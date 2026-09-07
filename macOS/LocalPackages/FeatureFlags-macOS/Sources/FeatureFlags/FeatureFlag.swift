@@ -252,7 +252,7 @@ public enum FeatureFlag: String, CaseIterable {
     case webNotifications
 
     /// Enables the Website Permissions entry point in Settings.
-    case websitePermissions
+    case websitePermissionsSettings
 
     /// Shows a survey when quitting the app for the first time in a determined period
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1212242893241885?focus=true
@@ -407,9 +407,21 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
     case promoQueue
 
+    /// Enables the Bookmark Toolbar ("Show Bookmarks Bar?") promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218028792667616?focus=true
+    case promoQueueBookmarkToolbarPromo
+
     /// Enables the Sync Favicons ("Download Missing Icons?") promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218028792667610?focus=true
     case promoQueueSyncFaviconsPromo
+
+    /// Enables the Autofill Toolbar Pinning ("Add passwords shortcut?") promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218049727240260?focus=true
+    case promoQueueAutofillToolbarPinningPromo
+
+    /// Enables the Cookie Pop-ups Blocked promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218049727240253?focus=true
+    case promoQueueCookiePopupsBlockedPromo
 
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
@@ -689,7 +701,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportNewExperience:
             Config(source: .remoteReleasable(DataImportSubfeature.newDataImportExperience))
         case .dataImportDataDirectoryAccess:
-            Config(defaultValue: .disabled, source: .remoteReleasable(DataImportSubfeature.dataDirectoryAccess))
+            Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.dataDirectoryAccess))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .standaloneMigration:
@@ -700,8 +712,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PopupBlockingSubfeature.featureEnabled), category: .popupBlocking)
         case .webNotifications:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.webNotifications), category: .webNotifications)
-        case .websitePermissions:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissions))
+        case .websitePermissionsSettings:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsSettings))
         case .firstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))
         case .firstTimeQuitSurveySkipNonUserQuit:
@@ -786,8 +798,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         case .promoQueue:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.featureEnabled))
+        case .promoQueueBookmarkToolbarPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkToolbarPromo))
         case .promoQueueSyncFaviconsPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncFaviconsPromo))
+        case .promoQueueAutofillToolbarPinningPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillToolbarPinningPromo))
+        case .promoQueueCookiePopupsBlockedPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.cookiePopupsBlockedPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:

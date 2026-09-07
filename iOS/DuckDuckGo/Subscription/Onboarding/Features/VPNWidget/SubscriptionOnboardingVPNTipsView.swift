@@ -1,0 +1,123 @@
+//
+//  SubscriptionOnboardingVPNTipsView.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import SwiftUI
+import DesignResourcesKit
+import UIComponents
+
+/// The post-activation "What to know about using your VPN" screen: the tips carousel with a single
+/// button that advances the flow. Piggybacks on `.vpnWidget`'s checklist item — completes nothing of its own.
+struct SubscriptionOnboardingVPNTipsView: View {
+
+    var title: String?
+    var navigationButton: SubscriptionOnboardingNavigationButton?
+    var onNext: () -> Void = {}
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        SubscriptionOnboardingBaseView(
+            title: title,
+            navigationButton: navigationButton ?? .back({ dismiss() }),
+            header: SubscriptionOnboardingHeaderView(title: UserText.subscriptionOnboardingVPNTipsTitle),
+            footer: .single(.init(UserText.subscriptionOnboardingVPNTipsDoneButton) { onNext() })) {
+            VPNTipsCarousel()
+                .padding(.top, 24)
+        }
+    }
+}
+
+// MARK: - Tips carousel
+
+/// The VPN tips carousel: fixed-width cards with the neighbours peeking at the edges.
+private struct VPNTipsCarousel: View {
+    private enum Metrics {
+        static let cardWidth: CGFloat = 260
+        static let horizontalPadding: CGFloat = 32
+        static let verticalPadding: CGFloat = 32
+        static let cardSpacing: CGFloat = 16
+        static let iconSpacing: CGFloat = 4
+    }
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top, spacing: Metrics.cardSpacing) {
+                ForEach(Tip.allCases, id: \.self) { tip in
+                    card(for: tip)
+                }
+            }
+            .padding(.horizontal, SubscriptionOnboardingPageInsets.horizontal)
+        }
+        .padding(.horizontal, -SubscriptionOnboardingPageInsets.horizontal)
+    }
+
+    private func card(for tip: Tip) -> some View {
+        SubscriptionOnboardingCard(
+            CardItem(
+                icon: CardItemIcon(position: .topLeading, visual: .image(tip.icon), size: .size56, spacing: Metrics.iconSpacing),
+                title: CardItemText(tip.title, font: .headline),
+                text: CardItemText(tip.bodyText, font: .subheadRegular)),
+            style: .borderless,
+            contentInset: .init(horizontal: Metrics.horizontalPadding, vertical: Metrics.verticalPadding))
+        .frame(width: Metrics.cardWidth)
+        .accessibilityElement(children: .combine)
+    }
+
+    private enum Tip: CaseIterable {
+        case noCaps
+        case speed
+        case blocked
+
+        var icon: Image {
+            switch self {
+            case .noCaps: Image(.keyhole56)
+            case .speed: Image(.responseGood56)
+            case .blocked: Image(.onboardingVPN56)
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .noCaps: UserText.subscriptionOnboardingVPNTipNoCapsTitle
+            case .speed: UserText.subscriptionOnboardingVPNTipSpeedTitle
+            case .blocked: UserText.subscriptionOnboardingVPNTipBlockedTitle
+            }
+        }
+
+        var bodyText: String {
+            switch self {
+            case .noCaps: UserText.subscriptionOnboardingVPNTipNoCapsBody
+            case .speed: UserText.subscriptionOnboardingVPNTipSpeedBody
+            case .blocked: UserText.subscriptionOnboardingVPNTipBlockedBody
+            }
+        }
+    }
+}
+
+#if DEBUG
+
+#Preview("Tips") {
+    RebrandedPreview {
+        SubscriptionOnboardingVPNTipsView(
+            title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
+        .subscriptionOnboardingNavigationContainer()
+    }
+}
+
+#endif

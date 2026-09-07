@@ -145,6 +145,34 @@ final class WebExtensionManagerHandlerRegistrationTests: XCTestCase {
         XCTAssertTrue(messageRouter.unregisterHandlersCalled)
         XCTAssertEqual(messageRouter.unregisteredIdentifier, identifier)
     }
+
+    @MainActor
+    func testWhenReloadUnloadFails_ThenLiveHandlersAreNotUnregistered() async {
+        let manager = makeManager()
+        webExtensionLoadingMock.mockUnloadError = NSError(domain: "test", code: 1)
+
+        do {
+            try await manager.reloadExtension(identifier: "test-extension-id")
+            XCTFail("Expected reload to fail")
+        } catch {
+            XCTAssertFalse(messageRouter.unregisterHandlersCalled)
+            XCTAssertFalse(webExtensionLoadingMock.loadWebExtensionCalled)
+        }
+    }
+
+    @MainActor
+    func testWhenReloadLoadFails_ThenHandlersForUnloadedContextAreRemoved() async {
+        let manager = makeManager()
+        webExtensionLoadingMock.mockError = NSError(domain: "test", code: 2)
+
+        do {
+            try await manager.reloadExtension(identifier: "test-extension-id")
+            XCTFail("Expected reload to fail")
+        } catch {
+            XCTAssertTrue(messageRouter.unregisterHandlersCalled)
+            XCTAssertTrue(webExtensionLoadingMock.loadWebExtensionCalled)
+        }
+    }
 }
 
 // MARK: - Test Helper Classes

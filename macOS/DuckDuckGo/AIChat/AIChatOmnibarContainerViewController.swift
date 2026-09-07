@@ -1195,10 +1195,15 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         usageWarningCardView.onDismiss = { [weak self] in
             guard let self else { return }
+            // Ahead of the pixel: this card is not a usage message, so closing it must not report
+            // a dismissal against whichever usage exposure happens to be open.
             if createImageModelSwitchNotice != nil {
                 clearCreateImageModelSwitchNotice()
                 return
-            } else if omnibarController.usageWarningViewModel?.warning != nil {
+            }
+
+            omnibarController.usageWarningMeasurement.warningDismissed()
+            if omnibarController.usageWarningViewModel?.warning != nil {
                 omnibarController.usageWarningViewModel?.dismiss()
             } else {
                 highUsageNoticeSource?.dismissCurrent()
@@ -1247,11 +1252,15 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         applyInputBlock(warning?.blocksInput == true)
         if let createImageModelSwitchNotice {
             usageWarningCardView.update(with: createImageModelSwitchNotice)
+            // Not a usage message, so nothing here is an impression — and leaving the last one set
+            // would report it again for a card the user is no longer looking at.
+            currentUsageWarningExposure = nil
             setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
             return
         }
         if let warning {
             usageWarningCardView.update(with: warning)
+            currentUsageWarningExposure = DuckAiUsageWarningExposure(warning: warning)
             setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
             return
         }
@@ -1276,9 +1285,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// The fallback when no allowance message applies: web shows the same one, and shows it here too.
     private func applyHighUsageNotice() {
         guard let notice = highUsageNoticeSource?.notice else {
+            currentUsageWarningExposure = nil
             return setUsageWarningVisible(false)
         }
         usageWarningCardView.update(with: notice)
+        currentUsageWarningExposure = DuckAiUsageWarningExposure(notice: notice)
         setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
     }
 
@@ -1301,7 +1312,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func setUsageWarningVisible(_ visible: Bool) {
-        guard applyUsageWarningVisibility(visible) else { return }
+        let didChangeVisibility = applyUsageWarningVisibility(visible)
+
+        // Reported off the reveal rather than the resolve: the message is resolved while the panel
+        // is still collapsed, and only shown when it expands. Not gated on the visibility changing,
+        // because the message in the slot can be replaced without the card ever coming down — the
+        // measurement ignores a repeat of the one already showing.
+        if visible, let currentUsageWarningExposure {
+            omnibarController.usageWarningMeasurement.cardBecameVisible(currentUsageWarningExposure)
+        }
+
+        guard didChangeVisibility else { return }
 
         onSuggestionsHeightChanged?(suggestionsHeight)
         onPassthroughHeightNeedsUpdate?()
@@ -1334,6 +1355,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Mirrors the controller's copy; kept here so the apply can early-out on no change.
     private var isInputBlockedByUsageLimit = false
+
+    /// What the card is currently about, held so the reveal can report it.
+    private var currentUsageWarningExposure: DuckAiUsageWarningExposure?
 
     /// Beside the usage warnings rather than part of them: it keys off the selected model, not the
     /// allowance. The warning wins the card when both apply.
@@ -2361,6 +2385,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             omnibarController.usageWarningViewModel?.modelSwitchedToSuggestion(model.id)
         }
         clearCreateImageModelSwitchNotice()
+        // Before the switch, like the card's own CTA does: applying it refreshes the card, and a
+        // message replaced there would take the credit while the one acted on is called abandoned.
+        omnibarController.usageWarningMeasurement.modelSwitched()
         // `updateSelectedModel` calls back into `refreshForSelectedModel`, whichever route changed it.
         omnibarController.updateSelectedModel(model.id)
         if isPresentingModelPickerFromUsageCard {

@@ -21,6 +21,7 @@ import BrowserServicesKit
 @_spi(Testing) import Persistence
 import BrowserServicesKitTestsUtils
 import Combine
+import Common
 import ConcurrencyExtensions
 import Core
 import PrivacyConfig
@@ -633,6 +634,33 @@ final class TabManagerTests: XCTestCase {
         XCTAssertFalse(controller.error.isHidden)
         XCTAssertEqual(controller.errorHeader.text, UserText.tabTerminationErrorPageTitle)
         XCTAssertTrue(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
+    }
+
+    func testWhenReportingFromTabTerminationErrorPageThenDirectFeedbackFormEntryPointIsUsed() throws {
+        let manager = try makeManager(TabsModel(desktop: false))
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        let delegate = MockTabDelegate()
+        controller.delegate = delegate
+        controller.showTabTerminationErrorPage()
+
+        controller.onReportBrokenSiteFromErrorPage()
+
+        XCTAssertEqual(delegate.reportBrokenSiteEntryPoints, [.webKitTerminationErrorPage])
+    }
+
+    func testWhenReportingFromSafariRedirectErrorPageThenStandardErrorPageEntryPointIsUsed() throws {
+        let manager = try makeManager(TabsModel(desktop: false))
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        let delegate = MockTabDelegate()
+        controller.delegate = delegate
+        controller.safariRedirectHandler(
+            SafariRedirectHandler(tld: TLD()),
+            didRequestShowSafariRedirectLoopErrorForURL: URL(string: "x-safari-https://example.com")!
+        )
+
+        controller.onReportBrokenSiteFromErrorPage()
+
+        XCTAssertEqual(delegate.reportBrokenSiteEntryPoints, [.errorPage])
     }
 
     func testWhenCurrentTabTerminatesInBackgroundThenItReloadsOnceAfterBecomingActive() throws {

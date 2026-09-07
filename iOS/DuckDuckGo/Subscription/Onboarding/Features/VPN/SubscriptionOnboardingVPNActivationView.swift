@@ -31,27 +31,32 @@ struct SubscriptionOnboardingVPNActivationView: View {
         static let infoCardStackSpacing: CGFloat = 8
         static let onInfoCardsSpacing: CGFloat = 12
         static let featureRowSpacing: CGFloat = 10
+        static let newIPCardSlideOffset: CGFloat = -16
     }
 
     @StateObject private var viewModel: SubscriptionOnboardingVPNActivationViewModel
 
     private let title: String?
+    private let navigationButton: SubscriptionOnboardingNavigationButton?
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var tapAllowHint = TapAllowHintCoordinator()
 
     @State private var isShowingInfoSheet = false
     @State private var tapAllowHintWindow = TapAllowHintOverlayWindow()
 
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingVPNActivationViewModel,
-         title: String? = nil) {
+         title: String? = nil,
+         navigationButton: SubscriptionOnboardingNavigationButton? = nil) {
         _viewModel = StateObject(wrappedValue: viewModel())
         self.title = title
+        self.navigationButton = navigationButton
     }
 
     var body: some View {
         SubscriptionOnboardingBaseView(
             title: title,
-            navigationButton: .back({ viewModel.goBack() }),
+            navigationButton: navigationButton,
             header: header,
             footer: footer) {
             content
@@ -59,7 +64,6 @@ struct SubscriptionOnboardingVPNActivationView: View {
         .onAppear { viewModel.onAppear() }
         .onDisappear {
             viewModel.onDisappear()
-            // Safety net
             tapAllowHintWindow.hide()
             tapAllowHint.disappeared()
         }
@@ -106,7 +110,7 @@ private extension SubscriptionOnboardingVPNActivationView {
                 onInfoLinkTap: { isShowingInfoSheet = true })
         case .on:
             return SubscriptionOnboardingHeaderView(
-                visual: .lottie(name: "vpn-v4"),
+                visual: .lottie(name: "vpn-animation"),
                 title: UserText.subscriptionOnboardingVPNActivationOnTitle,
                 explanation: UserText.subscriptionOnboardingVPNActivationOnExplanation,
                 onInfoLinkTap: { isShowingInfoSheet = true })
@@ -128,6 +132,7 @@ private extension SubscriptionOnboardingVPNActivationView {
             vpnInfoCards
             featureRows
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: viewModel.connectionState)
     }
 
     @ViewBuilder
@@ -136,37 +141,48 @@ private extension SubscriptionOnboardingVPNActivationView {
             VStack(spacing: Metrics.infoCardStackSpacing) {
                 SubscriptionOnboardingVPNInfoCard(state: .visibleIP,
                                                   ipAddress: viewModel.originalIPText,
-                                                  location: viewModel.originalLocationText)
+                                                  location: viewModel.originalLocationText,
+                                                  isAvailable: viewModel.isOriginalInfoAvailable)
                 footnote(UserText.subscriptionOnboardingVPNActivationOffFootnote)
             }
+            .transition(.opacity)
         } else {
             VStack(spacing: Metrics.infoCardStackSpacing) {
                 VStack(spacing: Metrics.onInfoCardsSpacing) {
                     SubscriptionOnboardingVPNInfoCard(state: .hiddenIP,
                                                       ipAddress: viewModel.originalIPText,
                                                       location: viewModel.originalLocationText)
+                        .transition(.opacity)
                     SubscriptionOnboardingVPNInfoCard(state: .newIP,
                                                       ipAddress: viewModel.vpnIPText,
                                                       location: viewModel.vpnLocationText,
-                                                      nearestIndicator: viewModel.vpnLocationNearestIndicator)
+                                                      nearestIndicator: viewModel.vpnLocationNearestIndicator,
+                                                      isAvailable: viewModel.isVPNInfoAvailable)
+                        .transition(.offset(y: Metrics.newIPCardSlideOffset).combined(with: .opacity))
                 }
                 footnote(UserText.subscriptionOnboardingVPNActivationOnFootnote)
             }
+            .transition(.opacity)
         }
     }
 
+    @ViewBuilder
     var featureRows: some View {
-        VStack(spacing: Metrics.featureRowSpacing) {
-            ForEach(VPNProtection.allCases, id: \.self) { protection in
-                SubscriptionOnboardingListItemView(
-                    text: protection.text,
-                    status: viewModel.connectionState == .on ? .active : .inactive)
+        if viewModel.connectionState == .on {
+            VStack(spacing: Metrics.featureRowSpacing) {
+                ForEach(VPNProtection.allCases, id: \.self) { protection in
+                    SubscriptionOnboardingListItemView(text: protection.text, status: .active)
+                }
             }
+            .transition(.move(edge: .trailing).combined(with: .opacity))
+        } else {
+            VStack(spacing: Metrics.featureRowSpacing) {
+                ForEach(VPNProtection.allCases, id: \.self) { protection in
+                    SubscriptionOnboardingListItemView(text: protection.text, status: .inactive)
+                }
+            }
+            .transition(.move(edge: .leading).combined(with: .opacity))
         }
-        .id(viewModel.connectionState)
-        .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
-                                removal: .identity))
-        .animation(.easeInOut(duration: 0.4), value: viewModel.connectionState)
     }
 
     func footnote(_ text: String) -> some View {
@@ -195,11 +211,9 @@ private extension SubscriptionOnboardingVPNActivationView {
                 return .single(.init(UserText.subscriptionOnboardingVPNActivationTurnOnButton, action: startVPN))
             }
             return .double(primary: .init(UserText.subscriptionOnboardingVPNActivationTryAgainButton, action: startVPN),
-                           secondary: .init(UserText.subscriptionOnboardingVPNActivationSkipButton,
-                                            push: SubscriptionOnboardingVPNWidgetEducationView(title: title, onDone: { viewModel.advance() })))
+                           secondary: .init(UserText.subscriptionOnboardingVPNActivationSkipButton) { viewModel.advance() })
         case .on:
-            return .single(.init(UserText.subscriptionOnboardingVPNActivationNextButton,
-                                 push: SubscriptionOnboardingVPNWidgetEducationView(title: title, onDone: { viewModel.advance() })))
+            return .single(.init(UserText.subscriptionOnboardingVPNActivationNextButton) { viewModel.advance() })
         }
     }
 }
@@ -220,18 +234,9 @@ private enum VPNProtection: CaseIterable {
 
 #if DEBUG
 
-import Lottie
-
 private extension SubscriptionOnboardingConnectionInfo {
     static let madrid = SubscriptionOnboardingConnectionInfo(ip: "31.120.130.50", city: "Madrid", country: "ES")
     static let valencia = SubscriptionOnboardingConnectionInfo(ip: "45.132.71.9", city: "Valencia", country: "ES")
-}
-
-private let previewLottieRenderer = GraphicLottieRenderer { name, _ in
-    AnyView(
-        Lottie.LottieView(animation: .named(name))
-            .playbackMode(.playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)))
-    )
 }
 
 @MainActor
@@ -248,7 +253,7 @@ private func activationPreview(state: SubscriptionOnboardingVPNActivationViewMod
                             didFailToStartVPN: didFailToStart),
         title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
     .subscriptionOnboardingNavigationContainer()
-    .graphicLottieRenderer(previewLottieRenderer)
+    .graphicLottieRenderer(.app)
 }
 
 #Preview("Off - Light") {
@@ -332,7 +337,7 @@ private struct VPNRevealPreview: View {
             viewModel: viewModel,
             title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
         .subscriptionOnboardingNavigationContainer()
-        .graphicLottieRenderer(previewLottieRenderer)
+        .graphicLottieRenderer(.app)
         .task {
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             await viewModel.turnOnVPN()

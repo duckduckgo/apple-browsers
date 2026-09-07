@@ -64,7 +64,7 @@ struct EventHubFunctionalTests {
     static let immediateConfig = """
     { "telemetry": { "webEvent_impression": {
         "state": "enabled",
-        "trigger": { "type": "immediate", "source": "impression" },
+        "trigger": { "type": "immediate_v2", "source": "impression" },
         "parameters": {}
     } } }
     """

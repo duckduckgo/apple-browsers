@@ -393,7 +393,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                                               adBlockingAvailability: adBlockingAvailability,
-                                                              eventHub: eventHub)
+                                                              eventHub: eventHub,
+                                                              webExtensionManagerProvider: { [weak self] in self?.webExtensionManager })
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -523,7 +524,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                                               adBlockingAvailability: adBlockingAvailability,
-                                                              eventHub: eventHub)
+                                                              eventHub: eventHub,
+                                                              webExtensionManagerProvider: { [weak self] in self?.webExtensionManager })
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,

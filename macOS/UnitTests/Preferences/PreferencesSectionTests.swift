@@ -36,6 +36,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingSync: shouldIncludeSync,
                                                           includingAIChat: shouldIncludeAIChat,
                                                           includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -77,6 +78,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingSync: shouldIncludeSync,
                                                           includingAIChat: shouldIncludeAIChat,
                                                           includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -98,6 +100,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingSync: shouldIncludeSync,
                                                           includingAIChat: shouldIncludeAIChat,
                                                           includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -119,6 +122,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingSync: shouldIncludeSync,
                                                           includingAIChat: shouldIncludeAIChat,
                                                           includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -138,6 +142,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingSync: false,
                                                           includingAIChat: false,
                                                           includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -155,6 +160,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingSync: false,
                                                           includingAIChat: false,
                                                           includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -183,6 +189,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingSync: false,
                                                           includingAIChat: false,
                                                           includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -203,6 +210,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingSync: false,
                                                           includingAIChat: false,
                                                           includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then

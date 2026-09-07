@@ -413,6 +413,7 @@ extension PrivacyDashboardViewController {
         if let httpStatusCode = currentTab.brokenSiteInfo?.lastHttpStatusCode {
             statusCodes = [httpStatusCode]
         }
+        let isAfterTabTermination = currentTab.error?.code == .webContentProcessTerminated
 
         let isPirEnabled = await isPirEnabledAndUserHasProfile()
 
@@ -458,6 +459,7 @@ extension PrivacyDashboardViewController {
                                                privacyExperiments: currentTab.privacyInfo?.privacyExperimentCohorts ?? "",
                                                isPirEnabled: isPirEnabled,
                                                isForceDarkModeEnabled: NSApp.delegateTyped.darkReaderFeatureSettings?.isForceDarkModeEnabled,
+                                               isAfterTabTermination: isAfterTabTermination,
                                                lastTabSuspension: currentTab.tabSuspension?.lastSuspensionState.rawValue,
                                                pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming,
                                                breakageData: breakageData,

@@ -610,10 +610,7 @@ final class BrowserToolbarView: UIView {
             materialBackgroundView.effect = nil
             materialBackgroundView.effect = materialEffect()
             materialBackgroundView.layoutIfNeeded()
-            // chromeContentHost (holding buttonStack's toolbar buttons) is a sibling of materialBackgroundView
-            // under chromeContainer, not a descendant, so it never inherited the override above. Its buttons'
-            // dynamic colors were left resolving against the ambient (light) trait while the glass they sit on
-            // was forced dark for fire mode, leaving them with no contrast.
+            // chromeContentHost is a sibling of materialBackgroundView, not a descendant — needs the override too.
             chromeContentHost.overrideUserInterfaceStyle = interfaceStyle
         }
         scheduleHostedOmnibarMaterialRefresh()

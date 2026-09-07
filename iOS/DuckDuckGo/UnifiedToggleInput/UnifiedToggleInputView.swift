@@ -963,11 +963,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private var fireModeContentSubviews: [UIView] {
-        // aiTabCollapsedFireButton/aiTabCollapsedMenuButton are NOT excluded here: they sit on the
-        // surrounding BrowserToolbarView glass (materialBackgroundView), which FloatingGlassAppearancePolicy
-        // forces to `.dark` whenever fire mode is active — independently of this card's own background.
-        // Leaving them at the OS trait made their icons resolve light-mode tints against that now-dark
-        // glass, with no contrast. They must track fire mode like the rest of the card content.
+        // aiTabCollapsed buttons no longer excluded — the glass they sit on goes dark for fire mode too.
         subviews.filter {
             $0 !== cardView &&
             $0 !== expandedShadowView

@@ -215,9 +215,6 @@ final class UTIFooterController {
         }
     }
 
-    /// Suppression counts: a block the card is not on screen to explain would read as the input
-    /// having broken. Reported off the warning rather than the visible message, so the model-switch
-    /// notice taking the slot does not lift it.
     private func updateInputBlock() {
         let blocked = !isSuppressed && viewModel.warning?.blocksInput == true
         guard blocked != isInputBlocked else { return }

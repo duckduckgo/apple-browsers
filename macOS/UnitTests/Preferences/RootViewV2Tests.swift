@@ -105,7 +105,7 @@ final class RootViewV2Tests: XCTestCase {
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
-            websitePermissionManager: PermissionManagerMock(),
+            permissionManager: PermissionManagerMock(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in }
             )
@@ -127,7 +127,7 @@ final class RootViewV2Tests: XCTestCase {
             aiChatURLSettings: mockRemoteAISettings,
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
-            websitePermissionManager: PermissionManagerMock(),
+            permissionManager: PermissionManagerMock(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         ) { content in
             self.showTabCalled = true
@@ -164,7 +164,7 @@ final class RootViewV2Tests: XCTestCase {
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
-            websitePermissionManager: PermissionManagerMock()
+            permissionManager: PermissionManagerMock()
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -203,7 +203,7 @@ final class RootViewV2Tests: XCTestCase {
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
-            websitePermissionManager: PermissionManagerMock(),
+            permissionManager: PermissionManagerMock(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in },
             pixelHandler: { pixel, _ in

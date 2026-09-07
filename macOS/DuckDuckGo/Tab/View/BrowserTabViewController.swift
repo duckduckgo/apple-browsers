@@ -105,6 +105,7 @@ final class BrowserTabViewController: NSViewController {
     private let subscriptionManager: any SubscriptionManager
     private weak var subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+    private let permissionManager: PermissionManagerProtocol
     private let pinningManager: PinningManager
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
 
@@ -185,6 +186,7 @@ final class BrowserTabViewController: NSViewController {
          subscriptionManager: any SubscriptionManager = NSApp.delegateTyped.subscriptionManager,
          subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate? = NSApp.delegateTyped.subscriptionPromoDelegate,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
+         permissionManager: PermissionManagerProtocol,
          pinningManager: PinningManager,
          adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
          tld: TLD = NSApp.delegateTyped.tld,
@@ -215,6 +217,7 @@ final class BrowserTabViewController: NSViewController {
         self.subscriptionManager = subscriptionManager
         self.subscriptionPromoDelegate = subscriptionPromoDelegate
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.permissionManager = permissionManager
         self.pinningManager = pinningManager
         self.adBlockingAvailability = adBlockingAvailability
 
@@ -1489,7 +1492,7 @@ final class BrowserTabViewController: NSViewController {
                 tabCollectionViewModel: tabCollectionViewModel,
                 privacyConfigurationManager: privacyConfigurationManager,
                 featureFlagger: featureFlagger,
-                websitePermissionManager: Application.appDelegate.permissionManager,
+                permissionManager: permissionManager,
                 defaultBrowserPreferences: defaultBrowserPreferences,
                 downloadsPreferences: downloadsPreferences,
                 searchPreferences: searchPreferences,
@@ -2086,6 +2089,7 @@ extension BrowserTabViewController {
         dockPreferences: Application.appDelegate.dockPreferences,
         accessibilityPreferences: Application.appDelegate.accessibilityPreferences,
         duckPlayer: Application.appDelegate.duckPlayer,
+        permissionManager: Application.appDelegate.permissionManager,
         pinningManager: Application.appDelegate.pinningManager
     )
 }

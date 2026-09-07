@@ -39,7 +39,6 @@ final class WebsitePermissionsViewModel: ObservableObject {
         case .onAppear:
             guard !didAppear else { return }
             didAppear = true
-            viewState.rows = makeRows(from: [])
             setupObserver()
         }
     }

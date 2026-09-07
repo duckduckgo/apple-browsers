@@ -124,6 +124,27 @@ final class FloatingUIManagerTests: XCTestCase {
 
 }
 
+final class FloatingUIPullToRefreshTests: XCTestCase {
+
+    func testWhenFloatingUIIsEnabledThenRefreshBackgroundUsesSurfaceCanvas() {
+        let pageBackgroundColor = UIColor.red
+        let refreshBackgroundColor = PullToRefreshViewAdapter.refreshBackgroundColor(pageBackgroundColor: pageBackgroundColor,
+                                                                                      isFloatingUIEnabled: true)
+        let traits = UITraitCollection(userInterfaceStyle: .light)
+
+        XCTAssertEqual(refreshBackgroundColor.resolvedColor(with: traits),
+                       UIColor(designSystemColor: .surfaceCanvas).resolvedColor(with: traits))
+    }
+
+    func testWhenFloatingUIIsDisabledThenRefreshBackgroundUsesPageColor() {
+        let pageBackgroundColor = UIColor.red
+        let refreshBackgroundColor = PullToRefreshViewAdapter.refreshBackgroundColor(pageBackgroundColor: pageBackgroundColor,
+                                                                                      isFloatingUIEnabled: false)
+
+        XCTAssertEqual(refreshBackgroundColor, pageBackgroundColor)
+    }
+}
+
 final class FloatingGlassAppearancePolicyTests: XCTestCase {
 
     func testWhenFireModeIsActiveThenInterfaceStyleIsDarkRegardlessOfDeviceAndPageAppearance() {

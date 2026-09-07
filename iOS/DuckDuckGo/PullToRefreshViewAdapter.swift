@@ -66,17 +66,23 @@ final class PullToRefreshViewAdapter: NSObject {
     private var didTriggerRefresh = false
     private var didEndRefreshing = false
     private var initialTranslationY: CGFloat = 0
+    private var pullableViewClipsToBoundsBeforePull: Bool?
 
     private weak var scrollView: UIScrollView?
     private weak var pullableView: UIView?
+    private let isFloatingUIEnabled: Bool
     private let onRefresh: () -> Void
 
     var backgroundColor: UIColor? {
         didSet {
-            fakeScrollView.backgroundColor = backgroundColor ?? UIColor(designSystemColor: .background)
-            // Set refresh control tint color based on background brightness
-            refreshControl.tintColor = determineRefreshControlTintColor(for: backgroundColor)
+            applyBackgroundColor()
         }
+    }
+
+    static func refreshBackgroundColor(pageBackgroundColor: UIColor?, isFloatingUIEnabled: Bool) -> UIColor {
+        isFloatingUIEnabled
+            ? UIColor(designSystemColor: .surfaceCanvas)
+            : pageBackgroundColor ?? UIColor(designSystemColor: .background)
     }
 
     private func determineRefreshControlTintColor(for backgroundColor: UIColor?) -> UIColor {
@@ -103,16 +109,29 @@ final class PullToRefreshViewAdapter: NSObject {
      */
     init(with scrollView: UIScrollView,
          pullableView: UIView,
+         isFloatingUIEnabled: Bool,
          onRefresh: @escaping () -> Void) {
         self.scrollView = scrollView
         self.pullableView = pullableView
+        self.isFloatingUIEnabled = isFloatingUIEnabled
         self.onRefresh = onRefresh
 
         super.init()
         setupBackgroundScrollView(basedOn: pullableView)
         fakeScrollView.refreshControl = refreshControl
         setupPanGestureRecognizer()
-        refreshControl.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        if isFloatingUIEnabled {
+            applyBackgroundColor()
+        } else {
+            refreshControl.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        }
+    }
+
+    private func applyBackgroundColor() {
+        let refreshBackgroundColor = Self.refreshBackgroundColor(pageBackgroundColor: backgroundColor,
+                                                                 isFloatingUIEnabled: isFloatingUIEnabled)
+        fakeScrollView.backgroundColor = refreshBackgroundColor
+        refreshControl.tintColor = determineRefreshControlTintColor(for: refreshBackgroundColor)
     }
 
     private func setupBackgroundScrollView(basedOn view: UIView) {
@@ -187,6 +206,10 @@ final class PullToRefreshViewAdapter: NSObject {
 
     private func startPullingIfAtTop(of scrollView: UIScrollView) {
         if scrollView.contentOffset.y < 0 {
+            if !isPulling, isFloatingUIEnabled, pullableViewClipsToBoundsBeforePull == nil {
+                pullableViewClipsToBoundsBeforePull = pullableView?.clipsToBounds
+                pullableView?.clipsToBounds = true
+            }
             scrollView.bounces = false
             isPulling = true
         }
@@ -244,7 +267,15 @@ final class PullToRefreshViewAdapter: NSObject {
             if !self.refreshControl.isRefreshing {
                 self.fakeScrollView.contentOffset.y = 0
             }
+        } completion: { _ in
+            self.restorePullableViewClippingIfNeeded()
         }
+    }
+
+    private func restorePullableViewClippingIfNeeded() {
+        guard !isPulling, let pullableViewClipsToBoundsBeforePull else { return }
+        pullableView?.clipsToBounds = pullableViewClipsToBoundsBeforePull
+        self.pullableViewClipsToBoundsBeforePull = nil
     }
 
     private func beginRefreshing() {

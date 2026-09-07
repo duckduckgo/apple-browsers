@@ -215,6 +215,10 @@ final class AIChatContextualSheetCoordinator {
         isWebUTIEnabled && featureFlagger.isFeatureOn(.aiChatContextualUnifiedToggleInput)
     }
 
+    private var isPagePlaceholderEnabled: Bool {
+        featureFlagger.isFeatureOn(.contextualPagePlaceholder)
+    }
+
     /// A chat about to start brings a keyboard up with it; one that already exists does not.
     private var sheetContextualInputStart: ContextualInputStart {
         guard sessionState.hasActiveChat else { return .expandedPreSubmit }
@@ -679,7 +683,7 @@ final class AIChatContextualSheetCoordinator {
             }
         } else if sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
             sessionState.notifyFrontendOfMultiContextNavigation()
-            if sessionState.shouldSuggestPageContextOnNavigation() {
+            if isPagePlaceholderEnabled, sessionState.shouldSuggestPageContextOnNavigation() {
                 // Read the page so the chip can offer it by name. Attached only if the user taps.
                 sessionState.markPendingSuggestedContextCollection()
                 if !pageContextHandler.triggerContextCollection(trigger: .navigation) {

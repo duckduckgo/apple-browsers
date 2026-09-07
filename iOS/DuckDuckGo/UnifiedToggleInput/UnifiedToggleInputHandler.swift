@@ -120,6 +120,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     var isImageGenerationSelected: Bool = false
 
+    /// Mirrors the usage card's blocking state, so every path into a prompt is closed and not just
+    /// the buttons that look closed.
+    var isInputBlockedByUsageLimit: Bool = false
+
     // MARK: - SwitchBarHandling — Publishers
 
     var currentTextPublisher: AnyPublisher<String, Never> {
@@ -195,12 +199,14 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     func submitText(_ text: String) {
+        guard !isInputBlockedByUsageLimit else { return }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
     }
 
     func submitAIChatAttachmentOnlyPrompt() {
+        guard !isInputBlockedByUsageLimit else { return }
         textSubmissionSubject.send((text: "", mode: .aiChat))
     }
 

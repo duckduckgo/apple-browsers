@@ -44,7 +44,7 @@ public class DataBrokerProtectionAgentManagerProvider {
     public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                     configurationManager: DefaultConfigurationManager,
                                     privacyConfigurationManager: PrivacyConfigurationManaging,
-                                    featureFlagger: DBPFeatureFlagging,
+                                    featureFlagger: DBPMacOSFeatureFlagging,
                                     wideEvent: WideEventManaging,
                                     vpnBypassService: VPNBypassFeatureProvider,
                                     resourceMonitor: ResourceMonitoring?,
@@ -61,7 +61,9 @@ public class DataBrokerProtectionAgentManagerProvider {
 
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
         let schedulingConfig = DataBrokerMacOSSchedulingConfig(mode: dbpSettings.runType == .integrationTests ? .fastForIntegrationTests : .normal)
-        let activityScheduler = DefaultDataBrokerProtectionBackgroundActivityScheduler(config: schedulingConfig)
+        let activityScheduler = DefaultDataBrokerProtectionBackgroundActivityScheduler(
+            config: schedulingConfig,
+            isDeferralHandlingEnabled: featureFlagger.isSchedulerDeferralHandlingEnabled)
 
         let notificationService = DefaultDataBrokerProtectionUserNotificationService(pixelHandler: pixelHandler, userNotificationCenter: UNUserNotificationCenter.current(), authenticationManager: authenticationManager)
         let eventsHandler = BrokerProfileJobEventsHandler(userNotificationService: notificationService)
@@ -372,6 +374,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
         } catch {
             Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }
+
         await startScheduledOperations()
     }
 

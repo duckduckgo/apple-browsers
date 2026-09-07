@@ -42,6 +42,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // New dark mode colors
     private static let x080808 = Color(0x080808)
+    private static let x090909 = Color(0x090909)
     private static let x282828 = Color(0x282828)
     private static let x373737 = Color(0x373737)
     private static let x3D3D3D = Color(0x3D3D3D)
@@ -111,6 +112,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let fireModeAccentTertiary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Mandarin.mandarin60)
     private static let fireModeBackground = DynamicColor(lightColor: x3D3D3D, darkColor: x080808)
     private static let fireModeCardBackground = DynamicColor(lightColor: x3D3D3D, darkColor: x1C1C1C)
+    private static let fireModeFieldBackground = DynamicColor(lightColor: x3D3D3D, darkColor: x090909)
 
     // DuckAI Cells
     private static let duckAIVoiceCellBackground = DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater90)
@@ -359,6 +361,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .fireModeAccentTertiary: return fireModeAccentTertiary
         case .fireModeBackground: return fireModeBackground
         case .fireModeCardBackground: return fireModeCardBackground
+        case .fireModeFieldBackground: return fireModeFieldBackground
         case .duckAIVoiceCellBackground: return duckAIVoiceCellBackground
         case .confettiMandarinFill:
             return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin50)

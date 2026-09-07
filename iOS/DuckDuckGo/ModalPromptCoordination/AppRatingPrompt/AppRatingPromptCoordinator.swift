@@ -117,10 +117,6 @@ final class AppRatingPromptCoordinator: ModalPromptProvider, AppRatingPromptCoor
         nil
     }
 
-    /// Deliberately empty. This fires only when a slot was taken *and* redeemed, never in the legacy path.
-    /// Eligibility is consumed at the request site, the one point common to every path.
-    func didPresentModal() {}
-
     func didReleaseDeferredSlot() {
         store.unredeemedSlotCount += 1
         Logger.modalPrompt.debug("[App Rating Prompt] - Slot released without a search.")

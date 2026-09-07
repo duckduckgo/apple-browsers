@@ -76,6 +76,34 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
                                           didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 }
 
+/// Answers whether a persisted chat has been deleted, or declines to answer.
+///
+/// Deletion must be proven by a keyed read returning nothing. A store that is absent, unmigrated or
+/// unreadable cannot answer, and its silence is not evidence: treating it as such discards chats that
+/// are perfectly fine.
+struct DeletedChatCheck {
+
+    let storage: DuckAiNativeStorageHandling?
+    let isNativeDataAccessEnabled: Bool
+
+    func wasDeleted(chatAt url: URL) -> Bool {
+        guard let chatID = url.duckAIChatID else { return false }
+        return wasDeleted(chatID: chatID)
+    }
+
+    func wasDeleted(chatID: String) -> Bool {
+        guard isNativeDataAccessEnabled,
+              let storage,
+              (try? storage.isMigrationDone()) == true else { return false }
+        do {
+            return try storage.getChat(chatId: chatID) == nil
+        } catch {
+            Logger.aiChat.error("[Contextual] Could not verify \(chatID): \(error.localizedDescription)")
+            return false
+        }
+    }
+}
+
 /// Coordinates the presentation and lifecycle of the contextual AI chat sheet.
 @MainActor
 final class AIChatContextualSheetCoordinator {
@@ -147,6 +175,13 @@ final class AIChatContextualSheetCoordinator {
 
     private var isWebUTIEnabled: Bool {
         unifiedToggleInputFeature.isAvailable
+    }
+
+    private var deletedChatCheck: DeletedChatCheck {
+        DeletedChatCheck(
+            storage: isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler,
+            isNativeDataAccessEnabled: AIChatFeatureFlagProvider(featureFlagger: featureFlagger).isNativeDataAccessEnabled()
+        )
     }
 
     private var isImmediateContextualUTIEnabled: Bool {
@@ -690,7 +725,7 @@ private extension AIChatContextualSheetCoordinator {
     func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?, opensOntoSubmittedChat: Bool = false) {
         guard presentingVC.presentedViewController == nil, floatingInputViewController == nil else { return }
 
-        if let restoreURL {
+        if let restoreURL, !deletedChatCheck.wasDeleted(chatAt: restoreURL) {
             sessionState.restoreChat(with: restoreURL)
         }
 
@@ -1153,10 +1188,6 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
 
     func aiChatContextualSheetViewControllerDidDismiss(_ viewController: AIChatContextualSheetViewController) {
         handleSheetDismissed()
-    }
-
-    func aiChatContextualSheetViewControllerDidDetectActiveChatRemoved(_ viewController: AIChatContextualSheetViewController) {
-        resetToNativeInputState()
     }
 
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController) {

@@ -72,7 +72,6 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     /// Called when the user taps the "New Chat" button to start a fresh conversation
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController)
     /// Housekeeping, not a user request: reset in place, never move the user to another surface.
-    func aiChatContextualSheetViewControllerDidDetectActiveChatRemoved(_ viewController: AIChatContextualSheetViewController)
 
     /// Called when the user asks to open Duck.ai itself, rather than continue in this sheet.
     func aiChatContextualSheetViewControllerDidRequestOpenDuckAI(_ viewController: AIChatContextualSheetViewController)
@@ -530,7 +529,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         pixelHandler.fireSheetOpened()
         addKeyboardObserver()
         showDimmingView(animated: animated)
-        prefetchRecentChatsVisibility()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -732,23 +730,6 @@ private extension AIChatContextualSheetViewController {
     }
 
     // MARK: - Recent Chats Menu
-
-    func prefetchRecentChatsVisibility() {
-        guard suggestionsReader != nil else { return }
-        Task { @MainActor in
-            let viewModel = await AIChatRecentChatsMenuViewModel.fetch(using: suggestionsReader)
-            guard view.window != nil, !isBeingDismissed else { return }
-
-            // If we have an active chat, check if it still exists in the suggestions
-            if sessionState.hasActiveChat,
-               let activeChatID = sessionState.contextualChatURL?.duckAIChatID,
-               let suggestions = viewModel?.suggestions,
-               !suggestions.contains(where: { $0.chatId == activeChatID }) {
-                Logger.aiChat.debug("[SheetVC] Active chat no longer exists, resetting to new chat")
-                delegate?.aiChatContextualSheetViewControllerDidDetectActiveChatRemoved(self)
-            }
-        }
-    }
 
     func updateChipUI(chipState: ChipState) {
         guard persistentUTIHost == nil else { return }

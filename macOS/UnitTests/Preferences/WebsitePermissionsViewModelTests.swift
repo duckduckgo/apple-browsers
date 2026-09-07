@@ -38,6 +38,7 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         let sut = createSUT()
 
         sut.send(action: .onAppear)
+        drainMainQueue()
 
         let rows = sut.viewState.rows
         XCTAssertEqual(rows.map(\.category), [
@@ -103,6 +104,12 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1)
         withExtendedLifetime(cancellable) {}
+    }
+
+    private func drainMainQueue() {
+        let exp = expectation(description: "main queue drained")
+        DispatchQueue.main.async { exp.fulfill() }
+        wait(for: [exp], timeout: 1.0)
     }
 
     private func createSUT(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {

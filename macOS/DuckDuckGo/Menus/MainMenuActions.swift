@@ -853,6 +853,7 @@ extension AppDelegate {
 
     @objc func resetOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
+        OnboardingExperimentPersistor().reset()
     }
 
     @objc func resetHomePageSettingsOnboarding(_ sender: Any?) {

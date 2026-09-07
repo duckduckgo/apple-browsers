@@ -204,6 +204,7 @@ final class MainWindowController: NSWindowController {
             // The selected tab can change before the onboarding page loads, so record it now, while
             // it is still unambiguous.
             Application.appDelegate.windowControllersManager.setOnboardingTab(selectedTab)
+            selectedTab.onboardingActionsManager?.installNonBlockingHandlers()
         } else {
             // During Onboarding, several UI elements get disabled. In order to prevent flickering,
             // we'll disable them right after kicking off Onboarding.

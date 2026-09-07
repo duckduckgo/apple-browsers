@@ -1107,6 +1107,34 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     // MARK: - Helper Functions
 
+    @MainActor
+    func testSkippedTreatmentPrioritizesDefaultAndDockInBothOrderingModes() {
+        for advanced in [false, true] {
+            persistor = MockNewTabPageNextStepsCardsPersistor()
+            let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+            flags.enabledFeatureFlags = advanced ? [.nextStepsListAdvancedCardOrdering] : []
+            var skipped = false
+            let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                          featureFlagger: flags, isAppStoreBuild: false,
+                                          didSkipOnboarding: { skipped })
+            skipped = true
+            NotificationCenter.default.post(name: OnboardingExperimentPersistor.outcomeDidChange, object: nil)
+
+            XCTAssertEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
+            provider.dismiss(.defaultApp)
+            XCTAssertFalse(provider.cards.contains(.defaultApp))
+            XCTAssertEqual(provider.cards.first, .addAppToDockMac)
+            provider.dismiss(.addAppToDockMac)
+        }
+    }
+
+    @MainActor
+    func testSkippedControlDoesNotGetTreatmentCardPriority() {
+        let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                      isAppStoreBuild: false, didSkipOnboarding: { true })
+        XCTAssertNotEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
+    }
+
     private func createProvider(
         defaultBrowserIsDefault: Bool? = nil,
         dataImportDidImport: Bool? = nil,
@@ -1123,7 +1151,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         featureFlagger: MockFeatureFlagger? = nil,
         adBlockingAvailability: MockAdBlockingAvailability? = nil,
         isFirstSession: Bool? = nil,
-        isAppStoreBuild: Bool? = nil
+        isAppStoreBuild: Bool? = nil,
+        didSkipOnboarding: @escaping () -> Bool = { false }
     ) -> NewTabPageNextStepsSingleCardProvider {
         let testDefaultBrowserProvider: CapturingDefaultBrowserProvider = {
             if let value = defaultBrowserIsDefault {
@@ -1227,7 +1256,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             syncService: testSyncService,
             adBlockingAvailability: testAdBlockingAvailability,
             applicationBuildType: testApplicationBuildType,
-            scheduler: .immediate
+            scheduler: .immediate,
+            didSkipOnboarding: didSkipOnboarding
         )
     }
 

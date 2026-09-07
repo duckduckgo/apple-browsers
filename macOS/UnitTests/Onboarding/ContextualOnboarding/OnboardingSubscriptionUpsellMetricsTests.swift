@@ -127,6 +127,23 @@ final class OnboardingSubscriptionUpsellMetricsTests: XCTestCase {
         XCTAssertEqual(metrics.reported, [.upsellDismissed])
     }
 
+    func testUpsellXDelegatesToManualDismissWithoutAdvancingTheFlow() {
+        var actions: [String] = []
+        let legacy = DefaultContextualDaxDialogViewFactory.subscriptionUpsellDialog(
+            delegate: MockOnboardingNavigationDelegate(), metrics: SpyUpsellMetricsReporter(),
+            onDismiss: { actions.append("dismiss") }, onManualDismiss: { actions.append("manual") },
+            onGotItPressed: { actions.append("gotIt") })
+        let rebranded = RebrandedContextualDaxDialogsFactory.subscriptionUpsellDialog(
+            delegate: MockOnboardingNavigationDelegate(), metrics: SpyUpsellMetricsReporter(),
+            onDismiss: { actions.append("dismiss") }, onManualDismiss: { actions.append("manual") },
+            onGotItPressed: { actions.append("gotIt") })
+
+        legacy.onManualDismiss()
+        rebranded.onManualDismiss()
+
+        XCTAssertEqual(actions, ["manual", "manual"])
+    }
+
     func testWhenUpsellCTAsRunThenTheyDoNotAlsoReportDismissal() {
         let metrics = SpyUpsellMetricsReporter()
         let dialog = RebrandedContextualDaxDialogsFactory.subscriptionUpsellDialog(

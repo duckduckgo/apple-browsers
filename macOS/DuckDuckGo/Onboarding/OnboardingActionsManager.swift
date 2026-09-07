@@ -130,7 +130,14 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     private weak var contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater?
     private var cancellables = Set<AnyCancellable>()
-    private var hasSkipped = false
+    private var hasEnded = false
+    private var hasInstalledHandlers = false
+    private let experimentPersistor: OnboardingExperimentPersistor
+
+    /// Early and fully installed scripts can have different managers for the same first-run flow.
+    private var canEndOnboarding: Bool {
+        !hasEnded && (!nonBlockingExperiment.isNonBlocking || experimentPersistor.outcome == nil)
+    }
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
     static var isOnboardingFinished: Bool
@@ -254,8 +261,10 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         featureFlagger: FeatureFlagger,
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling,
         chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling,
-        contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater? = nil
+        contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater? = nil,
+        experimentPersistor: OnboardingExperimentPersistor = OnboardingExperimentPersistor()
     ) {
+        self.experimentPersistor = experimentPersistor
         self.navigation = navigationDelegate
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider
@@ -272,12 +281,20 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.contextualOnboardingStateUpdater = contextualOnboardingStateUpdater
     }
 
+    /// Installed when the tab is established, before the page can receive user input.
+    func installNonBlockingHandlers() {
+        guard nonBlockingExperiment.isNonBlocking, !hasInstalledHandlers, canEndOnboarding else { return }
+        hasInstalledHandlers = true
+        navigation.setOnboardingHandlers(
+            onClose: { [weak self] in self?.skipOnboarding() },
+            onSkipInPlace: { [weak self] in self?.recordSkipInPlace() }
+        )
+    }
+
     func onboardingStarted() {
+        if nonBlockingExperiment.isNonBlocking, !canEndOnboarding { return }
         if nonBlockingExperiment.isNonBlocking {
-            navigation.setOnboardingHandlers(
-                onClose: { [weak self] in self?.skipOnboarding() },
-                onSkipInPlace: { [weak self] in self?.recordSkipInPlace() }
-            )
+            installNonBlockingHandlers()
         } else {
             navigation.updatePreventUserInteraction(prevent: true)
         }
@@ -290,7 +307,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     @MainActor
     func goToAddressBar() {
-        onboardingHasFinished()
+        guard finishOnboarding(.completed) else { return }
         let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
         navigation.replaceTabWith(tab)
 
@@ -304,7 +321,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     @MainActor
     func goToSettings() {
-        onboardingHasFinished()
+        guard finishOnboarding(.completed) else { return }
         let tab = Tab(content: .settings(pane: nil))
         navigation.replaceTabWith(tab)
     }
@@ -313,14 +330,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     /// so closing onboarding leaves them somewhere to be rather than with nothing.
     @MainActor
     func skipOnboarding() {
-        // A repeated close would otherwise fire the pixel again and, with the onboarding tab
-        // already released, replace whichever tab the user happens to be on. Guarded per instance
-        // rather than on `isOnboardingFinished`, which a developer replaying onboarding via launch
-        // options leaves set — that would make skipping do nothing for them.
-        guard !hasSkipped else { return }
-        hasSkipped = true
-
-        recordSkippedOnboarding()
+        // A late callback from either script must not replace a browsing tab after onboarding ended.
+        guard finishOnboarding(.skipped) else { return }
 
         let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
         navigation.replaceTabWith(tab)
@@ -339,23 +350,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     @MainActor
     private func recordSkipInPlace() {
         guard !Self.isOnboardingFinished else { return }
-        recordSkippedOnboarding()
-    }
-
-    @MainActor
-    private func recordSkippedOnboarding() {
-        // Skipping is reachable from any step, so the completion side effects are deliberately left
-        // out: marking the Duck.ai toggle step as seen would suppress a popover the user never got,
-        // and the final-step pixels would report a step that never displayed. `onboardingSkipped`
-        // below is what this path reports instead.
-        finalizeOnboarding()
-
-        // Skipping means the user asked to be left alone, so the contextual highlights don't
-        // follow them out of a setup they declined.
-        contextualOnboardingStateUpdater?.state = .onboardingCompleted
-
-        PixelKit.fire(GeneralPixel.onboardingSkipped, frequency: .dailyAndCount)
-        nonBlockingExperiment.fireMetric(.onboardingSkipped)
+        _ = finishOnboarding(.skipped)
     }
 
     func addToDock() {
@@ -547,33 +542,35 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         }
     }
 
-    /// The state that has to settle however onboarding ended, including when it was cut short.
-    /// Unlocking the UI belongs here: a window that skipped is otherwise left with no way out.
-    private func finalizeOnboarding() {
+    /// Accepts an outcome once, before callers replace tabs or perform other navigation.
+    private func finishOnboarding(_ outcome: OnboardingExperimentPersistor.Outcome) -> Bool {
+        guard canEndOnboarding else { return false }
+        hasEnded = true
         Self.isOnboardingFinished = true
         navigation.updatePreventUserInteraction(prevent: false)
         Self.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
-    }
 
-    private func onboardingHasFinished() {
-        finalizeOnboarding()
-
-        // Non-blocking onboarding leaves the highlights suppressed while it runs, so completing is
-        // what arms them. Only this path does: skipping, or leaving onboarding any other way,
-        // leaves them suppressed.
-        if nonBlockingExperiment.isNonBlocking {
-            contextualOnboardingStateUpdater?.state = .notStarted
+        let isFirstOutcome = experimentPersistor.record(outcome)
+        switch outcome {
+        case .completed:
+            let userSawToggleOnboarding = wasToggleOnboardingStepShown()
+            if userSawToggleOnboarding {
+                aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
+            }
+            if !nonBlockingExperiment.isNonBlocking || isFirstOutcome {
+                fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
+            }
+        case .skipped:
+            // Skipping must not record a final step or suppress a toggle popover the user never saw.
+            if !nonBlockingExperiment.isNonBlocking {
+                contextualOnboardingStateUpdater?.state = .onboardingCompleted
+            }
+            if isFirstOutcome {
+                PixelKit.fire(GeneralPixel.onboardingSkipped, frequency: .dailyAndCount)
+                nonBlockingExperiment.fireMetric(.onboardingSkipped)
+            }
         }
-
-        let userSawToggleOnboarding = wasToggleOnboardingStepShown()
-
-        /// If user completed onboarding while the toggle onboarding step was shown,
-        /// mark the flag to skip the popover
-        if userSawToggleOnboarding {
-            aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
-        }
-
-        fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
+        return true
     }
 
     /// Applies the Duck Player default dictated by the ad-blocking defaults rollout for a

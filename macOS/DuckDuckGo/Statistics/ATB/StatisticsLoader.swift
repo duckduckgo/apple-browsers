@@ -69,9 +69,11 @@ final class StatisticsLoader {
         fireSearchExperimentPixels: @escaping () -> Void = {
             PixelKit.fireSearchExperimentPixels()
             StatisticsLoader.fireLegacySearchRetentionExperimentPixels()
+            StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel()
         },
         fireDuckAISearchExperimentPixels: @escaping () -> Void = {
             StatisticsLoader.fireSearchExperimentPixelsForDuckAIEligibleExperiments()
+            StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel()
         },
         fireNewAIPromptExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIPromptExperimentPixels,
         fireOnboardingNonBlockingAppRetentionExperimentPixel: @escaping () -> Void = StatisticsLoader.fireOnboardingNonBlockingAppRetentionExperimentPixel
@@ -111,13 +113,22 @@ final class StatisticsLoader {
 
     /// Fires the app-use metric for the non-blocking onboarding experiment over a 1...3 day conversion
     /// window, in addition to the per-day (1...1, 2...2, 3...3) windows `fireAppRetentionExperimentPixels`
-    /// already fires for every active experiment. The primary metric is "any app use on day 1, 2, or 3",
-    /// which the per-day pixels can't reconstruct at analysis time (they're aggregate counts with no
-    /// per-user identifier to de-duplicate on), so this experiment gets its own union window.
+    /// already fires for every active experiment. This supplementary union window measures any app
+    /// use on days 1–3; the primary search metric is emitted separately on search events.
     static func fireOnboardingNonBlockingAppRetentionExperimentPixel() {
         PixelKit.fireExperimentPixelIfThresholdReached(
             for: MacOSBrowserConfigSubfeature.onboardingNonBlocking.rawValue,
             metric: PixelKit.Constants.appUseMetricValue,
+            conversionWindowDays: 1...3,
+            threshold: 1
+        )
+    }
+
+    /// Uses the same search events (including Duck.ai) as the automatic 5...7 guardrail.
+    static func fireOnboardingNonBlockingSearchRetentionExperimentPixel() {
+        PixelKit.fireExperimentPixelIfThresholdReached(
+            for: MacOSBrowserConfigSubfeature.onboardingNonBlocking.rawValue,
+            metric: PixelKit.Constants.searchMetricValue,
             conversionWindowDays: 1...3,
             threshold: 1
         )

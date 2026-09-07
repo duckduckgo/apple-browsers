@@ -19,6 +19,7 @@
 import FeatureFlags_macOS
 import PixelExperimentKit
 import PixelKit
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import XCTest
 
@@ -33,7 +34,62 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
     }
 
     override func tearDown() {
+        PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(),
+                                        eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
+                                        fire: { _, _, _ in })
         firedEvents = nil
+    }
+
+    @MainActor
+    func testContextualInitializationSurvivesResumeAndPreservesProgressAndDismissal() {
+        let store = MockKeyValueFileStore()
+        let experiment = OnboardingNonBlockingExperiment(
+            featureFlagger: MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment))
+        let updater = MockContextualOnboardingState()
+        experiment.initializeContextualOnboarding(updater, persistor: OnboardingExperimentPersistor(keyValueStore: store))
+        XCTAssertEqual(updater.state, .notStarted)
+
+        for state in [ContextualOnboardingState.ongoing, .onboardingCompleted] {
+            updater.state = state
+            experiment.initializeContextualOnboarding(updater, persistor: OnboardingExperimentPersistor(keyValueStore: store))
+            XCTAssertEqual(updater.state, state)
+        }
+    }
+
+    func testOutcomeIsDurableAndCannotChangeAfterSkip() {
+        let store = MockKeyValueFileStore()
+        let persistor = OnboardingExperimentPersistor(keyValueStore: store)
+        XCTAssertTrue(persistor.record(.skipped))
+
+        let restored = OnboardingExperimentPersistor(keyValueStore: store)
+        XCTAssertEqual(restored.outcome, .skipped)
+        XCTAssertFalse(restored.record(.completed))
+        XCTAssertEqual(restored.outcome, .skipped)
+    }
+
+    func testExplicitResetAllowsANewOnboardingSession() {
+        let persistor = OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
+        persistor.contextualInitialized = true
+        persistor.record(.skipped)
+
+        persistor.reset()
+
+        XCTAssertFalse(persistor.contextualInitialized)
+        XCTAssertNil(persistor.outcome)
+        XCTAssertTrue(persistor.record(.completed))
+    }
+
+    func testSearchUnionWindowIncludesOnlyDaysOneThroughThree() {
+        let cohort = FeatureFlag.OnboardingNonBlockingCohort.treatment
+        for day in [0, 1, 2, 3, 4] {
+            firedEvents = []
+            let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
+            configureExperimentKit(cohort: cohort, featureFlagger: featureFlagger,
+                                   enrollmentDate: Calendar.current.date(byAdding: .day, value: -day, to: Date())!)
+            StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel()
+            let searchEvents = firedEvents.filter { $0.parameters?["metric"] == "search" }
+            XCTAssertEqual(searchEvents.count, (1...3).contains(day) ? 1 : 0, "Day \(day)")
+        }
     }
 
     func testEnrollCallsResolveCohort() {
@@ -110,6 +166,17 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
         XCTAssertTrue(firedEvents.contains(where: { $0.parameters?["metric"] == "onboardingCompleted" }))
     }
 
+    func testContextualDismissalIncludesTheDialogWithoutEnrollingUsers() {
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        configureExperimentKit(cohort: .treatment, featureFlagger: flags)
+        OnboardingNonBlockingExperiment(featureFlagger: flags).fireMetric(.contextualDismissed, value: "subscriptionUpsell")
+        XCTAssertEqual(firedEvents.count, 1)
+        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "contextualDismissed")
+        XCTAssertEqual(firedEvents.first?.parameters?["value"], "subscriptionUpsell")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-7")
+        XCTAssertFalse(flags.didCallResolveCohort)
+    }
+
     func testConversionWindowsForOneFiveSevenDayMetrics() {
         let expectedWindows: [ClosedRange<Int>] = [0...1, 0...5, 0...7]
 
@@ -130,14 +197,15 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
 
 private extension OnboardingNonBlockingExperimentTests {
     func configureExperimentKit(cohort: FeatureFlag.OnboardingNonBlockingCohort?,
-                                featureFlagger: MockFeatureFlagger) {
+                                featureFlagger: MockFeatureFlagger,
+                                enrollmentDate: Date = Date()) {
         if let cohort {
             let subfeatureID = MacOSBrowserConfigSubfeature.onboardingNonBlocking.rawValue
             featureFlagger.allActiveExperiments = [
                 subfeatureID: ExperimentData(
                     parentID: PrivacyFeature.macOSBrowserConfig.rawValue,
                     cohortID: cohort.rawValue,
-                    enrollmentDate: Date()
+                    enrollmentDate: enrollmentDate
                 )
             ]
         } else {

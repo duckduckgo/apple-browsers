@@ -118,6 +118,7 @@ final class BrowserTabViewController: NSViewController {
     private var keyWindowSelectedTabCancellable: AnyCancellable?
     private var contentOverlayWindowResizeCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
+    private var contextualCompletionCancellable: AnyCancellable?
 
     private weak var previouslySelectedTab: Tab?
 
@@ -223,6 +224,15 @@ final class BrowserTabViewController: NSViewController {
         containerStackView = NSStackView()
 
         super.init(nibName: nil, bundle: nil)
+
+        contextualCompletionCancellable = onboardingDialogTypeProvider.isContextualOnboardingCompletedPublisher
+            .sink { [weak self] completed in
+                guard let self, completed,
+                      OnboardingNonBlockingExperiment(featureFlagger: self.featureFlagger).isNonBlocking,
+                      self.presentedContextualOnboardingDialogType != nil else { return }
+                self.delegate?.dismissViewHighlight()
+                self.removeExistingDialog()
+            }
     }
 
     override func loadView() {
@@ -878,14 +888,23 @@ final class BrowserTabViewController: NSViewController {
     private func handleContextualOnboardingOnManualDismiss(dialogType: ContextualDialogType) {
         let displayedDialogType = displayedDialogType(forRoot: dialogType)
         onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: displayedDialogType)
+        let experiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
+        if experiment.isNonBlocking {
+            guard onboardingDialogTypeProvider.state != .onboardingCompleted else { return }
+            experiment.fireMetric(.contextualDismissed, value: displayedDialogType.stringRepresentation)
+            onboardingDialogTypeProvider.turnOffFeature()
+            return
+        }
         if displayedDialogType == .subscriptionUpsell,
            onboardingDialogTypeProvider.lastDialog == displayedDialogType {
-            onboardingDialogTypeProvider.gotItPressed()
+            handleContextualOnboardingOnGotItPressed(dialogType: displayedDialogType)
         }
         handleContextualOnboardingOnDismiss(dialogType: displayedDialogType)
     }
 
     private func handleContextualOnboardingOnGotItPressed(dialogType: ContextualDialogType) {
+        if OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking,
+           onboardingDialogTypeProvider.state == .onboardingCompleted { return }
         let displayedDialogType = displayedDialogType(forRoot: dialogType)
         onboardingDialogTypeProvider.gotItPressed()
         onboardingPixelReporter.measureGotItPressed(dialogType: displayedDialogType)

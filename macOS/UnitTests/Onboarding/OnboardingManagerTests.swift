@@ -84,7 +84,8 @@ class OnboardingManagerTests: XCTestCase {
             dataImportProvider: importProvider,
             featureFlagger: MockFeatureFlagger(),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
-            chromeExtensionInstaller: chromeExtensionInstaller
+            chromeExtensionInstaller: chromeExtensionInstaller,
+            experimentPersistor: OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
         )
     }
 
@@ -170,7 +171,8 @@ class OnboardingManagerTests: XCTestCase {
             dataImportProvider: importProvider,
             featureFlagger: MockFeatureFlagger(),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
-            chromeExtensionInstaller: chromeExtensionInstaller
+            chromeExtensionInstaller: chromeExtensionInstaller,
+            experimentPersistor: OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
         )
         let stepDefinitions = StepDefinitions(
             systemSettings: SystemSettings(rows: ["dock-instructions", "import"]),
@@ -202,7 +204,8 @@ class OnboardingManagerTests: XCTestCase {
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
-            chromeExtensionInstaller: chromeExtensionInstaller
+            chromeExtensionInstaller: chromeExtensionInstaller,
+            experimentPersistor: OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
         )
 
         let systemSettings = SystemSettings(rows: ["dock", "import"])
@@ -691,7 +694,8 @@ class OnboardingManagerTests: XCTestCase {
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
-            chromeExtensionInstaller: chromeExtensionInstaller
+            chromeExtensionInstaller: chromeExtensionInstaller,
+            experimentPersistor: OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
         )
 
         // When
@@ -718,7 +722,8 @@ class OnboardingManagerTests: XCTestCase {
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
-            chromeExtensionInstaller: chromeExtensionInstaller
+            chromeExtensionInstaller: chromeExtensionInstaller,
+            experimentPersistor: OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
         )
 
         // When
@@ -788,7 +793,8 @@ class OnboardingManagerTests: XCTestCase {
             homepageSearchModeSeedPersistor: homepageSearchModeSeedPersistor,
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
-            chromeExtensionInstaller: chromeExtensionInstaller
+            chromeExtensionInstaller: chromeExtensionInstaller,
+            experimentPersistor: OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
         )
     }
 
@@ -883,18 +889,18 @@ class OnboardingManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testNonBlockingOnboarding_ArmsContextualHighlightsOnlyOnCompletion() {
+    func testNonBlockingOnboarding_PreservesDismissalOnCompletion() {
         // Given
         let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
         let managerUnderTest = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
-        // Suppressed while onboarding runs, which is what `Tab.startOnboarding()` leaves behind.
+        // The user dismissed contextual onboarding before completing first-run onboarding.
         contextualOnboardingState.state = .onboardingCompleted
 
         // When
         managerUnderTest.goToAddressBar()
 
         // Then
-        XCTAssertEqual(contextualOnboardingState.state, .notStarted)
+        XCTAssertEqual(contextualOnboardingState.state, .onboardingCompleted)
     }
 
     @MainActor
@@ -909,6 +915,74 @@ class OnboardingManagerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(contextualOnboardingState.state, .onboardingCompleted)
+    }
+
+    @MainActor
+    func testLateCallbacksCannotReplaceBrowsingAfterEitherOutcome() {
+        for outcome in [OnboardingExperimentPersistor.Outcome.completed, .skipped] {
+            let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+            let store = MockKeyValueFileStore()
+            let early = makeNonBlockingExperimentManager(featureFlagger: flags,
+                                                         experimentPersistor: OnboardingExperimentPersistor(keyValueStore: store))
+            let full = makeNonBlockingExperimentManager(featureFlagger: flags,
+                                                        experimentPersistor: OnboardingExperimentPersistor(keyValueStore: store))
+            switch outcome {
+            case .completed: early.goToAddressBar()
+            case .skipped: early.skipOnboarding()
+            }
+            navigationDelegate.replaceTabCalled = false
+            navigationDelegate.updatePreventUserInteractionCalled = false
+
+            for manager in [early, full] {
+                manager.goToAddressBar()
+                manager.goToSettings()
+                manager.skipOnboarding()
+            }
+
+            XCTAssertFalse(navigationDelegate.replaceTabCalled)
+            XCTAssertFalse(navigationDelegate.updatePreventUserInteractionCalled)
+            XCTAssertEqual(OnboardingExperimentPersistor(keyValueStore: store).outcome, outcome)
+        }
+    }
+
+    @MainActor
+    func testNonBlockingHandlersAreAvailableBeforeThePageInitializes() {
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        let managerUnderTest = makeNonBlockingExperimentManager(featureFlagger: flags)
+        configureNonBlockingExperimentKit(cohort: .treatment, featureFlagger: flags)
+        contextualOnboardingState.state = .notStarted
+
+        managerUnderTest.installNonBlockingHandlers()
+        XCTAssertNotNil(navigationDelegate.onboardingOnClose)
+        navigationDelegate.onboardingOnClose?()
+        managerUnderTest.onboardingStarted()
+        managerUnderTest.goToAddressBar()
+
+        XCTAssertEqual(contextualOnboardingState.state, .notStarted)
+        XCTAssertTrue(experimentFiredEvents.contains { $0.parameters?["metric"] == "onboardingSkipped" })
+        XCTAssertFalse(experimentFiredEvents.contains { $0.parameters?["metric"] == "onboardingCompleted" })
+    }
+
+    @MainActor
+    func testNonBlockingOnboarding_SkipPreservesContextualProgress() {
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        let managerUnderTest = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+        contextualOnboardingState.state = .ongoing
+
+        managerUnderTest.skipOnboarding()
+
+        XCTAssertEqual(contextualOnboardingState.state, .ongoing)
+    }
+
+    @MainActor
+    func testNonBlockingOnboarding_CompletionPreservesContextualProgress() {
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        let managerUnderTest = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+        contextualOnboardingState.state = .ongoing
+
+        managerUnderTest.goToAddressBar()
+
+        XCTAssertEqual(contextualOnboardingState.state, .ongoing)
     }
 
     @MainActor
@@ -959,7 +1033,8 @@ private extension OnboardingManagerTests {
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
-            chromeExtensionInstaller: chromeExtensionInstaller
+            chromeExtensionInstaller: chromeExtensionInstaller,
+            experimentPersistor: OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
         )
     }
 
@@ -972,7 +1047,8 @@ private extension OnboardingManagerTests {
 
 private extension OnboardingManagerTests {
 
-    func makeNonBlockingExperimentManager(featureFlagger: MockFeatureFlagger) -> OnboardingActionsManager {
+    func makeNonBlockingExperimentManager(featureFlagger: MockFeatureFlagger,
+                                          experimentPersistor: OnboardingExperimentPersistor? = nil) -> OnboardingActionsManager {
         OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -983,7 +1059,8 @@ private extension OnboardingManagerTests {
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller,
-            contextualOnboardingStateUpdater: contextualOnboardingState
+            contextualOnboardingStateUpdater: contextualOnboardingState,
+            experimentPersistor: experimentPersistor ?? OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
         )
     }
 

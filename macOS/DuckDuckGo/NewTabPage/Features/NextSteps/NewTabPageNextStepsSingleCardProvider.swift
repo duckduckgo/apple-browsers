@@ -45,6 +45,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private let legacySubscriptionCardPersistor: HomePageSubscriptionCardPersisting
     private let appearancePreferences: AppearancePreferences
     private let featureFlagger: FeatureFlagger
+    private let didSkipOnboarding: () -> Bool
 
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let dockCustomizer: DockCustomization
@@ -188,7 +189,9 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
          syncService: DDGSyncing?,
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
-         scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
+         scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler(),
+         didSkipOnboarding: @escaping () -> Bool = { OnboardingExperimentPersistor().outcome == .skipped }) {
+        self.didSkipOnboarding = didSkipOnboarding
         self.cardActionHandler = cardActionHandler
         self.pixelHandler = pixelHandler
         self.persistor = persistor
@@ -218,6 +221,10 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         if !shouldUseAdvancedCardOrdering {
             refreshCardList(recordNewCardImpression: false)
         }
+        NotificationCenter.default.publisher(for: OnboardingExperimentPersistor.outcomeDidChange)
+            .receive(on: scheduler)
+            .sink { [weak self] _ in self?.refreshCardList(updateOrder: true) }
+            .store(in: &cancellables)
         observeCardVisibilityChanges()
         observeKeyWindowChanges()
         observeNewTabPageWebViewDidAppear()
@@ -266,7 +273,15 @@ private extension NewTabPageNextStepsSingleCardProvider {
     ///   - updateOrder: When true, refreshes the full advanced-ordering stack (NTP appear only). Mid-session refreshes prune the current stack without reordering.
     ///   - recordNewCardImpression: Whether to record an impression for the newly visible card if the first card in the list has changed after the refresh. Defaults to true.
     func refreshCardList(updateOrder: Bool = false, recordNewCardImpression: Bool = true) {
-        let cards = visibleCards(updateOrder: updateOrder)
+        var cards = visibleCards(updateOrder: updateOrder)
+        if OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking, didSkipOnboarding() {
+            let priority: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac].filter(shouldShowCard)
+            cards = priority + cards.filter { !priority.contains($0) }
+            if shouldUseAdvancedCardOrdering {
+                cards = Array(cards.prefix(Constants.maxVisibleCards))
+                persistor.dailyVisibleStack = cards
+            }
+        }
 
         if cards.isEmpty && !hasRemainingEligibleCards() {
             appearancePreferences.continueSetUpCardsClosed = true

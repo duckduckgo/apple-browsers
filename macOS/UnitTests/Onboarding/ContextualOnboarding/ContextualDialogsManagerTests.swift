@@ -40,6 +40,38 @@ class ContextualDialogsManagerTests {
         trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
     }
 
+    @Test("Non-blocking contextual onboarding waits for a URL and cannot restore a dismissed dialog",
+          arguments: ["https://example.com", "https://duckduckgo.com/?q=test"])
+    func testNonBlockingContextualLifecycle(url: String) async {
+        let treatmentManager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
+                                                       subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                                       stateStorage: stateStorage,
+                                                       isNonBlocking: { true })
+        treatmentManager.state = .notStarted
+        let newTab = await Tab(content: .newtab)
+        #expect(treatmentManager.dialogTypeForTab(newTab) == nil)
+        #expect(treatmentManager.state == .notStarted)
+
+        let browsingTab = await Tab(content: .url(URL(string: url)!, source: .ui))
+        #expect(treatmentManager.dialogTypeForTab(browsingTab) == .tryASearch)
+        #expect(treatmentManager.lastDialogForTab(browsingTab) == .tryASearch)
+
+        treatmentManager.turnOffFeature()
+
+        #expect(treatmentManager.state == .onboardingCompleted)
+        #expect(treatmentManager.lastDialogForTab(browsingTab) == nil)
+        #expect(treatmentManager.dialogTypeForTab(newTab) == nil)
+        treatmentManager.gotItPressed()
+        #expect(treatmentManager.state == .onboardingCompleted)
+        #expect(treatmentManager.lastDialog == nil)
+
+        let restored = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
+                                               subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                               stateStorage: stateStorage,
+                                               isNonBlocking: { true })
+        #expect(restored.dialogTypeForTab(browsingTab) == nil)
+    }
+
     // MARK: - Highlights Switched Off
 
     @available(iOS 16, macOS 13, *)

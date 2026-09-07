@@ -99,6 +99,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     /// machine below. Resolved per call rather than captured, so flipping the flag in the debug
     /// menu takes effect without a relaunch.
     private let areHighlightsDisabled: () -> Bool
+    private let isNonBlocking: () -> Bool
 
     // The last dialog that was presented.
     var lastDialog: ContextualDialogType?
@@ -137,7 +138,9 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     init(trackerMessageProvider: TrackerMessageProviding,
          subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
          stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage(),
-         areHighlightsDisabled: @escaping () -> Bool = { false }) {
+         areHighlightsDisabled: @escaping () -> Bool = { false },
+         isNonBlocking: @escaping () -> Bool = { false }) {
+        self.isNonBlocking = isNonBlocking
         self.trackerMessageProvider = trackerMessageProvider
         self.subscriptionUpsellExperiment = subscriptionUpsellExperiment
         self.stateStorage = stateStorage
@@ -147,6 +150,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
 
     // Returns the last dialog shown if it was shown for the given tab.
     func lastDialogForTab(_ tab: Tab) -> ContextualDialogType? {
+        if isNonBlocking(), state == .onboardingCompleted { return nil }
         // If the provided tab is the same as the last tab we processed, return the stored last dialog.
         if tab == lastTab {
             return lastDialog
@@ -156,6 +160,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
 
     // Called when the user taps the "Got It" button present on some dialogs.
     public func gotItPressed() {
+        if isNonBlocking(), state == .onboardingCompleted { return }
         // Update state based on the type of dialog that was last shown.
         switch lastDialog {
         case .searchDone(shouldFollowUp: true)?:
@@ -205,6 +210,10 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
 
     // Called to turn off the contextual onboarding.
     func turnOffFeature() {
+        if isNonBlocking() {
+            lastDialog = nil
+            lastTab = nil
+        }
         state = .onboardingCompleted
     }
 
@@ -215,6 +224,10 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         guard !areHighlightsDisabled() else { return nil }
         // If onboarding is complete, return nil.
         guard state != .onboardingCompleted else { return nil }
+        // Non-blocking setup starts contextual guidance on the first browsing navigation.
+        if isNonBlocking(), state == .notStarted {
+            guard case .url = tab.content else { return nil }
+        }
         // If onboarding hasn't started, mark it as ongoing.
         if state == .notStarted { state = .ongoing }
         // The upsell shows once. The persisted marker also prevents it returning after relaunch.
@@ -243,7 +256,11 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         case .url(let url, _, _):
             // Check if the URL is a DuckDuckGo search.
             if url.isDuckDuckGoSearch {
-                selectedDialog = dialogForDuckDuckGoSearch()
+                if isNonBlocking(), !hasSeen(.tryASearch) {
+                    selectedDialog = .tryASearch
+                } else {
+                    selectedDialog = dialogForDuckDuckGoSearch()
+                }
             } else {
                 // For website visit, decide dialog also based on the tracker type.
                 let trackerType = trackerMessageProvider.trackersType(privacyInfo: tab.privacyInfo)

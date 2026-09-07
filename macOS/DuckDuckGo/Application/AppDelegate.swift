@@ -1058,7 +1058,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagger: featureFlagger,
                 subscriptionManager: subscriptionManager
             ),
-            areHighlightsDisabled: { [featureFlagger] in featureFlagger.isFeatureOn(.onboardingSkipHighlights) }
+            areHighlightsDisabled: { [featureFlagger] in featureFlagger.isFeatureOn(.onboardingSkipHighlights) },
+            isNonBlocking: { [featureFlagger] in OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking }
         )
 
         let onboardingManager = onboardingContextualDialogsManager

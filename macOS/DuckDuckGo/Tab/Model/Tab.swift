@@ -128,6 +128,7 @@ enum TabCloseReason {
 
     private(set) var userContentController: UserContentController?
     private(set) var specialPagesUserScript: SpecialPagesUserScript?
+    private(set) var onboardingActionsManager: OnboardingActionsManager?
 
     @MainActor
     convenience init(id: String? = nil,
@@ -322,8 +323,7 @@ enum TabCloseReason {
         self.themeManager = themeManager
 
         self.specialPagesUserScript = SpecialPagesUserScript()
-        specialPagesUserScript?
-            .withAllSubfeatures()
+        self.onboardingActionsManager = specialPagesUserScript?.withAllSubfeatures()
         let configuration = webViewConfiguration ?? WKWebViewConfiguration()
         configuration.applyStandardConfiguration(featureFlagger: featureFlagger,
                                                  contentBlocking: privacyFeatures.contentBlocking,
@@ -1010,13 +1010,13 @@ enum TabCloseReason {
             return
         }
 
-        // Arming the highlights means setting `.notStarted`: the first search or navigation moves
-        // them to `.ongoing` and they start appearing. Non-blocking onboarding lets the user browse
-        // while onboarding is still open, so arming here would show highlights for a setup they
-        // haven't finished. Leave them suppressed and let completion arm them instead — which also
-        // means skipping never reaches them.
-        let isNonBlocking = OnboardingNonBlockingExperiment(featureFlagger: Application.appDelegate.featureFlagger).isNonBlocking
-        Application.appDelegate.onboardingContextualDialogsManager.state = isNonBlocking ? .onboardingCompleted : .notStarted
+        let experiment = OnboardingNonBlockingExperiment(featureFlagger: Application.appDelegate.featureFlagger)
+        let updater = Application.appDelegate.onboardingContextualDialogsManager
+        if experiment.isNonBlocking {
+            experiment.initializeContextualOnboarding(updater)
+        } else {
+            updater.state = .notStarted
+        }
         setContent(.onboarding)
     }
 

@@ -33,6 +33,11 @@ final class AIChatMenu: NSMenu {
         case moreOptionsMenu
     }
 
+    enum Layout {
+        case standard
+        case tabBarButton
+    }
+
     // MARK: - Actions
 
     struct Actions {
@@ -40,6 +45,7 @@ final class AIChatMenu: NSMenu {
         var openNewVoiceChat: @MainActor () -> Void
         var openNewImageChat: @MainActor () -> Void
         var openChat: @MainActor (AIChatSuggestion) -> Void
+        var askAboutPage: @MainActor () -> Void = {}
         var deleteAllChats: () async -> Void
     }
 
@@ -54,8 +60,9 @@ final class AIChatMenu: NSMenu {
 
     private lazy var newChatItem: NSMenuItem = {
         // ⌥⌘N on the main menu (moved here from "Open Duck.ai"; both open a new Duck.ai chat).
-        let item = NSMenuItem(title: UserText.aiChatMenuNewChat, action: #selector(newChatTapped), keyEquivalent: origin == .mainMenu ? "n" : "")
-        if origin == .mainMenu {
+        let showsShortcut = origin == .mainMenu || layout == .tabBarButton
+        let item = NSMenuItem(title: UserText.aiChatMenuNewChat, action: #selector(newChatTapped), keyEquivalent: showsShortcut ? "n" : "")
+        if showsShortcut {
             item.keyEquivalentModifierMask = [.option, .command]
         }
         item.target = self
@@ -104,6 +111,14 @@ final class AIChatMenu: NSMenu {
         return item
     }()
 
+    private lazy var tabBarAskAboutPageItem: NSMenuItem = {
+        let item = NSMenuItem(title: UserText.aiChatMenuAskAboutPage, action: #selector(tabBarAskAboutPageTapped), keyEquivalent: "l")
+        item.keyEquivalentModifierMask = [.command, .option]
+        item.target = self
+        item.withImage(TabBarViewController.openSidebarMenuIcon(), visibleOnMacOS27: true)
+        return item
+    }()
+
     private lazy var deleteAllChatsItem: NSMenuItem = {
         let item = NSMenuItem(title: UserText.aiChatMenuDeleteAllChats, action: #selector(deleteAllChatsTapped), keyEquivalent: "")
         item.target = self
@@ -123,6 +138,7 @@ final class AIChatMenu: NSMenu {
     /// When set, limits the number of chat items shown in the menu.
     private let maxChatItems: Int?
     private let origin: Origin
+    private let layout: Layout
     /// Whether the "Ask About Page" item should currently be shown (menu-button layout only).
     /// Evaluated live so a feature-flag toggle is reflected next time the menu opens.
     private let shouldShowAskAboutPage: () -> Bool
@@ -139,6 +155,7 @@ final class AIChatMenu: NSMenu {
          actions: Actions,
          maxChatItems: Int? = nil,
          origin: Origin = .mainMenu,
+         layout: Layout = .standard,
          shouldShowAskAboutPage: @escaping () -> Bool = { false },
          isCurrentPageAttachable: @escaping () -> Bool = { true },
          isChatPresented: @escaping () -> Bool = { false }) {
@@ -146,6 +163,7 @@ final class AIChatMenu: NSMenu {
         self.actions = actions
         self.maxChatItems = maxChatItems
         self.origin = origin
+        self.layout = layout
         self.shouldShowAskAboutPage = shouldShowAskAboutPage
         self.isCurrentPageAttachable = isCurrentPageAttachable
         self.isChatPresented = isChatPresented
@@ -160,6 +178,16 @@ final class AIChatMenu: NSMenu {
     // MARK: - Menu construction
 
     private func buildMenu() {
+        if layout == .tabBarButton {
+            addItem(newChatItem)
+            addItem(.separator())
+            addItem(recentChatsLabel)
+            // Dynamic chat items are inserted after recentChatsLabel by insertChatItems(_:hasMore:)
+            addItem(.separator())
+            addItem(tabBarAskAboutPageItem)
+            return
+        }
+
         addItem(openDuckAIItem)
         addItem(.separator())
         addItem(newChatItem)
@@ -216,10 +244,7 @@ final class AIChatMenu: NSMenu {
             let item = NSMenuItem(title: chat.title, action: #selector(chatItemTapped(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = chat
-            item.withImage(
-                chat.isPinned ? DesignSystemImages.Color.Size12.chatPinned : DesignSystemImages.Color.Size12.chat,
-                visibleOnMacOS27: true
-            )
+            item.withImage(chatIcon(for: chat), visibleOnMacOS27: true)
             insertItem(item, at: labelIndex + 1 + offset)
             chatItems.append(item)
         }
@@ -235,6 +260,17 @@ final class AIChatMenu: NSMenu {
             chatItems.append(separator)
             chatItems.append(viewAllItem)
         }
+    }
+
+    private func chatIcon(for chat: AIChatSuggestion) -> NSImage {
+        guard layout == .tabBarButton else {
+            return chat.isPinned ? DesignSystemImages.Color.Size12.chatPinned : DesignSystemImages.Color.Size12.chat
+        }
+
+        let image = chat.isPinned ? DesignSystemImages.Glyphs.Size16.chatPinned : DesignSystemImages.Glyphs.Size16.chat
+        guard let icon = image.copy() as? NSImage else { return image }
+        icon.size = NSSize(width: 12, height: 12)
+        return icon
     }
 
     // MARK: - Action handlers
@@ -297,6 +333,10 @@ final class AIChatMenu: NSMenu {
         actions.openNewChat(.viewAllChats)
         let pixel: AIChatPixel = origin == .moreOptionsMenu ? .aiChatViewAllChatsMoreOptionsMenu : .aiChatViewAllChatsMainMenu
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
+    }
+
+    @objc private func tabBarAskAboutPageTapped() {
+        actions.askAboutPage()
     }
 
     @objc private func deleteAllChatsTapped() {

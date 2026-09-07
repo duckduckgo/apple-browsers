@@ -119,7 +119,7 @@ final class CredentialProviderListDetailsViewModel: ObservableObject {
         case .password:
             message = UserText.credentialProviderDetailsCopyToastPasswordCopied
             UIPasteboard.general.setItems([[UTType.utf8PlainText.identifier: password]],
-                                         options: [.expirationDate: Date().addingTimeInterval(60)])
+                                         options: [.expirationDate: Date().addingTimeInterval(.minutes(1))])
             Pixel.fire(pixel: .autofillManagementCopyPassword)
         case .address:
             message = UserText.credentialProviderDetailsCopyToastAddressCopied

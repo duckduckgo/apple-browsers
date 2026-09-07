@@ -201,7 +201,7 @@ final class PasswordManagementLoginModel: ObservableObject, PasswordManagementIt
                     clearPassword()
                 }
                 // Keep cleanup alive even after the password manager closes, without retaining the password or model.
-                scheduleClipboardClear(60) {
+                scheduleClipboardClear(.minutes(1)) {
                     notificationCenter.removeObserver(quitObserver)
                     workspaceNotificationCenter.removeObserver(sleepObserver)
                     clearPassword()

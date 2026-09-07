@@ -253,7 +253,7 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
         case .password:
             message = UserText.autofillCopyToastPasswordCopied
             pasteboard.setItems([[UTType.utf8PlainText.identifier: password]],
-                                options: [.expirationDate: Date().addingTimeInterval(60)])
+                                options: [.expirationDate: Date().addingTimeInterval(.minutes(1))])
             Pixel.fire(pixel: .autofillManagementCopyPassword)
         case .address:
             message = UserText.autofillCopyToastAddressCopied

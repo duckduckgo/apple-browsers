@@ -26,6 +26,7 @@ import BrowserServicesKit
 import WebKit
 import Bookmarks
 @_spi(Testing) import Persistence
+import SitePermissions
 import DDGSync
 import WKAbstractions
 import BrowserServicesKitTestsUtils
@@ -130,6 +131,8 @@ final class FireExecutorTests: XCTestCase {
     private var mockDelegate: MockFireExecutorDelegate!
     private var mockAppSettings: AppSettingsMock!
     private var mockAIChatSyncCleaner: MockAIChatSyncCleaning!
+    private var sitePermissionsStore: SitePermissionsStore!
+    private var wideEventMock: WideEventMock!
     
     private var normalTextZoomCoordinator: MockTextZoomCoordinator {
         mockTextZoomCoordinatorProvider.normalCoordinator
@@ -154,6 +157,9 @@ final class FireExecutorTests: XCTestCase {
         mockAppSettings = AppSettingsMock()
         mockAppSettings.autoClearAIChatHistory = true
         mockAIChatSyncCleaner = MockAIChatSyncCleaning()
+        sitePermissionsStore = SitePermissionsStore(storage: UserDefaults.app.keyedStoring())
+        wideEventMock = WideEventMock()
+        clearSitePermissionsStorage()
     }
     
     override func tearDown() {
@@ -174,6 +180,9 @@ final class FireExecutorTests: XCTestCase {
         mockDelegate = nil
         mockAppSettings = nil
         mockAIChatSyncCleaner = nil
+        wideEventMock = nil
+        clearSitePermissionsStorage()
+        sitePermissionsStore = nil
         super.tearDown()
     }
     
@@ -205,7 +214,7 @@ final class FireExecutorTests: XCTestCase {
             },
             appSettings: mockAppSettings,
             aiChatSyncCleaner: mockAIChatSyncCleaner,
-            wideEvent: WideEventMock(),
+            wideEvent: wideEventMock,
             clearAppSwitcherSnapshots: clearAppSwitcherSnapshots
         )
         executor.delegate = mockDelegate
@@ -219,6 +228,21 @@ final class FireExecutorTests: XCTestCase {
         source: FireRequest.Source = .browsing
     ) -> FireRequest {
         FireRequest(options: options, trigger: trigger, scope: scope, source: source)
+    }
+
+    private func makeSitePermissionKey(_ host: String) -> SitePermissionKey {
+        SitePermissionKey(committedURL: URL(string: "https://\(host)")!)!
+    }
+
+    private func storePermission(for host: String,
+                                 type: SitePermissionType = .camera,
+                                 decision: SitePermissionDecision = .allow) {
+        sitePermissionsStore.setPersistentDecision(decision, for: type, at: makeSitePermissionKey(host))
+    }
+
+    private func clearSitePermissionsStorage() {
+        sitePermissionsStore.clearSitePermissions()
+        sitePermissionsStore.resetGlobalDefaults()
     }
     
     private func makeTabViewModel() -> TabViewModel {
@@ -627,8 +651,159 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(visitedDomains.contains("facebook.com"))
         XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedExcludingDomains, ["amazon.com"])
     }
-    
-    
+
+    // MARK: - Site Permissions Fire Worker Tests
+
+    func testWhenBurningNormalModeDataThenFireproofedSitePermissionsSurvive() async {
+        storePermission(for: "protected.example")
+        storePermission(for: "cleared.example")
+        mockFireproofing.isAllowedFireproofDomainHandler = { $0 == "protected.example" }
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .normalMode), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("protected.example")), .allow)
+        XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("cleared.example")))
+    }
+
+    func testWhenBurningNormalModeDataThenFireproofedParentDomainProtectsItsSubdomain() async {
+        storePermission(for: "mail.amazon.com")
+        storePermission(for: "cleared.example")
+        let fireproofing = MockFireproofing(domains: ["amazon.com"])
+        fireproofing.isAllowedFireproofDomainHandler = { domain in
+            domain == "amazon.com" || domain.hasSuffix(".amazon.com")
+        }
+        let executor = makeFireExecutor(fireproofing: fireproofing)
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .normalMode), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("mail.amazon.com")), .allow)
+        XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("cleared.example")))
+    }
+
+    func testWhenBurningNormalModeDataThenImplicitDuckDuckGoPermissionsSurvive() async {
+        storePermission(for: "duckduckgo.com")
+        storePermission(for: "duck.ai")
+        storePermission(for: "cleared.example")
+        mockFireproofing.isAllowedFireproofDomainHandler = { ["duckduckgo.com", "duck.ai"].contains($0) }
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .normalMode), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("duckduckgo.com")), .allow)
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("duck.ai")), .allow)
+        XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("cleared.example")))
+    }
+
+    func testWhenBurningNormalModeDataThenGlobalPermissionDefaultsArePreserved() async {
+        storePermission(for: "cleared.example")
+        sitePermissionsStore.setGlobalDefault(.deny, for: .camera)
+        sitePermissionsStore.setGlobalDefault(.deny, for: .location)
+        let defaultsKey = "site-permissions-global-defaults"
+        let defaultsBeforeBurn = UserDefaults.app.object(forKey: defaultsKey) as? [String: String]
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .normalMode), applicationState: .unknown)
+
+        XCTAssertEqual(UserDefaults.app.object(forKey: defaultsKey) as? [String: String], defaultsBeforeBurn)
+    }
+
+    func testWhenBurningFireModeDataThenSitePermissionsRemainUnchanged() async {
+        storePermission(for: "preserved.example")
+        sitePermissionsStore.setGlobalDefault(.deny, for: .microphone)
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .fireMode), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("preserved.example")), .allow)
+        XCTAssertEqual(sitePermissionsStore.globalDefault(for: .microphone), .deny)
+    }
+
+    func testWhenBurningFireModeTabDataThenSitePermissionsRemainUnchanged() async {
+        storePermission(for: "preserved.example")
+        mockHistoryManager.tabHistoryResult = [URL(string: "https://preserved.example")!]
+        let executor = makeFireExecutor()
+        let tabViewModel = TabViewModel(tab: Tab(uid: "fire-tab-uid", fireTab: true), historyManager: mockHistoryManager)
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("preserved.example")), .allow)
+    }
+
+    func testWhenSitePermissionsFeatureIsOffThenBurnStillClearsSitePermissions() async {
+        XCTAssertFalse(mockFeatureFlagger.enabledFeatureFlags.contains(.sitePermissions))
+        storePermission(for: "cleared.example")
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .normalMode), applicationState: .unknown)
+
+        XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("cleared.example")))
+    }
+
+    func testWhenBurningTabDataThenOnlyVisitedNonFireproofedSitePermissionsAreCleared() async {
+        storePermission(for: "mail.amazon.com")
+        storePermission(for: "cleared.example")
+        storePermission(for: "untouched.example")
+        let fireproofing = MockFireproofing(domains: ["amazon.com"])
+        fireproofing.isAllowedFireproofDomainHandler = { domain in
+            domain == "amazon.com" || domain.hasSuffix(".amazon.com")
+        }
+        let executor = makeFireExecutor(fireproofing: fireproofing)
+        let tabViewModel = makeTabViewModel()
+        mockHistoryManager.tabHistoryResult = [
+            URL(string: "https://mail.amazon.com/inbox")!,
+            URL(string: "https://www.cleared.example/path")!
+        ]
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("mail.amazon.com")), .allow)
+        XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("cleared.example")))
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("untouched.example")), .allow)
+    }
+
+    func testWhenTabHistoryFetchFailsThenPermissionsRemainAndWideEventReportsFailure() async throws {
+        storePermission(for: "preserved.example")
+        let expectedError = NSError(domain: "FireExecutorTests.TabHistory", code: 1)
+        mockHistoryManager.tabHistoryError = expectedError
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("preserved.example")), .allow)
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertEqual(eventData.clearPermissionsStatus, .failure)
+        XCTAssertEqual(eventData.clearPermissionsError?.domain, expectedError.domain)
+        XCTAssertEqual(eventData.clearPermissionsError?.code, expectedError.code)
+    }
+
+    func testWhenTabHistoryIsEmptyThenWideEventReportsPermissionClearingSuccess() async throws {
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertEqual(eventData.clearPermissionsStatus, .success)
+        XCTAssertNil(eventData.clearPermissionsError)
+    }
+
+    func testWhenBurningTabDataThenIPv6SitePermissionsAreCleared() async throws {
+        let ipv6URL = try XCTUnwrap(URL(string: "https://[::1]"))
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: ipv6URL))
+        sitePermissionsStore.setPersistentDecision(.allow, for: .camera, at: site)
+        mockHistoryManager.tabHistoryResult = [ipv6URL]
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: site))
+    }
+
     // MARK: - Burn ongoing downloads
     
     func testBurnTabsAndDataCancelsDownloads() async {

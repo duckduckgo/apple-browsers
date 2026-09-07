@@ -967,11 +967,10 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private var fireModeContentSubviews: [UIView] {
+        // aiTabCollapsed buttons no longer excluded — the glass they sit on goes dark for fire mode too.
         subviews.filter {
             $0 !== cardView &&
-            $0 !== expandedShadowView &&
-            $0 !== aiTabCollapsedFireButton &&
-            $0 !== aiTabCollapsedMenuButton
+            $0 !== expandedShadowView
         }
     }
 

@@ -192,6 +192,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var sut: AIChatContextualSheetCoordinator!
     private var mockDelegate: MockDelegate!
     private var mockPresentingVC: MockPresentingViewController!
+    private var mockNativeStorage: MockDuckAiChatStorage!
     private let savedChatID = "760d681e-9173-4abd-a120-d660783787e9"
     private lazy var savedChatURL = URL(string: "https://duckduckgo.com/?ia=chat&chatID=\(savedChatID)")!
     private var mockSettings: MockAIChatSettingsProvider!
@@ -212,6 +213,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     @MainActor
     override func setUp() {
         super.setUp()
+        mockNativeStorage = MockDuckAiChatStorage()
         mockSettings = MockAIChatSettingsProvider()
         mockFeatureFlagger = MockFeatureFlagger()
         mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
@@ -242,6 +244,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
                 originating: originatingTabURLSubject.eraseToAnyPublisher(),
                 didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
             ),
+            duckAiNativeStorageHandler: mockNativeStorage,
             pixelHandler: pixelHandler,
             selectionJourneyInstrumentation: mockSelectionJourneyInstrumentation
         )
@@ -1427,54 +1430,26 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     // MARK: - Restoring a chat that may have been deleted
 
     @MainActor
-    private func makeCoordinator(storage: DuckAiNativeStorageHandling?) -> AIChatContextualSheetCoordinator {
-        AIChatContextualSheetCoordinator(
-            voiceSearchHelper: MockVoiceSearchHelper(),
-            aiChatSettings: mockSettings,
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
-            featureDiscovery: MockFeatureDiscovery(),
-            featureFlagger: mockFeatureFlagger,
-            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
-            pageContextHandler: mockPageContextHandler,
-            tabURLPublishers: AIChatTabURLPublishers(
-                originating: originatingTabURLSubject.eraseToAnyPublisher(),
-                didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
-            ),
-            duckAiNativeStorageHandler: storage
-        )
-    }
-
-    @MainActor
-    private func restoredURL(storage: DuckAiNativeStorageHandling?) async -> URL? {
-        sut = makeCoordinator(storage: storage)
+    private func restoredURL() async -> URL? {
         await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
         return sut.sessionState.contextualChatURL
-    }
-
-    private func migratedStorage() throws -> DuckAiNativeMemoryStorageHandler {
-        let storage = DuckAiNativeMemoryStorageHandler()
-        try storage.markMigrationDone(key: DuckAiMigrationKey.chats)
-        try storage.markMigrationDone(key: DuckAiMigrationKey.files)
-        return storage
     }
 
     @MainActor
     func testWhenTheSavedChatIsStillInTheStoreThenItIsRestored() async throws {
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
-        let storage = try migratedStorage()
-        try storage.putChat(chatId: savedChatID, data: Data())
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
 
-        let restored = await restoredURL(storage: storage)
+        let restored = await restoredURL()
 
         XCTAssertEqual(restored, savedChatURL)
     }
 
     @MainActor
-    func testWhenTheSavedChatWasDeletedThenItIsNotRestored() async throws {
+    func testWhenTheSavedChatWasDeletedThenItIsNotRestored() async {
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
 
-        let restored = await restoredURL(storage: try migratedStorage())
+        let restored = await restoredURL()
 
         XCTAssertNil(restored)
     }
@@ -1483,8 +1458,9 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testWhenTheStoreCannotBeReadThenTheSavedChatIsStillRestored() async {
         // The regression: an unanswerable store must not cost the user their chat.
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockNativeStorage.failsReads = true
 
-        let restored = await restoredURL(storage: UnreadableDuckAiStorage())
+        let restored = await restoredURL()
 
         XCTAssertEqual(restored, savedChatURL)
     }
@@ -1492,8 +1468,9 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     @MainActor
     func testWhenTheStoreIsNotMigratedThenTheSavedChatIsStillRestored() async {
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockNativeStorage.migrationDone = false
 
-        let restored = await restoredURL(storage: DuckAiNativeMemoryStorageHandler())
+        let restored = await restoredURL()
 
         XCTAssertEqual(restored, savedChatURL)
     }
@@ -1502,16 +1479,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testWhenNativeDataAccessIsOffThenTheSavedChatIsStillRestored() async {
         mockFeatureFlagger.enabledFeatureFlags = []
 
-        let restored = await restoredURL(storage: DuckAiNativeMemoryStorageHandler())
-
-        XCTAssertEqual(restored, savedChatURL)
-    }
-
-    @MainActor
-    func testWhenThereIsNoStoreThenTheSavedChatIsStillRestored() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
-
-        let restored = await restoredURL(storage: nil)
+        let restored = await restoredURL()
 
         XCTAssertEqual(restored, savedChatURL)
     }
@@ -1542,15 +1510,24 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
 }
 
-/// The in-memory handler cannot be made to fail, and an unreadable store is the case that matters.
-final class UnreadableDuckAiStorage: DuckAiNativeStorageHandling {
+/// Wraps the shipped in-memory handler so a test can make the two reads the coordinator relies on
+/// fail or report an unmigrated store.
+final class MockDuckAiChatStorage: DuckAiNativeStorageHandling {
 
     struct ReadFailure: Error {}
 
+    var failsReads = false
+    var migrationDone = true
+
     private let backing = DuckAiNativeMemoryStorageHandler()
 
-    func getChat(chatId: String) throws -> DuckAiChatRecord? { throw ReadFailure() }
-    func isMigrationDone() throws -> Bool { true }
+    func getChat(chatId: String) throws -> DuckAiChatRecord? {
+        if failsReads { throw ReadFailure() }
+        return try backing.getChat(chatId: chatId)
+    }
+
+    func isMigrationDone() throws -> Bool { migrationDone }
+    func isMigrationDone(key: String) throws -> Bool { migrationDone }
 
     func putEntry(key: String, value: Any) throws { try backing.putEntry(key: key, value: value) }
     func getEntry(key: String) throws -> Any? { try backing.getEntry(key: key) }
@@ -1569,6 +1546,5 @@ final class UnreadableDuckAiStorage: DuckAiNativeStorageHandling {
     func deleteFile(uuid: String) throws { try backing.deleteFile(uuid: uuid) }
     func deleteFiles(chatId: String) throws { try backing.deleteFiles(chatId: chatId) }
     func deleteAllFiles() throws { try backing.deleteAllFiles() }
-    func isMigrationDone(key: String) throws -> Bool { true }
     func markMigrationDone(key: String) throws { try backing.markMigrationDone(key: key) }
 }

@@ -229,6 +229,8 @@ public struct SitePermissionsSheetView: View {
     private func permissionIcon(for row: SitePermissionsSheetViewModel.Row) -> Image {
         let image: UIImage
         switch (row.permissionType, row.iconState) {
+        case (.camera, .inUse):
+            return Image(systemName: "video.fill")
         case (.camera, _):
             return Image(systemName: "video")
         case (.microphone, .outline):

@@ -210,6 +210,7 @@ struct SettingsSitePermissionsView: View {
                     SettingsSitePermissionRow(
                         permissionType: permissionType,
                         selection: viewModel.globalDefault(for: permissionType).settingsTitle,
+                        optionTitles: GlobalSitePermissionDecision.allCases.map(\.settingsTitle),
                         accessibilityIdentifier: "Settings.SitePermissions.Global.\(permissionType.rawValue)") {
                         Picker(permissionType.settingsTitle, selection: viewModel.globalDefaultBinding(for: permissionType)) {
                             ForEach(GlobalSitePermissionDecision.allCases, id: \.self) { decision in
@@ -307,6 +308,7 @@ private struct SettingsSitePermissionsSiteView: View {
                     SettingsSitePermissionRow(
                         permissionType: permissionType,
                         selection: viewModel.siteDecision(for: permissionType, at: site).settingsTitle,
+                        optionTitles: SitePermissionDecision.allCases.map(\.settingsTitle),
                         accessibilityIdentifier: "Settings.SitePermissions.Site.\(permissionType.rawValue)") {
                         Picker(permissionType.settingsTitle, selection: viewModel.siteDecisionBinding(for: permissionType, at: site)) {
                             ForEach(SitePermissionDecision.allCases, id: \.self) { decision in
@@ -344,6 +346,7 @@ private struct SettingsSitePermissionsSiteView: View {
 private struct SettingsSitePermissionRow<MenuContent: View>: View {
     let permissionType: SitePermissionType
     let selection: String
+    let optionTitles: [String]
     let accessibilityIdentifier: String
     @ViewBuilder let menuContent: () -> MenuContent
 
@@ -359,9 +362,14 @@ private struct SettingsSitePermissionRow<MenuContent: View>: View {
             Spacer(minLength: 16)
             Menu(content: menuContent) {
                 HStack(spacing: 12) {
-                    Text(selection)
-                        .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                    ZStack(alignment: .trailing) {
+                        ForEach(optionTitles, id: \.self) { title in
+                            Text(title).hidden()
+                        }
+                        Text(selection)
+                    }
+                    .daxBodyRegular()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.footnote.weight(.bold))
                         .foregroundColor(Color(UIColor.tertiaryLabel))

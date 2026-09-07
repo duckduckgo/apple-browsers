@@ -156,9 +156,14 @@ public struct SitePermissionsSheetView: View {
                 }
             } label: {
                 HStack(spacing: 8) {
-                    Text(row.stateText)
-                        .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                    ZStack(alignment: .trailing) {
+                        ForEach(row.options, id: \.self) { option in
+                            Text(UserText.PermissionManagement.title(for: option)).hidden()
+                        }
+                        Text(row.stateText)
+                    }
+                    .daxBodyRegular()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
                     Image(systemName: "chevron.up.chevron.down")
                         .foregroundColor(Color(designSystemColor: .iconsTertiary))
                         .accessibilityHidden(true)

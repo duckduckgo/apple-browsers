@@ -262,6 +262,7 @@ struct SettingsSitePermissionsView: View {
                         .font(.body.weight(.semibold))
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                         .textCase(nil)
+                        .padding(.top, 12)
                 }
 
                 Section {

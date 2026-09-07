@@ -50,7 +50,6 @@ final class UnifiedToggleInputToolbarView: UIView {
     var onStopGeneratingTapped: (() -> Void)?
     var onReturnKeyTapped: (() -> Void)?
     var onModelPickerShown: (() -> Void)?
-    var onUpdatedModelPickerTapped: (() -> Void)?
     var onReasoningPickerShown: (() -> Void)?
 
     // MARK: - State
@@ -65,6 +64,15 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     var isSubmitBlockedByRecoveryCard: Bool = false {
         didSet { updateSubmitButtonAppearance() }
+    }
+
+    /// A spent allowance blocks the voice button too: it opens a chat the allowance can't pay for.
+    var isInputBlockedByUsageLimit: Bool = false {
+        didSet {
+            guard oldValue != isInputBlockedByUsageLimit else { return }
+            updateSubmitButtonAppearance()
+            updateToolbarControlsEnabledState()
+        }
     }
 
     var usesNewPromptSubmitStyle: Bool = false {
@@ -107,8 +115,12 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateModelChipConfiguration() }
     }
 
-    var usesUpdatedModelPickerPresentation = false {
-        didSet { updateModelPickerPrimaryAction() }
+    var isModelChipMenuIndicatorHidden: Bool = false {
+        didSet {
+            guard oldValue != isModelChipMenuIndicatorHidden else { return }
+            updateModelChipConfiguration()
+            modelChipButton.isUserInteractionEnabled = !isModelChipMenuIndicatorHidden
+        }
     }
 
     var selectedTool: AIChatRAGTool? {
@@ -129,10 +141,6 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
-    var modelPickerSourceView: UIView {
-        modelChipButton
-    }
-
     /// Programmatically opens the model chip's pull-down menu. Returns `true` when the OS
     /// exposes an API to trigger it (iOS 17.4+, where `performPrimaryAction()` lands), `false`
     /// otherwise.
@@ -140,18 +148,24 @@ final class UnifiedToggleInputToolbarView: UIView {
     func presentModelPickerMenu() -> Bool {
         guard modelPickerMenu != nil else { return false }
 
-        if usesUpdatedModelPickerPresentation {
-            guard let onUpdatedModelPickerTapped else { return false }
-            onUpdatedModelPickerTapped()
-            return true
-        }
-
         if #available(iOS 17.4, *) {
             modelChipButton.performPrimaryAction()
             return true
         }
         return false
     }
+    
+    @discardableResult
+    func presentReasoningPickerMenu() -> Bool {
+        guard reasoningPickerMenu != nil else { return false }
+
+        if #available(iOS 17.4, *) {
+            reasoningButton.performPrimaryAction()
+            return true
+        }
+        return false
+    }
+
 
     var reasoningPickerMenu: UIMenu? {
         get { reasoningButton.menu }
@@ -262,9 +276,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     private lazy var modelChipButton: UIButton = {
         var config = UIButton.Configuration.plain()
         config.title = modelName
-        config.image = UIImage(systemName: "chevron.down")?.withConfiguration(
-            UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
-        )
+        config.image = isModelChipMenuIndicatorHidden ? nil : Self.modelChipMenuIndicatorImage
         config.imagePlacement = .trailing
         config.imagePadding = Constants.chipSpacing
         config.titleLineBreakMode = .byTruncatingTail
@@ -504,12 +516,17 @@ private extension UnifiedToggleInputToolbarView {
         return button
     }
 
+    static let modelChipMenuIndicatorImage = UIImage(systemName: "chevron.down")?.withConfiguration(
+        UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
+    )
+
     private func updateModelChipConfiguration() {
         modelChipButton.configuration?.title = modelName
+        modelChipButton.configuration?.image = isModelChipMenuIndicatorHidden ? nil : Self.modelChipMenuIndicatorImage
     }
 
     private func updateModelPickerPrimaryAction() {
-        modelChipButton.menu = usesUpdatedModelPickerPresentation ? nil : storedModelPickerMenu
+        modelChipButton.menu = storedModelPickerMenu
         modelChipButton.showsMenuAsPrimaryAction = modelChipButton.menu != nil
     }
 
@@ -548,9 +565,13 @@ private extension UnifiedToggleInputToolbarView {
         }()
         submitButton.setImage(icon, for: .normal)
         let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard
-        let isActive = submitAllowed || showVoice
+        let isActive = (submitAllowed || showVoice) && !isInputBlockedByUsageLimit
         submitButton.isEnabled = isActive
-        if showVoice {
+        // The blocked button keeps its icon and takes the inactive submit fill: the voice and
+        // return-key styles have no disabled state of their own.
+        if isInputBlockedByUsageLimit {
+            submitButton.applySubmitStyle(isActive: false, isFireTab: isFireTab, activeForeground: .white)
+        } else if showVoice {
             submitButton.applyAIVoiceChatStyle()
         } else if usesReturnKeyStyle {
             submitButton.applyReturnKeyStyle()
@@ -570,7 +591,7 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     func updateToolbarControlsEnabledState() {
-        let controlsAreEnabled = !isGenerating
+        let controlsAreEnabled = !isGenerating && !isInputBlockedByUsageLimit
         imageButton.isEnabled = controlsAreEnabled && isImageButtonAvailable
         toolsButton.isEnabled = controlsAreEnabled
         reasoningButton.isEnabled = controlsAreEnabled
@@ -582,11 +603,7 @@ private extension UnifiedToggleInputToolbarView {
     @objc private func returnKeyTapped() { onReturnKeyTapped?() }
     @objc private func modelPickerShown() {
         guard modelPickerMenu != nil else { return }
-        if usesUpdatedModelPickerPresentation {
-            onUpdatedModelPickerTapped?()
-        } else {
-            onModelPickerShown?()
-        }
+        onModelPickerShown?()
     }
     @objc private func reasoningPickerShown() {
         guard reasoningPickerMenu != nil else { return }

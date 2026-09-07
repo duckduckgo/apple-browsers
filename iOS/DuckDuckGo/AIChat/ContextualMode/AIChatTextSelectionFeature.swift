@@ -25,6 +25,8 @@ import FeatureFlags_iOS
 
 /// Availability of the items offered on text selected in the browser.
 protocol AIChatTextSelectionFeatureProviding {
+    /// Whether the feature is on at all, gating the machinery both items share.
+    var isEnabled: Bool { get }
     /// Whether **Ask Duck.ai** is offered.
     var isAskAvailable: Bool { get }
     /// Whether **Search with DuckDuckGo** is offered.
@@ -51,7 +53,7 @@ struct AIChatTextSelectionFeature: AIChatTextSelectionFeatureProviding {
     }
 
     /// The feature's kill switch and platform scope, shared by both items.
-    private var isEnabled: Bool {
+    var isEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatTextActions) && devicePlatform.isIphone
     }
 

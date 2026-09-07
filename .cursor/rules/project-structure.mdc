@@ -69,6 +69,15 @@ macOS/
 └── Configuration/              # Build configurations
 ```
 
+## Adding files and directories to the iOS project
+
+Use buildable folders by default when creating directories. Create an ordinary Xcode group only when the existing project structure requires one.
+
+Before adding a file, determine how its destination is represented in `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxproj`.
+
+- **Buildable folder** (`PBXFileSystemSynchronizedRootGroup`): Create the file or directory in the corresponding filesystem location. Xcode detects it automatically, so no `project.pbxproj` change is needed.
+- **Xcode group** (`PBXGroup`): Create the file and update the necessary file reference, group membership, build phase, and target membership in `project.pbxproj`.
+
 ## Dependencies and Packages
 
 ### Primary Dependency: BrowserServicesKit

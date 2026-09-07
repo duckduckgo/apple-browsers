@@ -287,6 +287,7 @@ final class MainWindowController: NSWindowController {
     private var burningDataCancellable: AnyCancellable?
     private var delayedBlockingWorkItem: DispatchWorkItem?
     private var didMoveTabBarForFireAnimation = false
+    private var isClosingAndBurning = false
 
     private func subscribeToBurningData() {
         burningDataCancellable = fireViewModel.fire.burningDataPublisher
@@ -592,12 +593,24 @@ extension MainWindowController: NSWindowDelegate {
     func windowShouldClose(_ window: NSWindow) -> Bool {
         guard mainViewController.tabCollectionViewModel.isBurner else { return true }
 
+        burnAndClose(window)
+        return false
+    }
+
+    /// `NSWindow.close()` bypasses `windowShouldClose(_:)`, so programmatic Fire Window closes have to come
+    /// through here or they lose the fire animation and the in-progress downloads warning.
+    func burnAndClose(_ window: NSWindow) {
+        // A burn already has the animation on screen and closes windows itself (see Fire.closeWindows).
+        guard fireViewModel.fire.burningData == nil else {
+            window.close()
+            return
+        }
+
         if showAlertIfActiveDownloadsPresent(in: window) {
-            return false
+            return
         }
 
         animateBurningIfNeededAndClose(window)
-        return false
     }
 
     private func showAlertIfActiveDownloadsPresent(in window: NSWindow) -> Bool {
@@ -635,6 +648,10 @@ extension MainWindowController: NSWindowDelegate {
     }
 
     private func animateBurningIfNeededAndClose(_ window: NSWindow) {
+        // The animation is awaited, so the window stays around and closable in the meantime.
+        guard !isClosingAndBurning else { return }
+        isClosingAndBurning = true
+
         guard !window.isPopUpWindow else {
             window.close()
             return

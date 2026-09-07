@@ -24,7 +24,10 @@ import FoundationExtensions
 import PixelKit
 import SERPSettings
 
-enum SERPSettingsPixel: PixelKitEvent {
+enum SERPSettingsPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     case serpSettingsSerializationFailed
     case serpSettingsKeyValueStoreReadError
     case serpSettingsKeyValueStoreWriteError

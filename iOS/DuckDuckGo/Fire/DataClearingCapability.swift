@@ -24,10 +24,6 @@ import FeatureFlags_iOS
 
 protocol DataClearingCapable {
     var isFireButtonRefinementsEnabled: Bool { get }
-
-    /// When enabled, the fire confirmation collapses to a single "Delete All" button
-    /// if only one non-Duck.ai tab is open, since burning that tab equals burning all.
-    var isSingleTabDeleteAllEnabled: Bool { get }
 }
 
 enum DataClearingCapability {
@@ -56,9 +52,5 @@ struct DataClearingDefaultCapability: DataClearingCapable {
             // but the refinements should still apply independently.
             featureFlagger.isFeatureOn(for: FeatureFlag.fireButtonRefinements)
         }
-    }
-
-    var isSingleTabDeleteAllEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.fireButtonSingleTabDeleteAll)
     }
 }

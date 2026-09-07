@@ -20,6 +20,12 @@
 import Bookmarks
 import Foundation
 
+/// Which control of a New Tab Page message the user pressed.
+enum NewTabPageMessageInteraction {
+    case callToAction
+    case dismiss
+}
+
 protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity)
     func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity)
@@ -27,8 +33,12 @@ protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab)
     func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController)
     func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: NewTabPageViewController)
+    func newTabPageDidScroll(_ controller: NewTabPageViewController)
+    func newTabPage(_ controller: NewTabPageViewController, didInteractWithMessage interaction: NewTabPageMessageInteraction)
 }
 
 extension NewTabPageControllerDelegate {
     func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: NewTabPageViewController) { }
+    func newTabPageDidScroll(_ controller: NewTabPageViewController) { }
+    func newTabPage(_ controller: NewTabPageViewController, didInteractWithMessage interaction: NewTabPageMessageInteraction) { }
 }

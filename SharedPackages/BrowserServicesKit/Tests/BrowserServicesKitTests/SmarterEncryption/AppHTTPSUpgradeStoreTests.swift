@@ -98,6 +98,15 @@ final class AppHTTPSUpgradeStoreTests: XCTestCase {
         XCTAssertEqual(specification, testee.loadBloomFilter()?.specification)
     }
 
+    func testWhenBloomFilterMatchesPersistedDataThenPersistenceIsSkipped() throws {
+        let data = "Hello World!".data(using: .utf8)!
+        let sha = "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"
+        let specification = HTTPSBloomFilterSpecification(bitCount: 100, errorRate: 0.01, totalEntries: 100, sha256: sha)
+
+        XCTAssertTrue(try testee.persistBloomFilter(specification: specification, data: data))
+        XCTAssertFalse(try testee.persistBloomFilter(specification: specification, data: data))
+    }
+
     func testWhenNewBloomFilterDoesNotMatchShaInSpecThenSpecAndDataNotPersisted() {
         let data = "Hello World!".data(using: .utf8)!
         let sha = "wrong sha"
@@ -129,6 +138,11 @@ final class AppHTTPSUpgradeStoreTests: XCTestCase {
         try testee.persistExcludedDomains([ "www.example.com", "apple.com" ])
         XCTAssertTrue(testee.hasExcludedDomain("www.example.com"))
         XCTAssertTrue(testee.hasExcludedDomain("apple.com"))
+    }
+
+    func testWhenExcludedDomainsMatchPersistedDataThenPersistenceIsSkipped() throws {
+        XCTAssertTrue(try testee.persistExcludedDomains(["WWW.EXAMPLE.COM", "apple.com"]))
+        XCTAssertFalse(try testee.persistExcludedDomains(["apple.com", "www.example.com"]))
     }
 
     func testWhenNoExcludedDomainsPersistedThenExcludedDomainIsFalse() {

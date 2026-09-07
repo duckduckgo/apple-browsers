@@ -23,7 +23,7 @@ import XCTest
 import os.log
 import WebKit
 @testable import Core
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import BrowserServicesKitTestsUtils
 import WKAbstractions
 

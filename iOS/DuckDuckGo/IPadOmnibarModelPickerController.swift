@@ -32,7 +32,7 @@ import UIKit
 final class IPadOmnibarModelPickerController {
 
     private let store: UTIModelStore
-    private let menuFactory = UnifiedToggleInputModelMenuFactory()
+    private let menuFactory: UnifiedToggleInputModelMenuFactory
     private let upsellPresenter: DuckAISubscriptionUpselling
     var onModelsUpdated: (() -> Void)?
 
@@ -49,16 +49,20 @@ final class IPadOmnibarModelPickerController {
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
-        upsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()
+        upsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter(),
+        updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
     ) {
+        let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.upsellPresenter = upsellPresenter
+        self.menuFactory = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled)
         store = UTIModelStore(
             modelsService: modelsService ?? AIChatModelsService(
                 baseURL: aiChatModelsBaseURL(forChatURL: aiChatSettings.aiChatURL),
                 accessTokenProvider: subscriptionManager
             ),
             preferences: preferences,
-            subscriptionManager: subscriptionManager
+            subscriptionManager: subscriptionManager,
+            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled
         )
         store.onModelsUpdated = { [weak self] in
             self?.onModelsUpdated?()
@@ -84,11 +88,12 @@ final class IPadOmnibarModelPickerController {
 
     func makeMenu(onSelect: @escaping (String) -> Void) -> UIMenu? {
         guard hasModels else { return nil }
+
         return menuFactory.makeMenu(
             models: store.models,
             selectedId: store.persistedModelId,
-            plusSectionTitle: UserText.aiChatPlusModelsSectionHeader,
-            proSectionTitle: UserText.aiChatProModelsSectionHeader,
+            userTier: store.subscriptionState.userTier,
+            freeTrialEligibility: store.freeTrialEligibility,
             onSelect: onSelect
         )
     }

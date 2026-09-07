@@ -35,9 +35,9 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let aiChatDeleter: AIChatDeleting
     private let isShiftPressed: () -> Bool
     private let isCommandPressed: () -> Bool
-    private let firePixel: (PixelKitEvent) -> Void
+    private let firePixel: (PixelKit.Event) -> Void
     /// Deletion-flow pixels fire at `.dailyAndCount`, matching the address-bar delete pixels.
-    private let fireDailyCountPixel: (PixelKitEvent) -> Void
+    private let fireDailyCountPixel: (PixelKit.Event) -> Void
     private let presentDeleteConfirmation: @MainActor (String, NSWindow?) async -> Bool
 
     /// Called after the Customize Responses modal closes or the toggle is set, so the NTP config
@@ -54,8 +54,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
          aiChatDeleter: AIChatDeleting,
          isShiftPressed: @escaping () -> Bool = { NSApp?.isShiftPressed ?? false },
          isCommandPressed: @escaping () -> Bool = { NSApp?.isCommandPressed ?? false },
-         firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) },
-         fireDailyCountPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) },
+         firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) },
+         fireDailyCountPixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) },
          presentDeleteConfirmation: @escaping @MainActor (String, NSWindow?) async -> Bool = NewTabPageOmnibarActionsHandler.presentNativeDeleteConfirmation) {
         self.promptHandler = promptHandler
         self.windowControllersManager = windowControllersManager
@@ -181,7 +181,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         if mode == AIChatNativePrompt.voiceMode {
             let sourceCollection = windowControllersManager.lastKeyMainWindowController?
                 .mainViewController.tabCollectionViewModel
-            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.voice)
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPageVoice)
             tabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: behavior)
             return
         }
@@ -244,7 +244,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             behavior = .newTab(selected: isShiftPressed())
         }
 
-        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.recentChat)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPageRecentChat)
         tabOpener.openAIChatTab(with: .existingChat(chatId: chatId), behavior: behavior)
     }
 
@@ -261,7 +261,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             behavior = .newTab(selected: isShiftPressed())
         }
 
-        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPage)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPageViewAllChats)
         tabOpener.openNewAIChat(in: behavior)
     }
 

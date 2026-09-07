@@ -29,7 +29,7 @@ final class DuckAIPromptWideEventData: WideEventData {
         featureName: "duckai-prompt",
         mobileMetaType: "ios-duckai-prompt",
         desktopMetaType: "macos-duckai-prompt",
-        version: "1.1.0"
+        version: "1.2.0"
     )
 
     var globalData: WideEventGlobalData
@@ -41,6 +41,9 @@ final class DuckAIPromptWideEventData: WideEventData {
     var userTier: String
     var reasoningEffort: String?
     var entryPoint: EntryPoint
+    /// How the user reached the surface (an `AIChatEntryPointSource` raw value), as opposed
+    /// to `entryPoint`, which is the surface itself. Optional so old pending flows decode.
+    var origin: String?
     var inputMode: InputMode
     var fireMode: Bool
     var isFirstPrompt: Bool
@@ -79,6 +82,7 @@ final class DuckAIPromptWideEventData: WideEventData {
          userTier: String,
          reasoningEffort: String?,
          entryPoint: EntryPoint,
+         origin: String? = nil,
          inputMode: InputMode,
          fireMode: Bool,
          isFirstPrompt: Bool,
@@ -94,6 +98,7 @@ final class DuckAIPromptWideEventData: WideEventData {
         self.userTier = userTier
         self.reasoningEffort = reasoningEffort
         self.entryPoint = entryPoint
+        self.origin = origin
         self.inputMode = inputMode
         self.fireMode = fireMode
         self.isFirstPrompt = isFirstPrompt
@@ -210,6 +215,7 @@ extension DuckAIPromptWideEventData {
             (WideEventParameter.DuckAIPromptFeature.userTier, userTier),
             (WideEventParameter.DuckAIPromptFeature.reasoningEffort, reasoningEffort),
             (WideEventParameter.DuckAIPromptFeature.entryPoint, entryPoint.rawValue),
+            (WideEventParameter.DuckAIPromptFeature.origin, origin),
             (WideEventParameter.DuckAIPromptFeature.inputMode, inputMode.rawValue),
             (WideEventParameter.DuckAIPromptFeature.lastStep, lastStep?.rawValue),
             (WideEventParameter.DuckAIPromptFeature.cancellationReason, cancellationReason?.rawValue),
@@ -242,6 +248,7 @@ extension WideEventParameter {
         static let userTier = "feature.data.ext.prompt.user_tier"
         static let reasoningEffort = "feature.data.ext.prompt.reasoning_effort"
         static let entryPoint = "feature.data.ext.prompt.entry_point"
+        static let origin = "feature.data.ext.prompt.origin"
         static let inputMode = "feature.data.ext.prompt.input_mode"
         static let fireMode = "feature.data.ext.prompt.fire_mode"
         static let isFirstPrompt = "feature.data.ext.prompt.is_first_prompt"

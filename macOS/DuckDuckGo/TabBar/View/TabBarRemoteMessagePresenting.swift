@@ -84,8 +84,9 @@ extension TabBarRemoteMessagePresenting {
             onTap: { [weak self] surveyURL in
                 guard let self = self else { return }
 
+                let refreshedSurveyURL = self.tabBarRemoteMessageViewModel.refreshSurveyURL(surveyURL)
                 DispatchQueue.main.async {
-                    Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(surveyURL, source: .appOpenUrl))
+                    Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(refreshedSurveyURL, source: .appOpenUrl))
                 }
                 self.tabBarRemoteMessageViewModel.onSurveyOpened()
                 self.removeFeedbackButton()

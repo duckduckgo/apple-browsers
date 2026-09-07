@@ -267,6 +267,8 @@ struct SettingsRootView: View {
             SettingsAppearanceView().environmentObject(viewModel)
         case .general:
             SettingsGeneralView().environmentObject(viewModel)
+        case .cookiePopupProtection:
+            CookiePopUpProtectionView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {
                 let model = SubscriptionSettingsViewModel(userScriptsDependencies: viewModel.userScriptsDependencies)

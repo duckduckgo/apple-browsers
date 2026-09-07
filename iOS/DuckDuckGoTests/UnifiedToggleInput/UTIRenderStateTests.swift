@@ -232,7 +232,7 @@ final class UTIRenderStateTests: XCTestCase {
         sut = UnifiedToggleInputCoordinator(
             host: .contextualChat,
             isToggleEnabled: false,
-            contextualStartsPreSubmit: true
+            contextualStart: .expandedPreSubmit
         )
 
         XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
@@ -243,7 +243,7 @@ final class UTIRenderStateTests: XCTestCase {
         sut = UnifiedToggleInputCoordinator(
             host: .contextualChat,
             isToggleEnabled: false,
-            contextualStartsPreSubmit: true
+            contextualStart: .expandedPreSubmit
         )
 
         _ = sut.prepareExternalPromptSubmission()

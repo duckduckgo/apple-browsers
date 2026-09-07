@@ -45,6 +45,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Fetch Build Variants
         id: get-build-variants
         uses: ./.github/actions/asana-get-build-variants-list
@@ -71,6 +74,9 @@ jobs:
             macOS/Gemfile.lock
             macOS/fastlane
             macOS/scripts
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Download release app
         env:
@@ -134,6 +140,10 @@ jobs:
             macOS/Gemfile.lock
             macOS/fastlane
             macOS/scripts
+
+      - name: Print macOS version
+        if: ${{ env.success || env.failure }} # Don't execute when cancelled
+        run: sw_vers
 
       - name: Setup Ruby and dependencies
         if: ${{ env.success || env.failure }} # Don't execute when cancelled

@@ -4,7 +4,7 @@
         "owners": ["hanyutang-sandra"],
         "meta": {
             "type": "macos-data-clearing",
-            "version": "1.0"
+            "version": "1.1"
         },
         "feature": {
             "name": "data-clearing",

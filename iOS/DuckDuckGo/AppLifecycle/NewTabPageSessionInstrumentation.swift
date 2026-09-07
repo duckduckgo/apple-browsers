@@ -40,7 +40,8 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
 
     // MARK: - Actions
     //
-    // Repeat calls are cheap, and each one holds off the inactivity timeout.
+    // Repeat calls are cheap, and each one holds off the inactivity timeout. Each also adds a
+    // step, except for typing and scrolling, where an uninterrupted run counts once.
 
     func tapInputBar()
     func typeInInput()
@@ -75,6 +76,22 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
     /// The back arrow that leaves search mode, in the omnibar's unified text input.
     func utiBackArrow()
 
+    func selectBookmark()
+    func selectPassword()
+    func selectDownload()
+    func emailCopied()
+
+    func vpnOn()
+    func vpnOff()
+
+    /// The user was handed to another screen inside the app, such as Bookmarks or the VPN
+    /// settings. The time they spend there does not count as inactivity.
+    func noteUserLeftForAnotherScreen()
+
+    /// The user is back on the New Tab Page with that screen gone. Anything they do while still
+    /// on it, such as picking a login, is not a return.
+    func noteUserReturnedFromAnotherScreen()
+
     // MARK: - Terminals
 
     /// A user action ended the visit. `terminalAction` decides the reported outcome.
@@ -82,6 +99,10 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
 
     /// App was backgrounded with a visit still open. Completes as CANCELLED.
     func visitBackgrounded()
+
+    /// The page the visit was measuring is gone, so the visit has no outcome to report and is
+    /// dropped rather than completed.
+    func visitDiscarded()
 }
 
 /// Reads the wide event sample rate from the feature's remote settings, so the volume can be
@@ -127,6 +148,17 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
     /// Set once a timeout threshold has elapsed. The visit stays open so its real end time can
     /// still be observed, but its outcome is fixed and further actions are ignored.
     private var lockedTerminal: NewTabPageSessionWideEventData.TerminalAction?
+
+    /// The action recorded last, so that a run of the same one counts as a single step.
+    private var lastRecordedAction: ReferenceWritableKeyPath<NewTabPageSessionWideEventData, Bool>?
+
+    /// Set while the user is on another screen the app sent them to, so their next appearance is
+    /// read as a return rather than as a visit that went quiet.
+    private var isAwaitingReturnFromAnotherScreen = false
+
+    /// Total time spent on other screens, discounted from the overall cap so a long detour cannot
+    /// exhaust it on its own.
+    private var timeSpentOnOtherScreens: TimeInterval = 0
 
     init(wideEvent: WideEventManaging,
          dateProvider: @escaping () -> Date = { Date() },
@@ -177,6 +209,9 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
                                                   startedAt: dateProvider(),
                                                   globalData: WideEventGlobalData(sampleRate: sampleRate()))
         activeVisit = visit
+        lastRecordedAction = nil
+        isAwaitingReturnFromAnotherScreen = false
+        timeSpentOnOtherScreens = 0
         // The framework consults the sample rate only here. A visit the sampler drops still
         // runs locally, and its later calls no-op.
         wideEvent.startFlow(visit)
@@ -184,31 +219,51 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
 
     // MARK: - Actions
 
-    func tapInputBar() { recordAction { $0.tapInputBar = true } }
-    func typeInInput() { recordAction { $0.typeInInput = true } }
-    func switchToggleToSearch() { recordAction { $0.switchToggleToSearch = true } }
-    func switchToggleToAiChat() { recordAction { $0.switchToggleToAiChat = true } }
-    func tapDuckaiButton() { recordAction { $0.tapDuckaiButton = true } }
-    func hitSubmit() { recordAction { $0.hitSubmit = true } }
-    func chooseSuggestion() { recordAction { $0.chooseSuggestion = true } }
-    func tapFavorite() { recordAction { $0.tapFavorite = true } }
-    func tapFireButton() { recordAction { $0.tapFireButton = true } }
-    func tapReturnToLast() { recordAction { $0.tapReturnToLast = true } }
-    func tapTabViewerEscapeHatch() { recordAction { $0.tapTabViewerEscapeHatch = true } }
-    func tapTabViewerToolbar() { recordAction { $0.tapTabViewerToolbar = true } }
-    func tapBookmarksToolbarItem() { recordAction { $0.tapBookmarksToolbarItem = true } }
-    func tapPasswordsToolbarItem() { recordAction { $0.tapPasswordsToolbarItem = true } }
-    func openMenu() { recordAction { $0.openMenu = true } }
-    func menuBookmarks() { recordAction { $0.menuBookmarks = true } }
-    func menuPasswords() { recordAction { $0.menuPasswords = true } }
-    func menuChats() { recordAction { $0.menuChats = true } }
-    func menuDownloads() { recordAction { $0.menuDownloads = true } }
-    func menuVpn() { recordAction { $0.menuVpn = true } }
-    func clickMessageCta() { recordAction { $0.clickMessageCta = true } }
-    func clickMessageDismiss() { recordAction { $0.clickMessageDismiss = true } }
-    func dismissKeyboard() { recordAction { $0.dismissKeyboard = true } }
-    func scrollView() { recordAction { $0.scrollView = true } }
-    func utiBackArrow() { recordAction { $0.utiBackArrow = true } }
+    func tapInputBar() { recordAction(\.tapInputBar) }
+    func typeInInput() { recordStreamedAction(\.typeInInput) }
+    func switchToggleToSearch() { recordAction(\.switchToggleToSearch) }
+    func switchToggleToAiChat() { recordAction(\.switchToggleToAiChat) }
+    func tapDuckaiButton() { recordAction(\.tapDuckaiButton) }
+    func hitSubmit() { recordAction(\.hitSubmit) }
+    func chooseSuggestion() { recordAction(\.chooseSuggestion) }
+    func tapFavorite() { recordAction(\.tapFavorite) }
+    func tapFireButton() { recordAction(\.tapFireButton) }
+    func tapReturnToLast() { recordAction(\.tapReturnToLast) }
+    func tapTabViewerEscapeHatch() { recordAction(\.tapTabViewerEscapeHatch) }
+    func tapTabViewerToolbar() { recordAction(\.tapTabViewerToolbar) }
+    func tapBookmarksToolbarItem() { recordAction(\.tapBookmarksToolbarItem) }
+    func tapPasswordsToolbarItem() { recordAction(\.tapPasswordsToolbarItem) }
+    func openMenu() { recordAction(\.openMenu) }
+    func menuBookmarks() { recordAction(\.menuBookmarks) }
+    func menuPasswords() { recordAction(\.menuPasswords) }
+    func menuChats() { recordAction(\.menuChats) }
+    func menuDownloads() { recordAction(\.menuDownloads) }
+    func menuVpn() { recordAction(\.menuVpn) }
+    func clickMessageCta() { recordAction(\.clickMessageCta) }
+    func clickMessageDismiss() { recordAction(\.clickMessageDismiss) }
+    func dismissKeyboard() { recordAction(\.dismissKeyboard) }
+    func scrollView() { recordStreamedAction(\.scrollView) }
+    func utiBackArrow() { recordAction(\.utiBackArrow) }
+    func selectBookmark() { recordAction(\.selectBookmark) }
+    func selectPassword() { recordAction(\.selectPassword) }
+    func selectDownload() { recordAction(\.selectDownload) }
+    func emailCopied() { recordAction(\.emailCopied) }
+    func vpnOn() { recordAction(\.vpnOn) }
+    func vpnOff() { recordAction(\.vpnOff) }
+
+    func noteUserLeftForAnotherScreen() {
+        guard activeVisit != nil, lockedTerminal == nil else { return }
+        isAwaitingReturnFromAnotherScreen = true
+    }
+
+    func noteUserReturnedFromAnotherScreen() {
+        guard let visit = activeVisit, isAwaitingReturnFromAnotherScreen else { return }
+
+        isAwaitingReturnFromAnotherScreen = false
+        let now = dateProvider()
+        timeSpentOnOtherScreens += now.timeIntervalSince(visit.lastActionAt)
+        visit.lastActionAt = now
+    }
 
     // MARK: - Terminals
 
@@ -220,6 +275,11 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
         // A timed out visit keeps its timeout outcome. The user action that closed it came
         // after we had already declared it abandoned.
         let outcome = lockedTerminal ?? terminalAction
+
+        if isPassingThrough(visit, endingOn: outcome) {
+            discard(visit)
+            return
+        }
 
         visit.sessionInterval.end = now
         if lockedTerminal == nil {
@@ -237,17 +297,53 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
         complete(visit, with: lockedTerminal ?? .appBackgrounded)
     }
 
+    func visitDiscarded() {
+        lockTerminalIfTimedOut()
+        guard let visit = activeVisit else { return }
+
+        // A visit already abandoned had its outcome before the page went away, so closing the
+        // page does not erase it.
+        if let lockedTerminal {
+            visit.sessionInterval.end = dateProvider()
+            complete(visit, with: lockedTerminal)
+            return
+        }
+
+        discard(visit)
+    }
+
     // MARK: - Helpers
 
-    private func recordAction(_ mutate: (NewTabPageSessionWideEventData) -> Void) {
+    /// Records a discrete action. Repeats each add a step: a burst of them suggests the control
+    /// was not responding.
+    private func recordAction(_ action: ReferenceWritableKeyPath<NewTabPageSessionWideEventData, Bool>) {
+        record(action, collapsingRun: false)
+    }
+
+    /// Records an action arriving as a stream of calls, one per keystroke or scroll tick. An
+    /// uninterrupted run of it is a single step.
+    private func recordStreamedAction(_ action: ReferenceWritableKeyPath<NewTabPageSessionWideEventData, Bool>) {
+        record(action, collapsingRun: true)
+    }
+
+    private func record(_ action: ReferenceWritableKeyPath<NewTabPageSessionWideEventData, Bool>,
+                        collapsingRun: Bool) {
         lockTerminalIfTimedOut()
         // Actions after a timeout are dropped: the visit is already classed as abandoned and
         // only a fresh trigger opens another one.
         guard let visit = activeVisit, lockedTerminal == nil else { return }
 
         let now = dateProvider()
-        mutate(visit)
-        visit.actionCount += 1
+
+        // Compared against the previous action rather than the flag, so that returning to an
+        // earlier action after doing something else still counts as a new step.
+        if !collapsingRun || action != lastRecordedAction {
+            visit.actionCount += 1
+        }
+        lastRecordedAction = action
+        visit[keyPath: action] = true
+
+        // Outside the collapse, so that a burst of typing keeps holding off the inactivity timeout.
         visit.lastActionAt = now
         markFirstInteractionIfNeeded(on: visit, at: now)
     }
@@ -261,6 +357,10 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
     private func lockTerminalIfTimedOut() {
         guard let visit = activeVisit, lockedTerminal == nil else { return }
 
+        // Reading a screen the app opened is not abandoning the visit, so neither threshold
+        // advances while the user is still on it. The gap it produced is discounted on return.
+        guard !isAwaitingReturnFromAnotherScreen else { return }
+
         let now = dateProvider()
 
         // Inactivity wins over the overall cap when both have elapsed: a visit that went
@@ -268,9 +368,34 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
         if now.timeIntervalSince(visit.lastActionAt) >= NewTabPageSessionWideEventData.noActionTimeout {
             lockedTerminal = .noActionTimeout
         } else if let startedAt = visit.sessionInterval.start,
-                  now.timeIntervalSince(startedAt) >= NewTabPageSessionWideEventData.maxSessionDuration {
+                  now.timeIntervalSince(startedAt) - timeSpentOnOtherScreens >= NewTabPageSessionWideEventData.maxSessionDuration {
             lockedTerminal = .maxDurationExceeded
         }
+    }
+
+    /// Whether the user crossed the New Tab Page on the way somewhere else without using it.
+    ///
+    /// Swiping between tabs attaches the page for a moment when it passes an empty one, and the
+    /// next swipe closes it again. Reporting those as successes would let swiping habits lift the
+    /// success rate on visits where the user never asked the surface for anything.
+    ///
+    /// Only tab changes qualify: every other terminal needs an action to reach, and the timeouts
+    /// are the deliberate no-action failures the rate exists to capture.
+    private func isPassingThrough(_ visit: NewTabPageSessionWideEventData,
+                                  endingOn terminalAction: NewTabPageSessionWideEventData.TerminalAction) -> Bool {
+        guard visit.actionCount == 0 else { return false }
+
+        switch terminalAction {
+        case .selectOtherTab, .swipeToOtherTab: return true
+        default: return false
+        }
+    }
+
+    private func discard(_ visit: NewTabPageSessionWideEventData) {
+        wideEvent.discardFlow(visit)
+        activeVisit = nil
+        lockedTerminal = nil
+        lastRecordedAction = nil
     }
 
     private func complete(_ visit: NewTabPageSessionWideEventData,
@@ -279,6 +404,7 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
         wideEvent.completeFlow(visit, status: terminalAction.status, onComplete: { _, _ in })
         activeVisit = nil
         lockedTerminal = nil
+        lastRecordedAction = nil
     }
 
     private func markFirstInteractionIfNeeded(on visit: NewTabPageSessionWideEventData, at date: Date) {

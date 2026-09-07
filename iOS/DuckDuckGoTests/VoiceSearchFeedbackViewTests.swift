@@ -22,7 +22,7 @@ import Testing
 @testable import DuckDuckGo
 
 @MainActor
-@Suite("Voice Search Feedback View Tests", .disabled("Snapshot testing is opt-in until the sync automations land"))
+@Suite("Voice Search Feedback View Tests")
 final class VoiceSearchFeedbackViewTests {
 
     @available(iOS 16, macOS 13, *)

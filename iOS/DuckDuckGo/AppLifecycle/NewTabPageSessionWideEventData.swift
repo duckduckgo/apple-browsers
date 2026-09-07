@@ -32,7 +32,7 @@ final class NewTabPageSessionWideEventData: WideEventData {
         mobileMetaType: "ios-new-tab-page-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-new-tab-page-session",
-        version: "1.0.0"
+        version: "1.1.0"
     )
 
     enum Trigger: String, Codable, CaseIterable {
@@ -60,17 +60,13 @@ final class NewTabPageSessionWideEventData: WideEventData {
         case lastTabLoaded = "last_tab_loaded"
         case selectOtherTab = "select_other_tab"
         case swipeToOtherTab = "swipe_to_other_tab"
-        case selectBookmark = "select_bookmark"
-        case selectPassword = "select_password"
-        case selectDownload = "select_download"
         case deleteData = "delete_data"
-        case vpnOn = "vpn_on"
-        case vpnOff = "vpn_off"
-        case emailCopied = "email_copied"
-        case menuItemSelected = "menu_item_selected"
         /// The customizable toolbar button, when set to something other than Fire.
         /// Only reachable while the New Tab Page icon customization flag is on.
         case customButton = "custom_button"
+        /// A top level browsing menu entry with no terminal of its own, such as New Tab or
+        /// Settings. Those replace the New Tab Page for good, so the visit ends here.
+        case menuItemSelected = "menu_item_selected"
         case noActionTimeout = "no_action_timeout"
         case maxDurationExceeded = "max_duration_exceeded"
         case appBackgrounded = "app_backgrounded"
@@ -89,15 +85,9 @@ final class NewTabPageSessionWideEventData: WideEventData {
                  .lastTabLoaded,
                  .selectOtherTab,
                  .swipeToOtherTab,
-                 .selectBookmark,
-                 .selectPassword,
-                 .selectDownload,
                  .deleteData,
-                 .vpnOn,
-                 .vpnOff,
-                 .emailCopied,
-                 .menuItemSelected,
-                 .customButton:
+                 .customButton,
+                 .menuItemSelected:
                 // No reason attached: the sender would copy it into
                 // `status_reason`, duplicating `terminal_action` and forcing every
                 // success value into the schema's `status_reason` enum.
@@ -159,6 +149,12 @@ final class NewTabPageSessionWideEventData: WideEventData {
     var dismissKeyboard: Bool = false
     var scrollView: Bool = false
     var utiBackArrow: Bool = false
+    var selectBookmark: Bool = false
+    var selectPassword: Bool = false
+    var selectDownload: Bool = false
+    var emailCopied: Bool = false
+    var vpnOn: Bool = false
+    var vpnOff: Bool = false
 
     init(trigger: Trigger,
          launchKeyboardMode: LaunchKeyboardMode,
@@ -208,6 +204,12 @@ extension NewTabPageSessionWideEventData {
         return thresholds.last(where: { $0 <= count }) ?? 0
     }
 
+    /// Omits an action that did not happen, since thirty `false` flags per visit are payload
+    /// without information.
+    private func whenDone(_ actionOccurred: Bool) -> Bool? {
+        actionOccurred ? true : nil
+    }
+
     func jsonParameters() -> [String: Encodable] {
         let bucket = Self.durationBucket
         return Dictionary(compacting: [
@@ -218,31 +220,37 @@ extension NewTabPageSessionWideEventData {
             (WideEventParameter.NewTabPageSessionFeature.actionCountBucketed, String(Self.actionCountBucket(actionCount))),
             (WideEventParameter.NewTabPageSessionFeature.timeToFirstInteractionMsBucketed, firstInteractionInterval.stringValue(bucket)),
             (WideEventParameter.NewTabPageSessionFeature.sessionDurationMsBucketed, sessionInterval.stringValue(bucket)),
-            (WideEventParameter.NewTabPageSessionFeature.tapInputBar, tapInputBar),
-            (WideEventParameter.NewTabPageSessionFeature.typeInInput, typeInInput),
-            (WideEventParameter.NewTabPageSessionFeature.switchToggleToSearch, switchToggleToSearch),
-            (WideEventParameter.NewTabPageSessionFeature.switchToggleToAiChat, switchToggleToAiChat),
-            (WideEventParameter.NewTabPageSessionFeature.tapDuckaiButton, tapDuckaiButton),
-            (WideEventParameter.NewTabPageSessionFeature.hitSubmit, hitSubmit),
-            (WideEventParameter.NewTabPageSessionFeature.chooseSuggestion, chooseSuggestion),
-            (WideEventParameter.NewTabPageSessionFeature.tapFavorite, tapFavorite),
-            (WideEventParameter.NewTabPageSessionFeature.tapFireButton, tapFireButton),
-            (WideEventParameter.NewTabPageSessionFeature.tapReturnToLast, tapReturnToLast),
-            (WideEventParameter.NewTabPageSessionFeature.tapTabViewerEscapeHatch, tapTabViewerEscapeHatch),
-            (WideEventParameter.NewTabPageSessionFeature.tapTabViewerToolbar, tapTabViewerToolbar),
-            (WideEventParameter.NewTabPageSessionFeature.tapBookmarksToolbarItem, tapBookmarksToolbarItem),
-            (WideEventParameter.NewTabPageSessionFeature.tapPasswordsToolbarItem, tapPasswordsToolbarItem),
-            (WideEventParameter.NewTabPageSessionFeature.openMenu, openMenu),
-            (WideEventParameter.NewTabPageSessionFeature.menuBookmarks, menuBookmarks),
-            (WideEventParameter.NewTabPageSessionFeature.menuPasswords, menuPasswords),
-            (WideEventParameter.NewTabPageSessionFeature.menuChats, menuChats),
-            (WideEventParameter.NewTabPageSessionFeature.menuDownloads, menuDownloads),
-            (WideEventParameter.NewTabPageSessionFeature.menuVpn, menuVpn),
-            (WideEventParameter.NewTabPageSessionFeature.clickMessageCta, clickMessageCta),
-            (WideEventParameter.NewTabPageSessionFeature.clickMessageDismiss, clickMessageDismiss),
-            (WideEventParameter.NewTabPageSessionFeature.dismissKeyboard, dismissKeyboard),
-            (WideEventParameter.NewTabPageSessionFeature.scrollView, scrollView),
-            (WideEventParameter.NewTabPageSessionFeature.utiBackArrow, utiBackArrow),
+            (WideEventParameter.NewTabPageSessionFeature.tapInputBar, whenDone(tapInputBar)),
+            (WideEventParameter.NewTabPageSessionFeature.typeInInput, whenDone(typeInInput)),
+            (WideEventParameter.NewTabPageSessionFeature.switchToggleToSearch, whenDone(switchToggleToSearch)),
+            (WideEventParameter.NewTabPageSessionFeature.switchToggleToAiChat, whenDone(switchToggleToAiChat)),
+            (WideEventParameter.NewTabPageSessionFeature.tapDuckaiButton, whenDone(tapDuckaiButton)),
+            (WideEventParameter.NewTabPageSessionFeature.hitSubmit, whenDone(hitSubmit)),
+            (WideEventParameter.NewTabPageSessionFeature.chooseSuggestion, whenDone(chooseSuggestion)),
+            (WideEventParameter.NewTabPageSessionFeature.tapFavorite, whenDone(tapFavorite)),
+            (WideEventParameter.NewTabPageSessionFeature.tapFireButton, whenDone(tapFireButton)),
+            (WideEventParameter.NewTabPageSessionFeature.tapReturnToLast, whenDone(tapReturnToLast)),
+            (WideEventParameter.NewTabPageSessionFeature.tapTabViewerEscapeHatch, whenDone(tapTabViewerEscapeHatch)),
+            (WideEventParameter.NewTabPageSessionFeature.tapTabViewerToolbar, whenDone(tapTabViewerToolbar)),
+            (WideEventParameter.NewTabPageSessionFeature.tapBookmarksToolbarItem, whenDone(tapBookmarksToolbarItem)),
+            (WideEventParameter.NewTabPageSessionFeature.tapPasswordsToolbarItem, whenDone(tapPasswordsToolbarItem)),
+            (WideEventParameter.NewTabPageSessionFeature.openMenu, whenDone(openMenu)),
+            (WideEventParameter.NewTabPageSessionFeature.menuBookmarks, whenDone(menuBookmarks)),
+            (WideEventParameter.NewTabPageSessionFeature.menuPasswords, whenDone(menuPasswords)),
+            (WideEventParameter.NewTabPageSessionFeature.menuChats, whenDone(menuChats)),
+            (WideEventParameter.NewTabPageSessionFeature.menuDownloads, whenDone(menuDownloads)),
+            (WideEventParameter.NewTabPageSessionFeature.menuVpn, whenDone(menuVpn)),
+            (WideEventParameter.NewTabPageSessionFeature.clickMessageCta, whenDone(clickMessageCta)),
+            (WideEventParameter.NewTabPageSessionFeature.clickMessageDismiss, whenDone(clickMessageDismiss)),
+            (WideEventParameter.NewTabPageSessionFeature.dismissKeyboard, whenDone(dismissKeyboard)),
+            (WideEventParameter.NewTabPageSessionFeature.scrollView, whenDone(scrollView)),
+            (WideEventParameter.NewTabPageSessionFeature.utiBackArrow, whenDone(utiBackArrow)),
+            (WideEventParameter.NewTabPageSessionFeature.selectBookmark, whenDone(selectBookmark)),
+            (WideEventParameter.NewTabPageSessionFeature.selectPassword, whenDone(selectPassword)),
+            (WideEventParameter.NewTabPageSessionFeature.selectDownload, whenDone(selectDownload)),
+            (WideEventParameter.NewTabPageSessionFeature.emailCopied, whenDone(emailCopied)),
+            (WideEventParameter.NewTabPageSessionFeature.vpnOn, whenDone(vpnOn)),
+            (WideEventParameter.NewTabPageSessionFeature.vpnOff, whenDone(vpnOff)),
         ])
     }
 }
@@ -283,5 +291,11 @@ extension WideEventParameter {
         static let dismissKeyboard = "feature.data.ext.actions.dismiss_keyboard"
         static let scrollView = "feature.data.ext.actions.scroll_view"
         static let utiBackArrow = "feature.data.ext.actions.uti_back_arrow"
+        static let selectBookmark = "feature.data.ext.actions.select_bookmark"
+        static let selectPassword = "feature.data.ext.actions.select_password"
+        static let selectDownload = "feature.data.ext.actions.select_download"
+        static let emailCopied = "feature.data.ext.actions.email_copied"
+        static let vpnOn = "feature.data.ext.actions.vpn_on"
+        static let vpnOff = "feature.data.ext.actions.vpn_off"
     }
 }

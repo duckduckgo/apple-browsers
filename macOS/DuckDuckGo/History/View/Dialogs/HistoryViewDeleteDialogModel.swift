@@ -65,7 +65,20 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
             return date
         }
 
+        /// Title that spells the date out in full, including the year.
         var title: String {
+            title(dateFormatter: HistoryViewDeleteDialogModel.dateFormatter)
+        }
+
+        /// Title that shortens the date to the weekday, the month and the day.
+        ///
+        /// The compact Fire dialog uses this title. It only titles dates from the last week, so the
+        /// year adds nothing and only made the title long enough to wrap onto a second line.
+        var compactTitle: String {
+            title(dateFormatter: HistoryViewDeleteDialogModel.compactDateFormatter)
+        }
+
+        private func title(dateFormatter: DateFormatter) -> String {
             switch self {
             case .all:
                 return UserText.deleteAllHistory
@@ -78,7 +91,7 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
             case .unspecified:
                 return UserText.deleteHistory
             case .date(let date):
-                return UserText.deleteHistory(for: HistoryViewDeleteDialogModel.dateFormatter.string(from: date))
+                return UserText.deleteHistory(for: dateFormatter.string(from: date))
             case .sites(let domains) where domains.count == 1:
                 return UserText.deleteHistory(for: domains.first!)
             case .sites:
@@ -165,10 +178,19 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
     private let mode: DeleteMode
     private let settingsPersistor: HistoryViewDeleteDialogSettingsPersisting
 
+    /// Spells the date out in full, including the year.
     static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .full
         formatter.timeStyle = .none
+        formatter.formattingContext = .middleOfSentence
+        return formatter
+    }()
+
+    /// Shortens the date to the weekday, the month and the day, leaving the year out.
+    static let compactDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("EEEEMMMMd")
         formatter.formattingContext = .middleOfSentence
         return formatter
     }()

@@ -42,19 +42,19 @@ final class DefaultTrackerProtectionDataSourceTests: XCTestCase {
                            cnames: nil)
     }
 
-    private func ctlTDS() -> TrackerData {
-        let ctlRule = KnownTracker.Rule(rule: "facebook\\.net/.*sdk\\.js", surrogate: "fb-sdk-surrogate.js", action: .blockCTLFB, options: nil, exceptions: nil)
-        let fbTracker = KnownTracker(domain: "facebook.net",
-                                     defaultAction: .ignore,
-                                     owner: KnownTracker.Owner(name: "Facebook Inc", displayName: "Facebook", ownedBy: nil),
-                                     prevalence: 0.5,
-                                     subdomains: nil,
-                                     categories: nil,
-                                     rules: [ctlRule])
-        let entity = Entity(displayName: "Facebook", domains: ["facebook.net", "facebook.com"], prevalence: 0.5)
-        return TrackerData(trackers: ["facebook.net": fbTracker],
-                           entities: ["Facebook Inc": entity],
-                           domains: ["facebook.net": "Facebook Inc", "facebook.com": "Facebook Inc"],
+    private func otherTDS() -> TrackerData {
+        let rule = KnownTracker.Rule(rule: "other\\.net/.*sdk\\.js", surrogate: "other-sdk-surrogate.js", action: .block, options: nil, exceptions: nil)
+        let tracker = KnownTracker(domain: "other.net",
+                                   defaultAction: .ignore,
+                                   owner: KnownTracker.Owner(name: "Other Inc", displayName: "Other", ownedBy: nil),
+                                   prevalence: 0.5,
+                                   subdomains: nil,
+                                   categories: nil,
+                                   rules: [rule])
+        let entity = Entity(displayName: "Other", domains: ["other.net"], prevalence: 0.5)
+        return TrackerData(trackers: ["other.net": tracker],
+                           entities: ["Other Inc": entity],
+                           domains: ["other.net": "Other Inc"],
                            cnames: nil)
     }
 
@@ -81,17 +81,17 @@ final class DefaultTrackerProtectionDataSourceTests: XCTestCase {
             name: DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName,
             trackerData: mainTDS()
         )!
-        let ctlRules = await makeFakeRules(
-            name: DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName,
-            trackerData: ctlTDS()
+        let otherRules = await makeFakeRules(
+            name: "OtherRuleList",
+            trackerData: otherTDS()
         )!
-        let mock = StubCompiledRuleListsSource(rules: [mainRules, ctlRules])
+        let mock = StubCompiledRuleListsSource(rules: [mainRules, otherRules])
 
         let dataSource = DefaultTrackerProtectionDataSource(contentBlockingManager: mock)
 
         XCTAssertNotNil(dataSource.trackerData)
         XCTAssertNotNil(dataSource.trackerData?.trackers["tracker.com"], "Main tracker should be present")
-        XCTAssertNil(dataSource.trackerData?.trackers["facebook.net"], "Non-main trackers should not be merged for surrogate injection")
+        XCTAssertNil(dataSource.trackerData?.trackers["other.net"], "Non-main trackers should not be merged for surrogate injection")
     }
 
     func testSurrogateFilteredTrackerData_derivedFromMainDatasetOnly() async {
@@ -99,25 +99,25 @@ final class DefaultTrackerProtectionDataSourceTests: XCTestCase {
             name: DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName,
             trackerData: mainTDS()
         )!
-        let ctlRules = await makeFakeRules(
-            name: DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName,
-            trackerData: ctlTDS()
+        let otherRules = await makeFakeRules(
+            name: "OtherRuleList",
+            trackerData: otherTDS()
         )!
-        let mock = StubCompiledRuleListsSource(rules: [mainRules, ctlRules])
+        let mock = StubCompiledRuleListsSource(rules: [mainRules, otherRules])
 
         let dataSource = DefaultTrackerProtectionDataSource(contentBlockingManager: mock)
 
         XCTAssertNotNil(dataSource.surrogateFilteredTrackerData)
         XCTAssertNotNil(dataSource.surrogateFilteredTrackerData?.trackers["tracker.com"])
-        XCTAssertNil(dataSource.surrogateFilteredTrackerData?.trackers["facebook.net"])
+        XCTAssertNil(dataSource.surrogateFilteredTrackerData?.trackers["other.net"])
     }
 
     func testWhenMainDatasetMissing_thenValuesAreNil() async {
-        let ctlRules = await makeFakeRules(
-            name: DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName,
-            trackerData: ctlTDS()
+        let otherRules = await makeFakeRules(
+            name: "OtherRuleList",
+            trackerData: otherTDS()
         )!
-        let mock = StubCompiledRuleListsSource(rules: [ctlRules])
+        let mock = StubCompiledRuleListsSource(rules: [otherRules])
 
         let dataSource = DefaultTrackerProtectionDataSource(contentBlockingManager: mock)
 

@@ -17,7 +17,7 @@
 //
 
 import NewTabPage
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 

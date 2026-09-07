@@ -21,6 +21,7 @@ import Common
 import FoundationExtensions
 import BrowserServicesKit
 import FeatureFlags_macOS
+import PrivacyConfig
 import WebKit
 import History
 
@@ -31,10 +32,30 @@ extension Fire.BurningData {
      */
     func shouldDelayShowingDialog(decider: VisualizeFireSettingsDecider) -> Bool {
         switch self {
-        case .specificDomains(_, false):
+        case .specificDomains(_, false, _):
             return decider.shouldShowFireAnimation
         default:
             return false
+        }
+    }
+
+    /// Text of the modal dialog shown while data is being deleted.
+    ///
+    /// With the simplified Fire Dialog it describes the scope of the burn for a single tab burn
+    /// and for an all-data burn, and stays generic for all other burns. Without the simplified
+    /// Fire Dialog it always stays generic.
+    func deletingDataMessage(featureFlagger: FeatureFlagger) -> String {
+        guard featureFlagger.isFeatureOn(.fireDialogSimplified) else {
+            return UserText.fireDialogDeletingData
+        }
+
+        switch self {
+        case .all, .specificDomains(_, _, .allWindows):
+            return UserText.fireDialogDeletingAllData
+        case .specificDomains(_, _, .tab):
+            return UserText.fireDialogDeletingDataFromThisTab
+        case .specificDomains:
+            return UserText.fireDialogDeletingData
         }
     }
 }

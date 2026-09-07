@@ -79,7 +79,7 @@ final class VPNAppEventsHandler {
 
     // MARK: - Login Item Control Checkpoints
 
-    private enum LoginItemsControlCheckpointPixel: PixelKitEvent {
+    private enum LoginItemsControlCheckpointPixel: PixelKit.Event {
         case cannotStopVPN(_ error: Error)
 
         var name: String {

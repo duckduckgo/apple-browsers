@@ -133,7 +133,11 @@ def main() -> None:
                    help="run kickoff time (UTC), stable across re-run attempts")
     p.add_argument("--gh-run-started-at", required=True,
                    help="current ATTEMPT start time (UTC); ReplacingMergeTree version")
-    p.add_argument("--webview-type", required=True)
+    p.add_argument(
+        "--webview-type",
+        choices=("chrome", "safari", "ddg"),
+        required=True,
+    )
     p.add_argument("--webview-channel", default="stable")
     args = p.parse_args()
 

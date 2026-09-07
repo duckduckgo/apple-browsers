@@ -67,7 +67,6 @@ final class SettingsViewModel: ObservableObject {
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
     private(set) var privacyStore = PrivacyUserDefaults()
     lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
-    private lazy var animator: FireButtonAnimator = FireButtonAnimator(appSettings: AppUserDefaults())
     private var legacyViewProvider: SettingsLegacyViewProvider
     private lazy var versionProvider: AppVersion = AppVersion.shared
     private let voiceSearchHelper: VoiceSearchHelperProtocol
@@ -548,25 +547,6 @@ final class SettingsViewModel: ObservableObject {
                     Pixel.fire(pixel: .settingsGpcOn)
                 } else {
                     Pixel.fire(pixel: .settingsGpcOff)
-                }
-            }
-        )
-    }
-
-    var isCookiePopupPreferenceSettingEnabled: Bool {
-        featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting)
-    }
-
-    var autoconsentBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.state.autoconsentEnabled },
-            set: {
-                self.appSettings.autoconsentEnabled = $0
-                self.state.autoconsentEnabled = $0
-                if $0 {
-                    Pixel.fire(pixel: .settingsAutoconsentOn)
-                } else {
-                    Pixel.fire(pixel: .settingsAutoconsentOff)
                 }
             }
         )
@@ -1156,7 +1136,6 @@ extension SettingsViewModel {
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             showTrackersBlockedAnimation: appSettings.showTrackersBlockedAnimation,
-            isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
             forceWebsiteDarkMode: darkReaderFeatureSettings.isForceDarkModeEnabled,
@@ -1635,10 +1614,6 @@ extension SettingsViewModel {
         urlOpener.open(url)
     }
 
-    @MainActor func openCookiePopupManagement() {
-        pushViewController(legacyViewProvider.autoConsent)
-    }
-    
     @MainActor func dismissSettings() {
         onRequestDismissSettings?()
     }
@@ -1685,8 +1660,6 @@ extension SettingsViewModel {
             firePixel(.settingsDoNotSellShown)
             pushViewController(legacyViewProvider.gpc)
         
-        case .autoconsent:
-            pushViewController(legacyViewProvider.autoConsent)
         case .passwordsImport:
             pushViewController(legacyViewProvider.importPasswords(importScreen: .completeSetup,
                                                                   delegate: self,
@@ -1760,6 +1733,7 @@ extension SettingsViewModel {
         case customizeAddressBarButton
         case appearance
         case general
+        case cookiePopupProtection
         // Add other cases as needed
 
         var id: String {
@@ -1779,6 +1753,7 @@ extension SettingsViewModel {
             case .customizeAddressBarButton: return "customizeAddressButton"
             case .appearance: return "appearance"
             case .general: return "general"
+            case .cookiePopupProtection: return "cookiePopupProtection"
             // Ensure all cases are covered
             }
         }
@@ -1787,7 +1762,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection:
                 return .navigationLink
             }
         }

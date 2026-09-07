@@ -19,10 +19,11 @@
 
 import Foundation
 import AIChat
+import PixelKit
+import os.log
 
 /// Prefetches what the flow's sections need, once at flow start, so screens read the result rather than
 /// refetching on every visit.
-// TODO: will be owned by SubscriptionOnboardingFlowViewModel.swift calling `prefetch()` once at flow start
 @MainActor
 final class SubscriptionOnboardingPrefetcher: ObservableObject {
 
@@ -47,13 +48,16 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
 
     private let connectionInfoService: SubscriptionOnboardingConnectionInfoService
     private let modelProvider: SubscriptionOnboardingAIModelProviding
+    private let pixelFiring: PixelFiring?
 
     private var connectionInfoTask: Task<Void, Never>?
     private var modelsTask: Task<Void, Never>?
 
     init(connectionInfoService: SubscriptionOnboardingConnectionInfoService = DefaultSubscriptionOnboardingConnectionInfoService(),
-         modelProvider: SubscriptionOnboardingAIModelProviding? = nil) {
+         modelProvider: SubscriptionOnboardingAIModelProviding? = nil,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.connectionInfoService = connectionInfoService
+        self.pixelFiring = pixelFiring
         self.modelProvider = modelProvider ?? DefaultSubscriptionOnboardingAIModelProvider()
     }
 
@@ -62,14 +66,28 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
         modelsTask?.cancel()
     }
 
-    /// Kicks off both fetches at flow start.
-    func prefetch() {
-        fetchConnectionInfoIfNeeded()
-        fetchModelsIfNeeded()
+    struct Targets: OptionSet {
+        let rawValue: Int
+
+        static let connectionInfo = Targets(rawValue: 1 << 0)
+        static let aiModels = Targets(rawValue: 1 << 1)
+
+        static let all: Targets = [.connectionInfo, .aiModels]
+    }
+
+    /// Kicks off fetches at flow start.
+    func prefetch(_ targets: Targets) {
+        if targets.contains(.connectionInfo) {
+            fetchConnectionInfoIfNeeded()
+        }
+        if targets.contains(.aiModels) {
+            fetchModelsIfNeeded()
+        }
     }
 
     func fetchConnectionInfoIfNeeded() {
         guard connectionInfo.shouldStartFetch else { return }
+        Logger.subscription.debug("Onboarding prefetch starting: connection info")
         connectionInfo = .loading
         connectionInfoTask = Task { @MainActor [weak self] in
             guard let service = self?.connectionInfoService else { return }
@@ -85,6 +103,8 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
                     self?.connectionInfo = .idle
                     return
                 }
+                Logger.subscription.error("Onboarding connection info fetch failed: \(error.localizedDescription, privacy: .public)")
+                self?.pixelFiring?.fire(SubscriptionPixel.subscriptionOnboardingConnectionInfoFailure(error), frequency: .dailyAndCount)
                 self?.connectionInfo = .failed
             }
         }
@@ -92,6 +112,7 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
 
     func fetchModelsIfNeeded() {
         guard models.shouldStartFetch else { return }
+        Logger.subscription.debug("Onboarding prefetch starting: Duck.ai models")
         models = .loading
         modelsTask = Task { @MainActor [weak self] in
             guard let provider = self?.modelProvider else { return }
@@ -100,7 +121,12 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
                 self?.models = .idle
                 return
             }
-            self?.models = fetched.isEmpty ? .failed : .loaded(fetched)
+            guard !fetched.isEmpty else {
+                Logger.subscription.error("Onboarding Duck.ai model fetch returned no models")
+                self?.models = .failed
+                return
+            }
+            self?.models = .loaded(fetched)
         }
     }
 

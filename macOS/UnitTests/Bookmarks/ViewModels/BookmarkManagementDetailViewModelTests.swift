@@ -17,11 +17,10 @@
 //
 
 import FeatureFlags_macOS
-import PixelKitTestingUtilities
 import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-@testable import PixelKit
+@_spi(Testing) @testable import PixelKit
 
 final class BookmarkManagementDetailViewModelTests: XCTestCase {
     private var testUserDefault: UserDefaults! = UserDefaults(suiteName: #function)!

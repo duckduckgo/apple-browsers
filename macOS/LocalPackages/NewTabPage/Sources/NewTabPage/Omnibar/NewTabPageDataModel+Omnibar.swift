@@ -38,13 +38,16 @@ public extension NewTabPageDataModel {
         public let isAvailable: Bool
         /// `"subscribe"` or `"upgrade"`. Present only when `isAvailable == false`.
         public let upsell: String?
+        /// Header for the gated section this effort starts; set on the first gated effort only.
+        public let gatedSectionHeader: String?
 
-        public init(id: String, name: String, description: String? = nil, isAvailable: Bool, upsell: String? = nil) {
+        public init(id: String, name: String, description: String? = nil, isAvailable: Bool, upsell: String? = nil, gatedSectionHeader: String? = nil) {
             self.id = id
             self.name = name
             self.description = description
             self.isAvailable = isAvailable
             self.upsell = upsell
+            self.gatedSectionHeader = gatedSectionHeader
         }
     }
 
@@ -52,13 +55,15 @@ public extension NewTabPageDataModel {
         public let id: String
         public let name: String
         public let shortName: String
+        /// Subtitle beneath the model name (the backend recommendation label), `nil` for unlabelled models.
+        public let description: String?
         public let isAvailable: Bool
         public let supportsImageUpload: Bool
         public let supportedTools: [String]
         /// `nil` for a model with no tier requirement; set on every item, not just gated ones.
         public let accessTier: String?
         /// Empty when reasoning isn't supported, or when disabled natively (picker stays hidden).
-        public let reasoningEfforts: [AIModelReasoningEffort]
+        public var reasoningEfforts: [AIModelReasoningEffort]
         /// MIME types the model accepts as file attachments (e.g. `["application/pdf"]`). Empty
         /// when the model accepts no files; the web uses this to drive the file picker's `accept`
         /// and to clear attached files whose MIME isn't supported when the user switches models.
@@ -67,10 +72,11 @@ public extension NewTabPageDataModel {
         /// `"upgrade"`. `nil` for enabled models.
         public let upsell: String?
 
-        public init(id: String, name: String, shortName: String, isAvailable: Bool, supportsImageUpload: Bool, supportedTools: [String] = [], accessTier: String? = nil, reasoningEfforts: [AIModelReasoningEffort] = [], supportedFileTypes: [String] = [], upsell: String? = nil) {
+        public init(id: String, name: String, shortName: String, description: String? = nil, isAvailable: Bool, supportsImageUpload: Bool, supportedTools: [String] = [], accessTier: String? = nil, reasoningEfforts: [AIModelReasoningEffort] = [], supportedFileTypes: [String] = [], upsell: String? = nil) {
             self.id = id
             self.name = name
             self.shortName = shortName
+            self.description = description
             self.isAvailable = isAvailable
             self.supportsImageUpload = supportsImageUpload
             self.supportedTools = supportedTools

@@ -18,18 +18,7 @@
 //
 
 import AIChat
-import BrowserServicesKit
 import Combine
-import Core
-import PrivacyConfig
-import UIKit
-import FeatureFlags_iOS
-
-/// Protocol for handling AI chat history events
-protocol AIChatHistoryManagerDelegate: AnyObject {
-    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChatURL url: URL)
-    func aiChatHistoryManagerDidSelectViewAllChats(_ manager: AIChatHistoryManager)
-}
 
 /// Manages the AI Chat history list installation and interaction
 @MainActor
@@ -43,7 +32,6 @@ final class AIChatHistoryManager {
 
     // MARK: - Properties
 
-    weak var delegate: AIChatHistoryManagerDelegate?
     var onFetchCompleted: (@MainActor (String, Bool) -> Void)?
 
     var hasSuggestions: Bool {
@@ -61,22 +49,10 @@ final class AIChatHistoryManager {
         lastCompletedFetchQuery.map { $0 == query } ?? false
     }
 
-    private var historyViewController: AIChatHistoryListViewController?
     private let suggestionsReader: AIChatSuggestionsReading
-    private let aiChatSettings: AIChatSettingsProvider
     private let aiChatDeleter: AIChatDeleting
     private let viewModel: AIChatSuggestionsViewModel
-    private let featureFlagger: FeatureFlagger
-    private let isIPadExperience: Bool
     private let isFireTab: Bool
-
-    /// Whether to surface the "View all chats" row that opens the native chat history page.
-    /// Gated on the native history feature, and restricted to iPhone — the native sheet is an iPhone-only experience.
-    private var isViewAllChatsEnabled: Bool {
-        UIDevice.current.userInterfaceIdiom != .pad && featureFlagger.isFeatureOn(.aiChatNativeChatHistory)
-    }
-
-    var titleLayoutConfiguration: AIChatHistoryListViewController.TitleLayoutConfiguration?
     private(set) var hasCompletedInitialFetch = false
     /// Query string of the most recently completed (non-cancelled) fetch. Callers compare
     /// this against the current text to detect "fetcher hasn't caught up yet" and treat
@@ -88,132 +64,16 @@ final class AIChatHistoryManager {
     // MARK: - Initialization
 
     init(suggestionsReader: AIChatSuggestionsReading,
-         aiChatSettings: AIChatSettingsProvider,
          aiChatDeleter: AIChatDeleting,
          viewModel: AIChatSuggestionsViewModel,
-         isIPadExperience: Bool = false,
-         isFireTab: Bool,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         isFireTab: Bool) {
         self.suggestionsReader = suggestionsReader
-        self.aiChatSettings = aiChatSettings
         self.aiChatDeleter = aiChatDeleter
         self.viewModel = viewModel
-        self.isIPadExperience = isIPadExperience
         self.isFireTab = isFireTab
-        self.featureFlagger = featureFlagger
     }
 
     // MARK: - Public Methods
-
-    /// Installs the chat history list in the provided container view
-    /// - Parameters:
-    ///   - containerView: The view to install the chat history list into
-    ///   - parentViewController: The parent view controller for the hosting controller
-    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController) {
-        guard historyViewController == nil else { return }
-
-        let viewController = AIChatHistoryListViewController(
-            viewModel: viewModel,
-            isIPadExperience: isIPadExperience,
-            onChatSelected: { [weak self] chat in
-                self?.handleChatActivation(chat)
-            },
-            onChatDeleted: { [weak self] chat in
-                self?.deleteChatSuggestion(suggestion: chat)
-            },
-            onViewAllSelected: { [weak self] in
-                self?.handleViewAllChats()
-            }
-        )
-
-        if let titleLayoutConfiguration {
-            viewController.titleLayoutConfiguration = titleLayoutConfiguration
-        }
-
-        parentViewController.addChild(viewController)
-        containerView.addSubview(viewController.view)
-
-        viewController.view.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            viewController.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            viewController.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            viewController.view.topAnchor.constraint(equalTo: containerView.topAnchor),
-            viewController.view.bottomAnchor.constraint(lessThanOrEqualTo: containerView.safeAreaLayoutGuide.bottomAnchor)
-        ])
-
-        viewController.didMove(toParent: parentViewController)
-        self.historyViewController = viewController
-
-        if let pendingSectionTitle {
-            viewController.setScrollableTitle(pendingSectionTitle)
-        }
-
-        if !isIPadExperience {
-            fetchSuggestionsIfNeeded(query: "")
-        }
-    }
-
-    // MARK: - Keyboard selection
-
-    var hasHighlightedSuggestion: Bool {
-        viewModel.selectedIndex != nil
-    }
-
-    func moveSelectionDown() {
-        viewModel.selectNext()
-    }
-
-    func moveSelectionUp() {
-        viewModel.selectPrevious()
-    }
-
-    @discardableResult
-    func activateHighlightedSuggestion() -> Bool {
-        if viewModel.isViewAllChatsSelected {
-            handleViewAllChats()
-            return true
-        }
-        guard let suggestion = viewModel.selectedSuggestion else { return false }
-        handleChatActivation(suggestion)
-        return true
-    }
-
-    func clearSelection() {
-        viewModel.clearSelection()
-    }
-
-    /// Fires the selection pixels and opens the chat. Shared by tap (the VC's `onChatSelected`) and keyboard activation.
-    private func handleChatActivation(_ chat: AIChatSuggestion) {
-        let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
-        DailyPixel.fireDailyAndCount(pixel: pixel)
-        if isIPadExperience {
-            let iPadPixel: Pixel.Event = chat.isPinned ? .aiChatIPadToggleRecentChatSelectedPinned : .aiChatIPadToggleRecentChatSelected
-            DailyPixel.fireDailyAndCount(pixel: iPadPixel)
-        }
-        let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
-        delegate?.aiChatHistoryManager(self, didSelectChatURL: url)
-    }
-
-    /// Routes the "View all chats" row to the native chat history page. Shared by tap and keyboard activation.
-    private func handleViewAllChats() {
-        delegate?.aiChatHistoryManagerDidSelectViewAllChats(self)
-    }
-
-    func setEscapeHatch(_ model: EscapeHatchModel?) {
-        historyViewController?.setEscapeHatch(model)
-    }
-
-    func setAdditionalTopInset(_ inset: CGFloat) {
-        historyViewController?.additionalTopInset = inset
-    }
-
-    func setSectionTitle(_ title: String?) {
-        pendingSectionTitle = title
-        historyViewController?.setScrollableTitle(title)
-    }
-
-    private var pendingSectionTitle: String?
 
     /// Subscribes to text changes from a publisher with debounce and fetches filtered suggestions
     /// - Parameter textPublisher: A publisher that emits text changes
@@ -266,16 +126,13 @@ final class AIChatHistoryManager {
         let reader = suggestionsReader
         let viewModel = viewModel
         let effectiveQuery = query.isEmpty ? nil : query
-        let isViewAllChatsEnabled = isViewAllChatsEnabled
         let maxChats = viewModel.maxSuggestions
 
         currentFetchTask = Task {
             let suggestions = await reader.fetchSuggestions(query: effectiveQuery, maxChats: maxChats)
             guard !Task.isCancelled else { return }
             let hasSuggestions = !(suggestions.pinned.isEmpty && suggestions.recent.isEmpty)
-            // Surface the "View all chats" row when browsing recents (empty query), not while searching.
-            let showViewAllChats = isViewAllChatsEnabled && hasSuggestions && query.isEmpty
-            viewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent, showViewAllChats: showViewAllChats)
+            viewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
             hasCompletedInitialFetch = true
             lastCompletedFetchQuery = query
             onFetchCompleted?(query, hasSuggestions)
@@ -288,13 +145,6 @@ final class AIChatHistoryManager {
         currentFetchTask = nil
         lastCompletedFetchQuery = nil
         cancellables.removeAll()
-
-        if let historyVC = historyViewController {
-            historyVC.willMove(toParent: nil)
-            historyVC.view.removeFromSuperview()
-            historyVC.removeFromParent()
-            historyViewController = nil
-        }
 
         suggestionsReader.tearDown()
         viewModel.clearAllChats()

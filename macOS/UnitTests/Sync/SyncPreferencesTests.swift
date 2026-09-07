@@ -20,9 +20,8 @@ import Bookmarks
 import BrowserServicesKit
 import Combine
 import FeatureFlags_macOS
-import Persistence
+@_spi(Testing) import Persistence
 import XCTest
-import PersistenceTestingUtils
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 @testable import DDGSync

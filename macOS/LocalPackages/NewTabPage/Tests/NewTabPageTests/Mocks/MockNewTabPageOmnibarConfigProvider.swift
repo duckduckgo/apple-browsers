@@ -70,6 +70,12 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
         customizeResponsesStateSubject.eraseToAnyPublisher()
     }
 
+    var refreshUsageLimitsCallCount = 0
+    @MainActor
+    func refreshUsageLimits(requestingWebView: WKWebView?) {
+        refreshUsageLimitsCallCount += 1
+    }
+
     @Published var isAttachTabsEnabled: Bool = false
 
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> {

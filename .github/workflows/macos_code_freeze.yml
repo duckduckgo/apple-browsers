@@ -51,6 +51,9 @@ jobs:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           submodules: recursive
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Assert main branch
         run: |
           if [ "${{ github.ref_name }}" != "main" ]; then
@@ -114,6 +117,9 @@ jobs:
         with:
           submodules: recursive
           ref: ${{ needs.create_release_branch.outputs.release_branch_name }}
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Setup Ruby and dependencies
         uses: ./.github/actions/setup-ruby

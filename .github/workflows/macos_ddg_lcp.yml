@@ -1,0 +1,673 @@
+name: "macOS - LCP: DuckDuckGo"
+run-name: "macOS - LCP: DuckDuckGo"
+
+on:
+  workflow_dispatch:
+    inputs:
+      review-build-url:
+        description: "Review app archive/DMG URL (blank = build this commit)"
+        required: false
+        default: ""
+      review-run-id:
+        description: "Reuse the Review app built by this run ID (blank = build this commit)"
+        required: false
+        default: ""
+      sites:
+        description: "Comma-separated sites (blank = full 22-site list)"
+        required: false
+        default: ""
+      reps:
+        description: "Measured loads per site"
+        required: false
+        default: "10"
+      upload-to-clickhouse:
+        description: "Upload aggregated per-domain results to ClickHouse"
+        type: boolean
+        required: false
+        default: false
+      capture-screenshots:
+        description: "Save a PNG of the first load of each site (diagnostics artifact)"
+        type: boolean
+        required: false
+        default: false
+      youtube-theme-refresh:
+        description: "Navigate YouTube directly to its theme-refresh URL"
+        type: boolean
+        required: false
+        default: false
+      alert-asana:
+        description: "Create Asana subtasks for validation or measurement errors"
+        type: boolean
+        required: false
+        default: true
+  schedule:
+    - cron: "41 4 * * *"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: macos-browser-lcp-performance
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: macOS/scripts/crossbench
+
+jobs:
+  build-review:
+    name: Build signed Review app
+    if: inputs.review-build-url == '' && inputs.review-run-id == ''
+    uses: ./.github/workflows/macos_build_notarized.yml
+    with:
+      release-type: review
+      create-dmg: false
+      commit-sha: ${{ github.sha }}
+      skip-notify: true
+    secrets:
+      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_ACCESS_KEY_ID_RELEASE_S3: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY_RELEASE_S3: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
+      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      SSH_PRIVATE_KEY_DUCKSANS_FONT: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+  validate-wpr:
+    uses: ./.github/workflows/wpr_archive_validation.yml
+    with:
+      sites: ${{ inputs.sites }}
+      alert-asana: ${{ github.event_name != 'workflow_dispatch' || inputs.alert-asana }}
+    secrets:
+      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+
+  ddg-lcp:
+    name: DuckDuckGo LCP
+    needs: [build-review, validate-wpr]
+    if: >-
+      always() &&
+      needs.validate-wpr.result == 'success'
+    # Same self-hosted Apple Silicon runner as the Chrome and Safari
+    # measurements, so the three browsers' numbers stay comparable.
+    runs-on: [self-hosted, macOS, ARM64]
+    environment: macos-performance
+    timeout-minutes: 220
+
+    steps:
+      - name: Check out the trusted code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Download validated WPR archives
+        uses: actions/download-artifact@v7
+        with:
+          name: validated-wpr-archives
+          path: ${{ runner.temp }}/wpr-archives
+
+      - name: Download built Review artifact
+        if: inputs.review-build-url == '' && needs.build-review.result == 'success'
+        uses: actions/download-artifact@v7
+        with:
+          pattern: DuckDuckGo-review-*.app.tar.xz
+          merge-multiple: true
+          path: ${{ runner.temp }}/ddg-review-source
+
+      # Reusing an earlier run's app skips a ~17-minute rebuild when the only
+      # thing under test is the measurement itself. The app still goes through
+      # the same signature, team and Gatekeeper checks below.
+      - name: Download Review artifact from an earlier run
+        if: inputs.review-build-url == '' && inputs.review-run-id != ''
+        uses: actions/download-artifact@v7
+        with:
+          pattern: DuckDuckGo-review-*.app.tar.xz
+          merge-multiple: true
+          path: ${{ runner.temp }}/ddg-review-source
+          run-id: ${{ inputs.review-run-id }}
+          github-token: ${{ github.token }}
+
+      - name: Prepare and validate Review app
+        env:
+          REVIEW_BUILD_URL: ${{ inputs.review-build-url }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/ddg-review-source"
+          python3 ./prepare-ddg-review.py \
+            --input-directory "$RUNNER_TEMP/ddg-review-source" \
+            --output "$RUNNER_TEMP/ddg-review-prepared.tar.xz" \
+            --report "$GITHUB_WORKSPACE/macOS/scripts/crossbench/ddg-review-validation/report.txt"
+
+          mkdir -p "$RUNNER_TEMP/ddg-review-app"
+          tar -xf "$RUNNER_TEMP/ddg-review-prepared.tar.xz" \
+            -C "$RUNNER_TEMP/ddg-review-app"
+          apps=()
+          while IFS= read -r -d '' app; do
+            apps+=("$app")
+          done < <(
+            find "$RUNNER_TEMP/ddg-review-app" -type d -name '*.app' \
+              -prune -print0
+          )
+          if [ "${#apps[@]}" -ne 1 ]; then
+            echo "ERROR: prepared Review artifact did not contain exactly one app." >&2
+            exit 1
+          fi
+          installed_app="/Applications/DuckDuckGo Performance Review-${GITHUB_RUN_ID}.app"
+          if [ -e "$installed_app" ]; then
+            echo "ERROR: dedicated Review app path already exists." >&2
+            exit 1
+          fi
+          printf 'DDG_APP=%s\n' "$installed_app" >> "$GITHUB_ENV"
+          /usr/bin/ditto "${apps[0]}" "$installed_app"
+          codesign --verify --deep --strict "$installed_app"
+
+      - name: Upload Review validation report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ddg-review-validation-report
+          path: macOS/scripts/crossbench/ddg-review-validation/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Provision replay and traffic-shaping tools
+        env:
+          RUNTIME_ROOT: ${{ runner.temp }}/ddg-replay-runtime
+        run: |
+          ./provision-ddg-runtime.sh
+          {
+            echo "WPR_SRC=$RUNTIME_ROOT/webpagereplay"
+            echo "WPR_BIN=$RUNTIME_ROOT/bin/wpr"
+            echo "TSPROXY_PY=$RUNTIME_ROOT/bin/tsproxy.py"
+            echo "PYTHON_BIN=$(brew --prefix python@3.11)/bin/python3.11"
+          } >> "$GITHUB_ENV"
+
+      - name: Run DuckDuckGo LCP suite
+        env:
+          SITES: ${{ inputs.sites }}
+          REPS: ${{ inputs.reps || '10' }}
+          WPR_DIR: ${{ runner.temp }}/wpr-archives
+          WPR_ARCHIVES_PREPARED: "1"
+          DIAGNOSTICS_DIR: ${{ github.workspace }}/macOS/scripts/crossbench/ddg-diagnostics
+          RUNNER_IMAGE: ${{ vars.MACOS_PERFORMANCE_RUNNER_IMAGE || runner.name }}
+          BROWSER_WINDOW_WIDTH: "800"
+          BROWSER_WINDOW_HEIGHT: "600"
+          CAPTURE_SCREENSHOTS: ${{ inputs.capture-screenshots && '1' || '0' }}
+          YOUTUBE_THEME_REFRESH: ${{ inputs.youtube-theme-refresh && '1' || '0' }}
+        run: |
+          args=()
+          if [ -n "$SITES" ]; then
+            args+=(--sites "$SITES")
+          fi
+          if [ -n "$REPS" ]; then
+            args+=(--reps "$REPS")
+          fi
+          ./test-ddg.sh "${args[@]}"
+
+      # The app is launched through LaunchServices, so a crash leaves nothing on
+      # the redirected stdout/stderr the harness captures. Its crash reports and
+      # unified-log entries are the only record of why it exited.
+      - name: Collect app crash reports and unified log
+        if: always()
+        run: |
+          out="$GITHUB_WORKSPACE/macOS/scripts/crossbench/ddg-app-diagnostics"
+          mkdir -p "$out"
+          for dir in "$HOME/Library/Logs/DiagnosticReports" \
+                     /Library/Logs/DiagnosticReports; do
+            [ -d "$dir" ] || continue
+            find "$dir" -maxdepth 1 -type f \
+              \( -name 'DuckDuckGo*' -o -name 'com.duckduckgo*' \) \
+              -exec cp {} "$out/" \;
+          done
+          # Two separate views. The process predicate shows what the system did
+          # to the app; the subsystem predicate shows what the app itself logged,
+          # which is where its own reason for exiting appears.
+          log show --style compact --last 60m --info --debug \
+            --predicate 'process BEGINSWITH "DuckDuckGo"' \
+            > "$out/unified-log-process.txt" 2>&1 || true
+          log show --style compact --last 60m --info --debug \
+            --predicate 'subsystem BEGINSWITH "com.duckduckgo"' \
+            > "$out/unified-log-subsystem.txt" 2>&1 || true
+          # Anything that terminated the app leaves a record here even when the
+          # app logs nothing itself.
+          log show --style compact --last 60m --info \
+            --predicate 'process == "launchd" OR process == "loginwindow" OR eventMessage CONTAINS "DuckDuckGo"' \
+            > "$out/unified-log-system.txt" 2>&1 || true
+          ls -la "$out"
+
+      - name: Upload app crash diagnostics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ddg-app-diagnostics
+          path: macOS/scripts/crossbench/ddg-app-diagnostics/
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Remove dedicated Review app
+        if: always()
+        run: |
+          expected="/Applications/DuckDuckGo Performance Review-${GITHUB_RUN_ID}.app"
+          if [ -z "${DDG_APP:-}" ]; then
+            exit 0
+          fi
+          if [ "$DDG_APP" != "$expected" ]; then
+            echo "ERROR: refusing to remove an unexpected app path." >&2
+            exit 1
+          fi
+          if [ -e "$DDG_APP" ]; then
+            rm -rf -- "$DDG_APP"
+          fi
+
+      - name: Upload results TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ddg-lcp-results
+          path: macOS/scripts/crossbench/crossbench-results/*.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload per-site dispositions TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ddg-lcp-dispositions
+          path: macOS/scripts/crossbench/crossbench-dispositions/*.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload bounded diagnostics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ddg-lcp-diagnostics
+          path: macOS/scripts/crossbench/ddg-diagnostics/**
+          if-no-files-found: ignore
+          retention-days: 3
+
+      - name: Aggregate results for ClickHouse
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          in_tsv=(crossbench-results/*.tsv)
+          if [ "${#in_tsv[@]}" -eq 0 ]; then
+            echo "no metrics TSV to aggregate"
+            exit 0
+          fi
+          if [ "${#in_tsv[@]}" -ne 1 ]; then
+            echo "ERROR: expected one metrics TSV, found ${#in_tsv[@]}" >&2
+            exit 1
+          fi
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
+          ./aggregate-lcp.py \
+            --input "${in_tsv[0]}" \
+            --output clickhouse-rows.tsv \
+            --run-id "$GITHUB_RUN_ID" \
+            --start-time "$(jq -r '.created_at' <<< "$run_json")" \
+            --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
+            --webview-type ddg \
+            --webview-channel review
+          cat clickhouse-rows.tsv
+
+      - name: Upload ClickHouse rows TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ddg-lcp-clickhouse-rows
+          path: macOS/scripts/crossbench/clickhouse-rows.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Aggregate dispositions for ClickHouse
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          in_tsv=(crossbench-dispositions/*.tsv)
+          if [ "${#in_tsv[@]}" -eq 0 ]; then
+            echo "no dispositions TSV to aggregate"
+            exit 0
+          fi
+          if [ "${#in_tsv[@]}" -ne 1 ]; then
+            echo "ERROR: expected one dispositions TSV, found ${#in_tsv[@]}" >&2
+            exit 1
+          fi
+          if [ "$(wc -l < "${in_tsv[0]}")" -le 1 ]; then
+            echo "no disposition rows to aggregate"
+            exit 0
+          fi
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
+          ./aggregate-dispositions.py \
+            --input "${in_tsv[0]}" \
+            --output clickhouse-attempts.tsv \
+            --run-id "$GITHUB_RUN_ID" \
+            --start-time "$(jq -r '.created_at' <<< "$run_json")" \
+            --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
+            --webview-type ddg \
+            --webview-channel review
+          cat clickhouse-attempts.tsv
+
+      - name: Upload ClickHouse attempts TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ddg-lcp-attempts-rows
+          path: macOS/scripts/crossbench/clickhouse-attempts.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+  upload-to-clickhouse:
+    name: Upload to ClickHouse
+    needs: [validate-wpr, ddg-lcp]
+    if: >-
+      always() &&
+      needs.validate-wpr.result == 'success' &&
+      (github.event_name == 'schedule' || inputs.upload-to-clickhouse)
+    # `apple` names the owning team, not a platform: the label covers both a
+    # Linux utility runner and the bare-metal measurement mac, and only the
+    # former has clickhouse-client. Without the platform label this job lands on
+    # either, so roughly half of its runs fail on a missing binary. Asking for
+    # Linux keeps it off the measurement mac without naming a machine.
+    runs-on: [self-hosted, apple, Linux]
+    # 60 minutes, deliberately loose: this job can queue behind a multi-hour
+    # measurement job whenever the runner it wants is busy.
+    timeout-minutes: 60
+
+    steps:
+      - name: Download ClickHouse rows TSV
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          name: ddg-lcp-clickhouse-rows
+
+      - name: Download ClickHouse attempts TSV
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          name: ddg-lcp-attempts-rows
+
+      - name: Insert rows into ClickHouse
+        working-directory: .
+        env:
+          GH_RUN_CONCLUSION: ${{ needs.ddg-lcp.result }}
+        run: |
+          inserted=0
+          failed=0
+          if [ -s clickhouse-rows.tsv ]; then
+            if awk -v c="$GH_RUN_CONCLUSION" '{ print $0 "\t" c }' clickhouse-rows.tsv > clickhouse-rows-final.tsv &&
+                cat clickhouse-rows-final.tsv &&
+                clickhouse-client --no-warnings --user dev-rw \
+                  -h clickhouse.duckduckgo.com \
+                  --query "INSERT INTO native_apps.macos_browser_health_nav_to_lcp (run_id, start_time, domain, webview_type, webview_channel, webview_version, samples, min_ms, max_ms, mean_ms, p25_ms, p50_ms, p75_ms, p95_ms, gh_run_started_at, gh_run_conclusion) FORMAT TSV" \
+                  < clickhouse-rows-final.tsv; then
+              inserted=$((inserted + 1))
+            else
+              echo "ERROR: metrics rows could not be inserted." >&2
+              failed=$((failed + 1))
+            fi
+          fi
+          if [ -s clickhouse-attempts.tsv ]; then
+            if awk -v c="$GH_RUN_CONCLUSION" '{ print $0 "\t" c }' clickhouse-attempts.tsv > clickhouse-attempts-final.tsv &&
+                cat clickhouse-attempts-final.tsv &&
+                clickhouse-client --no-warnings --user dev-rw \
+                  -h clickhouse.duckduckgo.com \
+                  --query "INSERT INTO native_apps.macos_browser_health_nav_to_lcp_attempts (run_id, start_time, domain, webview_type, webview_channel, webview_version, outcome, validation_status, validation_reason, validation_http_status, validation_detail, archive_sha256, failure_stage, failure_reason, failure_detail, requested_repetitions, observed_repetitions, recorded_samples, dropped_unfinalized, dropped_no_metric, load_window_ms, runner_image, gh_run_started_at, gh_run_conclusion) FORMAT TSV" \
+                  < clickhouse-attempts-final.tsv; then
+              inserted=$((inserted + 1))
+            else
+              echo "ERROR: attempts rows could not be inserted." >&2
+              failed=$((failed + 1))
+            fi
+          fi
+          if [ "$inserted" -eq 0 ] && [ "$failed" -eq 0 ]; then
+            echo "ERROR: neither artifact was present — nothing was uploaded." >&2
+            exit 1
+          fi
+          [ "$failed" -eq 0 ]
+
+  notify-runtime-failures:
+    name: Report DuckDuckGo measurement errors
+    needs: [ddg-lcp, upload-to-clickhouse]
+    if: >-
+      always() &&
+      (github.event_name != 'workflow_dispatch' || inputs.alert-asana) &&
+      vars.CROSSBENCH_RUNTIME_ASANA_ALERTS_ENABLED != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out notification helpers
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Download per-site dispositions
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          name: ddg-lcp-dispositions
+          path: runtime-dispositions
+
+      - name: Download Review validation report
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          name: ddg-review-validation-report
+          path: review-validation
+
+      - name: Prepare runtime failure report
+        id: report
+        continue-on-error: true
+        working-directory: .
+        env:
+          BENCHMARK_RESULT: ${{ needs.ddg-lcp.result }}
+        run: |
+          echo "task-name=Browser Measurement Failure: DuckDuckGo LCP" >> "$GITHUB_OUTPUT"
+          write_run_failure_report() {
+            mkdir -p runtime-report
+            if grep -q '^status: error$' review-validation/report.txt 2>/dev/null; then
+              echo "task-name=Review Build Validation Failure: DuckDuckGo LCP" >> "$GITHUB_OUTPUT"
+            fi
+            {
+              echo "[RUN ERROR] $1"
+              echo "Result: $BENCHMARK_RESULT"
+              if [ -s review-validation/report.txt ]; then
+                echo
+                sed -n '1,80p' review-validation/report.txt
+              fi
+              echo "Action: inspect the failed workflow step and preserved diagnostics"
+            } > runtime-report/report.txt
+            echo "has-errors=true" >> "$GITHUB_OUTPUT"
+            echo "issue-count=1" >> "$GITHUB_OUTPUT"
+          }
+
+          shopt -s nullglob
+          in_tsv=(runtime-dispositions/*.tsv)
+          if [ "${#in_tsv[@]}" -ne 1 ]; then
+            if [ "$BENCHMARK_RESULT" = "skipped" ]; then
+              echo "has-errors=false" >> "$GITHUB_OUTPUT"
+            else
+              write_run_failure_report "DuckDuckGo disposition artifact was unavailable"
+            fi
+            exit 0
+          fi
+          if ! python3 macOS/scripts/crossbench/runtime-failure-report.py \
+              --input "${in_tsv[0]}" \
+              --report runtime-report/report.txt \
+              --github-output "$GITHUB_OUTPUT" \
+              --job-result "$BENCHMARK_RESULT" \
+              --browser-label DuckDuckGo; then
+            write_run_failure_report "DuckDuckGo disposition report could not be prepared"
+          fi
+
+      - name: Check ClickHouse upload result
+        # A green ddg-lcp job tells you nothing about whether the aggregated
+        # rows actually reached ClickHouse — that's a separate, self-hosted job.
+        # Runs after "Prepare runtime failure report" on purpose: that step's
+        # python helper also writes has-errors/report.txt, and running before
+        # it would let this step's write of the file (or has-errors) get
+        # clobbered by that one.
+        id: upload-check
+        continue-on-error: true
+        working-directory: .
+        env:
+          UPLOAD_RESULT: ${{ needs.upload-to-clickhouse.result }}
+        run: |
+          if [ "$UPLOAD_RESULT" = "failure" ] || [ "$UPLOAD_RESULT" = "cancelled" ]; then
+            mkdir -p runtime-report
+            cat >> runtime-report/report.txt <<EOF
+
+          [UPLOAD ERROR] ClickHouse insert did not complete.
+          Result: $UPLOAD_RESULT
+          Action: inspect the upload-to-clickhouse job logs.
+          EOF
+            echo "upload-failed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload-failed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload runtime failure report
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: ddg-runtime-failure-report
+          path: runtime-report/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Check run alert marker
+        if: >-
+          always() &&
+          (steps.report.outputs.has-errors == 'true' ||
+           steps.upload-check.outputs.upload-failed == 'true')
+        id: alert-marker
+        continue-on-error: true
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Up to 3 attempts, 5s apart: a transient API failure should not lose
+          # an alert. exists=unknown (and skipping task creation) is still the
+          # outcome after 3 consecutive failures — treating unknown as "false"
+          # would risk duplicate tasks, which is worse than a delayed alert.
+          marker_count=""
+          for attempt in 1 2 3; do
+            if marker_count="$(
+                gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=ddg-runtime-failure-run-$GITHUB_RUN_ID&per_page=100" \
+                  --jq '[.artifacts[] | select(.expired == false)] | length'
+              )"; then
+              break
+            fi
+            marker_count=""
+            [ "$attempt" -lt 3 ] && sleep 5
+          done
+          if [ -z "$marker_count" ]; then
+            echo "::warning title=Asana notification skipped::Could not check the run alert marker after 3 attempts; skipping task creation to avoid duplicates."
+            echo "exists=unknown" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$marker_count" -gt 0 ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Asana subtask
+        if: >-
+          always() &&
+          (steps.report.outputs.has-errors == 'true' ||
+           steps.upload-check.outputs.upload-failed == 'true') &&
+          steps.alert-marker.outputs.exists == 'false'
+        id: asana
+        continue-on-error: true
+        working-directory: .
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          ASANA_FOLLOWERS: ${{ vars.CROSSBENCH_ALERT_FOLLOWERS }}
+          GH_TOKEN: ${{ github.token }}
+          TASK_NAME: ${{ steps.report.outputs.task-name }}
+        run: |
+          if [ -z "$ASANA_ACCESS_TOKEN" ]; then
+            echo "::warning title=Asana notification skipped::ASANA_ACCESS_TOKEN is not available."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          helper="macOS/scripts/crossbench/create-asana-subtask.sh"
+          report="runtime-report/report.txt"
+          if [ ! -x "$helper" ] || [ ! -s "$report" ]; then
+            echo "::warning title=Asana notification skipped::Runtime report or notification helper is unavailable."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          notes_file="$RUNNER_TEMP/asana-ddg-measurement-notes.txt"
+          {
+            echo "Workflow: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "Commit: $GITHUB_SHA"
+            echo
+            cat "$report"
+          } > "$notes_file"
+          diagnostics_zip=""
+          diagnostics_artifact_id="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=ddg-lcp-diagnostics" \
+              --jq '.artifacts[0].id // empty'
+          )"
+          if [ -n "$diagnostics_artifact_id" ]; then
+            diagnostics_zip="$RUNNER_TEMP/ddg-lcp-diagnostics.zip"
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$diagnostics_artifact_id/zip" \
+              > "$diagnostics_zip"
+          fi
+          run_started_at="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+              --jq '.run_started_at'
+          )"
+          start_date="${run_started_at%%T*}"
+          due_date="$start_date"
+          working_days=0
+          while [ "$working_days" -lt 5 ]; do
+            due_date="$(date --utc --date "$due_date + 1 day" +%F)"
+            day_of_week="$(date --utc --date "$due_date" +%u)"
+            if [ "$day_of_week" -le 5 ]; then
+              working_days=$((working_days + 1))
+            fi
+          done
+          "$helper" \
+            1217628708169653 \
+            1217628708169657 \
+            "$TASK_NAME" \
+            "$notes_file" \
+            "$start_date" \
+            "$due_date" \
+            "$diagnostics_zip"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+          mkdir -p runtime-report
+          echo "reported by run $GITHUB_RUN_ID" > runtime-report/alert-marker.txt
+
+      - name: Fail loudly when the Asana alert could not be delivered
+        # No continue-on-error: create-asana-subtask.sh keeps it on the step
+        # above so the marker-saving step below still runs, but a failed
+        # notification must not leave the run green.
+        if: always() && steps.asana.outcome == 'failure'
+        working-directory: .
+        run: |
+          echo "::error title=Asana alert not delivered::Asana subtask creation failed for run https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          exit 1
+
+      - name: Save run alert marker
+        if: always() && steps.asana.outputs.created == 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: ddg-runtime-failure-run-${{ github.run_id }}
+          path: runtime-report/alert-marker.txt
+          if-no-files-found: error
+          retention-days: 90

@@ -34,18 +34,24 @@ let package = Package(
             targets: ["EventHub"]),
     ],
     dependencies: [
+        .package(path: "../Common"),
+        .package(path: "../Persistence"),
         .package(path: "../BrowserServicesKit"),
     ],
     targets: [
         .target(
             name: "EventHub",
             dependencies: [
-                .product(name: "Common", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
             ]),
         .testTarget(
             name: "EventHubTests",
-            dependencies: ["EventHub"]),
+            dependencies: [
+                "EventHub",
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
+            ]),
     ]
 )

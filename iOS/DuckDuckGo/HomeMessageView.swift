@@ -315,6 +315,7 @@ private enum HomeMessagePreviewSamples {
 
     static func makeView(id: String, modelType: HomeSupportedMessageDisplayType) -> HomeMessageView {
         HomeMessageView(viewModel: HomeMessageViewModel(messageId: id,
+                                                        acquisitionIdentity: nil,
                                                         modelType: modelType,
                                                         messageActionHandler: RemoteMessagingActionHandler(),
                                                         preloadedImage: nil,

@@ -39,7 +39,8 @@ enum PromptBarContentFactory {
             origin: nil,
             pixelHandler: PromptBarPixelHandler(),
             suggestionsReader: nil,
-            preferences: preferences
+            preferences: preferences,
+            usageLimitsStore: DuckAiUsageLimitsStore(storageHandler: duckAiNativeStorageHandler)
         )
 
         let containerViewController = AIChatOmnibarContainerViewController(

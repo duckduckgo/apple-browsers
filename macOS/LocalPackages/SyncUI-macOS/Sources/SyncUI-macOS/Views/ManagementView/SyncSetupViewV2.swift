@@ -23,8 +23,6 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import PreviewSnapshots
 
-/// V2 of the Sync setup screen, gated behind the `simplifiedSyncSetupV2` feature flag.
-/// This starts as a copy of `SyncSetupView` so the two versions can evolve independently.
 struct SyncSetupViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
     @EnvironmentObject var model: ViewModel
 

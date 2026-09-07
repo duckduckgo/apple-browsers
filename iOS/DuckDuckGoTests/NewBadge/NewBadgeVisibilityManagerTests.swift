@@ -20,7 +20,7 @@
 import XCTest
 @testable import DuckDuckGo
 import PrivacyConfigTestsUtils
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 final class NewBadgeVisibilityManagerTests: XCTestCase {
 

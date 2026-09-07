@@ -183,6 +183,14 @@ Uploads pre-built Experimental app to TestFlight
 
 Increment build number based on version in App Store Connect
 
+### ios upload_appstore_version_metadata
+
+```sh
+[bundle exec] fastlane ios upload_appstore_version_metadata
+```
+
+Fetches latest App Store version and uploads metadata to CDN
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.

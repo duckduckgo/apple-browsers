@@ -18,14 +18,52 @@
 //
 
 import AIChat
+import BrowserServicesKit
 import Core
 import Foundation
+import Persistence
 import PixelKit
 import Subscription
 
+/// Install-lifetime first-Duck.ai-prompt flag behind the shared `first_prompt_new_install` pixel
+/// parameter. Read by every prompt-submission pixel; marked once per submission flow after its
+/// pixels fire. `DuckAIFirstPromptNewInstallCohort` pre-marks existing installs at launch, so the
+/// parameter can only ever fire on a brand-new install's genuine first prompt.
+extension FeatureDiscovery {
+
+    var isFirstDuckAIPromptNewInstall: Bool {
+        !wasUsedBefore(.duckAIPrompt)
+    }
+
+    func markDuckAIPromptSubmitted() {
+        setWasUsedBefore(.duckAIPrompt)
+    }
+}
+
+/// Launch-time cohort gate for `first_prompt_new_install`: installs that predate this measurement
+/// are pre-marked as having prompted, so only brand-new installs can ever report the parameter.
+enum DuckAIFirstPromptNewInstallCohort {
+
+    static let cohortAssignedKey = "com.duckduckgo.aichat.firstPromptNewInstall.cohortAssigned"
+
+    /// Must run before StatisticsLoader stores install statistics (mirrors `IdleReturnCohort`):
+    /// once they exist every install looks existing, which would disqualify a genuinely new one.
+    static func assignIfNeeded(statisticsStore: StatisticsStore,
+                               featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
+                               marker: KeyValueStoring = UserDefaults.standard) {
+        guard marker.object(forKey: cohortAssignedKey) == nil else { return }
+        if statisticsStore.hasInstallStatistics {
+            featureDiscovery.markDuckAIPromptSubmitted()
+        }
+        marker.set(true, forKey: cohortAssignedKey)
+    }
+}
+
 /// The schedule suffix is part of the name, fired with frequencies that append nothing, so PixelKit's
 /// platform suffix lands after it and the wire name stays `..._daily_ios_phone` as the legacy pixel reports it.
-enum ExperimentalOmnibarPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+enum ExperimentalOmnibarPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     /// `isToggleVisible`: whether the Search/Duck.ai toggle was on screen when the surface appeared.
     case omnibarShownDaily(isToggleVisible: Bool)
@@ -47,7 +85,7 @@ enum ExperimentalOmnibarPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
 
     var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 /// The UTI surface a pixel is fired from, sent as the `surface` param (`voice_tapped` reuses `source`).
@@ -58,6 +96,24 @@ enum UnifiedToggleInputPixelSurface: String {
     case duckAI = "duck_ai"
     /// The contextual chat sheet presented over a web page.
     case contextualChat = "contextual_chat"
+}
+
+enum UnifiedToggleInputPromptPageType: String {
+    case ntp
+    case serp
+    case website
+    case duckAI = "duck_ai"
+    case contextual
+    case unknown
+}
+
+extension Tab {
+
+    var promptPageType: UnifiedToggleInputPromptPageType {
+        if isAITab { return .duckAI }
+        guard let url = link?.url else { return .ntp }
+        return url.isDuckDuckGoSearch ? .serp : .website
+    }
 }
 
 private enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
@@ -127,6 +183,15 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         }
     }
 
+    static func fireEditAttachmentRemovedPixel(for attachment: UnifiedToggleInputAttachment, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
+        switch attachment {
+        case .image:
+            firing.fireDailyAndCount(.unifiedToggleInputEditImageRemoved, surfaceParameters(surface))
+        case .file, .invalidFile:
+            firing.fireDailyAndCount(.unifiedToggleInputEditFileRemoved, surfaceParameters(surface))
+        }
+    }
+
     static func fireSubscriptionUpsellTriggeredPixel(
         source: SubscriptionFlowSource,
         currentTier: AIChatUserTier,
@@ -186,13 +251,17 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         reasoningMode: AIChatReasoningMode?,
         modelId: String?,
         surface: UnifiedToggleInputPixelSurface,
+        pageType: UnifiedToggleInputPromptPageType? = nil,
+        origin: AIChatEntryPointSource? = nil,
+        defaultMode: DefaultOmnibarMode? = nil,
+        isFirstPromptNewInstall: Bool = false,
         firing: UTIPixelFiring = .live
     ) {
         let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: selectedTool).rawValue
         let reasoningEffort = reasoningMode?.rawValue ?? "none"
         let modelId = modelId ?? ""
 
-        firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, [
+        var parameters = [
             "selected_tool": selectedToolValue,
             "model_id": modelId,
             "reasoning_effort": reasoningEffort,
@@ -200,7 +269,30 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
             "has_file_attachment": hasFileAttachment(in: attachments) ? "true" : "false",
             "has_text": hasText ? "true" : "false",
             "surface": surface.rawValue
-        ])
+        ]
+        parameters["page_type"] = pageType?.rawValue
+        parameters["origin"] = origin?.rawValue
+        parameters["default_mode"] = defaultMode?.rawValue
+        parameters[PixelParameters.aiChatFirstPromptNewInstall] = isFirstPromptNewInstall ? "true" : nil
+
+        firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, parameters)
+    }
+
+    static func fireUnifiedQuerySubmittedPixel(
+        surface: UnifiedToggleInputPixelSurface,
+        pageType: UnifiedToggleInputPromptPageType? = nil,
+        isToggleVisible: Bool,
+        defaultMode: DefaultOmnibarMode? = nil,
+        firing: UTIPixelFiring = .live
+    ) {
+        var parameters = [
+            "surface": surface.rawValue,
+            "toggle_visible": isToggleVisible ? "true" : "false"
+        ]
+        parameters["page_type"] = pageType?.rawValue
+        parameters["default_mode"] = defaultMode?.rawValue
+
+        firing.fireDailyAndCount(.unifiedToggleInputQuerySubmitted, parameters)
     }
 
     static func fireModelSelectedPixel(modelId: String, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {

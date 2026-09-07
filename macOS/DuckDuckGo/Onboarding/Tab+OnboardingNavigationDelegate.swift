@@ -28,7 +28,7 @@ extension OnboardingNavigationDelegate {
         guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(
             SubscriptionFunnelOrigin.onboardingSubscriptionUpsell.rawValue
         )?.url else { return }
-        navigateFromOnboarding(to: url)
+        navigateFromOnboardingInNewTab(to: url)
     }
 }
 
@@ -48,6 +48,17 @@ extension Tab: OnboardingNavigationDelegate {
 
     func navigateFromOnboarding(to url: URL) {
         setUrl(url, source: .ui)
+    }
+
+    func navigateFromOnboardingInNewTab(to url: URL) {
+        Task { @MainActor in
+            Application.appDelegate.windowControllersManager.show(
+                url: url,
+                source: .ui,
+                newTab: true,
+                selected: true
+            )
+        }
     }
 
 }

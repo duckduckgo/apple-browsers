@@ -24,10 +24,17 @@ import PrivacyConfig
 import FeatureFlags_iOS
 
 enum MonthlyFreeTrialExperiment {
-    static let cohortParameterName = "experiment_mobileannualtrials_ios"
+    static let cohortParameterName = "experiment_mobileannualtrials2_ios"
 
-    static func appendingCohortParameter(to url: URL, resolvedBy featureFlagger: FeatureFlagger) -> URL {
-        guard let cohort = featureFlagger.resolveCohort(for: FeatureFlag.monthlyFreeTrialExperiment)
+    /// Enrols the user in the experiment and appends the resolved cohort to `url`.
+    ///
+    /// Users who are not eligible for a free trial are never enrolled.
+    static func appendingCohortParameter(to url: URL,
+                                         resolvedBy featureFlagger: FeatureFlagger,
+                                         isEligibleForFreeTrial: Bool) -> URL {
+        guard isEligibleForFreeTrial else { return url }
+
+        guard let cohort = featureFlagger.resolveCohort(for: FeatureFlag.monthlyFreeTrialExperiment2)
             as? FeatureFlag.MonthlyFreeTrialExperimentCohort else {
             return url
         }

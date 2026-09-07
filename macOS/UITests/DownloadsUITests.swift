@@ -26,7 +26,6 @@ class DownloadsUITests: UITestCase {
     private var table: XCUIElement!
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
 
@@ -319,9 +318,7 @@ class DownloadsUITests: UITestCase {
         // Expect exactly one item + "Open Downloads folder"
         XCTAssertTrue(table.cells.wait(for: \.count, equals: 2, timeout: UITests.Timeouts.localTestServer), "Should have exactly 2 cells (1 download + Open Downloads folder), actual: \(table.cells.count)")
 
-        // Quit and relaunch
-        app.typeKey("q", modifierFlags: [.command])
-        app.launch()
+        app.restart()
         _ = app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
         app.enforceSingleWindow()
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -373,12 +370,10 @@ class DownloadsUITests: UITestCase {
         // Expect exactly one item + "Open Downloads folder"
         XCTAssertTrue(table.cells.wait(for: \.count, equals: 2, timeout: UITests.Timeouts.localTestServer), "Should have exactly 2 cells (1 download + Open Downloads folder), actual: \(table.cells.count)")
 
-        // Quit and relaunch to restore session
-        app.typeKey("q", modifierFlags: [.command])
-        app.launch()
+        app.restart()
         _ = app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
 
-        XCTAssertTrue(webView.staticTexts["Page loaded!"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(webView.staticTexts["Page loaded!"].waitForExistence(timeout: UITests.Timeouts.navigation))
         sleep(2)
 
         // Verify no NEW download was added after restoration (still exactly one)
@@ -444,7 +439,7 @@ class DownloadsUITests: UITestCase {
         app.pasteURL(pageURL, pressingEnter: true)
 
         let link = app.webViews.firstMatch.links["HTML Link"].firstMatch
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         XCUIApplication.perform(withKeyModifiers: [.option]) {
             link.click()
         }
@@ -536,7 +531,7 @@ class DownloadsUITests: UITestCase {
         openSiteForDownloadingFile(url: url.absoluteString)
 
         let link = webView.links["Download via Data URL"].firstMatch
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         link.tap()
         let saveSheet = app.sheets.firstMatch
         XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -576,7 +571,7 @@ class DownloadsUITests: UITestCase {
 
         app.pasteURL(url, pressingEnter: true)
         let link = webView.links["Download via Blob"].firstMatch
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         link.tap()
         let saveSheet = app.sheets.firstMatch
         XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -608,9 +603,7 @@ class DownloadsUITests: UITestCase {
         assertDownloadListed(filename: fileName, sizeLabelRegex: "1.0 MB")
 
         // Restart app and verify the same file is listed
-        app.typeKey("q", modifierFlags: [.command])
-
-        app.launch()
+        app.restart()
         _=app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
         app.enforceSingleWindow()
         // wait for the New Tab page to load
@@ -730,7 +723,7 @@ class DownloadsUITests: UITestCase {
 
         app.pasteURL(launcherURL, pressingEnter: true)
         let openLink = app.webViews.firstMatch.links["Open Popup"]
-        XCTAssertTrue(openLink.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(openLink.waitForExistence(timeout: UITests.Timeouts.navigation))
         // Open link in a new tab with ⌘+click
         XCUIApplication.perform(withKeyModifiers: [.command]) {
             openLink.click()
@@ -828,7 +821,7 @@ class DownloadsUITests: UITestCase {
 
         app.pasteURL(url, pressingEnter: true)
         let link = app.webViews.firstMatch.links["Open Download"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
         // Click to open in new tab (respects default behavior of target=_blank)
         link.click()
 

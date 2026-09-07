@@ -17,8 +17,7 @@
 //
 
 import XCTest
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import BrowserServicesKit
 
 class AdClickAttributionCounterTests: XCTestCase {

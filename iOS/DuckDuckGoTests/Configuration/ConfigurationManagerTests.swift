@@ -98,6 +98,18 @@ final class ConfigurationManagerTests: XCTestCase {
         XCTAssertEqual(Array(operationLog.steps.dropFirst(2)), expectedRemainingStepsOrder, "Steps do not match the expected order.")
     }
 
+    func test_WhenNoConfigurationHasChanged_ThenUpdateReturnsNoData() async {
+        mockFetcher.fetchResults = Dictionary(uniqueKeysWithValues: Configuration.allCases.map { ($0, .notModified) })
+        mockFetcher.fetchAllResult = []
+
+        let result = await configManager.update()
+
+        guard case .noData = result else {
+            XCTFail("Expected noData when every request returns not modified")
+            return
+        }
+    }
+
 }
 
 // Step enum to track operations
@@ -112,12 +124,14 @@ private enum ConfigurationStep: String, Equatable {
 private class MockConfigurationFetcher: ConfigurationFetching {
     var operationLog: OperationLog
     var shouldFailPrivacyFetch = false
+    var fetchResults = [Configuration: ConfigurationFetchResult]()
+    var fetchAllResult: Set<Configuration>?
 
     init(operationLog: OperationLog) {
         self.operationLog = operationLog
     }
 
-    func fetch(_ configuration: Configuration, isDebug: Bool) async throws {
+    func fetch(_ configuration: Configuration, isDebug: Bool) async throws -> ConfigurationFetchResult {
         switch configuration {
         case .bloomFilterBinary:
             break
@@ -138,9 +152,12 @@ private class MockConfigurationFetcher: ConfigurationFetching {
         case .remoteMessagingConfig:
             break
         }
+        return fetchResults[configuration] ?? .updated
     }
 
-    func fetch(all configurations: [Configuration]) async throws {}
+    func fetch(all configurations: [Configuration]) async throws -> Set<Configuration> {
+        fetchAllResult ?? Set(configurations)
+    }
 }
 
 private class MockPrivacyConfigurationManagerWithLogs: PrivacyConfigurationManager {

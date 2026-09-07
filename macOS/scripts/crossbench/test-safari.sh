@@ -23,12 +23,24 @@
 # replay needs no DNS/CDN warm-up. An unavailable archive never causes a live
 # network fallback.
 #
+# Safari is quit before every repetition so each load runs on a freshly launched
+# process, matching the per-repetition freshness Chrome and DuckDuckGo already
+# have. Safari must therefore be the only one on the machine: the run refuses to
+# start while another Safari is open, since safaridriver would attach to it.
+#
 # Prerequisites: run provision-macos.sh and enable Safari remote automation.
+# No Safari window may be open when the run starts.
 #
 # Usage:
 #   ./test-safari.sh [--sites a.com,b.com] [--reps N] [--out FILE] [--yes]
 #
 set -euo pipefail
+# Everything this script emits is machine-readable, so no text handling may
+# follow the operator's locale. Under a comma-decimal locale awk renders an
+# LCP of 1000.0 ms as "1000,0" in the TSV that CI ingests; character ranges
+# and sort order would vary the same way. LC_NUMERIC alone is not enough
+# because LC_ALL overrides it, so pin the whole environment to C.
+export LC_ALL=C
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=macOS/scripts/crossbench/wpr-config.sh
@@ -68,6 +80,7 @@ SAFARI_DOMAIN="com.apple.Safari"
 SAFARI_HTTP_PROXY_KEY="WebKit2HTTPProxy"
 SAFARI_HTTPS_PROXY_KEY="WebKit2HTTPSProxy"
 SAFARI_APP="${SAFARI_APP:-/Applications/Safari.app}"
+SAFARI_AUTOMATION_STORE_DIR="${SAFARI_AUTOMATION_STORE_DIR:-$HOME/Library/Containers/com.apple.Safari/Data/tmp/SafariAutomation}"
 LOAD_WINDOW="12s"
 LOAD_WINDOW_MS=12000
 LOAD_WINDOW_SECONDS=12
@@ -157,7 +170,12 @@ HTTPS_PROXY_VALUE=""
 DIAGNOSTICS_DIR="${DIAGNOSTICS_DIR:-$PWD/safari-diagnostics}"
 MAX_SITE_DIAGNOSTICS="${MAX_SITE_DIAGNOSTICS:-5}"
 MAX_DIAGNOSTIC_BYTES="${MAX_DIAGNOSTIC_BYTES:-5242880}"
+MAX_CRASH_REPORTS="${MAX_CRASH_REPORTS:-10}"
+SAFARIDRIVER_DIAGNOSE="${SAFARIDRIVER_DIAGNOSE:-}"
 SITE_DIAGNOSTICS=0
+# Marker for "when this run began", so only crash reports belonging to this run
+# get collected rather than whatever the box accumulated earlier.
+RUN_START_MARKER=""
 
 if ! [[ "$MAX_SITE_DIAGNOSTICS" =~ ^[0-9]+$ ]]; then
   echo "ERROR: MAX_SITE_DIAGNOSTICS must be a non-negative integer." >&2
@@ -165,6 +183,10 @@ if ! [[ "$MAX_SITE_DIAGNOSTICS" =~ ^[0-9]+$ ]]; then
 fi
 if ! [[ "$MAX_DIAGNOSTIC_BYTES" =~ ^[1-9][0-9]*$ ]]; then
   echo "ERROR: MAX_DIAGNOSTIC_BYTES must be a positive integer." >&2
+  exit 2
+fi
+if ! [[ "$MAX_CRASH_REPORTS" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: MAX_CRASH_REPORTS must be a non-negative integer." >&2
   exit 2
 fi
 
@@ -195,6 +217,70 @@ kill_pid() {
     kill -9 "$pid" 2>/dev/null || true
   fi
   wait "$pid" 2>/dev/null || true
+}
+
+# safaridriver launches Safari, not this script, so there is no PID to track.
+# check_prerequisites refuses to start while any Safari is running, so every
+# Safari alive during a run is one safaridriver started on our behalf.
+safari_pids() {
+  pgrep -x Safari 2>/dev/null || true
+}
+
+# Quit Safari so the next repetition starts on a fresh process, the way Chrome
+# (new process + new profile per repetition) and DuckDuckGo (relaunch + website
+# data wipe per repetition) already do. WebKit's disk cache lives outside the
+# process, so this does not clear the cache by itself; it removes the JIT,
+# prewarmed-process and in-memory carry-over that made later repetitions faster
+# than the first, and it is the precondition for clearing anything on disk.
+# Returns non-zero if a Safari survives, since later repetitions would then be
+# measuring a warmer browser than the ones already recorded.
+quit_safari() {
+  local pid
+  [ -n "$(safari_pids)" ] || return 0
+  # shellcheck disable=SC2046  # The PID list is deliberately word-split.
+  for pid in $(safari_pids); do
+    kill "$pid" 2>/dev/null || true
+  done
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    [ -n "$(safari_pids)" ] || return 0
+    sleep 0.5
+  done
+  # shellcheck disable=SC2046  # The PID list is deliberately word-split.
+  for pid in $(safari_pids); do
+    kill -9 "$pid" 2>/dev/null || true
+  done
+  for _ in 1 2 3 4; do
+    [ -n "$(safari_pids)" ] || return 0
+    sleep 0.25
+  done
+  return 1
+}
+
+# safaridriver gives every WebDriver session its own on-disk website data store
+# and never removes it, so a run leaves one directory per repetition behind. They
+# are dead session temporaries, but they accumulate until a later run trips the
+# disk-headroom check. Pruning is only safe with no Safari alive, because a live
+# session owns its store, so every caller prunes right after quitting Safari.
+prune_safari_automation_stores() {
+  local dir root="$SAFARI_AUTOMATION_STORE_DIR"
+  # The loop below removes directories recursively, so refuse any root that is
+  # not recognizably the automation store — including an empty override.
+  case "$root" in
+    */SafariAutomation) ;;
+    *)
+      echo "WARNING: refusing to prune unexpected session-store path: $root" >&2
+      return 0
+      ;;
+  esac
+  [ -d "$root" ] || return 0
+  if [ -n "$(safari_pids)" ]; then
+    echo "WARNING: Safari is running; leaving safaridriver session stores." >&2
+    return 0
+  fi
+  for dir in "$root"/*; do
+    [ -e "$dir" ] || continue
+    rm -rf -- "$dir"
+  done
 }
 
 capture_proxy_key() {
@@ -279,10 +365,70 @@ preserve_diagnostic() {
   tail -c "$MAX_DIAGNOSTIC_BYTES" "$source" > "$DIAGNOSTICS_DIR/$name"
 }
 
+# A repetition that loses its browser mid-load looks, from the harness side,
+# like a WebDriver call against a session that no longer exists. That is the
+# same symptom whether Safari crashed or the driver dropped the session, and
+# only a crash report tells the two apart — so collect any that this run
+# produced. A memory-pressure kill is filed as JetsamEvent-<date> rather than
+# under the process name, so it has to be matched separately or a jetsammed
+# WebContent would be reported as nothing having happened at all.
+# Best effort throughout: ReportCrash writes these asynchronously and
+# the directory may not be readable, neither of which is worth failing a run.
+preserve_crash_reports() {
+  [ "$MAX_CRASH_REPORTS" -gt 0 ] || return 0
+  [ -n "$RUN_START_MARKER" ] && [ -f "$RUN_START_MARKER" ] || return 0
+  local directory report destination copied=0 candidates=0 unreadable=""
+  destination="$DIAGNOSTICS_DIR/crash-reports"
+  for directory in "$HOME/Library/Logs/DiagnosticReports" \
+      /Library/Logs/DiagnosticReports; do
+    [ -d "$directory" ] || continue
+    if [ ! -r "$directory" ]; then
+      unreadable="$unreadable $directory"
+      continue
+    fi
+    while IFS= read -r report; do
+      candidates=$((candidates + 1))
+      [ "$copied" -lt "$MAX_CRASH_REPORTS" ] || continue
+      mkdir -p "$destination" || continue
+      if cp "$report" "$destination/" 2>/dev/null; then
+        copied=$((copied + 1))
+      fi
+    done < <(find "$directory" -maxdepth 1 -type f \
+      \( -name '*Safari*' -o -name '*WebContent*' -o -name '*WebKit*' \
+         -o -name 'JetsamEvent*' \) \
+      -newer "$RUN_START_MARKER" 2>/dev/null | sort)
+  done
+  # Report the count even when it is zero. Staying quiet would make "nothing
+  # crashed" and "the reports could not be read" look identical, which is the
+  # one distinction this function exists to provide.
+  echo "    crash reports: found=$candidates kept=$copied${unreadable:+ unreadable:$unreadable}" >&2
+}
+
+# safaridriver keeps its --diagnose output in its own directory rather than on
+# stdout, so it has to be collected separately from SAFARIDRIVER_LOG. Only
+# reachable when --diagnose was requested, and scoped to this run.
+preserve_driver_diagnostics() {
+  [ -n "$SAFARIDRIVER_DIAGNOSE" ] || return 0
+  [ -n "$RUN_START_MARKER" ] && [ -f "$RUN_START_MARKER" ] || return 0
+  local source="$HOME/Library/Logs/com.apple.WebDriver" report destination kept=0
+  [ -d "$source" ] && [ -r "$source" ] || return 0
+  destination="$DIAGNOSTICS_DIR/safaridriver-diagnose"
+  while IFS= read -r report; do
+    mkdir -p "$destination" || return 0
+    if tail -c "$MAX_DIAGNOSTIC_BYTES" "$report" \
+        > "$destination/$(basename "$report")" 2>/dev/null; then
+      kept=$((kept + 1))
+    fi
+  done < <(find "$source" -type f -newer "$RUN_START_MARKER" 2>/dev/null | sort)
+  echo "    safaridriver diagnostics: kept=$kept" >&2
+}
+
 preserve_shared_diagnostics() {
   preserve_diagnostic "$SAFARIDRIVER_LOG" safaridriver.log
   preserve_diagnostic "$HTTPPROXY_LOG" httpproxy.log
   preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
+  preserve_crash_reports
+  preserve_driver_diagnostics
 }
 
 preserve_site_diagnostics() {
@@ -300,6 +446,16 @@ cleanup() {
   local exit_code=$?
   trap - EXIT HUP INT TERM
   kill_pid "$SAFARIDRIVER_PID"
+  # The last repetition's Safari is still up; leave the box as we found it. Only
+  # when we got as far as launching safaridriver: on an earlier exit the only
+  # Safari that can be running is one we never owned — including the one the
+  # startup check refused to start alongside.
+  # Best-effort: a lingering Safari is untidy, not a reason to fail the run.
+  if [ -n "$SAFARIDRIVER_PID" ]; then
+    quit_safari || echo "WARNING: Safari did not quit during cleanup." >&2
+    # Removes the last repetition's store, which no earlier prune could reach.
+    prune_safari_automation_stores
+  fi
   # Keep the proxy chain alive until Safari's own preferences are restored.
   # This avoids leaving Safari pointed at a dead local endpoint if restoration
   # itself needs to communicate with its preferences service.
@@ -315,11 +471,13 @@ cleanup() {
     preserve_diagnostic "$HTTPPROXY_LOG" httpproxy.log
     preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
     preserve_diagnostic "$WPR_LOG" wpr.log
+    preserve_crash_reports
   fi
   [ -z "$SAFARIDRIVER_LOG" ] || rm -f "$SAFARIDRIVER_LOG"
   [ -z "$HTTPPROXY_LOG" ] || rm -f "$HTTPPROXY_LOG"
   [ -z "$TSPROXY_LOG" ] || rm -f "$TSPROXY_LOG"
   [ -z "$WPR_LOG" ] || rm -f "$WPR_LOG"
+  [ -z "$RUN_START_MARKER" ] || rm -f "$RUN_START_MARKER"
   exit "$exit_code"
 }
 trap cleanup EXIT
@@ -359,10 +517,31 @@ check_prerequisites() {
     echo "ERROR: shasum not found." >&2
     exit 1
   }
+  # Without pgrep the Safari checks below would find nothing and quietly stop
+  # enforcing per-repetition freshness, so treat it as a hard requirement.
+  command -v pgrep >/dev/null 2>&1 || {
+    echo "ERROR: pgrep not found; cannot verify or quit Safari between reps." >&2
+    exit 1
+  }
   [ -d "$SAFARI_APP" ] || {
     echo "ERROR: Safari not found at $SAFARI_APP." >&2
     exit 1
   }
+  # A Safari that is already running is not ours to drive or to quit: safaridriver
+  # would attach to it, so the run would measure someone's warm browser and take
+  # over their windows, and the per-repetition quit below would kill it. Refusing
+  # to start also makes every later Safari attributable to this run.
+  [ -z "$(safari_pids)" ] || {
+    echo "ERROR: Safari is already running; refusing to start." >&2
+    echo "       This run drives Safari and quits it between repetitions," >&2
+    echo "       so it must be the only Safari on the machine." >&2
+    echo "       Quit Safari and re-run." >&2
+    exit 2
+  }
+  # No Safari is alive, so anything still under the automation store is left over
+  # from a run that has already ended. Clearing it here keeps a long run from
+  # starting on top of every earlier run's leftovers.
+  prune_safari_automation_stores
   [ -x "$WPR_BIN" ] || {
     echo "ERROR: WPR binary missing at $WPR_BIN. Run provision-macos.sh." >&2
     exit 1
@@ -604,8 +783,19 @@ start_http_proxy() {
 
 start_safaridriver() {
   assert_port_free "$SAFARIDRIVER_PORT" safaridriver
+  # Stamped before the first Safari of the run exists, so every crash report
+  # newer than this one belongs to us.
+  RUN_START_MARKER="$(mktemp)"
   SAFARIDRIVER_LOG="$(mktemp)"
-  safaridriver -p "$SAFARIDRIVER_PORT" >"$SAFARIDRIVER_LOG" 2>&1 &
+  local driver_args=(-p "$SAFARIDRIVER_PORT")
+  if [ -n "$SAFARIDRIVER_DIAGNOSE" ]; then
+    # safaridriver writes these per-session, to its own directory, while pages
+    # are loading. That is inside the window being timed, so this is for
+    # investigating a site and not for producing numbers.
+    driver_args+=(--diagnose)
+    echo "NOTE: safaridriver --diagnose is on; timings are not comparable." >&2
+  fi
+  safaridriver "${driver_args[@]}" >"$SAFARIDRIVER_LOG" 2>&1 &
   SAFARIDRIVER_PID=$!
   if ! wait_for_port "$SAFARIDRIVER_PORT" 15; then
     echo "ERROR: safaridriver failed to start. Log:" >&2
@@ -656,7 +846,7 @@ mark_runtime_failure() {
 measure_site() {
   local site="$1" archive rep before output lcp detail landed_url offsite field
   local field_count
-  local automation_status site_harness_failed=0
+  local automation_status site_harness_failed=0 surviving
   local unfinalized=0 no_metric=0 observed=0 recorded=0
   local -a values=()
   reset_measurement_counters
@@ -702,10 +892,23 @@ measure_site() {
       mark_runtime_failure replay wpr_exited "repetition=$rep"
       break
     fi
+    # Start every repetition on a browser safaridriver has just launched. This is
+    # a no-op on the first repetition, where check_prerequisites has already
+    # established that no Safari is running.
+    if ! quit_safari; then
+      echo "    attempt rep=$rep: Safari would not quit -> HARNESS FAILURE" >&2
+      site_harness_failed=1
+      mark_runtime_failure runner safari_quit_failed "repetition=$rep"
+      break
+    fi
+    # The previous repetition's session store is now unowned; drop it before the
+    # next session allocates its own, so disk use stays flat across a long run.
+    prune_safari_automation_stores
     before="$(proxy_log_line_count)"
     if output="$("$PYTHON_BIN" "$SAFARI_AUTOMATION_PY" \
         "$SAFARIDRIVER_PORT" measure "https://$site" \
-        "$LCP_SETTLE_MS" "$LOAD_WINDOW_SECONDS" 2>&1)"; then
+        "$LCP_SETTLE_MS" "$LOAD_WINDOW_SECONDS" \
+        "$BROWSER_WINDOW_WIDTH" "$BROWSER_WINDOW_HEIGHT" 2>&1)"; then
       automation_status=0
     else
       automation_status=$?
@@ -747,6 +950,12 @@ measure_site() {
     if [ "$automation_status" -ne 0 ]; then
       echo "::warning title=Harness failure::$site: Safari automation exited $automation_status on repetition $rep"
       printf '%s\n' "$output" | tail -20 >&2
+      # A session the driver has dropped and a browser that died report the
+      # same way over WebDriver. Whether a Safari is still alive separates the
+      # two, and it has to be sampled here, before the next repetition quits
+      # whatever is left of this one.
+      surviving="$(safari_pids | tr '\n' ' ')"
+      echo "    rep=$rep: Safari after failure: ${surviving:-no process}" >&2
       site_harness_failed=1
       no_metric=$((no_metric + 1))
       mark_runtime_failure automation command_failed \

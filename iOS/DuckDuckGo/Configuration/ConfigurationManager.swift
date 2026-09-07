@@ -131,10 +131,12 @@ final class ConfigurationManager: DefaultConfigurationManager {
 
         // Perform privacyConfiguration fetch and update
         do {
-            try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
-            didFetchAnyTrackerBlockingDependencies = true
-            privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
-                                               data: store.loadData(for: .privacyConfiguration))
+            let fetchResult = try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
+            if fetchResult == .updated {
+                didFetchAnyTrackerBlockingDependencies = true
+                privacyConfigurationManager.reload(etag: store.loadEtag(for: .privacyConfiguration),
+                                                   data: store.loadData(for: .privacyConfiguration))
+            }
         } catch {
             Logger.general.error("Did not apply update to \(Configuration.privacyConfiguration.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
@@ -143,15 +145,15 @@ final class ConfigurationManager: DefaultConfigurationManager {
         let trackerDataSetTask = Task { try await fetcher.fetch(.trackerDataSet, isDebug: isDebug) }
 
         // Wait for surrogates and trackerDataSet tasks
-        let tasks: [(Configuration, Task<(), Swift.Error>)] = [
+        let tasks: [(Configuration, Task<ConfigurationFetchResult, Swift.Error>)] = [
             (.surrogates, surrogatesTask),
             (.trackerDataSet, trackerDataSetTask)
         ]
 
         for (configuration, task) in tasks {
             do {
-                try await task.value
-                didFetchAnyTrackerBlockingDependencies = true
+                let fetchResult = try await task.value
+                didFetchAnyTrackerBlockingDependencies = didFetchAnyTrackerBlockingDependencies || fetchResult == .updated
             } catch {
                 Logger.general.error("Did not apply update to \(configuration.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
@@ -172,8 +174,7 @@ final class ConfigurationManager: DefaultConfigurationManager {
     func fetchAndUpdateBloomFilterExcludedDomains() async -> Bool {
         do {
             try await fetcher.fetch(.bloomFilterExcludedDomains, isDebug: false)
-            try await updateBloomFilterExclusions()
-            return true
+            return try await updateBloomFilterExclusions()
         } catch {
             Logger.general.error("Failed to apply update to bloom filter exclusions: \(error.localizedDescription, privacy: .public)")
             return false
@@ -184,15 +185,14 @@ final class ConfigurationManager: DefaultConfigurationManager {
     func fetchAndUpdateBloomFilter() async -> Bool {
         do {
             try await fetcher.fetch(all: [.bloomFilterBinary, .bloomFilterSpec])
-            try await updateBloomFilter()
-            return true
+            return try await updateBloomFilter()
         } catch {
             Logger.general.error("Failed to apply update to bloom filter: \(error.localizedDescription, privacy: .public)")
             return false
         }
     }
     
-    private func updateBloomFilter() async throws {
+    private func updateBloomFilter() async throws -> Bool {
         guard let specData = store.loadData(for: .bloomFilterSpec) else {
             throw Error.bloomFilterSpecNotFound
         }
@@ -200,17 +200,25 @@ final class ConfigurationManager: DefaultConfigurationManager {
             throw Error.bloomFilterBinaryNotFound
         }
         let specification = try JSONDecoder().decode(HTTPSBloomFilterSpecification.self, from: specData)
-        try await PrivacyFeatures.httpsUpgrade.persistBloomFilter(specification: specification, data: bloomFilterData)
-        await PrivacyFeatures.httpsUpgrade.loadData()
+        let didPersistBloomFilter = try await PrivacyFeatures.httpsUpgrade.persistBloomFilter(specification: specification, data: bloomFilterData)
+
+        let isBloomFilterLoaded = await PrivacyFeatures.httpsUpgrade.isBloomFilterLoaded
+        if didPersistBloomFilter || !isBloomFilterLoaded {
+            await PrivacyFeatures.httpsUpgrade.loadData()
+        }
+        return didPersistBloomFilter
     }
     
-    private func updateBloomFilterExclusions() async throws {
+    private func updateBloomFilterExclusions() async throws -> Bool {
         guard let excludedDomainsData = store.loadData(for: .bloomFilterExcludedDomains) else {
             throw Error.bloomFilterExcludedDomainsNotFound
         }
         let excludedDomains = try HTTPSUpgradeParser.convertExcludedDomainsData(excludedDomainsData)
-        try await PrivacyFeatures.httpsUpgrade.persistExcludedDomains(excludedDomains)
-        await PrivacyFeatures.httpsUpgrade.loadData()
+        let didPersistExcludedDomains = try await PrivacyFeatures.httpsUpgrade.persistExcludedDomains(excludedDomains)
+        if didPersistExcludedDomains {
+            await PrivacyFeatures.httpsUpgrade.loadData()
+        }
+        return didPersistExcludedDomains
     }
     
 }

@@ -36,6 +36,31 @@ import PrivacyConfig
 import AIChat
 import UIComponents
 
+enum TabSwitcherGridLayoutGeometry {
+
+    static let spacing: CGFloat = 14
+    static let minimumColumnWidth: CGFloat = 150
+    static let maximumColumnCount = 4
+
+    static var sectionInset: UIEdgeInsets {
+        UIEdgeInsets(top: spacing, left: spacing, bottom: spacing, right: spacing)
+    }
+
+    static func columnWidth(for availableWidth: CGFloat) -> CGFloat {
+        let contentWidth = max(0, availableWidth - spacing)
+        let columnCount = min(maximumColumnCount, max(1, Int(contentWidth / minimumColumnWidth)))
+        return max(0, contentWidth / CGFloat(columnCount) - spacing)
+    }
+
+    static func previewWidth(for availableWidth: CGFloat) -> CGFloat {
+        max(0, floor(columnWidth(for: availableWidth)) - TabViewGridCell.Constants.previewHorizontalInset)
+    }
+
+    static func maximumPreviewWidth(for availableSize: CGSize) -> CGFloat {
+        max(previewWidth(for: availableSize.width), previewWidth(for: availableSize.height))
+    }
+}
+
 protocol TabSwitcherPageDelegate: AnyObject {
     func page(_ page: TabSwitcherPageViewController, didSelectTabAt index: Int)
     func page(_ page: TabSwitcherPageViewController, didDeselectTab: Void)
@@ -74,6 +99,7 @@ class TabSwitcherPageViewController: UIViewController {
     private var lastAppliedTrackerCountState: TabSwitcherTrackerCountViewModel.State?
     private var trackerInfoModel: InfoPanelView.Model?
     private var fireModeEmptyStateHostingController: UIHostingController<FireModeEmptyStateView>?
+    private var fireModeEmptyStateTopConstraint: NSLayoutConstraint?
     private let duckAIGridContentProvider: DuckAIGridContentProviding?
     private let duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?
     private var voiceSessionChangesCancellable: AnyCancellable?
@@ -115,9 +141,9 @@ class TabSwitcherPageViewController: UIViewController {
         super.viewDidLoad()
 
         let layout = UICollectionViewFlowLayout()
-        layout.minimumLineSpacing = 14
-        layout.minimumInteritemSpacing = 14
-        layout.sectionInset = UIEdgeInsets(top: 14, left: 14, bottom: 14, right: 14)
+        layout.minimumLineSpacing = TabSwitcherGridLayoutGeometry.spacing
+        layout.minimumInteritemSpacing = TabSwitcherGridLayoutGeometry.spacing
+        layout.sectionInset = TabSwitcherGridLayoutGeometry.sectionInset
 
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -134,6 +160,9 @@ class TabSwitcherPageViewController: UIViewController {
         collectionView.allowsSelection = true
         collectionView.allowsMultipleSelection = true
         collectionView.allowsMultipleSelectionDuringEditing = true
+        if isFloatingTabSwitcherEnabled {
+            collectionView.contentInsetAdjustmentBehavior = .never
+        }
 
         collectionView.register(TabViewGridCell.self, forCellWithReuseIdentifier: TabViewGridCell.reuseIdentifier)
         collectionView.register(TabViewListCell.self, forCellWithReuseIdentifier: TabViewListCell.reuseIdentifier)
@@ -201,10 +230,18 @@ class TabSwitcherPageViewController: UIViewController {
         view.addSubview(hostingController.view)
         hostingController.didMove(toParent: self)
 
-        let topConstraint = isFloatingTabSwitcherEnabled
-            ? hostingController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor,
-                                                          constant: FireModeEmptyStateMetrics.floatingNavigationBarClearance)
-            : hostingController.view.topAnchor.constraint(equalTo: view.topAnchor)
+        let topConstraint: NSLayoutConstraint
+        if isFloatingTabSwitcherEnabled {
+            // Pin to the page top (same coordinate space as the collection view) so clearance
+            // matches the chrome inset: navbar bottom + 10pt. The empty state's own
+            // `mainTopPadding` then adds 24pt above the pictogram.
+            topConstraint = hostingController.view.topAnchor.constraint(
+                equalTo: view.topAnchor,
+                constant: FireModeEmptyStateMetrics.estimatedFloatingTopClearance)
+            fireModeEmptyStateTopConstraint = topConstraint
+        } else {
+            topConstraint = hostingController.view.topAnchor.constraint(equalTo: view.topAnchor)
+        }
 
         NSLayoutConstraint.activate([
             topConstraint,
@@ -216,8 +253,16 @@ class TabSwitcherPageViewController: UIViewController {
         fireModeEmptyStateHostingController = hostingController
     }
 
-    private enum FireModeEmptyStateMetrics {
-        static let floatingNavigationBarClearance: CGFloat = 60
+    enum FireModeEmptyStateMetrics {
+        /// Gap between the top navbar buttons and the empty-state container.
+        static let spacingBelowNavbar: CGFloat = 10
+        /// Fallback until the chrome reports a laid-out nav bar: estimated nav (50) + floating inset (8) + 10.
+        static let estimatedFloatingTopClearance: CGFloat = 68
+    }
+
+    func applyFloatingTopClearance(_ topBarBottomOffset: CGFloat) {
+        guard isFloatingTabSwitcherEnabled else { return }
+        fireModeEmptyStateTopConstraint?.constant = topBarBottomOffset + FireModeEmptyStateMetrics.spacingBelowNavbar
     }
 
     func updateEmptyStateVisibility() {
@@ -503,14 +548,6 @@ extension TabSwitcherPageViewController: UICollectionViewDelegate {
 
 extension TabSwitcherPageViewController: UICollectionViewDelegateFlowLayout {
 
-    private func calculateColumnWidth(minimumColumnWidth: CGFloat, maxColumns: Int) -> CGFloat {
-        let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
-        let spacing = layout?.sectionInset.left ?? 0.0
-        let contentWidth = collectionView.bounds.width - spacing
-        let numberOfColumns = min(maxColumns, Int(contentWidth / minimumColumnWidth))
-        return contentWidth / CGFloat(numberOfColumns) - spacing
-    }
-
     private func calculateRowHeight(columnWidth: CGFloat) -> CGFloat {
         let contentAspectRatio = collectionView.bounds.width / collectionView.bounds.height
         let heightToFit = (columnWidth / contentAspectRatio) + TabViewCell.Constants.cellHeaderHeight
@@ -524,7 +561,7 @@ extension TabSwitcherPageViewController: UICollectionViewDelegateFlowLayout {
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
         if tabSwitcherSettings.isGridViewEnabled {
-            let columnWidth = calculateColumnWidth(minimumColumnWidth: 150, maxColumns: 4)
+            let columnWidth = TabSwitcherGridLayoutGeometry.columnWidth(for: collectionView.bounds.width)
             let rowHeight = calculateRowHeight(columnWidth: columnWidth)
             return CGSize(width: floor(columnWidth), height: floor(rowHeight))
         } else {

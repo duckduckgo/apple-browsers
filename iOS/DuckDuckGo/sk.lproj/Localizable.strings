@@ -20,6 +20,9 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
+"%@: %@" = "%1$@: %2$@";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -63,6 +66,9 @@
 
 /* Add action - button shown in alert */
 "action.title.add" = "Pridať";
+
+/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
+"action.title.aiChat.askDuckAI" = "Spýtaj sa Duck.ai";
 
 /* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
 "action.title.aiChat.hideContextualSheetButton" = "Skryť skratku dolného panela";
@@ -202,6 +208,9 @@
 /* Add to Favorites action */
 "action.title.save.favorite" = "Pridať do obľúbených položiek";
 
+/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
+"action.title.searchWithDuckDuckGo" = "Vyhľadávať";
+
 /* Settings action */
 "action.title.settings" = "Nastavenia";
 
@@ -310,6 +319,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Tento typ súboru nie je podporovaný. Prilož %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Upravením sa odpoveď nahradí novou.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Upraviť správu";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Nové";
 
@@ -397,6 +412,15 @@
 /* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
 "aiChat.history.swipe.unpin.a11y" = "Rozpnúť čet";
 
+/* Section header for Pro-only models shown to DuckDuckGo Plus subscribers */
+"aichat.model-picker.pro-plan-exclusive" = "Exkluzívne pre plán Pro";
+
+/* Section header for subscription models shown to users who are not eligible for a free trial */
+"aichat.model-picker.subscriber-exclusive" = "Exkluzívne pre predplatiteľov";
+
+/* Section header for subscription models shown to free users */
+"aichat.model-picker.try-free" = "Vyskúšaj to zadarmo";
+
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Pre analytické úlohy";
 
@@ -459,6 +483,42 @@
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Webové vyhľadávanie";
+
+/* Button in the Duck.ai input footer letting a paid user keep chatting on their weekly allowance after the daily one is spent */
+"aichat.usageWarnings.action.startUsingWeeklyLimit" = "Začni používať týždenný limit";
+
+/* Button in the Duck.ai input footer warning taking a user who has already used their free trial to the subscription flow */
+"aichat.usageWarnings.action.subscribe" = "Predplatiť";
+
+/* Button in the Duck.ai input footer warning that moves the user onto the suggested model */
+"aichat.usageWarnings.action.switch" = "Model prepínača";
+
+/* Button in the Duck.ai input footer warning taking a user who is still eligible for a free trial to the subscription flow */
+"aichat.usageWarnings.action.tryForFree" = "Vyskúšaj predplatné zadarmo";
+
+/* Title of the Duck.ai input footer warning shown once the allowance for advanced AI models specifically is used up, while free models remain available */
+"aichat.usageWarnings.advancedModelsLimitReached.title" = "Bol dosiahnutý limit pre pokročilé modely umelej inteligencie";
+
+/* Title of the Duck.ai input footer warning shown once the user's daily message limit is used up */
+"aichat.usageWarnings.dailyLimitReached.title" = "Bol dosiahnutý denný limit";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their daily message limit is used. %d is a percentage */
+"aichat.usageWarnings.dailyUsage.title" = "%d %% z denného limitu";
+
+/* Accessibility label for the button that dismisses the Duck.ai input footer warning */
+"aichat.usageWarnings.dismiss.a11y" = "Odmietnuť";
+
+/* Duck.ai input footer notice shown while a costly model is selected. %@ is the model's short name, such as 'Opus 4.8' */
+"aichat.usageWarnings.highUsageModel" = "%@ čerpá limity až 2–5× rýchlejšie ako základné modely.";
+
+/* Subtitle of the Duck.ai input footer warning saying how long until the usage limit resets. %@ is a duration such as '2 days' */
+"aichat.usageWarnings.resetsIn" = "Obnoví sa o %@";
+
+/* Title of the Duck.ai input footer warning shown once the user's weekly message limit is used up */
+"aichat.usageWarnings.weeklyLimitReached.title" = "Bol dosiahnutý týždenný limit používania";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their weekly message limit is used. %d is a percentage */
+"aichat.usageWarnings.weeklyUsage.title" = "%d %% z týždenného limitu";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Existujúce záložky sa nebudú duplikovať.";
@@ -1894,6 +1954,9 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Funkčnosť prehrávača Duck Player bola ovplyvnená nedávnymi zmenami v službe YouTube. Na odstránení týchto problémov pracujeme. Ďakujeme za pochopenie.";
 
+/* Address bar Duck.ai menu option that opens a fresh chat with no page context */
+"duckai.address.bar.menu.new.chat" = "Nový čet";
+
 /* Fourth paragraph of the Duck.ai widget education screen */
 "duckai.addWidget.settings.fourthParagraph" = "Klepnutím na miniaplikáciu ho uprav a potom nastav **Duck.ai** a **Duck.ai hlas** ako skratky";
 
@@ -1905,6 +1968,9 @@
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Odoslané s tvojou správou na Duck.ai";
+
+/* Row in the contextual chat's chats popup that opens Duck.ai in a new tab */
+"duckai.contextual.open.duckai" = "Otvoriť Duck.ai";
 
 /* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
 "duckai.contextual.recent.chats.button" = "Nedávne chaty";
@@ -2203,6 +2269,12 @@
 /* Suggested prompt submitted text: summarize the current page */
 "duckai.suggestion.summarize-page.prompt" = "Zhrň túto stránku.";
 
+/* Suggested prompt chip shown when the user has attached a text selection: summarize that selection */
+"duckai.suggestion.summarize-selection.label" = "Zhrň tento výber";
+
+/* Suggested prompt submitted text: summarize the attached text selection */
+"duckai.suggestion.summarize-selection.prompt" = "Zhrň tento výber.";
+
 /* Suggested prompt chip: summarize a discussion thread */
 "duckai.suggestion.summarize-thread.label" = "Zhrň túto diskusiu";
 
@@ -2227,6 +2299,12 @@
 /* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
 "duckai.suggestion.translate-page.prompt" = "Prelož túto stránku do jazyka %@.";
 
+/* Suggested prompt chip shown when the user has attached a text selection: translate that selection */
+"duckai.suggestion.translate-selection.label" = "Prelož tento výber";
+
+/* Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-selection.prompt" = "Prelož tento výber do %@.";
+
 /* Suggested prompt chip: video key points */
 "duckai.suggestion.video-key-points.label" = "Aké sú hlavné body?";
 
@@ -2244,6 +2322,12 @@
 
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Oplatí sa to pozrieť? Povedz mi o tom bez prezradenia výsledkov deja.";
+
+/* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
+"duckai.text-selection.context-title" = "Výber textu";
+
+/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
+"duckai.text-selection.limit-reached" = "Môžeš pridať až %d výberov textu. Ak chceš pridať ďalší, jeden odstráň.";
 
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Všetky chaty sú %@ súkromné";
@@ -2536,14 +2620,17 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Naposledy použitá karta Fire";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Zatvoriť kartu";
+/* Menu item that closes the last used open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeLastUsedTab" = "Zatvoriť naposledy použitú kartu";
 
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Odstrániť kartu";
 
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Späť na kartu";
+/* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
+"escapeHatch.menu.hideReturnToShortcut" = "Skryť skratku „Vrátiť sa na“";
+
+/* Menu item that returns the user to the last used open tab from the escape hatch card */
+"escapeHatch.menu.returnToLastUsedTab" = "Späť na naposledy použitú kartu";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Ďalšie možnosti";
@@ -2556,6 +2643,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Vráť sa na %1$@, %2$@";
+
+/* Swipe action that closes the open tab referenced by the escape hatch card */
+"escapeHatch.swipeAction.closeTab" = "Zatvoriť kartu";
 
 /* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
 "escapeHatch.tabSwitcher.privateTabs.label" = "Súkromné karty";
@@ -4210,11 +4300,11 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Časovač nečinnosti";
 
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Naposledy použitá karta";
+/* Option: open last used tab when returning after inactivity */
+"settings.afterInactivity.option.openLastUsedTab" = "Otvoriť naposledy použitú kartu";
 
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Nová karta";
+/* Option: open New Tab when returning after inactivity */
+"settings.afterInactivity.option.openNewTab" = "Otvoriť novú kartu";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Po nečinnosti";
@@ -4522,11 +4612,11 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klávesnica";
 
+/* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
+"settings.lastTabShortcut.subtitle" = "Zobrazí odkaz na návrat na naposledy použitú kartu pri spustení aplikácie po nečinnosti.";
+
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Zistite viac";
-
-/* Switch button label. */
-"settings.let.duckduckgo.manage.cookie.consent.popups" = "Nech DuckDuckGo spravuje kontextové okná týkajúce sa súhlasu so súbormi cookie";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Heslá a automatické dopĺňanie";
@@ -4584,6 +4674,9 @@
 
 /* Settings screen cell text for setting the refresh button position. */
 "settings.refreshButton.position.title" = "Poloha tlačidla obnovenia";
+
+/* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
+"settings.returnToShortcut.label" = "Skratka „Návrat na“";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Nastavenia vyhľadávania";

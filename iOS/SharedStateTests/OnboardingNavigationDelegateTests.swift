@@ -18,7 +18,7 @@
 //
 
 import XCTest
-import Persistence
+@_spi(Testing) import Persistence
 import Bookmarks
 import DDGSync
 import History
@@ -32,7 +32,6 @@ import SubscriptionTestingUtilities
 import Common
 @testable import DuckDuckGo
 @testable import Core
-import PersistenceTestingUtils
 import PrivacyConfig
 
 // swiftlint:disable force_try

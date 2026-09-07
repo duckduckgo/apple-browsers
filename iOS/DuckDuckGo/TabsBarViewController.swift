@@ -349,23 +349,57 @@ class TabsBarViewController: UIViewController {
 
     func refresh(tabsModel: TabsModelManaging?, scrollToSelected: Bool = false) {
         self.tabsModel = tabsModel
-
-        tabSwitcherButton.isAccessibilityElement = true
-        tabSwitcherButton.accessibilityLabel = UserText.tabSwitcherAccessibilityLabel
-        tabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabsCount)
-
         recomputeItemSize()
         reloadData()
         fireUsageDailyPixels()
+        if scrollToSelected { scrollToSelectedTab() }
+    }
 
-        if scrollToSelected {
-            DispatchQueue.main.async {
-                if let currentIndex = self.currentIndex {
-                    self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: [], animated: true)
-                }
-            }
+    /// Restyles visible cells in place instead of reloading (a reload recycles cells hosting the pointer
+    /// effect and flashes the hover highlight on the wrong tab). Falls back to `refresh` on add/remove.
+    func refreshStyleInPlace(tabsModel: TabsModelManaging?, scrollToSelected: Bool = false) {
+        guard let tabsModel, tabsModel.count == collectionView.numberOfItems(inSection: 0) else {
+            refresh(tabsModel: tabsModel, scrollToSelected: scrollToSelected)
+            return
         }
+        self.tabsModel = tabsModel
+        refreshVisibleCellStyles()
+        refreshTabSwitcherButton()
+        if scrollToSelected { scrollToSelectedTab() }
+    }
 
+    /// Deletes one cell instead of reloading, so surviving cells keep their pointer state. Must run
+    /// before `updateCurrentTab()` on the close path so the follow-up restyle stays in place.
+    func removeTab(at index: Int, tabsModel: TabsModelManaging?) {
+        let displayedCount = collectionView.numberOfItems(inSection: 0)
+        guard let tabsModel, index < displayedCount, tabsModel.count == displayedCount - 1 else {
+            refresh(tabsModel: tabsModel, scrollToSelected: true)
+            return
+        }
+        self.tabsModel = tabsModel
+        // deleteItems animates by default; suppress it to match reloadData()'s instant update.
+        UIView.performWithoutAnimation {
+            collectionView.deleteItems(at: [IndexPath(item: index, section: 0)])
+        }
+        recomputeItemSize()
+        refreshVisibleCellStyles()
+        refreshTabSwitcherButton()
+    }
+
+    private func refreshTabSwitcherButton() {
+        tabSwitcherButton.isAccessibilityElement = true
+        tabSwitcherButton.accessibilityLabel = UserText.tabSwitcherAccessibilityLabel
+        tabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabsCount)
+        tabSwitcherButton.tabCount = tabsCount
+        tabSwitcherButton.isFireMode = (tabManager?.currentBrowsingMode ?? .normal) == .fire
+        tabSwitcherButton.hasUnread = hasUnread
+    }
+
+    private func scrollToSelectedTab() {
+        DispatchQueue.main.async {
+            guard let currentIndex = self.currentIndex else { return }
+            self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: [], animated: true)
+        }
     }
 
     /// After a resize/rotation reflows the strip, nudge the current tab fully into view, but only if
@@ -453,9 +487,7 @@ class TabsBarViewController: UIViewController {
 
     private func reloadData() {
         collectionView.reloadData()
-        tabSwitcherButton.tabCount = tabsCount
-        tabSwitcherButton.isFireMode = (tabManager?.currentBrowsingMode ?? .normal) == .fire
-        tabSwitcherButton.hasUnread = hasUnread
+        refreshTabSwitcherButton()
         flareBackground.update()
     }
 
@@ -914,7 +946,7 @@ extension MainViewController: TabsBarDelegate {
     
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int) {
         if let tab = tabManager.currentTabsModel.get(tabAt: index) {
-            closeTab(tab)
+            closeTab(tab, refreshInPlace: true)
         }
     }
 
@@ -966,11 +998,13 @@ extension MainViewController: TabsBarDelegate {
     }
 
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController) {
+        recordDuckAISessionPendingExit(.fireTabOpened)
         tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
         newTab()
     }
 
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController) {
+        recordDuckAISessionPendingExit(.newTabOpened)
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         newTab()
     }
@@ -978,9 +1012,11 @@ extension MainViewController: TabsBarDelegate {
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController) {
         // Chrome button always opens Duck.ai in a new tab unless current tab is blank — matches macOS.
         if let currentTab, currentTab.tabModel.link != nil {
-            currentTab.openNewChatInNewTab()
+            // Bypasses `openAIChat`, so fire the entry pixel directly.
+            fireAIChatEntryPointPixel(source: .tabsBarButton, opensNewTab: true, hasPrompt: false)
+            currentTab.openNewChatInNewTab(source: .tabsBarButton)
         } else {
-            openAIChat()
+            openAIChat(source: .tabsBarButton)
         }
     }
 
@@ -997,6 +1033,8 @@ extension MainViewController: TabsBarDelegate {
         } else {
             // Route through TabViewController so the cold-restore `contextualChatURL`
             // is honored — presenting the coordinator directly would skip it and open a blank chat.
+            // The sheet bypasses `openAIChat`, so fire the entry pixel directly.
+            fireAIChatEntryPointPixel(source: .contextualChat, opensNewTab: false, hasPrompt: false)
             currentTab.presentContextualAIChatSheet(from: self)
         }
     }

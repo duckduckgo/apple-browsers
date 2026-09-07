@@ -46,6 +46,11 @@
                 "key": "launch_source",
                 "description": "What triggered this foreground: standard, url, shortcut, or user_activity",
                 "type": "string"
+            },
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
+                "enum": ["randomize"]
             }
         ]
     }

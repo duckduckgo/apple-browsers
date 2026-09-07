@@ -50,7 +50,6 @@ class AIChatMenuButtonTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp(featureFlags: [
             "aiChatChromeSidebar": true,
             "aiChatSidebarFloating": true,
@@ -156,6 +155,23 @@ class AIChatMenuButtonTests: UITestCase {
         let tabsAfter = app.tabGroups.matching(identifier: "Tabs").radioButtons.count
         XCTAssertEqual(tabsAfter, tabsBefore + 1,
                        "Clicking 'New Chat' should open a new Duck.ai tab")
+    }
+
+    /// ⌘-click skips the dropdown and starts a new chat directly, as clicking the split button used to.
+    func test_pillCommandClick_opensNewChatTab_withoutDropdown() {
+        addressBarTextField.typeURL(UITests.simpleServedPage(titled: "Command Click Test"))
+        XCTAssertTrue(pillButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        let tabsBefore = app.tabGroups.matching(identifier: "Tabs").radioButtons.count
+
+        XCUIElement.perform(withKeyModifiers: [.command]) {
+            pillButton.click()
+        }
+
+        let tabsAfter = app.tabGroups.matching(identifier: "Tabs").radioButtons.count
+        XCTAssertEqual(tabsAfter, tabsBefore + 1,
+                       "⌘-clicking the pill should open a new Duck.ai tab")
+        XCTAssertFalse(newChatMenuItem.exists, "⌘-click should not present the dropdown")
     }
 
     // MARK: - Close Sidebar

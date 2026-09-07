@@ -40,7 +40,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let hoverUserScript = HoverUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
     let identityTheftRestorationPagesUserScript = IdentityTheftRestorationPagesUserScript()
-    let clickToLoadScript: ClickToLoadUserScript
 
     let contentScopeUserScript: ContentScopeUserScript
     let contentScopeUserScriptIsolated: ContentScopeUserScript
@@ -73,7 +72,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
-        clickToLoadScript = ClickToLoadUserScript()
         // `setupSucceeded == nil` (setup still in flight) is treated as "available"
         // so the launch path is not blocked. Only force the JS fallback when a
         // permanent setup failure has been observed.
@@ -214,7 +212,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
-        contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)
 
         if let aiChatUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)

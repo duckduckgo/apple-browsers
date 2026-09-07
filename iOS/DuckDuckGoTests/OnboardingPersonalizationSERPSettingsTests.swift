@@ -19,8 +19,7 @@
 
 import Testing
 import Foundation
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import SERPSettings
 import AIChat
 @testable import DuckDuckGo

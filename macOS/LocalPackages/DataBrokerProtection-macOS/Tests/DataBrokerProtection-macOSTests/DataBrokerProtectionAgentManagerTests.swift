@@ -146,6 +146,37 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         XCTAssertTrue(startScheduledScansCalled)
     }
 
+    func testQueueLifecycleForwardsToResourceMonitor() {
+        let resourceMonitor = MockResourceMonitor()
+        sut = DataBrokerProtectionAgentManager(
+            eventsHandler: mockEventsHandler,
+            activityScheduler: mockActivityScheduler,
+            ipcServer: mockIPCServer,
+            queueManager: mockQueueManager,
+            dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
+            jobDependencies: mockDependencies,
+            sharedPixelsHandler: mockSharedPixelsHandler,
+            pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
+            agentStopper: mockAgentStopper,
+            configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            authenticationManager: mockAuthenticationManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
+            resourceMonitor: resourceMonitor
+        )
+
+        sut.queueManagerDidStartOperations(mockQueueManager)
+        sut.queueManagerDidFinishOperations(mockQueueManager)
+
+        XCTAssertEqual(resourceMonitor.startCallCount, 1)
+        XCTAssertEqual(resourceMonitor.stopCallCount, 1)
+    }
+
     func testWhenAgentStart_andProfileExists_andUserIsFreemium_thenActivityIsScheduled_andScheduledScanOperationsRun() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
@@ -743,12 +774,12 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 }
 
 struct MockConfigurationFetcher: ConfigurationFetching {
-    func fetch(_ configuration: Configuration, isDebug: Bool) async throws {
-        return
+    func fetch(_ configuration: Configuration, isDebug: Bool) async throws -> ConfigurationFetchResult {
+        return .updated
     }
 
-    func fetch(all configurations: [Configuration]) async throws {
-        return
+    func fetch(all configurations: [Configuration]) async throws -> Set<Configuration> {
+        return Set(configurations)
     }
 }
 
@@ -818,5 +849,18 @@ final class MockEmailConfirmationDataService: EmailConfirmationDataServiceProvid
                       extract: [String],
                       shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData {
         [:]
+    }
+}
+
+private final class MockResourceMonitor: ResourceMonitoring {
+    private(set) var startCallCount = 0
+    private(set) var stopCallCount = 0
+
+    func start() {
+        startCallCount += 1
+    }
+
+    func stop() {
+        stopCallCount += 1
     }
 }

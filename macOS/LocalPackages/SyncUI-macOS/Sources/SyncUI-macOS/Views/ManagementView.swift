@@ -17,6 +17,7 @@
 //
 
 import PreferencesUI_macOS
+import DesignResourcesKit
 import SwiftUI
 import SwiftUIExtensions
 
@@ -50,19 +51,34 @@ public struct ManagementView<ViewModel>: View where ViewModel: ManagementViewMod
                 .padding(.bottom, -22)
 
             if model.isSimplifiedSyncSetupV2Enabled {
-                StatusIndicatorView(status: syncStatus, isLarge: true)
-            }
-
-            if model.isSyncEnabled {
-                SyncEnabledView<ViewModel>()
-                    .environmentObject(model)
-            } else if model.isSimplifiedSyncSetupV2Enabled {
-                SyncSetupViewV2<ViewModel>()
-                    .environmentObject(model)
+                simplifiedSyncSetupV2Content
             } else {
-                SyncSetupView<ViewModel>()
-                    .environmentObject(model)
+                legacyContent
             }
+        }
+    }
+
+    @ViewBuilder
+    private var simplifiedSyncSetupV2Content: some View {
+        StatusIndicatorView(status: syncStatus, isLarge: true)
+
+        if model.isSyncEnabled {
+            SyncEnabledViewV2<ViewModel>()
+                .environmentObject(model)
+        } else {
+            SyncSetupViewV2<ViewModel>()
+                .environmentObject(model)
+        }
+    }
+
+    @ViewBuilder
+    private var legacyContent: some View {
+        if model.isSyncEnabled {
+            SyncEnabledView<ViewModel>()
+                .environmentObject(model)
+        } else {
+            SyncSetupView<ViewModel>()
+                .environmentObject(model)
         }
     }
 }
@@ -81,7 +97,8 @@ struct ManagementView_Previews: PreviewProvider {
             .init(name: "Enabled", state: .enabled)
         ],
         configure: { model in
-            ScrollView {
+            DesignSystemRebrand.isAppRebranded = { true }
+            return ScrollView {
                 ManagementView(model: model)
                     .padding()
             }

@@ -110,15 +110,34 @@ final class ConfigurationFetcherTests: XCTestCase {
         XCTAssertNil(store.loadEtag(for: .privacyConfiguration))
     }
 
-    func testFetchConfigurationWhenResponseIsNotModifiedThenNoDataStored() async {
+    func testFetchConfigurationWhenResponseIsNotModifiedThenReturnsNotModifiedAndDoesNotStoreData() async throws {
         MockURLProtocol.requestHandler = { _ in ( HTTPURLResponse.notModified, nil) }
         let store = MockStore()
 
         let fetcher = makeConfigurationFetcher(store: store)
-        try? await fetcher.fetch(.privacyConfiguration)
+        let result = try await fetcher.fetch(.privacyConfiguration)
 
+        XCTAssertEqual(result, .notModified)
         XCTAssertNil(store.loadEtag(for: .privacyConfiguration))
         XCTAssertNil(store.loadData(for: .privacyConfiguration))
+    }
+
+    func testFetchConfigurationWhenResponseContainsDataThenReturnsUpdated() async throws {
+        MockURLProtocol.requestHandler = { _ in (HTTPURLResponse.ok, self.privacyConfigurationData) }
+        let fetcher = makeConfigurationFetcher()
+
+        let result = try await fetcher.fetch(.privacyConfiguration)
+
+        XCTAssertEqual(result, .updated)
+    }
+
+    func testFetchDebugConfigurationWhenResponseIsNotModifiedThenReturnsNotModified() async throws {
+        MockURLProtocol.requestHandler = { _ in (HTTPURLResponse.notModified, nil) }
+        let fetcher = makeConfigurationFetcher()
+
+        let result = try await fetcher.fetch(.privacyConfiguration, isDebug: true)
+
+        XCTAssertEqual(result, .notModified)
     }
 
     func testFetchConfigurationWhenEtagAndDataStoredThenEtagAddedToRequest() async {
@@ -208,6 +227,45 @@ final class ConfigurationFetcherTests: XCTestCase {
         }
         XCTAssertNil(store.loadData(for: .bloomFilterBinary))
         XCTAssertNil(store.loadData(for: .bloomFilterSpec))
+    }
+
+    func testFetchAllWhenAssetsAreNotModifiedThenNoConfigurationsAreReturned() async throws {
+        MockURLProtocol.requestHandler = { _ in (HTTPURLResponse.notModified, nil) }
+        let store = MockStore()
+        let fetcher = makeConfigurationFetcher(store: store)
+
+        let updatedConfigurations = try await fetcher.fetch(all: [.bloomFilterBinary, .bloomFilterSpec])
+
+        XCTAssertTrue(updatedConfigurations.isEmpty)
+    }
+
+    func testFetchAllWhenAssetsAreModifiedThenAllFetchedConfigurationsAreReturned() async throws {
+        MockURLProtocol.requestHandler = { _ in (HTTPURLResponse.ok, Data("Updated".utf8)) }
+        let store = MockStore()
+        let fetcher = makeConfigurationFetcher(store: store)
+
+        let updatedConfigurations = try await fetcher.fetch(all: [.bloomFilterBinary, .bloomFilterSpec])
+
+        XCTAssertEqual(updatedConfigurations, Set([.bloomFilterBinary, .bloomFilterSpec]))
+    }
+
+    func testFetchAllWhenOneAssetIsModifiedThenOnlyThatConfigurationIsReturned() async throws {
+        let binaryURL = URL(string: "https://example.com/bloom-filter.bin")!
+        let specificationURL = URL(string: "https://example.com/bloom-filter.json")!
+        configurationURLProvider.urlsByConfiguration = [
+            .bloomFilterBinary: binaryURL,
+            .bloomFilterSpec: specificationURL
+        ]
+        MockURLProtocol.requestHandler = { request in
+            request.url == binaryURL
+                ? (HTTPURLResponse.ok, Data("Updated".utf8))
+                : (HTTPURLResponse.notModified, nil)
+        }
+        let fetcher = makeConfigurationFetcher()
+
+        let updatedConfigurations = try await fetcher.fetch(all: [.bloomFilterBinary, .bloomFilterSpec])
+
+        XCTAssertEqual(updatedConfigurations, [.bloomFilterBinary])
     }
 
     func testFetchAllWhenOneAssetFailsToValidateThenOtherIsNotStoredAndErrorIsThrown() async {

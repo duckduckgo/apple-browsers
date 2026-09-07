@@ -33,7 +33,7 @@ struct ReturnSessionWideEventDataTests {
         #expect(ReturnSessionWideEventData.metadata.pixelName == "return_session")
         #expect(ReturnSessionWideEventData.metadata.featureName == "return-session")
         #expect(ReturnSessionWideEventData.metadata.type == "ios-return-session")
-        #expect(ReturnSessionWideEventData.metadata.version == "1.0.0")
+        #expect(ReturnSessionWideEventData.metadata.version == "1.2.0")
     }
 
     // MARK: - jsonParameters
@@ -48,6 +48,7 @@ struct ReturnSessionWideEventDataTests {
         #expect(params["feature.data.ext.focused"] as? Bool == false)
         #expect(params["feature.data.ext.time_away_ms_bucketed"] == nil)
         #expect(params["feature.data.ext.status_reason"] == nil)
+        #expect(params["feature.data.ext.source"] == nil)
         #expect(params["feature.data.ext.session_duration_ms_bucketed"] == nil)
         #expect(params["feature.data.ext.time_to_first_interaction_ms_bucketed"] == nil)
         #expect(params["feature.data.ext.page_engaged"] as? Bool == false)
@@ -99,6 +100,55 @@ struct ReturnSessionWideEventDataTests {
             data.statusReason = reason
             #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == reason.rawValue)
         }
+    }
+
+    @available(iOS 16, *)
+    @Test("Prompt source emits its value when set", .timeLimit(.minutes(1)))
+    func promptSourceEmitsWhenSet() {
+        let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true)
+        data.statusReason = .aiPromptSubmitted
+        data.promptOrigin = AIChatEntryPointSource.addressBarPrompt.rawValue
+
+        let params = data.jsonParameters()
+        #expect(params["feature.data.ext.status_reason"] as? String == "ai_prompt_submitted")
+        #expect(params["feature.data.ext.source"] as? String == "address_bar_prompt")
+        #expect(params["feature.data.ext.prompt_origin"] == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("Prompt source reports unknown for unattributed AI submissions", .timeLimit(.minutes(1)))
+    func promptSourceReportsUnknownWhenUnattributed() {
+        let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true)
+        data.statusReason = .aiPromptSubmitted
+
+        #expect(data.jsonParameters()["feature.data.ext.source"] as? String == "unknown")
+    }
+
+    @available(iOS 16, *)
+    @Test("Prompt source is absent when nil", .timeLimit(.minutes(1)))
+    func promptSourceAbsentWhenNil() {
+        let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true)
+        data.statusReason = .searchSubmitted
+
+        #expect(data.jsonParameters()["feature.data.ext.source"] == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("Prompt source is omitted for non-AI terminals", .timeLimit(.minutes(1)))
+    func promptSourceOmittedForNonAITerminal() {
+        let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true)
+        data.statusReason = .searchSubmitted
+        data.promptOrigin = AIChatEntryPointSource.addressBarPrompt.rawValue
+
+        #expect(data.jsonParameters()["feature.data.ext.source"] == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("Return sessions are sampled at 100 percent", .timeLimit(.minutes(1)))
+    func returnSessionsUseFullSampling() {
+        let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: false)
+
+        #expect(data.globalData.sampleRate == 1.0)
     }
 
     @available(iOS 16, *)
@@ -192,6 +242,7 @@ struct ReturnSessionWideEventDataTests {
                                                   timeAwayMs: 120_000,
                                                   focused: true)
         original.statusReason = .returnToPageTapped
+        original.promptOrigin = AIChatEntryPointSource.voice.rawValue
         original.sessionInterval.end = start.addingTimeInterval(5)
         original.firstInteractionInterval.end = start.addingTimeInterval(1)
         original.pageEngaged = true
@@ -209,6 +260,7 @@ struct ReturnSessionWideEventDataTests {
         #expect(decoded.timeAwayMs == 120_000)
         #expect(decoded.focused == true)
         #expect(decoded.statusReason == .returnToPageTapped)
+        #expect(decoded.promptOrigin == AIChatEntryPointSource.voice.rawValue)
         #expect(decoded.sessionInterval.start == start)
         #expect(decoded.sessionInterval.end == start.addingTimeInterval(5))
         #expect(decoded.firstInteractionInterval.start == start)

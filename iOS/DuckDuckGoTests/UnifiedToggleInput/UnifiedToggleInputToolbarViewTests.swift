@@ -114,6 +114,57 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertTrue(selectedToolClearButton?.isEnabled ?? false)
     }
 
+    /// A spent allowance leaves the card's own CTA as the only live control.
+    func test_isInputBlockedByUsageLimit_disablesToolbarConfigurationButtons() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isImageButtonEnabled = true
+        sut.selectedTool = .webSearch
+
+        let attachmentButton = findButton(accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel, in: sut)
+        let toolsButton = findButton(accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel, in: sut)
+        let reasoningButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.Reasoning", in: sut)
+        let modelChipButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.ModelChip", in: sut)
+
+        sut.isInputBlockedByUsageLimit = true
+
+        XCTAssertFalse(attachmentButton?.isEnabled ?? true)
+        XCTAssertFalse(toolsButton?.isEnabled ?? true)
+        XCTAssertFalse(reasoningButton?.isEnabled ?? true)
+        XCTAssertFalse(modelChipButton?.isEnabled ?? true)
+
+        sut.isInputBlockedByUsageLimit = false
+
+        XCTAssertTrue(attachmentButton?.isEnabled ?? false)
+        XCTAssertTrue(toolsButton?.isEnabled ?? false)
+        XCTAssertTrue(reasoningButton?.isEnabled ?? false)
+        XCTAssertTrue(modelChipButton?.isEnabled ?? false)
+    }
+
+    func test_isInputBlockedByUsageLimit_disablesTheSubmitButton() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+
+        let submitButton = findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut)
+        XCTAssertTrue(submitButton?.isEnabled ?? false)
+
+        sut.isInputBlockedByUsageLimit = true
+
+        XCTAssertFalse(submitButton?.isEnabled ?? true)
+    }
+
+    /// Voice is a way into a chat the allowance can't pay for either, so it greys out with submit.
+    func test_isInputBlockedByUsageLimit_disablesTheVoiceButton() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isAIVoiceChatActive = true
+
+        let submitButton = findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut)
+        XCTAssertTrue(submitButton?.isEnabled ?? false, "Voice is live on an empty input")
+
+        sut.isInputBlockedByUsageLimit = true
+
+        XCTAssertFalse(submitButton?.isEnabled ?? true)
+    }
+
     func test_isGenerating_doesNotReenableUnavailableAttachmentButton() {
         let sut = UnifiedToggleInputToolbarView()
         sut.isImageButtonEnabled = false
@@ -150,7 +201,7 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         }
     }
 
-    func testWhenUpdatedModelPickerIsDisabledThenModelChipUsesMenuAsPrimaryAction() {
+    func testWhenModelPickerMenuIsSetThenModelChipUsesMenuAsPrimaryAction() {
         let sut = UnifiedToggleInputToolbarView()
         sut.modelPickerMenu = UIMenu(children: [UIAction(title: "Model") { _ in }])
 
@@ -159,50 +210,15 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertTrue(modelChipButton?.showsMenuAsPrimaryAction ?? false)
     }
 
-    func testWhenUpdatedModelPickerIsEnabledThenModelChipRoutesTouchDownToUpdatedPickerCallback() {
+    func testWhenModelChipReceivesTouchDownThenRoutesToShownCallback() {
         let sut = UnifiedToggleInputToolbarView()
         sut.modelPickerMenu = UIMenu(children: [UIAction(title: "Model") { _ in }])
-        sut.usesUpdatedModelPickerPresentation = true
-        var updatedModelPickerCallbackCount = 0
         var modelPickerShownCallbackCount = 0
-        sut.onUpdatedModelPickerTapped = { updatedModelPickerCallbackCount += 1 }
         sut.onModelPickerShown = { modelPickerShownCallbackCount += 1 }
 
         let modelChipButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.ModelChip", in: sut)
         modelChipButton?.sendActions(for: .touchDown)
 
-        XCTAssertFalse(modelChipButton?.showsMenuAsPrimaryAction ?? true)
-        XCTAssertNil(modelChipButton?.menu)
-        XCTAssertNotNil(sut.modelPickerMenu)
-        XCTAssertEqual(updatedModelPickerCallbackCount, 1)
-        XCTAssertEqual(modelPickerShownCallbackCount, 0)
-    }
-
-    func testWhenUpdatedModelPickerIsEnabledThenProgrammaticPresentationRoutesToCallback() {
-        let sut = UnifiedToggleInputToolbarView()
-        sut.modelPickerMenu = UIMenu(children: [UIAction(title: "Model") { _ in }])
-        sut.usesUpdatedModelPickerPresentation = true
-        var callbackCount = 0
-        sut.onUpdatedModelPickerTapped = { callbackCount += 1 }
-
-        let didPresent = sut.presentModelPickerMenu()
-
-        XCTAssertTrue(didPresent)
-        XCTAssertEqual(callbackCount, 1)
-    }
-
-    func testWhenUpdatedModelPickerIsDisabledThenModelChipRoutesTouchDownToShownCallback() {
-        let sut = UnifiedToggleInputToolbarView()
-        sut.modelPickerMenu = UIMenu(children: [UIAction(title: "Model") { _ in }])
-        var updatedModelPickerCallbackCount = 0
-        var modelPickerShownCallbackCount = 0
-        sut.onUpdatedModelPickerTapped = { updatedModelPickerCallbackCount += 1 }
-        sut.onModelPickerShown = { modelPickerShownCallbackCount += 1 }
-
-        let modelChipButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.ModelChip", in: sut)
-        modelChipButton?.sendActions(for: .touchDown)
-
-        XCTAssertEqual(updatedModelPickerCallbackCount, 0)
         XCTAssertEqual(modelPickerShownCallbackCount, 1)
     }
 

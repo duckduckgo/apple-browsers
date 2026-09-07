@@ -57,6 +57,7 @@ final class UTIAttachmentController {
         let supportsImageUpload: () -> Bool
         let supportedFileTypes: () -> [String]
         let hasSelectedModel: () -> Bool
+        let keepsUnavailableAttachmentButtonVisible: () -> Bool
         let attachmentLimits: () -> AIChatAttachmentTierLimits?
         let currentTabUID: () -> TabUID?
         let isPageContextAttachable: () -> Bool?
@@ -397,13 +398,22 @@ final class UTIAttachmentController {
         )
     }
 
+    /// Opens the system file picker directly for the promo "add file" CTA. No-ops when files can't be
+    /// attached to the active chat.
+    func presentFilePicker() {
+        guard canPresentFilePicker, !allowedFileUTTypes.isEmpty, !view.isGenerating(),
+              let presenterVC = environment.presenterViewController() else { return }
+        presenter.presentFilePicker(from: presenterVC, allowedFileTypes: allowedFileUTTypes)
+    }
+
     func updateAttachButtonPresentation() {
         let policy = environment.policy()
         let supportsPageContextAttachment = environment.isContextualChatState() && environment.pageContextAttachHandler() != nil && (environment.isPageContextAttachable() ?? true)
         let supportsAttachments = environment.supportsImageUpload() || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment
         let hasAvailableAttachmentAction = policy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment
         let canAttachMore = hasAvailableAttachmentAction && !view.isGenerating()
-        view.setImageButtonHidden(!supportsAttachments)
+        let showsUnavailableAttachmentButton = environment.hasSelectedModel() && environment.keepsUnavailableAttachmentButtonVisible()
+        view.setImageButtonHidden(!supportsAttachments && !showsUnavailableAttachmentButton)
         view.setImageButtonEnabled(canAttachMore)
         view.setAttachmentMenu(supportsAttachments && canAttachMore ? makeAttachmentMenu() : nil)
     }
@@ -534,7 +544,7 @@ extension UTIAttachmentController: UnifiedToggleInputPasteDelegate {
     }
 
     /// Reports a load-time-rejected paste as an error banner (no chip, no revalidation) using the reason the loader recorded, so the message and pixel reflect why it was actually rejected.
-    func reportRejectedPaste(reason: PasteRejectionReason) {
+    func reportRejectedPastedFiles(reason: PasteFileRejectionReason) {
         let files = environment.attachmentLimits()?.files
         let message: String
         let pixelReason: String
@@ -552,6 +562,18 @@ extension UTIAttachmentController: UnifiedToggleInputPasteDelegate {
         }
         pixelReporter.reportFileValidationFailed(reason: pixelReason, source: "paste")
         presentTransientValidationError(message)
+    }
+
+    /// Recorded even when there is no capacity message to show, so a silently dropped paste is still visible in metrics.
+    func reportRejectedPastedImages(reason: PasteImageRejectionReason) {
+        let pixelReason: String
+        switch reason {
+        case .capacityReached:
+            pixelReason = "count_exceeded"
+        case .allowanceTruncated:
+            pixelReason = "paste_truncated"
+        }
+        pixelReporter.reportImageValidationFailed(reason: pixelReason, source: "paste")
     }
 
     func presentPasteError(_ message: String) {

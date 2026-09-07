@@ -380,7 +380,11 @@ final class SubscriptionFlowViewModel: ObservableObject {
         if webViewModel.url != subscriptionManager.url(for: currentSubscriptionURL).forComparison() {
             // Only enroll users into experiment for initial purchase offer.
             let urlToLoad = isInitialPurchaseOfferScreen
-                ? MonthlyFreeTrialExperiment.appendingCohortParameter(to: initialURL, resolvedBy: featureFlagger)
+                ? MonthlyFreeTrialExperiment.appendingCohortParameter(
+                    to: initialURL,
+                    resolvedBy: featureFlagger,
+                    isEligibleForFreeTrial: subscriptionManager.isUserEligibleForFreeTrial()
+                  )
                 : initialURL
             self.webViewModel.navigationCoordinator.navigateTo(url: urlToLoad)
         }

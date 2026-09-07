@@ -19,8 +19,7 @@
 
 import AIChat
 import Foundation
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import Testing
 @testable import DuckDuckGo
 
@@ -832,7 +831,7 @@ struct DuckAIWideEventInstrumentationTests {
         #expect(DuckAIPromptWideEventData.metadata.pixelName == "duckai_prompt")
         #expect(DuckAIPromptWideEventData.metadata.featureName == "duckai-prompt")
         #expect(DuckAIPromptWideEventData.metadata.type == "ios-duckai-prompt")
-        #expect(DuckAIPromptWideEventData.metadata.version == "1.1.0")
+        #expect(DuckAIPromptWideEventData.metadata.version == "1.2.0")
     }
 
     @available(iOS 16, *)

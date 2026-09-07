@@ -46,4 +46,14 @@ enum DuckAIAddressBarEntry: Equatable {
         guard isFloatingInputAvailable, !hasChatToReopen else { return .contextualSheet }
         return .menu
     }
+
+    /// A surface is open, or this tab has a chat to come back to. Beside `resolve` and over the same
+    /// inputs so the glyph can't contradict what a tap does.
+    static func showsContextualGlyph(isContextualModeAvailable: Bool,
+                                     isHomeTab: Bool,
+                                     hasChatToReopen: Bool,
+                                     isContextualSurfacePresented: Bool) -> Bool {
+        guard isContextualModeAvailable, !isHomeTab else { return false }
+        return hasChatToReopen || isContextualSurfacePresented
+    }
 }

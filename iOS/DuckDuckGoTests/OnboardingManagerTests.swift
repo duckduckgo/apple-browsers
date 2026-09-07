@@ -18,8 +18,7 @@
 //
 
 import Onboarding
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import Testing
 import class UIKit.UIDevice
@@ -536,7 +535,7 @@ struct OnboardingStepsForConfiguredFlow {
         #expect(OnboardingIntroStep.aiModelSelection.resumeStep == .aiModelSelection)
         #expect(OnboardingIntroStep.toggleInputModeSelection.resumeStep == .toggleInputModeSelection)
         #expect(OnboardingIntroStep.keepDuckAISelection.resumeStep == .keepDuckAISelection)
-        #expect(OnboardingIntroStep.duckPlayerSelection.resumeStep == .duckPlayerSelection)
+        #expect(OnboardingIntroStep.adBlockingPersonalization.resumeStep == .adBlockingPersonalization)
         #expect(OnboardingIntroStep.setDefaultBrowser.resumeStep == .setDefaultBrowser)
         #expect(OnboardingIntroStep.aiIntro.resumeStep == .aiIntro)
         #expect(OnboardingIntroStep.addToDockPromo.resumeStep == .addToDockPromo)

@@ -25,6 +25,7 @@ import os.log
 import Foundation
 import PrivacyConfig
 import SERPSettings
+import SitePermissions
 import SpecialErrorPages
 import Subscription
 import TrackerRadarKit
@@ -59,7 +60,10 @@ final class UserScripts: UserScriptsProvider {
 
     private(set) var faviconScript = FaviconUserScript()
     private(set) var findInPageScript = FindInPageUserScript()
+
+    private(set) var selectionFrameScript: SelectionFrameUserScript
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
+    private(set) var mediaCaptureUserScript: MediaCaptureUserScript?
     private(set) var printingSubfeature = PrintingSubfeature()
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
 
@@ -68,10 +72,14 @@ final class UserScripts: UserScriptsProvider {
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         mediaCaptureUserScript: MediaCaptureUserScript? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
+
+        selectionFrameScript = SelectionFrameUserScript()
+        self.mediaCaptureUserScript = mediaCaptureUserScript
 
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
@@ -153,6 +161,7 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: selectionFrameScript)
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
         }
@@ -181,6 +190,7 @@ final class UserScripts: UserScriptsProvider {
         var scripts: [UserScript?] = [
             findInPageScript,
             fullScreenVideoScript,
+            mediaCaptureUserScript,
             autofillUserScript,
             loginFormDetectionScript,
             contentScopeUserScript,

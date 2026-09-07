@@ -24,7 +24,7 @@ import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
-@Suite("URL Drag Preview Provider Tests", .disabled("Snapshot testing is opt-in until the sync automations land"))
+@Suite("URL Drag Preview Provider Tests")
 final class URLDragPreviewProviderTests {
 
     @available(macOS 13, *)

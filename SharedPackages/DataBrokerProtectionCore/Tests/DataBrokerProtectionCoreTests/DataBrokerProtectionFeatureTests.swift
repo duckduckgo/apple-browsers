@@ -185,6 +185,27 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenActionCannotContinue_thenReportsCancellation() async {
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate,
+                                              executionConfig: BrokerJobExecutionConfig(),
+                                              shouldContinueActionHandler: { false })
+        sut.with(broker: mockBroker)
+        let action = NavigateAction(id: "navigate-1", actionType: .navigate, url: "")
+        let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
+        let cancellationExpectation = expectation(description: "Cancellation should be reported")
+        mockCSSDelegate.onErrorCallback = { error in
+            if error as? DataBrokerProtectionError == .cancelled {
+                cancellationExpectation.fulfill()
+            }
+        }
+
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params)
+
+        await fulfillment(of: [cancellationExpectation], timeout: 5)
+        XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError, .cancelled)
+    }
+
+    @MainActor
     func testWhenActionCompletesBeforeTimeout_thenNoTimeoutErrorIsSent() async {
         let executionConfig = BrokerJobExecutionConfig(cssActionTimeout: 0.05)
         let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: executionConfig, shouldContinueActionHandler: { true })

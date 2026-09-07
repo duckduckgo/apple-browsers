@@ -19,8 +19,7 @@
 import Common
 import FoundationExtensions
 import Foundation
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import SubscriptionTestingUtilities
 import XCTest
 
@@ -170,6 +169,7 @@ final class WideEventServiceTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "test.subscription",
             freeTrialEligible: true,
+            entryPoint: .unknown,
             createAccountDuration: WideEvent.MeasuredInterval(start: Date(), end: Date()),
             contextData: WideEventContextData()
         )
@@ -300,6 +300,7 @@ final class WideEventServiceTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "subscription",
             freeTrialEligible: true,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
     }
@@ -309,6 +310,7 @@ final class WideEventServiceTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "subscription",
             freeTrialEligible: true,
+            entryPoint: .unknown,
             activateAccountDuration: WideEvent.MeasuredInterval(start: startDate, end: nil),
             contextData: WideEventContextData()
         )

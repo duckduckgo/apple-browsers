@@ -135,6 +135,10 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let aiModelSections = await modelsProvider?.fetchAIModelSections()
         let customize = configProvider.customizeResponsesState(requestingWebView: original.webView)
+        // An NTP that loads already in Duck.ai mode never sends `setConfig`, so it needs its own read.
+        if configProvider.mode == .ai {
+            configProvider.refreshUsageLimits(requestingWebView: original.webView)
+        }
         return NewTabPageDataModel.OmnibarConfig(
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
@@ -168,6 +172,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             return nil
         }
         configProvider.mode = config.mode
+        if config.mode == .ai {
+            configProvider.refreshUsageLimits(requestingWebView: original.webView)
+        }
         configProvider.isAIChatShortcutEnabled = config.enableAi
         if let showCustomizePopover = config.showCustomizePopover {
             configProvider.showCustomizePopover = showCustomizePopover
@@ -253,18 +260,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             NewTabPageDataModel.AIModelSection(
                 header: section.header,
                 items: section.items.map { item in
-                    NewTabPageDataModel.AIModelItem(
-                        id: item.id,
-                        name: item.name,
-                        shortName: item.shortName,
-                        isAvailable: item.isAvailable,
-                        supportsImageUpload: item.supportsImageUpload,
-                        supportedTools: item.supportedTools,
-                        accessTier: item.accessTier,
-                        reasoningEfforts: [],
-                        supportedFileTypes: item.supportedFileTypes,
-                        upsell: item.upsell
-                    )
+                    var copy = item
+                    copy.reasoningEfforts = []
+                    return copy
                 }
             )
         }

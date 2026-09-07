@@ -66,6 +66,7 @@ public enum Screen: String, Decodable, CaseIterable {
     case primaryScreen
 
     case breakageForm
+    case breakageFormFinalStep
     case categorySelection
     case categoryTypeSelection
     case choiceBreakageForm

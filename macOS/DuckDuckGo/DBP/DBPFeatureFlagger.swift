@@ -23,7 +23,7 @@ import PrivacyConfig
 import FeatureFlags_macOS
 import PixelKit
 
-final class DBPFeatureFlagger: DBPFeatureFlagging {
+final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
     fileprivate let featureFlagger: FeatureFlagger
 
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
@@ -44,8 +44,16 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
     }
 
+    var isPerformanceMetricsOn: Bool {
+        featureFlagger.isFeatureOn(.dbpPerformanceMetrics)
+    }
+
     var isExtractedProfileRefreshOn: Bool {
         featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
+    }
+
+    var isSchedulerDeferralHandlingEnabled: Bool {
+        featureFlagger.isFeatureOn(.dbpSchedulerDeferralHandling)
     }
 
     init(featureFlagger: FeatureFlagger) {

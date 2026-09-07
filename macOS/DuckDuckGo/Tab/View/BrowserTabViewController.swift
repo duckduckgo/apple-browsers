@@ -878,7 +878,7 @@ final class BrowserTabViewController: NSViewController {
     private func handleContextualOnboardingOnManualDismiss(dialogType: ContextualDialogType) {
         let displayedDialogType = displayedDialogType(forRoot: dialogType)
         onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: displayedDialogType)
-        if displayedDialogType == .highFive || displayedDialogType == .subscriptionUpsell,
+        if displayedDialogType == .subscriptionUpsell,
            onboardingDialogTypeProvider.lastDialog == displayedDialogType {
             onboardingDialogTypeProvider.gotItPressed()
         }

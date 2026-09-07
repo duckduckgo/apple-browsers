@@ -123,17 +123,15 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
 
     @MainActor
     func testWhenNativeAutoconsentPixelFiresThenHeuristicModeMatchesInitConfiguration() {
-        let cases: [(preference: CookiePopupPreference, preferenceSettingEnabled: Bool, heuristicEnabled: Bool, expectedMode: String)] = [
-            (.default, false, true, "reject"),
-            (.default, true, true, "tier1"),
-            (.max, true, true, "tier2"),
-            (.default, true, false, "off"),
+        let cases: [(preference: CookiePopupPreference, heuristicEnabled: Bool, expectedMode: String)] = [
+            (.default, true, "tier1"),
+            (.max, true, "tier2"),
+            (.default, false, "off"),
         ]
 
         for testCase in cases {
             assertHeuristicMode(
                 preference: testCase.preference,
-                preferenceSettingEnabled: testCase.preferenceSettingEnabled,
                 heuristicEnabled: testCase.heuristicEnabled,
                 expectedMode: testCase.expectedMode
             )
@@ -394,13 +392,9 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
 
     @MainActor
     private func assertHeuristicMode(preference: CookiePopupPreference,
-                                     preferenceSettingEnabled: Bool,
                                      heuristicEnabled: Bool,
                                      expectedMode: String) {
         let config = MockPrivacyConfiguration()
-        config.isSubfeatureKeyEnabled = { subfeature, _ in
-            subfeature.rawValue == AutoconsentSubfeature.cookiePopupPreferenceSetting.rawValue && preferenceSettingEnabled
-        }
         let preferences = MockAutoconsentPreferences()
         preferences.cookiePopupPreference = preference
         let enabledFeatureFlags: [FeatureFlag] = heuristicEnabled ? [.heuristicAction] : []

@@ -20,12 +20,11 @@
 
 import Foundation
 import XCTest
-import Persistence
+@_spi(Testing) import Persistence
 import CoreData
 import Bookmarks
 @testable import DuckDuckGo
 @testable import Core
-import PersistenceTestingUtils
 
 class DummyCoreDataStoreMock: CoreDataStoring {
 

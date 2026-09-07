@@ -50,7 +50,7 @@ final class UserBackgroundImagesManager: UserBackgroundImagesManaging {
     let maximumNumberOfImages: Int
     let storageLocation: URL
     let thumbnailsStorageLocation: URL
-    private let sendPixel: (PixelKitEvent) -> Void
+    private let sendPixel: (PixelKit.Event) -> Void
     private let imageProcessor: ImageProcessing
     private var availableImagesSortedByAccessTime: [UserBackgroundImage] = []
 
@@ -87,7 +87,7 @@ final class UserBackgroundImagesManager: UserBackgroundImagesManaging {
         maximumNumberOfImages: Int,
         applicationSupportDirectory: URL,
         imageProcessor: ImageProcessing = ImageProcessor(),
-        sendPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0) }
+        sendPixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0) }
     ) {
         assert(maximumNumberOfImages > 0, "maximumNumberOfImages must be greater than 0")
         self.maximumNumberOfImages = maximumNumberOfImages

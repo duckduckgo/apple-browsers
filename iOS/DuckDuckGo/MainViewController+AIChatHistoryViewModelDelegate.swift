@@ -24,6 +24,9 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
 
     func viewModelDidRequestOpenNewChat() {
         if let tab = currentTab, tab.isAITab {
+            fireAIChatEntryPointPixel(source: .chatHistoryNewChat, opensNewTab: false, hasPrompt: false)
+            stampDuckAIEntrySourceOnCurrentTab(.chatHistoryNewChat)
+            recordDuckAISessionNewChatCreatedOnCurrentTab()
             unifiedToggleInputCoordinator?.startNewChat()
             tab.submitStartChatAction()
             dismiss(animated: true) { [weak self] in
@@ -31,7 +34,7 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
             }
         } else {
             dismiss(animated: true) { [weak self] in
-                self?.openAIChat()
+                self?.openAIChat(source: .chatHistoryNewChat)
             }
         }
     }

@@ -481,7 +481,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             purchasePlatform: .appStore,
             subscriptionIdentifier: subscriptionSelection.id,
             freeTrialEligible: freeTrialEligible,
-            funnelName: subscriptionAttributionOrigin)
+            entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: subscriptionAttributionOrigin))
 
         self.purchaseWideEventData = data
         wideEvent.startFlow(data)

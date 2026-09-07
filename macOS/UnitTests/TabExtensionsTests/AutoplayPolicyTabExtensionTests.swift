@@ -267,9 +267,8 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
         mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         let ext = makeExtension()
         let script = WebTelemetryUserScript()
-        let payload = WebTelemetryUserScript.VideoPlaybackPayload(userInteraction: false)
 
-        ext.webTelemetryUserScript(script, didDetectVideoPlayback: payload, in: webView)
+        ext.webTelemetryUserScript(script, didDetectVideoPlaybackIn: webView)
 
         XCTAssertTrue(ext.videoPlaybackDetected)
     }
@@ -278,15 +277,55 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
         mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         let ext = makeExtension()
         let script = WebTelemetryUserScript()
-        let payload = WebTelemetryUserScript.VideoPlaybackPayload(userInteraction: false)
 
-        ext.webTelemetryUserScript(script, didDetectVideoPlayback: payload, in: webView)
+        ext.webTelemetryUserScript(script, didDetectVideoPlaybackIn: webView)
         XCTAssertTrue(ext.videoPlaybackDetected)
 
         var prefs = NavigationPreferences.default
         _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
 
         XCTAssertFalse(ext.videoPlaybackDetected)
+    }
+
+    func testVideoPlaybackAndAutoplayAreTrackedIndependently() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+        let ext = makeExtension()
+        let script = WebTelemetryUserScript()
+
+        ext.webTelemetryUserScript(script, didDetectVideoPlaybackIn: webView)
+
+        XCTAssertTrue(ext.videoPlaybackDetected)
+        XCTAssertFalse(ext.videoAutoplayDetected, "Playback must not imply autoplay")
+
+        ext.webTelemetryUserScript(script, didDetectVideoAutoplayIn: webView)
+
+        XCTAssertTrue(ext.videoAutoplayDetected)
+    }
+
+    // MARK: - Video autoplay detection
+
+    func testWhenVideoAutoplayDetectedThenPublishedPropertyIsTrue() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+        let ext = makeExtension()
+        let script = WebTelemetryUserScript()
+
+        ext.webTelemetryUserScript(script, didDetectVideoAutoplayIn: webView)
+
+        XCTAssertTrue(ext.videoAutoplayDetected)
+    }
+
+    func testWhenNavigationOccursThenVideoAutoplayDetectedResets() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+        let ext = makeExtension()
+        let script = WebTelemetryUserScript()
+
+        ext.webTelemetryUserScript(script, didDetectVideoAutoplayIn: webView)
+        XCTAssertTrue(ext.videoAutoplayDetected)
+
+        var prefs = NavigationPreferences.default
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertFalse(ext.videoAutoplayDetected)
     }
 
     // MARK: - Default permission seeding

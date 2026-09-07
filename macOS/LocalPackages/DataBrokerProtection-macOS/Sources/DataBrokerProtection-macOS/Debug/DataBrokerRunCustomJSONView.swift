@@ -142,6 +142,19 @@ struct DataBrokerRunCustomJSONView: View {
         ]
     }
 
+    private var brokerJobExecutionConfigLines: [(name: String, value: String)] {
+        let config = viewModel.brokerJobExecutionConfig
+        return [
+            ("scanJobTimeout", formattedDuration(config.scanJobTimeout)),
+            ("optOutJobTimeout", formattedDuration(config.optOutJobTimeout)),
+            ("cssActionTimeout", formattedDuration(config.cssActionTimeout)),
+            ("cssActionCancellationCheckInterval", formattedDuration(config.cssActionCancellationCheckInterval)),
+            ("clickAwaitTimeForScan", formattedDuration(config.clickAwaitTimeForScan)),
+            ("clickAwaitTimeForOptOut", formattedDuration(config.clickAwaitTimeForOptOut)),
+            ("getEmailDataTotalTimeout", formattedDuration(config.getEmailDataTotalTimeout)),
+        ]
+    }
+
     // MARK: - Tab 1: Scan
 
     private var scanView: some View {
@@ -200,6 +213,17 @@ struct DataBrokerRunCustomJSONView: View {
                         .padding(.top, 6)
                 }
             }
+
+            Text(verbatim: "Broker job execution config")
+                .font(.headline)
+                .padding(.top, 6)
+
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(brokerJobExecutionConfigLines, id: \.name) { item in
+                    Text(verbatim: "\(item.name): \(item.value)")
+                        .padding(.top, 6)
+                }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -251,11 +275,19 @@ struct DataBrokerRunCustomJSONView: View {
 
             Divider()
             VStack(alignment: .leading, spacing: 6) {
-                Button("Run") {
-                    viewModel.runJSON(jsonString: jsonText)
-                    selectedTab = .extractedProfiles
+                HStack(spacing: 12) {
+                    Button("Run") {
+                        viewModel.runJSON(jsonString: jsonText)
+                        selectedTab = .extractedProfiles
+                    }
+                    .disabled(jsonText.isEmpty)
+
+                    Toggle(isOn: $viewModel.usesConfiguredTimeouts) {
+                        Text(verbatim: "Use configured timeouts")
+                    }
+                    .toggleStyle(.checkbox)
+                    .help(Text(verbatim: "Applies the scan and opt-out job timeouts shown below."))
                 }
-                .disabled(jsonText.isEmpty)
 
                 if jsonText.isEmpty {
                     Text("Please enter broker JSON to enable scan")
@@ -264,6 +296,10 @@ struct DataBrokerRunCustomJSONView: View {
                 }
             }
         }
+    }
+
+    private func formattedDuration(_ duration: TimeInterval) -> String {
+        "\(duration.formatted(.number.precision(.fractionLength(0...2))))s"
     }
 
     // MARK: - Tab 2: Extracted profiles

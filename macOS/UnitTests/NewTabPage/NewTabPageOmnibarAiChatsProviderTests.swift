@@ -348,6 +348,8 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     @MainActor
     func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState { .none }
     var customizeResponsesStatePublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
+    @MainActor
+    func refreshUsageLimits(requestingWebView: WKWebView?) {}
     var isAttachTabsEnabled: Bool = false
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var selectedModelId: String?

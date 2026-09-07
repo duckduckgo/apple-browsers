@@ -19,16 +19,15 @@
 
 import Foundation
 import Onboarding
-import DuckPlayer
+import WebExtensions
 
 /// Store adapter backing the App-Settings toggles used across two onboarding steps.
 ///
 /// - **Recently visited sites** (Search step): passthrough to `recentlyVisitedSites`:
 ///   - `true` → On (the app default, shown selected on first load)
 ///   - `false` → Off.
-/// - **Duck Player** (Block Ads step): a single toggle over the YouTube.com playback mode:
-///   - `true` → `.auto` (Open Automatically)
-///   - `false` → `.ask` (Let me choose, the app default).
+/// - **Cookie pop-up protection** + **Pop-ups without opt-outs** (Block Ads step): passthrough to `cookiePopupPreference` (`.off` / `.default` / `.max`)
+///   turning protection off collapses the preference to `.off`, which makes pop-ups-without-opt-outs `false`.
 ///
 /// - See: [Search: Setup step](https://app.asana.com/1/137249556945/task/1216445221863465?focus=true)
 /// - See: [Block Ads: Setup step](https://app.asana.com/1/137249556945/task/1216445221863468?focus=true)
@@ -43,13 +42,26 @@ extension AppUserDefaults: OnboardingAppSettingsPersonalizationStore {
         }
     }
 
-    public var isDuckPlayerEnabled: Bool {
+    public var isCookiePopUpProtectionEnabled: Bool {
         get {
-            duckPlayerNativeYoutubeMode == .auto
+            cookiePopupPreference.isBlockingEnabled
         }
         set {
-            duckPlayerNativeYoutubeMode = newValue ? .auto : .ask
-            duckPlayerNativeUISettingsMapped = true   // Prevent performing migration from old store given the value has been set. This prevent old storage to override new value.
+            // Disabling clears pop-ups-without-opt-outs
+            cookiePopupPreference = .preference(
+                autoManageEnabled: newValue,
+                popUpsWithoutOptOutsEnabled: newValue ? cookiePopupPreference.isPopUpsWithoutOptOutsEnabled : false
+            )
+        }
+    }
+
+    public var isPopUpsWithoutOptOutsEnabled: Bool {
+        get {
+            cookiePopupPreference.isPopUpsWithoutOptOutsEnabled
+        }
+        set {
+            // Only reachable while protection is on, so auto-manage stays enabled.
+            cookiePopupPreference = .preference(autoManageEnabled: true, popUpsWithoutOptOutsEnabled: newValue)
         }
     }
 

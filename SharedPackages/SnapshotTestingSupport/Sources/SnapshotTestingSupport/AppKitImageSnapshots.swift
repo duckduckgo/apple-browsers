@@ -34,6 +34,8 @@ public func assertImageSnapshot(
     line: UInt = #line,
     column: UInt = #column
 ) {
+    guard !SnapshotSkipMode.skipIfEnabled(testName: testName) else { return }
+
     let configurations = strategy.configurations(for: .macOS, size: size)
     guard assertSnapshotConfigurations(configurations, fileID: fileID, file: file, line: line, column: column) else { return }
     guard assertSnapshotEnvironment(fileID: fileID, file: file, line: line, column: column) else { return }
@@ -42,7 +44,7 @@ public func assertImageSnapshot(
         view.appearance = configuration.appearance.nsAppearance
         let snapshotSize = resolvedSize(for: view, configuration: configuration, size: size)
 
-        withUnitBackingScale(view, size: snapshotSize) {
+        withFixedBackingScale(view, size: snapshotSize) {
             assertSnapshot(
                 of: view,
                 as: .image(
@@ -100,6 +102,8 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     line: UInt = #line,
     column: UInt = #column
 ) {
+    guard !SnapshotSkipMode.skipIfEnabled(testName: testName) else { return }
+
     let configurations = strategy.configurations(for: .macOS, size: size)
     guard assertSnapshotConfigurations(configurations, fileID: fileID, file: file, line: line, column: column) else { return }
     guard assertSnapshotEnvironment(fileID: fileID, file: file, line: line, column: column) else { return }
@@ -124,12 +128,14 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     }
 }
 
-private final class UnitBackingScaleWindow: NSWindow {
-    override var backingScaleFactor: CGFloat { 1.0 }
+private let macOSSnapshotBackingScaleFactor: CGFloat = 2.0
+
+private final class FixedBackingScaleWindow: NSWindow {
+    override var backingScaleFactor: CGFloat { macOSSnapshotBackingScaleFactor }
 }
 
-private func withUnitBackingScale(_ view: NSView, size: CGSize, perform body: () -> Void) {
-    let window = UnitBackingScaleWindow(
+private func withFixedBackingScale(_ view: NSView, size: CGSize, perform body: () -> Void) {
+    let window = FixedBackingScaleWindow(
         contentRect: CGRect(origin: .zero, size: size),
         styleMask: [],
         backing: .buffered,
@@ -200,7 +206,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
     )
     viewController.view.setFrameSize(snapshotSize)
 
-    withUnitBackingScale(viewController.view, size: snapshotSize) {
+    withFixedBackingScale(viewController.view, size: snapshotSize) {
         assertSnapshot(
             of: viewController.view,
             as: .image(

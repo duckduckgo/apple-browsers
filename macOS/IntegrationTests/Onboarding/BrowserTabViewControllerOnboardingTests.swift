@@ -24,7 +24,7 @@ import FeatureFlags_macOS
 import History
 import HistoryView
 import Onboarding
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyDashboard
@@ -528,14 +528,14 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenHighFiveIsManuallyDismissedThenTheUpsellIsPresented() throws {
+    func testWhenHighFiveIsManuallyDismissedThenAnotherDialogIsNotPresented() throws {
         presentDialog(.highFive)
         let presentationsBefore = factory.makeViewCallCount
 
         factory.performOnManualDismiss()
 
-        XCTAssertEqual(factory.capturedType, .subscriptionUpsell)
-        XCTAssertEqual(factory.makeViewCallCount, presentationsBefore + 1)
+        XCTAssertEqual(factory.capturedType, .highFive)
+        XCTAssertEqual(factory.makeViewCallCount, presentationsBefore)
         XCTAssertEqual(pixelReporter.manuallyDismissedDialog, .highFive)
     }
 

@@ -24,12 +24,15 @@ import Foundation
 /// value translation the store needs (e.g. an iOS `Bool` → a Duck Player youtube-mode enum) lives in
 /// that per-platform conformance, not in the shared manager.
 
-/// Backed by the platform's app settings (recently-visited sites, Duck Player).
+/// Backed by the platform's app settings (recently-visited sites, cookie pop-up protection).
 public protocol OnboardingAppSettingsPersonalizationStore: AnyObject {
     /// Whether the browser records and shows recently visited sites.
     var recentlyVisitedSitesEnabled: Bool { get set }
-    /// Whether Duck Player is enabled for YouTube.
-    var isDuckPlayerEnabled: Bool { get set }
+    /// Whether cookie pop-up protection (autoconsent) is enabled.
+    var isCookiePopUpProtectionEnabled: Bool { get set }
+    /// Whether cookie pop-ups without opt-outs are auto-accepted. Only meaningful while cookie pop-up
+    /// protection is on — the platform's backing preference keeps the two consistent.
+    var isPopUpsWithoutOptOutsEnabled: Bool { get set }
 }
 
 /// Backed by the platform's SERP settings blob.

@@ -19,6 +19,7 @@
 
 import Foundation
 import AIChat
+import BrowserServicesKit
 import Core
 import Subscription
 
@@ -37,7 +38,11 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
 
     private let timeElapsedInMinutes: Int?
     private let pixelFiring: PixelFiring.Type
+    private let featureDiscovery: FeatureDiscovery
     private let timestampParameterKey = "delta-timestamp-minutes"
+
+    /// The metrics the frontend reports when a prompt is submitted through its own composer.
+    private static let promptSubmissionMetrics: Set<AIChatMetricName> = [.userDidSubmitPrompt, .userDidSubmitFirstPrompt]
 
     static let metricToEventMap: [AIChatMetricName: Pixel.Event] = [
         .userDidSubmitPrompt: .aiChatMetricSentPromptOngoingChat,
@@ -88,9 +93,12 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
 
     // MARK: - Initialization
 
-    init(timeElapsedInMinutes: Int? = nil, pixelFiring: PixelFiring.Type = Pixel.self) {
+    init(timeElapsedInMinutes: Int? = nil,
+         pixelFiring: PixelFiring.Type = Pixel.self,
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.timeElapsedInMinutes = timeElapsedInMinutes
         self.pixelFiring = pixelFiring
+        self.featureDiscovery = featureDiscovery
     }
 
     // MARK: - AIChatPixelMetricHandling
@@ -107,7 +115,18 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
                 parameters = timestampParameters ?? [:]
             }
 
+            // Native submission paths mark the flag first, so this claims first_prompt_new_install
+            // only for submissions made directly in the frontend composer (e.g. iPad AI tabs).
+            let isPromptSubmission = Self.promptSubmissionMetrics.contains(metric.metricName)
+            if isPromptSubmission && featureDiscovery.isFirstDuckAIPromptNewInstall {
+                parameters[PixelParameters.aiChatFirstPromptNewInstall] = "true"
+            }
+
             pixelFiring.fire(event, withAdditionalParameters: parameters)
+
+            if isPromptSubmission {
+                featureDiscovery.markDuckAIPromptSubmitted()
+            }
             return
         }
 

@@ -17,10 +17,11 @@
 //
 
 import Combine
+@_spi(Testing) import SharedTestUtilities
 import XCTest
 import BrowserServicesKit
 import FeatureFlags_macOS
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {

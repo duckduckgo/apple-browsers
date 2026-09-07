@@ -127,7 +127,6 @@ final class SyncPromoManager: SyncPromoManaging {
             if syncService.authState == .inactive,
                featureFlagger.isFeatureOn(.sync),
                featureFlagger.isFeatureOn(.aiChatSync),
-               featureFlagger.isFeatureOn(.aiChatSyncPromo),
                privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .duckAiChatHistory),
                syncPromoAIChatDismissed == nil,
                syncPromoAIChatImpressions < Self.aiChatImpressionCap,

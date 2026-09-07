@@ -28,6 +28,7 @@ import FeatureFlags_macOS
 import FoundationExtensions
 import History
 import OSLog
+import Persistence
 import PixelKit
 import PrivacyConfig
 import Subscription
@@ -35,6 +36,7 @@ import SubscriptionUI
 import SwiftUI
 import Utilities
 import VPN
+import WebExtensions
 import WebKit
 
 // MARK: - LazyBookmarkFolderMenuDelegate
@@ -192,6 +194,11 @@ final class MainMenu: NSMenu {
     let configurationDateAndTimeMenuItem = NSMenuItem(title: "Configuration URL", action: nil)
     let autofillDebugScriptMenuItem = NSMenuItem(title: "Autofill Debug Script", action: #selector(MainMenu.toggleAutofillScriptDebugSettingsAction))
     let contentScopeDebugStateMenuItem = NSMenuItem(title: "Content Scope Scripts Debug State", action: #selector(MainMenu.toggleContentScopeStateDebugSettingsAction))
+    let simulateFailureURLSchemeConnectionErrorMenuItem = NSMenuItem(
+        title: AccessibilityIdentifiers.DebugMenu.failureURLSchemeSimulateConnectionErrorMenuTitleOff,
+        action: #selector(MainMenu.toggleSimulateFailureURLSchemeConnectionErrorAction)
+    )
+    .withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.simulateFailureURLSchemeConnectionError)
     let toggleWatchdogMenuItem = NSMenuItem(title: "Toggle Hang Watchdog", action: #selector(MainViewController.toggleWatchdog))
     let alwaysShowFirstTimeQuitSurvey = NSMenuItem(title: "Always Show First-Time Quit Survey", action: #selector(MainViewController.alwaysShowFirstTimeQuitSurvey))
     let shiftNextStepsDaysMenuItem = NSMenuItem(title: "Shift maximum Next Steps demonstration days", action: #selector(MainViewController.debugShiftNewTabOpeningDateNtimes))
@@ -234,6 +241,10 @@ final class MainMenu: NSMenu {
     private let subscriptionManager: any SubscriptionManager
 
     private var webExtensionsMenuItem: NSMenuItem?
+
+    private var failureURLSchemeDebugKeyedStorage: some KeyedStoring<FailureURLSchemeDebugSettingsKeys> {
+        UserDefaults.standard.keyedStoring()
+    }
 
     // MARK: - Initialization
 
@@ -303,6 +314,8 @@ final class MainMenu: NSMenu {
 
         setupAIChatMenu()
         subscribeToAIChatPreferences(aiChatMenuConfig: aiChatMenuConfig)
+
+        simulateFailureURLSchemeConnectionErrorMenuItem.target = self
     }
 
     func buildDuckDuckGoMenu() -> NSMenuItem {
@@ -372,11 +385,11 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: UserText.shareMenuItem)
                 .submenu(sharingMenu)
-                .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
+                .withImage(DesignSystemImages.Glyphs.Size12.shareApple, visibleOnMacOS27: true)
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.printMenuItem, action: #selector(MainViewController.printWebView), keyEquivalent: "p")
-                .withImage(DesignSystemImages.Glyphs.Size12.print)
+                .withImage(DesignSystemImages.Glyphs.Size12.print, visibleOnMacOS27: true)
         }
     }
 
@@ -526,7 +539,7 @@ final class MainMenu: NSMenu {
                             .withAccessibilityIdentifier("MainMenu.favoriteThisPage")
                         NSMenuItem.separator()
                     })
-                    .withImage(DesignSystemImages.Glyphs.Size12.favorite)
+                    .withImage(DesignSystemImages.Glyphs.Size12.favorite, visibleOnMacOS27: true)
 
                 NSMenuItem.separator()
             })
@@ -635,6 +648,7 @@ final class MainMenu: NSMenu {
         updateRemoteConfigurationInfo()
         updateAutofillDebugScriptMenuItem()
         updateContentScopeDebugStateMenuItem()
+        updateSimulateFailureURLSchemeConnectionErrorMenuItem()
         updateShiftNextStepsDaysMenuItem()
         updateShowToolbarsOnFullScreenMenuItem()
         updateWatchdogMenuItems()
@@ -649,6 +663,7 @@ final class MainMenu: NSMenu {
         alwaysShowFirstTimeQuitSurvey.state = quitSurveyPersistor.alwaysShowQuitSurvey ? .on : .off
     }
 
+    @MainActor
     private func updateWebExtensionsMenuItem() {
         guard let debugMenuItem = items.first(where: { item in item.title == Self.debugMenuTitle }),
               let debugSubmenu = debugMenuItem.submenu else {
@@ -656,10 +671,14 @@ final class MainMenu: NSMenu {
         }
 
         if #available(macOS 15.4, *) {
-            if let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            if let webExtensionManager = NSApp.delegateTyped.webExtensionManager,
+               let cpmMessagingHealthMonitor = webExtensionManager.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor {
                 if webExtensionsMenuItem == nil {
                     webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
-                        .submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
+                        .submenu(WebExtensionsDebugMenu(
+                            webExtensionManager: webExtensionManager,
+                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
+                        ))
                 }
                 if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {
                     debugSubmenu.insertItem(webExtensionsMenuItem, at: max(0, debugSubmenu.items.count - 3))
@@ -927,11 +946,16 @@ final class MainMenu: NSMenu {
 
             // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Clear WebKit Cache", action: #selector(AppDelegate.debugClearWebViewCache)).withAccessibilityIdentifier("MainMenu.clearWebKitCache")
+            NSMenuItem(title: "Data Import")
+                .submenu(DataImportDebugMenu(title: "Data Import"))
             NSMenuItem(title: "Favicons") {
                 NSMenuItem(title: "Clear In-Memory Cache", action: #selector(AppDelegate.debugClearFaviconsCache)).withAccessibilityIdentifier("MainMenu.clearFaviconsCache")
                 NSMenuItem(title: "Inspect", action: #selector(MainViewController.inspectFavicons(_:))).withAccessibilityIdentifier("MainMenu.inspectFavicons")
             }
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
+            NSMenuItem(title: "Permissions") {
+                NSMenuItem(title: "Inspect", action: #selector(MainViewController.inspectPermissions(_:))).withAccessibilityIdentifier("MainMenu.inspectPermissions")
+            }
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "Performance Debugging") {
                 NSMenuItem(title: "Export Allocation Stats", action: #selector(AppDelegate.exportMemoryAllocationStats), keyEquivalent: [.control, .command, .shift, .option, "m"])
@@ -951,7 +975,6 @@ final class MainMenu: NSMenu {
                     NSMenuItem(title: "Reset app launch flag", action: #selector(MainViewController.debugResetCookiePopupProtectionOptInLaunchFlag))
                 }
                 NSMenuItem(title: "NTP widget") {
-                    NSMenuItem(title: "Show feature awareness dialog for NTP widget", action: #selector(AppDelegate.debugShowFeatureAwarenessDialogForNTPWidget))
                     NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))
                     NSMenuItem(title: "Clear blockedCookiesPopoverSeen flag", action: #selector(AppDelegate.debugClearBlockedCookiesPopoverSeenFlag))
                     NSMenuItem(title: "Reset widgetNewLabelFirstShownDate", action: #selector(AppDelegate.debugResetWidgetNewLabelFirstShownDateKey))
@@ -1013,6 +1036,31 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Show Pop Up Window", action: #selector(MainViewController.showPopUpWindow))
                 alwaysShowFirstTimeQuitSurvey
             }
+            if featureFlagger.isFeatureOn(.debugURLScheme) {
+                NSMenuItem(title: "debug:// URL scheme") {
+                    simulateFailureURLSchemeConnectionErrorMenuItem
+                    NSMenuItem(
+                        title: "Open debug://failure demo page",
+                        action: #selector(AppDelegate.openFailureURLSchemeDemoDebugPage(_:))
+                    )
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.openFailureURLSchemeDemoPage)
+                    NSMenuItem(
+                        title: "Open debug://failure (alternating failures)",
+                        action: #selector(AppDelegate.openFailureURLSchemeAlternatingFailuresDebugPage(_:))
+                    )
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.openFailureURLSchemeAlternatingFailuresDemoPage)
+                    NSMenuItem(
+                        title: "Open debug://failure (notConnected query)",
+                        action: #selector(AppDelegate.openFailureURLSchemeNotConnectedQueryDebugPage(_:))
+                    )
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.openFailureURLSchemeNotConnectedQueryDemoPage)
+                    NSMenuItem(
+                        title: "Open debug://failure (hostNotFound query)",
+                        action: #selector(AppDelegate.openFailureURLSchemeHostNotFoundQueryDebugPage(_:))
+                    )
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.openFailureURLSchemeHostNotFoundQueryDemoPage)
+                }.withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.failureURLScheme)
+            }
             NSMenuItem(title: "Remote Configuration") {
                 customConfigurationUrlMenuItem
                 configurationDateAndTimeMenuItem
@@ -1038,6 +1086,7 @@ final class MainMenu: NSMenu {
             FreemiumDebugMenu()
             SubscriptionPromoDebugMenu()
             AdBlockingDebugMenu()
+            FireDialogDebugMenu()
 
             if case .normal = AppVersion.runType {
                 NSMenuItem(title: "VPN")
@@ -1289,7 +1338,7 @@ final class MainMenu: NSMenu {
 
     @MainActor private func makeAIChatMenu() -> AIChatMenu {
         let actions = AIChatMenu.Actions.makeDefault(
-            conversationSource: .mainMenu,
+            conversationSources: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: NSApp.delegateTyped.aiChatTabOpener,
             historyCleaner: aiChatHistoryCleaner,
@@ -1324,6 +1373,14 @@ final class MainMenu: NSMenu {
         contentScopeDebugStateMenuItem.state = contentScopePreferences.isDebugStateEnabled ? .on : .off
     }
 
+    private func updateSimulateFailureURLSchemeConnectionErrorMenuItem() {
+        let isSimulating = failureURLSchemeDebugKeyedStorage.simulateConnectionLost == true
+        simulateFailureURLSchemeConnectionErrorMenuItem.title = isSimulating
+            ? AccessibilityIdentifiers.DebugMenu.failureURLSchemeSimulateConnectionErrorMenuTitleOn
+            : AccessibilityIdentifiers.DebugMenu.failureURLSchemeSimulateConnectionErrorMenuTitleOff
+        simulateFailureURLSchemeConnectionErrorMenuItem.state = isSimulating ? .on : .off
+    }
+
     private func updateShiftNextStepsDaysMenuItem() {
         shiftNextStepsDaysMenuItem.title = "Shift \(appearancePreferences.maxNextStepsCardsDemonstrationDays) days"
     }
@@ -1355,6 +1412,15 @@ final class MainMenu: NSMenu {
     @objc private func toggleContentScopeStateDebugSettingsAction(_ sender: NSMenuItem) {
         contentScopePreferences.isDebugStateEnabled = !contentScopePreferences.isDebugStateEnabled
         updateContentScopeDebugStateMenuItem()
+    }
+
+    @objc private func toggleSimulateFailureURLSchemeConnectionErrorAction(_ sender: NSMenuItem) {
+        let keyed = failureURLSchemeDebugKeyedStorage
+        keyed.simulateConnectionLost = !(keyed.simulateConnectionLost == true)
+        if featureFlagger.isFeatureOn(.debugURLScheme) {
+            DuckURLSchemeHandler.resetFailureSchemeAlternatingStateForUITests()
+        }
+        updateSimulateFailureURLSchemeConnectionErrorMenuItem()
     }
 
     @MainActor
@@ -1559,6 +1625,29 @@ extension MainMenu: SharingMenuDelegate {
 
         return (tabViewModel.title, [url])
     }
+}
+
+// MARK: - debug:// debug menu (UserDefaults / KeyedStoring)
+
+enum MainMenuFailureURLSchemeDebugKeys: String, StorageKeyDescribing {
+    /// When enabled, navigations to `debug://failure` fail with a network connection error from the URL scheme handler (demo HTML when off).
+    case simulateConnectionLost = "debug-url-scheme-simulate-connection-lost"
+}
+
+extension StorageKey {
+    init(
+        _ key: MainMenuFailureURLSchemeDebugKeys,
+        migrateLegacyKey: String? = nil,
+        assertionHandler: (_ message: String) -> Void = { message in
+            assertionFailure(message)
+        }
+    ) {
+        self.init(key as (any StorageKeyDescribing), migrateLegacyKey: migrateLegacyKey, assertionHandler: assertionHandler)
+    }
+}
+
+struct FailureURLSchemeDebugSettingsKeys: StoringKeys {
+    let simulateConnectionLost = StorageKey<Bool>(.simulateConnectionLost)
 }
 
 #if DEBUG

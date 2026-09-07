@@ -242,7 +242,7 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
 
 extension NetworkProtectionIPCTunnelController {
 
-    enum StartAttempt: PixelKitEvent {
+    enum StartAttempt: PixelKit.Event {
         case begin
         case success
         case failure(_ error: Error)
@@ -280,7 +280,7 @@ extension NetworkProtectionIPCTunnelController {
 
 extension NetworkProtectionIPCTunnelController {
 
-    enum StopAttempt: PixelKitEvent {
+    enum StopAttempt: PixelKit.Event {
         case begin
         case success
         case failure(_ error: Error)

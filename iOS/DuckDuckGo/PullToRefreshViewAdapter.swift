@@ -57,9 +57,12 @@ final class PullToRefreshViewAdapter: NSObject {
 
     private let fakeScrollView = UIScrollView()
     private let refreshControl = UIRefreshControl()
+    private var topConstraint: NSLayoutConstraint?
     private var panGestureRecognizer: UIPanGestureRecognizer?
 
     private var isPulling = false
+    private var isRefreshControlEnabled = true
+    private var isPullSuspended = false
     private var didTriggerRefresh = false
     private var didEndRefreshing = false
     private var initialTranslationY: CGFloat = 0
@@ -121,8 +124,10 @@ final class PullToRefreshViewAdapter: NSObject {
         view.superview?.addSubview(fakeScrollView)
         view.superview?.sendSubviewToBack(fakeScrollView)
 
+        let topConstraint = fakeScrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
+        self.topConstraint = topConstraint
         NSLayoutConstraint.activate([
-            fakeScrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            topConstraint,
             fakeScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             fakeScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             fakeScrollView.bottomAnchor.constraint(equalTo: view.centerYAnchor)
@@ -269,9 +274,28 @@ final class PullToRefreshViewAdapter: NSObject {
      * @param isEnabled Whether the refresh control should be enabled.
      */
     func setRefreshControlEnabled(_ isEnabled: Bool) {
-        if !isPulling {
-            fakeScrollView.refreshControl = isEnabled ? refreshControl : nil
-        }
+        isRefreshControlEnabled = isEnabled
+        applyRefreshControlState()
+    }
+
+    /// Suspends the pull gesture itself, not just the refresh control, and outranks
+    /// `setRefreshControlEnabled` — the monitored scroll view can be reparented outside the tab
+    /// (WebKit's fullscreen window), where a drag must not reach `onRefresh`.
+    func setPullSuspended(_ isSuspended: Bool) {
+        isPullSuspended = isSuspended
+        panGestureRecognizer?.isEnabled = !isSuspended
+        applyRefreshControlState()
+    }
+
+    private func applyRefreshControlState() {
+        guard !isPulling else { return }
+
+        let shouldAttach = isRefreshControlEnabled && !isPullSuspended
+        fakeScrollView.refreshControl = shouldAttach ? refreshControl : nil
+    }
+
+    func setTopOffset(_ offset: CGFloat) {
+        topConstraint?.constant = offset
     }
 
 }

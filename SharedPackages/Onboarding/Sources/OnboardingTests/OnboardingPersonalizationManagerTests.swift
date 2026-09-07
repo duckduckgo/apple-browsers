@@ -171,30 +171,47 @@ struct OnboardingPersonalizationManagerTests {
         #expect(!store.isYouTubeAdBlockingEnabled)
     }
 
-    @Test("Duck Player reads and writes the app settings store")
-    func duckPlayer() {
+    @Test("Cookie pop-up protection reads and writes the app settings store")
+    func cookiePopUpProtection() {
         // GIVEN
         let appSettings = MockOnboardingAppSettingsStore()
-        appSettings.isDuckPlayerEnabled = false
+        appSettings.isCookiePopUpProtectionEnabled = false
         let manager = makeManager(appSettings: appSettings)
-        #expect(!manager.isDuckPlayerEnabled)
+        #expect(!manager.isCookiePopUpProtectionEnabled)
 
         // WHEN
-        manager.setDuckPlayer(true)
+        manager.setCookiePopUpProtection(true)
 
         // THEN
-        #expect(appSettings.isDuckPlayerEnabled)
+        #expect(appSettings.isCookiePopUpProtectionEnabled)
+    }
+
+    @Test("Pop-ups without opt-outs reads and writes the app settings store")
+    func popUpsWithoutOptOuts() {
+        // GIVEN
+        let appSettings = MockOnboardingAppSettingsStore()
+        appSettings.isPopUpsWithoutOptOutsEnabled = false
+        let manager = makeManager(appSettings: appSettings)
+        #expect(!manager.isPopUpsWithoutOptOutsEnabled)
+
+        // WHEN
+        manager.setPopUpsWithoutOptOuts(true)
+
+        // THEN
+        #expect(appSettings.isPopUpsWithoutOptOutsEnabled)
     }
 
     // MARK: - applyDefaults
 
-    @Test("applyDefaults for .noAI disables both Search AI features")
+    @Test("applyDefaults for .noAI disables the Search AI features and Duck.ai")
     func applyDefaultsNoAI() {
         // GIVEN
         let serpSettings = MockOnboardingSERPStore()
         serpSettings.isSearchAssistEnabled = true
         serpSettings.areAIGeneratedImagesHidden = false
-        let manager = makeManager(serpSettings: serpSettings)
+        let aiChatSettings = MockOnboardingAIChatStore()
+        aiChatSettings.isDuckAIEnabled = true
+        let manager = makeManager(serpSettings: serpSettings, aiChatSettings: aiChatSettings)
 
         // WHEN
         manager.applyDefaults(for: .noAI)
@@ -202,11 +219,26 @@ struct OnboardingPersonalizationManagerTests {
         // THEN
         #expect(!serpSettings.isSearchAssistEnabled)
         #expect(serpSettings.areAIGeneratedImagesHidden)
+        #expect(!aiChatSettings.isDuckAIEnabled)
+    }
+
+    @Test("applyDefaults for .blockAds enables cookie pop-up protection but leaves accept-other-cookies off")
+    func applyDefaultsBlockAds() {
+        // GIVEN
+        let appSettings = MockOnboardingAppSettingsStore()
+        let manager = makeManager(appSettings: appSettings)
+
+        // WHEN
+        manager.applyDefaults(for: .blockAds)
+
+        // THEN
+        #expect(appSettings.isCookiePopUpProtectionEnabled)
+        #expect(!appSettings.isPopUpsWithoutOptOutsEnabled)
     }
 
     @Test(
         "applyDefaults is a no-op for the reasons that already match app defaults",
-        arguments: [OnboardingDownloadReason.browserPrivately, .privateAIChat, .blockAds]
+        arguments: [OnboardingDownloadReason.browserPrivately, .privateAIChat]
     )
     func applyDefaultsOtherReasonsAreNoOp(reason: OnboardingDownloadReason) {
         // GIVEN

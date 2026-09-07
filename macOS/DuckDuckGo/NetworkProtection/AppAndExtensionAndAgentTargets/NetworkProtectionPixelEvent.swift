@@ -21,7 +21,7 @@ import PixelKit
 import VPN
 import Configuration
 
-enum NetworkProtectionPixelEvent: PixelKitEvent {
+enum NetworkProtectionPixelEvent: PixelKit.Event {
     static let vpnErrorDomain = "com.duckduckgo.vpn.errorDomain"
 
     case networkProtectionActiveUser

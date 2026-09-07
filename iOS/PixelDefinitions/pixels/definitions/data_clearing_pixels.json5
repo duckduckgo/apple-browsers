@@ -15,6 +15,14 @@
         "parameters": ["appVersion", "pixelSource"]
     },
 
+    "app-switcher_snapshot_enumeration_failed": {
+        "description": "Fired when the app cannot enumerate the iOS app switcher snapshot directory, including when the expected private OS path is missing",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+
     "m_fire_clear_website_data_remove_all_containers_after_delay_success": {
         "description": "Fired when website data container cleanup after delay completes successfully",
         "owners": ["hanyutang-sandra"],

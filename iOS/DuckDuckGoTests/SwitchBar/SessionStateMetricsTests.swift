@@ -19,7 +19,7 @@
 
 import XCTest
 @testable import DuckDuckGo
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 final class SessionStateMetricsTests: XCTestCase {
 

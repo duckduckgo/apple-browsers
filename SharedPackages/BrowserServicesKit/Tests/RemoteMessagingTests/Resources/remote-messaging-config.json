@@ -163,7 +163,7 @@
                 "type": "survey",
                 "value": "https://duckduckgo.com/survey",
                 "additionalParameters": {
-                    "queryParams": "atb;var;delta;osv;ddgv"
+                    "queryParams": "atb;var;delta;osv;ddgv;last_duck_ai_usage"
                 }
             }
         },

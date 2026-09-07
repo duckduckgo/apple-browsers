@@ -19,7 +19,7 @@
 import PixelKit
 import DDGSync
 
-enum SyncFeatureUsagePixels: PixelKitEvent {
+enum SyncFeatureUsagePixels: PixelKit.Event {
     private enum ParameterKeys {
         static let connectedDevices = "connected_devices"
     }
@@ -52,7 +52,55 @@ enum SyncFeatureUsagePixels: PixelKitEvent {
     }
 }
 
-enum SyncSwitchAccountPixelKitEvent: PixelKitEvent {
+enum SyncSettingsPixelKitEvent: PixelKit.Event {
+
+    enum ParameterKey {
+        static let syncPromptOption = "sync_prompt_option"
+    }
+
+    enum AnotherDevicePromptOption: String {
+        case thisDeviceOnly = "this_device_only"
+        case syncAnotherDevice = "sync_another_device"
+    }
+
+    case anotherDevicePromptShown
+    case anotherDevicePromptOptionTapped(option: AnotherDevicePromptOption)
+    case authenticationCancelledPromptShown
+
+    var name: String {
+        switch self {
+        case .anotherDevicePromptShown: return "settings_sync_another_device_prompt_shown"
+        case .anotherDevicePromptOptionTapped: return "settings_sync_another_device_prompt_option_tapped"
+        case .authenticationCancelledPromptShown: return "settings_sync_authentication_cancelled_prompt_shown"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .anotherDevicePromptShown:
+            return nil
+        case .anotherDevicePromptOptionTapped(let option):
+            return [ParameterKey.syncPromptOption: option.rawValue]
+        case .authenticationCancelledPromptShown:
+            return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .anotherDevicePromptShown,
+                .anotherDevicePromptOptionTapped,
+                .authenticationCancelledPromptShown:
+            return [.pixelSource]
+        }
+    }
+}
+
+enum SyncSwitchAccountPixelKitEvent: PixelKit.Event {
+    /// Frozen: these names are already complete. This was `doNotEnforcePrefix: true` repeated at
+    /// every call site that fires this type.
+    var namePrefix: PixelKitNamePrefix { .none }
+
     case syncAskUserToSwitchAccount
     case syncUserAcceptedSwitchingAccount
     case syncUserCancelledSwitchingAccount
@@ -88,7 +136,10 @@ enum SyncSwitchAccountPixelKitEvent: PixelKitEvent {
     }
 }
 
-enum SyncSetupPixelKitEvent: PixelKitEvent {
+enum SyncSetupPixelKitEvent: PixelKit.Event {
+    /// Frozen: these names are already complete. This was `doNotEnforcePrefix: true` repeated at
+    /// every call site that fires this type.
+    var namePrefix: PixelKitNamePrefix { .none }
 
     enum ParameterKey {
         static let source = "source"

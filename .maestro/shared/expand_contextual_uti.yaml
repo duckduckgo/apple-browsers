@@ -1,0 +1,12 @@
+appId: com.duckduckgo.mobile.ios
+
+---
+
+# Once a chat is under way the UTI sits collapsed to a single line so the conversation gets the room.
+# Tapping it reveals the row holding the attachment menu and the context chip, so anything asserting
+# those has to expand it first — collapsed, they are absent and an assertNotVisible would pass for
+# the wrong reason. There is no model chip in this state; the model is named in the response header.
+- tapOn:
+    id: "searchEntry"
+- waitForAnimationToEnd:
+    timeout: 3000

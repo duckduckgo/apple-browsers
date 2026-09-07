@@ -76,31 +76,23 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
                                           didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 }
 
-/// Answers whether a persisted chat has been deleted, or declines to answer.
+/// Whether a persisted chat has been deleted, or `false` when that cannot be established.
 ///
 /// Deletion must be proven by a keyed read returning nothing. A store that is absent, unmigrated or
 /// unreadable cannot answer, and its silence is not evidence: treating it as such discards chats that
 /// are perfectly fine.
-struct DeletedChatCheck {
-
-    let storage: DuckAiNativeStorageHandling?
-    let isNativeDataAccessEnabled: Bool
-
-    func wasDeleted(chatAt url: URL) -> Bool {
-        guard let chatID = url.duckAIChatID else { return false }
-        return wasDeleted(chatID: chatID)
-    }
-
-    func wasDeleted(chatID: String) -> Bool {
-        guard isNativeDataAccessEnabled,
-              let storage,
-              (try? storage.isMigrationDone()) == true else { return false }
-        do {
-            return try storage.getChat(chatId: chatID) == nil
-        } catch {
-            Logger.aiChat.error("[Contextual] Could not verify \(chatID): \(error.localizedDescription)")
-            return false
-        }
+func isChatDeleted(chatID: String?,
+                   in storage: DuckAiNativeStorageHandling?,
+                   isNativeDataAccessEnabled: Bool) -> Bool {
+    guard let chatID,
+          isNativeDataAccessEnabled,
+          let storage,
+          (try? storage.isMigrationDone()) == true else { return false }
+    do {
+        return try storage.getChat(chatId: chatID) == nil
+    } catch {
+        Logger.aiChat.error("[Contextual] Could not verify \(chatID): \(error.localizedDescription)")
+        return false
     }
 }
 
@@ -177,11 +169,12 @@ final class AIChatContextualSheetCoordinator {
         unifiedToggleInputFeature.isAvailable
     }
 
-    private var deletedChatCheck: DeletedChatCheck {
-        DeletedChatCheck(
-            storage: isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler,
-            isNativeDataAccessEnabled: AIChatFeatureFlagProvider(featureFlagger: featureFlagger).isNativeDataAccessEnabled()
-        )
+    private var chatStorage: DuckAiNativeStorageHandling? {
+        isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
+    }
+
+    private var isNativeDataAccessEnabled: Bool {
+        AIChatFeatureFlagProvider(featureFlagger: featureFlagger).isNativeDataAccessEnabled()
     }
 
     private var isImmediateContextualUTIEnabled: Bool {
@@ -725,7 +718,10 @@ private extension AIChatContextualSheetCoordinator {
     func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?, opensOntoSubmittedChat: Bool = false) {
         guard presentingVC.presentedViewController == nil, floatingInputViewController == nil else { return }
 
-        if let restoreURL, !deletedChatCheck.wasDeleted(chatAt: restoreURL) {
+        if let restoreURL,
+           !isChatDeleted(chatID: restoreURL.duckAIChatID,
+                          in: chatStorage,
+                          isNativeDataAccessEnabled: isNativeDataAccessEnabled) {
             sessionState.restoreChat(with: restoreURL)
         }
 

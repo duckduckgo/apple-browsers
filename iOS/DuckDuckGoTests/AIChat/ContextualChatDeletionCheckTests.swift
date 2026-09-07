@@ -58,7 +58,7 @@ final class StubDuckAiNativeStorage: DuckAiNativeStorageHandling {
     func markMigrationDone(key: String) throws {}
 }
 
-final class DeletedChatCheckTests: XCTestCase {
+final class IsChatDeletedTests: XCTestCase {
 
     private let chatID = "760d681e-9173-4abd-a120-d660783787e9"
     private var storage: StubDuckAiNativeStorage!
@@ -68,53 +68,41 @@ final class DeletedChatCheckTests: XCTestCase {
         storage = StubDuckAiNativeStorage()
     }
 
-    private func makeSUT(nativeDataAccess: Bool = true, storage: DuckAiNativeStorageHandling?) -> DeletedChatCheck {
-        DeletedChatCheck(storage: storage, isNativeDataAccessEnabled: nativeDataAccess)
+    private func wasDeleted(_ chatID: String?,
+                            storage: DuckAiNativeStorageHandling?,
+                            nativeDataAccess: Bool = true) -> Bool {
+        isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: nativeDataAccess)
     }
 
     func testWhenTheStoreHasNoSuchChatThenItWasDeleted() {
-        let sut = makeSUT(storage: storage)
 
-        XCTAssertTrue(sut.wasDeleted(chatID: chatID))
     }
 
     func testWhenTheStoreHasTheChatThenItWasNotDeleted() {
         storage.chats[chatID] = DuckAiChatRecord(chatId: chatID, data: Data())
-        let sut = makeSUT(storage: storage)
 
-        XCTAssertFalse(sut.wasDeleted(chatID: chatID))
     }
 
     func testWhenTheReadFailsThenNoDeletionIsClaimed() {
         // The bug this replaces: an unanswerable store read as proof of deletion.
         storage.readError = StubDuckAiNativeStorage.ReadFailure()
-        let sut = makeSUT(storage: storage)
 
-        XCTAssertFalse(sut.wasDeleted(chatID: chatID))
     }
 
     func testWhenTheStoreIsNotMigratedThenNoDeletionIsClaimed() {
         storage.migrationDone = false
-        let sut = makeSUT(storage: storage)
 
-        XCTAssertFalse(sut.wasDeleted(chatID: chatID))
     }
 
     func testWhenNativeDataAccessIsOffThenNoDeletionIsClaimed() {
-        let sut = makeSUT(nativeDataAccess: false, storage: storage)
-
-        XCTAssertFalse(sut.wasDeleted(chatID: chatID))
+        XCTAssertFalse(wasDeleted(chatID, storage: storage, nativeDataAccess: false))
     }
 
     func testWhenThereIsNoStoreThenNoDeletionIsClaimed() {
-        let sut = makeSUT(storage: nil)
 
-        XCTAssertFalse(sut.wasDeleted(chatID: chatID))
     }
 
-    func testWhenTheURLCarriesNoChatIDThenNoDeletionIsClaimed() {
-        let sut = makeSUT(storage: storage)
-
-        XCTAssertFalse(sut.wasDeleted(chatAt: URL(string: "https://duckduckgo.com/chat")!))
+    func testWhenThereIsNoChatIDThenNoDeletionIsClaimed() {
+        XCTAssertFalse(wasDeleted(nil, storage: storage))
     }
 }

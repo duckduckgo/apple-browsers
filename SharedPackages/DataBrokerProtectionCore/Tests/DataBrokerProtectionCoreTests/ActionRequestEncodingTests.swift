@@ -22,6 +22,19 @@ import DataBrokerProtectionCoreTestsUtils
 
 final class ActionRequestEncodingTests: XCTestCase {
 
+    func testWhenExecuteScriptActionIsEncoded_thenActionRequestPreservesScriptPayload() throws {
+        let action = ExecuteScriptAction(id: "execute-script-1",
+                                         actionType: .executeScript,
+                                         script: "document.body.dataset.result = 'ok';")
+
+        let payload: EncodedExecuteScriptRequest = try encodePayload(action: action,
+                                                                     data: .userData(makeProfileQuery(), nil, nil, [:]))
+
+        XCTAssertEqual(payload.state.action.actionType, .executeScript)
+        XCTAssertEqual(payload.state.action.id, action.id)
+        XCTAssertEqual(payload.state.action.script, action.script)
+    }
+
     func testWhenActionContainsRawJSON_thenEncodingUsesRawActionPayload() throws {
         let stepJSON = """
             {
@@ -328,4 +341,17 @@ final class ActionRequestEncodingTests: XCTestCase {
     private func makeProfileQuery() -> ProfileQuery {
         ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 1985)
     }
+
+    private func encodePayload<Payload: Decodable>(action: Action, data: CCFRequestData) throws -> Payload {
+        let encoded = try JSONEncoder().encode(Params(state: ActionRequest(action: action, data: data)))
+        return try JSONDecoder().decode(Payload.self, from: encoded)
+    }
+}
+
+private struct EncodedExecuteScriptRequest: Decodable {
+    struct State: Decodable {
+        let action: ExecuteScriptAction
+    }
+
+    let state: State
 }

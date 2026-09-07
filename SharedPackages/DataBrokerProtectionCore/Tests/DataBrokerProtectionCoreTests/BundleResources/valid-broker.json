@@ -57,6 +57,11 @@
                 }
             },
             "id": "43118aca-c38c-4145-b75a-2fad858005b7"
+        },
+        {
+            "actionType": "executeScript",
+            "script": "document.body.dataset.result = 'ok';",
+            "id": "f79a920e-c62f-440e-b585-b4be84a2cb9f"
         }
         ]
     },

@@ -176,7 +176,8 @@ class MainViewController: UIViewController {
                                                            aiChatSettings: aiChatSettings,
                                                            subscriptionManager: subscriptionManager,
                                                            internalUserCommands: internalUserCommands,
-                                                           floatingUIManager: floatingUIManager)
+                                                           floatingUIManager: floatingUIManager,
+                                                           redesignFeature: NewTabPageRedesignFeature(featureFlagger: featureFlagger))
 
     var tabsBarController: TabsBarViewController?
     var suggestionTrayController: SuggestionTrayViewController?

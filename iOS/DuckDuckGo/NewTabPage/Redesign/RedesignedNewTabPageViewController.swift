@@ -55,7 +55,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = UIColor(designSystemColor: .alertYellow)
         addSubviews()
         installBlocks()
     }

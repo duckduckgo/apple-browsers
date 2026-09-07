@@ -43,11 +43,32 @@ struct NewTabPageBuilder {
     let subscriptionManager: any SubscriptionManager
     let internalUserCommands: URLBasedDebugCommands
     let floatingUIManager: FloatingUIManaging
+    let redesignFeature: NewTabPageRedesignFeatureProviding
 
     /// `daxDialogFactory` is supplied per page rather than stored.
     func makeNewTabPage(tab: Tab,
                         openedAfterIdle: Bool,
                         daxDialogFactory: any NewTabDaxDialogProviding) -> any NewTabPage {
+        // Fire tabs are excluded because their empty state is drawn elsewhere and would cover the
+        // page.
+        if !tab.fireTab, redesignFeature.isAvailable {
+            return makeRedesignedNewTabPage()
+        }
+
+        return makeCurrentNewTabPage(tab: tab,
+                                     openedAfterIdle: openedAfterIdle,
+                                     daxDialogFactory: daxDialogFactory)
+    }
+
+    private func makeRedesignedNewTabPage() -> any NewTabPage {
+        RedesignedNewTabPageViewController(blocks: [
+            SwiftUIBlock(id: "daxLogo", rootView: NewTabPageDaxLogoView())
+        ])
+    }
+
+    private func makeCurrentNewTabPage(tab: Tab,
+                                       openedAfterIdle: Bool,
+                                       daxDialogFactory: any NewTabDaxDialogProviding) -> any NewTabPage {
         NewTabPageViewController(isFocussedState: false,
                                  openedAfterIdle: openedAfterIdle,
                                  dismissKeyboardOnScroll: true,

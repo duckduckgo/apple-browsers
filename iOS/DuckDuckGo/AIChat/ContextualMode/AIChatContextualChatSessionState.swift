@@ -614,6 +614,7 @@ final class AIChatContextualChatSessionState {
         resolveSuggestionsIfLoading(from: context)
 
         if pendingSuggestedContextCollection {
+            print("🔎PH state: suggested collection landed title=\(context?.title ?? "nil") hasPage=\(context?.contextData.hasAttachedPage ?? false)")
             pendingSuggestedContextCollection = false
             isProcessingNavigation = false
             lastCollectedContext = context

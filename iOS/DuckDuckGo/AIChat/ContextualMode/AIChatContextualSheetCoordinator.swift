@@ -670,6 +670,7 @@ final class AIChatContextualSheetCoordinator {
 
     /// Called by TabViewController when the page navigates to a new URL.
     func notifyPageChanged() async {
+        print("🔎PH nav: hasActiveSheet=\(hasActiveSheet) hasActiveChat=\(sessionState.hasActiveChat) flag=\(isPagePlaceholderEnabled) shouldSuggest=\(sessionState.shouldSuggestPageContextOnNavigation()) autoCollect=\(sessionState.shouldTriggerAutoCollect()) observing=\(isActivelyObservingContext) immediateUTI=\(isImmediateContextualUTIEnabled)")
         guard hasActiveSheet else { return }
         sessionState.notifyPageChanged()
 
@@ -685,8 +686,10 @@ final class AIChatContextualSheetCoordinator {
             sessionState.notifyFrontendOfMultiContextNavigation()
             if isPagePlaceholderEnabled, sessionState.shouldSuggestPageContextOnNavigation() {
                 // Read the page so the chip can offer it by name. Attached only if the user taps.
+                print("🔎PH nav: taking the suggestion branch, collecting")
                 sessionState.markPendingSuggestedContextCollection()
                 if !pageContextHandler.triggerContextCollection(trigger: .navigation) {
+                    print("🔎PH nav: collection FAILED to start")
                     sessionState.cancelPendingSuggestedContextCollection()
                     sessionState.clearProcessingNavigationFlag()
                 }
@@ -970,6 +973,7 @@ private extension AIChatContextualSheetCoordinator {
             host.showAttachAffordance()
         }
 
+        print("🔎PH deliver: targets=\(targets.rawValue) host=\(persistentUTIHost != nil) suggestion=\(sessionState.suggestedContext?.title ?? "nil")")
         if let host = persistentUTIHost, targets.contains(.utiSuggestedContext) {
             if let suggestion = sessionState.suggestedContext {
                 host.setSuggestedContext(suggestion)

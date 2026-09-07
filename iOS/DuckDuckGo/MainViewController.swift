@@ -441,6 +441,15 @@ class MainViewController: UIViewController {
                               isFloatingUIEnabled: isFloatingUIEnabled)
     }()
 
+    // Re-run the glass policy when WebKit's page-derived color changes; otherwise it only ran on tab-switch/trait changes.
+    private var pageBackgroundColorObservation: NSKeyValueObservation?
+
+    private func observePageBackgroundColor(for tab: TabViewController) {
+        pageBackgroundColorObservation = tab.webView.observe(\.underPageBackgroundColor, options: [.initial, .new]) { [weak self] _, _ in
+            self?.refreshSettledFloatingGlassAppearance()
+        }
+    }
+
     private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create()
 
     let themeManager: ThemeManaging
@@ -2843,6 +2852,7 @@ class MainViewController: UIViewController {
         chromeManager.attach(to: tab.webView.scrollView)
         chromeManager.reset(animated: false)
         themeColorManager.attach(to: tab)
+        observePageBackgroundColor(for: tab)
         tab.chromeDelegate = self
         tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
 

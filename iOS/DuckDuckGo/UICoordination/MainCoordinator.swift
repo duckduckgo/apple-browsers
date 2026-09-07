@@ -78,7 +78,6 @@ final class MainCoordinator {
     private let privacyStats: PrivacyStatsProviding
     private let wideEvent: WideEventManaging
     private let voiceSessionStateManager: VoiceSessionStateProviding
-    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
@@ -153,7 +152,6 @@ final class MainCoordinator {
         self.wideEvent = wideEvent
         self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
-        self.voiceShortcutFeature = DuckAIVoiceShortcutFeature(featureFlagger: featureFlagger)
         FireModeCapability.resolve(using: featureFlagger)
         UnifiedToggleInputFeature.resolve(using: featureFlagger)
         let fireModeCapability = FireModeCapability.create()
@@ -919,7 +917,7 @@ extension MainCoordinator: UserActivityHandling {
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
     func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) {
-        if voiceShortcutFeature.isAvailable, voiceSessionStateManager.isVoiceSessionActive {
+        if voiceSessionStateManager.isVoiceSessionActive {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             return
         }

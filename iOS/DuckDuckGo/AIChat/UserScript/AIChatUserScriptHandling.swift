@@ -285,11 +285,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             payload = paramsDict[AIChatKeys.aiChatPayload] as? AIChatPayload
         }
 
-        NotificationCenter.default.post(
-            name: .urlInterceptAIChat,
-            object: payload,
-            userInfo: [TabURLInterceptorParameter.aiChatRequestHost: message.messageHost]
-        )
+        var userInfo: [AnyHashable: Any] = [TabURLInterceptorParameter.aiChatRequestHost: message.messageHost]
+        if let pageURL = message.messageWebView?.url {
+            userInfo[TabURLInterceptorParameter.aiChatRequestURL] = pageURL
+        }
+        NotificationCenter.default.post(name: .urlInterceptAIChat, object: payload, userInfo: userInfo)
 
         return nil
     }

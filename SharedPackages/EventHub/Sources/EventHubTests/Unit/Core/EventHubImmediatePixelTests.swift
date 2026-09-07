@@ -24,7 +24,7 @@ struct EventHubImmediatePixelTests {
     static let immediateConfig = """
     { "telemetry": { "webEvent_impression": {
         "state": "enabled",
-        "trigger": { "type": "immediate", "source": "impression" },
+        "trigger": { "type": "immediate_v2", "source": "impression" },
         "parameters": {}
     } } }
     """
@@ -37,14 +37,18 @@ struct EventHubImmediatePixelTests {
         #expect(f.fired.first?.name == "webEvent_impression")
     }
 
-    @Test("immediate pixels are not deduplicated")
-    func immediatePixelsAreNotDeduplicated() {
+    @Test("immediate pixels are de-duplicated per page")
+    func immediatePixelsAreDeduplicatedPerPage() {
+        // The hub de-duplicates before fan-out, so immediate pixels are subject to it like any other
+        // handler. Covers the parameterless config specifically — the spec fixtures all carry a data
+        // parameter, so the empty-payload key path is only exercised here.
         let f = EventHubFixture.active(Self.immediateConfig)
         let tab = EventHubTabID.new()
+        f.manager.onNavigationStarted(tabID: tab, url: "https://example.com/page")
         f.manager.handleWebEvent(EventHubFixture.webEvent("impression"), tabID: tab)
         f.manager.handleWebEvent(EventHubFixture.webEvent("impression"), tabID: tab)
         f.manager.handleWebEvent(EventHubFixture.webEvent("impression"), tabID: tab)
-        #expect(f.fired.count == 3)
+        #expect(f.fired.count == 1)
     }
 
     @Test("immediate pixels fire without the app being foregrounded")

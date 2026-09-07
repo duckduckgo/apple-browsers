@@ -147,7 +147,12 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                                        attachedTabIds: Set<TabUID>,
                                        tabActionHandler: @escaping (MultiTabAttachmentCandidate) -> Void) -> UIMenu {
         let tabActions: [UIAction] = attachableTabs.map { candidate in
+            let favicon = FaviconsHelper.loadFaviconSync(
+                forDomain: candidate.url.host,
+                usingCache: .tabs,
+                useFakeFavicon: true).image?.withRenderingMode(.alwaysOriginal)
             let action = UIAction(title: candidate.title,
+                                  image: favicon,
                                   state: attachedTabIds.contains(candidate.tabId) ? .on : .off) { action in
                 action.state = action.state == .on ? .off : .on
                 tabActionHandler(candidate)

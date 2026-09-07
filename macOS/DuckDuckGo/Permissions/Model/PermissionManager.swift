@@ -35,10 +35,15 @@ struct WebsitePermissionEntry: Equatable {
     let domain: String
     let permissionType: PermissionType
     let decision: PersistedPermissionDecision
+    /// When the user last explicitly set this decision, or `nil` if it predates the stored attribute.
+    let lastModified: Date?
 }
 
 protocol WebsitePermissionManaging: AnyObject {
     var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> { get }
+
+    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType)
+    func removePermission(forDomain domain: String, permissionType: PermissionType)
 }
 
 protocol PermissionManagerProtocol: AnyObject {
@@ -106,7 +111,10 @@ final class PermissionManager: PermissionManagerProtocol, WebsitePermissionManag
     private func publishPersistedPermissions() {
         let entries = permissions.flatMap { domain, permissions in
             permissions.map { permissionType, storedPermission in
-                WebsitePermissionEntry(domain: domain, permissionType: permissionType, decision: storedPermission.decision)
+                WebsitePermissionEntry(domain: domain,
+                                       permissionType: permissionType,
+                                       decision: storedPermission.decision,
+                                       lastModified: storedPermission.lastModified)
             }
         }.sorted {
             if $0.domain == $1.domain {
@@ -159,13 +167,18 @@ final class PermissionManager: PermissionManagerProtocol, WebsitePermissionManag
         defer {
             self.permissionSubject.send( (domain, permissionType, decision) )
         }
+        let lastModified = Date()
         if var oldValue = permissions[domain]?[permissionType] {
             oldValue.decision = decision
+            oldValue.lastModified = lastModified
             storedPermission = oldValue
-            store.update(objectWithId: oldValue.id, decision: decision)
+            store.update(objectWithId: oldValue.id, decision: decision, lastModified: lastModified)
         } else {
             do {
-                storedPermission = try store.add(domain: domain, permissionType: permissionType, decision: decision)
+                storedPermission = try store.add(domain: domain,
+                                                 permissionType: permissionType,
+                                                 decision: decision,
+                                                 lastModified: lastModified)
             } catch {
                 Logger.general.error("PermissionStore: Failed to store permission")
                 return

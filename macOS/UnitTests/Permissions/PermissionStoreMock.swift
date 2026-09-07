@@ -35,6 +35,8 @@ final class PermissionStoreMock: PermissionStore {
     }
 
     var history = [CallHistoryItem]()
+    /// Last `lastModified` value passed to `update(objectWithId:decision:lastModified:completionHandler:)`, by object id.
+    var lastModifiedByObjectId: [NSManagedObjectID: Date?] = [:]
 
     func loadPermissions() throws -> [PermissionEntity] {
         history.append(.load)
@@ -44,8 +46,12 @@ final class PermissionStoreMock: PermissionStore {
         return permissions
     }
 
-    func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, completionHandler: (@MainActor (Error?) -> Void)?) {
+    func update(objectWithId id: NSManagedObjectID,
+                decision: PersistedPermissionDecision?,
+                lastModified: Date?,
+                completionHandler: (@MainActor (Error?) -> Void)?) {
         history.append(.update(id: id, decision: decision))
+        lastModifiedByObjectId[id] = lastModified
         MainActor.assumeMainThread {
             completionHandler?(nil)
         }
@@ -58,12 +64,15 @@ final class PermissionStoreMock: PermissionStore {
         }
     }
 
-    func add(domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision) throws -> StoredPermission {
+    func add(domain: String,
+             permissionType: PermissionType,
+             decision: PersistedPermissionDecision,
+             lastModified: Date) throws -> StoredPermission {
         history.append(.add(domain: domain, permissionType: permissionType, decision: decision))
         if let error = error {
             throw error
         }
-        return StoredPermission(id: .init(), decision: decision)
+        return StoredPermission(id: .init(), decision: decision, lastModified: lastModified)
     }
 
     func clear(except: [StoredPermission], completionHandler: (@MainActor (Error?) -> Void)?) {

@@ -17,10 +17,16 @@
 //
 
 import AppKit
+import Common
 import DesignResourcesKitIcons
 
 struct WebsitePermissionsViewState: Equatable {
+    var recents: [RecentRow] = []
     var rows: [Row] = []
+
+    var hasRecents: Bool {
+        !recents.isEmpty
+    }
 }
 
 extension WebsitePermissionsViewState {
@@ -66,6 +72,46 @@ extension WebsitePermissionsViewState {
 
         var accessibilityIdentifier: String {
             "WebsitePermissions.\(category)"
+        }
+    }
+}
+
+extension WebsitePermissionsViewState {
+    /// A single recently changed website permission. Display strings and the dropdown's options are
+    /// resolved when the row is built, since `PermissionType.localizedDescription` consults
+    /// `NSWorkspace` to name the handling app for external schemes.
+    struct RecentRow: Identifiable, Equatable {
+        let domain: String
+        let permissionType: PermissionType
+        let decision: PersistedPermissionDecision
+        let permissionTitle: String
+        let availableDecisions: [PersistedPermissionDecision]
+
+        var id: String {
+            "\(domain)|\(permissionType.rawValue)"
+        }
+
+        var faviconURL: URL? {
+            URL(string: "\(URL.NavigationalScheme.https.separated())\(domain)")
+        }
+
+        var accessibilityIdentifier: String {
+            "WebsitePermissions.Recent.\(id)"
+        }
+    }
+}
+
+extension PersistedPermissionDecision {
+    /// Label shown in the Website Permissions dropdowns. Reuses the Permission Center wording so a
+    /// decision reads the same wherever the user meets it.
+    var websitePermissionsLabel: String {
+        switch self {
+        case .allow:
+            return UserText.permissionCenterAlwaysAllow
+        case .deny:
+            return UserText.permissionCenterNeverAllow
+        case .ask:
+            return UserText.permissionCenterAlwaysAsk
         }
     }
 }

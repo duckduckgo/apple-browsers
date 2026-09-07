@@ -32,6 +32,9 @@ struct PreferencesWebsitePermissionsView: View {
         static let iconSize: CGFloat = 16
         static let chevronSize: CGFloat = 12
         static let countSeparatorSize: CGFloat = 3
+        static let faviconSize: CGFloat = 16
+        static let removeButtonSize: CGFloat = 16
+        static let dropdownWidth: CGFloat = 124
     }
 
     @ObservedObject
@@ -39,11 +42,89 @@ struct PreferencesWebsitePermissionsView: View {
 
     var body: some View {
         PreferencePane(UserText.websitePermissions) {
+            if model.viewState.hasRecents {
+                recentsSection
+            }
             permissionsSection
         }
         .task {
             model.send(action: .onAppear)
         }
+    }
+
+    private var recentsSection: some View {
+        PreferencePaneSection(UserText.websitePermissionsRecentsSection) {
+            VStack(spacing: 0) {
+                ForEach(Array(model.viewState.recents.enumerated()), id: \.element.id) { index, row in
+                    recentRow(row)
+
+                    if index < model.viewState.recents.count - 1 {
+                        Rectangle()
+                            .fill(Color(designSystemColor: .containerBorderPrimary))
+                            .frame(height: Constants.separatorHeight)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .background(Color(designSystemColor: .containerFillSecondary))
+            .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous))
+        }
+    }
+
+    private func recentRow(_ row: WebsitePermissionsViewState.RecentRow) -> some View {
+        HStack(spacing: 10) {
+            FaviconView(url: row.faviconURL, size: Constants.faviconSize)
+
+            Text(row.domain)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .lineLimit(1)
+                .truncationMode(.middle)
+
+            Spacer(minLength: 10)
+
+            Text(row.permissionTitle)
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .lineLimit(1)
+
+            decisionPicker(row)
+
+            removeButton(row)
+        }
+        .padding(Constants.rowPadding)
+        .frame(height: Constants.rowHeight)
+        .accessibilityIdentifier(row.accessibilityIdentifier)
+    }
+
+    private func decisionPicker(_ row: WebsitePermissionsViewState.RecentRow) -> some View {
+        Picker(selection: Binding(
+            get: { row.decision },
+            set: { model.send(action: .changeRecentDecision(row, $0)) }),
+               label: EmptyView()) {
+            ForEach(row.availableDecisions, id: \.self) { decision in
+                Text(decision.websitePermissionsLabel).tag(decision)
+            }
+        }
+        .labelsHidden()
+        .frame(width: Constants.dropdownWidth)
+        .accessibilityIdentifier("\(row.accessibilityIdentifier).Decision")
+    }
+
+    private func removeButton(_ row: WebsitePermissionsViewState.RecentRow) -> some View {
+        Button {
+            model.send(action: .removeRecent(row))
+        } label: {
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.closeSmall)
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: Constants.removeButtonSize, height: Constants.removeButtonSize)
+                .foregroundColor(Color(designSystemColor: .iconsSecondary))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(UserText.websitePermissionsRemovePermission)
+        .accessibilityIdentifier("\(row.accessibilityIdentifier).Remove")
     }
 
     private var permissionsSection: some View {
@@ -111,7 +192,6 @@ struct PreferencesWebsitePermissionsView: View {
     }
 }
 
-
 #if DEBUG
 private final class PreviewWebsitePermissionManager: WebsitePermissionManaging {
 
@@ -124,6 +204,10 @@ private final class PreviewWebsitePermissionManager: WebsitePermissionManaging {
     var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> {
         Just(entries).eraseToAnyPublisher()
     }
+
+    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {}
+
+    func removePermission(forDomain domain: String, permissionType: PermissionType) {}
 }
 
 @MainActor
@@ -132,14 +216,14 @@ private func previewModel(entries: [WebsitePermissionEntry] = []) -> WebsitePerm
 }
 
 private let previewEntries: [WebsitePermissionEntry] = [
-    WebsitePermissionEntry(domain: "duckduckgo.com", permissionType: .notification, decision: .allow),
-    WebsitePermissionEntry(domain: "example.com", permissionType: .notification, decision: .deny),
-    WebsitePermissionEntry(domain: "maps.example.com", permissionType: .geolocation, decision: .allow),
-    WebsitePermissionEntry(domain: "meet.example.com", permissionType: .camera, decision: .allow),
-    WebsitePermissionEntry(domain: "meet.example.com", permissionType: .microphone, decision: .allow),
-    WebsitePermissionEntry(domain: "example.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow),
-    WebsitePermissionEntry(domain: "example.com", permissionType: .externalScheme(scheme: "zoommtg"), decision: .ask),
-    WebsitePermissionEntry(domain: "shop.example.com", permissionType: .popups, decision: .deny),
+    WebsitePermissionEntry(domain: "duckduckgo.com", permissionType: .notification, decision: .allow, lastModified: nil),
+    WebsitePermissionEntry(domain: "example.com", permissionType: .notification, decision: .deny, lastModified: Date(timeIntervalSinceNow: -30)),
+    WebsitePermissionEntry(domain: "maps.example.com", permissionType: .geolocation, decision: .allow, lastModified: nil),
+    WebsitePermissionEntry(domain: "meet.example.com", permissionType: .camera, decision: .allow, lastModified: Date(timeIntervalSinceNow: -60)),
+    WebsitePermissionEntry(domain: "meet.example.com", permissionType: .microphone, decision: .allow, lastModified: nil),
+    WebsitePermissionEntry(domain: "example.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: Date()),
+    WebsitePermissionEntry(domain: "example.com", permissionType: .externalScheme(scheme: "zoommtg"), decision: .ask, lastModified: nil),
+    WebsitePermissionEntry(domain: "shop.example.com", permissionType: .popups, decision: .deny, lastModified: nil),
 ]
 
 #Preview("Website Permissions - Light") {

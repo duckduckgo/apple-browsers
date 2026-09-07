@@ -30,4 +30,15 @@ final class WebsitePermissionManagerMock: WebsitePermissionManaging {
     func send(_ entries: [WebsitePermissionEntry]) {
         subject.send(entries)
     }
+
+    private(set) var setPermissionCalls: [(decision: PersistedPermissionDecision, domain: String, permissionType: PermissionType)] = []
+    private(set) var removePermissionCalls: [(domain: String, permissionType: PermissionType)] = []
+
+    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
+        setPermissionCalls.append((decision: decision, domain: domain, permissionType: permissionType))
+    }
+
+    func removePermission(forDomain domain: String, permissionType: PermissionType) {
+        removePermissionCalls.append((domain: domain, permissionType: permissionType))
+    }
 }

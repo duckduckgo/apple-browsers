@@ -26,6 +26,11 @@ enum WebsitePermissionCategory: CaseIterable, Hashable, Identifiable {
 
     var id: Self { self }
 
+    /// The category a permission belongs to, or `nil` for types this pane does not show (autoplay).
+    static func category(for permissionType: PermissionType) -> WebsitePermissionCategory? {
+        allCases.first { $0.contains(permissionType) }
+    }
+
     func contains(_ permissionType: PermissionType) -> Bool {
         switch (self, permissionType) {
         case (.notifications, .notification),

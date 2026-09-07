@@ -36,6 +36,8 @@ final class PermissionManagerMock: PermissionManagerProtocol, WebsitePermissionM
     }
 
     var savedPermissions = [String: [PermissionType: PersistedPermissionDecision]]()
+    /// Stamped by `setPermission`; assign directly to drive recency-ordered UI from tests.
+    var lastModifiedDates = [String: [PermissionType: Date]]()
     var setPermissionCalls: [(decision: PersistedPermissionDecision, domain: String, permissionType: PermissionType)] = []
 
     var persistedPermissionTypes: Set<PermissionType> {
@@ -69,11 +71,13 @@ final class PermissionManagerMock: PermissionManagerProtocol, WebsitePermissionM
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
         setPermissionCalls.append((decision: decision, domain: domain, permissionType: permissionType))
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = decision
+        lastModifiedDates[domain.droppingWwwPrefix(), default: [:]][permissionType] = Date()
         publishPersistedPermissions()
     }
 
     func removePermission(forDomain domain: String, permissionType: PermissionType) {
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = nil
+        lastModifiedDates[domain.droppingWwwPrefix(), default: [:]][permissionType] = nil
         publishPersistedPermissions()
     }
 
@@ -116,7 +120,10 @@ final class PermissionManagerMock: PermissionManagerProtocol, WebsitePermissionM
     private func publishPersistedPermissions() {
         let entries = savedPermissions.flatMap { domain, permissions in
             permissions.map { permissionType, decision in
-                WebsitePermissionEntry(domain: domain, permissionType: permissionType, decision: decision)
+                WebsitePermissionEntry(domain: domain,
+                                       permissionType: permissionType,
+                                       decision: decision,
+                                       lastModified: lastModifiedDates[domain]?[permissionType])
             }
         }
         persistedPermissionsSubject.send(entries)

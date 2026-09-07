@@ -1033,8 +1033,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         menu.popUp(positioning: nil, at: origin, in: sender)
     }
 
-    /// The pill's two-item dropdown (New Chat + a state-dependent sidebar item), rebuilt per press so
-    /// its title/icon reflect the current tab and chat state.
+    /// The pill's dropdown with direct entry points for a new chat, chat history, and page context.
     private func makeDuckAIMenuButtonMenu() -> NSMenu {
         let menu = NSMenu()
 
@@ -1046,22 +1045,21 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         newChatItem.keyEquivalentModifierMask = [.command, .option]
         menu.addItem(newChatItem)
 
-        // Chat presented → "Close Sidebar" (close icon); otherwise "Ask About Page" (attachable page)
-        // or "Open Sidebar" (nothing to attach), both with the sidebar-open icon.
-        let sidebarItem = NSMenuItem(title: "", action: #selector(duckAIMenuSidebarAction), keyEquivalent: "")
-        sidebarItem.target = self
-        if isDuckAIChatPresented {
-            sidebarItem.title = UserText.aiChatMenuCloseSidebar
-            sidebarItem.withImage(Self.closeSidebarMenuIcon(), visibleOnMacOS27: true)
-        } else {
-            sidebarItem.title = isCurrentPageAttachableForAIChat ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
-            sidebarItem.withImage(Self.openSidebarMenuIcon(), visibleOnMacOS27: true)
-        }
+        let recentChatsItem = NSMenuItem(title: UserText.aiChatMenuRecentChats, action: #selector(duckAIMenuRecentChatsAction), keyEquivalent: "")
+        recentChatsItem.target = self
+        recentChatsItem.withImage(DesignSystemImages.Glyphs.Size12.chat, visibleOnMacOS27: true)
+        menu.addItem(recentChatsItem)
+
+        menu.addItem(.separator())
+
+        let askAboutPageItem = NSMenuItem(title: UserText.aiChatMenuAskAboutPage, action: #selector(duckAIMenuAskAboutPageAction), keyEquivalent: "")
+        askAboutPageItem.target = self
+        askAboutPageItem.withImage(Self.openSidebarMenuIcon(), visibleOnMacOS27: true)
         // Display-only: mirror the main menu's ⌥⌘L. This transient popup doesn't register the shortcut
         // globally (the main-menu item owns handling); it just shows the glyph for discoverability.
-        sidebarItem.keyEquivalent = "l"
-        sidebarItem.keyEquivalentModifierMask = [.command, .option]
-        menu.addItem(sidebarItem)
+        askAboutPageItem.keyEquivalent = "l"
+        askAboutPageItem.keyEquivalentModifierMask = [.command, .option]
+        menu.addItem(askAboutPageItem)
 
         return menu
     }
@@ -1108,14 +1106,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         mainViewController.openNewDuckAIChatTab()
     }
 
-    /// Toggles the sidebar: closes an open chat (sidebar or floating), otherwise opens it with the
-    /// current page attached.
-    @objc private func duckAIMenuSidebarAction() {
-        if isDuckAIChatPresented {
-            closeDuckAIChat()
-        } else {
-            openDuckAISidebarWithPageAttachment()
-        }
+    @objc private func duckAIMenuRecentChatsAction() {
+        PixelKit.fire(AIChatPixel.aiChatViewAllChatsMainMenu, frequency: .dailyAndStandard)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.mainMenuViewAllChats)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .newChat, behavior: .newTab(selected: true))
+    }
+
+    @objc private func duckAIMenuAskAboutPageAction() {
+        openDuckAISidebarWithPageAttachment()
     }
 
     /// Closes the current tab's Duck.ai chat, whether docked in the sidebar or in a floating window.

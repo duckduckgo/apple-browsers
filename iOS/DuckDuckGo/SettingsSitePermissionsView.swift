@@ -195,6 +195,7 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
 @MainActor
 struct SettingsSitePermissionsView: View {
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var settingsViewModel: SettingsViewModel
     @StateObject private var viewModel: SettingsSitePermissionsViewModel
 
@@ -268,6 +269,7 @@ struct SettingsSitePermissionsView: View {
             }
         }
         .sitePermissionsSectionSpacing()
+        .animation(reduceMotion ? nil : .default, value: viewModel.storedSites)
         .applySettingsListModifiers(title: UserText.sitePermissions, displayMode: .inline, viewModel: settingsViewModel)
         .disabled(!settingsViewModel.state.sitePermissionsEnabled)
         .onFirstAppear {

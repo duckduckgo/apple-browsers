@@ -45,14 +45,7 @@ protocol PermissionManagerProtocol: AnyObject {
     /// `nil` when nothing is persisted. Use only for cleanup or migration paths that genuinely need
     /// to know the on-disk state; everything else should call `permission(forDomain:permissionType:)`.
     func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision?
-    /// `lastModified` is recorded as the instant the user set this decision. It is injected rather than
-    /// read from the clock inside, so a caller handling several permissions can stamp them identically
-    /// and tests can assert an exact value. Implementations default it to `Date()`, and the overload
-    /// below applies the same default when calling through this protocol.
-    func setPermission(_ decision: PersistedPermissionDecision,
-                       forDomain domain: String,
-                       permissionType: PermissionType,
-                       lastModified: Date)
+    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType, lastModified: Date)
 
     func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
     func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
@@ -64,13 +57,9 @@ protocol PermissionManagerProtocol: AnyObject {
 }
 
 extension PermissionManagerProtocol {
-
-    /// Stamps the decision with the current time. Protocol requirements cannot carry default argument
-    /// values, so this stands in for one and keeps ordinary callers free of clock plumbing.
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
-        setPermission(decision, forDomain: domain, permissionType: permissionType, lastModified: Date())
+    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType, lastModified: Date = Date()) {
+        setPermission(decision, forDomain: domain, permissionType: permissionType, lastModified: lastModified)
     }
-
 }
 
 final class PermissionManager: PermissionManagerProtocol {
@@ -132,10 +121,12 @@ final class PermissionManager: PermissionManagerProtocol {
         return Array(domainPermissions.keys)
     }
 
-    func setPermission(_ decision: PersistedPermissionDecision,
-                       forDomain domain: String,
-                       permissionType: PermissionType,
-                       lastModified: Date = Date()) {
+    func setPermission(
+        _ decision: PersistedPermissionDecision,
+        forDomain domain: String,
+        permissionType: PermissionType,
+        lastModified: Date = Date()
+    ) {
 
         let storedPermission: StoredPermission
         let domain = domain.droppingWwwPrefix()

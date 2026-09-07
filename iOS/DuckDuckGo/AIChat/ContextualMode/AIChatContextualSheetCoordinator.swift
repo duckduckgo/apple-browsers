@@ -150,17 +150,19 @@ final class AIChatContextualSheetCoordinator {
     }
 
 
+    private var chatStorage: DuckAiNativeStorageHandling? {
+        isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
+    }
+
+    private var isNativeDataAccessEnabled: Bool {
+        AIChatFeatureFlagProvider(featureFlagger: featureFlagger).isNativeDataAccessEnabled()
+    }
+
     /// Whether a persisted chat has been deleted, or `false` when that cannot be established.
-    ///
-    /// Deletion must be proven by a keyed read returning nothing. A store that is absent, unmigrated
-    /// or unreadable cannot answer, and its silence is not evidence: treating it as such discards
-    /// chats that are perfectly fine.
-    static func isChatDeleted(chatID: String?,
-                              in storage: DuckAiNativeStorageHandling?,
-                              isNativeDataAccessEnabled: Bool) -> Bool {
+    private func isChatDeleted(chatID: String?) -> Bool {
         guard let chatID,
               isNativeDataAccessEnabled,
-              let storage,
+              let storage = chatStorage,
               (try? storage.isMigrationDone()) == true else { return false }
         do {
             return try storage.getChat(chatId: chatID) == nil
@@ -168,14 +170,6 @@ final class AIChatContextualSheetCoordinator {
             Logger.aiChat.error("[Contextual] Could not verify \(chatID): \(error.localizedDescription)")
             return false
         }
-    }
-
-    private var chatStorage: DuckAiNativeStorageHandling? {
-        isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
-    }
-
-    private var isNativeDataAccessEnabled: Bool {
-        AIChatFeatureFlagProvider(featureFlagger: featureFlagger).isNativeDataAccessEnabled()
     }
 
     private var isImmediateContextualUTIEnabled: Bool {
@@ -719,10 +713,7 @@ private extension AIChatContextualSheetCoordinator {
     func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?, opensOntoSubmittedChat: Bool = false) {
         guard presentingVC.presentedViewController == nil, floatingInputViewController == nil else { return }
 
-        if let restoreURL,
-           !Self.isChatDeleted(chatID: restoreURL.duckAIChatID,
-                               in: chatStorage,
-                               isNativeDataAccessEnabled: isNativeDataAccessEnabled) {
+        if let restoreURL, !isChatDeleted(chatID: restoreURL.duckAIChatID) {
             sessionState.restoreChat(with: restoreURL)
         }
 

@@ -60,60 +60,25 @@ final class StubDuckAiNativeStorage: DuckAiNativeStorageHandling {
     func markMigrationDone(key: String) throws {}
 }
 
-final class IsChatDeletedTests: XCTestCase {
-
-    private let chatID = "760d681e-9173-4abd-a120-d660783787e9"
-    private var storage: StubDuckAiNativeStorage!
-
-    override func setUp() {
-        super.setUp()
-        storage = StubDuckAiNativeStorage()
-    }
-
-    func testWhenTheStoreHasNoSuchChatThenItWasDeleted() {
-        XCTAssertTrue(AIChatContextualSheetCoordinator.isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true))
-    }
-
-    func testWhenTheStoreHasTheChatThenItWasNotDeleted() {
-        storage.chats[chatID] = DuckAiChatRecord(chatId: chatID, data: Data())
-
-        XCTAssertFalse(AIChatContextualSheetCoordinator.isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true))
-    }
-
-    func testWhenTheReadFailsThenNoDeletionIsClaimed() {
-        storage.readError = StubDuckAiNativeStorage.ReadFailure()
-
-        XCTAssertFalse(AIChatContextualSheetCoordinator.isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true))
-    }
-
-    func testWhenTheStoreCannotAnswerThenNoDeletionIsClaimed() {
-        storage.migrationDone = false
-        XCTAssertFalse(AIChatContextualSheetCoordinator.isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true), "unmigrated store")
-
-        storage.migrationDone = true
-        XCTAssertFalse(AIChatContextualSheetCoordinator.isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: false), "native access off")
-        XCTAssertFalse(AIChatContextualSheetCoordinator.isChatDeleted(chatID: chatID, in: nil, isNativeDataAccessEnabled: true), "no store")
-        XCTAssertFalse(AIChatContextualSheetCoordinator.isChatDeleted(chatID: nil, in: storage, isNativeDataAccessEnabled: true), "no chat id")
-    }
-}
-
-/// The behaviour the helper exists for: a saved chat is restored unless the store says it is gone.
+/// A saved chat is restored unless the store positively says it is gone.
 @MainActor
 final class RestoringADeletedChatTests: XCTestCase {
 
-    private let chatURL = URL(string: "https://duckduckgo.com/?ia=chat&chatID=760d681e-9173-4abd-a120-d660783787e9")!
+    private let chatID = "760d681e-9173-4abd-a120-d660783787e9"
+    private lazy var chatURL = URL(string: "https://duckduckgo.com/?ia=chat&chatID=\(chatID)")!
     private var storage: StubDuckAiNativeStorage!
+    private var featureFlagger: MockFeatureFlagger!
     private var presentingVC: MockPresentingViewController!
-    private let featureFlagger = MockFeatureFlagger()
 
     override func setUp() {
         super.setUp()
         storage = StubDuckAiNativeStorage()
-        presentingVC = MockPresentingViewController()
+        featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        presentingVC = MockPresentingViewController()
     }
 
-    private func makeSUT() -> AIChatContextualSheetCoordinator {
+    private func makeSUT(storage: DuckAiNativeStorageHandling?) -> AIChatContextualSheetCoordinator {
         AIChatContextualSheetCoordinator(
             voiceSearchHelper: MockVoiceSearchHelper(),
             aiChatSettings: MockAIChatSettingsProvider(),
@@ -130,30 +95,53 @@ final class RestoringADeletedChatTests: XCTestCase {
         )
     }
 
-    func testWhenTheChatIsStillInTheStoreThenItIsRestored() async {
-        storage.chats["760d681e-9173-4abd-a120-d660783787e9"] = DuckAiChatRecord(chatId: "760d681e-9173-4abd-a120-d660783787e9", data: Data())
-        let sut = makeSUT()
-
+    private func restoredURL(storage: DuckAiNativeStorageHandling?) async -> URL? {
+        let sut = makeSUT(storage: storage)
         await sut.presentSheet(from: presentingVC, restoreURL: chatURL)
+        return sut.sessionState.contextualChatURL
+    }
 
-        XCTAssertEqual(sut.sessionState.contextualChatURL, chatURL)
+    func testWhenTheChatIsStillInTheStoreThenItIsRestored() async {
+        storage.chats[chatID] = DuckAiChatRecord(chatId: chatID, data: Data())
+
+        let restored = await restoredURL(storage: storage)
+
+        XCTAssertEqual(restored, chatURL)
     }
 
     func testWhenTheChatWasDeletedThenItIsNotRestored() async {
-        let sut = makeSUT()
+        let restored = await restoredURL(storage: storage)
 
-        await sut.presentSheet(from: presentingVC, restoreURL: chatURL)
-
-        XCTAssertNil(sut.sessionState.contextualChatURL)
+        XCTAssertNil(restored)
     }
 
-    func testWhenTheStoreCannotAnswerThenTheChatIsStillRestored() async {
-        // The regression: an unreadable store must not cost the user their chat.
+    func testWhenTheReadFailsThenTheChatIsStillRestored() async {
         storage.readError = StubDuckAiNativeStorage.ReadFailure()
-        let sut = makeSUT()
 
-        await sut.presentSheet(from: presentingVC, restoreURL: chatURL)
+        let restored = await restoredURL(storage: storage)
 
-        XCTAssertEqual(sut.sessionState.contextualChatURL, chatURL)
+        XCTAssertEqual(restored, chatURL, "An unreadable store must not cost the user their chat")
+    }
+
+    func testWhenTheStoreIsNotMigratedThenTheChatIsStillRestored() async {
+        storage.migrationDone = false
+
+        let restored = await restoredURL(storage: storage)
+
+        XCTAssertEqual(restored, chatURL)
+    }
+
+    func testWhenNativeDataAccessIsOffThenTheChatIsStillRestored() async {
+        featureFlagger.enabledFeatureFlags = []
+
+        let restored = await restoredURL(storage: storage)
+
+        XCTAssertEqual(restored, chatURL)
+    }
+
+    func testWhenThereIsNoStoreThenTheChatIsStillRestored() async {
+        let restored = await restoredURL(storage: nil)
+
+        XCTAssertEqual(restored, chatURL)
     }
 }

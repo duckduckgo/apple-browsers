@@ -23,6 +23,7 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
 import Core
+import DuckAiDataStore
 import WebKit
 @testable import DuckDuckGo
 

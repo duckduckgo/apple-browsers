@@ -36,12 +36,22 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
 
     func testWhenThereAreNoPersistedPermissionsThenAllRowsHaveZeroCount() {
         let sut = createSUT()
+        let expectation = expectation(description: "Permission rows published")
+        var receivedRows: [WebsitePermissionsViewState.Row] = []
+
+        let cancellable = sut.$viewState
+            .dropFirst()
+            .prefix(1)
+            .sink { state in
+                receivedRows = state.rows
+                expectation.fulfill()
+            }
+        defer { cancellable.cancel() }
 
         sut.send(action: .onAppear)
-        drainMainQueue()
+        wait(for: [expectation], timeout: 1)
 
-        let rows = sut.viewState.rows
-        XCTAssertEqual(rows.map(\.category), [
+        XCTAssertEqual(receivedRows.map(\.category), [
             .notifications,
             .location,
             .camera,
@@ -49,7 +59,7 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
             .externalApps,
             .popups,
         ])
-        XCTAssertTrue(rows.allSatisfy { $0.count == 0 })
+        XCTAssertTrue(receivedRows.allSatisfy { $0.count == 0 })
     }
 
     func testWhenBuildingRowsThenPermissionsAreGroupedByCategoryAndAutoplayIsExcluded() {
@@ -104,12 +114,6 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1)
         withExtendedLifetime(cancellable) {}
-    }
-
-    private func drainMainQueue() {
-        let exp = expectation(description: "main queue drained")
-        DispatchQueue.main.async { exp.fulfill() }
-        wait(for: [exp], timeout: 1.0)
     }
 
     private func createSUT(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {

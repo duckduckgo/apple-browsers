@@ -485,5 +485,68 @@
                 "description": "Unix timestamp (UTC) denoting the start of the measurement period"
             }
         ]
+    },
+    "webTelemetry_detectorPerf_day_macos": {
+        "description": "Daily bucketed counts of measured pages, Web Detection runs and failures, and detector performance threshold crossings. Fired by EventHub at the end of each 1-day period.",
+        "owners": ["miasma13"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            "appVersion",
+            {
+                "keyPattern": "^(pagesMeasured|webDetectionRan|webDetectionFailed|webDetectionOver(8|16|50|150)|webDetectionTotalOver(50|100|250|500)|combinedOver(100|250|500))$",
+                "type": "string",
+                "description": "Bucketed count for the period.",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_detectorPerf_week_macos": {
+        "description": "Weekly bucketed counts of measured pages, Web Detection runs and failures, and detector performance threshold crossings. Fired by EventHub at the end of each 7-day period.",
+        "owners": ["miasma13"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            "appVersion",
+            {
+                "keyPattern": "^(pagesMeasured|webDetectionRan|webDetectionFailed|webDetectionOver(8|16|50|150)|webDetectionTotalOver(50|100|250|500)|combinedOver(100|250|500))$",
+                "type": "string",
+                "description": "Bucketed count for the period.",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "detectorPerf_severe_macos": {
+        "description": "Fired immediately when Web Detection execution crosses the highest configured single-run, accumulated, or combined performance threshold.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "kind",
+                "type": "string",
+                "description": "The threshold family that was crossed.",
+                "enum": ["single", "total", "combined"]
+            },
+            {
+                "key": "detector",
+                "type": "string",
+                "description": "The Web Detection config ID for single-run crossings, or the pooled accumulator name for total and combined crossings.",
+                "pattern": "^[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*$"
+            },
+            {
+                "key": "thresholdMs",
+                "type": "number",
+                "description": "The configured performance threshold crossed, in milliseconds."
+            }
+        ]
     }
 }

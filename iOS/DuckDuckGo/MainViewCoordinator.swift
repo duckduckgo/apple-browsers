@@ -194,15 +194,26 @@ class MainViewCoordinator {
         return activating
     }
 
+    private func applyOmnibarHostedInNavigationContainerPose() {
+        navigationBarContainer.isHidden = false
+        navigationBarContainer.alpha = 1
+        navigationBarContainer.isUserInteractionEnabled = true
+
+        let surfaceOwnedElsewhere = isNavigationChromeHidden || isUnifiedToggleInputVisible
+        navigationBarCollectionView.alpha = surfaceOwnedElsewhere ? 0 : 1
+        navigationBarCollectionView.isUserInteractionEnabled = !surfaceOwnedElsewhere
+        if !surfaceOwnedElsewhere {
+            navigationBarContainer.bringSubviewToFront(navigationBarCollectionView)
+        }
+    }
+
     func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {
         addressBarPosition = position
         applyContentContainerTopAnchorForCurrentState()
         guard isFloatingUIEnabled else {
             toolbar.setOmnibarView(nil, height: 0)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
-            navigationBarContainer.isHidden = false
-            navigationBarContainer.alpha = 1
-            navigationBarContainer.isUserInteractionEnabled = true
+            applyOmnibarHostedInNavigationContainerPose()
             setContentContainerBottomAnchorMode(requesting: .toolbar)
             isOmnibarInToolbar = false
             return
@@ -215,9 +226,7 @@ class MainViewCoordinator {
             toolbar.setOmnibarView(nil, height: 0)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
             omniBar.barView.makeGlass()
-            navigationBarContainer.isHidden = false
-            navigationBarContainer.alpha = 1
-            navigationBarContainer.isUserInteractionEnabled = true
+            applyOmnibarHostedInNavigationContainerPose()
             bringFloatingTopNavigationBarToFrontIfNeeded()
             // Span content full-bleed to the main view bottom (behind the floating toolbar) so the
             // web scroll edge sits at the screen bottom and content doesn't move when the bars hide.
@@ -232,9 +241,7 @@ class MainViewCoordinator {
             ) else {
                 toolbar.setOmnibarView(nil, height: 0)
                 constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
-                navigationBarContainer.isHidden = false
-                navigationBarContainer.alpha = 1
-                navigationBarContainer.isUserInteractionEnabled = true
+                applyOmnibarHostedInNavigationContainerPose()
                 isOmnibarInToolbar = false
                 return
             }
@@ -339,9 +346,7 @@ class MainViewCoordinator {
         guard addressBarPosition.isBottom else { return }
 
         if isUnifiedToggleInputVisible {
-            navigationBarContainer.isHidden = false
-            navigationBarContainer.alpha = 1
-            navigationBarContainer.isUserInteractionEnabled = true
+            applyOmnibarHostedInNavigationContainerPose()
             setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
             return
         }
@@ -349,9 +354,7 @@ class MainViewCoordinator {
         if isFloatingUIEnabled, isOmnibarInToolbar {
             ensureBottomOmnibarAttachedToToolbarIfNeeded()
         } else {
-            navigationBarContainer.isHidden = false
-            navigationBarContainer.alpha = 1
-            navigationBarContainer.isUserInteractionEnabled = true
+            applyOmnibarHostedInNavigationContainerPose()
         }
 
         if isNavigationChromeHidden {
@@ -393,9 +396,7 @@ class MainViewCoordinator {
         } else {
             toolbar.prepareForOmnibarDetachment()
         }
-        navigationBarContainer.isHidden = false
-        navigationBarContainer.alpha = 1
-        navigationBarContainer.isUserInteractionEnabled = true
+        applyOmnibarHostedInNavigationContainerPose()
         isOmnibarInToolbar = false
     }
 

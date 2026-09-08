@@ -214,6 +214,7 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
 
         moveAddressBar(to: barPosition)
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
         assertChromeButtonsAreUsable()
 
         let menuButton = element(withIdentifier: AccessibilityID.toolbarMenu)
@@ -530,11 +531,13 @@ class FloatingUIXCUITestCase: XCTestCase {
     }
 
     private func moveAddressBar(to position: FloatingUIBarPosition, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout), file: file, line: line)
         searchField.press(forDuration: 0.8)
         let moveAction = app.buttons[position.moveAction]
         XCTAssertTrue(moveAction.waitForHittable(timeout: timeout), file: file, line: line)
         moveAction.tap()
         XCTAssertTrue(waitUntil(timeout: timeout) {
+            guard self.searchField.exists, self.searchField.isHittable else { return false }
             switch position {
             case .top:
                 return self.searchField.frame.midY < self.app.frame.midY

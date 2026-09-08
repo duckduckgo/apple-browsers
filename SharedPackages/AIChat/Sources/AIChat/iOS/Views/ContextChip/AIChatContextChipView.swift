@@ -37,11 +37,6 @@ public final class AIChatContextChipView: UIView {
         static let cornerRadius: CGFloat = 24
         static let borderWidth: CGFloat = 1
         /// The offer reads as provisional, so its outline is heavier and broken rather than solid.
-        /// The design's `Parts/Attachment-Type`: 192x40, smaller than the attached pill this view
-        /// also draws. The attached size is left alone — changing it is not this feature's business.
-        static let suggestedWidth: CGFloat = 192
-        static let suggestedHeight: CGFloat = 40
-        static let suggestedCornerRadius: CGFloat = 20
         static let suggestedBorderWidth: CGFloat = 1.5
         static let suggestedDashPattern: [NSNumber] = [5, 7]
         /// The design puts a 24pt blur behind the pill; a shadow is the closest UIKit gets.
@@ -87,7 +82,6 @@ public final class AIChatContextChipView: UIView {
         return border
     }()
 
-    private var heightConstraint: NSLayoutConstraint!
     private var fixedWidthConstraint: NSLayoutConstraint!
     private var titleTrailingToRemoveButtonConstraint: NSLayoutConstraint!
 
@@ -162,11 +156,7 @@ public final class AIChatContextChipView: UIView {
     /// Clamped to a capsule: the design's 24 exceeds half the 44pt height and would kink.
     public override func layoutSubviews() {
         super.layoutSubviews()
-        if case .suggested = currentState {
-            layer.cornerRadius = Constants.suggestedCornerRadius
-        } else {
-            layer.cornerRadius = min(Constants.cornerRadius, bounds.height / 2)
-        }
+        layer.cornerRadius = min(Constants.cornerRadius, bounds.height / 2)
         removeButton.layer.cornerRadius = removeButton.bounds.height / 2
 
         dashedBorderLayer.frame = bounds
@@ -272,7 +262,7 @@ private extension AIChatContextChipView {
             titleLabel.font = UIFont.daxSubheadSemibold()
             titleLabel.accessibilityLabel = offer
             titleLabel.accessibilityTraits = .button
-            applyPillLayout(width: Constants.suggestedWidth, height: Constants.suggestedHeight)
+            applyPillLayout()
             removeButton.isHidden = false
             removeButton.tintColor = UIColor(designSystemColor: .icons)
             removeButton.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
@@ -319,10 +309,8 @@ private extension AIChatContextChipView {
     }
 
     /// `.loading` drops the fixed geometry, so the pill states have to put it back.
-    func applyPillLayout(width: CGFloat = Constants.chipWidth, height: CGFloat = Constants.height) {
-        fixedWidthConstraint.constant = width
+    func applyPillLayout() {
         fixedWidthConstraint.isActive = true
-        heightConstraint.constant = height
         titleTrailingToRemoveButtonConstraint.isActive = true
     }
 
@@ -359,7 +347,6 @@ private extension AIChatContextChipView {
         // priority so the host's external `height == 0` collapse can break it.
         let height = heightAnchor.constraint(equalToConstant: Constants.height)
         height.priority = .defaultHigh
-        heightConstraint = height
 
         let width = widthAnchor.constraint(equalToConstant: Constants.chipWidth)
         fixedWidthConstraint = width

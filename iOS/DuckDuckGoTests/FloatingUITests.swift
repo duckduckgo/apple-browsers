@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import WebKit
 import XCTest
 @testable import Core
 @testable import DuckDuckGo
@@ -126,14 +127,14 @@ final class FloatingUIManagerTests: XCTestCase {
 
 final class FloatingUIPullToRefreshTests: XCTestCase {
 
-    func testWhenFloatingUIIsEnabledThenRefreshBackgroundUsesSurfaceCanvas() {
+    func testWhenFloatingUIIsEnabledThenRefreshBackgroundUsesBackgroundColor() {
         let pageBackgroundColor = UIColor.red
         let refreshBackgroundColor = PullToRefreshViewAdapter.refreshBackgroundColor(pageBackgroundColor: pageBackgroundColor,
                                                                                       isFloatingUIEnabled: true)
         let traits = UITraitCollection(userInterfaceStyle: .light)
 
         XCTAssertEqual(refreshBackgroundColor.resolvedColor(with: traits),
-                       UIColor(designSystemColor: .surfaceCanvas).resolvedColor(with: traits))
+                       UIColor(designSystemColor: .background).resolvedColor(with: traits))
     }
 
     func testWhenFloatingUIIsDisabledThenRefreshBackgroundUsesPageColor() {
@@ -142,6 +143,81 @@ final class FloatingUIPullToRefreshTests: XCTestCase {
                                                                                       isFloatingUIEnabled: false)
 
         XCTAssertEqual(refreshBackgroundColor, pageBackgroundColor)
+    }
+
+    func testApplyingRefreshBackgroundUpdatesEveryVisibleWebViewLayer() {
+        let webView = WKWebView()
+        let refreshBackgroundColor = UIColor(designSystemColor: .background)
+        let traits = UITraitCollection(userInterfaceStyle: .light)
+        let expectedComponents = refreshBackgroundColor.resolvedColor(with: traits).cgColor.components
+
+        PullToRefreshViewAdapter.applyRefreshBackgroundColor(refreshBackgroundColor, to: webView)
+
+        XCTAssertEqual(webView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+        XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+        XCTAssertEqual(webView.underPageBackgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+    }
+
+    func testRefreshTriggerThresholdIsBoundedForFloatingUIWithoutChangingClassicUI() {
+        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 844, isFloatingUIEnabled: true), 120)
+        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 200, isFloatingUIEnabled: true), 80)
+        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 844, isFloatingUIEnabled: false), 253.2,
+                       accuracy: 0.01)
+    }
+
+    func testWhenFloatingUIIsDisabledThenRefreshHostRemainsBehindPullableView() throws {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let pageScrollView = UIScrollView(frame: pullableView.bounds)
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(pageScrollView)
+        _ = PullToRefreshViewAdapter(with: pageScrollView,
+                                     pullableView: pullableView,
+                                     isFloatingUIEnabled: false,
+                                     onRefresh: {})
+        let refreshHost = try XCTUnwrap(hostView.subviews.compactMap { $0 as? UIScrollView }.first)
+
+        XCTAssertLessThan(try XCTUnwrap(hostView.subviews.firstIndex(of: refreshHost)),
+                          try XCTUnwrap(hostView.subviews.firstIndex(of: pullableView)))
+        XCTAssertTrue(refreshHost.isUserInteractionEnabled)
+        XCTAssertEqual(refreshHost.contentInsetAdjustmentBehavior, .automatic)
+    }
+
+    func testWhenTopOffsetChangesThenBackdropStaysFixedAndRefreshHostAllowsOverflow() throws {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let pageScrollView = UIScrollView(frame: pullableView.bounds)
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(pageScrollView)
+        let adapter = PullToRefreshViewAdapter(with: pageScrollView,
+                                               pullableView: pullableView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+        hostView.layoutIfNeeded()
+        let refreshHost = try XCTUnwrap(hostView.subviews.compactMap { $0 as? UIScrollView }.first)
+        let backdrop = try XCTUnwrap(hostView.subviews.first { $0 !== pullableView && !($0 is UIScrollView) })
+        let initialBackdropMinY = backdrop.frame.minY
+        let refreshHostTopConstraint = try XCTUnwrap(hostView.constraints.first {
+            guard let constrainedView = $0.firstItem as? UIView else { return false }
+            return constrainedView === refreshHost && $0.firstAttribute == .top
+        })
+
+        adapter.setTopOffset(72)
+        hostView.layoutIfNeeded()
+
+        XCTAssertEqual(backdrop.frame.minY, initialBackdropMinY)
+        XCTAssertEqual(backdrop.frame.maxY, hostView.bounds.maxY)
+        XCTAssertEqual(refreshHostTopConstraint.constant, 72)
+        XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: .init(userInterfaceStyle: .light)),
+                       UIColor(designSystemColor: .background).resolvedColor(with: .init(userInterfaceStyle: .light)))
+        XCTAssertEqual(refreshHost.backgroundColor, .clear)
+        XCTAssertEqual(refreshHost.refreshControl?.backgroundColor?.resolvedColor(with: .init(userInterfaceStyle: .light)),
+                       UIColor(designSystemColor: .background).resolvedColor(with: .init(userInterfaceStyle: .light)))
+        XCTAssertEqual(refreshHost.contentInsetAdjustmentBehavior, .never)
+        XCTAssertGreaterThan(try XCTUnwrap(hostView.subviews.firstIndex(of: refreshHost)),
+                             try XCTUnwrap(hostView.subviews.firstIndex(of: pullableView)))
+        XCTAssertFalse(refreshHost.isUserInteractionEnabled)
+        XCTAssertFalse(refreshHost.clipsToBounds)
     }
 }
 

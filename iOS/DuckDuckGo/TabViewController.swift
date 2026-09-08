@@ -1371,6 +1371,7 @@ class TabViewController: UIViewController {
 
         pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
                                                             pullableView: webViewContainer,
+                                                            webView: webView,
                                                             isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled,
                                                             onRefresh: { [weak self] in
             self?.handlePullToRefresh()

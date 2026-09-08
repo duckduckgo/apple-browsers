@@ -182,6 +182,7 @@ final class UnifiedToggleInputViewController: UIViewController {
     var isInputBlockedByUsageLimit: Bool = false {
         didSet {
             guard isInputBlockedByUsageLimit != oldValue else { return }
+            if isInputBlockedByUsageLimit { mentionHandler?.dismiss() }
             handler.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit
             inputBarView.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit
         }
@@ -190,6 +191,7 @@ final class UnifiedToggleInputViewController: UIViewController {
     var isGenerating: Bool = false {
         didSet {
             guard isGenerating != oldValue else { return }
+            if isGenerating { mentionHandler?.dismiss() }
             handler.isGenerating = isGenerating
             inputBarView.isGenerating = isGenerating
         }
@@ -223,6 +225,11 @@ final class UnifiedToggleInputViewController: UIViewController {
     var attachmentMenu: UIMenu? {
         get { inputBarView.attachmentMenu }
         set { inputBarView.attachmentMenu = newValue }
+    }
+
+    var mentionHandler: (any TextEntryMentionHandling)? {
+        get { inputBarView.mentionHandler }
+        set { inputBarView.mentionHandler = newValue }
     }
 
     weak var attachmentPasteHandler: AttachmentPasteHandling? {

@@ -93,6 +93,7 @@ class SwitchBarTextEntryView: UIView {
     var style: Style = .multiLine {
         didSet {
             guard style != oldValue else { return }
+            mentionHandler?.dismiss()
             let wasFirstResponder = textView.isFirstResponder || textField.isFirstResponder
 
             // Unhide and populate the incoming control before touching first responder.
@@ -236,6 +237,8 @@ class SwitchBarTextEntryView: UIView {
 
     var onTextInputActivated: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
+
+    weak var mentionHandler: (any TextEntryMentionHandling)?
 
     /// Injected paste handler for the multi-line (Duck.ai) control. Attachments are Duck.ai-only, so the single-line search field doesn't receive it. Nil leaves default paste.
     weak var attachmentPasteHandler: AttachmentPasteHandling? {
@@ -420,6 +423,7 @@ class SwitchBarTextEntryView: UIView {
     private func setupButtonsView() {
         buttonsView.onClearTapped = { [weak self] in
             guard let self else { return }
+            self.mentionHandler?.dismiss()
             self.hasBeenInteractedWith = true
             self.fireClearButtonPressedPixel()
 
@@ -501,6 +505,7 @@ class SwitchBarTextEntryView: UIView {
     /// dispatch, so clearing it here would clobber `textView.text` mid-collapse. The real handler
     /// reset happens at dismiss completion via the coordinator's `clearText()`.
     func applyDismissSnapshot(_ snapshot: UTIDismissSnapshot) {
+        mentionHandler?.dismiss()
         if usesTextField {
             textField.text = snapshot.text
         } else {
@@ -968,7 +973,15 @@ class SwitchBarTextEntryView: UIView {
 
     @discardableResult
     override func resignFirstResponder() -> Bool {
+        mentionHandler?.dismiss()
         return usesTextField ? textField.resignFirstResponder() : textView.resignFirstResponder()
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window == nil {
+            mentionHandler?.dismiss()
+        }
     }
 
     func selectAllText() {
@@ -998,6 +1011,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     func setQueryText(_ text: String) {
+        mentionHandler?.dismiss()
         if usesTextField {
             textField.text = text
         } else {
@@ -1137,6 +1151,7 @@ class SwitchBarTextEntryView: UIView {
 extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textViewDidChangeSelection(_ textView: UITextView) {
+        mentionHandler?.selectionDidChange(in: textView)
         guard canExpandOnSelectionChange else { return }
         canExpandOnSelectionChange = false
         // A selection change (e.g. the select-all on focus) only needs the expandable-height
@@ -1148,6 +1163,10 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
         onTextInputActivated?()
         fireTextAreaFocusedPixel()
+    }
+
+    func textViewDidEndEditing(_ textView: UITextView) {
+        mentionHandler?.dismiss()
     }
 
     func textViewDidChange(_ textView: UITextView) {
@@ -1166,6 +1185,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         if !handler.isUsingFadeOutAnimation {
             textView.reloadInputViews()
         }
+        mentionHandler?.textDidChange(in: textView)
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {

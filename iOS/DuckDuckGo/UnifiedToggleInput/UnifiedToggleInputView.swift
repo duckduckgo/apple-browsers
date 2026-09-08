@@ -277,6 +277,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.attachmentMenu = newValue }
     }
 
+    var mentionHandler: (any TextEntryMentionHandling)? {
+        get { textEntryView.mentionHandler }
+        set { textEntryView.mentionHandler = newValue }
+    }
+
     weak var attachmentPasteHandler: AttachmentPasteHandling? {
         get { textEntryView.attachmentPasteHandler }
         set { textEntryView.attachmentPasteHandler = newValue }

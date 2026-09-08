@@ -190,6 +190,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     /// The tab this input belongs to, excluded from the tab picker.
     private var multiTabCurrentTabUID: TabUID?
+    private var multiTabMentionController: MultiTabMentionController?
 
     /// The attached tabs held for a delivery in flight.
     ///
@@ -1016,6 +1017,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func hide() {
+        multiTabMentionController?.dismiss()
         keyboardMonitor.disarm()
         displayState = .hidden
         isClearingModelPickerPinWithoutPersist = true
@@ -1684,12 +1686,30 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     /// Hands the input the tabs it can attach, and the tab it belongs to.
     func setMultiTabAttachmentContext(_ context: MultiTabAttachmentContext?, currentTabUID: TabUID?) {
+        multiTabMentionController?.dismiss()
         if multiTabAttachmentContext !== context || multiTabCurrentTabUID != currentTabUID {
             draftTabPreparations.removeAll()
             submittedTabPreparations.removeAll()
         }
         multiTabAttachmentContext = context
         multiTabCurrentTabUID = currentTabUID
+        if #available(iOS 16.0, *), context != nil, multiTabMentionController == nil {
+            let mentionController = MultiTabMentionController(environment: .init(
+                isEnabled: { [weak self] in
+                    guard let self else { return false }
+                    return self.isContextualChatState && self.inputMode == .aiChat
+                        && self.multiTabAttachmentContext?.isEnabled == true
+                        && !self.viewController.isGenerating && !self.viewController.isInputBlockedByUsageLimit
+                },
+                tabs: { [weak self] in self?.multiTabAttachmentCandidates ?? [] },
+                attachedTabIds: { [weak self] in
+                    Set(self?.viewController.currentAttachments.compactMap { $0.tabAttachment?.tabId } ?? [])
+                },
+                toggleAttachment: { [weak self] in self?.attachmentController.toggleTabAttachment($0) ?? false }
+            ), presenter: MultiTabMentionMenuPresenter())
+            multiTabMentionController = mentionController
+            viewController.mentionHandler = mentionController
+        }
         prepareDraftTabContexts()
         attachmentController.updateAttachButtonPresentation()
     }
@@ -2172,6 +2192,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func resetSessionState() {
+        multiTabMentionController?.dismiss()
         isNewChatPending = false
         aiChatStatus = .unknown
         attachmentUsage = nil

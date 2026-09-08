@@ -408,7 +408,10 @@ final class UTIAttachmentController {
 
     /// Attaches the tab, or detaches it when it is already attached. The menu is rebuilt afterwards
     /// so the checkmarks match the chips.
-    func toggleTabAttachment(_ candidate: MultiTabAttachmentCandidate) {
+    @discardableResult
+    func toggleTabAttachment(_ candidate: MultiTabAttachmentCandidate) -> Bool {
+        guard environment.isContextualChatState(), !view.isGenerating(),
+              environment.multiTabAttachmentTabs().contains(where: { $0.tabId == candidate.tabId && $0.url == candidate.url }) else { return false }
         if let attached = view.currentAttachments().first(where: { $0.tabAttachment?.tabId == candidate.tabId }) {
             view.removeAttachment(attached.id)
         } else {
@@ -419,6 +422,7 @@ final class UTIAttachmentController {
         callbacks.onDraftChanged()
         callbacks.onExpandIfNeeded()
         updateAttachButtonPresentation()
+        return true
     }
 
     /// Opens the system file picker directly for the promo "add file" CTA. No-ops when files can't be

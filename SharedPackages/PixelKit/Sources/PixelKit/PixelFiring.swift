@@ -51,3 +51,15 @@ extension PixelFiring {
 /// `PixelKit` satisfies the requirement with its own `fire(event:frequency:options:onComplete:)`,
 /// so no forwarding shim is needed here.
 extension PixelKit: PixelFiring {}
+
+/// `PixelFiring` under a name that survives being imported alongside another module's own
+/// `PixelFiring` protocol (e.g. iOS's legacy `Core.PixelFiring`) without a collision.
+///
+/// Writing `PixelKit.PixelFiring` does not work as a workaround: this module also declares a
+/// top-level `class PixelKit`, so the module name is shadowed and `PixelKit.PixelFiring` resolves
+/// to a (non-existent) nested member of that class instead of this module-level protocol. Exporting
+/// the alias from here, under a name no other module declares, sidesteps that — and also sidesteps
+/// same-module declarations always shadowing an imported name: a module that declares its own
+/// `PixelFiring` can still see this name unambiguously, because the module doesn't declare
+/// `PixelKitFiring` itself.
+public typealias PixelKitFiring = PixelFiring

@@ -20,6 +20,7 @@
 import Contacts
 import ContactsUI
 import Core
+import PixelKit
 import SwiftUI
 import UIKit
 
@@ -53,12 +54,12 @@ struct ContactCardView: UIViewControllerRepresentable {
     }
 
     final class Coordinator: NSObject, CNContactViewControllerDelegate {
-        let pixelFiring: PixelFiring.Type
+        let pixelFiring: (any PixelKitFiring)?
         private let onSaved: () -> Void
         private let onDismiss: () -> Void
         private let completion: ContactCardCompletion
 
-        init(onSaved: @escaping () -> Void, onDismiss: @escaping () -> Void, pixelFiring: PixelFiring.Type = Pixel.self) {
+        init(onSaved: @escaping () -> Void, onDismiss: @escaping () -> Void, pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
             self.onSaved = onSaved
             self.onDismiss = onDismiss
             self.pixelFiring = pixelFiring

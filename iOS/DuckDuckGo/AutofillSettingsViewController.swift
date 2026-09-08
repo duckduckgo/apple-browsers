@@ -26,6 +26,7 @@ import DDGSync
 import SwiftUI
 import Persistence
 import Bookmarks
+import PixelKit
 
 enum AutofillSettingsSource: String {
     case settings
@@ -129,7 +130,7 @@ final class AutofillSettingsViewController: UIViewController {
             }
         }
 
-        Pixel.fire(pixel: .autofillSettingsOpened)
+        PixelKit.fire(Pixel.Event.autofillSettingsOpened)
     }
 
     private func setupView() {
@@ -188,7 +189,7 @@ final class AutofillSettingsViewController: UIViewController {
         switch DataImportEntryPointHandler().destination(for: entryPoint) {
         case .legacy(let importScreen):
             destinationViewController = makeDataImportViewController(importScreen: importScreen)
-            Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped, withAdditionalParameters: [PixelParameters.source: "settings"])
+            PixelKit.fire(Pixel.Event.autofillImportPasswordsImportButtonTapped, options: .parameters([PixelParameters.source: "settings"]))
         case .hub:
             destinationViewController = DataImportHubViewController(syncService: syncService,
                                                                     keyValueStore: keyValueStore,
@@ -198,7 +199,7 @@ final class AutofillSettingsViewController: UIViewController {
                                                                     onFinished: { [weak self] in
                                                                         self?.handleDataImportCompletion()
                                                                     })
-            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
+            PixelKit.fire(Pixel.Event.importHubEntryTapped, options: .parameters(entryPoint.importHubEntryPointParameters))
         }
         navigationController?.pushViewController(destinationViewController, animated: true)
     }
@@ -207,7 +208,7 @@ final class AutofillSettingsViewController: UIViewController {
         let importController = ImportPasswordsViaSyncViewController(syncService: syncService)
         importController.delegate = self
         navigationController?.pushViewController(importController, animated: true)
-        Pixel.fire(pixel: .autofillLoginsImportNoPasswords, withAdditionalParameters: [PixelParameters.source: "settings"])
+        PixelKit.fire(Pixel.Event.autofillLoginsImportNoPasswords, options: .parameters([PixelParameters.source: "settings"]))
     }
     
     private func segueToSync(source: String? = nil) {

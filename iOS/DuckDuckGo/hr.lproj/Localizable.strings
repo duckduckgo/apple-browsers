@@ -5284,6 +5284,15 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Želiš li ukloniti uređaj?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Podaci poslužitelja su izbrisani";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Svi uređaji koji koriste Sync & Backup bit će isključeni, a tvoji sinkronizirani podaci bit će izbrisani s poslužitelja.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Isključi Sync & Backup i izbriši podatke poslužitelja?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Dodan je novi uređaj!";
 

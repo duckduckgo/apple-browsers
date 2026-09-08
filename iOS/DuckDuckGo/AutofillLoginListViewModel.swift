@@ -30,6 +30,7 @@ import Persistence
 import PrivacyConfig
 import os.log
 import FeatureFlags_iOS
+import PixelKit
 
 class AutofillLoginListViewModel: ObservableObject {
     
@@ -158,7 +159,7 @@ class AutofillLoginListViewModel: ObservableObject {
         setupCancellables()
 
         if showBreakageReporter {
-            Pixel.fire(pixel: .autofillLoginsReportAvailable)
+            PixelKit.fire(Pixel.Event.autofillLoginsReportAvailable)
         }
     }
     
@@ -320,12 +321,12 @@ class AutofillLoginListViewModel: ObservableObject {
         let sendReportAction = UIAlertAction(title: UserText.autofillSettingsReportNotWorkingConfirmationPromptButton,
                                              style: .default) {[weak self] _ in
             self?.saveReport(for: currentTabUrl)
-            Pixel.fire(pixel: .autofillLoginsReportConfirmationPromptConfirmed)
+            PixelKit.fire(Pixel.Event.autofillLoginsReportConfirmationPromptConfirmed)
         }
 
         alert.addAction(sendReportAction)
         alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel, handler: { _ in
-            Pixel.fire(pixel: .autofillLoginsReportConfirmationPromptDismissed)
+            PixelKit.fire(Pixel.Event.autofillLoginsReportConfirmationPromptDismissed)
         }))
         alert.preferredAction = sendReportAction
 
@@ -591,7 +592,7 @@ class AutofillLoginListViewModel: ObservableObject {
             try secureVault.deleteWebsiteCredentialsFor(accountId: accountIdInt)
             return true
         } catch {
-            Pixel.fire(pixel: .secureVaultError, error: error)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
             return false
         }
     }
@@ -610,7 +611,7 @@ class AutofillLoginListViewModel: ObservableObject {
             clearUndoCache()
             updateData()
         } catch {
-            Pixel.fire(pixel: .secureVaultError, error: error)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
         }
     }
     
@@ -622,7 +623,7 @@ class AutofillLoginListViewModel: ObservableObject {
             try secureVault.deleteAllWebsiteCredentials()
             return true
         } catch {
-            Pixel.fire(pixel: .secureVaultError, error: error)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
             return false
         }
     }

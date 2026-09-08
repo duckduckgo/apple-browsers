@@ -21,18 +21,11 @@ import Foundation
 import Core
 import Testing
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 @Suite("System Settings PiP Tutorial - Pixel Handler Tests")
 final class SystemSettingsPiPTutorialPixelHandlerTests {
-    private let pixelFiringMock: PixelFiringMock.Type
-
-    init() {
-        pixelFiringMock = PixelFiringMock.self
-    }
-
-    deinit {
-        pixelFiringMock.tearDown()
-    }
+    private let pixelKitMock = PixelKitMock()
 
     @Test(
         "Check parameter is extracted properly from URL",
@@ -60,30 +53,30 @@ final class SystemSettingsPiPTutorialPixelHandlerTests {
     func whenURLPathIsNotNilThenParametersIsSetCorrectly(urlPath: String, expectedResult: String) async throws {
         // GIVEN
         let error = NSError(domain: #function, code: 0)
-        let sut = SystemSettingsPiPTutorialPixelHandler(dailyPixelFiring: pixelFiringMock)
+        let sut = SystemSettingsPiPTutorialPixelHandler(pixelFiring: pixelKitMock)
 
         // WHEN
         sut.fireFailedToLoadPiPTutorialEvent(error: error, urlPath: urlPath)
 
         // THEN
-        #expect(pixelFiringMock.lastDailyPixelInfo?.pixelName == Pixel.Event.systemSettingsPiPTutorialFailedToLoadVideo.name)
-        #expect(pixelFiringMock.lastDailyPixelInfo?.params == ["video_url_path": expectedResult])
-        #expect(pixelFiringMock.lastDailyPixelInfo?.error as? NSError == error)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.systemSettingsPiPTutorialFailedToLoadVideo.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters == ["video_url_path": expectedResult])
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.error == error)
     }
 
     @Test("Check parameter is extracted properly from URL ")
     func whenURLPathIsNilThenParametersIsNotSet() async throws {
         // GIVEN
         let error = NSError(domain: #function, code: 0)
-        let sut = SystemSettingsPiPTutorialPixelHandler(dailyPixelFiring: pixelFiringMock)
+        let sut = SystemSettingsPiPTutorialPixelHandler(pixelFiring: pixelKitMock)
 
         // WHEN
         sut.fireFailedToLoadPiPTutorialEvent(error: error, urlPath: nil)
 
         // THEN
-        #expect(pixelFiringMock.lastDailyPixelInfo?.pixelName == Pixel.Event.systemSettingsPiPTutorialFailedToLoadVideo.name)
-        #expect(pixelFiringMock.lastDailyPixelInfo?.params == [:])
-        #expect(pixelFiringMock.lastDailyPixelInfo?.error as? NSError == error)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.systemSettingsPiPTutorialFailedToLoadVideo.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters == [:])
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.error == error)
     }
 
 }

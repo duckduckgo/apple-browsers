@@ -242,6 +242,26 @@ final class AIChatMenuTests: XCTestCase {
 
     // MARK: - Action handlers
 
+    func testDefaultViewAllChatsActionOpensChatHistory() {
+        let tabOpener = MockAIChatTabOpener()
+        let defaultActions = AIChatMenu.Actions.makeDefault(
+            conversationSources: .mainMenu,
+            remoteSettings: AIChatRemoteSettings(),
+            tabOpener: tabOpener,
+            historyCleaner: StubAIChatHistoryCleaner(result: .success(())),
+            windowControllersManager: WindowControllersManagerMock(),
+            aiChatSyncCleaner: { nil }
+        )
+
+        defaultActions.openNewChat(.viewAllChats)
+
+        guard case .chatHistory? = tabOpener.lastTrigger else {
+            XCTFail("Expected chat history trigger")
+            return
+        }
+        XCTAssertEqual(tabOpener.lastBehavior, .newTab(selected: true))
+    }
+
     func testOpenDuckAITappedCallsAction() {
         let menu = AIChatMenu(suggestionsReader: suggestionsReader, actions: actions)
         let item = menu.items.first { $0.title == UserText.aiChatMenuOpenDuckAI }!

@@ -1033,8 +1033,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         menu.popUp(positioning: nil, at: origin, in: sender)
     }
 
-    /// The pill's two-item dropdown (New Chat + a state-dependent sidebar item), rebuilt per press so
-    /// its title/icon reflect the current tab and chat state.
+    /// The pill's dropdown, rebuilt per press so the sidebar item's title/icon reflect the current
+    /// tab and chat state.
     private func makeDuckAIMenuButtonMenu() -> NSMenu {
         let menu = NSMenu()
 
@@ -1062,6 +1062,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         sidebarItem.keyEquivalent = "l"
         sidebarItem.keyEquivalentModifierMask = [.command, .option]
         menu.addItem(sidebarItem)
+
+        menu.addItem(.separator())
+
+        let recentChatsItem = NSMenuItem(title: UserText.aiChatMenuRecentChats, action: #selector(duckAIMenuRecentChatsAction), keyEquivalent: "")
+        recentChatsItem.target = self
+        recentChatsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.chats), visibleOnMacOS27: true)
+        menu.addItem(recentChatsItem)
 
         return menu
     }
@@ -1106,6 +1113,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
         mainViewController.openNewDuckAIChatTab()
+    }
+
+    @objc private func duckAIMenuRecentChatsAction() {
+        PixelKit.fire(AIChatPixel.aiChatRecentChatsTitleBarMenu, frequency: .dailyAndStandard)
+        guard let mainViewController = parent as? MainViewController else {
+            Logger.general.error("TabBarViewController: Failed to find MainViewController to open Duck.ai")
+            return
+        }
+        mainViewController.openDuckAIChatHistory()
     }
 
     /// Toggles the sidebar: closes an open chat (sidebar or floating), otherwise opens it with the

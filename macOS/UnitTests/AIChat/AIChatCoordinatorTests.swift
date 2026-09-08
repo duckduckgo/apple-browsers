@@ -1135,6 +1135,8 @@ class MockAIChatTabOpener: AIChatTabOpening {
         switch trigger {
         case .newChat:
             break
+        case .chatHistory:
+            break
         case .query(let query, let shouldAutoSubmit):
             lastQuery = query
             lastShouldAutoSubmit = shouldAutoSubmit

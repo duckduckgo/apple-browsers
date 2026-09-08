@@ -119,6 +119,9 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User picks "New Chat" from the tab-bar Duck.ai menu button (or middle-clicks the pill).
     case aiChatNewChatTitleBarMenu
 
+    /// Event Trigger: User picks "Recent Chats" from the tab-bar Duck.ai menu button.
+    case aiChatRecentChatsTitleBarMenu
+
     // MARK: - Summarization
 
     /// Event Trigger: User triggers summarize action (either via keyboard shortcut or a context menu action)
@@ -595,6 +598,8 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_tabbar_button_clicked"
         case .aiChatNewChatTitleBarMenu:
             return "aichat_new_chat_title_bar_menu"
+        case .aiChatRecentChatsTitleBarMenu:
+            return "aichat_recent_chats_title_bar_menu"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
         case .aiChatSummarizeSourceLinkClicked:
@@ -893,6 +898,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatSidebarFloatingTabActivated,
                 .aiChatTabbarButtonClicked,
                 .aiChatNewChatTitleBarMenu,
+                .aiChatRecentChatsTitleBarMenu,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
@@ -1114,6 +1120,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatSidebarFloatingTabActivated,
                 .aiChatTabbarButtonClicked,
                 .aiChatNewChatTitleBarMenu,
+                .aiChatRecentChatsTitleBarMenu,
                 .aiChatSummarizeText,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,

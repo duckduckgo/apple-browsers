@@ -27,6 +27,9 @@ enum AIChatOpenTrigger {
     /// Opens a new, empty AI chat session.
     case newChat
 
+    /// Opens Duck.ai with the recent chats sidebar visible.
+    case chatHistory
+
     /// Opens an AI chat with an optional pre-filled query.
     /// - Parameters:
     ///   - query: The optional query string to pre-fill in the chat. If `nil`, opens an empty chat.
@@ -137,6 +140,10 @@ struct AIChatTabOpener: AIChatTabOpening {
         switch trigger {
         case .newChat:
             openAIChatTab(query: nil, with: behavior, autoSubmit: true)
+
+        case .chatHistory:
+            let url = AIChatURLParameters.sidebarOpenURL(from: aiChatRemoteSettings.aiChatURL)
+            aiChatTabManaging.openAIChat(url, with: behavior, hasPrompt: false)
 
         case .query(let query, shouldAutoSubmit: let shouldAutoSubmit):
             openAIChatTab(query: query, with: behavior, autoSubmit: shouldAutoSubmit)

@@ -298,6 +298,13 @@
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_recent_chats_title_bar_menu": {
+        "description": "Fired when user picks Recent Chats from the tab-bar Ask Duck.ai menu",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "m_mac_aichat_tab_did_terminate": {
         "description": "Fired when a Duck.ai tab's WebKit web content process terminates",
         "owners": ["aataraxiaa", "Bunn", "samsymons"],

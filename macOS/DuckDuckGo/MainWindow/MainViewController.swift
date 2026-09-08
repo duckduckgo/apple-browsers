@@ -602,11 +602,19 @@ final class MainViewController: NSViewController {
     }
 
     func openNewDuckAIChatTab() {
+        openDuckAIChatTab(with: .newChat)
+    }
+
+    func openDuckAIChatHistory() {
+        openDuckAIChatTab(with: .chatHistory)
+    }
+
+    private func openDuckAIChatTab(with trigger: AIChatOpenTrigger) {
         let behavior: LinkOpenBehavior = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
             ? .currentTab
             : .newTab(selected: true)
         aiChatConversationSourceHandler.setData(.tabBarButton)
-        NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: behavior)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: trigger, behavior: behavior)
     }
 
     private func wireToggleReferenceToAIChatTextContainer() {

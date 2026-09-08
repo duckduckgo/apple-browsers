@@ -325,6 +325,10 @@ final class AIChatContextualSheetCoordinator {
         sessionState.refreshAutoAttachSetting()
         sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
         clearStaleManualContextIfNeeded()
+        // Before collecting: the offer needs `hasActiveChat`, which a restore is what establishes.
+        if let restoreURL {
+            sessionState.restoreChat(with: restoreURL)
+        }
 
         startObservingContextUpdates()
         collectContextForNewSession(skippingAutoAttach: skippingAutoAttach)
@@ -334,7 +338,7 @@ final class AIChatContextualSheetCoordinator {
         if let sheetViewController {
             presentExistingSheet(sheetViewController, from: presentingViewController)
         } else {
-            presentNewSheet(from: presentingViewController, restoreURL: restoreURL)
+            presentNewSheet(from: presentingViewController)
         }
     }
 
@@ -506,7 +510,7 @@ final class AIChatContextualSheetCoordinator {
         if let sheetViewController {
             presentExistingSheet(sheetViewController, from: presentingViewController)
         } else {
-            presentNewSheet(from: presentingViewController, restoreURL: nil, opensOntoSubmittedChat: true)
+            presentNewSheet(from: presentingViewController, opensOntoSubmittedChat: true)
         }
     }
 
@@ -775,12 +779,8 @@ private extension AIChatContextualSheetCoordinator {
         isSheetPresented = true
     }
 
-    func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?, opensOntoSubmittedChat: Bool = false) {
+    func presentNewSheet(from presentingVC: UIViewController, opensOntoSubmittedChat: Bool = false) {
         guard presentingVC.presentedViewController == nil, floatingInputViewController == nil else { return }
-
-        if let restoreURL {
-            sessionState.restoreChat(with: restoreURL)
-        }
 
         let suggestionsReader = makeSuggestionsReaderIfEnabled()
         let persistentUTIHost = isImmediateContextualUTIEnabled

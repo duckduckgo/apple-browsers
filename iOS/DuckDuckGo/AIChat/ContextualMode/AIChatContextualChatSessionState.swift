@@ -490,7 +490,10 @@ final class AIChatContextualChatSessionState {
         deliveredContextURLWithNoNavigationSince = nil
         // The offer belongs to the page that was current when it was made.
         suggestedContext = nil
-        if shouldAutoCollectContext, userDowngradedToPlaceholder {
+        // Detaching opts out of the page you were on, not of every page after it. This used to be
+        // conditional on auto-attach, so with it off the opt-out never lifted and the offer stopped
+        // for the rest of the session.
+        if userDowngradedToPlaceholder {
             userDowngradedToPlaceholder = false
             Logger.aiChat.debug("[SessionState] Page navigation cleared temporary context removal")
         }

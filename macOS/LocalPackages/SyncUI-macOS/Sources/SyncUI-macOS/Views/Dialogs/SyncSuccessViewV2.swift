@@ -95,7 +95,9 @@ struct SyncSuccessViewV2: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 2)
                     }
-                    .buttonStyle(DismissActionButtonStyle(pillShape: true, showsBorder: true))
+                    .buttonStyle(DismissActionButtonStyle(pillShape: true,
+                                                          showsBorder: true,
+                                                          stateColors: .themedDismissButton))
                     .accessibilityIdentifier("SyncSuccessCopyCodeButton")
 
                     Button {
@@ -105,7 +107,9 @@ struct SyncSuccessViewV2: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 2)
                     }
-                    .buttonStyle(DismissActionButtonStyle(pillShape: true, showsBorder: true))
+                    .buttonStyle(DismissActionButtonStyle(pillShape: true,
+                                                          showsBorder: true,
+                                                          stateColors: .themedDismissButton))
                     .accessibilityIdentifier("SyncSuccessDownloadPDFButton")
                 }
                 .padding(.top, 12)

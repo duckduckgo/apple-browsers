@@ -153,14 +153,12 @@ final class AIChatContextualSheetCoordinator {
         isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
     }
 
-    private var canTrustChatStorage: Bool {
-        let provider = AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-        return provider.isNativeDataAccessEnabled() && provider.isNativeDataStorageEnabled()
+    private var isNativeDataAccessEnabled: Bool {
+        AIChatFeatureFlagProvider(featureFlagger: featureFlagger).isNativeDataAccessEnabled()
     }
 
     private func discardActiveChatIfDeleted() {
-        guard !isSheetPresented,
-              sessionState.hasActiveChat,
+        guard sessionState.hasActiveChat,
               isChatDeleted(chatID: sessionState.contextualChatURL?.duckAIChatID) else { return }
         Logger.aiChat.debug("[Contextual] Active chat was deleted, clearing it")
         clearActiveChat()
@@ -168,7 +166,7 @@ final class AIChatContextualSheetCoordinator {
 
     private func isChatDeleted(chatID: String?) -> Bool {
         guard let chatID,
-              canTrustChatStorage,
+              isNativeDataAccessEnabled,
               let storage = chatStorage,
               storage.setupSucceeded == true,
               (try? storage.isMigrationDone()) == true else { return false }

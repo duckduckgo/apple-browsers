@@ -199,7 +199,6 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
         // Make the purchase
         switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID, includeProTier: includeProTier) {
         case .success(let transactionJWS):
-            NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
             return .success((transactionJWS: transactionJWS, accountCreationDuration: accountCreationDuration))
         case .failure(let error):
             Logger.subscriptionAppStorePurchaseFlow.error("purchaseSubscription error: \(String(describing: error), privacy: .public)")
@@ -269,6 +268,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
                     return .failure(.missingEntitlements)
                 } else {
                     pendingTransactionHandler?.handleSubscriptionActivated()
+                    NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
                     return .success(.completed)
                 }
             } else {

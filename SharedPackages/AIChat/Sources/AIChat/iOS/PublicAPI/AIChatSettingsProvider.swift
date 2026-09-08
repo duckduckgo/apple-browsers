@@ -30,7 +30,7 @@ public enum DefaultOmnibarMode: String, CaseIterable {
 }
 
 public protocol AIChatSettingsProvider {
-    /// The URL used to open AI Chat in the `AIChatViewController`.
+    /// The URL used to open AI Chat.
     var aiChatURL: URL { get }
 
     /// The user state for AI chat overall.

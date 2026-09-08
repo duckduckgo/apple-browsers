@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Core
 import SwiftUI
 import UIKit
+import PixelKit
 
 class EmailAddressPromptViewController: UIViewController {
 
@@ -71,7 +72,8 @@ class EmailAddressPromptViewController: UIViewController {
 
 extension EmailAddressPromptViewController: UISheetPresentationControllerDelegate {
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        Pixel.fire(pixel: .emailTooltipDismissed, withAdditionalParameters: pixelParameters, includedParameters: [])
+        PixelKit.fire(Pixel.Event.emailTooltipDismissed,
+                      options: PixelKit.Options(additionalParameters: pixelParameters, includeAppVersionParameter: false))
 
         completion(.none, false)
     }
@@ -83,7 +85,8 @@ extension EmailAddressPromptViewController: EmailAddressPromptViewModelDelegate 
         pixelParameters[PixelParameters.emailLastUsed] = emailManager.lastUseDate
         emailManager.updateLastUseDate()
 
-        Pixel.fire(pixel: .emailUserPressedUseAddress, withAdditionalParameters: pixelParameters, includedParameters: [])
+        PixelKit.fire(Pixel.Event.emailUserPressedUseAddress,
+                      options: PixelKit.Options(additionalParameters: pixelParameters, includeAppVersionParameter: false))
 
         completion(.user, false)
 
@@ -96,7 +99,8 @@ extension EmailAddressPromptViewController: EmailAddressPromptViewModelDelegate 
         pixelParameters[PixelParameters.emailLastUsed] = emailManager.lastUseDate
         emailManager.updateLastUseDate()
 
-        Pixel.fire(pixel: .emailUserPressedUseAlias, withAdditionalParameters: pixelParameters, includedParameters: [])
+        PixelKit.fire(Pixel.Event.emailUserPressedUseAlias,
+                      options: PixelKit.Options(additionalParameters: pixelParameters, includeAppVersionParameter: false))
 
         completion(.generated, true)
 
@@ -106,7 +110,8 @@ extension EmailAddressPromptViewController: EmailAddressPromptViewModelDelegate 
     }
 
     func emailAddressPromptViewModelDidClose(_ viewModel: EmailAddressPromptViewModel) {
-        Pixel.fire(pixel: .emailTooltipDismissed, withAdditionalParameters: pixelParameters, includedParameters: [])
+        PixelKit.fire(Pixel.Event.emailTooltipDismissed,
+                      options: PixelKit.Options(additionalParameters: pixelParameters, includeAppVersionParameter: false))
 
         completion(.none, false)
 

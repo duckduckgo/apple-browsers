@@ -26,6 +26,8 @@ protocol ColorsProviding {
     var addressBarShadowColor: NSColor { get }
     var addressBarSuffixTextColor: NSColor { get }
     var addressBarTextFieldColor: NSColor { get }
+    var activeSwitchToTabBackgroundColor: NSColor { get }
+    var inactiveSwitchToTabBackgroundColor: NSColor { get }
     func addressBarActiveBorderColor(isBurner: Bool) -> NSColor
     func activeAddressBarBackgroundColor(isBurner: Bool) -> NSColor
     func inactiveAddressBarBackgroundColor(isBurner: Bool) -> NSColor
@@ -103,6 +105,8 @@ final class LegacyColorsProviding: ColorsProviding {
     var addressBarShadowColor: NSColor { palette.shadowTertiary }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
+    var activeSwitchToTabBackgroundColor: NSColor { navigationBackgroundColor.blended(with: .addressBarBackground) }
+    var inactiveSwitchToTabBackgroundColor: NSColor { navigationBackgroundColor.blended(with: .inactiveSearchBarBackground) }
 
     var settingsBackgroundColor: NSColor { palette.surfaceCanvas }
     var iconsColor: NSColor { palette.iconsPrimary }
@@ -148,6 +152,8 @@ final class CurrentColorsProviding: ColorsProviding {
     var addressBarShadowColor: NSColor { palette.shadowTertiary }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
+    var activeSwitchToTabBackgroundColor: NSColor { palette.unifiedInputControlFillSecondary }
+    var inactiveSwitchToTabBackgroundColor: NSColor { palette.unifiedInputControlFillSecondary }
 
     func addressBarActiveBorderColor(isBurner: Bool) -> NSColor {
         isBurner ? palette.accentFirePrimary : palette.accentPrimary

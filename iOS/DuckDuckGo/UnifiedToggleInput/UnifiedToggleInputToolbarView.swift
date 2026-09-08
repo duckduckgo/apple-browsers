@@ -66,6 +66,15 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateSubmitButtonAppearance() }
     }
 
+    /// A spent allowance blocks the voice button too: it opens a chat the allowance can't pay for.
+    var isInputBlockedByUsageLimit: Bool = false {
+        didSet {
+            guard oldValue != isInputBlockedByUsageLimit else { return }
+            updateSubmitButtonAppearance()
+            updateToolbarControlsEnabledState()
+        }
+    }
+
     var usesNewPromptSubmitStyle: Bool = false {
         didSet { updateSubmitButtonAppearance() }
     }
@@ -104,6 +113,14 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     var modelName: String = "4o-mini" {
         didSet { updateModelChipConfiguration() }
+    }
+
+    var isModelChipMenuIndicatorHidden: Bool = false {
+        didSet {
+            guard oldValue != isModelChipMenuIndicatorHidden else { return }
+            updateModelChipConfiguration()
+            modelChipButton.isUserInteractionEnabled = !isModelChipMenuIndicatorHidden
+        }
     }
 
     var selectedTool: AIChatRAGTool? {
@@ -259,9 +276,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     private lazy var modelChipButton: UIButton = {
         var config = UIButton.Configuration.plain()
         config.title = modelName
-        config.image = UIImage(systemName: "chevron.down")?.withConfiguration(
-            UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
-        )
+        config.image = isModelChipMenuIndicatorHidden ? nil : Self.modelChipMenuIndicatorImage
         config.imagePlacement = .trailing
         config.imagePadding = Constants.chipSpacing
         config.titleLineBreakMode = .byTruncatingTail
@@ -501,8 +516,13 @@ private extension UnifiedToggleInputToolbarView {
         return button
     }
 
+    static let modelChipMenuIndicatorImage = UIImage(systemName: "chevron.down")?.withConfiguration(
+        UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
+    )
+
     private func updateModelChipConfiguration() {
         modelChipButton.configuration?.title = modelName
+        modelChipButton.configuration?.image = isModelChipMenuIndicatorHidden ? nil : Self.modelChipMenuIndicatorImage
     }
 
     private func updateModelPickerPrimaryAction() {
@@ -545,9 +565,13 @@ private extension UnifiedToggleInputToolbarView {
         }()
         submitButton.setImage(icon, for: .normal)
         let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard
-        let isActive = submitAllowed || showVoice
+        let isActive = (submitAllowed || showVoice) && !isInputBlockedByUsageLimit
         submitButton.isEnabled = isActive
-        if showVoice {
+        // The blocked button keeps its icon and takes the inactive submit fill: the voice and
+        // return-key styles have no disabled state of their own.
+        if isInputBlockedByUsageLimit {
+            submitButton.applySubmitStyle(isActive: false, isFireTab: isFireTab, activeForeground: .white)
+        } else if showVoice {
             submitButton.applyAIVoiceChatStyle()
         } else if usesReturnKeyStyle {
             submitButton.applyReturnKeyStyle()
@@ -567,7 +591,7 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     func updateToolbarControlsEnabledState() {
-        let controlsAreEnabled = !isGenerating
+        let controlsAreEnabled = !isGenerating && !isInputBlockedByUsageLimit
         imageButton.isEnabled = controlsAreEnabled && isImageButtonAvailable
         toolsButton.isEnabled = controlsAreEnabled
         reasoningButton.isEnabled = controlsAreEnabled

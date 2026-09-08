@@ -74,13 +74,7 @@ final class BookmarksBarMenuViewController: NSViewController {
             bookmarkManager: bookmarkManager,
             treeController: treeController,
             dragDropManager: dragDropManager,
-            sortMode: .manual,
-            presentFaviconsFetcherOnboarding: { [weak self] in
-                guard let self, let window = self.view.window else {
-                    return
-                }
-                self.faviconsFetcherOnboarding?.presentOnboardingIfNeeded(in: window)
-            }
+            sortMode: .manual
         )
     }()
 
@@ -90,14 +84,6 @@ final class BookmarksBarMenuViewController: NSViewController {
         }
         return [BookmarkNode]()
     }
-
-    private(set) lazy var faviconsFetcherOnboarding: FaviconsFetcherOnboarding? = {
-        guard let syncService = NSApp.delegateTyped.syncService, let syncBookmarksAdapter = NSApp.delegateTyped.syncDataProviders?.bookmarksAdapter else {
-            assertionFailure("SyncService and/or SyncBookmarksAdapter is nil")
-            return nil
-        }
-        return .init(syncService: syncService, syncBookmarksAdapter: syncBookmarksAdapter)
-    }()
 
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,

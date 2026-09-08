@@ -140,16 +140,8 @@ extension FileManager {
         }
     }
 
-    /// `true` only when the directory exists but listing it failed because of missing permissions.
+    /// `true` only when the directory exists but we don't have the rights to access its contents
     func requiresReadPermission(atPath path: String) -> Bool {
-        do {
-            _ = try contentsOfDirectory(atPath: path)
-        } catch let error as CocoaError where error.code == .fileReadNoPermission {
-            return true
-        } catch {
-            Logger.general.error("Failed to list directory contents: \(error.localizedDescription)")
-        }
-
-        return false
+        directoryExists(atPath: path) && !isReadableFile(atPath: path)
     }
 }

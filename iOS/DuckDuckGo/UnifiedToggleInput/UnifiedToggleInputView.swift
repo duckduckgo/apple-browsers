@@ -99,13 +99,12 @@ final class UnifiedToggleInputView: UIView {
         /// (see `flankedHorizontalInset` in `setupConstraints`). Keeps the flanked input's left/right
         /// padding consistent end-to-end.
         static let flankedCardHorizontalMargin: CGFloat = 16
-        /// Card container's outer horizontal margin in the non-flanked layouts.
-        static let cardHorizontalMargin: CGFloat = 8
         static let cardVerticalMargin: CGFloat = 8
         static let cardHorizontalMarginExpanded: CGFloat = 16
         static let cardVerticalMarginBottom: CGFloat = 8
-        /// Omnibar pill's horizontal inset; the card's hand-off start width so it animates to the
-        /// narrower editing margins. Mirrors `DefaultOmniBarView`'s portrait value (landscape/iPad differ).
+        /// Resting address-bar inset (`DefaultOmniBarView.Metrics.textAreaHorizontalPadding`). Used
+        /// for the omnibar hand-off and for the focused card in the top/split session so the
+        /// field doesn't shrink horizontally when editing begins.
         static let omnibarMatchingHorizontalMargin: CGFloat = 16
         static let cardCornerRadiusExpanded: CGFloat = 28
         static let toggleTopPadding: CGFloat = 8
@@ -240,6 +239,10 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isSubmitBlockedByRecoveryCard = isToolbarSubmitBlockedByRecoveryCard }
     }
 
+    var isInputBlockedByUsageLimit: Bool = false {
+        didSet { toolsToolbar.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit }
+    }
+
     var isGenerating: Bool = false {
         didSet { toolsToolbar.isGenerating = isGenerating }
     }
@@ -287,6 +290,11 @@ final class UnifiedToggleInputView: UIView {
     var isModelChipHidden: Bool {
         get { toolsToolbar.isModelChipHidden }
         set { toolsToolbar.isModelChipHidden = newValue }
+    }
+
+    var isModelChipMenuIndicatorHidden: Bool {
+        get { toolsToolbar.isModelChipMenuIndicatorHidden }
+        set { toolsToolbar.isModelChipMenuIndicatorHidden = newValue }
     }
 
     var selectedTool: AIChatRAGTool? {
@@ -364,6 +372,8 @@ final class UnifiedToggleInputView: UIView {
     var onAIChatShortcutTapped: (() -> Void)?
     var onFooterPrimaryTapped: (() -> Void)?
     var onFooterDismissTapped: (() -> Void)?
+    /// The footer card entering or leaving the bottom slot, i.e. actually appearing on screen.
+    var onFooterVisibilityChanged: ((Bool) -> Void)?
 
     // MARK: - Attachment API
 
@@ -441,6 +451,9 @@ final class UnifiedToggleInputView: UIView {
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] view showing footer '\(message.title, privacy: .public)' (wasVisible=\(wasVisible, privacy: .public))")
         footerCard.configure(with: message, animateIcon: wasVisible)
         applyBottomSlot(.footer)
+        // A wrapping title only reports its real height once the label has been laid out at the width
+        // this message's CTA leaves it, and the host measures the bar right after this returns.
+        footerCard.layoutIfNeeded()
         guard !wasVisible else { return }
         footerCard.contentView.alpha = 0
         UIView.animate(withDuration: Constants.footerContentFadeDuration,
@@ -451,6 +464,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func applyBottomSlot(_ slot: BottomCardSlot) {
+        let wasShowingFooter = bottomCardSlot == .footer
         bottomCardSlot = slot
         cardBottomConstraint.isActive = slot == .none
         cardEditBottomConstraint.isActive = slot == .editDisclaimer
@@ -460,6 +474,9 @@ final class UnifiedToggleInputView: UIView {
         expandedShadowFooterBottomConstraint.isActive = slot == .footer
         footerCollapsedHeightConstraint.isActive = slot != .footer
         footerCard.alpha = slot == .footer ? 1 : 0
+        if wasShowingFooter != (slot == .footer) {
+            onFooterVisibilityChanged?(slot == .footer)
+        }
     }
 
     private static func makeEditReplaceDisclaimerCard() -> UIView {
@@ -681,6 +698,9 @@ final class UnifiedToggleInputView: UIView {
     /// be measured — so the symmetric dismiss can land back on the pill without re-measuring (the
     /// pill has been removed from the toolbar by then).
     private var cachedOmnibarMatchedInsets: OmnibarMatchedInsets?
+    /// The insets are point offsets against the container's width, so they only describe the window
+    /// size they were measured at — a rotation between focus and dismiss invalidates them.
+    private var cachedOmnibarMatchedInsetsWindowSize: CGSize?
     private var omnibarMaterialTransitionBackgroundColor: UIColor?
     /// Resting-grey stand-in revealed as the editing fill fades. Flat color (not live glass) so the
     /// morph keeps the card's silhouette without adding glass self-shadowing on top of the toolbar.
@@ -950,6 +970,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private var fireModeContentSubviews: [UIView] {
+        // aiTabCollapsed buttons keep their own regular glass, so they must stay on the OS trait.
         subviews.filter {
             $0 !== cardView &&
             $0 !== expandedShadowView &&
@@ -978,10 +999,6 @@ final class UnifiedToggleInputView: UIView {
 
     func selectAllText() {
         textEntryView.selectAllText()
-    }
-
-    func moveCaretToStart() {
-        textEntryView.moveCaretToStart()
     }
 
     var placeholderWindowX: CGFloat? { textEntryView.placeholderWindowX }
@@ -1132,7 +1149,7 @@ final class UnifiedToggleInputView: UIView {
             aiTabCollapsedMenuButton.isHidden = true
         }
         guard layout != currentLayout else {
-            updateExpandedBorderVisibility(expanded && layout.showsToggle)
+            updateExpandedBorderVisibility(expanded && (layout.showsToggle || layout.showsToolbar))
             return
         }
         currentLayout = layout
@@ -1158,12 +1175,9 @@ final class UnifiedToggleInputView: UIView {
         if expanded && !usesOmnibarMargins {
             hLeadingMargin = Constants.cardHorizontalMarginExpanded
             hTrailingMargin = Constants.cardHorizontalMarginExpanded
-        } else if layout == .collapsed {
+        } else {
             hLeadingMargin = Constants.omnibarMatchingHorizontalMargin
             hTrailingMargin = Constants.omnibarMatchingHorizontalMargin
-        } else {
-            hLeadingMargin = Constants.cardHorizontalMargin
-            hTrailingMargin = cardTrailingMargin
         }
 
         let topMargin: CGFloat
@@ -1203,7 +1217,7 @@ final class UnifiedToggleInputView: UIView {
         cardView.layer.maskedCorners = Constants.allCorners
         cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)
 
-        updateExpandedBorderVisibility(expanded && showsToggle)
+        updateExpandedBorderVisibility(expanded && (showsToggle || showToolbar))
         let changes = {
             self.setCardFlanked(layout == .flanked)
             // Bottom collapsed pose is a capsule to match the floating omnibar pill; everything
@@ -1365,12 +1379,11 @@ final class UnifiedToggleInputView: UIView {
             // would stretch the pinned 44pt height to 46pt (defaultHigh priority loses to bottom).
             cardTopConstraint.constant = Constants.cardVerticalMargin
             cardBottomConstraint.constant = -Constants.cardVerticalMargin
-            // Start width matches the omnibar so the expanded pose (set inside the animation block)
-            // can animate the card's width rather than snap it.
             cardLeadingConstraint.constant = Constants.omnibarMatchingHorizontalMargin
             cardTrailingConstraint.constant = -Constants.omnibarMatchingHorizontalMargin
         case .bottom:
-            if let cached = cachedOmnibarMatchedInsets {
+            if let cached = cachedOmnibarMatchedInsets,
+               cachedOmnibarMatchedInsetsWindowSize == window?.bounds.size {
                 // Reproduce the measured pill pose (cached at focus) so the dismiss collapse lands
                 // back on the pill without re-measuring — it's no longer in the toolbar by then.
                 applyOmnibarMatchedInsets(cached)
@@ -1407,6 +1420,7 @@ final class UnifiedToggleInputView: UIView {
             trailing: -(bounds.width - pillInSelf.maxX),
             bottom: -(bounds.height - pillInSelf.maxY))
         cachedOmnibarMatchedInsets = insets
+        cachedOmnibarMatchedInsetsWindowSize = window?.bounds.size
         applyOmnibarMatchedInsets(insets)
         cardView.layer.cornerRadius = collapsedCornerRadius
         layoutIfNeeded()
@@ -1449,7 +1463,7 @@ final class UnifiedToggleInputView: UIView {
         let showToolbar = toggleView.selectedMode == .aiChat
         currentLayout = .expanded(showsToggle: true, showsToolbar: showToolbar)
         cardView.layer.cornerRadius = Constants.cardCornerRadiusExpanded
-        // Width animation: this reveal path bypasses `applyCardLayout`, so set the expanded margins here.
+        // This reveal path bypasses `applyCardLayout`, so keep the focused margins in sync here.
         cardLeadingConstraint.constant = expandedCardHorizontalMargin
         cardTrailingConstraint.constant = -expandedCardHorizontalMargin
         toggleTopConstraint.constant = Constants.toggleTopPadding
@@ -1520,15 +1534,8 @@ final class UnifiedToggleInputView: UIView {
 
     // MARK: - Private
 
-    /// Card trailing margin for the current state. The card spans the full width since the
-    /// inline X is hosted inside the card (in the toggle row when the toggle is shown, or in
-    /// the field row alongside the inline buttons when the toggle is hidden at `.top`).
-    private var cardTrailingMargin: CGFloat {
-        Constants.cardHorizontalMargin
-    }
-
     private var expandedCardHorizontalMargin: CGFloat {
-        usesOmnibarMargins ? Constants.cardHorizontalMargin : Constants.cardHorizontalMarginExpanded
+        usesOmnibarMargins ? Constants.omnibarMatchingHorizontalMargin : Constants.cardHorizontalMarginExpanded
     }
 
     private func updateToolbarVisibility(for mode: TextEntryMode, animated: Bool) {

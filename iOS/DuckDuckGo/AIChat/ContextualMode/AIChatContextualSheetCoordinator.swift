@@ -153,8 +153,9 @@ final class AIChatContextualSheetCoordinator {
 
     private static let chatLookupQueue = DispatchQueue(label: "com.duckduckgo.aichat.contextual.chatlookup")
 
-    /// `DuckAiNativeStorageHandling` is not `Sendable`, though its implementations serialize through a
-    /// GRDB `DatabaseQueue` or a lock, so it is safe to read from the lookup queue.
+    /// `DuckAiNativeStorageHandling` is not `Sendable`. The reads taken on the lookup queue —
+    /// `isMigrationDone` and `getChat` — reach only immutable state, an `NSLock`-guarded settings blob
+    /// and GRDB's own serialized `DatabaseQueue`, so calling them from off the main thread is sound.
     private struct UncheckedSendable<Value>: @unchecked Sendable {
         let value: Value
     }

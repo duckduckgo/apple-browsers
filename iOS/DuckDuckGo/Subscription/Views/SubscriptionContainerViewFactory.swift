@@ -89,11 +89,11 @@ enum SubscriptionContainerViewFactory {
                                                                    wideEvent: wideEvent,
                                                                    pendingTransactionHandler: pendingTransactionHandler)
 
-        var initialURL = makeSubscribeFlowInitialURL(redirectURLComponents: redirectURLComponents,
-                                                     landingURL: landingURL,
-                                                     subscriptionManager: subscriptionManager,
-                                                     tld: tld,
-                                                     performanceOptimizedPaywalls: performanceOptimizedPaywallsProvider)
+        var initialURL = SubscribeFlowInitialURLBuilder.makeInitialURL(redirectURLComponents: redirectURLComponents,
+                                                                       landingURL: landingURL,
+                                                                       subscriptionManager: subscriptionManager,
+                                                                       tld: tld,
+                                                                       performanceOptimizedPaywalls: performanceOptimizedPaywallsProvider)
         if isDebugOverlayEnabled {
             initialURL = initialURL.appendingParameter(name: "debug", value: "1")
         }
@@ -127,31 +127,6 @@ enum SubscriptionContainerViewFactory {
         viewModel.email.setEmailFlowMode(.restoreFlow)
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
             .environmentObject(navigationCoordinator)
-    }
-
-    private static func makeSubscribeFlowInitialURL(redirectURLComponents: URLComponents?,
-                                                    landingURL: URL?,
-                                                    subscriptionManager: SubscriptionManager,
-                                                    tld: TLD,
-                                                    performanceOptimizedPaywalls: any PerformanceOptimizedPaywallsProviding) -> URL {
-        // A landing URL is an explicit destination, like the post-purchase welcome page, never a paywall.
-        if let landingURL { return landingURL }
-
-        let purchaseURL = redirectURLComponents.map {
-            subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: $0, tld: tld)
-        } ?? subscriptionManager.url(for: .purchase)
-
-        // Intercepted `/pro` URLs are excluded from performance-optimized paywalls.
-        guard performanceOptimizedPaywalls.isEnabled,
-              redirectURLComponents?.path != SubscriptionPurchaseFlowPath.pro.rawValue else { return purchaseURL }
-
-        let performanceOptimizedPaywallURL = SubscriptionURL.performanceOptimizedPaywallURL(
-            basedOn: purchaseURL,
-            paths: performanceOptimizedPaywalls.paths,
-            isTrialEligible: subscriptionManager.isUserEligibleForFreeTrial(),
-            isPersonalInformationRemovalAvailable: subscriptionManager.currentStorefrontRegion == .usa
-        )
-        return performanceOptimizedPaywallURL ?? purchaseURL
     }
 
     @ViewBuilder
@@ -370,5 +345,34 @@ enum SubscriptionContainerViewFactory {
         return SubscriptionContainerView(currentView: .email, viewModel: viewModel, featureFlagger: featureFlagger)
             .environmentObject(navigationCoordinator)
             .onDisappear(perform: { onDisappear() })
+    }
+}
+
+enum SubscribeFlowInitialURLBuilder {
+
+    static func makeInitialURL(redirectURLComponents: URLComponents?,
+                               landingURL: URL?,
+                               subscriptionManager: SubscriptionManager,
+                               tld: TLD,
+                               performanceOptimizedPaywalls: any PerformanceOptimizedPaywallsProviding) -> URL {
+        // A landing URL is an explicit destination, like the post-purchase welcome page, never a paywall.
+        if let landingURL { return landingURL }
+
+        let purchaseURL = redirectURLComponents.map {
+            subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: $0, tld: tld)
+        } ?? subscriptionManager.url(for: .purchase)
+
+        // Existing subscribers and intercepted `/pro` URLs keep the legacy paywall.
+        guard performanceOptimizedPaywalls.isEnabled,
+              !subscriptionManager.isSubscriptionPresent(),
+              redirectURLComponents?.path != SubscriptionPurchaseFlowPath.pro.rawValue else { return purchaseURL }
+
+        let performanceOptimizedPaywallURL = SubscriptionURL.performanceOptimizedPaywallURL(
+            basedOn: purchaseURL,
+            paths: performanceOptimizedPaywalls.paths,
+            isTrialEligible: subscriptionManager.isUserEligibleForFreeTrial(),
+            isPersonalInformationRemovalAvailable: subscriptionManager.currentStorefrontRegion == .usa
+        )
+        return performanceOptimizedPaywallURL ?? purchaseURL
     }
 }

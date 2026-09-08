@@ -36,9 +36,9 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     }
 
     var savedPermissions = [String: [PermissionType: PersistedPermissionDecision]]()
-    /// Stamped by `setPermission`; assign directly to drive recency-ordered UI from tests.
-    var lastModifiedDates = [String: [PermissionType: Date]]()
-    var setPermissionCalls: [(decision: PersistedPermissionDecision, domain: String, permissionType: PermissionType)] = []
+    /// Mirrors the `lastModified` column so debug entries report what was stamped.
+    var savedLastModified = [String: [PermissionType: Date]]()
+    var setPermissionCalls: [(decision: PersistedPermissionDecision, domain: String, permissionType: PermissionType, lastModified: Date)] = []
 
     /// Stands in for `PermissionDecisionOverriding`: when it returns a decision, that decision is the
     /// effective one and `savedPermissions` is left alone. Nil (the default) means no override.
@@ -80,16 +80,19 @@ final class PermissionManagerMock: PermissionManagerProtocol {
         savedPermissions[domain.droppingWwwPrefix()]?[permissionType]
     }
 
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
-        setPermissionCalls.append((decision: decision, domain: domain, permissionType: permissionType))
+    func setPermission(_ decision: PersistedPermissionDecision,
+                       forDomain domain: String,
+                       permissionType: PermissionType,
+                       lastModified: Date = Date()) {
+        setPermissionCalls.append((decision: decision, domain: domain, permissionType: permissionType, lastModified: lastModified))
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = decision
-        lastModifiedDates[domain.droppingWwwPrefix(), default: [:]][permissionType] = Date()
+        savedLastModified[domain.droppingWwwPrefix(), default: [:]][permissionType] = lastModified
         publishPersistedPermissions()
     }
 
     func removePermission(forDomain domain: String, permissionType: PermissionType) {
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = nil
-        lastModifiedDates[domain.droppingWwwPrefix(), default: [:]][permissionType] = nil
+        savedLastModified[domain.droppingWwwPrefix(), default: [:]][permissionType] = nil
         publishPersistedPermissions()
     }
 
@@ -131,10 +134,10 @@ final class PermissionManagerMock: PermissionManagerProtocol {
 
     func setPersistedPermissions(_ entries: [WebsitePermissionEntry]) {
         savedPermissions = [:]
-        lastModifiedDates = [:]
+        savedLastModified = [:]
         for entry in entries {
             savedPermissions[entry.domain, default: [:]][entry.permissionType] = entry.decision
-            lastModifiedDates[entry.domain, default: [:]][entry.permissionType] = entry.lastModified
+            savedLastModified[entry.domain, default: [:]][entry.permissionType] = entry.lastModified
         }
         publishPersistedPermissions()
     }
@@ -145,7 +148,7 @@ final class PermissionManagerMock: PermissionManagerProtocol {
                 WebsitePermissionEntry(domain: domain,
                                        permissionType: permissionType,
                                        decision: decision,
-                                       lastModified: lastModifiedDates[domain]?[permissionType])
+                                       lastModified: savedLastModified[domain]?[permissionType])
             }
         }
         persistedPermissionsSubject.send(entries)
@@ -164,7 +167,8 @@ extension PermissionManagerMock: PermissionManagerDebugging {
                                      permissionType: type.rawValue,
                                      allow: decision == .allow,
                                      isRemoved: decision == .ask,
-                                     effectiveDecision: permission(forDomain: domain, permissionType: type))
+                                     effectiveDecision: permission(forDomain: domain, permissionType: type),
+                                     lastModified: savedLastModified[domain]?[type])
             }
         }
     }

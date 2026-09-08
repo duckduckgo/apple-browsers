@@ -105,6 +105,33 @@ final class PermissionStoreTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    func testWhenPermissionIsAddedThenLastModifiedRoundTripsThroughTheStore() throws {
+        let stored = try store.add(domain: "duckduckgo.com",
+                                   permissionType: .camera,
+                                   decision: .allow,
+                                   lastModified: Self.referenceDate)
+        XCTAssertEqual(stored.lastModified, Self.referenceDate)
+
+        let permissions = try store.loadPermissions()
+
+        XCTAssertEqual(permissions.map(\.permission.lastModified), [Self.referenceDate])
+    }
+
+    func testWhenLastModifiedIsClearedByAnUpdateThenItLoadsAsNil() throws {
+        // Clearing an existing timestamp must persist nil through a subsequent load.
+        let stored = try store.add(domain: "duckduckgo.com",
+                                   permissionType: .camera,
+                                   decision: .allow,
+                                   lastModified: Self.referenceDate)
+        let e = expectation(description: "lastModified cleared")
+        store.update(objectWithId: stored.id, decision: .allow, lastModified: nil) { [store] _ in
+            let permissions = try? store!.loadPermissions()
+            XCTAssertEqual(permissions?.map(\.permission.lastModified), [Date?.none])
+            e.fulfill()
+        }
+        waitForExpectations(timeout: 1)
+    }
+
     func testWhenPermissionsAreClearedThenOnlyExceptionsRemain() throws {
         let stored1 = try store.add(domain: "duckduckgo.com", permissionType: .microphone, decision: .allow, lastModified: Self.referenceDate)
         _=try store.add(domain: "otherdomain.com", permissionType: .geolocation, decision: .allow, lastModified: Self.referenceDate)

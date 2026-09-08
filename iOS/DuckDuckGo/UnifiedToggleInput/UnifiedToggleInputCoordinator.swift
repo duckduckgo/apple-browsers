@@ -1480,7 +1480,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Models
 
     let modelStore: UTIModelStore
-    private(set) var hasSubmittedPrompt = false
+    /// Last `syncChipVisibility` input, so it can act on transitions rather than one-shot upgrades.
+    private var lastSyncedHasExistingChat: Bool?
+    private(set) var hasSubmittedPrompt = false {
+        didSet {
+            guard oldValue != hasSubmittedPrompt else { return }
+            Logger.unifiedInputState.debug("hasSubmittedPrompt \(oldValue, privacy: .public) → \(self.hasSubmittedPrompt, privacy: .public) [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
+        }
+    }
 
     var models: [AIChatModel] { modelStore.models }
     var subscriptionState: SubscriptionState { modelStore.subscriptionState }
@@ -1502,6 +1509,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func startNewChat() {
+        Logger.unifiedInputState.debug("startNewChat [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
         attachmentController.resetPasteConversation()
         isNewChatPending = true
         hasSubmittedPrompt = false
@@ -2071,12 +2079,19 @@ private extension UnifiedToggleInputCoordinator {
             return
         }
         isNewChatPending = false
-        // Upgrade only — the chat URL gets its chatID after the page loads, so downgrading
-        // here would clobber a just-submitted prompt. Explicit resets cover the rest.
-        guard hasExistingChat, !hasSubmittedPrompt else { return }
-        hasSubmittedPrompt = true
-        modelSelector.updateModelChipVisibility()
-        syncHasSubmittedPromptToHandler()
+        defer { lastSyncedHasExistingChat = hasExistingChat }
+        if hasExistingChat, !hasSubmittedPrompt {
+            hasSubmittedPrompt = true
+            modelSelector.updateModelChipVisibility()
+            syncHasSubmittedPromptToHandler()
+        } else if !hasExistingChat, lastSyncedHasExistingChat == true, hasSubmittedPrompt {
+            // The page left a chat with an ID for a fresh chat without announcing it (e.g. the
+            // context-limit banner's Start New Chat). A just-submitted prompt can't hit this:
+            // its URL never had a chatID yet, so there is no true → false transition to see.
+            hasSubmittedPrompt = false
+            modelSelector.updateModelChipVisibility()
+            syncHasSubmittedPromptToHandler()
+        }
     }
 
     func syncHasSubmittedPromptToHandler() {
@@ -2111,6 +2126,7 @@ private extension UnifiedToggleInputCoordinator {
         aiChatStatus = .unknown
         attachmentUsage = nil
         hasSubmittedPrompt = false
+        lastSyncedHasExistingChat = nil
         // Do not clear the model-picker pin here. It is stored per tab in TabInputState and
         // restored by applyState during activateForTab. bindToTab calls resetSessionState
         // immediately after that restore when switching Duck.ai tabs, so resetting the pin

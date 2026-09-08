@@ -68,6 +68,34 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertTrue(sut.isVoiceSessionActive)
     }
 
+    // The FE's context-limit "Start New Chat" moves to a fresh chat with no event and no
+    // navigation — only the URL's chatID disappearing marks the transition.
+    func test_bindToTab_freshChatAfterExistingChat_resetsHasSubmittedPrompt() {
+        let sut = makeSUT(stateStore: FakeInputStateStore())
+        let script = makeTestUserScript()
+        sut.activateForTab("tab-A")
+        sut.bindToTab(script, hasExistingChat: true)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+
+        sut.bindToTab(script, hasExistingChat: false)
+
+        XCTAssertFalse(sut.hasSubmittedPrompt)
+    }
+
+    func test_bindToTab_freshChatAfterSubmission_keepsSubmittedState() {
+        let sut = makeSUT(stateStore: FakeInputStateStore())
+        let script = makeTestUserScript()
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+
+        sut.bindToTab(script, hasExistingChat: false)
+
+        XCTAssertTrue(sut.hasSubmittedPrompt,
+                      "a just-submitted chat has no chatID in its URL yet — the sync must not clobber it")
+    }
+
     func test_handleNavigationCommit_onActiveTab_resetsLiveAndStoredVisibility() {
         let store = FakeInputStateStore()
         let sut = makeSUT(stateStore: store)

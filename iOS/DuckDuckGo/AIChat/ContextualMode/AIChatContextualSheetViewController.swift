@@ -71,7 +71,6 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
 
     /// Called when the user taps the "New Chat" button to start a fresh conversation
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController)
-    /// Housekeeping, not a user request: reset in place, never move the user to another surface.
 
     /// Called when the user asks to open Duck.ai itself, rather than continue in this sheet.
     func aiChatContextualSheetViewControllerDidRequestOpenDuckAI(_ viewController: AIChatContextualSheetViewController)
@@ -729,7 +728,7 @@ private extension AIChatContextualSheetViewController {
         delegate?.aiChatContextualSheetViewControllerDidRequestRemoveChip(self)
     }
 
-    // MARK: - Recent Chats Menu
+    // MARK: - Context Chip
 
     func updateChipUI(chipState: ChipState) {
         guard persistentUTIHost == nil else { return }

@@ -1456,45 +1456,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenTheChatIsDeletedThenTheAddressBarStopsOfferingIt() async throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
-        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
-        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
-        XCTAssertTrue(sut.hasChatToReopen(persistedChatURL: savedChatURL))
-
-        try mockNativeStorage.deleteChat(chatId: savedChatID)
-
-        XCTAssertFalse(sut.hasChatToReopen(persistedChatURL: savedChatURL))
-    }
-
-    @MainActor
-    func testWhenTheStoreCannotAnswerThenTheAddressBarKeepsOfferingTheChat() async throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
-        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
-        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
-
-        mockNativeStorage.failsReads = true
-
-        XCTAssertTrue(sut.hasChatToReopen(persistedChatURL: savedChatURL))
-    }
-
-    @MainActor
-    func testWhenAskingAboutThePageAfterADeletionThenTheStaleChatIsCleared() async throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
-        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
-        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
-        sut.aiChatContextualSheetViewControllerDidDismiss(try XCTUnwrap(sut.sheetViewController))
-        try mockNativeStorage.deleteChat(chatId: savedChatID)
-
-        await sut.presentFloatingInput(from: mockPresentingVC)
-
-        XCTAssertFalse(sut.sessionState.hasActiveChat)
-    }
-
-    @MainActor
     func testWhenAnOpenChatIsDeletedElsewhereThenItDoesNotReopen() async throws {
-        // A live session keeps the conversation in memory, so nothing consults the store on the way
-        // back in unless we ask: the sheet reopened onto a chat the user had just deleted.
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
         try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
         await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
@@ -1521,8 +1483,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenTheSavedChatWasDeletedThenTheTabsStaleURLIsCleared() async {
-        // Skipping the restore is not enough on its own: the tab keeps its pointer, so
-        // `hasContextualChatToReopen` stays true and the address bar offers a chat that is gone.
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
         mockDelegate.contextualChatURLUpdates = []
 
@@ -1546,9 +1506,28 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenTheStoreCannotBeReadThenTheSavedChatIsStillRestored() async {
-        // The regression: an unanswerable store must not cost the user their chat.
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
         mockNativeStorage.failsReads = true
+
+        let restored = await restoredURL()
+
+        XCTAssertEqual(restored, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenTheStoreIsStillSettingUpThenTheSavedChatIsStillRestored() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockNativeStorage.setupSucceeded = nil
+
+        let restored = await restoredURL()
+
+        XCTAssertEqual(restored, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenTheStoreSetupFailedThenTheSavedChatIsStillRestored() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockNativeStorage.setupSucceeded = false
 
         let restored = await restoredURL()
 
@@ -1600,14 +1579,13 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
 }
 
-/// Wraps the shipped in-memory handler so a test can make the two reads the coordinator relies on
-/// fail or report an unmigrated store.
 final class MockDuckAiChatStorage: DuckAiNativeStorageHandling {
 
     struct ReadFailure: Error {}
 
     var failsReads = false
     var migrationDone = true
+    var setupSucceeded: Bool? = true
 
     private let backing = DuckAiNativeMemoryStorageHandler()
 

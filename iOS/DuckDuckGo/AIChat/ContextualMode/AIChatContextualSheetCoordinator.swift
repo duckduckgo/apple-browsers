@@ -149,7 +149,6 @@ final class AIChatContextualSheetCoordinator {
         unifiedToggleInputFeature.isAvailable
     }
 
-
     private var chatStorage: DuckAiNativeStorageHandling? {
         isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
     }
@@ -158,23 +157,6 @@ final class AIChatContextualSheetCoordinator {
         AIChatFeatureFlagProvider(featureFlagger: featureFlagger).isNativeDataAccessEnabled()
     }
 
-    /// Whether this tab has a conversation to return to. A deleted chat is not one.
-    func hasChatToReopen(persistedChatURL: URL?) -> Bool {
-        guard sessionState.hasActiveChat || persistedChatURL != nil else { return false }
-        let chatID = sessionState.contextualChatURL?.duckAIChatID ?? persistedChatURL?.duckAIChatID
-        return !isChatDeleted(chatID: chatID)
-    }
-
-    /// Reconciles the session before any surface opens.
-    private func prepareSessionForPresentation() {
-        discardActiveChatIfDeleted()
-        sessionState.refreshAutoAttachSetting()
-        sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
-        clearStaleManualContextIfNeeded()
-        startObservingContextUpdates()
-    }
-
-    /// Drops a chat that was deleted elsewhere, so the session cannot contradict the address bar.
     private func discardActiveChatIfDeleted() {
         guard sessionState.hasActiveChat,
               isChatDeleted(chatID: sessionState.contextualChatURL?.duckAIChatID) else { return }
@@ -182,11 +164,11 @@ final class AIChatContextualSheetCoordinator {
         clearActiveChat()
     }
 
-    /// Whether a chat has been deleted, or `false` when that cannot be established.
     private func isChatDeleted(chatID: String?) -> Bool {
         guard let chatID,
               isNativeDataAccessEnabled,
               let storage = chatStorage,
+              storage.setupSucceeded == true,
               (try? storage.isMigrationDone()) == true else { return false }
         do {
             return try storage.getChat(chatId: chatID) == nil
@@ -301,8 +283,12 @@ final class AIChatContextualSheetCoordinator {
     func presentSheet(from presentingViewController: UIViewController,
                       restoreURL: URL? = nil,
                       skippingAutoAttach: Bool = false) async {
-        prepareSessionForPresentation()
+        discardActiveChatIfDeleted()
+        sessionState.refreshAutoAttachSetting()
+        sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
+        clearStaleManualContextIfNeeded()
 
+        startObservingContextUpdates()
         collectContextForNewSession(skippingAutoAttach: skippingAutoAttach)
 
         stopSessionTimer()
@@ -323,8 +309,11 @@ final class AIChatContextualSheetCoordinator {
                                       skippingAutoAttach: Bool) async {
         guard floatingInputViewController == nil, !isSheetPresented else { return }
 
-        prepareSessionForPresentation()
+        sessionState.refreshAutoAttachSetting()
+        sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
+        clearStaleManualContextIfNeeded()
 
+        startObservingContextUpdates()
         if skippingAutoAttach {
             collectContextForNewSession(skippingAutoAttach: true)
         } else {
@@ -760,7 +749,6 @@ private extension AIChatContextualSheetCoordinator {
         isSheetPresented = true
     }
 
-    /// Restores a persisted chat, clearing the tab's pointer when that chat has since been deleted.
     func restoreChatIfAvailable(_ restoreURL: URL?) {
         guard let restoreURL else { return }
         guard !isChatDeleted(chatID: restoreURL.duckAIChatID) else {

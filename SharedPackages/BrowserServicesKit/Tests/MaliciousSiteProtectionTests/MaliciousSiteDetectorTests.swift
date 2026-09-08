@@ -70,6 +70,34 @@ class MaliciousSiteDetectorTests: XCTestCase {
         }
     }
 
+    func testWhenThreatMarkerIsAtEndOfLargeQueryThenLocalAndAPIMatchesDetectIt() async throws {
+        let hostHash = "255a8a793097aeea1f06a19c08cde28db0eb34c660c6e4e7480c9525d034b16d"
+        let regex = #"^https://malicious\.com/phishing\?q=a+&marker=threat$"#
+        let filter = Filter(hash: hostHash, regex: regex)
+        let url = try XCTUnwrap(URL(string: "https://malicious.com/PHISHING?q=" + String(repeating: "A", count: 100_000) + "&MARKER=THREAT"))
+        try await mockDataManager.store(HashPrefixSet(revision: 0, items: ["255a8a79"]), for: .hashPrefixes(threatKind: .phishing))
+
+        var apiCallCount = 0
+        mockAPIClient.matchesForHashPrefix = { _ in
+            apiCallCount += 1
+            return .init(matches: [
+                Match(hostname: "malicious.com", url: url.absoluteString, regex: regex, hash: hostHash, category: "phishing")
+            ])
+        }
+
+        for useLocalFilter in [true, false] {
+            try await mockDataManager.store(
+                FilterDictionary(revision: 0, items: useLocalFilter ? [filter] : []),
+                for: .filterSet(threatKind: .phishing)
+            )
+
+            let result = await detector.evaluate(url)
+
+            XCTAssertEqual(result, .phishing)
+            XCTAssertEqual(apiCallCount, useLocalFilter ? 0 : 1)
+        }
+    }
+
     func testWhenLargeURLHasNoMatchingHostPrefixThenNoThreatIsDetected() async throws {
         mockAPIClient.matchesForHashPrefix = { _ in
             XCTFail("URLs without a matching host prefix must not reach the API")

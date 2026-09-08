@@ -384,12 +384,10 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
                       "Expected a persisted session-health event", file: file, line: line)
     }
 
-    private func completedEvent(at index: Int = 0,
-                                file: StaticString = #filePath,
-                                line: UInt = #line) throws -> VPNSessionHealthWideEventData {
-        let completion = wideEvent.completions.enumerated().first { $0.offset == index }?.element
-        return try XCTUnwrap(completion?.0 as? VPNSessionHealthWideEventData,
-                             "Expected a completed session-health event at index \(index)", file: file, line: line)
+    private func completedEvent(at index: Int = 0, file: StaticString = #filePath, line: UInt = #line) throws -> VPNSessionHealthWideEventData {
+        let completion = wideEvent.completions.indices.contains(index) ? wideEvent.completions[index] : nil
+
+        return try XCTUnwrap(completion?.0 as? VPNSessionHealthWideEventData, "Expected a completed session-health event at index \(index)", file: file, line: line)
     }
 
     private func startMonitoredSession() {

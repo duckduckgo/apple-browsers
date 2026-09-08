@@ -179,26 +179,17 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
             switch step {
             case .begin:
-                persistentPixel.fireDailyAndCount(
-                    pixel: .networkProtectionRekeyAttempt,
-                    pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                    error: nil,
-                    withAdditionalParameters: [:],
-                    includedParameters: [.appVersion]) { _ in }
+                PixelKit.fire(Pixel.Event.networkProtectionRekeyAttempt,
+                              frequency: .legacyDailyAndCount,
+                              options: .withRetry)
             case .failure(let error):
-                persistentPixel.fireDailyAndCount(
-                    pixel: .networkProtectionRekeyFailure,
-                    pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                    error: error,
-                    withAdditionalParameters: [:],
-                    includedParameters: [.appVersion]) { _ in }
+                PixelKit.fire(Pixel.Event.networkProtectionRekeyFailure.withError(error),
+                              frequency: .legacyDailyAndCount,
+                              options: .withRetry)
             case .success:
-                persistentPixel.fireDailyAndCount(
-                    pixel: .networkProtectionRekeyCompleted,
-                    pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                    error: nil,
-                    withAdditionalParameters: [:],
-                    includedParameters: [.appVersion]) { _ in }
+                PixelKit.fire(Pixel.Event.networkProtectionRekeyCompleted,
+                              frequency: .legacyDailyAndCount,
+                              options: .withRetry)
             }
         case .tunnelStartAttempt(let step):
             switch step {
@@ -213,27 +204,18 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             switch step {
             case .begin:
                 if loopDetector.connectionLoopDetected { return }
-                persistentPixel.fireDailyAndCount(
-                    pixel: .networkProtectionTunnelStartAttempt,
-                    pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                    error: nil,
-                    withAdditionalParameters: [:],
-                    includedParameters: [.appVersion]) { _ in }
+                PixelKit.fire(Pixel.Event.networkProtectionTunnelStartAttempt,
+                              frequency: .legacyDailyAndCount,
+                              options: .withRetry)
             case .failure(let error):
                 if loopDetector.connectionLoopDetected { return }
-                persistentPixel.fireDailyAndCount(
-                    pixel: .networkProtectionTunnelStartFailure,
-                    pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                    error: error,
-                    withAdditionalParameters: [:],
-                    includedParameters: [.appVersion]) { _ in }
+                PixelKit.fire(Pixel.Event.networkProtectionTunnelStartFailure.withError(error),
+                              frequency: .legacyDailyAndCount,
+                              options: .withRetry)
             case .success:
-                persistentPixel.fireDailyAndCount(
-                    pixel: .networkProtectionTunnelStartSuccess,
-                    pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                    error: nil,
-                    withAdditionalParameters: [:],
-                    includedParameters: [.appVersion]) { _ in }
+                PixelKit.fire(Pixel.Event.networkProtectionTunnelStartSuccess,
+                              frequency: .legacyDailyAndCount,
+                              options: .withRetry)
             }
         case .tunnelStopAttempt(let step):
             switch step {
@@ -267,26 +249,17 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
             switch step {
             case .begin:
-                persistentPixel.fireDailyAndCount(
-                    pixel: .networkProtectionTunnelUpdateAttempt,
-                    pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                    error: nil,
-                    withAdditionalParameters: [:],
-                    includedParameters: [.appVersion]) { _ in }
+                PixelKit.fire(Pixel.Event.networkProtectionTunnelUpdateAttempt,
+                              frequency: .legacyDailyAndCount,
+                              options: .withRetry)
             case .failure(let error):
-                persistentPixel.fireDailyAndCount(
-                    pixel: .networkProtectionTunnelUpdateFailure,
-                    pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                    error: error,
-                    withAdditionalParameters: [:],
-                    includedParameters: [.appVersion]) { _ in }
+                PixelKit.fire(Pixel.Event.networkProtectionTunnelUpdateFailure.withError(error),
+                              frequency: .legacyDailyAndCount,
+                              options: .withRetry)
             case .success:
-                persistentPixel.fireDailyAndCount(
-                    pixel: .networkProtectionTunnelUpdateSuccess,
-                    pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                    error: nil,
-                    withAdditionalParameters: [:],
-                    includedParameters: [.appVersion]) { _ in }
+                PixelKit.fire(Pixel.Event.networkProtectionTunnelUpdateSuccess,
+                              frequency: .legacyDailyAndCount,
+                              options: .withRetry)
             }
         case .tunnelWakeAttempt(let step):
             switch step {
@@ -345,26 +318,17 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
             switch step {
             case .begin:
-                persistentPixel.fireDailyAndCount(
-                    pixel: .networkProtectionServerMigrationAttempt,
-                    pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                    error: nil,
-                    withAdditionalParameters: [:],
-                    includedParameters: [.appVersion]) { _ in }
+                PixelKit.fire(Pixel.Event.networkProtectionServerMigrationAttempt,
+                              frequency: .legacyDailyAndCount,
+                              options: .withRetry)
             case .failure(let error):
-                persistentPixel.fireDailyAndCount(
-                    pixel: .networkProtectionServerMigrationAttemptFailure,
-                    pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                    error: error,
-                    withAdditionalParameters: [:],
-                    includedParameters: [.appVersion]) { _ in }
+                PixelKit.fire(Pixel.Event.networkProtectionServerMigrationAttemptFailure.withError(error),
+                              frequency: .legacyDailyAndCount,
+                              options: .withRetry)
             case .success:
-                persistentPixel.fireDailyAndCount(
-                    pixel: .networkProtectionServerMigrationAttemptSuccess,
-                    pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                    error: nil,
-                    withAdditionalParameters: [:],
-                    includedParameters: [.appVersion]) { _ in }
+                PixelKit.fire(Pixel.Event.networkProtectionServerMigrationAttemptSuccess,
+                              frequency: .legacyDailyAndCount,
+                              options: .withRetry)
             }
         case .tunnelStartOnDemandWithoutAccessToken(let error):
             Logger.networkProtection.error("🔴 Starting tunnel without an auth token")
@@ -378,12 +342,9 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         case .adapterEndTemporaryShutdownStateRecoveryFailure(let error):
             PixelKit.fire(Pixel.Event.networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure.withError(error), frequency: .dailyAndCount)
         case .connectionFailureLoopDetected(let error):
-            persistentPixel.fireDailyAndCount(
-                pixel: .networkProtectionConnectionFailureLoopDetected,
-                pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                error: error,
-                withAdditionalParameters: [:],
-                includedParameters: [.appVersion]) { _ in }
+            PixelKit.fire(Pixel.Event.networkProtectionConnectionFailureLoopDetected.withError(error),
+                          frequency: .legacyDailyAndCount,
+                          options: .withRetry)
         }
     } }
 

@@ -498,8 +498,13 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
         let notice = provider.activateImageGeneration()
 
-        XCTAssertEqual(notice?.message, UserText.aiChatCreateImageModelSwitchTitle("Luna"))
-        XCTAssertEqual(notice?.secondaryText, UserText.aiChatCreateImageModelSwitchPrivacySubtitle("Open Model"))
+        XCTAssertEqual(
+            notice,
+            NewTabPageDataModel.OmnibarCreateImageModelSwitch(
+                message: UserText.aiChatCreateImageModelSwitchTitle("Luna"),
+                secondaryText: UserText.aiChatCreateImageModelSwitchPrivacySubtitle("Open Model")
+            )
+        )
     }
 
     func testActivateImageGeneration_clearsInvalidReasoningEffort() throws {

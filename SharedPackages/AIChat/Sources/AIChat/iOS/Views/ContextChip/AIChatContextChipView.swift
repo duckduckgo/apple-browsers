@@ -260,7 +260,7 @@ private extension AIChatContextChipView {
             isHidden = false
             titleLabel.text = offer
             titleLabel.accessibilityIdentifier = "AIChat.ContextChip.SuggestedTitle"
-            titleLabel.textColor = UIColor(designSystemColor: .accentTextPrimary)
+            titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
             titleLabel.font = UIFont.daxSubheadSemibold()
             titleLabel.accessibilityLabel = offer
             titleLabel.accessibilityTraits = .button
@@ -273,7 +273,7 @@ private extension AIChatContextChipView {
             faviconView.backgroundColor = .clear
             faviconView.layer.borderWidth = 0
             faviconView.layer.borderColor = nil
-            backgroundColor = UIColor(designSystemColor: .accentGlowPrimary)
+            backgroundColor = UIColor(designSystemColor: .accentGlowSecondary)
             isAccessibilityElement = false
             accessibilityIdentifier = "AIChat.ContextChip.Suggested"
             accessibilityLabel = offer

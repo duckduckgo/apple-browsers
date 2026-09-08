@@ -5284,6 +5284,15 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Cihaz Kaldırılsın mı?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Sunucu verileri silindi";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Sync & Backup kullanan tüm cihazların bağlantısı kesilecek ve senkronize edilen verileriniz sunucudan silinecektir.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Sync & Backup Kapatılsın ve Sunucu Verileri Silinsin mi?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Yeni cihaz eklendi!";
 

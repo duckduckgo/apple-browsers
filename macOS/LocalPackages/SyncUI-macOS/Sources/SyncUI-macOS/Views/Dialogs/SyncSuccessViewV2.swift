@@ -99,7 +99,7 @@ struct SyncSuccessViewV2: View {
                             if showCopyConfirmation {
                                 Image(nsImage: DesignSystemImages.Glyphs.Size16.check)
                             }
-                            Text(UserText.syncSuccessCopyCodeButtonV2)
+                            Text(showCopyConfirmation ? UserText.syncSuccessCopiedCodeButtonV2 : UserText.syncSuccessCopyCodeButtonV2)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 2)

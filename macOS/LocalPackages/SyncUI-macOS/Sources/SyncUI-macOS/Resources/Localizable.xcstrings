@@ -6779,6 +6779,18 @@
         }
       }
     },
+    "preferences.sync.success-v2.copied-code-button" : {
+      "comment" : "Confirmation shown on the copy button after copying the recovery code in the Sync success dialog (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copied"
+          }
+        }
+      }
+    },
     "preferences.sync.success-v2.copy-code-button" : {
       "comment" : "Button to copy the recovery code in the Sync success dialog (V2)",
       "extractionState" : "extracted_with_value",

@@ -146,6 +146,7 @@ enum UserText {
     static let syncSuccessDescriptionV2 = NSLocalizedString("preferences.sync.success-v2.description", bundle: Bundle.module, value: "Use this code to restore your synced data if you lose access to your devices. Keep it safe.", comment: "Recovery code explanation in the Sync success dialog (V2)")
     static let syncSuccessRecoveryCodeLabelV2 = NSLocalizedString("preferences.sync.success-v2.recovery-code-label", bundle: Bundle.module, value: "Recovery Code", comment: "Recovery code label in the Sync success dialog (V2)")
     static let syncSuccessCopyCodeButtonV2 = NSLocalizedString("preferences.sync.success-v2.copy-code-button", bundle: Bundle.module, value: "Copy Code", comment: "Button to copy the recovery code in the Sync success dialog (V2)")
+    static let syncSuccessCopiedCodeButtonV2 = NSLocalizedString("preferences.sync.success-v2.copied-code-button", bundle: Bundle.module, value: "Copied", comment: "Confirmation shown on the copy button after copying the recovery code in the Sync success dialog (V2)")
     static let syncSuccessDownloadPDFButtonV2 = NSLocalizedString("preferences.sync.success-v2.download-pdf-button", bundle: Bundle.module, value: "Download as PDF", comment: "Button to download the recovery code as a PDF in the Sync success dialog (V2)")
 
     // Enter recovery code dialog

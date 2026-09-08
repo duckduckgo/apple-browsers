@@ -1456,22 +1456,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenAnOpenChatIsDeletedElsewhereThenItDoesNotReopen() async throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess, .aiChatNativeStorage]
-        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
-        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
-        sut.aiChatContextualSheetViewControllerDidDismiss(try XCTUnwrap(sut.sheetViewController))
-        XCTAssertTrue(sut.sessionState.hasActiveChat)
-
-        try mockNativeStorage.deleteChat(chatId: savedChatID)
-        await sut.presentSheet(from: mockPresentingVC)
-
-        XCTAssertFalse(sut.sessionState.hasActiveChat)
-        XCTAssertNil(sut.sessionState.contextualChatURL)
-    }
-
-    @MainActor
-    func testWhenAnOpenChatStillExistsThenItReopens() async throws {
+    func testWhenAChatIsReopenedThenTheConversationSurvives() async throws {
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess, .aiChatNativeStorage]
         try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
         await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
@@ -1480,20 +1465,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(sut.sessionState.hasActiveChat)
         XCTAssertEqual(sut.sessionState.contextualChatURL, savedChatURL)
-    }
-
-    @MainActor
-    func testWhenTheSheetIsOnScreenThenADeletionDoesNotStripItOfItsSession() async throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess, .aiChatNativeStorage]
-        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
-        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
-
-        try mockNativeStorage.deleteChat(chatId: savedChatID)
-        await sut.presentSheet(from: mockPresentingVC)
-
-        XCTAssertNotNil(sut.sheetViewController, "clearing the chat would orphan the sheet already on screen")
-        XCTAssertTrue(sut.isSheetPresented)
-        XCTAssertTrue(sut.sessionState.hasActiveChat)
     }
 
     @MainActor

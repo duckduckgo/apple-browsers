@@ -341,23 +341,34 @@ final class FireViewController: NSViewController {
                 // Use the feature flag-aware method to determine if animation should play
                 if burningData.shouldPlayFireAnimation(decider: self.visualizeFireAnimationDecider) {
                     Task {
-                        await self.animateFire(burningData: burningData)
+                        // `animateFire` declines to play in any window but the one the burn was started
+                        // from, and when another window is already animating. Those windows need the
+                        // dialog fallback too — `isFirePresentationInProgress` has already unhidden the
+                        // container, so without it they show a bare scrim with nothing in it.
+                        guard await self.animateFire(burningData: burningData) == false else { return }
+                        self.presentBurningProgressIndicatorIfKeyWindow()
                     }
-                } else if self.isKeyWindowController {
+                } else {
                     // The full-window fire animation isn't covering this burn (it's disabled, or this is
                     // a New Tab Page site burn that only plays the in-page animation). Show the
                     // "Deleting browsing data" progress dialog directly so the burn still has visible
                     // feedback, mirroring what `animateFire` presents once the animation finishes.
                     // (For New Tab Page burns `isFirePresentationInProgress` still defers the container
                     // by 1s so the in-page animation plays first.)
-                    self.showBurningProgressIndicator()
-                } else {
-                    // Non-key window: make sure a progress dialog left visible by a previous burn
-                    // isn't shown.
-                    self.hideBurningProgressIndicator()
+                    self.presentBurningProgressIndicatorIfKeyWindow()
                 }
             })
             .store(in: &cancellables)
+    }
+
+    /// Shows the "Deleting browsing data…" dialog in the window the burn was started from, and makes
+    /// sure a dialog left visible by a previous burn isn't shown in any other window.
+    private func presentBurningProgressIndicatorIfKeyWindow() {
+        if isKeyWindowController {
+            showBurningProgressIndicator()
+        } else {
+            hideBurningProgressIndicator()
+        }
     }
 
     /// Whether this controller's window is the one the fire action was initiated from. Used to present
@@ -416,49 +427,73 @@ final class FireViewController: NSViewController {
         }
     }
 
+    /// Plays the full-window fire animation, if this is the window that should show it.
+    ///
+    /// - Returns: whether the animation was played. When it wasn't, the caller is responsible for
+    ///   presenting the burn some other way.
     @MainActor
-    private func animateFire(burningData: Fire.BurningData) async {
-        var playFireAnimation = true
-
+    @discardableResult
+    private func animateFire(burningData: Fire.BurningData) async -> Bool {
         // Animate just on the active window, don't animate if animation is already playing on another window
         let lastKeyWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
-        if view.window?.windowController !== lastKeyWindowController || fireViewModel.isAnimationPlaying {
-            playFireAnimation = false
+        guard view.window?.windowController === lastKeyWindowController, !fireViewModel.isAnimationPlaying else {
+            return false
         }
 
-        if playFireAnimation {
-            closeAllChildWindows()
+        closeAllChildWindows()
 
-            await waitForFireAnimationViewIfNeeded()
+        await waitForFireAnimationViewIfNeeded()
 
-            progressIndicatorWrapperBG.isHidden = true
-            progressIndicatorWrapper.isHidden = true
-            fireViewModel.setAnimationPlaying(true, isFireWindow: false)
+        progressIndicatorWrapperBG.isHidden = true
+        progressIndicatorWrapper.isHidden = true
+        isPlayingBurnAnimation = true
+        fireViewModel.setAnimationPlaying(true, isFireWindow: false)
 
-            fireAnimationView?.isHidden = false
-            fireAnimationView?.currentProgress = 0
+        fireAnimationView?.isHidden = false
+        fireAnimationView?.currentProgress = 0
 
-            let settings = Settings.current
-            fireAnimationView?.play(fromProgress: settings.animationBeginning, toProgress: settings.animationEnd) { [weak self, fireViewModel] _ in
-                Logger.general.debug("Fire animation did finish")
-                fireViewModel.setAnimationPlaying(false, isFireWindow: false)
+        let animationCompletion = { [weak self, fireViewModel] in
+            Logger.general.debug("Fire animation did finish")
+            self?.isPlayingBurnAnimation = false
+            fireViewModel.setAnimationPlaying(false, isFireWindow: false)
 
-                guard let self else { return }
+            guard let self else { return }
 
-                // If not finished yet, present the progress indicator
-                if self.fireViewModel.isBurning {
+            // If not finished yet, present the progress indicator
+            if self.fireViewModel.isBurning {
 
-                    // Waits until windows are closed in Fire.swift
-                    DispatchQueue.main.async {
-                        // Hide the fire animation view before showing progress indicator
-                        self.showBurningProgressIndicator()
-                        Logger.general.debug("Fire animation progress indicator shown")
-                    }
-                } else {
-                    Logger.general.debug("Fire animation did finish but is not burning")
+                // Waits until windows are closed in Fire.swift
+                DispatchQueue.main.async {
+                    // Hide the fire animation view before showing progress indicator
+                    self.showBurningProgressIndicator()
+                    Logger.general.debug("Fire animation progress indicator shown")
                 }
+            } else {
+                Logger.general.debug("Fire animation did finish but is not burning")
             }
         }
+
+        let settings = Settings.current
+        fireAnimationView?.play(fromProgress: settings.animationBeginning, toProgress: settings.animationEnd) { _ in
+            animationCompletion()
+        } ?? animationCompletion() // Report finished immediately if fireAnimationView is nil
+
+        return true
+    }
+
+    /// Whether *this* window is the one playing the burn animation.
+    ///
+    /// Deliberately not `fireViewModel.isAnimationPlaying`, which is app-wide: in an all-windows burn
+    /// the first window to close would otherwise release the burn while another window still animates.
+    private var isPlayingBurnAnimation = false
+
+    /// The burn may be closing this window mid-animation, which destroys the animation view and the
+    /// completion callback the burn is waiting on. Report the animation finished before that happens.
+    func windowWillClose() {
+        guard isPlayingBurnAnimation else { return }
+
+        isPlayingBurnAnimation = false
+        fireViewModel.setAnimationPlaying(false, isFireWindow: false)
     }
 
     private func waitForFireAnimationViewIfNeeded() async {

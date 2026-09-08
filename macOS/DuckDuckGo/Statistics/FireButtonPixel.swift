@@ -42,6 +42,7 @@ enum FireButtonPixel: PixelKit.Event {
     case fireDialogDeleteIndividualSitesClicked
     case fireDialogManageFireproofedSites
     case fireDialogCancel
+    case fireTimedOut(_ parameters: TimeoutParameters)
 
     var name: String {
         switch self {
@@ -73,6 +74,8 @@ enum FireButtonPixel: PixelKit.Event {
             return "fire_dialog_manage_fireproofed_sites_macos"
         case .fireDialogCancel:
             return "fire_dialog_cancel_macos"
+        case .fireTimedOut:
+            return "fire_timed_out_macos"
         }
     }
 
@@ -100,10 +103,39 @@ enum FireButtonPixel: PixelKit.Event {
 
         case .burn(let mode):
             return mode.params
+
+        case .fireTimedOut(let parameters):
+            return parameters.dictionaryRepresentation
         }
     }
 
     // MARK: - Parameters
+
+    /// Describes a burn that was abandoned because its watchdog timeout elapsed first.
+    struct TimeoutParameters {
+        /// What the burn was still waiting on when the watchdog fired.
+        enum Stage: String {
+            /// The fire animation never reported that it finished.
+            case animation
+            /// One or more data-clearing tasks never reported that they finished.
+            case dataClearing = "data_clearing"
+        }
+
+        let stage: Stage
+        /// Which burn entry point was running, matching `DataClearingWideEventService.BurnPath`.
+        let path: String
+        let isAutoClear: Bool
+        let animationEnabled: Bool
+
+        var dictionaryRepresentation: [String: String] {
+            [
+                "stage": stage.rawValue,
+                "path": path,
+                "trigger": isAutoClear ? "auto_clear" : "manual",
+                "animation_enabled": String(animationEnabled)
+            ]
+        }
+    }
 
     enum BurnMode {
         case currentTab(CurrentTabParameters)

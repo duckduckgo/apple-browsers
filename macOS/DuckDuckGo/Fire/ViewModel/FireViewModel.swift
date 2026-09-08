@@ -64,19 +64,31 @@ final class FireViewModel {
 
     let fire: FireProtocol
 
+    /// Whether either fire animation is on screen.
     @Published private(set) var isAnimationPlaying = false
 
-    func setAnimationPlaying(_ isAnimationPlaying: Bool, isFireWindow: Bool) {
-        guard self.isAnimationPlaying != isAnimationPlaying else { return }
-        self.isAnimationPlaying = isAnimationPlaying
+    /// The two animations are tracked separately because only the burn animation takes part in the
+    /// burn's dispatch group. With a single shared flag, a closing Fire Window's animation could
+    /// swallow the burn animation's stop edge, leaving the burn waiting on a `leave()` that never came.
+    private var isBurnAnimationPlaying = false
+    private var isFireWindowAnimationPlaying = false
 
-        if !isFireWindow {
+    func setAnimationPlaying(_ isAnimationPlaying: Bool, isFireWindow: Bool) {
+        if isFireWindow {
+            isFireWindowAnimationPlaying = isAnimationPlaying
+        } else if isBurnAnimationPlaying != isAnimationPlaying {
+            isBurnAnimationPlaying = isAnimationPlaying
+
             if isAnimationPlaying {
                 fire.fireAnimationDidStart()
             } else {
                 fire.fireAnimationDidFinish()
             }
         }
+
+        let isAnyAnimationPlaying = isBurnAnimationPlaying || isFireWindowAnimationPlaying
+        guard self.isAnimationPlaying != isAnyAnimationPlaying else { return }
+        self.isAnimationPlaying = isAnyAnimationPlaying
     }
 
     /// Publisher that emits true if burning animation or burning process is in progress

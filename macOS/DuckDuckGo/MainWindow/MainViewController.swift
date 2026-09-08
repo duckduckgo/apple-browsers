@@ -467,6 +467,9 @@ final class MainViewController: NSViewController {
     }
 
     func windowWillClose() {
+        // First: a burn waiting on this window's fire animation has to be released before the
+        // animation view goes away with the window.
+        fireViewController.windowWillClose()
         closeFloatingAIChatsForCurrentWindow()
         viewEventsCancellables.removeAll()
         aiChatOmnibarContainerViewController.cleanup()

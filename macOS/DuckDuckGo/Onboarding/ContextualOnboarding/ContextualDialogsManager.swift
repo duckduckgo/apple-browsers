@@ -150,6 +150,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
 
     // Returns the last dialog shown if it was shown for the given tab.
     func lastDialogForTab(_ tab: Tab) -> ContextualDialogType? {
+        if isNonBlocking(), case .onboarding = tab.content { return nil }
         if isNonBlocking(), state == .onboardingCompleted { return nil }
         // If the provided tab is the same as the last tab we processed, return the stored last dialog.
         if tab == lastTab {
@@ -219,6 +220,8 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
 
     // Determines and returns which dialog should be shown for a given tab and privacy info.
     func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo? = nil) -> ContextualDialogType? {
+        // No contextual transition or presentation belongs on the first-run onboarding page.
+        if isNonBlocking(), case .onboarding = tab.content { return nil }
         // Switched off outright: nothing shows, whatever the state says. Deliberately does not
         // touch the state, so turning the toggle back off resumes wherever the user had got to.
         guard !areHighlightsDisabled() else { return nil }

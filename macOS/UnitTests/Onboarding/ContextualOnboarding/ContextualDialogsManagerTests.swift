@@ -72,6 +72,30 @@ class ContextualDialogsManagerTests {
         #expect(restored.dialogTypeForTab(browsingTab) == nil)
     }
 
+    @Test("The onboarding page neither advances contextual onboarding nor restores a cached dialog")
+    func testOnboardingTabCannotPresentTheSubscriptionFollowUp() async {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        let treatmentManager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
+                                                       subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                                       stateStorage: stateStorage,
+                                                       isNonBlocking: { true })
+        treatmentManager.state = .ongoing
+        stateStorage.contextualDialogsSeen = ["highFive"]
+        let tab = await Tab(content: .onboarding)
+
+        #expect(treatmentManager.dialogTypeForTab(tab) == nil)
+        #expect(treatmentManager.state == .ongoing)
+        #expect(stateStorage.contextualDialogsSeen == ["highFive"])
+
+        tab.setContent(.url(URL(string: "https://example.com")!, source: .ui))
+        #expect(treatmentManager.dialogTypeForTab(tab) == .subscriptionUpsell)
+        #expect(treatmentManager.lastDialogForTab(tab) == .subscriptionUpsell)
+
+        tab.setContent(.onboarding)
+        #expect(treatmentManager.lastDialogForTab(tab) == nil)
+        #expect(treatmentManager.dialogTypeForTab(tab) == nil)
+    }
+
     // MARK: - Highlights Switched Off
 
     @available(iOS 16, macOS 13, *)

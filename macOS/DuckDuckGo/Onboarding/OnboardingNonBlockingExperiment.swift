@@ -64,7 +64,8 @@ struct OnboardingNonBlockingExperiment {
     }
 
     /// Assigns a cohort via `resolveCohort`. Caller must only invoke for eligible new installs.
-    func enroll() {
+    func enroll(buildType: ApplicationBuildType = StandardApplicationBuildType()) {
+        guard !buildType.isDebugBuild, !buildType.isReviewBuild, !buildType.isAlphaBuild else { return }
         _ = featureFlagger.resolveCohort(for: FeatureFlag.onboardingNonBlocking)
     }
 

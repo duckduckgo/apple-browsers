@@ -97,10 +97,25 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
         let experiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
 
-        experiment.enroll()
+        experiment.enroll(buildType: ApplicationBuildTypeMock())
 
         XCTAssertEqual(experiment.cohort, cohort)
         XCTAssertTrue(featureFlagger.didCallResolveCohort)
+    }
+
+    func testInternalBuildsDoNotEnrollEvenWithTheLocalTreatmentEnabled() {
+        for keyPath in [\ApplicationBuildTypeMock.isDebugBuild, \.isReviewBuild, \.isAlphaBuild] {
+            let buildType = ApplicationBuildTypeMock()
+            buildType[keyPath: keyPath] = true
+            let flags = MockFeatureFlagger()
+            flags.enabledFeatureFlags = [.onboardingAsync]
+            let experiment = OnboardingNonBlockingExperiment(featureFlagger: flags)
+
+            experiment.enroll(buildType: buildType)
+
+            XCTAssertFalse(flags.didCallResolveCohort)
+            XCTAssertTrue(experiment.isNonBlocking)
+        }
     }
 
     func testCohortReadsAssignedCohortWithoutResolving() {

@@ -2203,6 +2203,9 @@ class MainViewController: UIViewController {
             return
         }
 
+        pageBackgroundColorObservation = nil
+        refreshSettledFloatingGlassAppearance()
+
         // Reset chrome state on every NTP attach — the previous tab may have been a Duck.ai tab
         // with the AI header shown and the standard toolbar hidden. Some attach paths
         // (e.g. tab switcher long-press → newTab) don't go through `refreshControls`, so
@@ -5881,7 +5884,7 @@ extension MainViewController: OmniBarDelegate {
     func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
 
         let selectQueryText = !(isSERPPresented && !skipSERPFlow)
-        skipSERPFlow = false
+        resetSERPFlowAfterOmnibarFocus()
         
         if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
@@ -5890,10 +5893,8 @@ extension MainViewController: OmniBarDelegate {
         return selectQueryText
     }
 
-    func shouldAutoSelectTextForSERPQuery() -> Bool {
-        let shouldSelect = isSERPPresented && skipSERPFlow
+    func resetSERPFlowAfterOmnibarFocus() {
         skipSERPFlow = false
-        return shouldSelect
     }
 
     func onRefreshPressed() {

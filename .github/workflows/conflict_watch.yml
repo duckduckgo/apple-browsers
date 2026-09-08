@@ -6,6 +6,10 @@ name: Conflict Watch
 # any conflict pair whose total post-filter conflict-region lines clear
 # the noise threshold.
 #
+# Only people who have joined the Asana project get @-mentioned and added
+# as followers; everyone else is named in the comment without a tag, so an
+# uninterested engineer never gets the notification.
+#
 # Manual dispatches default to dry-run (no Asana writes) — flip
 # dry_run=false on the dispatch form to write for real. Scheduled cron
 # runs are real (dry_run input is unset → falsy).
@@ -31,6 +35,10 @@ on:
         default: false
       no_mentions:
         description: "Don't tag people: suppress Asana @-mentions and follower-adds"
+        type: boolean
+        default: false
+      mention_everyone:
+        description: "Tag mapped authors even if they never joined the project"
         type: boolean
         default: false
   schedule:
@@ -83,6 +91,9 @@ jobs:
           CW_RECENCY_HOURS: ${{ inputs.recency_hours || '48' }}
           CW_VERBOSE: ${{ inputs.verbose && '1' || '0' }}
           CW_NO_MENTIONS: ${{ inputs.no_mentions && '1' || '0' }}
+          # Inverted on purpose: `inputs` is unset on schedule events, so a
+          # falsy mention_everyone must map to members-only=1, not 0.
+          CW_MENTION_MEMBERS_ONLY: ${{ inputs.mention_everyone && '0' || '1' }}
         run: |
           python3 scripts/conflict-watch/conflict-watch.py
 

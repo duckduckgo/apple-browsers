@@ -160,7 +160,24 @@ class MainViewController: UIViewController {
         return emailManager
     }()
 
-    var newTabPageViewController: NewTabPageViewController?
+    var newTabPageViewController: (any NewTabPage)?
+
+    private lazy var newTabPageBuilder = NewTabPageBuilder(favoritesInteractionModel: favoritesViewModel,
+                                                           homePageMessagesConfiguration: homePageConfiguration,
+                                                           subscriptionDataReporting: subscriptionDataReporter,
+                                                           daxDialogsManager: daxDialogsManager,
+                                                           onboardingFlowProvider: onboardingManager,
+                                                           faviconLoader: faviconLoader,
+                                                           faviconsCache: favicons,
+                                                           remoteMessagingActionHandler: remoteMessagingActionHandler,
+                                                           remoteMessagingImageLoader: remoteMessagingImageLoader,
+                                                           remoteMessagingPixelReporter: remoteMessagingPixelReporter,
+                                                           appSettings: appSettings,
+                                                           aiChatSettings: aiChatSettings,
+                                                           subscriptionManager: subscriptionManager,
+                                                           internalUserCommands: internalUserCommands,
+                                                           floatingUIManager: floatingUIManager,
+                                                           redesignFeature: NewTabPageRedesignFeature(featureFlagger: featureFlagger))
 
     var tabsBarController: TabsBarViewController?
     var suggestionTrayController: SuggestionTrayViewController?
@@ -2209,29 +2226,10 @@ class MainViewController: UIViewController {
         }
 
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
-        let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
 
-        let controller = NewTabPageViewController(isFocussedState: false,
-                                                  openedAfterIdle: hatch != nil,
-                                                  dismissKeyboardOnScroll: true,
-                                                  tab: tabModel,
-                                                  interactionModel: favoritesViewModel,
-                                                  homePageMessagesConfiguration: homePageConfiguration,
-                                                  subscriptionDataReporting: subscriptionDataReporter,
-                                                  newTabDialogFactory: newTabDaxDialogFactory,
-                                                  daxDialogsManager: daxDialogsManager,
-                                                  onboardingFlowProvider: onboardingManager,
-                                                  faviconLoader: faviconLoader,
-                                                  remoteMessagingActionHandler: remoteMessagingActionHandler,
-                                                  remoteMessagingImageLoader: remoteMessagingImageLoader,
-                                                  remoteMessagingPixelReporter: remoteMessagingPixelReporter,
-                                                  appSettings: appSettings,
-                                                  faviconsCache: favicons,
-                                                  subscriptionManager: subscriptionManager,
-                                                  internalUserCommands: internalUserCommands,
-                                                  narrowLayoutInLandscape: narrowLayoutInLandscape,
-                                                  floatingUIManager: floatingUIManager
-        )
+        let controller = newTabPageBuilder.makeNewTabPage(tab: tabModel,
+                                                          openedAfterIdle: hatch != nil,
+                                                          daxDialogFactory: newTabDaxDialogFactory)
 
         controller.delegate = self
         controller.chromeDelegate = self
@@ -6469,15 +6467,15 @@ extension MainViewController: EscapeHatchActionRouter {
 
 extension MainViewController: NewTabPageControllerDelegate {
 
-    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+    func newTabPageDidSelectFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         self.onSelectFavorite(favorite)
     }
 
-    func newTabPageDidScroll(_ controller: NewTabPageViewController) {
+    func newTabPageDidScroll(_ controller: any NewTabPage) {
         recordNewTabPageSessionAction { $0.scrollView() }
     }
 
-    func newTabPage(_ controller: NewTabPageViewController, didInteractWithMessage interaction: NewTabPageMessageInteraction) {
+    func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction) {
         recordNewTabPageSessionAction { instrumentation in
             switch interaction {
             case .callToAction: instrumentation.clickMessageCta()
@@ -6486,15 +6484,15 @@ extension MainViewController: NewTabPageControllerDelegate {
         }
     }
 
-    func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+    func newTabPageDidEditFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         segueToEditBookmark(favorite)
     }
 
-    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {
+    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: any NewTabPage) {
         faviconsFetcherOnboarding.presentOnboardingIfNeeded(from: self)
     }
 
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
+    func newTabPageDidRequestSwitchToTab(_ controller: any NewTabPage, tab: Tab) {
         let targetTabsModel = tabManager.tabsModel(for: tab.mode)
         guard targetTabsModel.tabExists(tab: tab) else {
             clearEscapeHatch()
@@ -6512,12 +6510,12 @@ extension MainViewController: NewTabPageControllerDelegate {
         clearEscapeHatch()
     }
 
-    func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
+    func newTabPageDidRequestTabSwitcher(_ controller: any NewTabPage) {
         ntpAfterIdleInstrumentation.escapeHatchTabSwitcherTapped()
         requestTabSwitcher()
     }
 
-    func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: NewTabPageViewController) {
+    func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: any NewTabPage) {
         markSearchContextualOnboardingAsSeen()
     }
 
@@ -6773,7 +6771,7 @@ extension MainViewController: TabDelegate {
         // on every dismissal path.
         newTabPageViewController?.view.alpha = 0
         DispatchQueue.main.async { [weak self] in
-            self?.newTabPageViewController?.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message)
+            self?.newTabPageViewController?.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message, textEntryMode: nil)
         }
     }
     

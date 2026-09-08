@@ -1069,8 +1069,7 @@ extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
-        coordinator.viewController.deactivateInput()
-        let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator.cachedOmnibarPlaceholderWindowX
+        let omnibarPlaceholderWindowX = omnibarPlaceholderWindowXForHandoff(coordinator)
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
@@ -1116,6 +1115,9 @@ extension MainViewController {
             },
             interruptCleanup: { [weak self] in
                 self?.restoreChromeAfterInterruptedOmnibarDismiss()
+            },
+            resigningInput: { [weak coordinator] in
+                coordinator?.viewController.deactivateInput()
             },
             completion: { [weak self] in
                 self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)

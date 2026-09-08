@@ -110,14 +110,12 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          internalUserDecider: InternalUserDecider,
          featureFlagger: FeatureFlagger,
-         pinningManager: PinningManager,
-         isTerminating: @escaping @MainActor () -> Bool = { false }) {
+         pinningManager: PinningManager) {
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.internalUserDecider = internalUserDecider
         self.featureFlagger = featureFlagger
         self.pinningManager = pinningManager
-        self.isTerminating = isTerminating
     }
 
     /**
@@ -156,7 +154,6 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     private let internalUserDecider: InternalUserDecider
     private let featureFlagger: FeatureFlagger
     private let pinningManager: PinningManager
-    private let isTerminating: @MainActor () -> Bool
 
     /// find Main Window Controller being currently interacted with even when ⌘-clicked in background
     func mainWindowController(for sourceWindow: NSWindow?) -> MainWindowController? {
@@ -199,11 +196,10 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     }
 
     /// Closing the window that hosts onboarding disposes of onboarding just as deliberately as
-    /// closing its tab, so it counts as a skip. Quitting is excluded: it closes every window as its
-    /// final step, and `isTerminating` is what tells the two apart.
+    /// closing its tab, so it counts as a skip. Quit cleanup detaches tracking before closing windows.
     @MainActor
     private func recordOnboardingSkipIfWindowHostsOnboarding(_ windowController: MainWindowController) {
-        guard !isTerminating(), let onboardingTab else { return }
+        guard let onboardingTab else { return }
         guard windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: onboardingTab) != nil else { return }
 
         recordOnboardingSkipInPlace()
@@ -717,14 +713,8 @@ extension WindowControllersManager: OnboardingNavigating {
                 onClose()
                 return true
             case .bulk:
-                // Quitting sweeps every tab up in a bulk removal. Main records nothing when the
-                // user quits mid-onboarding, so neither does this — otherwise the treatment would
-                // lose the "onboarding shows again next launch" nudge that control keeps.
-                if self?.isTerminating() == true {
-                    self?.clearOnboardingTracking()
-                } else {
-                    self?.recordOnboardingSkipInPlace()
-                }
+                // Quit cleanup removes this interceptor before sweeping up tabs.
+                self?.recordOnboardingSkipInPlace()
                 return false
             case .programmatic:
                 // Not reachable — `removeUnpinnedTab` only consults the interceptor for

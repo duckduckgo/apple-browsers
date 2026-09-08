@@ -826,10 +826,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ),
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger,
-            pinningManager: pinningManager,
-            // Resolved through the delegate rather than captured: this runs during `init`, before
-            // `super.init()`, so `self` is not available yet. The closure only runs at quit time.
-            isTerminating: { Application.appDelegate.isTerminating }
+            pinningManager: pinningManager
         )
         tabsPreferences = TabsPreferences(
             persistor: TabsPreferencesUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
@@ -1814,18 +1811,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var terminationHandler: TerminationDeciderHandler?
 
-    /// `true` from the moment a quit is requested until it is either carried out or cancelled.
-    /// Termination closes every window as its final step, so anything that reads a window or tab
-    /// closing as a deliberate user action has to consult this first.
-    private(set) var isTerminating = false
-
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         // Already running — the in-flight handler will reply() when done
         if terminationHandler != nil {
             return .terminateLater
         }
-
-        isTerminating = true
 
         let handler = TerminationDeciderHandler(
             deciders: createTerminationDeciders(),
@@ -1838,7 +1828,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 // overwrite the saved state with empty data.
                 if !shouldTerminate {
                     self?.terminationHandler = nil
-                    self?.isTerminating = false
                 }
                 NSApp.reply(toApplicationShouldTerminate: shouldTerminate)
             }
@@ -1849,7 +1838,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if reply == .terminateCancel {
             // Synchronous cancellation — discard handler
             terminationHandler = nil
-            isTerminating = false
         }
         return reply
     }
@@ -1921,7 +1909,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
 
             // 9. Close windows before quitting while waiting for ⌘Q release
-            .perform {
+            .perform { [windowControllersManager] in
+                windowControllersManager.setOnboardingTab(nil)
                 NSApp.visibleWindows.forEach { $0.close() }
             }
         ]
@@ -2428,7 +2417,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                 stateRestorationManager: self.stateRestorationManager,
                                                 aiChatSyncCleaner: aiChatSyncCleaner,
                                                 wideEvent: wideEvent,
-                                                pixelFiring: PixelKit.shared)
+                                                pixelFiring: PixelKit.shared,
+                                                willPerformAutoClear: { [windowControllersManager] in
+                                                    windowControllersManager.setOnboardingTab(nil)
+                                                })
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()

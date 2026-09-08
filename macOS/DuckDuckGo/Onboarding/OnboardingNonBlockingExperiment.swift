@@ -152,7 +152,11 @@ final class OnboardingExperimentPersistor {
     @discardableResult
     func record(_ outcome: Outcome) -> Bool {
         guard self.outcome == nil else { return false }
-        try? keyValueStore.set(outcome.rawValue, forKey: Key.outcome.rawValue)
+        do {
+            try keyValueStore.set(outcome.rawValue, forKey: Key.outcome.rawValue)
+        } catch {
+            return false
+        }
         NotificationCenter.default.post(name: Self.outcomeDidChange, object: nil)
         return true
     }

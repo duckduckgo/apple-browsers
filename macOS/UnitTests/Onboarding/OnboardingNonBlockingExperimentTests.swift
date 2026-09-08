@@ -67,6 +67,20 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
         XCTAssertEqual(restored.outcome, .skipped)
     }
 
+    func testFailedOutcomeWriteDoesNotReportSuccessOrNotifyObservers() {
+        let store = MockKeyValueFileStore()
+        store.shouldThrowOnSet = true
+        let persistor = OnboardingExperimentPersistor(keyValueStore: store)
+        let observer = NotificationCenter.default.addObserver(forName: OnboardingExperimentPersistor.outcomeDidChange,
+                                                              object: nil, queue: nil) { _ in
+            XCTFail("A failed write must not announce a stored outcome change")
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        XCTAssertFalse(persistor.record(.skipped))
+        XCTAssertNil(persistor.outcome)
+    }
+
     func testExplicitResetAllowsANewOnboardingSession() {
         let persistor = OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
         persistor.contextualInitialized = true

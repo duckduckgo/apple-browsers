@@ -54,8 +54,7 @@ final class WindowControllersManagerBrowsingBeforeCompletionTests: XCTestCase {
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true, usesUnifiedFeedbackForm: false),
             internalUserDecider: MockInternalUserDecider(),
             featureFlagger: featureFlagger,
-            pinningManager: MockPinningManager(),
-            isTerminating: { false }
+            pinningManager: MockPinningManager()
         )
     }
 

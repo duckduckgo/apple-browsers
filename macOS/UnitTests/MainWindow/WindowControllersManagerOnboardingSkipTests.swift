@@ -19,6 +19,7 @@
 import Combine
 import FeatureFlags_macOS
 import PrivacyConfig
+@_spi(Testing) import PixelKit
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import XCTest
@@ -27,21 +28,18 @@ import XCTest
 
 /// Covers how `WindowControllersManager` decides that onboarding was skipped. Every way of leaving
 /// onboarding is a skip except quitting, which records nothing so that onboarding shows again on the
-/// next launch, matching what the blocking flow does today. Closing a window and quitting both close
-/// windows, so `isTerminating` is the only thing separating them.
+/// next launch, matching what the blocking flow does today. Quit cleanup detaches tracking first.
 @MainActor
 final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
 
     private var sut: WindowControllersManager!
     private var featureFlagger: MockFeatureFlagger!
-    private var isTerminating = false
     private var closeCount = 0
     private var skipInPlaceCount = 0
 
     override func setUp() {
         super.setUp()
 
-        isTerminating = false
         closeCount = 0
         skipInPlaceCount = 0
         featureFlagger = MockFeatureFlagger()
@@ -51,8 +49,7 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true, usesUnifiedFeedbackForm: false),
             internalUserDecider: MockInternalUserDecider(),
             featureFlagger: featureFlagger,
-            pinningManager: MockPinningManager(),
-            isTerminating: { [weak self] in self?.isTerminating == true }
+            pinningManager: MockPinningManager()
         )
     }
 
@@ -77,12 +74,42 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
 
     func testClosingTheWindowWhileQuittingRecordsNothing() {
         let (windowController, _) = startOnboarding()
-        isTerminating = true
+        sut.setOnboardingTab(nil)
 
         sut.unregister(windowController)
 
         XCTAssertEqual(skipInPlaceCount, 0)
-        XCTAssertTrue(sut.hasOnboardingTab, "Quitting leaves tracking in place; the app is going away regardless.")
+        XCTAssertFalse(sut.hasOnboardingTab)
+    }
+
+    func testCancelingAutoClearLeavesWindowSkipTrackingActive() {
+        let (windowController, _) = startOnboarding()
+        let preferences = DataClearingPreferences(
+            persistor: MockFireButtonPreferencesPersistor(),
+            fireproofDomains: MockFireproofDomains(domains: []),
+            faviconManager: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: featureFlagger,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner())
+        preferences.isAutoClearEnabled = true
+        preferences.isWarnBeforeClearingEnabled = true
+        let alert = MockAutoClearAlertPresenter()
+        alert.responseToReturn = .alertThirdButtonReturn
+        let handler = AutoClearHandler(
+            dataClearingPreferences: preferences,
+            startupPreferences: Application.appDelegate.startupPreferences,
+            fireViewModel: Application.appDelegate.fireCoordinator.fireViewModel,
+            stateRestorationManager: MockAppStateRestorationManager(),
+            aiChatSyncCleaner: nil, wideEvent: WideEventMock(), pixelFiring: nil,
+            alertPresenter: alert,
+            willPerformAutoClear: { [sut] in sut?.setOnboardingTab(nil) })
+
+        guard case .sync(.cancel) = handler.shouldTerminate(isAsync: false) else {
+            return XCTFail("Expected canceled quit")
+        }
+        sut.unregister(windowController)
+
+        XCTAssertEqual(skipInPlaceCount, 1)
     }
 
     func testClosingAWindowThatDoesNotHostOnboardingRecordsNothing() {
@@ -110,11 +137,11 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
 
     func testBulkRemovalWhileQuittingRecordsNothingAndReleasesTracking() {
         let (_, onboardingTab) = startOnboarding()
-        isTerminating = true
+        sut.setOnboardingTab(nil)
 
         let allowsRemoval = onboardingTab.closeInterceptor?(.bulk)
 
-        XCTAssertEqual(allowsRemoval, false)
+        XCTAssertNil(allowsRemoval)
         XCTAssertEqual(skipInPlaceCount, 0)
         XCTAssertFalse(sut.hasOnboardingTab)
     }
@@ -139,6 +166,19 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
         sut.unregister(windowController)
 
         XCTAssertEqual(skipInPlaceCount, 1)
+    }
+
+    func testQuitCleanupDetachesNavigationAndRejectsLateHandlerInstallation() {
+        let (_, onboardingTab) = startOnboarding()
+        sut.setOnboardingTab(nil)
+
+        sut.setOnboardingHandlers(onClose: { XCTFail("Late close handler") },
+                                  onSkipInPlace: { XCTFail("Late skip handler") })
+        onboardingTab.setContent(.newtab)
+
+        XCTAssertNil(onboardingTab.closeInterceptor)
+        XCTAssertEqual(skipInPlaceCount, 0)
+        XCTAssertEqual(closeCount, 0)
     }
 
     func testRetrackingOnboardingDiscardsTheOldTabsInterceptor() {

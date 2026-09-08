@@ -136,7 +136,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     /// Early and fully installed scripts can have different managers for the same first-run flow.
     private var canEndOnboarding: Bool {
-        !hasEnded && (!nonBlockingExperiment.isNonBlocking || experimentPersistor.outcome == nil)
+        !hasEnded && (!nonBlockingExperiment.isNonBlocking || (!Self.isOnboardingFinished && experimentPersistor.outcome == nil))
     }
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
@@ -550,7 +550,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         navigation.updatePreventUserInteraction(prevent: false)
         Self.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
 
-        let isFirstOutcome = experimentPersistor.record(outcome)
+        let isFirstOutcome = experimentPersistor.outcome == nil
+        experimentPersistor.record(outcome)
         switch outcome {
         case .completed:
             let userSawToggleOnboarding = wasToggleOnboardingStepShown()

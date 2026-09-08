@@ -33,6 +33,7 @@ import XCTest
 
 class OnboardingManagerTests: XCTestCase {
 
+    private var originalOnboardingFinished: Bool!
     var manager: OnboardingActionsManaging!
     var navigationDelegate: CapturingOnboardingNavigation!
     var dockCustomization: CapturingDockCustomizer!
@@ -51,6 +52,8 @@ class OnboardingManagerTests: XCTestCase {
     private var contextualOnboardingState: MockContextualOnboardingState!
 
     @MainActor override func setUp() {
+        originalOnboardingFinished = OnboardingActionsManager.isOnboardingFinished
+        OnboardingActionsManager.isOnboardingFinished = false
         navigationDelegate = CapturingOnboardingNavigation()
         dockCustomization = CapturingDockCustomizer()
         defaultBrowserProvider = CapturingDefaultBrowserProvider()
@@ -90,6 +93,7 @@ class OnboardingManagerTests: XCTestCase {
     }
 
     override func tearDown() {
+        UserDefaults.standard.set(originalOnboardingFinished, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
         // The experiment kit's fire closure is global and outlives this class, so hand it back a
         // sink that captures nothing — otherwise a later test firing an experiment pixel would
         // reach into this instance after its properties are gone.
@@ -920,6 +924,7 @@ class OnboardingManagerTests: XCTestCase {
     @MainActor
     func testLateCallbacksCannotReplaceBrowsingAfterEitherOutcome() {
         for outcome in [OnboardingExperimentPersistor.Outcome.completed, .skipped] {
+            OnboardingActionsManager.isOnboardingFinished = false
             let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
             let store = MockKeyValueFileStore()
             let early = makeNonBlockingExperimentManager(featureFlagger: flags,
@@ -942,6 +947,45 @@ class OnboardingManagerTests: XCTestCase {
             XCTAssertFalse(navigationDelegate.replaceTabCalled)
             XCTAssertFalse(navigationDelegate.updatePreventUserInteractionCalled)
             XCTAssertEqual(OnboardingExperimentPersistor(keyValueStore: store).outcome, outcome)
+        }
+    }
+
+    @MainActor
+    func testFailedOutcomeWriteStillFinishesAndReportsOnceAcrossManagers() {
+        for outcome in [OnboardingExperimentPersistor.Outcome.completed, .skipped] {
+            OnboardingActionsManager.isOnboardingFinished = false
+            experimentFiredEvents = []
+            navigationDelegate.replaceTabCalled = false
+            let cohort = FeatureFlag.OnboardingNonBlockingCohort.treatment
+            let flags = MockFeatureFlagger(resolveCohortStub: cohort)
+            configureNonBlockingExperimentKit(cohort: cohort, featureFlagger: flags)
+            let store = MockKeyValueFileStore()
+            store.shouldThrowOnSet = true
+            let early = makeNonBlockingExperimentManager(featureFlagger: flags,
+                                                         experimentPersistor: OnboardingExperimentPersistor(keyValueStore: store))
+            let full = makeNonBlockingExperimentManager(featureFlagger: flags,
+                                                        experimentPersistor: OnboardingExperimentPersistor(keyValueStore: store))
+            switch outcome {
+            case .completed: early.goToAddressBar()
+            case .skipped: early.skipOnboarding()
+            }
+            XCTAssertTrue(navigationDelegate.replaceTabCalled)
+            XCTAssertTrue(OnboardingActionsManager.isOnboardingFinished)
+            XCTAssertNil(OnboardingExperimentPersistor(keyValueStore: store).outcome)
+            let metric = outcome == .completed ? "onboardingCompleted" : "onboardingSkipped"
+            let outcomeEvents = experimentFiredEvents.filter { $0.parameters?["metric"] == metric }
+            XCTAssertEqual(outcomeEvents.count, 3)
+
+            navigationDelegate.replaceTabCalled = false
+            for manager in [early, full] {
+                manager.goToAddressBar()
+                manager.goToSettings()
+                manager.skipOnboarding()
+            }
+            XCTAssertFalse(navigationDelegate.replaceTabCalled)
+            XCTAssertEqual(experimentFiredEvents.filter { $0.parameters?["metric"] == metric }.count, 3)
+            let otherMetric = outcome == .completed ? "onboardingSkipped" : "onboardingCompleted"
+            XCTAssertFalse(experimentFiredEvents.contains { $0.parameters?["metric"] == otherMetric })
         }
     }
 

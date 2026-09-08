@@ -22,11 +22,12 @@ import UIKit
 
 extension MainViewController {
 
-    /// What the Duck.ai entry button should do for the current tab and session.
+    /// What the address-bar Duck.ai button should do for the current tab and session.
     var duckAIAddressBarEntry: DuckAIAddressBarEntry {
         DuckAIAddressBarEntry.resolve(
             isContextualModeAvailable: aiChatContextualModeFeature.isAvailable,
-            isMenuAvailable: isDuckAIAddressBarMenuAvailable,
+            isFloatingInputAvailable: aiChatContextualFloatingInputFeature.isAvailable,
+            isIPadChromeMenuButtonAvailable: isChromeMenuButtonInPlay,
             isHomeTab: tabManager.currentTabsModel.currentTab?.isHomeTab ?? true,
             isChatHistoryAvailable: DuckAIAddressBarMenuFactory.isChatHistoryAvailable(
                 featureFlagger: featureFlagger,
@@ -35,11 +36,6 @@ extension MainViewController {
             hasChatToReopen: currentTab?.hasContextualChatToReopen ?? false,
             isContextualSurfacePresented: isContextualSurfacePresented
         )
-    }
-
-    /// The floating input brings the menu to iPhone; the chrome menu button brings it to iPad.
-    var isDuckAIAddressBarMenuAvailable: Bool {
-        aiChatContextualFloatingInputFeature.isAvailable || isChromeMenuButtonInPlay
     }
 
     /// The iPad tabs-bar Duck.ai button runs on the same entry logic as the iPhone address-bar button.

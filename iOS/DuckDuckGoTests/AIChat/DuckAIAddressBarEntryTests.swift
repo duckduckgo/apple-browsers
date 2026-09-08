@@ -23,14 +23,14 @@ import XCTest
 final class DuckAIAddressBarEntryTests: XCTestCase {
 
     private func resolve(isContextualModeAvailable: Bool = true,
-                         isMenuAvailable: Bool = true,
+                         isFloatingInputAvailable: Bool = true,
                          isHomeTab: Bool = false,
                          isChatHistoryAvailable: Bool = true,
                          hasChatToReopen: Bool = false,
                          isContextualSurfacePresented: Bool = false) -> DuckAIAddressBarEntry {
         DuckAIAddressBarEntry.resolve(
             isContextualModeAvailable: isContextualModeAvailable,
-            isMenuAvailable: isMenuAvailable,
+            isFloatingInputAvailable: isFloatingInputAvailable,
             isHomeTab: isHomeTab,
             isChatHistoryAvailable: isChatHistoryAvailable,
             hasChatToReopen: hasChatToReopen,
@@ -40,7 +40,7 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
 
     // MARK: - Menu
 
-    func testWebPageWithMenuAvailableAndNoChatShowsTheMenu() {
+    func testWebPageWithFloatingInputAndNoChatShowsTheMenu() {
         XCTAssertEqual(resolve(), .menu)
     }
 
@@ -51,9 +51,37 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
         XCTAssertEqual(resolve(hasChatToReopen: true), .contextualSheet)
     }
 
-    /// iPhone without the floating input, or iPad without the chrome menu button.
-    func testWebPageWithoutMenuGoesStraightToTheSheet() {
-        XCTAssertEqual(resolve(isMenuAvailable: false), .contextualSheet)
+    func testWebPageWithoutFloatingInputGoesStraightToTheSheet() {
+        XCTAssertEqual(resolve(isFloatingInputAvailable: false), .contextualSheet)
+    }
+
+    // MARK: - iPad chrome menu button
+
+    /// iPad has no floating input; the chrome menu button offers the menu on its own.
+    func testIPadChromeMenuButtonShowsTheMenuWithoutTheFloatingInput() {
+        let entry = DuckAIAddressBarEntry.resolve(
+            isContextualModeAvailable: true,
+            isFloatingInputAvailable: false,
+            isIPadChromeMenuButtonAvailable: true,
+            isHomeTab: false,
+            isChatHistoryAvailable: false,
+            hasChatToReopen: false,
+            isContextualSurfacePresented: false
+        )
+        XCTAssertEqual(entry, .menu)
+    }
+
+    func testIPadChromeMenuButtonStillReopensAChatDirectly() {
+        let entry = DuckAIAddressBarEntry.resolve(
+            isContextualModeAvailable: true,
+            isFloatingInputAvailable: false,
+            isIPadChromeMenuButtonAvailable: true,
+            isHomeTab: false,
+            isChatHistoryAvailable: false,
+            hasChatToReopen: true,
+            isContextualSurfacePresented: false
+        )
+        XCTAssertEqual(entry, .contextualSheet)
     }
 
     // MARK: - Dismissal

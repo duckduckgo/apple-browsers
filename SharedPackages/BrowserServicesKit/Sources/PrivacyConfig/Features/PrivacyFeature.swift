@@ -176,6 +176,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
 
+    /// Enables the Website Permissions entry point in Settings.
+    case websitePermissionsSettings
+
     /// Memory Pressure Reporter
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
     case memoryPressureReporting
@@ -275,6 +278,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case deferredSecureVaultInit
     case performanceMetrics
     case extractedProfileRefresh
+    case schedulerDeferralHandling
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -428,9 +432,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     case ntpSuggestionsDeletion
-
-    /// Enables voice chat shortcut in the focused address bar
-    case voiceShortcut
 
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
@@ -827,6 +828,12 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the Sync Favicons ("Download Missing Icons?") promo.
     case syncFaviconsPromo
+
+    /// Kill switch for the Autofill Toolbar Pinning ("Add passwords shortcut?") promo.
+    case autofillToolbarPinningPromo
+
+    /// Kill switch for the Cookie Pop-ups Blocked promo.
+    case cookiePopupsBlockedPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

@@ -61,6 +61,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var fireButton: UIButton! { fireButtonView }
     var refreshButton: UIButton! { searchAreaView.reloadButton }
     var customizableButton: UIButton! { searchAreaView.customizableButton }
+    var urlSeparatorView: UIView { searchAreaView.separatorView }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
     var searchContainer: UIView! { searchAreaContainerView }
     var expectedHeight: CGFloat {
@@ -351,7 +352,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }()
 
     var onAIChatSendPressed: (() -> Void)?
-    var isAIVoiceChatEnabled: Bool = false
 
     let modelPickerButton: UIButton = {
         var config = UIButton.Configuration.plain()
@@ -767,12 +767,17 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         var view = UIVisualEffectView()
         UITraitCollection(userInterfaceStyle: configuration.interfaceStyle).performAsCurrent {
             if #available(iOS 26.0, *) {
-                // The embedded field carries the same material blur as the rest of the chrome.
-                let effect = UIGlassEffect(style: .regular)
-                if configuration.fireMode {
-                    effect.tintColor = UIColor(singleUseColor: .fireModeBackground)
+                if configuration.kind == .embedded {
+                    // Flat fill: the chrome underneath is already glass.
+                    view = UIVisualEffectView(effect: nil)
+                    view.backgroundColor = UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground)
+                } else {
+                    let effect = UIGlassEffect(style: .regular)
+                    if configuration.fireMode {
+                        effect.tintColor = UIColor(singleUseColor: .fireModeBackground)
+                    }
+                    view = UIVisualEffectView(effect: effect)
                 }
-                view = UIVisualEffectView(effect: effect)
                 view.cornerConfiguration = .capsule()
             }
         }
@@ -1311,17 +1316,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 ? UIColor(singleUseColor: .fireModeAccent).cgColor
                 : UIColor(designSystemColor: .accentPrimary).cgColor
         } else {
-            // Floating UI off (production): preserve the original fire-mode fill so the
-            // fire-mode omnibar colour is unchanged from `main`.
-            setFieldBackgroundColor(fireMode
-                ? UIColor(singleUseColor: .fireModeCardBackground)
-                : restingFieldBackgroundColor)
+            // Floating UI off (production): use the same fire-mode fill as the floating field so the
+            // field stays legible against the surrounding chrome in dark mode.
+            setFieldBackgroundColor(opaqueFieldBackgroundColor)
             activeOutlineView.layer.borderColor = fireMode
                 ? UIColor(singleUseColor: .fireModeAccent).cgColor
                 : UIColor(designSystemColor: .accentPrimary).cgColor
         }
         let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
         searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
+        // Stack siblings of searchAreaContainerView, so the loop above misses them — same override needed.
+        leadingButtonsContainer.overrideUserInterfaceStyle = style
+        trailingButtonsContainer.overrideUserInterfaceStyle = style
         if isBottomFloatingField, !isFloatingMinimalChromeBar, !fireMode, let embeddedGlassInterfaceStyle {
             glassEffect.overrideUserInterfaceStyle = embeddedGlassInterfaceStyle
         }
@@ -1756,7 +1762,7 @@ private extension DefaultOmniBarView {
 
     var opaqueFieldBackgroundColor: UIColor {
         fireMode
-            ? UIColor(singleUseColor: .fireModeBackground)
+            ? UIColor(singleUseColor: .fireModeFieldBackground)
             : restingFieldBackgroundColor
     }
 }
@@ -2380,7 +2386,7 @@ extension DefaultOmniBarView {
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
-        } else if !hasText && attachments.isEmpty && isAIVoiceChatEnabled {
+        } else if !hasText && attachments.isEmpty {
             aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.voice, for: .normal)
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)

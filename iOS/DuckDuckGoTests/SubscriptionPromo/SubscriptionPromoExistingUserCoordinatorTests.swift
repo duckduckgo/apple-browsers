@@ -73,6 +73,15 @@ final class SubscriptionPromoExistingUserCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.shouldPresentLaunchPrompt())
     }
 
+    func testShouldNotPresentWhenAppStoreProductsUnavailable() {
+        // Given
+        configureEligible()
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+
+        // Then
+        XCTAssertFalse(sut.shouldPresentLaunchPrompt())
+    }
+
     func testShouldNotPresentWhenAlreadyShown() {
         // Given
         configureEligible()

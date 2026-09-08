@@ -185,7 +185,7 @@ final class MainViewController: NSViewController {
             featureFlagger: featureFlagger,
             aiChatMenuConfig: aiChatMenuConfig,
             tabDragAndDropManager: tabDragAndDropManager,
-            autoconsentStatsPopoverCoordinator: NSApp.delegateTyped.autoconsentStatsPopoverCoordinator
+            cookiePopupsBlockedPromoDelegate: NSApp.delegateTyped.cookiePopupsBlockedPromoDelegate
         )
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
 
@@ -467,6 +467,7 @@ final class MainViewController: NSViewController {
     }
 
     func windowWillClose() {
+        navigationBarViewController.windowWillClose()
         closeFloatingAIChatsForCurrentWindow()
         viewEventsCancellables.removeAll()
         aiChatOmnibarContainerViewController.cleanup()

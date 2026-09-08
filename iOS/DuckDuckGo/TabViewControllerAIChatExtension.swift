@@ -168,4 +168,19 @@ extension TabViewController {
 
         return .openInNewTab(url)
     }
+
+    /// Page-started main-frame navigations into Duck.ai that native attributes. The tab's own loads
+    /// report their entry where they start, so the one still pending is skipped.
+    static func inPageDuckAIEntrySource(currentURL: URL?,
+                                        navigationAction: WKNavigationAction,
+                                        pendingNativeLoadURL: URL?) -> AIChatEntryPointSource? {
+        guard navigationAction.isTargetingMainFrame(),
+              navigationAction.navigationType != .backForward,
+              navigationAction.navigationType != .reload,
+              let targetURL = navigationAction.request.url,
+              targetURL != pendingNativeLoadURL else {
+            return nil
+        }
+        return AIChatEntryPointSource.forInPageNavigation(from: currentURL, to: targetURL)
+    }
 }

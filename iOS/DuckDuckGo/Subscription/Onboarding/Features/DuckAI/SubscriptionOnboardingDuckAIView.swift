@@ -33,19 +33,28 @@ struct SubscriptionOnboardingDuckAIView: View {
 
     @StateObject private var viewModel: SubscriptionOnboardingDuckAIViewModel
     private let title: String?
+    private let navigationButton: SubscriptionOnboardingNavigationButton?
+    private let progress: SubscriptionOnboardingProgress
 
     @State private var isShowingInfoSheet = false
 
+    /// How long the interstitial holds before the chat is requested, if the customer doesn't tap through.
+    private static let interstitialDuration: TimeInterval = 2
+
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingDuckAIViewModel,
-         title: String? = nil) {
+         title: String? = nil,
+         navigationButton: SubscriptionOnboardingNavigationButton? = nil,
+         progress: SubscriptionOnboardingProgress = SubscriptionOnboardingProgress(completedItems: [])) {
         _viewModel = StateObject(wrappedValue: viewModel())
         self.title = title
+        self.navigationButton = navigationButton
+        self.progress = progress
     }
 
     var body: some View {
         SubscriptionOnboardingBaseView(
             title: title,
-            navigationButton: .back({ viewModel.goBack() }),
+            navigationButton: viewModel.isShowingInterstitial ? nil : navigationButton,
             header: header,
             footer: footer,
             scrollsContent: false) {
@@ -54,6 +63,30 @@ struct SubscriptionOnboardingDuckAIView: View {
         .onAppear { viewModel.onAppear() }
         .onDisappear { viewModel.onDisappear() }
         .subscriptionOnboardingInfoSheet(.duckAI, isPresented: $isShowingInfoSheet)
+        .overlay {
+            if viewModel.isShowingInterstitial {
+                interstitial
+            }
+        }
+    }
+}
+
+// MARK: - Hand-off interstitial
+
+private extension SubscriptionOnboardingDuckAIView {
+
+    var interstitial: some View {
+        return SubscriptionOnboardingProgressView(
+            variant: .duckAIInterstitial,
+            progress: progress,
+            onNext: {})
+        .contentShape(Rectangle())
+        .onTapGesture { viewModel.handOffToChat() }
+        .task {
+            try? await Task.sleep(nanoseconds: UInt64(Self.interstitialDuration * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            viewModel.handOffToChat()
+        }
     }
 }
 

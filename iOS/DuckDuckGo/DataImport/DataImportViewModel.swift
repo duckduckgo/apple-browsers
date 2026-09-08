@@ -25,6 +25,7 @@ import BrowserServicesKit
 import Common
 import FoundationExtensions
 import DesignResourcesKit
+import PixelKit
 import WideEvent
 
 enum DataImportFileError {

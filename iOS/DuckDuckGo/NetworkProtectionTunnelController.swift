@@ -26,6 +26,7 @@ import Foundation
 import NetworkExtension
 import VPN
 import Subscription
+import PixelKit
 import WideEvent
 import FeatureFlags_iOS
 

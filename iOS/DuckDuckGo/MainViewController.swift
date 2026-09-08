@@ -2203,6 +2203,9 @@ class MainViewController: UIViewController {
             return
         }
 
+        pageBackgroundColorObservation = nil
+        refreshSettledFloatingGlassAppearance()
+
         // Reset chrome state on every NTP attach — the previous tab may have been a Duck.ai tab
         // with the AI header shown and the standard toolbar hidden. Some attach paths
         // (e.g. tab switcher long-press → newTab) don't go through `refreshControls`, so

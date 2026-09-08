@@ -21,6 +21,7 @@ import XCTest
 import enum UserScript.UserScriptError
 @testable import Core
 @testable import BrowserServicesKit
+@_spi(Testing) import PixelKit
 
 final class UserScriptErrorTests: XCTestCase {
 
@@ -28,12 +29,14 @@ final class UserScriptErrorTests: XCTestCase {
         let jsFile = "testFile"
         let underlyingError = NSError(domain: "TestDomain", code: 1, userInfo: nil)
         let error = UserScriptError.failedToLoadJS(jsFile: jsFile, error: underlyingError)
+        let pixelKitMock = PixelKitMock()
 
-        error.fireLoadJSFailedPixelIfNeeded(pixelFiring: PixelFiringMock.self)
+        error.fireLoadJSFailedPixelIfNeeded(pixelFiring: pixelKitMock)
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.userScriptLoadJSFailed.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [PixelParameters.jsFile: jsFile, PixelParameters.source: "browser"])
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.error as? NSError, underlyingError)
+        let fireCall = pixelKitMock.actualFireCalls.last
+        XCTAssertEqual(fireCall?.pixel.name, Pixel.Event.userScriptLoadJSFailed.name)
+        XCTAssertEqual(fireCall?.additionalParameters, [PixelParameters.jsFile: jsFile, PixelParameters.source: "browser"])
+        XCTAssertEqual(fireCall?.pixel.error, underlyingError)
     }
 
 }

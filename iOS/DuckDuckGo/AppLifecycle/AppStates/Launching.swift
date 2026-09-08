@@ -196,7 +196,7 @@ struct Launching: LaunchingHandling {
         let launchTimeMetricsService = LaunchTimeMetricsService(featureFlagger: featureFlagger)
         let statisticsService = StatisticsService()
 
-        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared)
         let reportingService = ReportingService(fireproofing: fireproofing,
                                                 featureFlagging: featureFlagger,
                                                 userDefaults: UserDefaults.app,
@@ -529,8 +529,8 @@ struct Launching: LaunchingHandling {
 
     private func logAppLaunchTime() {
         let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
-        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
-                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
+        PixelKit.fire(Pixel.Event.appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
+                      options: .parameters([PixelParameters.time: String(launchTime)]))
     }
 
     // MARK: -
@@ -588,70 +588,57 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
     func fire(_ event: DuckAiNativeStorageEvent) {
         switch event {
         case .initSuccess:
-            Pixel.fire(pixel: .duckAiNativeStorageInitSuccess)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageInitSuccess)
         case .initError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageInitError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageInitError.withError(error),
+                          frequency: .dailyAndStandard)
         case .migrationDone(let key):
-            UniquePixel.fire(pixel: .duckAiNativeStorageMigrationDoneUnique(key: key))
-            Pixel.fire(pixel: .duckAiNativeStorageMigrationDoneCount(key: key))
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageMigrationDoneUnique(key: key), frequency: .legacyInitial)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageMigrationDoneCount(key: key))
         case .migrationDoneBlankKey:
-            Pixel.fire(pixel: .duckAiNativeStorageMigrationDoneBlankCount)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageMigrationDoneBlankCount)
         case .migrationStarted:
-            Pixel.fire(pixel: .duckAiNativeStorageMigrationStarted)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageMigrationStarted)
         case .migrationAlreadyDone:
-            Pixel.fire(pixel: .duckAiNativeStorageMigrationAlreadyDone)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageMigrationAlreadyDone)
         case .migrationError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageMigrationError, error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageMigrationError.withError(error))
         case .settingsPutError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageSettingsPutError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageSettingsPutError.withError(error),
+                          frequency: .dailyAndStandard)
         case .settingsGetError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageSettingsGetError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageSettingsGetError.withError(error),
+                          frequency: .dailyAndStandard)
         case .settingsDeleteError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageSettingsDeleteError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageSettingsDeleteError.withError(error),
+                          frequency: .dailyAndStandard)
         case .chatPutError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageChatPutError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageChatPutError.withError(error),
+                          frequency: .dailyAndStandard)
         case .chatGetError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageChatGetError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageChatGetError.withError(error),
+                          frequency: .dailyAndStandard)
         case .chatDeleteError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageChatDeleteError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageChatDeleteError.withError(error),
+                          frequency: .dailyAndStandard)
         case .filePutError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFilePutError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageFilePutError.withError(error),
+                          frequency: .dailyAndStandard)
         case .fileGetError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFileGetError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageFileGetError.withError(error),
+                          frequency: .dailyAndStandard)
         case .fileListError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFileListError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageFileListError.withError(error),
+                          frequency: .dailyAndStandard)
         case .fileDeleteError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFileDeleteError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageFileDeleteError.withError(error),
+                          frequency: .dailyAndStandard)
         case .lastUsedModelParseError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageLastUsedModelParseError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageLastUsedModelParseError.withError(error),
+                          frequency: .dailyAndStandard)
         case .lastUsedReasoningModeParseError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageLastUsedReasoningModeParseError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageLastUsedReasoningModeParseError.withError(error),
+                          frequency: .dailyAndStandard)
         }
     }
 }

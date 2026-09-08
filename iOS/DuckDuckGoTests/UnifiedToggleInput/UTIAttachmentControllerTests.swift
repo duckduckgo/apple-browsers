@@ -22,6 +22,7 @@ import Core
 import UIKit
 import XCTest
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 /// Isolated unit tests for `UTIAttachmentController` — exercises the controller directly through
 /// stub `ViewSurface` / `Environment` / `Callbacks`, without a live coordinator. Coordinator-level
@@ -32,17 +33,18 @@ final class UTIAttachmentControllerTests: XCTestCase {
     private var view: FakeAttachmentView!
     private var config: FakeEnvironmentConfig!
     private var callbackSpy: CallbackSpy!
+    private var pixelKitMock: PixelKitMock!
 
     override func setUp() {
         super.setUp()
-        PixelFiringMock.tearDown()
+        pixelKitMock = PixelKitMock()
         view = FakeAttachmentView()
         config = FakeEnvironmentConfig()
         callbackSpy = CallbackSpy()
     }
 
     override func tearDown() {
-        PixelFiringMock.tearDown()
+        pixelKitMock = nil
         view = nil
         config = nil
         callbackSpy = nil
@@ -85,8 +87,8 @@ final class UTIAttachmentControllerTests: XCTestCase {
 
         XCTAssertEqual(view.attachments.count, 1)
         XCTAssertFalse(view.attachments.first?.isInvalid == true)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputFileAttached.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["source"], "file_picker")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputFileAttached.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["source"], "file_picker")
     }
 
     func testAddInvalidFileAttachment_addsInvalidChipShowsErrorAndFiresValidationPixel() {
@@ -99,8 +101,8 @@ final class UTIAttachmentControllerTests: XCTestCase {
         XCTAssertEqual(view.attachments.count, 1)
         XCTAssertTrue(view.attachments.first?.isInvalid == true)
         XCTAssertNotNil(view.validationMessage)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputFileValidationFailed.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["source"], "file_picker")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputFileValidationFailed.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["source"], "file_picker")
     }
 
     // MARK: - Remove / clear
@@ -143,9 +145,9 @@ final class UTIAttachmentControllerTests: XCTestCase {
         sut.reportRejectedPastedFiles(reason: .fileTooLarge)
 
         XCTAssertEqual(view.validationMessage, UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: 5))
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputFileValidationFailed.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["reason"], "size_exceeded")
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["source"], "paste")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputFileValidationFailed.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["reason"], "size_exceeded")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["source"], "paste")
     }
 
     func testTransientBanner_survivesValidationResyncWithNoInvalidAttachments() {
@@ -245,7 +247,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         let config = self.config!
         return UTIAttachmentController(
             pixelReporter: UTIPixelReporter(
-                firing: UTIPixelFiring(pixel: PixelFiringMock.self, daily: PixelFiringMock.self),
+                firing: UTIPixelFiring(pixelKit: { [unowned self] in pixelKitMock }),
                 context: { UTIPixelContext(surface: .addressBar, isDuckAISurfaceForAttribution: false, inputMode: .aiChat, isToggleVisible: false, pageType: .unknown, duckAIEntrySource: nil) }
             ),
             view: view.surface,

@@ -145,6 +145,13 @@ public final class AIChatConversationSourceHandler: AIChatConsumableDataHandling
         self.data = data
     }
 
+    /// For a source deduced from a navigation rather than from a deliberate action, so it can never
+    /// displace one a real surface staged moments earlier for the same chat.
+    public func setDataIfAbsent(_ data: DataType) {
+        guard self.data == nil else { return }
+        self.data = data
+    }
+
     public func consumeData() -> DataType? {
         let currentData = data
         reset()

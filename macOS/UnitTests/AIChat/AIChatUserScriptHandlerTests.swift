@@ -608,9 +608,52 @@ struct AIChatUserScriptHandlerTests {
     @Test("A recorded surface wins over the homepage fallback", .timeLimit(.minutes(1)))
     @MainActor
     func testThatConversationPixelPrefersRecordedSourceOverDuckDuckGoHomepageFallback() async {
-        let webView = mockWebView(url: "https://duckduckgo.com/")
+        let webView = mockWebView(url: "https://duckduckgo.com/?ia=chat")
         let parameters = await firedConversationParameters(source: .serp, metric: .userDidSubmitFirstPrompt, webView: webView)
         #expect(parameters?["source"] == "serp")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An ordinary duckduckgo.com page leaves a stamp pending for the chat it was meant for", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatANonChatPageDoesNotConsumeAPendingStamp() async {
+        // The mailbox is app-wide, so a page that can't be a chat must not drain it — the chat it
+        // was stamped for may be loading in another tab.
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+
+        sourceHandler.setData(.tabBarButton)
+
+        let serpWebView = mockWebView(url: "https://duckduckgo.com/?q=test")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: serpWebView))
+
+        #expect(sourceHandler.consumeData() == .tabBarButton)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A resolved source survives the chat's own URL changing mid-conversation", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAResolvedSourceSurvivesTheChatURLChanging() async {
+        // The frontend can rewrite the chat's URL as the conversation proceeds (e.g. appending a
+        // chatID); that is the same conversation, so its source must not be re-derived or dropped.
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+
+        let homepageWebView = mockWebView(url: "https://duckduckgo.com/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: homepageWebView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+        #expect(testPixelFiring.actualFireCalls.first?.pixel.parameters?["source"] == "duckduckgo-homepage")
+
+        // A stamp for a different chat lands while this conversation continues.
+        sourceHandler.setData(.omnibar)
+        let chatIDWebView = mockWebView(url: "https://duckduckgo.com/?ia=chat&chatID=abc123")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: chatIDWebView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitPrompt"], message: WKScriptMessage.mock())
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["source"] == "duckduckgo-homepage")
+        #expect(sourceHandler.consumeData() == .omnibar)
     }
 
     @available(iOS 16, macOS 13, *)

@@ -279,19 +279,28 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     /// duckduckgo.com fetches this config on every document load, so keying the capture to the
-    /// document is what keeps a source tied to one conversation: a real navigation re-captures
-    /// (clearing the previous conversation's source), while the homepage's same-document `#chat`
-    /// toggle keeps what that document captured.
+    /// document is what keeps a source tied to one conversation: leaving the chat drops the source,
+    /// while the homepage's same-document `#chat` toggle keeps what that document captured.
     private func captureConversationSource(for url: URL?) {
         let document = url?.strippingFragment
         guard !didCaptureConversationSource || document != conversationSourceDocument else { return }
         didCaptureConversationSource = true
         conversationSourceDocument = document
-        conversationSource = conversationSourceHandler.consumeData()
-        // A chat URL or `#chat` means the document opened as a chat, so no homepage started it here.
-        loadedOnDuckDuckGoHomepage = url.map {
-            $0.isDuckDuckGoHomepage && !$0.isDuckAIURL && !$0.isDuckAIChatFragment
-        } == true
+
+        // Only a chat can claim a stamp, and only if this conversation has none yet: a stamp is set
+        // just before a chat opens, so letting an ordinary page — or a conversation that already
+        // knows its source — consume it would take it from the chat it was meant for.
+        guard let url, !url.isDuckAIURL, !url.isDuckAIChatFragment else {
+            if conversationSource == nil {
+                conversationSource = conversationSourceHandler.consumeData()
+            }
+            loadedOnDuckDuckGoHomepage = false
+            return
+        }
+
+        // Not a chat, so whatever opened the last one no longer describes what happens here.
+        conversationSource = nil
+        loadedOnDuckDuckGoHomepage = url.isDuckDuckGoHomepage
     }
 
     /// The homepage switches to Duck.ai in place, so nothing native ever stamps a source for it;

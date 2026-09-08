@@ -139,7 +139,6 @@ final class AutocompleteSuggestionsPixelsTests: XCTestCase {
                                aiChatDiscoveryParameters: [:])
 
         XCTAssertEqual(firedNames, [Pixel.Event.autocompleteClickPhrase.name])
-        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
     }
 
     func testClickPixelsFiresTheDailyPixelForAskAIChat() {
@@ -147,9 +146,9 @@ final class AutocompleteSuggestionsPixelsTests: XCTestCase {
                                isExperimentalAIChatExperience: true,
                                aiChatDiscoveryParameters: ["was_used_before": "1"])
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName,
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name,
                        Pixel.Event.autocompleteAskAIChatExperimentalExperience.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["was_used_before"], "1")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["was_used_before"], "1")
     }
 
     /// The AI-chat context reads settings and feature-discovery state, so it must stay unevaluated on

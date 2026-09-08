@@ -1456,6 +1456,53 @@ final class PixelKitTests: XCTestCase {
         XCTAssertEqual(store.items.first?.pixelName.hasSuffix("_daily"), true)
     }
 
+    func testWhenLegacyDailyAndCountFailsWithRetryThenBothLegsAreQueuedAndReplayed() {
+        struct RetryEvent: PixelKit.Event {
+            let name = "retry_event"
+            let namePrefix: PixelKitNamePrefix = .none
+            let platformSuffixPolicy: PixelKitPlatformSuffixPolicy = .legacyOmitted
+            let parameters: [String: String]? = nil
+            let standardParameters: [PixelKitStandardParameter]? = nil
+        }
+
+        let store = MockPixelRetryQueueStore()
+        let fireMock = FireRequestMock()
+        fireMock.defaultResult = (false, NSError(domain: "test", code: 1))
+        let pixelKit = makePixelKit(retryQueueStore: store, fireRequest: fireMock.fireRequest)
+        let expectedNames = ["retry_event_c", "retry_event_d"]
+
+        pixelKit.fire(RetryEvent(), frequency: .legacyDailyAndCount, options: .withRetry)
+
+        // Completion precedes persistence, so wait for both legs to reach the store.
+        let queued = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            store.items.map(\.pixelName).sorted() == expectedNames
+        }, object: nil)
+        wait(for: [queued], timeout: 2.0)
+        XCTAssertEqual(fireMock.calls.map(\.pixelName).sorted(), expectedNames)
+
+        let replayed = expectation(description: "Both frequency legs are replayed")
+        replayed.expectedFulfillmentCount = 2
+        fireMock.onFireReceived = { call in
+            if call.parameters[PixelRetryQueue.Parameters.retriedPixel] == "1" {
+                replayed.fulfill()
+            }
+        }
+        fireMock.defaultResult = (true, nil)
+        pixelKit.fire(TestEventV2.testEvent)
+        wait(for: [replayed], timeout: 2.0)
+
+        // Receiving a replay does not mean its completion has removed the stored item yet.
+        let drained = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            store.items.isEmpty
+        }, object: nil)
+        wait(for: [drained], timeout: 2.0)
+        let replayNames = fireMock.calls
+            .filter { $0.parameters[PixelRetryQueue.Parameters.retriedPixel] == "1" }
+            .map(\.pixelName)
+        XCTAssertEqual(replayNames.sorted(), expectedNames)
+        XCTAssertTrue(store.items.isEmpty)
+    }
+
     // MARK: - Legacy daily no-suffix frequency
 
     func testLegacyDailyNoSuffixAcceptsANameThatAlreadyEndsWithTheDailyMarker() {

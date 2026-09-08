@@ -1043,7 +1043,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - Omnibar State
 
-    func activateFromOmnibar(prefilledText: String? = nil, shouldSelectAllText: Bool = true, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
+    func activateFromOmnibar(prefilledText: String? = nil, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
         keyboardMonitor.arm(awaiting: cardPosition == .top)
         displayState = .omnibar(.active)
         if host == .omnibar {
@@ -1068,15 +1068,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         // Set text before apply so clearDismissSnapshot sees the correct handler state when
         // it fires inside applyCardLayout — otherwise textRightInset starts at the no-button value.
-        let selectsAllText: Bool
         if let text = prefilledText, !text.isEmpty {
             textModel.setText(text)
             textModel.markPrefilledSelected()
             omnibarPrefilledText = text
-            selectsAllText = shouldSelectAllText
         } else {
             omnibarPrefilledText = nil
-            selectsAllText = false
         }
         updateFloatingReturnKeyState()
 
@@ -1101,11 +1098,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             guard omnibarPrefilledText != nil else { return }
             DispatchQueue.main.async { [weak self] in
                 guard let self, isOmnibarEditing else { return }
-                if selectsAllText {
-                    viewController.selectAllText()
-                } else {
-                    viewController.moveCaretToStart()
-                }
+                viewController.selectAllText()
             }
         }
     }

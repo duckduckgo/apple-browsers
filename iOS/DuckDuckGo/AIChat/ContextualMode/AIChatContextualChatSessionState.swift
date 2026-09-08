@@ -179,7 +179,6 @@ final class AIChatContextualChatSessionState {
     private var isProcessingNavigation = false
 
     private var pendingSignalsOnlyCollection = false
-    /// Collected on navigation but deliberately not attached — the chip offers it, a tap attaches it.
     private(set) var suggestedContext: AIChatPageContext?
     private var suppressesAutoAttachForSelectionEntry = false
 
@@ -328,14 +327,12 @@ final class AIChatContextualChatSessionState {
         pixelHandler.firePromptSubmittedWithSelections(count: unsubmittedSelections.count)
     }
 
-    /// The user tapped the offered chip. Reuses the collected context rather than re-reading the page.
     func acceptSuggestedContext() {
         guard let context = suggestedContext else { return }
         suggestedContext = nil
         attachContextFromSuggestionTap(context)
     }
 
-    /// The user dismissed the offer. Nothing was attached, so this is not a detach.
     func dismissSuggestedContext() {
         guard suggestedContext != nil else { return }
         suggestedContext = nil
@@ -488,11 +485,7 @@ final class AIChatContextualChatSessionState {
         // A real navigation means any subsequent context update is fresh, even if it later
         // resolves to a URL that was already submitted (e.g. the user navigated away and back).
         deliveredContextURLWithNoNavigationSince = nil
-        // The offer belongs to the page that was current when it was made.
         suggestedContext = nil
-        // Detaching opts out of the page you were on, not of every page after it. This used to be
-        // conditional on auto-attach, so with it off the opt-out never lifted and the offer stopped
-        // for the rest of the session.
         if userDowngradedToPlaceholder {
             userDowngradedToPlaceholder = false
             Logger.aiChat.debug("[SessionState] Page navigation cleared temporary context removal")
@@ -520,9 +513,7 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
     }
 
-    /// Whether this page is worth reading at all. Shared by auto-attach and the offer — the setting
-    /// decides what happens to the result, not whether it is collected.
-    private func isPageWorthCollecting(for pageURL: URL?) -> Bool {
+    private func shouldCollectPage(for pageURL: URL?) -> Bool {
         guard !hasUserOptedOutOfContext else { return false }
         guard let pageURL else { return true }
         guard let attachedContext = intendedAttachedContext,
@@ -533,15 +524,14 @@ final class AIChatContextualChatSessionState {
     }
 
     func shouldTriggerAutoCollect(for pageURL: URL? = nil) -> Bool {
-        shouldAutoCollectContext && isPageWorthCollecting(for: pageURL)
+        shouldAutoCollectContext && shouldCollectPage(for: pageURL)
     }
 
-    /// The same trigger with the setting off: read the page and offer it, rather than attach it.
     func shouldOfferPageContext(for pageURL: URL? = nil) -> Bool {
         !shouldAutoCollectContext
             && isUnifiedToggleInputActive
             && hasActiveChat
-            && isPageWorthCollecting(for: pageURL)
+            && shouldCollectPage(for: pageURL)
     }
 
     /// Sends a null context as a navigation signal.
@@ -773,7 +763,6 @@ private extension AIChatContextualChatSessionState {
         pixelHandler.endManualAttach()
     }
 
-    /// Auto-attach's counterpart: the page is offered, and only a tap on the chip attaches it.
     func handleOfferedContext(_ context: AIChatPageContext) {
         guard !isStaleEchoOfDeliveredContext(context.contextData) else {
             Logger.aiChat.debug("[SessionState] Ignoring stale echo for already-delivered context")

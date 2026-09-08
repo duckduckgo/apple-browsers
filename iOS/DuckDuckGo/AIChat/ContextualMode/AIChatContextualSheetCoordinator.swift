@@ -571,25 +571,18 @@ final class AIChatContextualSheetCoordinator {
         } else if currentPageURL != nil, shouldCollectSignalsOnly {
             sessionState.markPendingSignalsOnlyCollection()
             pageContextHandler.triggerContextCollection(trigger: .tabContent)
-        } else if offerPageContextIfNeeded(trigger: .auto) {
-            // Opening onto a page this chat has not been given: offer it.
-        } else {
-            // No collection attempted — still measure the current page's attachability.
+        } else if !offerPageContextIfNeeded(trigger: .auto) {
             pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
         }
     }
 
-    /// Auto-attach's counterpart: the same read, offered instead of attached. Requires a live observer,
-    /// since the result reaches the session only through the coordinator's subscription.
     @discardableResult
     private func offerPageContextIfNeeded(trigger: PageContextExtractionTrigger) -> Bool {
         guard isPagePlaceholderEnabled,
               isActivelyObservingContext,
               sessionState.shouldOfferPageContext(for: currentPageURL) else {
-            print("🔎PH offer: skipped flag=\(isPagePlaceholderEnabled) observing=\(isActivelyObservingContext) shouldOffer=\(sessionState.shouldOfferPageContext(for: currentPageURL))")
             return false
         }
-        print("🔎PH offer: collecting (trigger: \(trigger.rawValue))")
         return pageContextHandler.triggerContextCollection(trigger: trigger)
     }
 
@@ -690,7 +683,6 @@ final class AIChatContextualSheetCoordinator {
 
     /// Called by TabViewController when the page navigates to a new URL.
     func notifyPageChanged() async {
-        print("🔎PH nav: hasActiveSheet=\(hasActiveSheet) hasActiveChat=\(sessionState.hasActiveChat) flag=\(isPagePlaceholderEnabled) shouldOffer=\(sessionState.shouldOfferPageContext(for: currentPageURL)) autoCollect=\(sessionState.shouldTriggerAutoCollect()) observing=\(isActivelyObservingContext) immediateUTI=\(isImmediateContextualUTIEnabled)")
         guard hasActiveSheet else { return }
         sessionState.notifyPageChanged()
 
@@ -703,7 +695,6 @@ final class AIChatContextualSheetCoordinator {
                 sessionState.clearProcessingNavigationFlag()
             }
         } else if sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
-            print("🔎PH nav: entered the active-chat branch")
             sessionState.notifyFrontendOfMultiContextNavigation()
             if !offerPageContextIfNeeded(trigger: .navigation) {
                 sessionState.clearProcessingNavigationFlag()
@@ -981,7 +972,6 @@ private extension AIChatContextualSheetCoordinator {
             host.showAttachAffordance()
         }
 
-        print("🔎PH deliver: targets=\(targets.rawValue) host=\(persistentUTIHost != nil) suggestion=\(sessionState.suggestedContext?.title ?? "nil")")
         if let host = persistentUTIHost, targets.contains(.utiSuggestedContext) {
             if let suggestion = sessionState.suggestedContext {
                 host.setSuggestedContext(suggestion)

@@ -212,7 +212,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
             branch = attachedContext != nil ? "attachedDelivered" : "nothing"
         }
 
-        print("🔎PH chip: branch=\(branch) attached=\(attachedContext?.title ?? "nil") suggested=\(suggestedContext?.title ?? "nil") willDraw=\(state != nil)")
         let stateDesc: String = {
             switch state {
             case .suggested(let title, _): return "suggested(\(title))"

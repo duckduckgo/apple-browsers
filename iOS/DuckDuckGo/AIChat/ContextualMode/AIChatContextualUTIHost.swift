@@ -175,7 +175,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         chipViewModel.clearAttached()
     }
 
-    /// Offers the page as an attachment. Attached only if the user taps the chip.
     func setSuggestedContext(_ context: AIChatPageContext) {
         chipViewModel.setSuggested(context)
     }

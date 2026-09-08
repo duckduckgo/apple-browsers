@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import AVFoundation
 import WebKit
 import Core
 import Combine
@@ -51,6 +50,7 @@ import SERPSettings
 import AIChat
 import PixelKit
 import PrivacyConfig
+import SitePermissions
 import WebExtensions
 import DesignResourcesKitIcons
 import FeatureFlags_iOS
@@ -185,7 +185,7 @@ class TabViewController: UIViewController {
     /// Stores the visual state of the web view
     /// Used by DuckPlayer to save and restore view appearance when switching between normal browsing and fullscreen (portrail/landscape) video modes.
     private struct ViewSettings {
-        
+
         let viewBackground: UIColor?
         let webViewBackground: UIColor?
         let webViewOpaque: Bool
@@ -617,7 +617,9 @@ class TabViewController: UIViewController {
                                    duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
                                    adBlockingAvailability: AdBlockingAvailabilityProviding,
                                    eventHub: EventHubManaging,
-                                   pixelFiring: (any PixelKitFiring)? = PixelKit.shared) -> TabViewController {
+                                   webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
+                                   pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+                                   sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) -> TabViewController {
 
         return TabViewController(tabModel: model,
                                  privacyConfigurationManager: privacyConfigurationManager,
@@ -654,7 +656,9 @@ class TabViewController: UIViewController {
                                  duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                  adBlockingAvailability: adBlockingAvailability,
                                  eventHub: eventHub,
-                                 pixelFiring: pixelFiring)
+                                 pixelFiring: pixelFiring,
+                                 webExtensionManagerProvider: webExtensionManagerProvider,
+                                 sitePermissionsDependenciesProvider: sitePermissionsDependenciesProvider)
     }
 
     private var userContentController: UserContentController {
@@ -666,6 +670,7 @@ class TabViewController: UIViewController {
     let adBlockingAvailability: AdBlockingAvailabilityProviding
 
     let eventHub: EventHubManaging
+    let webExtensionManagerProvider: () -> WebExtensionManaging?
 
     /// This tab's EventHub identity. Derived from the tab model's UUID string, so it is stable for the
     /// tab's lifetime and unique per tab — which is what EventHub's per-tab web-event dedup keys off.
@@ -746,6 +751,9 @@ class TabViewController: UIViewController {
     let autoplaySettings: AutoplaySettings
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    var sitePermissionsDependenciesProvider: @MainActor () -> SitePermissionsDependencies?
+
+    let sitePermissionsState = SitePermissionsState()
 
     /// Main-frame response (URL + MIME) for the page-context gate; keyed by URL to avoid stale-MIME leaks.
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
@@ -821,7 +829,9 @@ class TabViewController: UIViewController {
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          eventHub: EventHubManaging,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
-         tabTerminationErrorPageInstrumentation: (any TabTerminationErrorPageInstrumenting)? = nil) {
+         tabTerminationErrorPageInstrumentation: (any TabTerminationErrorPageInstrumenting)? = nil,
+         webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
+         sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) {
 
         self.tabModel = tabModel
         self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
@@ -872,9 +882,11 @@ class TabViewController: UIViewController {
         self.autoplaySettings = autoplaySettings
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.sitePermissionsDependenciesProvider = sitePermissionsDependenciesProvider
         self.addressBarURLFilter = addressBarURLFilter
         self.adBlockingAvailability = adBlockingAvailability
         self.eventHub = eventHub
+        self.webExtensionManagerProvider = webExtensionManagerProvider
 
         // Captured by value so the handler's provider closure doesn't retain the controller.
         let eventHubTabID = EventHubTabID(rawValue: UUID(uuidString: tabModel.uid) ?? UUID())
@@ -884,6 +896,8 @@ class TabViewController: UIViewController {
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
         super.init(nibName: nil, bundle: nil)
+
+        subscribeToSitePermissionsChanges()
 
         // Reload AI Chat when subscription state changes
         subscriptionAIChatStateHandler.onSubscriptionStateChanged = { [weak self] in
@@ -1321,9 +1335,14 @@ class TabViewController: UIViewController {
                        loadingInitiatedByParentTab: Bool = false,
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
         instrumentation.willPrepareWebView()
-
-        let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
-                                                          privacyConfigurationManager: privacyConfigurationManager)
+        let isReplacingWebView = webView != nil
+        let mediaCaptureUserScript = makeSitePermissionsMediaCaptureUserScript(replacingWebView: isReplacingWebView)
+        let userContentController = UserContentController(
+            assetsPublisher: makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: mediaCaptureUserScript),
+            privacyConfigurationManager: privacyConfigurationManager,
+            earlyAccessHandlers: [mediaCaptureUserScript]
+        )
+        userContentController.addUserScript(mediaCaptureUserScript.makeWKUserScriptSync())
         configuration.userContentController = userContentController
         userContentController.delegate = self
 
@@ -1333,6 +1352,7 @@ class TabViewController: UIViewController {
         } else {
             webView = WebView(frame: view.bounds, configuration: configuration)
         }
+        sitePermissionsDidAttachWebView(replacingWebView: isReplacingWebView)
         if floatingUIManager.isFloatingUIEnabled {
             webView.scrollView.clipsToBounds = false
             webView.clipsToBounds = false
@@ -1959,7 +1979,7 @@ class TabViewController: UIViewController {
 
     func showPrivacyDashboard() {
         PixelKit.fire(Pixel.Event.privacyDashboardOpened, options: .parameters(featureDiscovery.addToParams([:], forFeature: .privacyDashboard)))
-        let webExtManager = (delegate as? MainViewController)?.webExtensionManager
+        let webExtManager = webExtensionManagerProvider()
         let controller = PrivacyDashboardViewController(
             privacyInfo: privacyInfo,
             entryPoint: .dashboard,
@@ -2037,7 +2057,7 @@ class TabViewController: UIViewController {
     
     public func makePrivacyInfo(url: URL, shouldCheckServerTrust: Bool = false) -> PrivacyInfo? {
         guard let host = url.host else { return nil }
-        
+
         let entity = ContentBlocking.shared.trackerDataManager.trackerData.findParentEntityOrFallback(forHost: host)
 
         let privacyInfo = PrivacyInfo(url: url,
@@ -2058,7 +2078,7 @@ class TabViewController: UIViewController {
         
         return privacyInfo
     }
-    
+
     private func makeProtectionStatus(for host: String) -> ProtectionStatus {
         let config = privacyConfigurationManager.privacyConfig
         
@@ -2314,6 +2334,15 @@ class TabViewController: UIViewController {
     }
 
     deinit {
+        if #available(iOS 18.4, *) {
+            DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id=tabModel.uid] in
+                webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: id))
+            }
+        }
+        // Tab removal closes synchronously; this also covers controllers released outside the tab cache.
+        Task { @MainActor [sitePermissionsState] in
+            sitePermissionsState.close()
+        }
         rulesCompilationMonitor.tabWillClose(tabModel.uid)
         eventHub.onTabClosed(tabID: eventHubTabID)
         removeObservers()
@@ -2380,9 +2409,14 @@ extension TabViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         pendingNativeLoadURL = nil
+        sitePermissionsDidCommit(webView, navigation: navigation)
         userScripts?.selectionFrameScript.reset()
+        tabModel.clearPendingSessionRestoration()
 
         if let url = webView.url {
+            if #available(iOS 18.4, *) {
+                webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationCommitted(tabIdentifier: tabModel.uid, url: url))
+            }
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             viewModel.captureWebviewDidCommit(finalURL)
             instrumentation.willLoad(url: url)
@@ -2471,6 +2505,8 @@ extension TabViewController: WKNavigationDelegate {
 
     private func handleNavigationResponse(_ navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
         let httpResponse = navigationResponse.response as? HTTPURLResponse
+        captureSitePermissionsMediaPolicy(from: navigationResponse.response,
+                                          isForMainFrame: navigationResponse.isForMainFrame)
         let mimeType = MIMEType(from: navigationResponse.response.mimeType, fileExtension: navigationResponse.response.url?.pathExtension)
         // Capture main-frame MIME for the page-context attachability gate.
         if navigationResponse.isForMainFrame, let responseURL = navigationResponse.response.url {
@@ -2573,6 +2609,21 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        // iOS receives the raw WebKit callbacks and has no Navigation redirect history, so the
+        // marker is read here and cleared at commit. A provisional load replaced before it commits
+        // raises this callback again, and that replacement is still the same logical restoration —
+        // macOS gets the equivalent from `redirectHistory.first`.
+        let isSessionRestoration = tabModel.hasPendingSessionRestoration
+        if #available(iOS 18.4, *) {
+            let navigationKind = Self.cpmNavigationKind(
+                isSessionRestoration: isSessionRestoration,
+                isBackForward: didGoBackForward
+            )
+            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(
+                .navigationStarted(tabIdentifier: tabModel.uid, navigationKind: navigationKind)
+            )
+        }
+        sitePermissionsDidStartProvisionalNavigation(webView, navigation: navigation)
         navigationPixelResponder.didStart(navigation)
         lastError = nil
         lastRenderedURL = webView.url
@@ -2587,6 +2638,16 @@ extension TabViewController: WKNavigationDelegate {
         adClickExternalOpenDetector.startNavigation()
         // Resets this tab's per-tab web-event dedup when the URL changes.
         eventHub.onNavigationStarted(tabID: eventHubTabID, url: webView.url?.absoluteString ?? "")
+    }
+
+    /// Resolves CPM attribution from the initiating navigation state.
+    /// Session restoration takes precedence because WebKit may also expose restored history state.
+    @available(iOS 18.4, *)
+    static func cpmNavigationKind(isSessionRestoration: Bool, isBackForward: Bool) -> CPMNavigationKind {
+        if isSessionRestoration {
+            return .sessionRestoration
+        }
+        return isBackForward ? .backForward : .other
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -2605,6 +2666,16 @@ extension TabViewController: WKNavigationDelegate {
         instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
         trackSecondSiteVisitIfNeeded(url: webView.url)
+
+        if let url = webView.url {
+            if #available(iOS 18.4, *), let webExtensionManager = webExtensionManagerProvider() {
+                webExtensionManager.cpmMessagingHealthMonitor.handle(.navigationFinished(
+                    tabIdentifier: tabModel.uid,
+                    url: url,
+                    extensionIsLoaded: webExtensionManager.isAutoconsentExtensionLoaded
+                ))
+            }
+        }
 
         fireProductTelemetry(for: webView)
         
@@ -3017,6 +3088,9 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        if #available(iOS 18.4, *) {
+            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationFailed(tabIdentifier: tabModel.uid))
+        }
         Logger.general.debug("didFailNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
         adClickExternalOpenDetector.failNavigation(error: error)
@@ -3064,6 +3138,10 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        if #available(iOS 18.4, *) {
+            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationFailed(tabIdentifier: tabModel.uid))
+        }
+        sitePermissionsDidFailProvisionalNavigation(webView, navigation: navigation)
         Logger.general.debug("didFailProvisionalNavigation; error: \(error)")
         pendingNativeLoadURL = nil
         adClickAttributionDetection.onDidFailNavigation()
@@ -4139,21 +4217,6 @@ extension TabViewController: WKUIDelegate {
                              inheritingAttribution: adClickAttributionLogic.state)
     }
 
-    func webView(_ webView: WKWebView,
-                 requestMediaCapturePermissionFor origin: WKSecurityOrigin,
-                 initiatedByFrame frame: WKFrameInfo,
-                 type: WKMediaCaptureType,
-                 decisionHandler: @escaping (WKPermissionDecision) -> Void) {
-        guard origin.host.isDuckAIHost,
-              type == .microphone || type == .cameraAndMicrophone else {
-            decisionHandler(.prompt)
-            return
-        }
-
-        let status = AVCaptureDevice.authorizationStatus(for: .audio)
-        decisionHandler(status == .authorized ? .grant : .deny)
-    }
-
     func webViewDidClose(_ webView: WKWebView) {
         if openedByPage {
             delegate?.tabDidRequestClose(self)
@@ -4172,6 +4235,10 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        if #available(iOS 18.4, *) {
+            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.webContentProcessTerminated(tabIdentifier: tabModel.uid))
+        }
+        sitePermissionsWebContentProcessDidTerminate(webView)
         userScripts?.selectionFrameScript.reset()
 
         let isDuckAITab = webView.url?.isDuckAIURL == true
@@ -4401,6 +4468,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.autofillUserScript.passwordImportDelegate = credentialsImportManager
         userScripts.faviconScript.delegate = faviconUpdater
         userScripts.printingSubfeature.delegate = self
+        configureSitePermissionsMediaCapture(with: userScripts.mediaCaptureUserScript)
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
         userScripts.autoconsentUserScript.management = autoconsentManagement
@@ -4482,16 +4550,19 @@ extension TabViewController: UserContentControllerDelegate {
 
     @objc
     func onReportBrokenSiteFromErrorPage() {
+        let entryPoint: PrivacyDashboardEntryPoint
         switch actionableErrorPage {
         case .tabTermination:
             tabTerminationErrorPageInstrumentation.sendFeedbackSelected()
+            entryPoint = .webKitTerminationErrorPage
         case .safariRedirectLoop:
             SafariRedirectPixel.reportBrokenSiteFromErrorPage.fireDailyAndCount()
+            entryPoint = .errorPage
         case nil:
             return
         }
 
-        delegate?.tabDidRequestReportBrokenSite(tab: self, entryPoint: .errorPage)
+        delegate?.tabDidRequestReportBrokenSite(tab: self, entryPoint: entryPoint)
     }
 
 }
@@ -4625,18 +4696,19 @@ extension TabViewController: AutoconsentUserScriptDelegate {
 
 @available(iOS 18.4, *)
 extension PrivacyInfo {
+    /// Dashboard state follows the page across query and fragment changes.
+    func matchesForCPMDashboardState(_ refreshURL: URL) -> Bool {
+        url.matchesCPMDashboardStatePage(refreshURL)
+    }
+
     func updateCookieConsentManagedForWebExtensionDashboardState(url refreshURL: URL, consentStatus: ConsentStatusInfo) {
-        guard url.host == refreshURL.host,
-              normalizedPath(url.path) == normalizedPath(refreshURL.path) else {
+        guard matchesForCPMDashboardState(refreshURL) else {
             return
         }
 
         cookieConsentManaged = consentStatus.toCookieConsentInfo()
     }
 
-    private func normalizedPath(_ path: String) -> String {
-        path.isEmpty ? "/" : path
-    }
 }
 
 // MARK: - ConsentStatusInfo to CookieConsentInfo Conversion
@@ -5566,8 +5638,9 @@ extension TabViewController: DuckPlayerHosting {
         return webViewBottomAnchorConstraint
     }
     
-    var persistentBottomBarHeight: CGFloat {
-        return chromeDelegate?.barsMaxHeight ?? 0.0
+    var floatingBottomChromeObscuredHeight: CGFloat {
+        guard let chromeDelegate else { return 0 }
+        return chromeDelegate.floatingWebViewBottomObscuredHeight(for: 1)
     }
 
     func showChrome() {

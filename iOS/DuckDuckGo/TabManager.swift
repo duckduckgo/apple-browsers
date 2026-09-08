@@ -32,6 +32,7 @@ import os.log
 import AIChat
 import Combine
 import PrivacyConfig
+import SitePermissions
 import WebExtensions
 import PixelKit
 
@@ -176,6 +177,16 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private weak var controllerPendingTerminationRecovery: TabViewController?
+    let sitePermissionsPixelHandler = SitePermissionsPixelHandler()
+
+    @MainActor
+    private lazy var sitePermissionsDependencies = SitePermissionsDependencies(
+        store: SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
+        systemPermissionClient: SystemPermissionClient(),
+        eventHandler: { [sitePermissionsPixelHandler] event in
+            sitePermissionsPixelHandler.fire(event)
+        }
+    )
 
     // Save debouncing. Fires after `saveDebounceInterval` of quiet, or `saveMaxWait` since
     // the first call in the burst (whichever comes first) so sustained activity cannot push
@@ -394,7 +405,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                                               adBlockingAvailability: adBlockingAvailability,
-                                                              eventHub: eventHub)
+                                                              eventHub: eventHub,
+                                                              webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+                                                              sitePermissionsDependenciesProvider: { [weak self] in
+                                                                  self?.sitePermissionsDependencies
+                                                              })
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -524,7 +539,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                                               adBlockingAvailability: adBlockingAvailability,
-                                                              eventHub: eventHub)
+                                                              eventHub: eventHub,
+                                                              webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+                                                              sitePermissionsDependenciesProvider: { [weak self] in
+                                                                  self?.sitePermissionsDependencies
+                                                              })
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,
@@ -677,6 +696,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             tabControllerCache.remove(at: index)
         }
         tabTerminationErrorPageDetector.removeHistory(forTabID: controller.tabModel.uid)
+        controller.closeSitePermissions()
         controller.dismiss()
     }
 

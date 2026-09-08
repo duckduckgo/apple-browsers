@@ -78,8 +78,23 @@ public enum SingleUseColor {
     case fireModeBackground
     case fireModeCardBackground
 
+    /// Fire Mode address bar field fill (Figma: Unified-Input-Fire/Field)
+    case fireModeFieldBackground
+
     // Duck.ai Grid Cell
     case duckAIVoiceCellBackground
+
+    /// The confetti burst's particle palette. Each brand hue supplies a body fill and a darker outline
+    case confettiMandarinFill
+    case confettiMandarinStroke
+    case confettiPondwaterFill
+    case confettiPondwaterStroke
+    case confettiLilypadFill
+    case confettiLilypadStroke
+    case confettiBlossomFill
+    case confettiBlossomStroke
+    case confettiPollenFill
+    case confettiPollenStroke
 
 #elseif os(macOS)
 

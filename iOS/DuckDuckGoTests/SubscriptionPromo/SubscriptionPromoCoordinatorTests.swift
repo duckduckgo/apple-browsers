@@ -73,6 +73,15 @@ final class SubscriptionPromoCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.shouldPresentLaunchPrompt())
     }
 
+    func testShouldNotPresentWhenAppStoreProductsUnavailable() {
+        // Given
+        configureEligible()
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+
+        // Then
+        XCTAssertFalse(sut.shouldPresentLaunchPrompt())
+    }
+
     func testShouldNotPresentWhenReinstallersFlagDisabled() {
         // Given
         configureEligible()
@@ -276,6 +285,7 @@ final class SubscriptionPromoCoordinatorTests: XCTestCase {
         mockSettings.subscriptionPromotionDialogShown = false
         mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPromoForReinstallers, .privacyProOnboardingPromotion]
         mockTutorialSettings.hasSkippedOnboarding = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockStatisticsStore.variant = VariantIOS.returningUser.name
         mockStatisticsStore.installDate = Calendar.current.date(byAdding: .day, value: -14, to: Date())
     }

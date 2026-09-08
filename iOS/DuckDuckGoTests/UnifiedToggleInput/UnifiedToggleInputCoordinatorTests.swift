@@ -160,6 +160,22 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.hasSubmittedPrompt, "an existing chat has a prompt in it already")
     }
 
+    func test_contextualChat_submittingPrompt_clearsToolbarVoiceChatActive() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            switchBarSubmissionMetrics: mockSubmissionMetrics,
+            contextualStart: .expandedPreSubmit
+        )
+        sut.delegate = mockDelegate
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
     // MARK: - Display State: showCollapsed
 
     func test_showCollapsed_setsDisplayState() {
@@ -824,18 +840,16 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.usesOmnibarMargins)
     }
 
-    func test_activateFromSearchTopPosition_withVoiceSearchDisabledAndAIVoiceEnabled_hidesInlineVoiceButton() {
+    func test_activateFromSearchTopPosition_withVoiceSearchDisabled_hidesInlineVoiceButton() {
         sut.updateVoiceSearchAvailability(false)
-        sut.updateAIVoiceChatAvailability(true)
 
         sut.activateFromOmnibar(inputMode: .search, cardPosition: .top)
 
         XCTAssertEqual(sut.viewController.handler.buttonState, .noButtons)
     }
 
-    func test_activateFromSearchBottomPosition_withVoiceSearchDisabledAndAIVoiceEnabled_hidesInlineVoiceButton() {
+    func test_activateFromSearchBottomPosition_withVoiceSearchDisabled_hidesInlineVoiceButton() {
         sut.updateVoiceSearchAvailability(false)
-        sut.updateAIVoiceChatAvailability(true)
 
         sut.activateFromOmnibar(inputMode: .search, cardPosition: .bottom)
 
@@ -2609,8 +2623,9 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.committedMode, .aiChat)
     }
 
-    func test_inlineVoiceSearchTap_requestsVoiceSearch() {
+    func test_inlineVoiceSearchTap_inSearchMode_requestsVoiceSearch() {
         sut.updateVoiceSearchAvailability(true)
+        sut.activateFromOmnibar(inputMode: .search)
 
         sut.viewController.handler.microphoneButtonTapped()
 
@@ -2619,7 +2634,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_collapsedAIVoiceChatButtonTap_requestsAIVoiceChat() {
-        sut.updateAIVoiceChatAvailability(true)
         sut.showCollapsed()
 
         sut.viewController.handler.microphoneButtonTapped()
@@ -2629,7 +2643,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_initialCollapsedAIVoiceChatButton_usesPlainWaveformStyle() {
-        sut.updateAIVoiceChatAvailability(true)
         sut.showCollapsed()
 
         let voiceButton = findButton(accessibilityIdentifier: "Browser.OmniBar.Button.VoiceSearch", in: sut.viewController.view)
@@ -2640,7 +2653,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_expandedAIChatInlineVoiceSearchTap_requestsVoiceSearch() {
         sut.updateVoiceSearchAvailability(true)
-        sut.updateAIVoiceChatAvailability(true)
         sut.showExpanded(inputMode: .aiChat)
 
         sut.viewController.handler.microphoneButtonTapped()
@@ -2651,7 +2663,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_expandedAIChatInlineVoiceSearchTap_whenVoiceSearchDisabled_ignoresStaleTap() {
         sut.updateVoiceSearchAvailability(false)
-        sut.updateAIVoiceChatAvailability(true)
         sut.showExpanded(inputMode: .aiChat)
 
         sut.viewController.handler.microphoneButtonTapped()
@@ -2668,20 +2679,34 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     // MARK: - Toolbar Voice Chat State Sync
 
-    func test_showCollapsed_whenAIVoiceChatEnabled_setsToolbarVoiceChatActive() {
-        sut.updateAIVoiceChatAvailability(true)
+    func test_showCollapsed_setsToolbarVoiceChatActive() {
         sut.showCollapsed()
         XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
     }
 
+    func test_submittingPrompt_clearsToolbarVoiceChatActive() {
+        sut.showExpanded(inputMode: .aiChat)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
+    func test_startNewChat_restoresToolbarVoiceChatActive() {
+        sut.showExpanded(inputMode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        sut.startNewChat()
+
+        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
     func test_showExpanded_inSearchMode_clearsToolbarVoiceChatActive() {
-        sut.updateAIVoiceChatAvailability(true)
         sut.showExpanded(inputMode: .search)
         XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
     }
 
     func test_deactivateToOmnibar_refreshesToolbarVoiceChatFlag() {
-        sut.updateAIVoiceChatAvailability(true)
         sut.activateFromOmnibar(inputMode: .aiChat)
         XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
 

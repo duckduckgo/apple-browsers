@@ -28,11 +28,13 @@ final class MockAppRatingPromptCoordinator: AppRatingPromptCoordinating {
 
     private(set) var registerUsageCallCount = 0
     private(set) var didRequestRatingCallCount = 0
+    private(set) var didSearchCallCount = 0
     private(set) var resetForDebugCallCount = 0
 
     func registerUsage() { registerUsageCallCount += 1 }
     func shouldRequestUncoordinated() -> Bool { uncoordinatedDecision }
     func didRequestRating() { didRequestRatingCallCount += 1 }
+    func didSearch() { didSearchCallCount += 1 }
     func resetForDebug() {
         resetForDebugCallCount += 1
         unredeemedSlotCount = 0
@@ -107,6 +109,17 @@ final class PromoCoordinationServiceAppRatingPromptTests {
         #expect(service.shouldRequestAppRatingPrompt())
         #expect(manager.redeemDeferredModalCallCount == 0)
         #expect(ratingCoordinator.didRequestRatingCallCount == 0)
+    }
+
+    @available(iOS 16, *)
+    @Test("Asking on a search clears the unredeemed cap whatever the outcome", .timeLimit(.minutes(1)), arguments: [true, false])
+    func searchClearsTheCap(_ isCoordinationEnabled: Bool) {
+        ratingCoordinator.isCoordinationEnabled = isCoordinationEnabled
+        let service = makeService(mode: .coordinated)
+
+        _ = service.shouldRequestAppRatingPrompt()
+
+        #expect(ratingCoordinator.didSearchCallCount == 1)
     }
 
     // MARK: - Backgrounding

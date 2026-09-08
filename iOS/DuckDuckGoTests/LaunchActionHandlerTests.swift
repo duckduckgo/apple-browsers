@@ -21,6 +21,7 @@ import UIKit
 import Testing
 import Core
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 final class MockURLHandler: URLHandling {
 
@@ -122,7 +123,7 @@ final class LaunchActionHandlerTests {
     let launchSourceManager = MockLaunchSourceManager()
     let idleReturnEvaluator = MockIdleReturnEvaluator()
     let idleReturnDelegate = MockIdleReturnLaunchDelegate()
-    let pixelFiringMock = PixelFiringMock.self
+    let pixelKitMock = PixelKitMock()
     lazy var launchActionHandler = LaunchActionHandler(
         urlHandler: urlHandler,
         shortcutItemHandler: shortcutItemHandler,
@@ -131,12 +132,8 @@ final class LaunchActionHandlerTests {
         launchSourceService: launchSourceManager,
         idleReturnEvaluator: idleReturnEvaluator,
         idleReturnDelegate: idleReturnDelegate,
-        pixelFiring: pixelFiringMock
+        pixelFiring: pixelKitMock
     )
-
-    deinit {
-        pixelFiringMock.tearDown()
-    }
 
     @Test("Open URL when LaunchAction is .openURL")
     func openURL() {
@@ -228,14 +225,14 @@ final class LaunchActionHandlerTests {
         // GIVEN
         let url = try #require(URL(string: path))
         let action = LaunchAction.openURL(url)
-        #expect(pixelFiringMock.allPixelsFired.count == 0)
+        #expect(pixelKitMock.actualFireCalls.count == 0)
 
         // WHEN
         launchActionHandler.handleLaunchAction(action)
 
         // THEN
-        #expect(pixelFiringMock.allPixelsFired.count == 1)
-        #expect(pixelFiringMock.allPixelsFired.first?.pixelName == Pixel.Event.appLaunchFromExternalLink.name)
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.first?.pixel.name == Pixel.Event.appLaunchFromExternalLink.name)
     }
 
     @Test(
@@ -249,14 +246,14 @@ final class LaunchActionHandlerTests {
         // GIVEN
         let url = try #require(URL(string: path))
         let action = LaunchAction.openURL(url)
-        #expect(pixelFiringMock.allPixelsFired.count == 0)
+        #expect(pixelKitMock.actualFireCalls.count == 0)
 
         // WHEN
         launchActionHandler.handleLaunchAction(action)
 
         // THEN
-        #expect(pixelFiringMock.allPixelsFired.count == 1)
-        #expect(pixelFiringMock.allPixelsFired.first?.pixelName == Pixel.Event.appLaunchFromShareExtension.name)
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.first?.pixel.name == Pixel.Event.appLaunchFromShareExtension.name)
     }
 
     // MARK: - LaunchSourceManager Integration Tests

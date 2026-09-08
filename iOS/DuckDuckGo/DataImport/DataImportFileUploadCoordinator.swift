@@ -29,6 +29,7 @@ import Persistence
 import PrivacyConfig
 import os.log
 import FeatureFlags_iOS
+import PixelKit
 
 protocol DataImportFileUploadFlowOwner: AnyObject {
     func dataImportUploadDidCompleteSummary()
@@ -149,7 +150,7 @@ extension DataImportFileUploadCoordinator: UIDocumentPickerDelegate {
 
             guard let typeIdentifier = resourceValues.typeIdentifier,
                   let fileType = DataImportFileType(typeIdentifier: typeIdentifier) else {
-                Pixel.fire(pixel: .importHubFilePickerUnsupported, withAdditionalParameters: importHubFilePickerPixelParameters)
+                PixelKit.fire(Pixel.Event.importHubFilePickerUnsupported, options: .parameters(importHubFilePickerPixelParameters))
                 presentFileErrorSheet(.unsupportedFile)
                 return
             }
@@ -159,7 +160,7 @@ extension DataImportFileUploadCoordinator: UIDocumentPickerDelegate {
             fireHubFilePickedPixelIfNeeded(for: fileType)
         } catch {
             Logger.autofill.debug("Failed to determine the file type: \(error)")
-            Pixel.fire(pixel: .importHubFilePickerUnsupported, withAdditionalParameters: importHubFilePickerPixelParameters)
+            PixelKit.fire(Pixel.Event.importHubFilePickerUnsupported, options: .parameters(importHubFilePickerPixelParameters))
             presentFileErrorSheet(.unsupportedFile)
         }
     }
@@ -167,7 +168,7 @@ extension DataImportFileUploadCoordinator: UIDocumentPickerDelegate {
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         viewModel.isLoading = false
         viewModel.documentPickerCancelled()
-        Pixel.fire(pixel: .importHubFilePickerCancelled, withAdditionalParameters: importHubFilePickerPixelParameters)
+        PixelKit.fire(Pixel.Event.importHubFilePickerCancelled, options: .parameters(importHubFilePickerPixelParameters))
         flowOwner?.dataImportUploadDidCancel()
     }
 }
@@ -187,7 +188,7 @@ private extension DataImportFileUploadCoordinator {
             presentingViewController.present(documentPicker, animated: true)
         }
 
-        Pixel.fire(pixel: .importHubFilePickerDisplayed, withAdditionalParameters: importHubFilePickerPixelParameters)
+        PixelKit.fire(Pixel.Event.importHubFilePickerDisplayed, options: .parameters(importHubFilePickerPixelParameters))
     }
 
     func presentDataTypePicker(for viewModel: DataImportViewModel, contents: ImportArchiveContents) {
@@ -325,24 +326,24 @@ private extension DataImportFileUploadCoordinator {
     func fireHubFilePickedPixelIfNeeded(for fileType: DataImportFileType) {
         switch fileType {
         case .zip, .json:
-            Pixel.fire(pixel: .importHubFilePickedZip, withAdditionalParameters: importHubFilePickerPixelParameters)
+            PixelKit.fire(Pixel.Event.importHubFilePickedZip, options: .parameters(importHubFilePickerPixelParameters))
         case .csv:
-            Pixel.fire(pixel: .importHubFilePickedCsv, withAdditionalParameters: importHubFilePickerPixelParameters)
+            PixelKit.fire(Pixel.Event.importHubFilePickedCsv, options: .parameters(importHubFilePickerPixelParameters))
         case .html:
-            Pixel.fire(pixel: .importHubFilePickedHtml, withAdditionalParameters: importHubFilePickerPixelParameters)
+            PixelKit.fire(Pixel.Event.importHubFilePickedHtml, options: .parameters(importHubFilePickerPixelParameters))
         }
     }
 
     func fireHubFileErrorPixelsIfNeeded(for error: DataImportFileError) {
         var fileErrorParameters = importHubPixelContext.parameters
         fileErrorParameters[PixelParameters.reason] = error.importHubReason
-        Pixel.fire(pixel: .importHubFileErrorDisplayed, withAdditionalParameters: fileErrorParameters)
+        PixelKit.fire(Pixel.Event.importHubFileErrorDisplayed, options: .parameters(fileErrorParameters))
 
         guard let failurePixel = error.importHubFailurePixel else {
             return
         }
 
-        Pixel.fire(pixel: failurePixel, withAdditionalParameters: importHubPixelContext.parameters)
+        PixelKit.fire(failurePixel, options: .parameters(importHubPixelContext.parameters))
     }
 }
 

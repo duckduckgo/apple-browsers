@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import DesignResourcesKitIcons
+import PixelKit
 
 // MARK: - State
 
@@ -51,7 +52,6 @@ struct TabSwitcherLongPressMenuState {
     let pressedContainsWebPages: Bool
     let isEditing: Bool
     let title: String
-    var shouldShowDeleteTabAndData = false
 
     var canShare: Bool { pressedContainsWebPages }
     var canAddBookmarks: Bool { pressedContainsWebPages }
@@ -83,7 +83,6 @@ struct TabSwitcherLongPressMenuActions {
     var onSelect: () -> Void
     var onClose: () -> Void
     var onCloseOther: () -> Void
-    var onDeleteTabAndData: () -> Void = {}
 }
 
 struct TabSwitcherEditMenuActions {
@@ -109,7 +108,7 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
                             actions: TabSwitcherMultiSelectMenuActions) -> UIMenu {
         let items = multiSelectionMenuItems(state: state, actions: actions)
         let deferredElement = UIDeferredMenuElement.uncached { completion in
-            Pixel.fire(pixel: .tabSwitcherSelectModeMenuClicked)
+            PixelKit.fire(Pixel.Event.tabSwitcherSelectModeMenuClicked)
             completion(items)
         }
         return UIMenu(title: "", children: [deferredElement])
@@ -118,7 +117,7 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
     func editMenu(actions: TabSwitcherEditMenuActions) -> UIMenu {
         let items = editMenuItems(actions: actions)
         let deferredElement = UIDeferredMenuElement.uncached { completion in
-            Pixel.fire(pixel: .tabSwitcherEditMenuClicked)
+            PixelKit.fire(Pixel.Event.tabSwitcherEditMenuClicked)
             completion(items)
         }
         return UIMenu(children: [deferredElement])
@@ -214,12 +213,6 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
                 state.canCloseOthers ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2),
                                                    imageForCloseTabs(2),
                                                    actions.onCloseOther) : nil,
-            ].compactMap { $0 }),
-
-            UIMenu(title: "", options: .displayInline, children: [
-                state.shouldShowDeleteTabAndData ? destructive(UserText.tabSwitcherDeleteTabAndData,
-                                                               DesignSystemImages.Glyphs.Size16.fireSolid,
-                                                               actions.onDeleteTabAndData) : nil,
             ].compactMap { $0 }),
         ].compactMap { $0 }
     }

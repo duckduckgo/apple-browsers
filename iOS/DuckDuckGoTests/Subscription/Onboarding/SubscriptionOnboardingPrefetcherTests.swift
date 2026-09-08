@@ -157,17 +157,54 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
 
     // MARK: - prefetch()
 
-    func testWhenPrefetchThenBothConnectionInfoAndModelsAreFetched() async {
+    func testWhenPrefetchingEverythingThenBothConnectionInfoAndModelsAreFetched() async {
         let service = MockConnectionInfoService(result: .success(.init(ip: "1.2.3.4", city: "Paris", country: "FR")))
         let provider = MockAIModelProvider(models: [model("a")])
         let prefetcher = makePrefetcher(connectionInfoService: service, modelProvider: provider)
 
         await wait(prefetcher.$models, until: { !$0.isLoading }) {
-            prefetcher.prefetch()
+            prefetcher.prefetch(.all)
         }
 
         XCTAssertEqual(service.fetchCallCount, 1)
         XCTAssertEqual(provider.fetchCallCount, 1)
+    }
+
+    func testWhenPrefetchingModelsOnlyThenConnectionInfoIsNotFetched() async {
+        let service = MockConnectionInfoService(result: .success(.init(ip: "1.2.3.4", city: "Paris", country: "FR")))
+        let provider = MockAIModelProvider(models: [model("a")])
+        let prefetcher = makePrefetcher(connectionInfoService: service, modelProvider: provider)
+
+        await wait(prefetcher.$models, until: { !$0.isLoading }) {
+            prefetcher.prefetch(.aiModels)
+        }
+
+        XCTAssertEqual(provider.fetchCallCount, 1)
+        XCTAssertEqual(service.fetchCallCount, 0)
+    }
+
+    func testWhenPrefetchingConnectionInfoOnlyThenModelsAreNotFetched() async {
+        let service = MockConnectionInfoService(result: .success(.init(ip: "1.2.3.4", city: "Paris", country: "FR")))
+        let provider = MockAIModelProvider(models: [model("a")])
+        let prefetcher = makePrefetcher(connectionInfoService: service, modelProvider: provider)
+
+        await wait(prefetcher.$connectionInfo, until: { !$0.isLoading }) {
+            prefetcher.prefetch(.connectionInfo)
+        }
+
+        XCTAssertEqual(service.fetchCallCount, 1)
+        XCTAssertEqual(provider.fetchCallCount, 0)
+    }
+
+    func testWhenPrefetchingNothingThenNeitherIsFetched() {
+        let service = MockConnectionInfoService(result: .success(.init(ip: "1.2.3.4", city: "Paris", country: "FR")))
+        let provider = MockAIModelProvider(models: [model("a")])
+        let prefetcher = makePrefetcher(connectionInfoService: service, modelProvider: provider)
+
+        prefetcher.prefetch([])
+
+        XCTAssertEqual(service.fetchCallCount, 0)
+        XCTAssertEqual(provider.fetchCallCount, 0)
     }
 
     // MARK: - Passthroughs

@@ -59,6 +59,10 @@ protocol AppRatingPromptCoordinating: AnyObject {
     /// The dialog was requested. Consumes the prompt's eligibility.
     func didRequestRating()
 
+    /// The user searched, so the cap on unredeemed slots starts over. Without this the cap is a
+    /// lifetime tally and reaching it stops the prompt permanently.
+    func didSearch()
+
     /// Consecutive foregrounds that took the slot without a search following.
     var unredeemedSlotCount: Int { get }
 
@@ -107,7 +111,8 @@ final class AppRatingPromptCoordinator: ModalPromptProvider, AppRatingPromptCoor
     }
 
     /// Stop taking the slot after this many foregrounds with no search, so a user who does not
-    /// search cannot starve the queue. A remote value of zero or less removes the cap.
+    /// search cannot starve the queue. A search clears the count, so reaching the cap is not
+    /// permanent. A remote value of zero or less removes the cap.
     private var isUnredeemedSlotCapReached: Bool {
         let cap = coordinationPolicy.maxUnredeemedSlots
         guard cap > 0 else { return false }
@@ -147,9 +152,12 @@ final class AppRatingPromptCoordinator: ModalPromptProvider, AppRatingPromptCoor
         // Read before `shown()`, which sets `firstShown` and so flips this.
         let isFirstRequest = appRatingPrompt.storage.firstShown == nil
 
-        store.unredeemedSlotCount = 0
         appRatingPrompt.shown()
         firePixel(isFirstRequest ? .firstRequest : .secondRequest)
+    }
+
+    func didSearch() {
+        store.unredeemedSlotCount = 0
     }
 
     func resetForDebug() {

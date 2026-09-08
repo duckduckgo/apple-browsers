@@ -80,6 +80,13 @@ final class CriticalPathsTests: XCTestCase {
         return bookmarksWindow
     }
 
+    private func ensureSyncSettingsWindowOpen() {
+        let settingsWindow = app.windows.containing(.button, identifier: "Sync & Backup").firstMatch
+        guard !settingsWindow.exists else { return }
+        app.typeKey(",", modifierFlags: [.command])
+        XCTAssertTrue(settingsWindow.waitForExistence(timeout: XCUIElement.Timeouts.elementExistence), "Settings window is not visible")
+    }
+
     private func accessSettings() {
         app.menuItems["MainMenu.preferencesMenuItem"].assertExists().click()
         _ = syncSettingsWindow()
@@ -268,6 +275,7 @@ final class CriticalPathsTests: XCTestCase {
         checkFavoriteNonUnified()
 
         // Remove Bookmarks
+        ensureSyncSettingsWindowOpen()
         settingsWindow.popUpButtons["Settings"].click()
         settingsWindow.menuItems["Bookmarks"].click()
         bookmarksWindow.staticTexts["www.spreadprivacy.com"].rightClick()
@@ -434,7 +442,7 @@ final class CriticalPathsTests: XCTestCase {
         let spreadPrivacy = newTabPage.staticTexts["www.spreadprivacy.com"]
         spreadPrivacy.assertExists()
         XCTAssertFalse(gitHub.exists)
-        app.typeKey("w", modifierFlags: [.command])
+        newTabPage.typeKey("w", modifierFlags: [.command])
     }
 
     private func checkBookmarks() {
@@ -472,7 +480,7 @@ final class CriticalPathsTests: XCTestCase {
         let spreadPrivacy = newTabPage.staticTexts["www.spreadprivacy.com"]
         gitHub.assertExists()
         spreadPrivacy.assertExists()
-        app.typeKey("w", modifierFlags: [.command])
+        newTabPage.typeKey("w", modifierFlags: [.command])
     }
 
     private func checkLogins() {

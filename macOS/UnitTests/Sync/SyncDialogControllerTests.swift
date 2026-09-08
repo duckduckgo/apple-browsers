@@ -1016,7 +1016,7 @@ final class SyncDialogControllerTests: XCTestCase {
             coordinationDelegate.didEndFlowCalled = {
                 expectation.fulfill()
             }
-            syncDialogController.saveRecoveryPDF()
+            syncDialogController.saveRecoveryPDF(requiresAuthentication: true)
             await fulfillment(of: [expectation])
         }
     }

@@ -444,6 +444,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
 
     @MainActor
     func saveRecoveryPDF() {
-        syncSettingsHandler.saveRecoveryPDF()
+        syncSettingsHandler.saveRecoveryPDF(requiresAuthentication: true)
     }
 }

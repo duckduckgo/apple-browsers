@@ -101,7 +101,7 @@ struct SyncSuccessViewV2: View {
                     .accessibilityIdentifier("SyncSuccessCopyCodeButton")
 
                     Button {
-                        model.delegate?.saveRecoveryPDF()
+                        model.delegate?.saveRecoveryPDF(requiresAuthentication: false)
                     } label: {
                         Text(UserText.syncSuccessDownloadPDFButtonV2)
                             .frame(maxWidth: .infinity)

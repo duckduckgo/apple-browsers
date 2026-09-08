@@ -47,7 +47,7 @@ struct SaveRecoveryPDFView: View {
                             .frame(width: 155, height: 28)
                     }
                     Button {
-                        viewModel.delegate?.saveRecoveryPDF()
+                        viewModel.delegate?.saveRecoveryPDF(requiresAuthentication: true)
                     } label: {
                         Text(UserText.recoveryPDFSavePDFButton)
                             .frame(width: 155, height: 28)

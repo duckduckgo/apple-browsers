@@ -28,7 +28,7 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func removeDeviceConfirmed(_ device: SyncDevice)
     func deleteAccount()
     func recoveryCodePasted(_ code: String, fromRecoveryScreen: Bool)
-    func saveRecoveryPDF()
+    func saveRecoveryPDF(requiresAuthentication: Bool)
     func recoveryCodeNextPressed()
     func turnOnSync()
     func enterRecoveryCodePressed()

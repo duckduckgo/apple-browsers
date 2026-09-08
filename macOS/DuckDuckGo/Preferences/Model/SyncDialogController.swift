@@ -64,7 +64,8 @@ protocol SyncSettingsViewHandling {
     func recoverDataPressed() async
 
     /// Saves the recovery code as a PDF document
-    func saveRecoveryPDF()
+    /// - Parameter requiresAuthentication: Whether the user should be authenticated before the code is exported
+    func saveRecoveryPDF(requiresAuthentication: Bool)
 
     // These two members should probably be split out / moved to DDGSync
     /// Refreshes the list of connected sync devices
@@ -528,14 +529,14 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         recoverDevice(recoveryCode: code, fromRecoveryScreen: fromRecoveryScreen, codeSource: .pastedCode)
     }
 
-    func saveRecoveryPDF() {
+    func saveRecoveryPDF(requiresAuthentication: Bool) {
         guard let recoveryCode = syncService.recoveryCode else {
             assertionFailure()
             return
         }
 
         Task { @MainActor in
-            guard await checkAuthenticated() else {
+            if requiresAuthentication, await checkAuthenticated() == false {
                 return
             }
 

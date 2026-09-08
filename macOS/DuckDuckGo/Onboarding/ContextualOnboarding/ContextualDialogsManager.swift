@@ -95,10 +95,6 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     private let trackerMessageProvider: TrackerMessageProviding
     private let subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling
     private var stateStorage: ContextualOnboardingStateStoring
-    /// Answers whether the highlights are switched off outright, independently of the state
-    /// machine below. Resolved per call rather than captured, so flipping the flag in the debug
-    /// menu takes effect without a relaunch.
-    private let areHighlightsDisabled: () -> Bool
     private let isNonBlocking: () -> Bool
 
     // The last dialog that was presented.
@@ -138,13 +134,11 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     init(trackerMessageProvider: TrackerMessageProviding,
          subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
          stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage(),
-         areHighlightsDisabled: @escaping () -> Bool = { false },
          isNonBlocking: @escaping () -> Bool = { false }) {
         self.isNonBlocking = isNonBlocking
         self.trackerMessageProvider = trackerMessageProvider
         self.subscriptionUpsellExperiment = subscriptionUpsellExperiment
         self.stateStorage = stateStorage
-        self.areHighlightsDisabled = areHighlightsDisabled
         self.isContextualOnboardingCompleted = stateStorage.stateString == ContextualOnboardingState.onboardingCompleted.rawValue
     }
 
@@ -222,9 +216,6 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo? = nil) -> ContextualDialogType? {
         // No contextual transition or presentation belongs on the first-run onboarding page.
         if isNonBlocking(), case .onboarding = tab.content { return nil }
-        // Switched off outright: nothing shows, whatever the state says. Deliberately does not
-        // touch the state, so turning the toggle back off resumes wherever the user had got to.
-        guard !areHighlightsDisabled() else { return nil }
         // If onboarding is complete, return nil.
         guard state != .onboardingCompleted else { return nil }
         // Non-blocking setup starts contextual guidance on the first browsing navigation.

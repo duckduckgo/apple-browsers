@@ -332,6 +332,7 @@ struct SyncWithAnotherDeviceViewV2: View {
         .multilineTextAlignment(.leading)
         .frame(width: 240, alignment: .leading)
         .padding(16)
+        .environment(\.colorScheme, .dark)
     }
 
     private func shareContent(_ sharedText: String) {

@@ -139,6 +139,7 @@ public final class AIChatContextChipView: UIView {
         button.tintColor = UIColor(designSystemColor: .textSecondary)
         button.addTarget(self, action: #selector(removeButtonTapped), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.layer.cornerRadius = Constants.removeButtonSize / 2
         return button
     }()
 
@@ -157,7 +158,6 @@ public final class AIChatContextChipView: UIView {
     public override func layoutSubviews() {
         super.layoutSubviews()
         layer.cornerRadius = min(Constants.cornerRadius, bounds.height / 2)
-        removeButton.layer.cornerRadius = removeButton.bounds.height / 2
 
         dashedBorderLayer.frame = bounds
         let inset = Constants.suggestedBorderWidth / 2
@@ -276,7 +276,8 @@ private extension AIChatContextChipView {
             accessibilityIdentifier = "AIChat.ContextChip.Suggested"
             accessibilityLabel = offer
             accessibilityTraits = .none
-            applyBorder(color: UIColor(designSystemColor: .accentPrimary))
+            applyDashedBorder(color: UIColor(designSystemColor: .accentPrimary))
+            applyGlow(color: UIColor(designSystemColor: .accentPrimary))
             isUserInteractionEnabled = true
             chipTapRecognizer.isEnabled = true
 

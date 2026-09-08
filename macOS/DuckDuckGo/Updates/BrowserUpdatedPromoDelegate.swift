@@ -23,11 +23,7 @@ import FeatureFlags_macOS
 import PixelKit
 import PrivacyConfig
 
-/// Presents the "Browser updated" popover through the promo queue, migrated from
-/// `UpdateNotificationPresenter`. Has no cooldown of its own (`PromoServiceFactory+BrowserUpdated`
-/// sets `customTimeoutResult: .noChange`) — matches legacy, which never throttled this
-/// notification at all, relying entirely on `ApplicationUpdateDetector` reporting a version
-/// change at most once per launch.
+/// Presents the "Browser updated" popover through the promo queue.
 final class BrowserUpdatedPromoDelegate: InternalPromoDelegate, UpdateNotificationPromoDismissing {
 
     private let bridge: UpdateNotificationPromoBridge
@@ -64,9 +60,6 @@ final class BrowserUpdatedPromoDelegate: InternalPromoDelegate, UpdateNotificati
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
-        let status = bridge.pendingApplicationUpdateStatus
-        guard status != .noChange else { return .noChange }
-
         guard let mainViewController = windowControllersManager.lastKeyMainWindowController?.mainViewController
                 ?? windowControllersManager.mainWindowControllers.last?.mainViewController,
               let optionsButton = mainViewController.navigationBarViewController.optionsButton,
@@ -76,13 +69,23 @@ final class BrowserUpdatedPromoDelegate: InternalPromoDelegate, UpdateNotificati
             return .noChange
         }
 
-        let text = status == .downgraded ? UserText.browserDowngradedNotification : UserText.browserUpdatedNotification
+        let notificationText: String? = {
+            switch bridge.pendingApplicationUpdateStatus {
+            case .noChange: return nil
+            case .updated: return UserText.browserUpdatedNotification
+            case .downgraded: return UserText.browserDowngradedNotification
+            }
+        }()
+        guard let notificationText else { return .noChange }
 
         return await withCheckedContinuation { continuation in
             resultContinuation = continuation
 
+            // Always temporarily dismiss the popover with no cooldown
+            let noCooldown: PromoResult = .ignored(cooldown: 0)
+
             let popover = PopoverMessageViewController(
-                message: text,
+                message: notificationText,
                 image: .successCheckmark,
                 configuration: .updateNotification,
                 autoDismissDuration: nil,
@@ -91,15 +94,15 @@ final class BrowserUpdatedPromoDelegate: InternalPromoDelegate, UpdateNotificati
                 buttonAction: { [weak self] in
                     self?.pixelFiring?.fire(UpdateFlowPixels.updateNotificationTapped)
                     self?.bridge.openUpdatesPage()
-                    self?.resolve(with: .noChange)
+                    self?.resolve(with: noCooldown)
                 },
                 clickAction: { [weak self] in
                     self?.pixelFiring?.fire(UpdateFlowPixels.updateNotificationTapped)
                     self?.bridge.openUpdatesPage()
-                    self?.resolve(with: .noChange)
+                    self?.resolve(with: noCooldown)
                 },
                 onDismiss: { [weak self] in
-                    self?.resolve(with: .noChange)
+                    self?.resolve(with: noCooldown)
                 }
             )
             if #available(macOS 26.0, *) {
@@ -135,8 +138,6 @@ private extension BrowserUpdatedPromoDelegate {
         continuation.resume(returning: result)
     }
 
-    /// See `UpdateAvailablePromoDelegate.dismissPopoverUnlessHovering()` — identical mechanism,
-    /// no `PopoverMessageViewController` changes needed.
     @MainActor
     func dismissPopoverUnlessHovering() {
         guard let popover, let presenter = popover.presentingViewController else { return }

@@ -71,9 +71,6 @@ final class UpdateNotificationPromoBridgeTests: XCTestCase {
         XCTAssertEqual(sut.pendingApplicationUpdateStatus, .updated)
     }
 
-    /// Once the browser-updated promo resolves, the status must not linger — `isEligible` should
-    /// reflect current truth (nothing left pending to show), even though in practice nothing else
-    /// will re-evaluate it this launch since `.browserUpdated` itself only posts once per launch.
     func testWhenAcknowledgedThenStatusResetsToNoChange() {
         sut.showUpdateNotification(for: .updated)
 

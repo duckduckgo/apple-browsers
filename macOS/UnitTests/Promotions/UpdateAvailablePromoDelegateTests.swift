@@ -68,8 +68,6 @@ final class UpdateAvailablePromoDelegateTests: XCTestCase {
         XCTAssertTrue(sut.isEligible)
     }
 
-    /// No key window to anchor to: the promo must end its session rather than leave the queue
-    /// waiting on an unresolved continuation.
     func testWhenThereIsNoKeyWindowThenShowReturnsNoChange() async {
         updateController.hasPendingUpdate = true
         updateController.latestUpdate = Update(isInstalled: false,
@@ -86,8 +84,6 @@ final class UpdateAvailablePromoDelegateTests: XCTestCase {
     }
 }
 
-/// Minimal stand-in for `any UpdateController` — add to this if a shared mock doesn't already
-/// exist elsewhere in the test target by the time this is implemented.
 private final class MockUpdateAvailabilityController: UpdateController {
     @Published var latestUpdate: Update?
     var latestUpdatePublisher: Published<Update?>.Publisher { $latestUpdate }

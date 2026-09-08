@@ -1,5 +1,5 @@
 //
-//  PromoServiceFactory+BrowserUpdated.swift
+//  PromoServiceFactory+AppUpdates.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,9 +20,23 @@ import Foundation
 
 extension PromoServiceFactory {
 
-    /// Builds the "Browser updated" Promo (migrated from `UpdateNotificationPresenter`).
-    /// Returns `nil` when there is no update bridge (e.g. `AppVersion.runType.allowsUpdates` is
-    /// false) — this promo simply never fires in that case, since `.browserUpdated` is never posted.
+    @MainActor
+    static func updateAvailable(dependencies: PromoDependencies) -> Promo {
+        let delegate = UpdateAvailablePromoDelegate(updateController: dependencies.updateController,
+                                                    windowControllersManager: dependencies.windowControllersManager,
+                                                    featureFlagger: dependencies.featureFlagger)
+        dependencies.updateNotificationBridge?.updateAvailableDelegate = delegate
+
+        return InternalPromo(id: "update-available",
+                             triggers: [.updateAvailable],
+                             initiated: .app,
+                             promoType: PromoType(.featureTip, customTimeoutResult: .ignored(cooldown: .days(7))),
+                             context: .global,
+                             respectsGlobalCooldown: false,
+                             setsGlobalCooldown: false,
+                             delegate: delegate)
+    }
+
     @MainActor
     static func browserUpdated(dependencies: PromoDependencies) -> Promo? {
         guard let bridge = dependencies.updateNotificationBridge else { return nil }
@@ -35,7 +49,7 @@ extension PromoServiceFactory {
         return InternalPromo(id: "browser-updated",
                              triggers: [.browserUpdated],
                              initiated: .app,
-                             promoType: PromoType(.featureTip, customTimeoutResult: .noChange),
+                             promoType: PromoType(.featureTip, customTimeoutResult: .ignored(cooldown: 0)),
                              context: .global,
                              respectsGlobalCooldown: false,
                              setsGlobalCooldown: false,

@@ -23,10 +23,7 @@ import FeatureFlags_macOS
 import PixelKit
 import PrivacyConfig
 
-/// Presents the "Update available" popover through the promo queue, migrated from
-/// `UpdateNotificationPresenter`. Covers both regular and critical updates with the same id and
-/// cooldown — `SparkleUpdateController`'s existing `NotificationDelay` scheduling already fires
-/// critical updates immediately, so no separate critical-update promo is needed here.
+/// Presents the "Update available" popover through the promo queue.
 final class UpdateAvailablePromoDelegate: InternalPromoDelegate, UpdateNotificationPromoDismissing {
 
     private let updateController: (any UpdateController)?
@@ -97,14 +94,9 @@ final class UpdateAvailablePromoDelegate: InternalPromoDelegate, UpdateNotificat
         return await withCheckedContinuation { continuation in
             resultContinuation = continuation
 
-            // There is no genuine "conversion" event for an update notification — only "shown and
-            // not clicked away in some way." All three paths below (CTA tap, message click, close/
-            // dismiss) must resolve `.ignored(cooldown: .days(7))`, never `.actioned`. This can't be
-            // covered by a unit test: presenting a real popover trips `TestRunHelper`'s
-            // `NSWindowDidOrderOnScreenAndFinishAnimatingNotification` guard ("Unit Tests should not
-            // present UI"), which is a deliberate, unconditional fatalError in this test target — the
-            // same limitation applies to every other promo delegate that presents a real popover
-            // (e.g. `AutoplayDiscoverabilityPromoDelegate`), none of which test past this point either.
+            // Always apply a cooldown (not a permanent dismissal) when the popover is dismissed
+            let cooldown: PromoResult = .ignored(cooldown: .days(7))
+
             let popover = PopoverMessageViewController(
                 message: text,
                 image: icon,
@@ -115,15 +107,15 @@ final class UpdateAvailablePromoDelegate: InternalPromoDelegate, UpdateNotificat
                 buttonAction: { [weak self] in
                     self?.pixelFiring?.fire(UpdateFlowPixels.updateNotificationTapped)
                     self?.updateController?.openUpdatesPage()
-                    self?.resolve(with: .ignored(cooldown: .days(7)))
+                    self?.resolve(with: cooldown)
                 },
                 clickAction: { [weak self] in
                     self?.pixelFiring?.fire(UpdateFlowPixels.updateNotificationTapped)
                     self?.updateController?.openUpdatesPage()
-                    self?.resolve(with: .ignored(cooldown: .days(7)))
+                    self?.resolve(with: cooldown)
                 },
                 onDismiss: { [weak self] in
-                    self?.resolve(with: .ignored(cooldown: .days(7)))
+                    self?.resolve(with: cooldown)
                 }
             )
             if #available(macOS 26.0, *) {
@@ -159,11 +151,6 @@ private extension UpdateAvailablePromoDelegate {
         continuation.resume(returning: result)
     }
 
-    /// `PromoService`'s own timeout timer can't be paused, so when it fires (`hide()` is called)
-    /// while the pointer is over the popover, this leaves it open rather than forcing it closed
-    /// out from under the user — mirroring `PermissionCenterViewModel.allowsAutodismiss` (the
-    /// mechanism `AutoplayDiscoverabilityPromoDelegate` relies on), via a live hit-test instead of
-    /// a permanent flag, so no change to `PopoverMessageViewController` is needed.
     @MainActor
     func dismissPopoverUnlessHovering() {
         guard let popover, let presenter = popover.presentingViewController else { return }

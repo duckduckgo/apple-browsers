@@ -66,8 +66,6 @@ final class BrowserUpdatedPromoDelegateTests: XCTestCase {
         XCTAssertFalse(sut.isEligible)
     }
 
-    /// No key window to anchor to: the promo must end its session rather than leave the queue
-    /// waiting on an unresolved continuation.
     func testWhenThereIsNoKeyWindowThenShowReturnsNoChange() async {
         bridge.showUpdateNotification(for: .updated)
 
@@ -76,8 +74,6 @@ final class BrowserUpdatedPromoDelegateTests: XCTestCase {
         XCTAssertEqual(result, .noChange)
     }
 
-    /// Recurring promo: resolving with anything permanent here would silence it for every future
-    /// update. `.noChange` matches legacy's own lack of a cooldown on this notification.
     func testWhenHiddenWithoutShowingThenAcknowledgesStatus() {
         bridge.showUpdateNotification(for: .updated)
 

@@ -20,20 +20,12 @@ import AppUpdaterShared
 import Combine
 import Foundation
 
-/// Something a promo delegate presenting an update-notification popover can be told to dismiss
-/// on demand, independent of `PromoService`'s own `hide()` call (used for the address-bar
-/// suggestions conflict below).
 protocol UpdateNotificationPromoDismissing: AnyObject {
     @MainActor func dismissIfPresented()
 }
 
-/// Bridges the existing Sparkle/App Store update-check machinery — which still calls into
-/// `UpdateNotificationPresenting`, unaware of the promo queue — onto the `update-available` and
-/// `browser-updated` promo triggers. Replaces `UpdateNotificationPresenter`: this type does not
-/// render any UI itself, it only posts triggers and stores what `checkNewApplicationVersion()`
-/// found so `BrowserUpdatedPromoDelegate` doesn't have to call `ApplicationUpdateDetector` a
-/// second time (which would keep returning the same non-`.noChange` result for the rest of the
-/// launch, since it caches after its first check).
+/// Bridges the existing Sparkle/App Store update-check machinery onto the `update-available` and
+/// `browser-updated` promo triggers.
 final class UpdateNotificationPromoBridge: UpdateNotificationPresenting {
 
     @Published private(set) var pendingApplicationUpdateStatus: AppUpdateStatus = .noChange
@@ -85,8 +77,6 @@ final class UpdateNotificationPromoBridge: UpdateNotificationPresenting {
         }
     }
 
-    /// Consumes the current `pendingApplicationUpdateStatus`, resetting it to `.noChange`.
-    /// Called by `BrowserUpdatedPromoDelegate` once its promo resolves.
     func acknowledgeApplicationUpdateStatus() {
         pendingApplicationUpdateStatus = .noChange
     }

@@ -7752,7 +7752,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "DuckDuckGo"
+            "value" : "DuckDuckGo App"
           }
         },
         "es" : {
@@ -7812,7 +7812,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "On your phone, open"
+            "value" : "On your phone, open the"
           }
         },
         "es" : {
@@ -8155,6 +8155,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Перейди в"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.step-4" : {
+      "comment" : "Fourth pairing instruction, reminding the user to keep the dialog open (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t close this window while connecting"
           }
         }
       }

@@ -145,12 +145,12 @@ final class DefaultOmniBarSearchView: UIView {
         modeToggleContainer.translatesAutoresizingMaskIntoConstraints = false
         modeToggleView.translatesAutoresizingMaskIntoConstraints = false
 
-        let leadingConstraint = mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor)
+        let leadingConstraint = mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.horizontalInset)
         mainStackLeadingConstraint = leadingConstraint
 
         NSLayoutConstraint.activate([
             leadingConstraint,
-            mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.horizontalInset),
 
             notificationContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 4),
             notificationContainer.trailingAnchor.constraint(equalTo: textField.trailingAnchor),
@@ -263,6 +263,15 @@ final class DefaultOmniBarSearchView: UIView {
 
     func setLeftIconAreaHidden(_ hidden: Bool) {
         leftIconContainerPlaceholder.isHidden = hidden
-        mainStackLeadingConstraint?.constant = hidden ? 16 : 0
+        mainStackLeadingConstraint?.constant = hidden ? Metrics.textOnlyLeadingInset : Metrics.horizontalInset
+    }
+
+    private enum Metrics {
+        /// Keeps the 44pt icon slots clear of the field's capsule ends. With the field at 48pt this
+        /// also lands the shield's centre on the centre of the leading arc, so the trackers-blocked
+        /// animation bursts symmetrically instead of being trimmed against the edge.
+        static let horizontalInset: CGFloat = 2
+        /// Text inset used when the leading icon slot is hidden.
+        static let textOnlyLeadingInset: CGFloat = 16
     }
 }

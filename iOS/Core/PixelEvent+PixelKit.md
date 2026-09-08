@@ -21,6 +21,7 @@ Frequency comes from the legacy call shape:
 | `Pixel.fire(pixel:)` | `.standard` |
 | `Pixel.fire(pixel:debounce: n)` | `.debounce(seconds: n)` |
 | `DailyPixel.fire(pixel:)` | `.legacyDailyNoSuffix` |
+| `DailyPixel.fire(pixel:error:)` | `.legacyDailyByError` |
 | `DailyPixel.fireDailyAndCount(pixel:)`, `"_daily"` / `"_count"` | `.dailyAndCount` |
 | …`(pixelNameSuffixes: .legacyDailyPixelSuffixes)`, `"_d"` / `"_c"` | `.legacyDailyAndCount` |
 | …`(pixelNameSuffixes: .dailyAndStandardSuffixes)`, `"_daily"` / `""` | `.dailyAndStandard` |

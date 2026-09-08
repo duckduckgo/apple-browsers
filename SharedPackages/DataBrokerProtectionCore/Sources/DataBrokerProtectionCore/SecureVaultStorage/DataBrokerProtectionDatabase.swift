@@ -707,6 +707,10 @@ extension DataBrokerProtectionDatabase {
         // The queries we need to create are the one that exist on the new ones but not in the database
         let profileQueriesToCreate = Set(newProfileQueries).subtracting(Set(databaseProfileQueries))
 
+        let profileQueriesToReactivate = Set(databaseProfileQueries.filter(\.deprecated))
+            .intersection(Set(newProfileQueries))
+            .map { $0.with(deprecated: false) }
+
         // Updated profile queries. This is only for use for deprecated matches.
         // We do not use it for updating a particular profile query. The reason is that
         // updates do not exist because the UI returns a complete profile, and does not
@@ -747,6 +751,14 @@ extension DataBrokerProtectionDatabase {
         // Update profileQueries
         if !profileQueriesToUpdate.isEmpty {
             try updateProfileQueries(Array(profileQueriesToUpdate),
+                                     profileID: profileID,
+                                     brokerIDs: brokerIDs,
+                                     vault: vault)
+        }
+
+        // Reactivate
+        if !profileQueriesToReactivate.isEmpty {
+            try updateProfileQueries(profileQueriesToReactivate,
                                      profileID: profileID,
                                      brokerIDs: brokerIDs,
                                      vault: vault)

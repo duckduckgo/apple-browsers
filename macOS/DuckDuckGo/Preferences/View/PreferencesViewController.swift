@@ -42,7 +42,7 @@ final class PreferencesViewController: NSViewController {
     private var bitwardenManager: BWManagement? = Application.appDelegate.bitwardenManager
     private let featureFlagger: FeatureFlagger
     private let pinningManager: PinningManager
-    private let websitePermissionManager: WebsitePermissionManaging
+    private let permissionManager: PermissionManagerProtocol
 
     init(
         syncService: DDGSyncing,
@@ -51,7 +51,7 @@ final class PreferencesViewController: NSViewController {
         privacyConfigurationManager: PrivacyConfigurationManaging,
         aiChatRemoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings(),
         featureFlagger: FeatureFlagger,
-        websitePermissionManager: WebsitePermissionManaging,
+        permissionManager: PermissionManagerProtocol,
         defaultBrowserPreferences: DefaultBrowserPreferences,
         downloadsPreferences: DownloadsPreferences,
         searchPreferences: SearchPreferences,
@@ -72,7 +72,7 @@ final class PreferencesViewController: NSViewController {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureFlagger = featureFlagger
-        self.websitePermissionManager = websitePermissionManager
+        self.permissionManager = permissionManager
         self.aiChatRemoteSettings = aiChatRemoteSettings
         self.pinningManager = pinningManager
         model = PreferencesSidebarModel(privacyConfigurationManager: privacyConfigurationManager,
@@ -116,7 +116,7 @@ final class PreferencesViewController: NSViewController {
                                                   aiChatURLSettings: aiChatRemoteSettings,
                                                   wideEvent: Application.appDelegate.wideEvent,
                                                   pinningManager: pinningManager,
-                                                  websitePermissionManager: websitePermissionManager)
+                                                  permissionManager: permissionManager)
         let host = NSHostingView(rootView: prefRootView)
         view.addAndLayout(host)
     }

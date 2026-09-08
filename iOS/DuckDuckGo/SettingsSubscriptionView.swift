@@ -26,6 +26,7 @@ import UIKit
 import VPN
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import PixelKit
 
 struct SettingsSubscriptionView: View {
 
@@ -111,7 +112,7 @@ struct SettingsSubscriptionView: View {
                     .foregroundColor(Color.init(designSystemColor: .accentPrimary))
                     .padding(.leading, 32.0)
             }, action: {
-                Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedOutOfferCTAClicked)
+                PixelKit.fire(Pixel.Event.subscriptionWinBackOfferSettingsLoggedOutOfferCTAClicked)
                 subscriptionNavigationCoordinator.redirectURLComponents = winBackURLComponents
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
             }, isButton: true, shouldShowWinBackOffer: true)
@@ -120,7 +121,7 @@ struct SettingsSubscriptionView: View {
             let restoreView = subscriptionRestoreViewV2
                 .navigationViewStyle(.stack)
                 .onFirstAppear {
-                    Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
+                    PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseClick)
                 }
             NavigationLink(destination: restoreView,
                            isActive: $isShowingRestoreFlow) {
@@ -128,7 +129,7 @@ struct SettingsSubscriptionView: View {
             }
         }
         .onFirstAppear {
-            Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedOutOfferShown)
+            PixelKit.fire(Pixel.Event.subscriptionWinBackOfferSettingsLoggedOutOfferShown)
         }
     }
 
@@ -158,7 +159,7 @@ struct SettingsSubscriptionView: View {
                     .foregroundColor(Color.init(designSystemColor: .accentPrimary))
                     .padding(.leading, 32.0)
             }, action: {
-                Pixel.fire(pixel: .subscriptionEntrySettingsSubscriptionClick)
+                PixelKit.fire(Pixel.Event.subscriptionEntrySettingsSubscriptionClick)
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
             }, isButton: true)
 
@@ -166,7 +167,7 @@ struct SettingsSubscriptionView: View {
             let restoreView = subscriptionRestoreViewV2
                 .navigationViewStyle(.stack)
                 .onFirstAppear {
-                    Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
+                    PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseClick)
                 }
             NavigationLink(destination: restoreView,
                            isActive: $isShowingRestoreFlow) {
@@ -174,7 +175,7 @@ struct SettingsSubscriptionView: View {
             }
         }
         .onFirstAppear {
-            Pixel.fire(pixel: .subscriptionEntrySettingsImpression)
+            PixelKit.fire(Pixel.Event.subscriptionEntrySettingsImpression)
         }
     }
 
@@ -195,7 +196,7 @@ struct SettingsSubscriptionView: View {
                 .foregroundColor(Color(designSystemColor: .accentPrimary))
                 .padding(.leading, 32.0)
         }, action: {
-            Pixel.fire(pixel: .freemiumPIRSettingsEntryPointClicked)
+            PixelKit.fire(Pixel.Event.freemiumPIRSettingsEntryPointClicked)
             isShowingDBP = true
         }, isButton: true)
         .background(
@@ -283,11 +284,11 @@ struct SettingsSubscriptionView: View {
                                                           viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                           settingsViewModel: settingsViewModel,
                                                           takeWinBackOffer: {
-                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
+                PixelKit.fire(Pixel.Event.subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
                 subscriptionNavigationCoordinator.redirectURLComponents = winBackURLComponents
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
             }).onFirstAppear {
-                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsShown)
+                PixelKit.fire(Pixel.Event.subscriptionWinBackOfferSubscriptionSettingsShown)
             }
                 .environmentObject(subscriptionNavigationCoordinator)
             NavigationLink(destination: settingsView) {
@@ -300,7 +301,7 @@ struct SettingsSubscriptionView: View {
             }
         }
         .onFirstAppear {
-            Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedInOfferShown)
+            PixelKit.fire(Pixel.Event.subscriptionWinBackOfferSettingsLoggedInOfferShown)
         }
     }
 
@@ -475,7 +476,7 @@ struct SettingsSubscriptionView: View {
                     freemiumPIRSettingsEntryPointRows
                 }
                 .onFirstAppear {
-                    Pixel.fire(pixel: .freemiumPIRSettingsEntryPointImpression)
+                    PixelKit.fire(Pixel.Event.freemiumPIRSettingsEntryPointImpression)
                 }
             }
         }

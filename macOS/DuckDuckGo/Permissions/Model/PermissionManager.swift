@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import CoreData
 import FoundationExtensions
 import os.log
 
@@ -31,25 +32,11 @@ protocol PermissionDecisionOverriding: AnyObject {
     func decision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision?
 }
 
-struct WebsitePermissionEntry: Equatable {
-    let domain: String
-    let permissionType: PermissionType
-    let decision: PersistedPermissionDecision
-    /// When the user last explicitly set this decision, or `nil` if it predates the stored attribute.
-    let lastModified: Date?
-}
-
-protocol WebsitePermissionManaging: AnyObject {
-    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> { get }
-
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType)
-    func removePermission(forDomain domain: String, permissionType: PermissionType)
-}
-
 protocol PermissionManagerProtocol: AnyObject {
 
     typealias PublishedPermission = (domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision)
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { get }
+    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> { get }
 
     func hasPermissionPersisted(forDomain domain: String, permissionType: PermissionType) -> Bool
     func hasAnyPermissionPersisted(forDomain domain: String) -> Bool
@@ -70,7 +57,7 @@ protocol PermissionManagerProtocol: AnyObject {
     var persistedPermissionTypes: Set<PermissionType> { get }
 }
 
-final class PermissionManager: PermissionManagerProtocol, WebsitePermissionManaging {
+final class PermissionManager: PermissionManagerProtocol {
 
     private let store: PermissionStore
     private var permissions = [String: [PermissionType: StoredPermission]]()
@@ -242,6 +229,87 @@ final class PermissionManager: PermissionManagerProtocol, WebsitePermissionManag
 
         // Notify subscribers
         permissionSubject.send((domain, permissionType, .ask))
+    }
+
+}
+
+extension PermissionManager: PermissionManagerDebugging {
+    func allPermissionsDebugEntries() -> [PermissionDebugEntry] {
+        let rows: [RawPermissionRow]
+        do {
+            rows = try store.loadRawPermissions()
+        } catch {
+            Logger.general.error("PermissionStore: Failed to load permissions for the debug inspector")
+            return []
+        }
+
+        return rows.map { row in
+            let normalizedDomain = row.domain.droppingWwwPrefix()
+            // An unparseable type can't be looked up, so its effective decision is just the stored one.
+            let effectiveDecision = PermissionType(rawValue: row.permissionType)
+                .map { permission(forDomain: normalizedDomain, permissionType: $0) }
+                ?? PersistedPermissionDecision(allow: row.allow, isRemoved: row.isRemoved)
+
+            return PermissionDebugEntry(storageIdentifier: row.storageIdentifier,
+                                        domain: row.domain,
+                                        permissionType: row.permissionType,
+                                        allow: row.allow,
+                                        isRemoved: row.isRemoved,
+                                        effectiveDecision: effectiveDecision)
+        }
+    }
+
+    func removePermissionsDebugEntries(withIdentifiers identifiers: Set<String>) -> Int {
+        let rows: [RawPermissionRow]
+        do {
+            rows = try store.loadRawPermissions().filter { identifiers.contains($0.storageIdentifier) }
+        } catch {
+            Logger.general.error("PermissionStore: Failed to load permissions for deletion from the debug inspector")
+            return 0
+        }
+
+        removeRawPermissions(rows)
+        return rows.count
+    }
+
+    func removeAllPermissions() -> Int {
+        let count: Int
+        do {
+            count = try store.loadRawPermissions().count
+        } catch {
+            Logger.general.error("PermissionStore: Failed to load permissions for deletion from the debug inspector")
+            count = 0
+        }
+
+        let removedPermissions = permissions.flatMap { domain, permissionsByType in
+            permissionsByType.keys.map { (domain: domain, type: $0) }
+        }
+        permissions.removeAll()
+        for permission in removedPermissions {
+            permissionSubject.send((permission.domain, permission.type, .ask))
+        }
+        store.clear(except: [])
+        return count
+    }
+
+    private func removeRawPermissions(_ rows: [RawPermissionRow]) {
+        let objectIDs = Set(rows.map(\.objectID))
+        var decodedRows = [(domain: String, type: PermissionType, objectID: NSManagedObjectID)]()
+
+        for (domain, permissionsByType) in permissions {
+            for (type, permission) in permissionsByType where objectIDs.contains(permission.id) {
+                decodedRows.append((domain, type, permission.id))
+            }
+        }
+
+        for row in decodedRows {
+            removePermission(forDomain: row.domain, permissionType: row.type)
+        }
+
+        let decodedObjectIDs = Set(decodedRows.map { $0.objectID })
+        for objectID in objectIDs.subtracting(decodedObjectIDs) {
+            store.remove(objectWithId: objectID)
+        }
     }
 
 }

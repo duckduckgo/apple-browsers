@@ -28,6 +28,7 @@ import XCTest
 import UserScript
 import WebKit
 @testable import AIChat
+@_spi(Testing) import PixelKit
 
 // swiftlint:disable inclusive_language
 class AIChatUserScriptHandlerTests: XCTestCase {
@@ -40,6 +41,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     var mockIPadDuckAIControlsFeature: MockIPadDuckAIControlsFeatureProvider!
     private var mockUserScriptErrorEventMapper: CapturingAIChatUserScriptErrorEventMapper!
     private var mockUserDefaults: UserDefaults!
+    private var pixelKitMock: PixelKitMock!
 
     private var mockSuiteName: String {
         String(describing: self)
@@ -55,6 +57,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
         mockIPadDuckAIControlsFeature = MockIPadDuckAIControlsFeatureProvider()
         mockUserScriptErrorEventMapper = CapturingAIChatUserScriptErrorEventMapper()
+        pixelKitMock = PixelKitMock()
 
         mockUserDefaults = UserDefaults(suiteName: mockSuiteName)
         mockUserDefaults.removePersistentDomain(forName: mockSuiteName)
@@ -72,7 +75,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockUnifiedToggleInputFeature = nil
         mockIPadDuckAIControlsFeature = nil
         mockUserScriptErrorEventMapper = nil
-        PixelFiringMock.tearDown()
+        pixelKitMock = nil
         super.tearDown()
     }
 
@@ -129,6 +132,26 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
 
         XCTAssertEqual(configValues?.installAge, 0)
+    }
+
+    @MainActor
+    func testWhenOpenAIChatIsRequestedThenNotificationCarriesTheRequestingPageURL() async {
+        let homepage = URL(string: "https://duckduckgo.com/")!
+        let webView = StubURLWebView(frame: .zero)
+        webView.stubbedURL = homepage
+        let message = MockUserScriptMessage(messageName: "openAIChat",
+                                            messageBody: [:],
+                                            messageHost: "duckduckgo.com",
+                                            isMainFrame: true,
+                                            messageWebView: webView)
+        let notificationPosted = expectation(forNotification: .urlInterceptAIChat, object: nil) { notification in
+            notification.userInfo?[TabURLInterceptorParameter.aiChatRequestURL] as? URL == homepage
+                && notification.userInfo?[TabURLInterceptorParameter.aiChatRequestHost] as? String == "duckduckgo.com"
+        }
+
+        _ = await aiChatUserScriptHandler.openAIChat(params: [:], message: message)
+
+        await fulfillment(of: [notificationPosted], timeout: 1)
     }
 
     func testGetAIChatNativeConfigValues() {
@@ -270,6 +293,20 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
 
+        XCTAssertEqual(configValues?.supportsNativeUsageWarnings, false)
+    }
+
+    /// The warning card is only designed for the iPhone input, so iPad keeps the FE banner.
+    func testWhenUsageWarningsFlagIsOnButDeviceIsIPadThenConfigDoesNotAdvertiseSupport() {
+        mockFeatureFlagger.enabledFeatureFlags = [.utiDuckAIWarnings]
+        MockDevicePlatform.isIphone = false
+        mockAIChatContextualModeFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true)
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsNativeChatInput, true)
         XCTAssertEqual(configValues?.supportsNativeUsageWarnings, false)
     }
 
@@ -684,13 +721,14 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             AIChatMetricName.self,
             DecodingError.Context(codingPath: [], debugDescription: "Expected metric name")
         )
-        let mapper = AIChatUserScriptErrorEventMapper(dailyPixelFiring: PixelFiringMock.self)
+        let mapper = AIChatUserScriptErrorEventMapper(pixelFiring: pixelKitMock)
 
         mapper.fire(.reportMetricDecodingFailed(error: error, failureReason: .typeMismatch))
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.aiChatReportMetricDecodeError.name)
-        XCTAssertNotNil(PixelFiringMock.lastDailyPixelInfo?.error)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["failureReason": "type_mismatch"])
+        let fireCall = pixelKitMock.actualFireCalls.last
+        XCTAssertEqual(fireCall?.pixel.name, Pixel.Event.aiChatReportMetricDecodeError.name)
+        XCTAssertNotNil(fireCall?.pixel.error)
+        XCTAssertEqual(fireCall?.additionalParameters, ["failureReason": "type_mismatch"])
     }
 
     func testUserScriptErrorEventMapperMapsResponseStateDecodeFailureToPixel() {
@@ -698,12 +736,13 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             AIChatStatusValue.self,
             DecodingError.Context(codingPath: [], debugDescription: "Expected status")
         )
-        let mapper = AIChatUserScriptErrorEventMapper(dailyPixelFiring: PixelFiringMock.self)
+        let mapper = AIChatUserScriptErrorEventMapper(pixelFiring: pixelKitMock)
 
         mapper.fire(.responseStateDecodingFailed(error: error, failureReason: .valueNotFound))
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.aiChatResponseStateDecodeError.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["failureReason": "value_not_found"])
+        let fireCall = pixelKitMock.actualFireCalls.last
+        XCTAssertEqual(fireCall?.pixel.name, Pixel.Event.aiChatResponseStateDecodeError.name)
+        XCTAssertEqual(fireCall?.additionalParameters, ["failureReason": "value_not_found"])
     }
 
     func testResponseReceivedPostsNilUserInfoWhenParamsAreNotDictionary() async {
@@ -991,6 +1030,11 @@ struct MockUserScriptMessage: UserScriptMessage {
 }
 // swiftlint: enable inclusive_language
 
+private final class StubURLWebView: WKWebView {
+    var stubbedURL: URL?
+    override var url: URL? { stubbedURL }
+}
+
 private final class MockDevicePlatform: DevicePlatformProviding {
     static var isIphone = false
 }
@@ -1272,12 +1316,12 @@ extension AIChatUserScriptHandlerTests {
 
         // A non-nil elapsed time proves the funnel path adds no timestamp parameter of its own
         let forwardingHandler = MetricForwardingHandler(
-            pixelMetricHandler: AIChatPixelMetricHandler(timeElapsedInMinutes: 7, pixelFiring: PixelFiringMock.self)
+            pixelMetricHandler: AIChatPixelMetricHandler(timeElapsedInMinutes: 7, pixelFiring: pixelKitMock)
         )
         aiChatUserScriptHandler.setMetricReportingHandler(forwardingHandler)
 
         for testCase in testCases {
-            PixelFiringMock.tearDown()
+            let countBefore = pixelKitMock.actualFireCalls.count
 
             // When
             _ = await aiChatUserScriptHandler.reportMetric(params: ["metricName": testCase.metricName],
@@ -1285,9 +1329,9 @@ extension AIChatUserScriptHandlerTests {
 
             // Then
             XCTAssertTrue(mockUserScriptErrorEventMapper.events.isEmpty, "\(testCase.metricName) failed to decode")
-            XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1, testCase.metricName)
-            XCTAssertEqual(PixelFiringMock.lastPixelName, testCase.pixel.name, testCase.metricName)
-            XCTAssertEqual(PixelFiringMock.lastParams, ["origin": testCase.origin], testCase.metricName)
+            XCTAssertEqual(pixelKitMock.actualFireCalls.count, countBefore + 1, testCase.metricName)
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, testCase.pixel.name, testCase.metricName)
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["origin": testCase.origin], testCase.metricName)
         }
     }
 }

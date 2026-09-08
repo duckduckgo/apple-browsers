@@ -25,6 +25,7 @@ import Common
 import FoundationExtensions
 import Core
 import SwiftUI
+import PixelKit
 
 final class CredentialProviderListViewController: UIViewController {
 
@@ -141,7 +142,7 @@ final class CredentialProviderListViewController: UIViewController {
 
         navigationItem.searchController = searchController
 
-        Pixel.fire(pixel: .autofillExtensionPasswordsOpened)
+        PixelKit.fire(Pixel.Event.autofillExtensionPasswordsOpened)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -297,7 +298,7 @@ final class CredentialProviderListViewController: UIViewController {
 
     @objc private func doneTapped() {
         onDismiss()
-        Pixel.fire(pixel: .autofillExtensionPasswordsDismissed)
+        PixelKit.fire(Pixel.Event.autofillExtensionPasswordsDismissed)
     }
 
 }
@@ -362,7 +363,7 @@ extension CredentialProviderListViewController: UITableViewDelegate {
                 presentDetailsForCredentials(item: item)
             } else {
                 onRowSelected(item)
-                Pixel.fire(pixel: .autofillExtensionPasswordSelected)
+                PixelKit.fire(Pixel.Event.autofillExtensionPasswordSelected)
             }
         }
     }

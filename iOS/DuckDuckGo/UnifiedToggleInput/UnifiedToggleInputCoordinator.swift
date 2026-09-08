@@ -178,7 +178,22 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// Window-space X of the resting omnibar placeholder text, captured at focus time (before the
     /// bottom floating omnibar is detached from the toolbar). Reused on dismiss to slide the UTI
     /// text back onto the omnibar's text leading edge — the omnibar can't be measured live then.
-    var cachedOmnibarPlaceholderWindowX: CGFloat?
+    /// Absolute window coordinate, so it only holds while the window keeps the size it was taken at.
+    private var omnibarPlaceholderHandoff: (windowX: CGFloat, windowSize: CGSize)?
+
+    func cacheOmnibarPlaceholderWindowX(_ windowX: CGFloat?, windowSize: CGSize?) {
+        guard let windowX, let windowSize else {
+            omnibarPlaceholderHandoff = nil
+            return
+        }
+        omnibarPlaceholderHandoff = (windowX, windowSize)
+    }
+
+    func omnibarPlaceholderWindowX(validFor windowSize: CGSize?) -> CGFloat? {
+        guard let handoff = omnibarPlaceholderHandoff, handoff.windowSize == windowSize else { return nil }
+        return handoff.windowX
+    }
+
     private var keyboardMonitor: UTIKeyboardMonitor!
     private var pixelReporter: UTIPixelReporter!
     private var wideEventReporter: UTIWideEventReporter!
@@ -925,6 +940,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                                               measurement: makeUsageWarningMeasurement(),
                                               createImagePixelFiring: createImagePixelFiring)
         footerController?.presenter = viewController
+        footerController?.onInputBlockChanged = { [weak self] blocked in
+            self?.viewController.isInputBlockedByUsageLimit = blocked
+        }
 
         // Also what brings a message back after the user has acted on the previous one.
         usageLimitsStore?.snapshotUpdates?
@@ -969,8 +987,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         case .tryForFree:
             subscriptionUpsellPresenter.presentPurchaseFlow(origin: usageWarningFunnelOrigin)
         case .startUsingWeeklyLimit(let entries):
-            // Web reads the entry before its next /status and /chat, so there is nothing to reload.
-            usageLimitsStore?.write(entries)
+            // Pushed to the live chat, the way a model change is. With no chat bound there is
+            // nothing to push to, so it falls back to the entry web reads on its next hydration —
+            // which is what macOS does throughout.
+            if let boundUserScript {
+                Logger.duckAIUsageWarnings.debug("[UsageWarnings] weekly-limit hand-off: chat is live, pushing the action")
+                boundUserScript.submitStartUsingWeeklyLimitAction()
+            } else {
+                Logger.duckAIUsageWarnings.debug("[UsageWarnings] weekly-limit hand-off: no chat bound, writing the entry")
+                usageLimitsStore?.write(entries)
+            }
         }
     }
 
@@ -1108,12 +1134,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if resetView {
             let renderState = computeRenderState()
             viewController.apply(renderState.viewConfig, animated: false)
-            applyToolbarPresentation()
-            viewController.deactivateInput()
-        } else {
-            applyToolbarPresentation()
-            viewController.deactivateInput()
         }
+        applyToolbarPresentation()
+        // Resign is sequenced by the dismiss animation, not here — see `hideUnifiedToggleInputOmnibar`.
         return true
     }
 
@@ -1217,11 +1240,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             recordUserChoiceToStore()
             refreshFooterSuppression()
         }
-    }
-
-    func updateAIVoiceChatAvailability(_ enabled: Bool) {
-        viewController.handler.isAIVoiceChatEnabled = enabled
-        updateToolbarAIVoiceChat()
     }
 
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
@@ -2057,6 +2075,7 @@ private extension UnifiedToggleInputCoordinator {
     func syncHasSubmittedPromptToHandler() {
         syncInputBehaviorToHandler()
         switchBarHandler.hasSubmittedPrompt = hasSubmittedPrompt
+        updateToolbarAIVoiceChat()
         // Beat the view's async sink so the flanked UTI's first frame uses the new placeholder.
         viewController.refreshPlaceholderForCurrentMode()
         updateFloatingReturnKeyState()
@@ -2098,7 +2117,7 @@ private extension UnifiedToggleInputCoordinator {
     // MARK: Toolbar
 
     func updateToolbarAIVoiceChat() {
-        viewController.isToolbarAIVoiceChatActive = viewController.handler.isAIVoiceChatEnabled && inputMode == .aiChat
+        viewController.isToolbarAIVoiceChatActive = inputMode == .aiChat && !hasSubmittedPrompt
     }
 
     func applyToolbarPresentation() {
@@ -2246,8 +2265,7 @@ private extension UnifiedToggleInputCoordinator {
         viewController.handler.microphoneButtonTappedPublisher
             .sink { [weak self] in
                 guard let self else { return }
-                let isCollapsedAIVoiceChatButton = viewController.handler.isAIVoiceChatEnabled
-                    && viewController.inputMode == .aiChat
+                let isCollapsedAIVoiceChatButton = viewController.inputMode == .aiChat
                     && !isInputPaneExpanded
                     && !stateMachine.prefersDictationOverVoiceChat
                 if isCollapsedAIVoiceChatButton {

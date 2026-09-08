@@ -22,6 +22,7 @@ import Core
 import RemoteMessaging
 import XCTest
 import DDGSync
+@_spi(Testing) import PixelKit
 
 @testable import DuckDuckGo
 
@@ -30,6 +31,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
  
     private var messagesConfiguration: HomePageMessagesConfigurationMock!
     private var notificationCenter: NotificationCenter!
+    private var pixelKitMock: PixelKitMock!
 
     private var segueToAIChatSettingsCallCount = 0
     private var segueToSettingsCallCount = 0
@@ -42,6 +44,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     override func setUpWithError() throws {
         messagesConfiguration = HomePageMessagesConfigurationMock(homeMessages: [])
         notificationCenter = NotificationCenter()
+        pixelKitMock = PixelKitMock()
         segueToAIChatSettingsCallCount = 0
         segueToSettingsCallCount = 0
         segueToSettingsGeneralCallCount = 0
@@ -52,7 +55,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
-        PixelFiringMock.tearDown()
+        pixelKitMock = nil
     }
 
     func testUpdatesOnNotification() {
@@ -245,8 +248,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         await model.onDidClose(.close)
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.remoteMessageDismissed.name)
-        XCTAssertEqual(PixelFiringMock.lastParams, [PixelParameters.message: "foo"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.remoteMessageDismissed.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [PixelParameters.message: "foo"])
     }
 
     func testFiresPixelOnAction() async throws {
@@ -259,8 +262,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let model = try XCTUnwrap(sut.homeMessageViewModels.first)
         await model.onDidClose(.action(isShare: false))
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.remoteMessageActionClicked.name)
-        XCTAssertEqual(PixelFiringMock.lastParams, [PixelParameters.message: "foo"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.remoteMessageActionClicked.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [PixelParameters.message: "foo"])
     }
 
     func testFiresPixelOnPrimaryAction() async throws {
@@ -273,8 +276,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let model = try XCTUnwrap(sut.homeMessageViewModels.first)
         await model.onDidClose(.primaryAction(isShare: false))
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.remoteMessagePrimaryActionClicked.name)
-        XCTAssertEqual(PixelFiringMock.lastParams, [PixelParameters.message: "foo"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.remoteMessagePrimaryActionClicked.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [PixelParameters.message: "foo"])
     }
 
     func testFiresPixelOnSecondaryAction() async throws {
@@ -287,8 +290,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let model = try XCTUnwrap(sut.homeMessageViewModels.first)
         await model.onDidClose(.secondaryAction(isShare: false))
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.remoteMessageSecondaryActionClicked.name)
-        XCTAssertEqual(PixelFiringMock.lastParams, [PixelParameters.message: "foo"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.remoteMessageSecondaryActionClicked.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [PixelParameters.message: "foo"])
     }
 
     func testDoesNotFirePixelOnCloseWhenMetricsAreDisabled() async throws {
@@ -302,8 +305,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         await model.onDidClose(.close)
 
-        XCTAssertNil(PixelFiringMock.lastPixelName)
-        XCTAssertNil(PixelFiringMock.lastParams)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.pixel.name)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters)
     }
 
     func testDoesNotFirePixelOnActionWhenMetricsAreDisabled() async throws {
@@ -316,8 +319,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let model = try XCTUnwrap(sut.homeMessageViewModels.first)
         await model.onDidClose(.action(isShare: false))
 
-        XCTAssertNil(PixelFiringMock.lastPixelName)
-        XCTAssertNil(PixelFiringMock.lastParams)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.pixel.name)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters)
     }
 
     func testDoesNotFirePixelOnPrimaryActionWhenMetricsAreDisabled() async throws {
@@ -330,8 +333,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let model = try XCTUnwrap(sut.homeMessageViewModels.first)
         await model.onDidClose(.primaryAction(isShare: false))
 
-        XCTAssertNil(PixelFiringMock.lastPixelName)
-        XCTAssertNil(PixelFiringMock.lastParams)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.pixel.name)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters)
     }
 
     func testDoesNotFirePixelOnSecondaryActionWhenMetricsAreDisabled() async throws {
@@ -344,8 +347,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let model = try XCTUnwrap(sut.homeMessageViewModels.first)
         await model.onDidClose(.secondaryAction(isShare: false))
 
-        XCTAssertNil(PixelFiringMock.lastPixelName)
-        XCTAssertNil(PixelFiringMock.lastParams)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.pixel.name)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters)
     }
 
     // MARK: - openedAfterIdle
@@ -392,7 +395,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         return NewTabPageMessagesModel(homePageMessagesConfiguration: configuration,
                                 notificationCenter: notificationCenter,
-                                pixelFiring: PixelFiringMock.self,
+                                pixelFiring: pixelKitMock,
                                 messageActionHandler: remoteMessageActionHandler,
                                 imageLoader: MockRemoteMessagingImageLoader(),
                                 isOpenedAfterIdle: { isOpenedAfterIdle })

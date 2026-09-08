@@ -239,6 +239,10 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isSubmitBlockedByRecoveryCard = isToolbarSubmitBlockedByRecoveryCard }
     }
 
+    var isInputBlockedByUsageLimit: Bool = false {
+        didSet { toolsToolbar.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit }
+    }
+
     var isGenerating: Bool = false {
         didSet { toolsToolbar.isGenerating = isGenerating }
     }
@@ -694,6 +698,9 @@ final class UnifiedToggleInputView: UIView {
     /// be measured — so the symmetric dismiss can land back on the pill without re-measuring (the
     /// pill has been removed from the toolbar by then).
     private var cachedOmnibarMatchedInsets: OmnibarMatchedInsets?
+    /// The insets are point offsets against the container's width, so they only describe the window
+    /// size they were measured at — a rotation between focus and dismiss invalidates them.
+    private var cachedOmnibarMatchedInsetsWindowSize: CGSize?
     private var omnibarMaterialTransitionBackgroundColor: UIColor?
     /// Resting-grey stand-in revealed as the editing fill fades. Flat color (not live glass) so the
     /// morph keeps the card's silhouette without adding glass self-shadowing on top of the toolbar.
@@ -963,6 +970,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private var fireModeContentSubviews: [UIView] {
+        // aiTabCollapsed buttons keep their own regular glass, so they must stay on the OS trait.
         subviews.filter {
             $0 !== cardView &&
             $0 !== expandedShadowView &&
@@ -1145,7 +1153,7 @@ final class UnifiedToggleInputView: UIView {
             aiTabCollapsedMenuButton.isHidden = true
         }
         guard layout != currentLayout else {
-            updateExpandedBorderVisibility(expanded && layout.showsToggle)
+            updateExpandedBorderVisibility(expanded && (layout.showsToggle || layout.showsToolbar))
             return
         }
         currentLayout = layout
@@ -1213,7 +1221,7 @@ final class UnifiedToggleInputView: UIView {
         cardView.layer.maskedCorners = Constants.allCorners
         cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)
 
-        updateExpandedBorderVisibility(expanded && showsToggle)
+        updateExpandedBorderVisibility(expanded && (showsToggle || showToolbar))
         let changes = {
             self.setCardFlanked(layout == .flanked)
             // Bottom collapsed pose is a capsule to match the floating omnibar pill; everything
@@ -1378,7 +1386,8 @@ final class UnifiedToggleInputView: UIView {
             cardLeadingConstraint.constant = Constants.omnibarMatchingHorizontalMargin
             cardTrailingConstraint.constant = -Constants.omnibarMatchingHorizontalMargin
         case .bottom:
-            if let cached = cachedOmnibarMatchedInsets {
+            if let cached = cachedOmnibarMatchedInsets,
+               cachedOmnibarMatchedInsetsWindowSize == window?.bounds.size {
                 // Reproduce the measured pill pose (cached at focus) so the dismiss collapse lands
                 // back on the pill without re-measuring — it's no longer in the toolbar by then.
                 applyOmnibarMatchedInsets(cached)
@@ -1415,6 +1424,7 @@ final class UnifiedToggleInputView: UIView {
             trailing: -(bounds.width - pillInSelf.maxX),
             bottom: -(bounds.height - pillInSelf.maxY))
         cachedOmnibarMatchedInsets = insets
+        cachedOmnibarMatchedInsetsWindowSize = window?.bounds.size
         applyOmnibarMatchedInsets(insets)
         cardView.layer.cornerRadius = collapsedCornerRadius
         layoutIfNeeded()

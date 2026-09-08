@@ -44,8 +44,17 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             contextSubject.eraseToAnyPublisher()
         }
 
+        private let documentReadInProgressSubject = CurrentValueSubject<Bool, Never>(false)
+        var documentReadInProgressPublisher: AnyPublisher<Bool, Never> {
+            documentReadInProgressSubject.eraseToAnyPublisher()
+        }
+
         func sendContext(_ context: AIChatPageContext?) {
             contextSubject.send(context)
+        }
+
+        func sendDocumentReadInProgress(_ inProgress: Bool) {
+            documentReadInProgressSubject.send(inProgress)
         }
 
         var isCurrentPageAttachableReturnValue = true
@@ -349,6 +358,32 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isFloatingInputPresented)
         XCTAssertNotNil(sut.sheetViewController)
         XCTAssertEqual(sut.sessionState.contextualChatURL, restoreURL)
+    }
+
+    @MainActor
+    func testAttachSelectionExpandsInputForExistingChat() async throws {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        sut.sessionState.handlePromptSubmission("Previous prompt")
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+        XCTAssertFalse(host.isInputCollapsed)
+    }
+
+    @MainActor
+    func testPresentingExistingChatWithoutSelectionKeepsInputCollapsed() async throws {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        sut.sessionState.handlePromptSubmission("Previous prompt")
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+        XCTAssertTrue(host.isInputCollapsed)
     }
 
     /// The signals-only payload is content-free and marked unattached, so pushing it while a page is

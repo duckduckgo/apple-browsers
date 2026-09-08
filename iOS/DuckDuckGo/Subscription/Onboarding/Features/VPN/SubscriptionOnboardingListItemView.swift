@@ -26,6 +26,8 @@ import UIComponents
 struct SubscriptionOnboardingListItemView: View {
     private enum Metrics {
         static let iconSpacing: CGFloat = 16
+        static let contentInsetHorizontal: CGFloat = 16
+        static let contentInsetVertical: CGFloat = 12
     }
 
     /// Whether the listed item is active yet; drives the leading icon.
@@ -47,7 +49,8 @@ struct SubscriptionOnboardingListItemView: View {
             CardItem(
                 icon: CardItemIcon(position: .leadingColumn, visual: .image(status.icon), size: .size24, spacing: Metrics.iconSpacing),
                 title: CardItemText(text, font: .subheadRegular)),
-            style: .borderless)
+            style: .borderless,
+            contentInset: CardItemList.ContentInset(horizontal: Metrics.contentInsetHorizontal, vertical: Metrics.contentInsetVertical))
         .accessibilityElement(children: .combine)
     }
 }

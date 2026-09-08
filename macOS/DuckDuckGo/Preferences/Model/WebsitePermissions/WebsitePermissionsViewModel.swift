@@ -29,11 +29,11 @@ final class WebsitePermissionsViewModel: ObservableObject {
     @Published
     private(set) var viewState = WebsitePermissionsViewState()
 
-    private let permissionManager: WebsitePermissionManaging
+    private let permissionManager: PermissionManagerProtocol
     private var permissionsCancellable: AnyCancellable?
     private var didAppear = false
 
-    init(permissionManager: WebsitePermissionManaging) {
+    init(permissionManager: PermissionManagerProtocol) {
         self.permissionManager = permissionManager
     }
 
@@ -44,7 +44,6 @@ final class WebsitePermissionsViewModel: ObservableObject {
         case .onAppear:
             guard !didAppear else { return }
             didAppear = true
-            viewState.rows = makeRows(from: [])
             setupObserver()
         case .changeRecentDecision(let row, let decision):
             guard decision != row.decision else { return }

@@ -358,7 +358,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
             closeTabsItem.title = UserText.tabSwitcherCloseTabsButtonTitle(withCount: params.selectedCount)
             closeTabsItem.isEnabled = params.selectedCount > 0
-            setToolbarItems([closeTabsItem, fireItem, .flexibleSpace(), doneItem])
+            setToolbarItems([closeTabsItem, .flexibleSpace(), doneItem])
         } else {
             navigationItem.title = nil
             navigationItem.titleView = centerTitleView()

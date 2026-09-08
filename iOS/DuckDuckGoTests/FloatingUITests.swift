@@ -169,6 +169,47 @@ final class FloatingGlassAppearancePolicyTests: XCTestCase {
 
 final class FloatingUILayoutPolicyTests: XCTestCase {
 
+    func testWhenFloatingTopBarThenNewTabPageBottomInsetClearsTheToolbar() {
+        let inset = FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: true,
+            addressBarPosition: .top,
+            floatingBottomObscuredHeight: 96,
+            safeAreaBottom: 34,
+            omnibarHeight: 52
+        )
+
+        XCTAssertEqual(inset, 62)
+    }
+
+    func testWhenFloatingBottomBarThenNewTabPageBottomInsetClearsTheCombinedChrome() {
+        let inset = FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: true,
+            addressBarPosition: .bottom,
+            floatingBottomObscuredHeight: 170,
+            safeAreaBottom: 34,
+            omnibarHeight: 48
+        )
+
+        XCTAssertEqual(inset, 136)
+    }
+
+    func testWhenFloatingUIIsDisabledThenNewTabPageKeepsLegacyBottomInsets() {
+        XCTAssertEqual(FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: false,
+            addressBarPosition: .top,
+            floatingBottomObscuredHeight: 96,
+            safeAreaBottom: 34,
+            omnibarHeight: 52
+        ), 0)
+        XCTAssertEqual(FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: false,
+            addressBarPosition: .bottom,
+            floatingBottomObscuredHeight: 96,
+            safeAreaBottom: 34,
+            omnibarHeight: 52
+        ), 52)
+    }
+
     func testWhenBarsVisibleThenBottomObscuredHeightIsToolbarSlot() {
         let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
             barsVisibilityPercent: 1,
@@ -461,6 +502,44 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
             let view = try XCTUnwrap(item)
             XCTAssertEqual(barView.convert(view.bounds, from: view).midY, fieldMidY, accuracy: 0.5)
         }
+    }
+
+    func testWhenEmbeddedFieldLaysOutThenIconSlotsAreInsetFromTheCapsuleEnds() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        barView.layoutIfNeeded()
+
+        let field = try XCTUnwrap(barView.searchContainer)
+        let fieldFrame = barView.convert(field.bounds, from: field)
+        let slot = try XCTUnwrap(barView.leftIconContainerView)
+        let slotFrame = barView.convert(slot.bounds, from: slot)
+        let shield = try XCTUnwrap(barView.privacyInfoContainer)
+        let shieldCentre = barView.convert(shield.center, from: shield.superview)
+
+        let inset: CGFloat = 2
+
+        // The 44pt slot sits 2pt in from the capsule so its 47pt shield animation is not trimmed
+        // against the leading edge.
+        XCTAssertEqual(slotFrame.minX, fieldFrame.minX + inset, accuracy: 0.5)
+
+        // With a 48pt field the inset lands the shield on the centre of the leading arc, so the
+        // trackers-blocked burst is symmetrical inside the capsule.
+        XCTAssertEqual(shieldCentre.x, fieldFrame.minX + fieldFrame.height / 2, accuracy: 0.5)
+
+        // The trailing end of the content row (whichever control, or the text field, is last) gets
+        // the same breathing room from the trailing arc.
+        let trailingViews: [UIView] = [barView.clearButton, barView.cancelButton, barView.refreshButton,
+                                       barView.customizableButton, barView.urlSeparatorView, barView.aiChatButton,
+                                       barView.textField]
+        let trailingEdge = try XCTUnwrap(trailingViews
+            .filter { !$0.isHidden }
+            .map { barView.convert($0.bounds, from: $0).maxX }
+            .max())
+        XCTAssertEqual(trailingEdge, fieldFrame.maxX - inset, accuracy: 0.5)
     }
 
     func testWhenNonFloatingIPadSearchAreaExpandsThenModeToggleDoesNotOverlapBottomControls() throws {

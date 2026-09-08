@@ -687,7 +687,7 @@ class SwitchBarTextEntryView: UIView {
 
     private func updateVoiceButtonStyle() {
         handler.hidesVoiceButton = voiceButtonAppearance == .hidden
-        let showsAIVoiceChatButton = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
+        let showsAIVoiceChatButton = handler.currentToggleState == .aiChat
         switch voiceButtonAppearance {
         case .automatic:
             buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoiceAccent : .microphone
@@ -1170,6 +1170,9 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        // Refusing the edit rather than clearing `isEditable`: that would end editing and take the
+        // keyboard, and the card explaining the block down with it.
+        guard !handler.isInputBlockedByUsageLimit else { return false }
         if text == "\n" {
             if currentMode == .aiChat && !handler.submitsAIChatOnKeyboardReturn {
                 return true

@@ -1287,13 +1287,7 @@ internal extension Dictionary where Key == String, Value == String {
             return first
         }
 
-        if let sqlErrorCode = error.userInfo["SQLiteResultCode"] as? NSNumber {
-            params[PixelKit.Parameters.underlyingErrorSQLiteCode] = "\(sqlErrorCode.intValue)"
-        }
-
-        if let sqlExtendedErrorCode = error.userInfo["SQLiteExtendedResultCode"] as? NSNumber {
-            params[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode] = "\(sqlExtendedErrorCode.intValue)"
-        }
+        params.merge(error.sqliteResultCodeParameters) { _, new in new }
 
         // Merge the collected parameters into self
         self.merge(params) { _, new in new }

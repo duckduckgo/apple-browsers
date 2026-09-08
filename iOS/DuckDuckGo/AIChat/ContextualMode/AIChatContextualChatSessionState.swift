@@ -171,6 +171,9 @@ final class AIChatContextualChatSessionState {
     private var isManualAttachInProgress = false
     private var isManualAttachFromFrontend = false
 
+    /// True while the loading chip is showing;
+    private var isDocumentChipLoading = false
+
     /// Flag to prevent duplicate navigation processing
     private var isProcessingNavigation = false
 
@@ -240,10 +243,6 @@ final class AIChatContextualChatSessionState {
     /// Whether automatic context collection is enabled
     var shouldAutoCollectContext: Bool {
         aiChatSettings.isAutomaticContextAttachmentEnabled
-    }
-
-    var supportsMultipleContexts: Bool {
-        featureFlagger.isFeatureOn(.multiplePageContexts)
     }
 
     var showsSuggestionsStartSurface: Bool {
@@ -396,6 +395,7 @@ final class AIChatContextualChatSessionState {
         userDowngradedToPlaceholder = false
         isManualAttachInProgress = false
         isManualAttachFromFrontend = false
+        isDocumentChipLoading = false
         isProcessingNavigation = false
         pendingSignalsOnlyCollection = false
         suggestionsResolveTask?.cancel()
@@ -509,11 +509,9 @@ final class AIChatContextualChatSessionState {
     }
 
     /// Sends a null context as a navigation signal.
-    /// Used when auto-collect is OFF but multiple contexts are supported,
-    /// so the FE can show the "Add page content" button for the new page.
+    /// Used when auto-collect is OFF, so the FE can show the "Ask about page"
+    /// button for the new page.
     func notifyFrontendOfMultiContextNavigation() {
-        guard supportsMultipleContexts else { return }
-
         var targets: PageContextDeliveryTargets = []
         if shouldDeliverToFrontendBridge(nil) {
             targets.insert(.frontendBridge)
@@ -555,6 +553,12 @@ final class AIChatContextualChatSessionState {
 
     func allowAutoAttachAgain() {
         suppressesAutoAttachForSelectionEntry = false
+    }
+
+    func setDocumentChipLoading(_ isLoading: Bool) {
+        guard isDocumentChipLoading != isLoading else { return }
+        isDocumentChipLoading = isLoading
+        rebuildViewState()
     }
 
     func beginLoadingSuggestions() {
@@ -693,14 +697,12 @@ final class AIChatContextualChatSessionState {
 
         let shouldDeliver: Bool
         switch frontendState {
-        case .chatWithoutInitialContext, .restoredChat:
+        case .chatWithoutInitialContext, .restoredChat, .chatWithInitialContext:
             shouldDeliver = true
-        case .chatWithInitialContext:
-            shouldDeliver = supportsMultipleContexts
         case .noChat:
             shouldDeliver = false
         }
-        Logger.aiChat.debug("[SessionState] shouldDeliverToFrontendBridge=\(shouldDeliver) (frontendState=\(self.frontendState), multipleContexts=\(self.supportsMultipleContexts), uti=\(self.isUnifiedToggleInputActive))")
+        Logger.aiChat.debug("[SessionState] shouldDeliverToFrontendBridge=\(shouldDeliver) (frontendState=\(self.frontendState), uti=\(self.isUnifiedToggleInputActive))")
         return shouldDeliver
     }
 
@@ -829,11 +831,13 @@ private extension AIChatContextualChatSessionState {
     /// Beyond one attachment a single-line suggestion can no longer say which part of the prompt it
     /// acts on.
     private var shouldHideSuggestions: Bool {
-        attachmentCount > 1
+        attachmentCount > 1 || isDocumentChipLoading
     }
 
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {
-        // These are all page-scoped, so beside an attached selection they act on the wrong thing.
+        if isDocumentChipLoading {
+            return []
+        }
         if !attachedSelections.isEmpty, frontendState == .noChat {
             return []
         }
@@ -921,7 +925,7 @@ private extension AIChatContextualChatSessionState {
             chipState: chipState,
             quickActions: quickActions,
             suggestions: shouldHideSuggestions ? [] : visibleSuggestions(reserving: quickActions.count),
-            suggestionsLoadState: suggestionsLoadState,
+            suggestionsLoadState: isDocumentChipLoading ? .loaded : suggestionsLoadState,
             suggestionsAreSmart: suggestionsAreSmart,
             suggestionsPageType: suggestionsPageType,
             suggestionsScope: suggestionsScope

@@ -239,6 +239,42 @@ class DownloadsPreferencesTests: XCTestCase {
         XCTAssertNil(preferences.lastUsedCustomDownloadLocation)
     }
 
+    // MARK: - ~/Downloads needs no security-scoped bookmark
+
+    func testWhenSystemDownloadsFolderIsSelectedThenItIsPersistedAsAPlainURLString() throws {
+        let downloads = try XCTUnwrap(FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first)
+        let persistor = DownloadsPreferencesPersistorMock(selectedDownloadLocation: nil)
+        let preferences = DownloadsPreferences(persistor: persistor)
+
+        preferences.selectedDownloadLocation = downloads
+
+        let persisted = try XCTUnwrap(persistor.selectedDownloadLocation)
+        XCTAssertNil(Data(base64Encoded: persisted))
+        XCTAssertEqual(URL(string: persisted), downloads)
+    }
+
+    func testWhenSystemDownloadsFolderIsPersistedAsPlainStringThenItRoundTrips() throws {
+        let downloads = try XCTUnwrap(FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first)
+        let persistor = DownloadsPreferencesPersistorMock(selectedDownloadLocation: downloads.absoluteString)
+
+        let preferences = DownloadsPreferences(persistor: persistor)
+
+        XCTAssertEqual(preferences.selectedDownloadLocation?.resolvingSymlinksInPath(), downloads.resolvingSymlinksInPath())
+        XCTAssertEqual(persistor.selectedDownloadLocation, downloads.absoluteString,
+                       "a valid persisted value must not be rewritten on launch")
+    }
+
+    func testWhenCustomFolderIsSelectedInSandboxThenABookmarkIsStillPersisted() throws {
+        try XCTSkipUnless(NSApp.isSandboxed, "the security-scoped bookmark branch only runs sandboxed")
+        let testDirectory = createTemporaryTestDirectory()
+        let persistor = DownloadsPreferencesPersistorMock(selectedDownloadLocation: nil)
+        let preferences = DownloadsPreferences(persistor: persistor)
+
+        preferences.selectedDownloadLocation = testDirectory
+
+        let persisted = try XCTUnwrap(persistor.selectedDownloadLocation)
+        XCTAssertNotNil(Data(base64Encoded: persisted), "custom folders still need a security-scoped bookmark")
+    }
 }
 
 private extension DownloadsPreferencesTests {

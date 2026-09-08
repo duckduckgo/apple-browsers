@@ -138,8 +138,9 @@ final class BrowserToolbarView: UIView {
 
     /// In the floating style the toolbar is laid out against the safe-area bottom (so the chrome
     /// hide/show math stays valid), but the capsule should float this close to the physical device
-    /// bottom. The glass is shifted down into the home-indicator region by the difference.
-    static let floatingEmbeddedBottomMargin: CGFloat = 12
+    /// bottom. The glass is shifted down into the home-indicator region by the difference. Matches
+    /// `floatingEmbeddedHorizontalInset` so the capsule keeps an even inset on every edge.
+    static let floatingEmbeddedBottomMargin: CGFloat = floatingEmbeddedHorizontalInset
     static let floatingStandaloneBottomMargin: CGFloat = 21
 
     static func floatingOuterHorizontalInset(for addressBarPosition: AddressBarPosition) -> CGFloat {
@@ -601,6 +602,8 @@ final class BrowserToolbarView: UIView {
         buttonRowCollapseProgress = 0
         omnibarHeightConstraint.constant = 0
         buttonsHeightConstraint.constant = buttonsOnlyHeight
+        // Settled into the buttons-only pose now, so drop the embedded (bottom omnibar) metrics.
+        isOmnibarMorphing = false
         applyContentStackMetrics()
         rebuildButtonRow()
         updateCornerStyle()

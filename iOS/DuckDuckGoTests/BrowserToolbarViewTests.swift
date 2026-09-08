@@ -334,7 +334,7 @@ final class BrowserToolbarViewTests: XCTestCase {
         }
     }
 
-    func testWhenBottomOmnibarDetachesForFocusThenOuterInsetsStayUnchanged() {
+    func testWhenBottomOmnibarDetachmentSettlesThenOuterInsetsMatchStandaloneConcentricSpec() {
         let sut = makeSUT(embeddedOmnibar: true)
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
         container.addSubview(sut)
@@ -345,9 +345,10 @@ final class BrowserToolbarViewTests: XCTestCase {
         let frame = sut.restingCapsuleFrame(in: container)
 
         if #available(iOS 26.0, *) {
-            XCTAssertEqual(frame.minX, BrowserToolbarView.floatingEmbeddedHorizontalInset, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.width - frame.maxX, BrowserToolbarView.floatingEmbeddedHorizontalInset, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.maxY - frame.maxY, BrowserToolbarView.floatingEmbeddedBottomMargin, accuracy: 0.01)
+            // Settled: it's a standalone capsule again, not tucked at the tight embedded margin.
+            XCTAssertEqual(frame.minX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.maxY - frame.maxY, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
         }
     }
 
@@ -369,15 +370,16 @@ final class BrowserToolbarViewTests: XCTestCase {
     func testWhenEmbeddedFloatingThenBottomMarginMatchesPlatformGeometry() {
         let sut = makeSUT(embeddedOmnibar: true)
 
-        XCTAssertEqual(BrowserToolbarView.floatingEmbeddedBottomMargin, 12)
+        // Even on every edge: the bottom margin matches the horizontal inset.
+        XCTAssertEqual(BrowserToolbarView.floatingEmbeddedBottomMargin, 16)
         if #available(iOS 26.0, *) {
-            XCTAssertEqual(sut.floatingBottomMargin, 12, accuracy: 0.01)
+            XCTAssertEqual(sut.floatingBottomMargin, 16, accuracy: 0.01)
             XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .bottom), 16)
-            XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .bottom), 12)
+            XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .bottom), 16)
         } else {
-            XCTAssertEqual(sut.floatingBottomMargin, 12, accuracy: 0.01)
+            XCTAssertEqual(sut.floatingBottomMargin, 16, accuracy: 0.01)
             XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .bottom), 16)
-            XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .bottom), 12)
+            XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .bottom), 16)
         }
     }
 

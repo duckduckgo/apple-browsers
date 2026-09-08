@@ -205,3 +205,15 @@ public extension WebExtensionManaging {
         context.performCommand(command)
     }
 }
+
+@available(macOS 15.4, *)
+public extension WebExtensionManaging {
+    @MainActor
+    func performCommand(for event: NSEvent) -> Bool {
+        let contexts = loadedExtensions.sorted(by: { $0.uniqueIdentifier < $1.uniqueIdentifier })
+        for context in contexts where context.performCommand(for: event) {
+            return true
+        }
+        return false
+    }
+}

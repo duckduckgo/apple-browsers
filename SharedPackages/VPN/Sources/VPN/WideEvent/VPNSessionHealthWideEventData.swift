@@ -164,6 +164,7 @@ extension VPNSessionHealthWideEventData {
         }
 
         if endReason == .processDied {
+            // A later physical start recovered this persisted orphan.
             return .unknown(.extensionProcessDied)
         }
 
@@ -185,26 +186,32 @@ private extension VPNSessionHealthWideEventData {
 
     var failureReason: FailureReason? {
         if endReason == .cancelledWithError {
+            // The provider called cancelTunnel(with:).
             return .cancelledWithError
         }
 
         if stoppedByUserWithActiveFailure {
+            // A user-initiated stop arrived during an active tester outage.
             return .routingOutageAtUserDisable
         }
 
         if failureRecoveryFailed {
+            // A recovery attempt failed, even if a later retry succeeded.
             return .failureRecoveryFailed
         }
 
         if staleHandshakeDetected {
+            // The handshake monitor reported a stale handshake, even if later recovered.
             return .staleHandshake
         }
 
         if extendedRoutingOutageDetected {
+            // One tester outage reached the extended failure threshold, even if later recovered.
             return .routingOutage
         }
 
         if endReason == .stoppedByFailure {
+            // The OS supplied a failure-class provider stop reason.
             return .stoppedWithFailure
         }
 
@@ -213,13 +220,16 @@ private extension VPNSessionHealthWideEventData {
 
     var unknownReason: UnknownReason {
         if !monitoringStarted {
+            // No successful monitoring start was recorded or inherited from rollover.
             return .monitorsNeverStarted
         }
 
         if endReason == .stoppedWithoutNetwork {
+            // The OS reported noNetworkAvailable before health monitoring ever activated.
             return .osStoppedWithoutNetwork
         }
 
+        // Monitors started, but no tester report established active, unpaused coverage in this segment.
         return .connectionTesterNeverReported
     }
 

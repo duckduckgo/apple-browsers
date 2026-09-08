@@ -4581,6 +4581,42 @@
         }
       }
     },
+    "aichat.createImage.modelSwitch.privacy.subtitle" : {
+      "comment" : "Subtitle shown after switching away from a Zero Provider Visibility model for image creation. Parameter is the previous model's short name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ can't create images. Zero Provider Visibility won't apply until you switch back."
+          }
+        }
+      }
+    },
+    "aichat.createImage.modelSwitch.subtitle" : {
+      "comment" : "Subtitle explaining why Duck.ai switched models. Parameter is the previous model's short name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ doesn't support image creation."
+          }
+        }
+      }
+    },
+    "aichat.createImage.modelSwitch.title" : {
+      "comment" : "Title of the Duck.ai input card shown after switching to an image-capable model. Parameter is the new model's short name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Now using %@"
+          }
+        }
+      }
+    },
     "aichat.customize-button.tooltip" : {
       "comment" : "Tooltip for the customize button in AI chat omnibar",
       "extractionState" : "stale",

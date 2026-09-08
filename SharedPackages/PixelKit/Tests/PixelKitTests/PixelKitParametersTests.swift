@@ -81,17 +81,21 @@ final class PixelKitParametersTests: XCTestCase {
 
     // MARK: - SQLite result codes
 
-    /// Core Data attaches the plain result code under `NSSQLiteErrorDomain`, and it has to reach
-    /// `sqlrc` the same way SecureStorage's `SQLiteResultCode` does.
-    func testCoreDataSQLiteResultCodeIsReportedAsTheSQLiteCodeParameter() {
+    /// Core Data attaches its own result code under `NSSQLiteErrorDomain`, and legacy iOS pixels
+    /// reported it by overwriting the chain's `ue`/`ud`. That behaviour is deliberately not carried
+    /// over, so the key must be ignored entirely rather than mapped to `sqlrc`.
+    /// Tech design: https://app.asana.com/1/137249556945/project/414235014887631/task/1218234709844266
+    func testCoreDataSQLiteErrorDomainIsNotReported() {
         let error = NSError(domain: NSCocoaErrorDomain, code: 256, userInfo: ["NSSQLiteErrorDomain": NSNumber(value: 13)])
 
         var parameters = [String: String]()
         parameters.appendErrorPixelParams(error: error)
 
-        XCTAssertEqual(parameters[PixelKit.Parameters.underlyingErrorSQLiteCode], "13")
-        XCTAssertNil(parameters[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode],
-                     "Core Data reports no extended result code")
+        XCTAssertNil(parameters[PixelKit.Parameters.underlyingErrorSQLiteCode])
+        XCTAssertNil(parameters[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode])
+        XCTAssertNil(parameters[PixelKit.Parameters.underlyingErrorCode],
+                     "and it must not be reported as an underlying error either")
+        XCTAssertNil(parameters[PixelKit.Parameters.underlyingErrorDomain])
     }
 
     func testSecureStorageSQLiteResultCodesAreReported() {
@@ -107,19 +111,6 @@ final class PixelKitParametersTests: XCTestCase {
         XCTAssertEqual(parameters[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode], "267")
     }
 
-    /// The two producers are disjoint, but pin the precedence rather than leave it to chance.
-    func testSecureStorageResultCodeWinsOverTheCoreDataOne() {
-        let error = NSError(domain: "secure.storage", code: 1, userInfo: [
-            "SQLiteResultCode": NSNumber(value: 11),
-            "NSSQLiteErrorDomain": NSNumber(value: 13)
-        ])
-
-        var parameters = [String: String]()
-        parameters.appendErrorPixelParams(error: error)
-
-        XCTAssertEqual(parameters[PixelKit.Parameters.underlyingErrorSQLiteCode], "11")
-    }
-
     /// A SQLite result code is not an error, so it must never appear as a link in the chain: an
     /// error carrying one reports its real chain, at its real depth, plus the code alongside it.
     func testSQLiteResultCodeDoesNotAddALinkToTheUnderlyingErrorChain() {
@@ -127,7 +118,7 @@ final class PixelKitParametersTests: XCTestCase {
         let middleError = NSError(domain: "middle", code: 2, userInfo: [NSUnderlyingErrorKey: deepestError])
         let topLevelError = NSError(domain: "top", code: 1, userInfo: [
             NSUnderlyingErrorKey: middleError,
-            "NSSQLiteErrorDomain": NSNumber(value: 13)
+            "SQLiteResultCode": NSNumber(value: 11)
         ])
 
         var parameters = [String: String]()
@@ -143,21 +134,21 @@ final class PixelKitParametersTests: XCTestCase {
         XCTAssertNil(parameters[PixelKit.Parameters.underlyingErrorCode + "3"],
                      "the result code must not be reported as a further link in the chain")
         XCTAssertNil(parameters[PixelKit.Parameters.underlyingErrorDomain + "3"])
-        XCTAssertEqual(parameters[PixelKit.Parameters.underlyingErrorSQLiteCode], "13",
+        XCTAssertEqual(parameters[PixelKit.Parameters.underlyingErrorSQLiteCode], "11",
                        "and it is reported alongside the chain")
     }
 
     /// The code is surfaced from anywhere in the chain, not just from the error the pixel is fired
     /// with, and the error carrying it is still reported as the chain link it actually is.
     func testSQLiteResultCodeCarriedByADeeperErrorIsReported() {
-        let deepestError = NSError(domain: "deepest", code: 3, userInfo: ["NSSQLiteErrorDomain": NSNumber(value: 13)])
+        let deepestError = NSError(domain: "deepest", code: 3, userInfo: ["SQLiteResultCode": NSNumber(value: 11)])
         let middleError = NSError(domain: "middle", code: 2, userInfo: [NSUnderlyingErrorKey: deepestError])
         let topLevelError = NSError(domain: "top", code: 1, userInfo: [NSUnderlyingErrorKey: middleError])
 
         var parameters = [String: String]()
         parameters.appendErrorPixelParams(error: topLevelError)
 
-        XCTAssertEqual(parameters[PixelKit.Parameters.underlyingErrorSQLiteCode], "13")
+        XCTAssertEqual(parameters[PixelKit.Parameters.underlyingErrorSQLiteCode], "11")
         XCTAssertEqual(parameters[PixelKit.Parameters.underlyingErrorCode + "2"], "3",
                        "the error carrying the code is still a chain link")
         XCTAssertEqual(parameters[PixelKit.Parameters.underlyingErrorDomain + "2"], "deepest")
@@ -165,22 +156,22 @@ final class PixelKitParametersTests: XCTestCase {
                      "and the code adds no link of its own")
     }
 
-    /// Both codes have to come from the same error, so a plain code and an extended code from
-    /// different producers can never be reported as if they were a pair.
-    func testSQLiteResultCodesAreTakenFromTheOutermostErrorThatCarriesAny() {
+    /// Both codes have to come from the same error, so a plain code and an extended code carried by
+    /// different errors in one chain can never be reported as if they were a pair.
+    func testSQLiteResultCodesAreTakenFromTheOutermostErrorThatCarriesEither() {
         let deepestError = NSError(domain: "deepest", code: 3, userInfo: [
-            "SQLiteResultCode": NSNumber(value: 11),
+            "SQLiteResultCode": NSNumber(value: 5),
             "SQLiteExtendedResultCode": NSNumber(value: 267)
         ])
         let topLevelError = NSError(domain: "top", code: 1, userInfo: [
             NSUnderlyingErrorKey: deepestError,
-            "NSSQLiteErrorDomain": NSNumber(value: 13)
+            "SQLiteResultCode": NSNumber(value: 11)
         ])
 
         var parameters = [String: String]()
         parameters.appendErrorPixelParams(error: topLevelError)
 
-        XCTAssertEqual(parameters[PixelKit.Parameters.underlyingErrorSQLiteCode], "13",
+        XCTAssertEqual(parameters[PixelKit.Parameters.underlyingErrorSQLiteCode], "11",
                        "the outermost error carrying a code wins")
         XCTAssertNil(parameters[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode],
                      "the deeper error's extended code must not be paired with the outer plain code")

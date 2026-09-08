@@ -21,23 +21,30 @@ import Foundation
 extension NSError {
 
     /// The SQLite result codes carried by this error or by any error in its underlying chain,
-    /// reported alongside the chain rather than as a link in it.
+    /// reported alongside the chain rather than as a link in it. A result code is not an error, so
+    /// reporting it as one would make the chain's depth and its deepest link depend on a `userInfo`
+    /// key the caller never sees.
     ///
-    /// Two producers attach the plain result code under different `userInfo` keys:
-    /// `SecureStorageError` uses `SQLiteResultCode`, Core Data uses `NSSQLiteErrorDomain`. Both
-    /// hold the same kind of value, a SQLite result code rather than an `NSError`, so both map to
-    /// `Parameters.underlyingErrorSQLiteCode`.
+    /// `SecureStorageError` attaches them under the `userInfo` keys `SQLiteResultCode` and
+    /// `SQLiteExtendedResultCode`, which map to `Parameters.underlyingErrorSQLiteCode` and
+    /// `Parameters.underlyingErrorSQLiteExtendedCode`.
     ///
-    /// The chain is walked outermost first and the first error carrying any SQLite code wins, so
-    /// the plain and extended codes always come from the same error and can't be mixed across
-    /// producers. Within one error, `SQLiteResultCode` takes precedence.
+    /// The chain is walked outermost first and the first error carrying either code wins, so the
+    /// plain and extended codes always come from the same error and can never be a mismatched pair.
+    ///
+    /// macOS only. Core Data attaches its own result code under `NSSQLiteErrorDomain`, and legacy
+    /// iOS pixels reported it by overwriting the chain's `ue`/`ud` fields. That behaviour is not
+    /// carried over, and these parameters are deliberately not sent on iOS.
+    /// Tech design: https://app.asana.com/1/137249556945/project/414235014887631/task/1218234709844266
     var sqliteResultCodeParameters: [String: String] {
+        #if os(macOS)
         for error in selfAndUnderlyingErrors {
             let parameters = error.ownSQLiteResultCodeParameters
             if !parameters.isEmpty {
                 return parameters
             }
         }
+        #endif
 
         return [:]
     }
@@ -46,8 +53,7 @@ extension NSError {
     private var ownSQLiteResultCodeParameters: [String: String] {
         var parameters = [String: String]()
 
-        if let resultCode = userInfo[SQLiteUserInfoKey.secureStorageResultCode] as? NSNumber
-            ?? userInfo[SQLiteUserInfoKey.coreDataResultCode] as? NSNumber {
+        if let resultCode = userInfo[SQLiteUserInfoKey.secureStorageResultCode] as? NSNumber {
             parameters[PixelKit.Parameters.underlyingErrorSQLiteCode] = "\(resultCode.intValue)"
         }
 
@@ -80,7 +86,5 @@ extension NSError {
         /// Written by `SecureStorageError`.
         static let secureStorageResultCode = "SQLiteResultCode"
         static let secureStorageExtendedResultCode = "SQLiteExtendedResultCode"
-        /// Written by Core Data, which reports no extended code.
-        static let coreDataResultCode = "NSSQLiteErrorDomain" // Disabled for now
     }
 }

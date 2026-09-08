@@ -165,6 +165,8 @@ public final class AIChatContextChipView: UIView {
             roundedRect: bounds.insetBy(dx: inset, dy: inset),
             cornerRadius: layer.cornerRadius - inset
         ).cgPath
+        // Without a path the glow renders as the layer's rectangle rather than the pill.
+        layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: layer.cornerRadius).cgPath
     }
 
     // MARK: - Configuration

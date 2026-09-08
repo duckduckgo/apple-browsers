@@ -650,6 +650,10 @@
 		805DF6B12F28E807004F1F41 /* GranularFireConfirmationViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805DF6B02F28E807004F1F41 /* GranularFireConfirmationViewModelTests.swift */; };
 		8065741D2ED917410001497A /* FireExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8065741C2ED917350001497A /* FireExecutor.swift */; };
 		806DF4092F3B89BD00FBCA3F /* DataClearingCapability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806DF4082F3B89BD00FBCA3F /* DataClearingCapability.swift */; };
+		806FB186304A6894004EA754 /* AppRatingPromptCoordinationPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806FB185304A6894004EA754 /* AppRatingPromptCoordinationPolicyTests.swift */; };
+		806FB188304A6B25004EA754 /* ModalPromptCoordinationManagerDeferredTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806FB187304A6B25004EA754 /* ModalPromptCoordinationManagerDeferredTests.swift */; };
+		806FB3D0304A7A43004EA754 /* AppRatingPromptCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806FB3CF304A7A43004EA754 /* AppRatingPromptCoordinatorTests.swift */; };
+		806FB3E1304A7B00004EA754 /* PromoCoordinationServiceAppRatingPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806FB3E0304A7B00004EA754 /* PromoCoordinationServiceAppRatingPromptTests.swift */; };
 		80879D552F7B5B9A000C2267 /* TabViewGridCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80879D542F7B5B9A000C2267 /* TabViewGridCell.swift */; };
 		80879D572F7B5BA9000C2267 /* TabViewListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80879D562F7B5BA9000C2267 /* TabViewListCell.swift */; };
 		808DA5012F230245001D5F76 /* TabViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808DA5002F230245001D5F76 /* TabViewModelTests.swift */; };
@@ -3218,6 +3222,10 @@
 		805FC085FDE8FE82A5752D91 /* SubscriptionOnboardingNavigationContainer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingNavigationContainer.swift; sourceTree = "<group>"; };
 		8065741C2ED917350001497A /* FireExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireExecutor.swift; sourceTree = "<group>"; };
 		806DF4082F3B89BD00FBCA3F /* DataClearingCapability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingCapability.swift; sourceTree = "<group>"; };
+		806FB185304A6894004EA754 /* AppRatingPromptCoordinationPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingPromptCoordinationPolicyTests.swift; sourceTree = "<group>"; };
+		806FB187304A6B25004EA754 /* ModalPromptCoordinationManagerDeferredTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManagerDeferredTests.swift; sourceTree = "<group>"; };
+		806FB3CF304A7A43004EA754 /* AppRatingPromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingPromptCoordinatorTests.swift; sourceTree = "<group>"; };
+		806FB3E0304A7B00004EA754 /* PromoCoordinationServiceAppRatingPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoCoordinationServiceAppRatingPromptTests.swift; sourceTree = "<group>"; };
 		80879D542F7B5B9A000C2267 /* TabViewGridCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewGridCell.swift; sourceTree = "<group>"; };
 		80879D562F7B5BA9000C2267 /* TabViewListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewListCell.swift; sourceTree = "<group>"; };
 		808DA5002F230245001D5F76 /* TabViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewModelTests.swift; sourceTree = "<group>"; };
@@ -6512,6 +6520,7 @@
 				CB019FD3300A000100000001 /* OverlayWindowPresenterTests.swift */,
 				9F387DF42EA8BED0006861F8 /* PromoCoordinationServiceTests.swift */,
 				B6A7C21731A1000100F00D01 /* PromoCoordinationServicePromoQueueTests.swift */,
+				806FB3E0304A7B00004EA754 /* PromoCoordinationServiceAppRatingPromptTests.swift */,
 				C1A74BAF2EC2618D00870321 /* AutofillServiceTests.swift */,
 				852A4D003013738B00FA7A16 /* PrivacyUserDefaultsTests.swift */,
 			);
@@ -8303,10 +8312,13 @@
 		9F7634BD2EA8633300804550 /* ModalPromptCoordination */ = {
 			isa = PBXGroup;
 			children = (
+				806FB3CF304A7A43004EA754 /* AppRatingPromptCoordinatorTests.swift */,
 				9F80A9892EA9E4CF0079C5AD /* Migrator */,
 				9F7634BC2EA8633300804550 /* Cooldown */,
 				9F387E052EA9A1D8006861F8 /* Providers */,
+				806FB185304A6894004EA754 /* AppRatingPromptCoordinationPolicyTests.swift */,
 				9F387DE52EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift */,
+				806FB187304A6B25004EA754 /* ModalPromptCoordinationManagerDeferredTests.swift */,
 				B6A7C21931A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift */,
 				B6A7C21B31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift */,
 				B6A7C21D31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift */,
@@ -13381,6 +13393,7 @@
 				569437342BE4E41500C0881B /* SyncErrorHandlerSyncErrorsAlertsTests.swift in Sources */,
 				9F387DF52EA8BED0006861F8 /* PromoCoordinationServiceTests.swift in Sources */,
 				B6A7C21831A1000100F00D01 /* PromoCoordinationServicePromoQueueTests.swift in Sources */,
+				806FB3E1304A7B00004EA754 /* PromoCoordinationServiceAppRatingPromptTests.swift in Sources */,
 				9F3668762EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */,
 				CBC88EE32C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift in Sources */,
 				C13A463D2EB39C9200BF7762 /* UniversalOmniBarStateTests.swift in Sources */,
@@ -13537,6 +13550,7 @@
 				CC3445752E6760D100019518 /* UserScriptErrorTests.swift in Sources */,
 				97C00D0C2F98EEE300593A53 /* UnifiedInputContentContainerViewControllerTests.swift in Sources */,
 				98E563EA2DE8B32D00E6E75F /* MockTextZoomCoordinator.swift in Sources */,
+				806FB186304A6894004EA754 /* AppRatingPromptCoordinationPolicyTests.swift in Sources */,
 				CB27DAFD30064B5800EEEADB /* UnifiedInputTextChangeGateTests.swift in Sources */,
 				98E563EC2DE8B32D00E6E75F /* MockWebsiteDataManager.swift in Sources */,
 				C1EA266A2EB572E1006A863C /* AutofillExtensionSettingsViewModelTests.swift in Sources */,
@@ -13580,6 +13594,7 @@
 				98E564032DE8B32D00E6E75F /* MockAIChatSettingsProvider.swift in Sources */,
 				98E564042DE8B32D00E6E75F /* MockDDGSyncing.swift in Sources */,
 				CB781CCD3010E961008DCD60 /* AutocompleteSuggestionsPixelsTests.swift in Sources */,
+				806FB188304A6B25004EA754 /* ModalPromptCoordinationManagerDeferredTests.swift in Sources */,
 				BBC3AF632FF6954500280FC7 /* SettingsDeepLinkSectionTests.swift in Sources */,
 				98E564062DE8B32D00E6E75F /* MockTabDelegate.swift in Sources */,
 				98E564072DE8B32D00E6E75F /* MockTutorialSettings.swift in Sources */,
@@ -13635,6 +13650,7 @@
 				CB15F6EE2FE4000300EDEB50 /* FocusedLogoModelTests.swift in Sources */,
 				C18390D72F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift in Sources */,
 				FA57E0020002000200020002 /* PasteboardAttachmentReaderTests.swift in Sources */,
+				806FB3D0304A7A43004EA754 /* AppRatingPromptCoordinatorTests.swift in Sources */,
 				FA57E0060006000600060006 /* UnifiedToggleInputPasteHandlerTests.swift in Sources */,
 				314A3EFC293905EC00D3D4C8 /* BrokenSiteReportingTests.swift in Sources */,
 				851B1283221FE65E004781BC /* ImproveOnboardingExperiment1Tests.swift in Sources */,

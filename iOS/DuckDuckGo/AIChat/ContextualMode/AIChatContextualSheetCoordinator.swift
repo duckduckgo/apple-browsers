@@ -149,6 +149,9 @@ final class AIChatContextualSheetCoordinator {
         unifiedToggleInputFeature.isAvailable
     }
 
+    /// Chats the storage bridge has confirmed writing, so their later absence is evidence of deletion.
+    private var persistedChatIDs: Set<String> = []
+
     private var chatStorage: DuckAiNativeStorageHandling? {
         isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
     }
@@ -157,10 +160,16 @@ final class AIChatContextualSheetCoordinator {
         AIChatFeatureFlagProvider(featureFlagger: featureFlagger).isNativeDataAccessEnabled()
     }
 
+    /// Absence in the store means deletion only for a chat the bridge has told us it wrote. A chat the
+    /// frontend has named but not yet saved is equally absent, and clearing it would lose the
+    /// conversation the user is having.
     private func discardActiveChatIfDeleted() {
         guard sessionState.hasActiveChat,
-              isChatDeleted(chatID: sessionState.contextualChatURL?.duckAIChatID) else { return }
+              let chatID = sessionState.contextualChatURL?.duckAIChatID,
+              persistedChatIDs.contains(chatID),
+              isChatDeleted(chatID: chatID) else { return }
         Logger.aiChat.debug("[Contextual] Active chat was deleted, clearing it")
+        persistedChatIDs.remove(chatID)
         clearActiveChat()
     }
 
@@ -755,6 +764,9 @@ private extension AIChatContextualSheetCoordinator {
             delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
             return
         }
+        if let chatID = restoreURL.duckAIChatID {
+            persistedChatIDs.insert(chatID)
+        }
         sessionState.restoreChat(with: restoreURL)
     }
 
@@ -1190,6 +1202,10 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
 
     func aiChatContextualSheetViewControllerDidDismiss(_ viewController: AIChatContextualSheetViewController) {
         handleSheetDismissed()
+    }
+
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didPersistChatWithID chatID: String) {
+        persistedChatIDs.insert(chatID)
     }
 
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController) {

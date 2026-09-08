@@ -1482,6 +1482,35 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenANewChatHasNotBeenWrittenYetThenItsAbsenceIsNotTreatedAsDeletion() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        sut.sessionState.handlePromptSubmission("hello", url: savedChatURL)
+        sut.aiChatContextualSheetViewControllerDidDismiss(sheet)
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertTrue(sut.sessionState.hasActiveChat, "the frontend had named the chat but not yet saved it")
+        XCTAssertEqual(sut.sessionState.contextualChatURL, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenTheBridgeConfirmedTheWriteThenALaterAbsenceIsTreatedAsDeletion() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        sut.sessionState.handlePromptSubmission("hello", url: savedChatURL)
+        sut.aiChatContextualSheetViewController(sheet, didPersistChatWithID: savedChatID)
+        sut.aiChatContextualSheetViewControllerDidDismiss(sheet)
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertFalse(sut.sessionState.hasActiveChat)
+        XCTAssertNil(sut.sessionState.contextualChatURL)
+    }
+
+    @MainActor
     func testWhenTheSavedChatWasDeletedThenTheTabsStaleURLIsCleared() async {
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
         mockDelegate.contextualChatURLUpdates = []

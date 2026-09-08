@@ -72,6 +72,9 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     /// Called when the user taps the "New Chat" button to start a fresh conversation
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController)
 
+    /// The storage bridge confirming a chat now exists on disk.
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didPersistChatWithID chatID: String)
+
     /// Called when the user asks to open Duck.ai itself, rather than continue in this sheet.
     func aiChatContextualSheetViewControllerDidRequestOpenDuckAI(_ viewController: AIChatContextualSheetViewController)
 
@@ -1119,6 +1122,10 @@ extension AIChatContextualSheetViewController: AIChatContextualWebViewController
 
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestOpenDownloadWithFileName fileName: String) {
         delegate?.aiChatContextualSheetViewController(self, didRequestOpenDownloadWithFileName: fileName)
+    }
+
+    func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didPersistChatWithID chatID: String) {
+        delegate?.aiChatContextualSheetViewController(self, didPersistChatWithID: chatID)
     }
 }
 

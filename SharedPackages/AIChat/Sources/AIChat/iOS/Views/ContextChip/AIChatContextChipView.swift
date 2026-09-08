@@ -36,6 +36,9 @@ public final class AIChatContextChipView: UIView {
         /// The design's rounded pill variant.
         static let cornerRadius: CGFloat = 24
         static let borderWidth: CGFloat = 1
+        /// The offer reads as provisional, so its outline is heavier and broken rather than solid.
+        static let suggestedBorderWidth: CGFloat = 2
+        static let suggestedDashPattern: [NSNumber] = [6, 4]
 
         static let faviconSize: CGFloat = 28
         /// The design's rounded variant shows a circular favicon, but its asset is a circle with its
@@ -64,6 +67,16 @@ public final class AIChatContextChipView: UIView {
         let recognizer = UITapGestureRecognizer(target: self, action: #selector(chipTapped))
         recognizer.delegate = self
         return recognizer
+    }()
+
+    /// `layer.borderWidth` cannot dash, so the suggested state draws its own outline.
+    private lazy var dashedBorderLayer: CAShapeLayer = {
+        let border = CAShapeLayer()
+        border.fillColor = UIColor.clear.cgColor
+        border.lineWidth = Constants.suggestedBorderWidth
+        border.lineDashPattern = Constants.suggestedDashPattern
+        border.isHidden = true
+        return border
     }()
 
     private var fixedWidthConstraint: NSLayoutConstraint!
@@ -141,6 +154,14 @@ public final class AIChatContextChipView: UIView {
     public override func layoutSubviews() {
         super.layoutSubviews()
         layer.cornerRadius = min(Constants.cornerRadius, bounds.height / 2)
+        removeButton.layer.cornerRadius = removeButton.bounds.height / 2
+
+        dashedBorderLayer.frame = bounds
+        let inset = Constants.suggestedBorderWidth / 2
+        dashedBorderLayer.path = UIBezierPath(
+            roundedRect: bounds.insetBy(dx: inset, dy: inset),
+            cornerRadius: layer.cornerRadius - inset
+        ).cgPath
     }
 
     // MARK: - Configuration
@@ -192,6 +213,7 @@ private extension AIChatContextChipView {
         layer.cornerCurve = .continuous
         clipsToBounds = true
 
+        layer.addSublayer(dashedBorderLayer)
         addSubview(mainStackView)
 
         chipContentView.addSubview(faviconView)
@@ -239,7 +261,8 @@ private extension AIChatContextChipView {
             titleLabel.accessibilityTraits = .button
             applyPillLayout()
             removeButton.isHidden = false
-            removeButton.tintColor = UIColor(designSystemColor: .accentPrimary)
+            removeButton.tintColor = UIColor(designSystemColor: .icons)
+            removeButton.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
             faviconView.tintColor = UIColor(designSystemColor: .accentPrimary)
             faviconView.image = favicon ?? fallbackFavicon()
             faviconView.backgroundColor = .clear
@@ -290,6 +313,13 @@ private extension AIChatContextChipView {
 
     /// Neutral states pass `lines`, not `decorationPrimary`: the design is black at 9%, which `lines`
     /// matches and `decorationPrimary` does not — it is 30%.
+    func applyDashedBorder(color: UIColor) {
+        layer.borderWidth = 0
+        dashedBorderLayer.isHidden = false
+        dashedBorderLayer.strokeColor = color.cgColor
+        setNeedsLayout()
+    }
+
     func applyBorder(color: UIColor) {
         layer.borderWidth = Constants.borderWidth
         layer.borderColor = color.cgColor

@@ -610,6 +610,8 @@ final class BrowserToolbarView: UIView {
             materialBackgroundView.effect = nil
             materialBackgroundView.effect = materialEffect()
             materialBackgroundView.layoutIfNeeded()
+            // chromeContentHost is a sibling of materialBackgroundView, not a descendant — needs the override too.
+            chromeContentHost.overrideUserInterfaceStyle = interfaceStyle
         }
         scheduleHostedOmnibarMaterialRefresh()
     }

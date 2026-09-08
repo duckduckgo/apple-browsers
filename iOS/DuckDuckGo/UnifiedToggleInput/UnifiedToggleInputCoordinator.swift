@@ -945,6 +945,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                                               measurement: makeUsageWarningMeasurement(),
                                               createImagePixelFiring: createImagePixelFiring)
         footerController?.presenter = viewController
+        footerController?.onInputBlockChanged = { [weak self] blocked in
+            self?.viewController.isInputBlockedByUsageLimit = blocked
+        }
 
         // Also what brings a message back after the user has acted on the previous one.
         usageLimitsStore?.snapshotUpdates?
@@ -2143,6 +2146,7 @@ private extension UnifiedToggleInputCoordinator {
     func syncHasSubmittedPromptToHandler() {
         syncInputBehaviorToHandler()
         switchBarHandler.hasSubmittedPrompt = hasSubmittedPrompt
+        updateToolbarAIVoiceChat()
         // Beat the view's async sink so the flanked UTI's first frame uses the new placeholder.
         viewController.refreshPlaceholderForCurrentMode()
         updateFloatingReturnKeyState()
@@ -2184,7 +2188,7 @@ private extension UnifiedToggleInputCoordinator {
     // MARK: Toolbar
 
     func updateToolbarAIVoiceChat() {
-        viewController.isToolbarAIVoiceChatActive = inputMode == .aiChat
+        viewController.isToolbarAIVoiceChatActive = inputMode == .aiChat && !hasSubmittedPrompt
     }
 
     func applyToolbarPresentation() {

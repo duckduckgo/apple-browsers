@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AVFoundation
 import Bookmarks
 import BrokenSitePrompt
 import BrowserServicesKit
@@ -1762,15 +1763,26 @@ class MainViewController: UIViewController {
     }
 
     private func adjustNewTabPageSafeAreaInsets(for addressBarPosition: AddressBarPosition) {
+        let bottomInset = newTabPageBottomAdditionalSafeAreaInset(for: addressBarPosition)
         switch addressBarPosition {
         case .top:
             // In floating top mode the NTP spans behind the glass omnibar; inset its content so it
             // rests below the bar while still being able to underflow it on scroll.
             let topInset = isFloatingTopContentBehindBar ? viewCoordinator.omniBar.barView.expectedHeight * currentBarsVisibility : 0
-            newTabPageViewController?.additionalSafeAreaInsets = .init(top: topInset, left: 0, bottom: 0, right: 0)
+            newTabPageViewController?.additionalSafeAreaInsets = .init(top: topInset, left: 0, bottom: bottomInset, right: 0)
         case .bottom:
-            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: viewCoordinator.omniBar.barView.expectedHeight, right: 0)
+            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: bottomInset, right: 0)
         }
+    }
+
+    private func newTabPageBottomAdditionalSafeAreaInset(for addressBarPosition: AddressBarPosition) -> CGFloat {
+        FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            addressBarPosition: addressBarPosition,
+            floatingBottomObscuredHeight: floatingWebViewBottomObscuredHeight(for: 1),
+            safeAreaBottom: view.safeAreaInsets.bottom,
+            omnibarHeight: viewCoordinator.omniBar.barView.expectedHeight
+        )
     }
 
     /// Scales the floating-top NTP content inset with chrome visibility so it collapses to zero in
@@ -1906,7 +1918,8 @@ class MainViewController: UIViewController {
         if appSettings.currentAddressBarPosition.isBottom,
            let ntp = self.newTabPageViewController,
            !ntp.isShowingLogo {
-            self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+            let restingBottomInset = newTabPageBottomAdditionalSafeAreaInset(for: .bottom)
+            self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(restingBottomInset, containerHeight)
         }
 
         UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
@@ -1916,7 +1929,8 @@ class MainViewController: UIViewController {
                !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                let ntp = self.newTabPageViewController,
                ntp.isShowingLogo {
-                self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+                let restingBottomInset = self.newTabPageBottomAdditionalSafeAreaInset(for: .bottom)
+                self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(restingBottomInset, containerHeight)
             } else {
                 self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
             }
@@ -3790,10 +3804,34 @@ class MainViewController: UIViewController {
     }
     
     private func showNoMicrophonePermissionAlert() {
-        let alertController = NoMicPermissionAlert.buildAlert()
-        present(alertController, animated: true, completion: nil)
+        let isRedesigned = featureFlagger.isFeatureOn(.sitePermissions)
+        guard isRedesigned else {
+            let alertController = NoMicPermissionAlert.build(isRedesigned: false) { _ in }
+            present(alertController, animated: true, completion: nil)
+            return
+        }
+
+        let pixelHandler = tabManager.sitePermissionsPixelHandler
+        let actionHandler = VoiceSearchPermissionPromptActionHandler(
+            eventHandler: { pixelHandler.fire($0) },
+            disableVoiceSearch: { [weak self] in
+                self?.voiceSearchHelper.enableVoiceSearch(false)
+            },
+            dismiss: { [weak self] completion in
+                self?.dismiss(animated: true, completion: completion)
+            },
+            openSystemSettings: {
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                UIApplication.shared.open(url)
+            })
+        let alertController = NoMicPermissionAlert.build(isRedesigned: isRedesigned) { action in
+            actionHandler.handle(action)
+        }
+        present(alertController, animated: true) {
+            actionHandler.didShow()
+        }
     }
-    
+
     private func subscribeToEmailProtectionStatusNotifications() {
         NotificationCenter.default.publisher(for: .emailDidSignIn)
             .receive(on: DispatchQueue.main)
@@ -4334,6 +4372,20 @@ class MainViewController: UIViewController {
     /// `deepLinkSource` is nil when voice was started in-app, so a widget voice entry is
     /// attributed to the widget; `m_aichat_voice_entry_point_tapped` separates voice from text.
     private func openAIChatInVoiceMode(deepLinkSource: AIChatEntryPointSource? = nil) {
+        if let reminder = NoMicPermissionAlert.buildVoiceChatReminderIfNeeded(
+            isSitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
+            microphoneAuthorization: AVCaptureDevice.authorizationStatus(for: .audio),
+            onAction: { [weak self] action in
+                self?.dismiss(animated: true) {
+                    guard action == .changePermissions,
+                          let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                    UIApplication.shared.open(url)
+                }
+            }) {
+            present(reminder, animated: true)
+            return
+        }
+
         // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
         let source = deepLinkSource ?? .voice
         let fromDeepLink = deepLinkSource != nil

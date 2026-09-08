@@ -1403,11 +1403,31 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
     }
 
-    func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForExistingHost_endsWithoutPresentingSuccess() {
+    func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForExistingHost_waitsForDevicesBeforeEndingFlow() async {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+        let expectation = expectation(description: "V2 existing-host flow ended")
+
+        managementDialogModel.$currentDialog
+            .filter { $0 == nil }
+            .prefix(1)
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+
+        syncDialogController.devices = [SyncDevice(kind: .mobile, name: "Test Device", id: "test-id")]
+
+        await fulfillment(of: [expectation], timeout: 1)
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForExistingHostAndNoDeviceChangeExpected_endsWithoutPresentingSuccess() {
         managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
         managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
 
-        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
         XCTAssertNil(managementDialogModel.currentDialog)
     }

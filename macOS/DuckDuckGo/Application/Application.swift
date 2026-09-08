@@ -188,6 +188,11 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
             }
             shouldResetClickCountForNextEventOfTypes = nil
         }
+
+        if #available(macOS 15.4, *), delegateTyped.webExtensionManager?.performCommand(for: event) == true {
+            return
+        }
+
         super.sendEvent(event)
     }
 

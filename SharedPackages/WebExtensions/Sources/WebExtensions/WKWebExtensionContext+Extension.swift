@@ -23,6 +23,9 @@ private let browserSpecificSettingsKey = "browser_specific_settings"
 private let duckduckgoKey = "duckduckgo"
 private let idKey = "id"
 private let requiresExtractionKey = "appleRequiresExtraction"
+private let actionKey = "action"
+private let browserActionKey = "browser_action"
+private let pageActionKey = "page_action"
 
 /// Extension types identified via manifest `browser_specific_settings.duckduckgo.id`.
 @available(macOS 15.4, iOS 18.4, *)
@@ -101,5 +104,16 @@ public extension WKWebExtensionContext {
     /// Convenience proxy to the underlying web extension's type.
     var duckDuckGoWebExtensionType: DuckDuckGoWebExtensionType? {
         webExtension.duckDuckGoWebExtensionType
+    }
+
+    /// Returns whether the extension declares a toolbar action in its manifest.
+    ///
+    /// Manifest V3 uses `action`; Manifest V2 uses `browser_action` or `page_action`.
+    /// Extensions without one of these keys have no user-facing button, so the browser
+    /// must not put them in the navigation bar. Our own embedded extensions (autoconsent,
+    /// content blocking, search token) fall into that group.
+    var declaresToolbarAction: Bool {
+        let manifest = webExtension.manifest
+        return manifest[actionKey] != nil || manifest[browserActionKey] != nil || manifest[pageActionKey] != nil
     }
 }

@@ -448,7 +448,8 @@ class MainViewController: UIViewController {
     let promoCoordinationService:
         (any RecentModalPromptStatusProviding
             & PromoCoordinationDiagnosticsProviding
-            & PromoCoordinationCooldownResetting)?
+            & PromoCoordinationCooldownResetting
+            & AppRatingPromptGating)?
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
     var adBlockingAvailability: AdBlockingAvailabilityProviding { tabManager.adBlockingAvailability }
@@ -628,7 +629,8 @@ class MainViewController: UIViewController {
         onboardingManager: OnboardingManaging,
         promoCoordinationService: (any RecentModalPromptStatusProviding
             & PromoCoordinationDiagnosticsProviding
-            & PromoCoordinationCooldownResetting)? = nil
+            & PromoCoordinationCooldownResetting
+            & AppRatingPromptGating)? = nil
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -6528,6 +6530,19 @@ extension MainViewController: NewTabPageControllerDelegate {
 
 extension MainViewController: TabDelegate {
 
+    func tabDidLoadPageForAppRatingPrompt(_ tab: TabViewController) {
+        promoCoordinationService?.registerAppRatingPromptUsage()
+    }
+
+    func tabShouldRequestAppRatingPrompt(_ tab: TabViewController) -> Bool {
+        promoCoordinationService?.shouldRequestAppRatingPrompt() ?? false
+    }
+
+    func tabDidRequestAppRatingPrompt(_ tab: TabViewController) {
+        promoCoordinationService?.didRequestAppRatingPrompt()
+    }
+
+
     /// Far longer than any real search, short enough to keep the URL well inside server limits.
     private static let maxSelectionSearchQueryLength = 500
 
@@ -7966,7 +7981,7 @@ extension MainViewController {
         FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
         viewCoordinator.omniBar.adjust(for: appSettings.currentAddressBarPosition)
         viewCoordinator.updateToolbarLayoutForAddressBarPosition(appSettings.currentAddressBarPosition)
-        viewCoordinator.bringFloatingTopNavigationBarToFrontIfNeeded()
+        viewCoordinator.bringFloatingNavigationBarToFrontIfNeeded()
         (viewCoordinator.omniBar as? DefaultOmniBarViewController)?.reconcileShadowClip()
         reconcileAIChromeForCurrentTab()
     }

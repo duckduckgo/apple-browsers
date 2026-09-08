@@ -194,6 +194,9 @@ class MainViewCoordinator {
         return activating
     }
 
+    /// The pose for an omnibar hosted in the nav container. The collection view's alpha belongs to
+    /// this pose: the focus transition zeroes it, so only re-hosting can put it back — and only
+    /// while nothing else owns the surface, since a rotation can rebuild this layout mid-focus.
     private func applyOmnibarHostedInNavigationContainerPose() {
         navigationBarContainer.isHidden = false
         navigationBarContainer.alpha = 1
@@ -210,12 +213,14 @@ class MainViewCoordinator {
     func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {
         addressBarPosition = position
         applyContentContainerTopAnchorForCurrentState()
+        // Default before any branch runs; only the toolbar-attach path below overrides it, so
+        // readers within this pass can't see a stale value.
+        isOmnibarInToolbar = false
         guard isFloatingUIEnabled else {
             toolbar.setOmnibarView(nil, height: 0)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
             applyOmnibarHostedInNavigationContainerPose()
             setContentContainerBottomAnchorMode(requesting: .toolbar)
-            isOmnibarInToolbar = false
             return
         }
 
@@ -227,11 +232,10 @@ class MainViewCoordinator {
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
             omniBar.barView.makeGlass()
             applyOmnibarHostedInNavigationContainerPose()
-            bringFloatingTopNavigationBarToFrontIfNeeded()
+            bringFloatingNavigationBarToFrontIfNeeded()
             // Span content full-bleed to the main view bottom (behind the floating toolbar) so the
             // web scroll edge sits at the screen bottom and content doesn't move when the bars hide.
             setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
-            isOmnibarInToolbar = false
         case .bottom:
             guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
                 isFloatingUIEnabled: isFloatingUIEnabled,
@@ -242,7 +246,6 @@ class MainViewCoordinator {
                 toolbar.setOmnibarView(nil, height: 0)
                 constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
                 applyOmnibarHostedInNavigationContainerPose()
-                isOmnibarInToolbar = false
                 return
             }
             toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
@@ -450,7 +453,7 @@ class MainViewCoordinator {
         navigationBarContainer.backgroundColor = .clear
 
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
-        bringFloatingTopNavigationBarToFrontIfNeeded()
+        bringFloatingNavigationBarToFrontIfNeeded()
 
         if addressBarPosition == .top {
             setAddressBarBottomActive(false)
@@ -527,10 +530,13 @@ class MainViewCoordinator {
     // MARK: - Omnibar Editing Layout
 
     @MainActor
+    /// `resigningInput` is invoked once the animator owns the container's position. Resigning any
+    /// earlier hands the container to the keyboard's animation, which lands it short of the pill.
     func hideUnifiedToggleInputOmnibar(reattachingOmnibar: Bool = true,
                                        contentSnapshot: UIView? = nil,
                                        additionalAnimations: (() -> Void)? = nil,
                                        interruptCleanup: (() -> Void)? = nil,
+                                       resigningInput: (() -> Void)? = nil,
                                        completion: (() -> Void)? = nil) {
         // Replacement dismiss owns NTP chrome until it finishes. Drop the previous
         // interruptCleanup first — otherwise stopping the in-flight animator restores
@@ -564,6 +570,7 @@ class MainViewCoordinator {
         }
         omnibarDismissAnimator = animator
         animator.startAnimation()
+        resigningInput?()
     }
 
     private func installOmnibarDismissContentSnapshot(_ snapshot: UIView) {
@@ -670,7 +677,7 @@ class MainViewCoordinator {
             omniBar?.barView.setIconContainersAlpha(1)
         }
         restoreContentContainerBottomAnchorAfterUnifiedToggleInput()
-        bringFloatingTopNavigationBarToFrontIfNeeded()
+        bringFloatingNavigationBarToFrontIfNeeded()
     }
 
     private var shouldHostOmnibarInFloatingToolbarAfterUTIExit: Bool {
@@ -707,13 +714,13 @@ class MainViewCoordinator {
         hideFocusedStateBackground()
         focusedStateBackground.alpha = 1
         superview.insertSubview(statusBackground, aboveSubview: topSlideContainer)
-        bringFloatingTopNavigationBarToFrontIfNeeded()
+        bringFloatingNavigationBarToFrontIfNeeded()
     }
 
-    /// Keeps the top floating omnibar above full-screen UTI layers so menu and customize long-press
-    /// gestures stay tappable after focus/dismiss cycles.
-    func bringFloatingTopNavigationBarToFrontIfNeeded() {
-        guard isFloatingUIEnabled, addressBarPosition == .top else { return }
+    /// Keeps the floating omnibar above full-screen UTI layers so its gestures stay tappable
+    /// after focus/dismiss cycles. Inverse of `bringSubviewToFront(toolbar)` at the attach sites.
+    func bringFloatingNavigationBarToFrontIfNeeded() {
+        guard isFloatingUIEnabled, !isOmnibarInToolbar else { return }
         superview.bringSubviewToFront(navigationBarContainer)
         applyAITabCollapsedTopSeparatorVisibility()
     }

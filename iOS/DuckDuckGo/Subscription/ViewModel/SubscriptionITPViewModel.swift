@@ -23,6 +23,7 @@ import Combine
 import Core
 import Subscription
 import PrivacyConfig
+import PixelKit
 
 final class SubscriptionITPViewModel: ObservableObject {
     
@@ -147,7 +148,7 @@ final class SubscriptionITPViewModel: ObservableObject {
     func onFirstAppear() {
         webViewModel.navigationCoordinator.navigateTo(url: manageITPURL )
         Task { await setupSubscribers() }
-        Pixel.fire(pixel: .subscriptionIdentityRestorationSettings)
+        PixelKit.fire(Pixel.Event.subscriptionIdentityRestorationSettings)
     }
     
     private func cleanUp() {

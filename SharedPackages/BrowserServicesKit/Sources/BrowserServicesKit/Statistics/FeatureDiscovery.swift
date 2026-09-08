@@ -26,6 +26,8 @@ import Persistence
 public enum WasUsedBeforeFeature: String {
 
     case aiChat
+    /// Set once the user has submitted their first Duck.ai prompt on this install.
+    case duckAIPrompt
     case duckPlayer
     case vpn
     case privacyDashboard

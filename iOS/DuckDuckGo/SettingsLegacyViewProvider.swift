@@ -32,6 +32,7 @@ import AIChat
 import DataBrokerProtection_iOS
 import Subscription
 import WebExtensions
+import PixelKit
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -122,7 +123,6 @@ class SettingsLegacyViewProvider: ObservableObject {
              autofill,
              appIcon,
              gpc,
-             autoconsent,
              unprotectedSites,
              fireproofSites,
              keyboard,
@@ -178,7 +178,6 @@ class SettingsLegacyViewProvider: ObservableObject {
     // Legacy UIKit Views (Pushed unmodified)
     var addToDock: UIViewController { instantiate( "instructions", fromStoryboard: StoryboardName.homeRow) }
     var gpc: UIViewController { instantiate("DoNotSell", fromStoryboard: StoryboardName.settings) }
-    var autoConsent: UIViewController { instantiate("AutoconsentSettingsViewController", fromStoryboard: StoryboardName.settings) }
     var unprotectedSites: UIViewController { UnprotectedSitesViewController() }
     var fireproofSites: UIViewController { instantiateFireproofingController() }
     var keyboard: UIViewController { instantiate("Keyboard", fromStoryboard: StoryboardName.settings) }
@@ -245,7 +244,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         case .legacy(let importScreen):
             return makeDataImportViewController(importScreen: importScreen, delegate: delegate)
         case .hub:
-            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: importScreen.importHubEntryPointParameters)
+            PixelKit.fire(Pixel.Event.importHubEntryTapped, options: .parameters(importScreen.importHubEntryPointParameters))
             return DataImportHubViewController(syncService: syncService,
                                                 keyValueStore: keyValueStore,
                                                 bookmarksDatabase: bookmarksDatabase,

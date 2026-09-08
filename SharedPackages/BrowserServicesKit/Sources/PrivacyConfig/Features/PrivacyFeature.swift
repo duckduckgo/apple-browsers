@@ -176,6 +176,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
 
+    /// Enables the Website Permissions entry point in Settings.
+    case websitePermissionsSettings
+
     /// Memory Pressure Reporter
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
     case memoryPressureReporting
@@ -275,6 +278,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case deferredSecureVaultInit
     case performanceMetrics
     case extractedProfileRefresh
+    case schedulerDeferralHandling
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -299,9 +303,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Single "Ask Duck.ai" menu button (New Chat / Ask About Page) replacing the two-part split button.
     case chromeMenuButton
-
-    /// Experimental address bar with duck.ai
-    case experimentalAddressBar
 
     /// Global switch to disable all AI Chat related functionality
     case globalToggle
@@ -332,9 +333,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Allows user to clear AI Chat history with the fire button or auto-clear
     case clearAIChatHistory
 
-    /// Signals that the iOS app should display duck.ai chats in "full mode" i.e in a tab, not a sheet
-    case fullDuckAIMode
-
     /// Enables native-side support for standalone migration flows in AI Chat
     case standaloneMigration
 
@@ -353,15 +351,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the default omnibar toggle position setting for AI Chat
     case omnibarDefaultPosition
 
-    case unifiedToggleInput
-
+    /// Enables updated model picker with BE-driven sorting and sublines for models.
     case updatedModelPicker
 
-    /// Forward-only lever for the unified toggle input rollout. When disabled, *new* (un-granted)
-    /// users stop receiving the unified toggle input; users who have already been granted it keep
-    /// it. Independent of the master `unifiedToggleInput` flag (which revokes from everyone when
-    /// turned off). See `UnifiedToggleInputFeature`.
-    case unifiedToggleInputIncludeNewUsers
+    /// Enables updated `Create image` tool behavior.
+    case updatedCreateImage
 
     /// Hides the Search↔Duck.ai toggle in the unified input when the user is on a Duck.ai tab,
     /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
@@ -421,6 +415,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
 
+    /// Enables handing a PDF tab to Duck.ai as page context (bytes instead of markdown)
+    case pdfPageContext
+
     /// Enables attaching content from multiple open tabs to the Duck.ai sidebar chat.
     case sidebarAttachMoreTabs
 
@@ -435,9 +432,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     case ntpSuggestionsDeletion
-
-    /// Enables voice chat shortcut in the focused address bar
-    case voiceShortcut
 
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
@@ -490,12 +484,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Group into the app's Application Support directory on iOS. Off keeps the
     /// legacy App Group path.
     case nativeStoragePathMigration
-
-    /// Once the native-storage path migration is complete (or not needed), opens
-    /// the store on locked / background launches instead of deferring on the
-    /// protected-data gate. Off keeps the legacy behavior where any locked launch
-    /// nils the handler — which makes the Duck.ai front-end re-prompt T&C.
-    case nativeStorageMigrationLockedLaunchFix
 
     /// Enables the rich Duck.ai tab grid card in the iOS tab switcher (rendered from
     /// native-storage chat data). When off, Duck.ai tabs fall back to the standard
@@ -631,7 +619,6 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case onByDefault
     case filterlist
     case heuristicAction
-    case cookiePopupPreferenceSetting
     case cookiePopupOptInDialog
     case cookiePopupOptInDialogExperiment
 }
@@ -835,6 +822,18 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
     case featureEnabled
+
+    /// Kill switch for the Bookmark Toolbar ("Show Bookmarks Bar?") promo.
+    case bookmarkToolbarPromo
+
+    /// Kill switch for the Sync Favicons ("Download Missing Icons?") promo.
+    case syncFaviconsPromo
+
+    /// Kill switch for the Autofill Toolbar Pinning ("Add passwords shortcut?") promo.
+    case autofillToolbarPinningPromo
+
+    /// Kill switch for the Cookie Pop-ups Blocked promo.
+    case cookiePopupsBlockedPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

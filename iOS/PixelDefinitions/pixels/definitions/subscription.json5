@@ -582,10 +582,21 @@
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
-                "key": "feature.data.ext.funnel_name",
+                "key": "feature.data.ext.entry_point",
                 "type": "string",
-                "description": "The funnel that led to the subscription flow",
-                "pattern": "^funnel_"
+                "description": "The coarse product surface that led to the subscription flow",
+                "enum": [
+                    "app_menu",
+                    "app_promotion",
+                    "settings",
+                    "onboarding",
+                    "new_tab_page",
+                    "duck_ai",
+                    "vpn",
+                    "personal_information_removal",
+                    "web",
+                    "unknown"
+                ]
             },
             {
                 "key": "context.name",
@@ -909,5 +920,28 @@
                 "enum": ["web_restore", "vpn"]
             }
         ]
+    },
+
+    // Subscription Onboarding Flow
+    "subscription_onboarding_connection-info_failure": {
+        "description": "Fired when the public IP and geolocation fetch behind the VPN activation screen fails during onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_onboarding_ai-models_failure": {
+        "description": "Fired when the Duck.ai model list fetch fails during onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_onboarding_subscription_failure": {
+        "description": "Fired when the subscription fetch behind the order confirmation screen fails during onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
     }
 }

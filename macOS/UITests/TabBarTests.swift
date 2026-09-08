@@ -22,7 +22,6 @@ class TabBarTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
 
         app.openNewWindow()
@@ -114,7 +113,7 @@ class TabBarTests: UITestCase {
         app.menuItems["Close Tab"].tap()
 
         /// Asserts that the recently active tab is visible
-        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
     }
 
     func testRecentlyActiveTabIsNotSelected_ifAnotherTabWasSelectedBeforeTheTabWasClosed() {
@@ -131,7 +130,7 @@ class TabBarTests: UITestCase {
         app.menuItems["Close Tab"].tap()
 
         /// Asserts that the tab to the right is shown
-        XCTAssertTrue(app.staticTexts["Sample text for Page #4"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(app.staticTexts["Sample text for Page #4"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
     }
 
     func testContextMenuOpens_withRightClickOnTab() {

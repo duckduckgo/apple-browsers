@@ -53,6 +53,13 @@ public struct OSDistributionPixel: PixelKit.Event {
         "os_distribution_\(metric.rawValue)_major_version_\(osMajorVersion)_\(platform.rawValue.lowercased())_\(formFactor)"
     }
 
+    /// The name above already ends in the platform and form factor, so PixelKit must not append a
+    /// second marker.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
+    /// Likewise complete at the front: `os_distribution_...` takes no platform prefix.
+    public var namePrefix: PixelKitNamePrefix { .none }
+
     /// Per-metric firing frequency. `.searches` measures total search + AI-query traffic so it fires
     /// on every event; `.client` and `.activeSubscriptions` measure monthly-active users / subscribers.
     var frequency: PixelKit.Frequency {
@@ -72,13 +79,13 @@ public struct OSDistributionPixel: PixelKit.Event {
 public extension PixelKit {
 
     /// Fires an OS-distribution pixel with the fixed configuration these pixels require:
-    /// the metric's `frequency` (see `OSDistributionPixel.frequency`), no `appVersion`,
-    /// no `pixelSource`, and no platform-prefix enforcement.
+    /// the metric's `frequency` (see `OSDistributionPixel.frequency`), no `appVersion`, and no
+    /// `pixelSource`. The name needs no prefix either, which the event itself declares via
+    /// `namePrefix`.
     func fireOSDistributionPixel(_ event: OSDistributionPixel) {
         fire(event,
              frequency: event.frequency,
-             includeAppVersionParameter: false,
-             doNotEnforcePrefix: true)
+             includeAppVersionParameter: false)
     }
 
     func fireOSDistributionPixel(metric: OSDistributionPixel.Metric,

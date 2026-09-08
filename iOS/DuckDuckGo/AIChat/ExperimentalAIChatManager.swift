@@ -17,52 +17,25 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Core
-import Common
-import FoundationExtensions
-import PrivacyConfig
 import FeatureFlags_iOS
+import PrivacyConfig
 
 struct ExperimentalAIChatManager {
     private let featureFlagger: FeatureFlagger
-    private let userDefaults: UserDefaults
-    private let experimentalAIChatSettingsKey = "experimentalAIChatSettingsEnabled"
-    private let devicePlatform: DevicePlatformProviding.Type
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
 
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         userDefaults: UserDefaults = .standard,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()) {
         self.featureFlagger = featureFlagger
-        self.userDefaults = userDefaults
-        self.devicePlatform = devicePlatform
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
-    }
-
-    var isExperimentalAIChatFeatureFlagEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.experimentalAddressBar, allowOverride: true)
-    }
-
-    var isExperimentalAIChatSettingsEnabled: Bool {
-        get {
-            isExperimentalAIChatFeatureFlagEnabled && userDefaults.bool(forKey: experimentalAIChatSettingsKey)
-        }
-        set {
-            userDefaults.set(newValue, forKey: experimentalAIChatSettingsKey)
-        }
     }
 
     var isStandaloneMigrationSupported: Bool {
         featureFlagger.isFeatureOn(.standaloneMigration)
     }
-    
+
     var isContextualDuckAIModeEnabled: Bool {
         aiChatContextualModeFeature.isAvailable
-    }
-
-    mutating func toggleExperimentalTheming() {
-        isExperimentalAIChatSettingsEnabled.toggle()
     }
 }

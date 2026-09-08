@@ -126,7 +126,10 @@ final class LaunchTimeMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
     }
 }
 
-enum LaunchTimeMetricsPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum LaunchTimeMetricsPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
     case firstDraw(minMs: Int, maxMs: Int)
     case resume(minMs: Int, maxMs: Int)
     case optimizedFirstDraw(minMs: Int, maxMs: Int)
@@ -153,7 +156,7 @@ enum LaunchTimeMetricsPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 private extension LaunchTimeDataPoint {

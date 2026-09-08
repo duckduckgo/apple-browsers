@@ -18,6 +18,7 @@
 //
 
 import Foundation
+@_spi(Testing) import PixelKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -42,17 +43,25 @@ final class AppSwitcherSnapshotCleanerTests: XCTestCase {
                                                                    includingPropertiesForKeys: nil), [])
     }
 
-    func testClearSnapshotsWhenSnapshotsDirectoryIsMissingDoesNothing() async {
+    func testWhenSnapshotsDirectoryIsMissingThenEnumerationFailurePixelIsFired() async throws {
         let libraryDirectory = makeTemporaryLibraryDirectory()
         defer { try? FileManager.default.removeItem(at: libraryDirectory) }
 
-        let cleaner = AppSwitcherSnapshotCleaner(libraryDirectoryOverride: libraryDirectory)
+        let pixelFiring = PixelKitMock()
+        let cleaner = AppSwitcherSnapshotCleaner(libraryDirectoryOverride: libraryDirectory, pixelFiring: pixelFiring)
         await cleaner.clearSnapshots()
 
         let snapshotsDirectory = libraryDirectory
             .appendingPathComponent("SplashBoard", isDirectory: true)
             .appendingPathComponent("Snapshots", isDirectory: true)
         XCTAssertFalse(FileManager.default.fileExists(atPath: snapshotsDirectory.path))
+
+        let fireCall = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
+        XCTAssertEqual(fireCall.pixel.name, "app-switcher_snapshot_enumeration_failed")
+        XCTAssertEqual(fireCall.pixel.error?.domain, NSCocoaErrorDomain)
+        XCTAssertEqual(fireCall.pixel.error?.code, CocoaError.fileReadNoSuchFile.rawValue)
+        XCTAssertEqual(fireCall.frequency, .dailyAndCount)
     }
 
     func testClearSnapshotsContinuesAfterAnItemCannotBeRemoved() async throws {

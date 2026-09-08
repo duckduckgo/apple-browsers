@@ -22,6 +22,7 @@ import Core
 import SubscriptionTestingUtilities
 import FeatureFlags_iOS
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
 
@@ -29,16 +30,18 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockStatisticsStore: MockStatisticsStore!
+    private var pixelKitMock: PixelKitMock!
 
     override func setUpWithError() throws {
         mockFeatureFlagger = MockFeatureFlagger()
         mockSubscriptionManager = SubscriptionManagerMock()
         mockStatisticsStore = MockStatisticsStore()
+        pixelKitMock = PixelKitMock()
 
         sut = OnboardingSubscriptionPromotionHelper(
             featureFlagger: mockFeatureFlagger,
             subscriptionManager: mockSubscriptionManager,
-            pixelFiring: PixelFiringMock.self,
+            pixelFiring: pixelKitMock,
             statisticsStore: mockStatisticsStore
         )
     }
@@ -48,7 +51,7 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
         mockFeatureFlagger = nil
         mockSubscriptionManager = nil
         mockStatisticsStore = nil
-        PixelFiringMock.tearDown()
+        pixelKitMock = nil
     }
 
     // MARK: - proceedButtonText Tests
@@ -126,10 +129,10 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
         sut.fireImpressionPixel()
 
         // Then
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.subscriptionOnboardingPromotionImpression.name)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.returningUser], "true")
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.freeTrial], "true")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.name, Pixel.Event.subscriptionOnboardingPromotionImpression.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.additionalParameters?[PixelParameters.returningUser], "true")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.additionalParameters?[PixelParameters.freeTrial], "true")
     }
 
     func testFireImpressionPixelForNewUserNotEligibleForFreeTrial() {
@@ -141,9 +144,9 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
         sut.fireImpressionPixel()
 
         // Then
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.returningUser], "false")
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.freeTrial], "false")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.additionalParameters?[PixelParameters.returningUser], "false")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.additionalParameters?[PixelParameters.freeTrial], "false")
     }
 
     func testFireTapPixelIncludesReturningUserAndFreeTrialParams() {
@@ -155,10 +158,10 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
         sut.fireTapPixel()
 
         // Then
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.subscriptionOnboardingPromotionTap.name)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.returningUser], "false")
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.freeTrial], "true")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.name, Pixel.Event.subscriptionOnboardingPromotionTap.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.additionalParameters?[PixelParameters.returningUser], "false")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.additionalParameters?[PixelParameters.freeTrial], "true")
     }
 
     func testFireDismissPixelIncludesReturningUserAndFreeTrialParams() {
@@ -170,10 +173,10 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
         sut.fireDismissPixel()
 
         // Then
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.subscriptionOnboardingPromotionDismiss.name)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.returningUser], "true")
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.params?[PixelParameters.freeTrial], "true")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.name, Pixel.Event.subscriptionOnboardingPromotionDismiss.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.additionalParameters?[PixelParameters.returningUser], "true")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.additionalParameters?[PixelParameters.freeTrial], "true")
     }
 
     // MARK: - Redirect URL Tests

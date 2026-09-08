@@ -21,6 +21,7 @@ import Core
 import SwiftUI
 import DesignResourcesKit
 import FeatureFlags_iOS
+import PixelKit
 
 enum AfterInactivityOption: String, CaseIterable, CustomStringConvertible {
     case newTab
@@ -162,7 +163,7 @@ struct SettingsGeneralView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onFirstAppear {
-            Pixel.fire(pixel: .settingsGeneralOpen)
+            PixelKit.fire(Pixel.Event.settingsGeneralOpen)
         }
     }
 

@@ -500,8 +500,9 @@ extension URL {
     // MARK: - HTTP/HTTPS
 
     public func toHttps() -> URL? {
-        guard navigationalScheme == .http,
-              var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return self }
+        guard navigationalScheme == .http else { return self }
+        guard port == nil,
+              var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return nil }
         components.scheme = NavigationalScheme.https.rawValue
         return components.url
     }

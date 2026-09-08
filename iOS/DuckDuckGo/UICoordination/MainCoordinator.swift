@@ -78,7 +78,6 @@ final class MainCoordinator {
     private let privacyStats: PrivacyStatsProviding
     private let wideEvent: WideEventManaging
     private let voiceSessionStateManager: VoiceSessionStateProviding
-    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
 
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
@@ -153,7 +152,6 @@ final class MainCoordinator {
         self.wideEvent = wideEvent
         self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
-        self.voiceShortcutFeature = DuckAIVoiceShortcutFeature(featureFlagger: featureFlagger)
         FireModeCapability.resolve(using: featureFlagger)
         UnifiedToggleInputFeature.resolve(using: featureFlagger)
         let fireModeCapability = FireModeCapability.create()
@@ -441,6 +439,7 @@ final class MainCoordinator {
             privacyConfigurationManager: privacyConfigurationManager,
             autoconsentPreferences: AppUserDefaults(),
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
+            searchTokenProvider: controller,
             scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
@@ -513,8 +512,6 @@ final class MainCoordinator {
     @available(iOS 18.4, *)
     private func deferUntilProtectedDataAvailable(_ operation: @escaping () -> Void) {
         pendingProtectedDataWork.append(operation)
-        DailyPixel.fireDailyAndCount(pixel: .webExtensionDeferredProtectedDataUnavailable,
-                                     pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
 
         guard protectedDataCancellable == nil else { return }
         protectedDataCancellable = NotificationCenter.default
@@ -526,8 +523,6 @@ final class MainCoordinator {
                     let pendingWork = self.pendingProtectedDataWork
                     self.pendingProtectedDataWork.removeAll()
                     guard !pendingWork.isEmpty else { return }
-                    DailyPixel.fireDailyAndCount(pixel: .webExtensionResumedProtectedDataAvailable,
-                                                 pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
                     pendingWork.forEach { $0() }
                 }
             }
@@ -579,6 +574,12 @@ final class MainCoordinator {
         }
         if controller.adBlockingAvailability.isEnabled {
             enabledTypes.insert(.adBlockingExtension)
+        }
+        let searchTokenCohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV4) as? FeatureFlag.SearchTokenExperimentCohort
+        // The search-token extension pulls its token over native messaging,
+        // so skipping this extension builds without that support (Alpha)
+        if searchTokenCohort == .treatment, nativeMessagingSupport.isSupported {
+            enabledTypes.insert(.searchToken)
         }
         return enabledTypes
     }
@@ -705,6 +706,7 @@ final class MainCoordinator {
 
     func onBackground() {
         homePageConfiguration.handleAppBackgrounded()
+        promoCoordinationService.handleAppBackgrounded()
         resetAppStartTime()
         Task {
             await privacyStats.handleAppTermination()
@@ -719,13 +721,12 @@ final class MainCoordinator {
         let isEnabled = controller.adBlockingAvailability.isEnabled
         let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
         let analyticsEnabled = isEnabled && ((try? storage.value(for: \.youTubeAnalyticsEnabled)) ?? false)
-        DailyPixel.fire(
-            pixel: .webExtensionDailyAdBlockingState,
-            withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.webExtensionDailyAdBlockingState,
+                      frequency: .legacyDailyNoSuffix,
+                      options: .parameters([
                 "is_enabled": isEnabled ? "true" : "false",
                 "analytics_enabled": analyticsEnabled ? "true" : "false"
-            ]
-        )
+            ]))
     }
 
 }
@@ -811,10 +812,10 @@ extension MainCoordinator: URLHandling {
         if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
            let queryItems = components.queryItems,
            queryItems.contains(where: { $0.name == "ls" }) {
-            Pixel.fire(pixel: .autofillLoginsLaunchWidgetLock)
+            PixelKit.fire(Pixel.Event.autofillLoginsLaunchWidgetLock)
             source = .lockScreenWidget
         } else {
-            Pixel.fire(pixel: .autofillLoginsLaunchWidgetHome)
+            PixelKit.fire(Pixel.Event.autofillLoginsLaunchWidgetHome)
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -830,10 +831,9 @@ extension MainCoordinator: URLHandling {
               let shortcut = queryItems.first(where: { $0.name == WidgetSourceType.shortcutKey })?.value
         else { return }
 
-        DailyPixel.fireDailyAndCount(
-            pixel: .widgetMediumLaunch,
-            withAdditionalParameters: [PixelParameters.shortcut: shortcut]
-        )
+        PixelKit.fire(Pixel.Event.widgetMediumLaunch,
+                      frequency: .dailyAndCount,
+                      options: .parameters([PixelParameters.shortcut: shortcut]))
     }
 
     func handleAIChatAppIconShortuct() {
@@ -842,7 +842,7 @@ extension MainCoordinator: URLHandling {
           DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
               self.controller.openAIChat(source: .iconShortcut)
           }
-          Pixel.fire(pixel: .openAIChatFromIconShortcut)
+          PixelKit.fire(Pixel.Event.openAIChatFromIconShortcut)
       }
 }
 
@@ -873,7 +873,7 @@ extension MainCoordinator: ShortcutItemHandling {
         DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
             self.controller.launchAutofillLogins(openSearch: true, source: .appIconShortcut)
         }
-        Pixel.fire(pixel: .autofillLoginsLaunchAppShortcut)
+        PixelKit.fire(Pixel.Event.autofillLoginsLaunchAppShortcut)
     }
 
 }
@@ -916,7 +916,7 @@ extension MainCoordinator: UserActivityHandling {
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
     func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) {
-        if voiceShortcutFeature.isAvailable, voiceSessionStateManager.isVoiceSessionActive {
+        if voiceSessionStateManager.isVoiceSessionActive {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             return
         }

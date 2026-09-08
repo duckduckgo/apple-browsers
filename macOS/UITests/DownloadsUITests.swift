@@ -26,7 +26,6 @@ class DownloadsUITests: UITestCase {
     private var table: XCUIElement!
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
 
@@ -319,9 +318,7 @@ class DownloadsUITests: UITestCase {
         // Expect exactly one item + "Open Downloads folder"
         XCTAssertTrue(table.cells.wait(for: \.count, equals: 2, timeout: UITests.Timeouts.localTestServer), "Should have exactly 2 cells (1 download + Open Downloads folder), actual: \(table.cells.count)")
 
-        // Quit and relaunch
-        app.typeKey("q", modifierFlags: [.command])
-        app.launch()
+        app.restart()
         _ = app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
         app.enforceSingleWindow()
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -373,9 +370,7 @@ class DownloadsUITests: UITestCase {
         // Expect exactly one item + "Open Downloads folder"
         XCTAssertTrue(table.cells.wait(for: \.count, equals: 2, timeout: UITests.Timeouts.localTestServer), "Should have exactly 2 cells (1 download + Open Downloads folder), actual: \(table.cells.count)")
 
-        // Quit and relaunch to restore session
-        app.typeKey("q", modifierFlags: [.command])
-        app.launch()
+        app.restart()
         _ = app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
 
         XCTAssertTrue(webView.staticTexts["Page loaded!"].waitForExistence(timeout: UITests.Timeouts.navigation))
@@ -608,9 +603,7 @@ class DownloadsUITests: UITestCase {
         assertDownloadListed(filename: fileName, sizeLabelRegex: "1.0 MB")
 
         // Restart app and verify the same file is listed
-        app.typeKey("q", modifierFlags: [.command])
-
-        app.launch()
+        app.restart()
         _=app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
         app.enforceSingleWindow()
         // wait for the New Tab page to load

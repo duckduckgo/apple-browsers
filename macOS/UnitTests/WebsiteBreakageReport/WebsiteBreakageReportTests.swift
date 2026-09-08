@@ -28,7 +28,6 @@ class WebsiteBreakageReportTests: XCTestCase {
     func testReportBrokenSitePixel() {
         fire(NonStandardPixel.brokenSiteReport,
              frequency: .standard,
-             doNotEnforcePrefix: true,
              and: .expect(pixelName: "epbf_macos_desktop"),
              file: #filePath,
              line: #line)
@@ -37,7 +36,6 @@ class WebsiteBreakageReportTests: XCTestCase {
     func testReportBrokenSiteShownPixel() {
         fire(NonStandardPixel.brokenSiteReportShown,
              frequency: .standard,
-             doNotEnforcePrefix: true,
              and: .expect(pixelName: "m_report-broken-site_shown"),
              file: #filePath,
              line: #line)
@@ -46,7 +44,6 @@ class WebsiteBreakageReportTests: XCTestCase {
     func testReportBrokenSiteSentPixel() {
         fire(NonStandardPixel.brokenSiteReportSent,
              frequency: .standard,
-             doNotEnforcePrefix: true,
              and: .expect(pixelName: "m_report-broken-site_sent"),
              file: #filePath,
              line: #line)
@@ -105,6 +102,7 @@ class WebsiteBreakageReportTests: XCTestCase {
         XCTAssertEqual(queryItems[valueFor: "blockedTrackers"], "bad.tracker.test,tracking.test")
         XCTAssertEqual(queryItems[valueFor: "surrogates"], "surrogate.domain.test")
         XCTAssertEqual(queryItems[valueFor: "protectionsState"], "true")
+        XCTAssertNil(queryItems[valueFor: "isAfterTabTermination"])
     }
 
     func testThatNativeAppSpecificFieldsAreReported() throws {
@@ -128,7 +126,7 @@ class WebsiteBreakageReportTests: XCTestCase {
             ampURL: "https://example.test",
             urlParametersRemoved: false,
             protectionsState: true,
-            reportFlow: .appMenu,
+            reportFlow: .errorPage,
             errors: nil,
             httpStatusCodes: nil,
             openerContext: nil,
@@ -154,6 +152,7 @@ class WebsiteBreakageReportTests: XCTestCase {
             privacyExperiments: "",
             isPirEnabled: true,
             isForceDarkModeEnabled: nil,
+            isAfterTabTermination: true,
             lastTabSuspension: nil,
             pageLoadTiming: nil
         )
@@ -191,6 +190,8 @@ class WebsiteBreakageReportTests: XCTestCase {
         XCTAssertEqual(queryItems[valueFor: "cpmQueueSize"], "2")
         XCTAssertEqual(queryItems[valueFor: "cpmConfigVersion"], "123")
         XCTAssertEqual(queryItems[valueFor: "isPirEnabled"], "true")
+        XCTAssertEqual(queryItems[valueFor: "reportFlow"], "error_page")
+        XCTAssertEqual(queryItems[valueFor: "isAfterTabTermination"], "true")
     }
 
     func testWebExtensionFieldsAreIncludedWhenProvided() throws {

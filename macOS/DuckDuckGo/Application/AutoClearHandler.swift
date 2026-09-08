@@ -134,8 +134,8 @@ final class AutoClearHandler: ApplicationTerminationDecider {
                 await aiChatSyncCleaner?.recordLocalClear(date: Date())
             }
         }
-        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount, options: .unenforcedPrefix)
-        pixelFiring?.fire(FireDialogPixel.fireStartedOnExit, frequency: .dailyAndCount, options: .unenforcedPrefix)
+        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount)
+        pixelFiring?.fire(FireDialogPixel.fireStartedOnExit, frequency: .dailyAndCount)
         await fireViewModel.fire.burnAll(isBurnOnExit: true,
                                          includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled,
                                          isAutoClear: true,
@@ -155,8 +155,8 @@ final class AutoClearHandler: ApplicationTerminationDecider {
         let shouldBurnOnStart = dataClearingPreferences.isAutoClearEnabled && !appTerminationHandledCorrectly
         guard shouldBurnOnStart else { return false }
 
-        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount, options: .unenforcedPrefix)
-        pixelFiring?.fire(FireDialogPixel.fireStartedOnStartup, frequency: .dailyAndCount, options: .unenforcedPrefix)
+        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount)
+        pixelFiring?.fire(FireDialogPixel.fireStartedOnStartup, frequency: .dailyAndCount)
         fireViewModel.fire.burnAll(includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled,
                                    isAutoClear: true,
                                    dataClearingWideEventService: dataClearingWideEventService)

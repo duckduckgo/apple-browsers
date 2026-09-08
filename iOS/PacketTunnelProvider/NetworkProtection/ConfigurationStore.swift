@@ -22,6 +22,7 @@ import os.log
 import Core
 import Configuration
 import Persistence
+import PixelKit
 
 struct ConfigurationStore: ConfigurationStoring {
 
@@ -62,7 +63,7 @@ struct ConfigurationStore: ConfigurationStoring {
             } catch {
                 if !Configuration.isExpectedFileReadError(error) {
                     let pixel = Pixel.Event.couldNotLoadConfiguration(configuration: configuration, target: .vpn)
-                    DailyPixel.fireDailyAndCount(pixel: pixel, error: error)
+                    PixelKit.fire(pixel.withError(error), frequency: .dailyAndCount)
                 }
             }
         }

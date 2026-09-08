@@ -120,8 +120,7 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
     }
 
     private func computeEligibility() -> Bool {
-        guard featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting),
-              featureFlagger.isFeatureOn(.cookiePopupOptInDialog) else { return false }
+        guard featureFlagger.isFeatureOn(.cookiePopupOptInDialog) else { return false }
         // Nothing to offer users already on the most-private setting — it already accepts no-opt-out cookies.
         guard cookiePopupProtectionPreferences.cookiePopupPreference != .max else { return false }
         guard store.shownCount < Self.maxShowCount else { return false }

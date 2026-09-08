@@ -143,13 +143,16 @@ extension PixelKit {
         var standardParameters: [PixelKitStandardParameter]? { get }
         var parameters: [String: String]? { get }
         var error: NSError? { get }
+        var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { get }
+        var namePrefix: PixelKitNamePrefix { get }
     }
 }
 ```
 
-An abridged example of an existing implementation is:
+`error`, `platformSuffixPolicy` and `namePrefix` all have defaults, so an implementation normally
+declares only `name`, `parameters` and `standardParameters`. See `PixelKit naming` below.
 
-The names in this existing implementation retain their legacy prefixes; for new cases, follow the feature-grouped convention above.
+An example implementation of this protocol is:
 
 ```swift
 // macOS/DuckDuckGo/Statistics/SubscriptionPixel.swift
@@ -298,12 +301,29 @@ Key fields:
 
 Prefer referencing shared suffix/parameter keys where possible to keep definitions consistent and validatable.
 
-Check the applicable PixelKit configuration and implementation for default values.
+### PixelKit naming
+
+A pixel name is built as `namePrefix` + `name` + frequency suffix + platform marker. The prefix and
+the marker are declared on the event (`PixelKit.Event.namePrefix` and `platformSuffixPolicy`); the
+frequency suffix comes from the `Frequency` passed to `fire`. `PixelKit.Options` cannot change a
+name.
+
+Both event properties default to what a new pixel wants: `.platformDefault` (`m_mac_` on macOS,
+nothing on iOS) and `.standard` (`..._count_ios_phone` on iOS, nothing on macOS). Declare the pixel
+as `"suffixes": ["first_daily_count", "platform", "form_factor"]` and write no naming code.
+
+Use `.none` when `name` is already complete. Never use a `legacy` case of
+`PixelKitPlatformSuffixPolicy` on a new pixel.
+
+Full reference, including exceptions and throttling keys:
+`SharedPackages/PixelKit/Sources/PixelKit/README.md`.
+
+Pixels have some default values, please check the Pixel implementation in the respective platform to determine what those are.
 
 ## Related Files
 
-- `iOS/Core/Pixel.swift` - Legacy iOS pixel firing implementation
-- `iOS/Core/DailyPixel.swift` - Legacy daily pixel implementation
-- `iOS/Core/UniquePixel.swift` - Legacy unique pixel implementation
-- `iOS/Core/PixelEvent.swift` - Legacy iOS pixel event definitions
+- `iOS/Core/Pixel.swift` - iOS pixel firing implementation
+- `iOS/Core/DailyPixel.swift` - Daily pixel implementation
+- `iOS/Core/UniquePixel.swift` - Unique pixel implementation
+- `iOS/Core/PixelEvent.swift` - iOS pixel event definitions
 - `SharedPackages/PixelKit/Sources/PixelKit/` - Shared PixelKit implementation

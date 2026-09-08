@@ -29,6 +29,7 @@ import SecureStorage
 import SyncDataProviders
 import os.log
 import Core
+import PixelKit
 
 public final class SyncCreditCardsAdapter {
 
@@ -104,7 +105,7 @@ public final class SyncCreditCardsAdapter {
         } catch let error as NSError {
             let processedErrors = CoreDataErrorsParser.parse(error: error)
             let params = processedErrors.errorPixelParameters
-            Pixel.fire(pixel: .syncCreditCardsProviderInitializationFailed, error: error, withAdditionalParameters: params)
+            PixelKit.fire(Pixel.Event.syncCreditCardsProviderInitializationFailed.withError(error), options: .parameters(params))
        }
     }
 

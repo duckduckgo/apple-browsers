@@ -22,6 +22,9 @@ import Foundation
 
 /// Implementation of ``PixelKit.Event`` with specific logic for debug events.
 public final class DebugEvent: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     public enum EventType {
         case assertionFailure(message: String, file: StaticString, line: UInt)
         case custom(_ event: PixelKit.Event)
@@ -83,13 +86,7 @@ public final class DebugEvent: PixelKit.Event {
                 params[PixelKit.Parameters.underlyingErrorDomain] = underlyingError.domain
             }
 
-            if let sqlErrorCode = nsError.userInfo["SQLiteResultCode"] as? NSNumber {
-                params[PixelKit.Parameters.underlyingErrorSQLiteCode] = "\(sqlErrorCode.intValue)"
-            }
-
-            if let sqlExtendedErrorCode = nsError.userInfo["SQLiteExtendedResultCode"] as? NSNumber {
-                params[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode] = "\(sqlExtendedErrorCode.intValue)"
-            }
+            params.merge(nsError.sqliteResultCodeParameters) { _, new in new }
         }
 
         return params

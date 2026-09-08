@@ -26,7 +26,7 @@ class MaliciousSiteProtectionUITests: UITestCase {
     private var localization: SpecialErrorPageLocalization!
 
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
         app = XCUIApplication.setUp()
         webView = app.webViews.firstMatch
         localization = try SpecialErrorPageLocalization.load(for: app)

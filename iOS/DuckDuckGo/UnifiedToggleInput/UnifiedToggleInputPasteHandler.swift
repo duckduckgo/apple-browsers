@@ -49,10 +49,18 @@ enum AttachmentPasteRouting {
 }
 
 /// Why a pasted file couldn't be attached, carried from the loader so the error is reported for the actual reason (not recomputed against later state).
-enum PasteRejectionReason: Equatable {
+enum PasteFileRejectionReason: Equatable {
     case fileTooLarge
     case filesExceedTotalSize
     case fileCountLimit
+}
+
+/// Why pasted images couldn't all be attached, so the rejection is reported with the limit that was actually hit.
+enum PasteImageRejectionReason: Equatable {
+    /// The conversation's image capacity was already full, so a pasted image was refused.
+    case capacityReached
+    /// The paste held more images than the allowance, so the extras were dropped without decoding.
+    case allowanceTruncated
 }
 
 /// What the current model accepts plus the remaining headroom, snapshotted once per paste so the loader can preflight sizes/counts.
@@ -102,7 +110,9 @@ protocol UnifiedToggleInputPasteDelegate: AnyObject {
     @discardableResult func addPastedImage(_ image: UIImage, fileName: String) -> Bool
     func addPastedFile(_ file: AIChatFileAttachment)
     /// Reports a file rejected during load (over size/count/total) with an error for the given reason; never adds an attachment.
-    func reportRejectedPaste(reason: PasteRejectionReason)
+    func reportRejectedPastedFiles(reason: PasteFileRejectionReason)
+    /// Reports pasted images that couldn't be attached, for the limit that was actually hit.
+    func reportRejectedPastedImages(reason: PasteImageRejectionReason)
     func presentPasteError(_ message: String)
 }
 
@@ -112,9 +122,15 @@ final class UnifiedToggleInputPasteHandler: AttachmentPasteHandling {
 
     weak var delegate: UnifiedToggleInputPasteDelegate?
 
+    private let attachmentProbe: PasteboardAttachmentProbe
+
+    init(attachmentProbe: PasteboardAttachmentProbe = PasteboardAttachmentProbe()) {
+        self.attachmentProbe = attachmentProbe
+    }
+
     func canPasteAttachments(from pasteboard: UIPasteboard) -> Bool {
         guard let support = delegate?.pasteAttachmentSupport, support.isEnabled, support.acceptsAnyAttachment else { return false }
-        return PasteboardAttachmentReader.hasSupportedAttachments(
+        return attachmentProbe.hasSupportedAttachments(
             in: pasteboard,
             allowsImages: support.acceptsImages,
             allowedFileTypes: support.fileTypes
@@ -125,6 +141,7 @@ final class UnifiedToggleInputPasteHandler: AttachmentPasteHandling {
         guard let delegate else { return }
         let support = delegate.pasteAttachmentSupport
         guard support.isEnabled, support.acceptsAnyAttachment else { return }
+        // Read on the main thread: `NSItemProvider` isn't `Sendable`, and this runs once per user-initiated paste rather than per menu build.
         let providers = pasteboard.itemProviders
         let context = delegate.pasteContextIdentity
         delegate.pasteWillBeginExpandingIfNeeded()
@@ -153,7 +170,7 @@ final class UnifiedToggleInputPasteHandler: AttachmentPasteHandling {
         }
 
         if let rejection = result.rejection {
-            delegate.reportRejectedPaste(reason: rejection)
+            delegate.reportRejectedPastedFiles(reason: rejection)
         }
 
         var didExceedImageLimit = false
@@ -164,9 +181,53 @@ final class UnifiedToggleInputPasteHandler: AttachmentPasteHandling {
             }
         }
 
-        if didExceedImageLimit || result.imagesTruncated, let message = delegate.imageCapacityMessage() {
-            delegate.presentPasteError(message)
+        if didExceedImageLimit || result.imagesTruncated {
+            // Nothing attachable at all — a zero allowance truncates before the first decode, so no add is ever refused.
+            let capacityWasFull = didExceedImageLimit || result.images.isEmpty
+            delegate.reportRejectedPastedImages(reason: capacityWasFull ? .capacityReached : .allowanceTruncated)
+            if let message = delegate.imageCapacityMessage() {
+                delegate.presentPasteError(message)
+            }
         }
+    }
+}
+
+/// Answers the edit-menu "can attachments be pasted?" question, memoised per pasteboard `changeCount`.
+/// Repeat menu builds never re-read `itemProviders` — a cross-process read that becomes a network fetch for a Universal Clipboard promise.
+@MainActor
+final class PasteboardAttachmentProbe {
+
+    /// The underlying metadata-only read; injectable so the memoisation can be exercised without a real clipboard.
+    typealias Read = @MainActor (_ pasteboard: UIPasteboard, _ allowsImages: Bool, _ allowedFileTypes: [UTType]) -> Bool
+
+    private struct Query: Equatable {
+        let changeCount: Int
+        let pasteboardName: UIPasteboard.Name
+        let allowsImages: Bool
+        let allowedFileTypes: [UTType]
+    }
+
+    private let read: Read
+    private var lastQuery: Query?
+    private var lastAnswer = false
+
+    nonisolated init(read: @escaping Read = PasteboardAttachmentReader.hasSupportedAttachments) {
+        self.read = read
+    }
+
+    func hasSupportedAttachments(in pasteboard: UIPasteboard, allowsImages: Bool, allowedFileTypes: [UTType]) -> Bool {
+        let query = Query(
+            changeCount: pasteboard.changeCount,
+            pasteboardName: pasteboard.name,
+            allowsImages: allowsImages,
+            allowedFileTypes: allowedFileTypes
+        )
+        guard query != lastQuery else { return lastAnswer }
+
+        let answer = read(pasteboard, allowsImages, allowedFileTypes)
+        lastQuery = query
+        lastAnswer = answer
+        return answer
     }
 }
 
@@ -178,14 +239,14 @@ enum PasteboardAttachmentReader {
         var images: [(image: UIImage, fileName: String)] = []
         var files: [AIChatFileAttachment] = []
         /// The reason the first over-budget file was rejected; capped at one so an exhausted capacity can't flood the strip.
-        var rejection: PasteRejectionReason?
+        var rejection: PasteFileRejectionReason?
         /// More image providers were present than the allowance, so some were dropped without decoding.
         var imagesTruncated = false
     }
 
     private enum LoadedFile {
         case read(AIChatFileAttachment)
-        case rejected(PasteRejectionReason)
+        case rejected(PasteFileRejectionReason)
     }
 
     /// Metadata-only probe (no byte reads, so no paste banner) that mirrors `loadAttachments`' per-provider classification, so a "yes" here means the loader will actually find something.
@@ -194,6 +255,8 @@ enum PasteboardAttachmentReader {
         allowsImages: Bool,
         allowedFileTypes: [UTType]
     ) -> Bool {
+        guard mayContainSupportedAttachments(in: pasteboard, allowsImages: allowsImages, allowedFileTypes: allowedFileTypes) else { return false }
+
         let fileIdentifiers = allowedFileTypes.map(\.identifier)
         return pasteboard.itemProviders.contains { provider in
             if allowsImages, provider.canLoadObject(ofClass: UIImage.self) {
@@ -201,6 +264,25 @@ enum PasteboardAttachmentReader {
             }
             return fileIdentifiers.contains { provider.hasItemConformingToTypeIdentifier($0) }
         }
+    }
+
+    /// The identifiers `canLoadObject(ofClass: UIImage.self)` accepts, so the gate can't reject an image the loader would take.
+    private static let loadableImageTypeIdentifiers = UIImage.readableTypeIdentifiersForItemProvider
+
+    /// Type-metadata gate run before `itemProviders` materialises every provider. Rejects only.
+    private static func mayContainSupportedAttachments(
+        in pasteboard: UIPasteboard,
+        allowsImages: Bool,
+        allowedFileTypes: [UTType]
+    ) -> Bool {
+        guard !allowedFileTypes.isEmpty else { return allowsImages && mayHoldLoadableImage(in: pasteboard) }
+        return pasteboard.numberOfItems > 0
+    }
+
+    /// Not `hasImages` (misses HEIC/WebP) and not `contains(pasteboardTypes:)` (inspects only the first item).
+    private static func mayHoldLoadableImage(in pasteboard: UIPasteboard) -> Bool {
+        guard let matches = pasteboard.itemSet(withPasteboardTypes: loadableImageTypeIdentifiers) else { return false }
+        return !matches.isEmpty
     }
 
     /// Reads the pasteboard bytes (surfaces the banner) and builds attachments. Images stop decoding at the allowance and files are
@@ -261,7 +343,7 @@ enum PasteboardAttachmentReader {
         return result
     }
 
-    private static func recordRejection(_ reason: PasteRejectionReason, in result: inout Result) {
+    private static func recordRejection(_ reason: PasteFileRejectionReason, in result: inout Result) {
         if result.rejection == nil {
             result.rejection = reason
         }

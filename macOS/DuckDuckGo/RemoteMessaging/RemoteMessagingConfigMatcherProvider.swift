@@ -163,14 +163,16 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                     statisticsStore: statisticsStore,
                     vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
                     subscriptionDataProvider: subscription,
-                    autofillUsageStore: autofillUsageStore
+                    autofillUsageStore: autofillUsageStore,
+                    featureDiscovery: featureDiscovery
                 )
             } else {
                 surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
                     statisticsStore: statisticsStore,
                     vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
                     subscriptionDataProvider: nil,
-                    autofillUsageStore: autofillUsageStore
+                    autofillUsageStore: autofillUsageStore,
+                    featureDiscovery: featureDiscovery
                 )
             }
         } catch {
@@ -178,7 +180,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                 statisticsStore: statisticsStore,
                 vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
                 subscriptionDataProvider: nil,
-                autofillUsageStore: autofillUsageStore
+                autofillUsageStore: autofillUsageStore,
+                featureDiscovery: featureDiscovery
             )
         }
 

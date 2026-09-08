@@ -30,6 +30,7 @@ import DDGSync
 import os.log
 import DataBrokerProtection_iOS
 import VPN
+import PixelKit
 
 struct VPNEntryPoint {
     let screenSource: VPNConnectionWideEventData.ScreenSource
@@ -375,9 +376,7 @@ extension MainViewController {
     func segueToSettingsCookiePopupManagement() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.openCookiePopupManagement()
-        }
+        launchSettings(deepLinkTarget: .cookiePopupProtection)
     }
 
     func segueToSettingsAutofillWith(account: SecureVaultModels.WebsiteAccount?,
@@ -558,7 +557,7 @@ extension MainViewController {
                 self?.loadUrlInNewTab(.duckAiSettings, inheritedAttribution: nil)
             }
         }
-        Pixel.fire(pixel: .settingsPresented)
+        PixelKit.fire(Pixel.Event.settingsPresented)
 
         func doLaunch() {
             if let navigationController = self.presentedViewController as? UINavigationController,
@@ -595,13 +594,7 @@ extension MainViewController {
             }
         }
 
-        if let controller = self.presentedViewController as? OmniBarEditingStateViewController {
-            controller.dismissAnimated {
-                doLaunch()
-            }
-        } else {
-            doLaunch()
-        }
+        doLaunch()
     }
 
     private func launchDebugSettings(completion: ((DebugScreensViewController) -> Void)? = nil) {

@@ -999,4 +999,80 @@ extension URLExtensionTests {
         #expect(URL.duckDuckGo.isEmailProtection == false)
         #expect(URL.aboutDuckDuckGo.isEmailProtection == false)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A directory contains itself and its descendants only", .timeLimit(.minutes(1)))
+    func directoryContainmentDetectionWorksCorrectly() {
+        let chrome = URL(fileURLWithPath: "/Users/user/Library/Application Support/Google/Chrome", isDirectory: true)
+
+        // the directory itself and its ancestors grant access to it
+        #expect(chrome.isContained(in: chrome) == true)
+        #expect(chrome.isContained(in: URL(fileURLWithPath: "/Users/user/Library/Application Support/Google/Chrome/", isDirectory: true)) == true)
+        #expect(chrome.isContained(in: URL(fileURLWithPath: "/Users/user/Library/Application Support/Google", isDirectory: true)) == true)
+        #expect(chrome.isContained(in: URL(fileURLWithPath: "/", isDirectory: true)) == true)
+
+        // children, siblings and unrelated directories don't
+        #expect(chrome.isContained(in: URL(fileURLWithPath: "/Users/user/Library/Application Support/Google/Chrome/Default", isDirectory: true)) == false)
+        #expect(chrome.isContained(in: URL(fileURLWithPath: "/Users/user/Library/Application Support/Google/Chrome Beta", isDirectory: true)) == false)
+        #expect(chrome.isContained(in: URL(fileURLWithPath: "/Users/user/Downloads", isDirectory: true)) == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Directory containment detection resolves symlinked paths", .timeLimit(.minutes(1)))
+    func directoryContainmentDetectionResolvesSymlinkedPaths() {
+        let temporaryDirectory = URL(fileURLWithPath: "/tmp", isDirectory: true)
+        let resolvedTemporaryDirectory = URL(fileURLWithPath: "/private/tmp", isDirectory: true)
+
+        #expect(temporaryDirectory.isContained(in: resolvedTemporaryDirectory) == true)
+        #expect(resolvedTemporaryDirectory.isContained(in: temporaryDirectory) == true)
+        #expect(temporaryDirectory.appendingPathComponent("file").isContained(in: resolvedTemporaryDirectory) == true)
+    }
+
+    // MARK: - isSystemDownloadsDirectory
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The system Downloads folder is recognised", .timeLimit(.minutes(1)))
+    func thatSystemDownloadsDirectoryIsRecognised() throws {
+        let downloads = try #require(FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first)
+
+        #expect(downloads.isSystemDownloadsDirectory)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The system Downloads folder is recognised without a trailing slash", .timeLimit(.minutes(1)))
+    func thatSystemDownloadsDirectoryIsRecognisedWithoutTrailingSlash() throws {
+        let downloads = try #require(FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first)
+        // NSOpenPanel and URL(fileURLWithPath:) can both yield a slash-less directory URL
+        let withoutTrailingSlash = URL(fileURLWithPath: downloads.path, isDirectory: false)
+
+        #expect(withoutTrailingSlash.isSystemDownloadsDirectory)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A symlink to the Downloads folder is recognised", .timeLimit(.minutes(1)))
+    func thatSymlinkToSystemDownloadsDirectoryIsRecognised() throws {
+        let downloads = try #require(FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first)
+        let link = FileManager.default.temporaryDirectory
+            .appendingPathComponent("downloads-link-\(UUID().uuidString)")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: downloads)
+        defer { try? FileManager.default.removeItem(at: link) }
+
+        #expect(link.isSystemDownloadsDirectory)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A folder inside Downloads is not the Downloads folder itself", .timeLimit(.minutes(1)))
+    func thatSubfolderOfSystemDownloadsDirectoryIsNotRecognised() throws {
+        let downloads = try #require(FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first)
+
+        #expect(downloads.appendingPathComponent("Subfolder").isSystemDownloadsDirectory == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Unrelated folders are not the Downloads folder", .timeLimit(.minutes(1)))
+    func thatUnrelatedDirectoriesAreNotRecognised() {
+        #expect(FileManager.default.temporaryDirectory.isSystemDownloadsDirectory == false)
+        #expect(FileManager.default.homeDirectoryForCurrentUser.isSystemDownloadsDirectory == false)
+        #expect(URL(fileURLWithPath: "/Users/someone-else/Downloads", isDirectory: true).isSystemDownloadsDirectory == false)
+    }
 }

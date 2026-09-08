@@ -18,7 +18,9 @@
 //
 
 import AIChat
+import BrowserServicesKitTestsUtils
 import Core
+import Persistence
 @_spi(Testing) import PixelKit
 import XCTest
 @testable import DuckDuckGo
@@ -30,20 +32,16 @@ final class UTIPixelReporterTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        PixelFiringMock.tearDown()
         pixelKitMock = PixelKitMock()
     }
 
     override func tearDown() {
-        PixelFiringMock.tearDown()
         pixelKitMock = nil
         super.tearDown()
     }
 
     private func makeReporter(context: @escaping () -> UTIPixelContext?) -> UTIPixelReporter {
-        UTIPixelReporter(firing: UTIPixelFiring(pixel: PixelFiringMock.self,
-                                                daily: PixelFiringMock.self,
-                                                pixelKit: { [unowned self] in pixelKitMock }),
+        UTIPixelReporter(firing: UTIPixelFiring(pixelKit: { [unowned self] in pixelKitMock }),
                          context: context)
     }
 
@@ -68,13 +66,14 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportOmnibarInputSurfaceShown()
 
-        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 2)
-        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.name, "m_aichat_experimental_omnibar_shown_daily")
-        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.frequency, .legacyDailyNoSuffix)
-        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, "m_aichat_experimental_omnibar_shown_count")
-        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.frequency, .standard)
-        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["toggle_visible": "true"])
-        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.parameters, ["toggle_visible": "true"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 3)
+        XCTAssertEqual(pixelKitMock.actualFireCalls[0].pixel.name, Pixel.Event.aiChatInternalSwitchBarDisplayed.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls[1].pixel.name, "m_aichat_experimental_omnibar_shown_daily")
+        XCTAssertEqual(pixelKitMock.actualFireCalls[1].frequency, .legacyDailyNoSuffix)
+        XCTAssertEqual(pixelKitMock.actualFireCalls[2].pixel.name, "m_aichat_experimental_omnibar_shown_count")
+        XCTAssertEqual(pixelKitMock.actualFireCalls[2].frequency, .standard)
+        XCTAssertEqual(pixelKitMock.actualFireCalls[1].pixel.parameters, ["toggle_visible": "true"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls[2].pixel.parameters, ["toggle_visible": "true"])
     }
 
     func testWhenOmnibarSurfaceShownWithToggleHiddenThenPixelReportsToggleVisibleFalse() {
@@ -82,7 +81,7 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportOmnibarInputSurfaceShown()
 
-        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["toggle_visible": "false"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls[1].pixel.parameters, ["toggle_visible": "false"])
     }
 
     // MARK: - Mode switch (non-trivial params, passed per call)
@@ -92,8 +91,8 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportModeSwitched(to: .aiChat, currentText: "hello", defaultOmnibarMode: .duckAI)
 
-        XCTAssertEqual(PixelFiringMock.lastPixelInfo?.pixelName, Pixel.Event.aiChatExperimentalOmnibarModeSwitched.name)
-        XCTAssertEqual(PixelFiringMock.lastPixelInfo?.params, [
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.aiChatExperimentalOmnibarModeSwitched.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [
             "direction": "to_duckai",
             "had_text": "true",
             "default_position": "duckAI"
@@ -105,11 +104,28 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportModeSwitched(to: .search, currentText: "   ", defaultOmnibarMode: .search)
 
-        XCTAssertEqual(PixelFiringMock.lastPixelInfo?.params, [
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [
             "direction": "to_search",
             "had_text": "false",
             "default_position": "search"
         ])
+    }
+
+    // MARK: - Prompt origin
+
+    func testCurrentPromptOriginMatchesTheSurfaceTheSubmissionPixelsReport() {
+        XCTAssertEqual(makeReporter { self.context(surface: .addressBar) }.currentPromptOrigin(), .addressBarPrompt)
+        XCTAssertEqual(makeReporter { self.context(surface: .contextualChat) }.currentPromptOrigin(), .contextualChat)
+        XCTAssertEqual(makeReporter { self.context(surface: .duckAI, duckAIEntrySource: .tabSwitcher) }.currentPromptOrigin(),
+                       .tabSwitcher)
+    }
+
+    func testCurrentPromptOriginIsNilOnADuckAISurfaceWithNoRecordedEntry() {
+        XCTAssertNil(makeReporter { self.context(surface: .duckAI, duckAIEntrySource: nil) }.currentPromptOrigin())
+    }
+
+    func testCurrentPromptOriginIsNilWhenTheCoordinatorIsGone() {
+        XCTAssertNil(makeReporter { nil }.currentPromptOrigin())
     }
 
     // MARK: - Prompt submission (daily, non-trivial params)
@@ -122,10 +138,11 @@ final class UTIPixelReporterTests: XCTestCase {
                                        attachments: [],
                                        reasoningMode: nil,
                                        modelId: "gpt-x",
-                                       defaultOmnibarMode: .search)
+                                       defaultOmnibarMode: .search,
+                                       isFirstPromptNewInstall: false)
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputPromptSubmitted.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputPromptSubmitted.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [
             "selected_tool": "none",
             "model_id": "gpt-x",
             "reasoning_effort": "none",
@@ -139,6 +156,20 @@ final class UTIPixelReporterTests: XCTestCase {
         ])
     }
 
+    func testWhenFirstPromptOnNewInstallSubmittedThenParamIsTrue() {
+        let reporter = makeReporter { self.context(surface: .addressBar, pageType: .ntp) }
+
+        reporter.reportPromptSubmitted(hasText: true,
+                                       selectedTool: nil,
+                                       attachments: [],
+                                       reasoningMode: nil,
+                                       modelId: nil,
+                                       defaultOmnibarMode: .search,
+                                       isFirstPromptNewInstall: true)
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["first_prompt_new_install"], "true")
+    }
+
     func testWhenPromptSubmittedFromAddressBarThenOriginIsAddressBarPrompt() {
         let reporter = makeReporter { self.context(surface: .addressBar, pageType: .serp) }
 
@@ -147,10 +178,11 @@ final class UTIPixelReporterTests: XCTestCase {
                                        attachments: [],
                                        reasoningMode: nil,
                                        modelId: nil,
-                                       defaultOmnibarMode: .lastUsed)
+                                       defaultOmnibarMode: .lastUsed,
+                                       isFirstPromptNewInstall: false)
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["origin"], "address_bar_prompt")
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["page_type"], "serp")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["origin"], "address_bar_prompt")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["page_type"], "serp")
     }
 
     func testWhenPromptSubmittedOnDuckAITabWithUnknownEntryThenOriginIsAbsent() {
@@ -161,9 +193,10 @@ final class UTIPixelReporterTests: XCTestCase {
                                        attachments: [],
                                        reasoningMode: nil,
                                        modelId: nil,
-                                       defaultOmnibarMode: .lastUsed)
+                                       defaultOmnibarMode: .lastUsed,
+                                       isFirstPromptNewInstall: false)
 
-        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo?.params?["origin"])
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters?["origin"])
     }
 
     // MARK: - Query submission
@@ -173,8 +206,8 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportQuerySubmitted(defaultOmnibarMode: .duckAI)
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputQuerySubmitted.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputQuerySubmitted.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [
             "surface": "address_bar",
             "page_type": "serp",
             "toggle_visible": "true",
@@ -187,22 +220,23 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportQuerySubmitted(defaultOmnibarMode: .search)
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["toggle_visible"], "false")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["toggle_visible"], "false")
     }
 
     func testQueryAndPromptSubmittedShareTheKeysTheMixIsCutBy() {
         let reporter = makeReporter { self.context(surface: .addressBar, isToggleVisible: true, pageType: .ntp) }
 
         reporter.reportQuerySubmitted(defaultOmnibarMode: .search)
-        let queryParams = PixelFiringMock.lastDailyPixelInfo?.params ?? [:]
+        let queryParams = pixelKitMock.actualFireCalls.last?.additionalParameters ?? [:]
 
         reporter.reportPromptSubmitted(hasText: true,
                                        selectedTool: nil,
                                        attachments: [],
                                        reasoningMode: nil,
                                        modelId: nil,
-                                       defaultOmnibarMode: .search)
-        let promptParams = PixelFiringMock.lastDailyPixelInfo?.params ?? [:]
+                                       defaultOmnibarMode: .search,
+                                       isFirstPromptNewInstall: false)
+        let promptParams = pixelKitMock.actualFireCalls.last?.additionalParameters ?? [:]
 
         for key in ["surface", "page_type", "default_mode"] {
             XCTAssertEqual(queryParams[key], promptParams[key], "\(key) must match across the two submission pixels")
@@ -216,8 +250,8 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportModelSelected(modelId: "m1")
 
-        XCTAssertEqual(PixelFiringMock.lastPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputModelSelected.name)
-        XCTAssertEqual(PixelFiringMock.lastPixelInfo?.params, ["model_id": "m1", "surface": "duck_ai"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputModelSelected.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["model_id": "m1", "surface": "duck_ai"])
     }
 
     // MARK: - Daily pixel with surface from context
@@ -227,8 +261,8 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportFileAttached(source: "file_picker")
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputFileAttached.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["surface": "address_bar", "source": "file_picker"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputFileAttached.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["surface": "address_bar", "source": "file_picker"])
     }
 
     func testReportImageAttachedFiresDailyWithResolvedSurface() {
@@ -236,8 +270,8 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportImageAttached(source: "paste")
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputImageAttached.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["surface": "address_bar", "source": "paste"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputImageAttached.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["surface": "address_bar", "source": "paste"])
     }
 
     func testReportFileValidationFailedWithRawReasonFiresDaily() {
@@ -245,8 +279,8 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportFileValidationFailed(reason: "size_exceeded", source: "paste")
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputFileValidationFailed.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputFileValidationFailed.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [
             "reason": "size_exceeded",
             "surface": "duck_ai",
             "source": "paste"
@@ -260,8 +294,8 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportVoiceTapped(hasPendingPageContext: true)
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputVoiceTapped.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputVoiceTapped.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [
             "source": "contextual_chat",
             "has_pending_page_context": "true"
         ])
@@ -271,13 +305,12 @@ final class UTIPixelReporterTests: XCTestCase {
 
     func testReportModelPickerShownOriginDependsOnAttributionState() {
         makeReporter { self.context(isDuckAISurfaceForAttribution: true) }.reportModelPickerShown()
-        let duckAIOrigin = PixelFiringMock.lastPixelInfo?.params
-        PixelFiringMock.tearDown()
+        let duckAIOrigin = pixelKitMock.actualFireCalls.last?.additionalParameters
 
         makeReporter { self.context(isDuckAISurfaceForAttribution: false) }.reportModelPickerShown()
-        let addressBarOrigin = PixelFiringMock.lastPixelInfo?.params
+        let addressBarOrigin = pixelKitMock.actualFireCalls.last?.additionalParameters
 
-        XCTAssertEqual(PixelFiringMock.lastPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputModelPickerShown.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputModelPickerShown.name)
         XCTAssertNotNil(duckAIOrigin)
         XCTAssertNotNil(addressBarOrigin)
         XCTAssertNotEqual(duckAIOrigin, addressBarOrigin)
@@ -291,7 +324,65 @@ final class UTIPixelReporterTests: XCTestCase {
         reporter.reportModelSelected(modelId: "m1")
         reporter.reportFileAttached(source: "file_picker")
 
-        XCTAssertNil(PixelFiringMock.lastPixelInfo)
-        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
     }
+}
+
+final class DuckAIFirstPromptNewInstallCohortTests: XCTestCase {
+
+    private var featureDiscovery: MockFeatureDiscovery!
+    private var statisticsStore: MockStatisticsStore!
+    private var marker: MockKeyValueStore!
+
+    override func setUp() {
+        super.setUp()
+        featureDiscovery = MockFeatureDiscovery()
+        statisticsStore = MockStatisticsStore()
+        marker = MockKeyValueStore()
+    }
+
+    override func tearDown() {
+        featureDiscovery = nil
+        statisticsStore = nil
+        marker = nil
+        super.tearDown()
+    }
+
+    private func assignCohort() {
+        DuckAIFirstPromptNewInstallCohort.assignIfNeeded(statisticsStore: statisticsStore,
+                                                         featureDiscovery: featureDiscovery,
+                                                         marker: marker)
+    }
+
+    func testWhenInstallHasStatisticsThenExistingInstallIsMarkedAsPrompted() {
+        statisticsStore.atb = "v456-7"
+
+        assignCohort()
+
+        XCTAssertTrue(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+
+    func testWhenBrandNewInstallThenFlagStaysUnset() {
+        assignCohort()
+
+        XCTAssertFalse(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+
+    /// A new install's second launch has install statistics; only the marker keeps it in the cohort.
+    func testWhenCohortAlreadyAssignedThenLaterLaunchesWithStatisticsDoNotMark() {
+        assignCohort()
+        statisticsStore.atb = "v456-7"
+
+        assignCohort()
+
+        XCTAssertFalse(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+}
+
+private final class MockKeyValueStore: KeyValueStoring {
+    private var storage: [String: Any] = [:]
+
+    func object(forKey key: String) -> Any? { storage[key] }
+    func set(_ value: Any?, forKey key: String) { storage[key] = value }
+    func removeObject(forKey key: String) { storage.removeValue(forKey: key) }
 }

@@ -30,12 +30,18 @@ enum SpeechRecognizerError: Error {
 }
 
 final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
+    private static let speechRecognizerSerialOperationQueue: OperationQueue = {
+        let operationQueue = OperationQueue()
+        operationQueue.qualityOfService = .userInteractive
+        operationQueue.maxConcurrentOperationCount = 1
+        return operationQueue
+    }()
+
     weak var delegate: SpeechRecognizerDelegate?
     private var audioEngine: AVAudioEngine?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private let speechRecognizer: SFSpeechRecognizer?
-    private let operationQueue: OperationQueue
     
     private(set) var isAvailable = false {
         didSet {
@@ -44,15 +50,13 @@ final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
     }
     
     override init() {
-        operationQueue = OperationQueue()
-        operationQueue.qualityOfService = .userInteractive
 #if targetEnvironment(simulator)
         speechRecognizer = nil
 #else
         speechRecognizer = SFSpeechRecognizer()
 #endif
-        speechRecognizer?.queue = operationQueue
-        
+        speechRecognizer?.queue = SpeechRecognizer.speechRecognizerSerialOperationQueue
+
         super.init()
         
         speechRecognizer?.delegate = self
@@ -62,7 +66,7 @@ final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
     private func updateAvailabilityFlag() {
         // https://app.asana.com/0/0/1201701558793614/1201934552312834
         
-        operationQueue.addOperation { [weak self] in
+        SpeechRecognizer.speechRecognizerSerialOperationQueue.addOperation { [weak self] in
             guard let self = self else { return }
             self.isAvailable = self.supportsOnDeviceRecognition && (self.speechRecognizer?.isAvailable ?? false)
         }

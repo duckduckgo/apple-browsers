@@ -55,9 +55,9 @@ struct AddExcludedDomainView: ModalView {
         self.buttonsState = buttonsState
         self.cancelActionTitle = cancelActionTitle
         self.cancelAction = cancelAction
-        self.isDefaultActionDisabled = Self.isInvalidDomain(domain: domain)
         self.defaultActionTitle = defaultActionTitle
         self.defaultAction = defaultAction
+        self.isDefaultActionDisabled = Self.isInvalidDomain(domain: domain)
     }
 
     var body: some View {

@@ -21,6 +21,7 @@ import XCTest
 import AIChat
 import BrowserServicesKitTestsUtils
 import WebKit
+import WebExtensions
 
 @testable import Core
 @testable import DuckDuckGo
@@ -77,6 +78,39 @@ class TabTests: XCTestCase {
         XCTAssertNotNil(tab?.link)
         XCTAssertFalse(tab?.viewed ?? true)
         XCTAssertTrue(tab?.isDesktop ?? false)
+    }
+
+    /// The marker survives repeated reads so a provisional load replaced before it commits keeps the
+    /// restoration attribution; only a commit ends it.
+    func testDecodedTabKeepsPendingSessionRestorationUntilCleared() throws {
+        let freshTab = Tab(link: link())
+        XCTAssertFalse(freshTab.hasPendingSessionRestoration)
+
+        let data = try NSKeyedArchiver.archivedData(withRootObject: freshTab, requiringSecureCoding: false)
+        let restoredTab = try XCTUnwrap(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab)
+
+        XCTAssertTrue(restoredTab.hasPendingSessionRestoration)
+        XCTAssertTrue(restoredTab.hasPendingSessionRestoration)
+
+        restoredTab.clearPendingSessionRestoration()
+
+        XCTAssertFalse(restoredTab.hasPendingSessionRestoration)
+    }
+
+    @available(iOS 18.4, *)
+    func testCPMNavigationKindPrioritizesSessionRestorationOverBackForward() {
+        XCTAssertEqual(
+            TabViewController.cpmNavigationKind(isSessionRestoration: true, isBackForward: true),
+            .sessionRestoration
+        )
+        XCTAssertEqual(
+            TabViewController.cpmNavigationKind(isSessionRestoration: false, isBackForward: true),
+            .backForward
+        )
+        XCTAssertEqual(
+            TabViewController.cpmNavigationKind(isSessionRestoration: false, isBackForward: false),
+            .other
+        )
     }
 
     /// This test supports the migration scenario where desktop was not a property of tab
@@ -504,6 +538,24 @@ class TabTests: XCTestCase {
         XCTAssertNil(tab?.unifiedInputState.selectedTool)
     }
 
+    func testWhenTabEncodedBeforeDuckAIEntrySourceAddedThenDecodesWithNil() {
+        let tab = Tab(coder: CoderStub(properties: ["link": link(), "viewed": false]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.duckAIEntrySource)
+    }
+
+    func testWhenTabHasInvalidDuckAIEntrySourceRawValueThenDecodesAsNil() {
+        let tab = Tab(coder: CoderStub(properties: [
+            "link": link(),
+            "viewed": false,
+            "duckAIEntrySource": "not-a-real-source"
+        ]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.duckAIEntrySource)
+    }
+
     // MARK: - promptPageType
 
     func testWhenTabHasNoLinkThenPromptPageTypeIsNTP() {
@@ -613,6 +665,76 @@ final class TabViewControllerAIChatNewWindowDecisionTests: XCTestCase {
 
     private func aiChatURL() -> URL {
         URL(string: "https://duck.ai/chat?duckai=4")!
+    }
+}
+
+final class TabViewControllerInPageDuckAIEntryTests: XCTestCase {
+
+    private let homepage = URL(string: "https://duckduckgo.com/")!
+    private let duckAIChat = URL(string: "https://duck.ai/chat?ia=chat&origin=funnel_home_website&q=hello&prompt=1")!
+
+    func testWhenHomepageLinkTargetsDuckAIInMainFrameThenSourceIsHomepage() {
+        let source = TabViewController.inPageDuckAIEntrySource(currentURL: homepage,
+                                                               navigationAction: mainFrameNavigation(to: duckAIChat),
+                                                               pendingNativeLoadURL: nil)
+
+        XCTAssertEqual(source, .ddgHomepage)
+    }
+
+    func testWhenHomepageScriptOrFormNavigatesToDuckAIThenSourceIsHomepage() {
+        for navigationType in [WKNavigationType.other, .formSubmitted] {
+            let source = TabViewController.inPageDuckAIEntrySource(currentURL: homepage,
+                                                                   navigationAction: mainFrameNavigation(to: duckAIChat, type: navigationType),
+                                                                   pendingNativeLoadURL: nil)
+
+            XCTAssertEqual(source, .ddgHomepage, "\(navigationType.rawValue)")
+        }
+    }
+
+    func testWhenNavigationIsBackForwardOrReloadThenNoSource() {
+        for navigationType in [WKNavigationType.backForward, .reload] {
+            let source = TabViewController.inPageDuckAIEntrySource(currentURL: homepage,
+                                                                   navigationAction: mainFrameNavigation(to: duckAIChat, type: navigationType),
+                                                                   pendingNativeLoadURL: nil)
+
+            XCTAssertNil(source, "\(navigationType.rawValue)")
+        }
+    }
+
+    func testWhenNavigationIsTheTabsOwnLoadThenNoSource() {
+        let source = TabViewController.inPageDuckAIEntrySource(currentURL: homepage,
+                                                               navigationAction: mainFrameNavigation(to: duckAIChat, type: .other),
+                                                               pendingNativeLoadURL: duckAIChat)
+
+        XCTAssertNil(source)
+    }
+
+    func testWhenNavigationTargetsSubframeThenNoSource() {
+        let request = URLRequest(url: duckAIChat)
+        let subframe = WKFrameInfo.mock(isMainFrame: false, securityOriginHost: "duckduckgo.com", request: request)
+        let navigationAction = MockNavigationAction(request: request, navigationType: .linkActivated, targetFrame: subframe)
+
+        let source = TabViewController.inPageDuckAIEntrySource(currentURL: homepage,
+                                                               navigationAction: navigationAction,
+                                                               pendingNativeLoadURL: nil)
+
+        XCTAssertNil(source)
+    }
+
+    func testWhenCurrentPageIsNotHomepageThenNoSource() {
+        let serp = URL(string: "https://duckduckgo.com/?q=test&ia=web")!
+
+        let source = TabViewController.inPageDuckAIEntrySource(currentURL: serp,
+                                                               navigationAction: mainFrameNavigation(to: duckAIChat),
+                                                               pendingNativeLoadURL: nil)
+
+        XCTAssertNil(source)
+    }
+
+    private func mainFrameNavigation(to url: URL, type: WKNavigationType = .linkActivated) -> WKNavigationAction {
+        let request = URLRequest(url: url)
+        let mainFrame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "duckduckgo.com", request: request)
+        return MockNavigationAction(request: request, navigationType: type, targetFrame: mainFrame)
     }
 }
 

@@ -20,6 +20,7 @@ import AIChat
 import AIChatDebugServer
 import DebugServer
 import AppKit
+import os.log
 import Persistence
 
 final class AIChatDebugMenu: NSMenu {
@@ -54,8 +55,139 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
+            usageWarningsMenuItem
+
+            NSMenuItem.separator()
+
             storageServerMenuItem
         }
+    }
+
+    // MARK: - Duck.ai Usage Warnings
+
+    /// Seeds the same entry the web app writes, so the real read path drives the message.
+    private var usageWarningsMenuItem: NSMenuItem {
+        let item = NSMenuItem(title: "Duck.ai Usage Warnings")
+        let submenu = NSMenu()
+
+        submenu.addItem(sectionHeader("Free"))
+        addSeeds(DuckAiUsageSnapshotSeed.freeSeeds, to: submenu)
+        submenu.addItem(.separator())
+        submenu.addItem(sectionHeader("Paid"))
+        addSeeds(DuckAiUsageSnapshotSeed.paidSeeds, to: submenu)
+        submenu.addItem(.separator())
+
+        submenu.addItem(menuItem(title: "Clear usage snapshot", action: #selector(clearUsageSnapshot)))
+        submenu.addItem(menuItem(title: "Clear dismissals", action: #selector(clearUsageDismissals)))
+
+        item.submenu = submenu
+        return item
+    }
+
+    private func addSeeds(_ seeds: [DuckAiUsageSnapshotSeed], to menu: NSMenu) {
+        for seed in seeds {
+            let item = menuItem(title: seed.displayName, action: #selector(seedUsageSnapshot(_:)))
+            item.representedObject = seed.rawValue
+            item.toolTip = seed.expectation
+            menu.addItem(item)
+        }
+    }
+
+    private func sectionHeader(_ title: String) -> NSMenuItem {
+        let item = NSMenuItem(title: title)
+        item.isEnabled = false
+        return item
+    }
+
+    private func menuItem(title: String, action: Selector) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        item.target = self
+        return item
+    }
+
+    @objc private func seedUsageSnapshot(_ sender: NSMenuItem) {
+        guard let rawValue = sender.representedObject as? String,
+              let seed = DuckAiUsageSnapshotSeed(rawValue: rawValue) else { return }
+
+        writeUsageSnapshot(seed)
+    }
+
+    @objc private func clearUsageSnapshot() {
+        guard let handler = storageHandlerOrAlert() else { return }
+        try? handler.deleteEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue)
+    }
+
+    /// Brings back a message dismissed with its close button, and one whose CTA has been run.
+    @objc private func clearUsageDismissals() {
+        let store = DuckAiUsageWarningDismissalStore()
+        store.setDismissal(nil)
+        store.setActedSnapshot(nil)
+    }
+
+    private func writeUsageSnapshot(_ seed: DuckAiUsageSnapshotSeed) {
+        guard let handler = storageHandlerOrAlert() else { return }
+
+        guard NSApp.delegateTyped.featureFlagger.isFeatureOn(.aiChatUsageWarnings) else {
+            showAlert("The usage-warnings flag is off",
+                      "Turn on aiChatUsageWarnings in Debug → Feature Flags. The snapshot was not written.")
+            return
+        }
+
+        // From the live model list, so the switch CTAs offer something the picker can select.
+        Task { @MainActor in
+            let models = await accessibleModelIds()
+            let selectedModelId = NSApp.delegateTyped.aiChatPreferencesPersistor.selectedModelId
+            let targets = models.filter { $0 != selectedModelId }
+
+            do {
+                try handler.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue,
+                                     value: seed.entryValue(switchTargets: targets, selectedModelId: selectedModelId))
+            } catch {
+                showAlert("Failed to seed the usage snapshot", error.localizedDescription)
+                return
+            }
+
+            if targets.isEmpty {
+                showAlert("Seeded without model targets",
+                          "The models list could not be fetched, so any switch button will be hidden — "
+                          + "which is the \"already on the cheapest model\" case. Everything else in the "
+                          + "message renders normally.")
+            }
+        }
+    }
+
+    /// Resolved against the free tier: every account can select those, so a seeded switch never
+    /// offers a model the picker would refuse.
+    private func accessibleModelIds() async -> [String] {
+        do {
+            let service = AIChatModelsService(accessTokenProvider: NSApp.delegateTyped.subscriptionManager)
+            let response = try await service.fetchModels()
+            return response.models
+                .map { AIChatModel(remoteModel: $0, userTier: .free) }
+                .filter(\.entityHasAccess)
+                .map(\.id)
+        } catch {
+            Logger.aiChat.error("Usage-warning seed: models fetch failed: \(error.localizedDescription, privacy: .public)")
+            return []
+        }
+    }
+
+    /// Same alert as the storage server, the other item needing the bridge.
+    private func storageHandlerOrAlert() -> DuckAiNativeStorageHandling? {
+        guard let handler = NSApp.delegateTyped.duckAiNativeStorageHandler else {
+            showAlert("Native storage is not available",
+                      "The duckAiNativeStorage feature flag may be disabled.")
+            return nil
+        }
+        return handler
+    }
+
+    private func showAlert(_ messageText: String, _ informativeText: String) {
+        let alert = NSAlert()
+        alert.messageText = messageText
+        alert.informativeText = informativeText
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     required init(coder: NSCoder) {

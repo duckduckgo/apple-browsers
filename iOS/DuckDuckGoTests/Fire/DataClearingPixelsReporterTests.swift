@@ -243,10 +243,11 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         XCTAssertEqual(pixel.parameters, ["dur": "2.0", "tc": "4"])
     }
 
-    /// The conformance exists only so PixelKit appends the `_ios_phone` / `_ios_tablet` suffix these
-    /// four have always sent; the names already carry their own `m_` prefix.
+    /// The names already carry their own `m_` prefix, so the custom-prefix conformance exists only
+    /// to suppress the default one. The `_ios_phone` / `_ios_tablet` marker comes from
+    /// `platformSuffixPolicy`, not from this conformance.
     func testCompletionPixelsAddNoNamePrefix() {
-        XCTAssertEqual(DataClearingCompletionPixels.allDataCleared(duration: 0, tabCount: 0).namePrefix, "")
+        XCTAssertEqual(DataClearingCompletionPixels.allDataCleared(duration: 0, tabCount: 0).namePrefix, .none)
     }
 
     /// Unlike `DataClearingPixels`, these four do not declare `pixelSource` in `forget_all.json5`.

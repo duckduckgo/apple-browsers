@@ -7,9 +7,10 @@ name: test_contextual_immediate_uti_manual_context_clears_after_navigation
 
 ---
 
-# With immediate contextual UTI on and automatic attachment off, manual page context
-# survives same-page sheet reopen, but a pre-submit manual attachment is cleared when
-# the sheet is reopened after navigating to another page.
+# With automatic attachment off, page context on the floating input is only ever there because it was
+# asked for: entry through the menu's Ask About Page attaches it, removing the chip clears it, and the
+# attachment menu puts it back. Navigating to another page and reopening shows the new page, never
+# the previous one.
 
 - launchApp:
     appId: "com.duckduckgo.mobile.ios"
@@ -19,7 +20,6 @@ name: test_contextual_immediate_uti_manual_context_clears_after_navigation
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        ff.unifiedToggleInput: "true"
         ff.contextualDuckAIMode: "true"
         ff.aiChatContextualUnifiedToggleInput: "true"
         ff.aiChatAutoAttachContextByDefault: "false"
@@ -33,34 +33,35 @@ name: test_contextual_immediate_uti_manual_context_clears_after_navigation
 - pressKey: Enter
 - assertVisible: ".*Privacy Test Pages.*"
 
-- tapOn:
-    id: "Browser.OmniBar.Button.AIChat"
-- assertVisible:
+- runFlow:
+    file: ../shared/open_contextual_duckai_from_address_bar.yaml
+
+- assertNotVisible:
     id: "AIChat.ContextualSheet"
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 10000
+
+# Removing the chip clears the context, and the attachment menu re-attaches the same page.
+- tapOn:
+    id: "AIChat.ContextChip.RemoveButton"
 - assertNotVisible:
     id: "AIChat.ContextChip.AttachedTitle"
+- assertNotVisible:
+    id: "AIChat.ContextChip.Placeholder"
 
 - tapOn: "Attach"
+- assertVisible: "Ask About Page"
 - tapOn: "Ask About Page"
 - extendedWaitUntil:
     visible:
         id: "AIChat.ContextChip.AttachedTitle"
     timeout: 10000
 
-- tapOn:
-    id: "AIChat.ContextualSheet.CloseButton"
-- waitForAnimationToEnd:
-    timeout: 3000
-
+# Tapping the Duck.ai button again dismisses the surface; with no prompt submitted no chat remains.
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"
-- assertVisible:
-    id: "AIChat.ContextualSheet"
-- assertVisible:
-    id: "AIChat.ContextChip.AttachedTitle"
-
-- tapOn:
-    id: "AIChat.ContextualSheet.CloseButton"
 - waitForAnimationToEnd:
     timeout: 3000
 
@@ -70,17 +71,12 @@ name: test_contextual_immediate_uti_manual_context_clears_after_navigation
 - pressKey: Enter
 - assertVisible: ".*Address Bar Spoofing.*"
 
-- tapOn:
-    id: "Browser.OmniBar.Button.AIChat"
-- assertVisible:
-    id: "AIChat.ContextualSheet"
-- assertNotVisible:
-    id: "AIChat.ContextChip.AttachedTitle"
-
-- tapOn: "Attach"
-- assertVisible: "Ask About Page"
-- tapOn: "Ask About Page"
+# Reopening on the new page attaches that page, not the one left behind.
+- runFlow:
+    file: ../shared/open_contextual_duckai_from_address_bar.yaml
 - extendedWaitUntil:
     visible:
         id: "AIChat.ContextChip.AttachedTitle"
     timeout: 10000
+- assertNotVisible:
+    id: "AIChat.ContextChip.Placeholder"

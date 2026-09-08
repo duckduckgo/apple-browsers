@@ -21,23 +21,19 @@ import XCTest
 import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
-import AIChat
 @testable import DuckDuckGo
 
 class TabURLInterceptorDefaultTests: XCTestCase {
 
     private var mockInternalUserStoring = MockInternalUserStoring()
-    private var mockAIChatFullModeFeature: MockAIChatFullModeFeatureProviding!
 
     var urlInterceptor: TabURLInterceptorDefault!
 
     override func setUp() {
         super.setUp()
         mockInternalUserStoring.isInternalUser = false
-        mockAIChatFullModeFeature = MockAIChatFullModeFeatureProviding()
         urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(internalUserDecider: DefaultInternalUserDecider(store: mockInternalUserStoring)),
-                                                  canPurchase: { true },
-                                                  aichatFullModeFeature: mockAIChatFullModeFeature)
+                                                  canPurchase: { true })
     }
     
     override func tearDown() {
@@ -137,78 +133,6 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         let interceptedURLComponents = try XCTUnwrap(capturedNotification?.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents)
         let originQueryItem = interceptedURLComponents.queryItems?.first { $0.name == AttributionParameter.origin }
         XCTAssertNil(originQueryItem)
-    }
-
-    func testAllowsNavigationForNonAIChatURL() {
-        let url = URL(string: "https://www.example.com")!
-        XCTAssertTrue(urlInterceptor.allowsNavigatingTo(url: url))
-    }
-
-    func testNotificationForInterceptedAIChatPathWhenFeatureFlagIsOn() {
-        mockAIChatFullModeFeature.isAvailable = false
-        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-                                                  canPurchase: { true },
-                                                  aichatFullModeFeature: mockAIChatFullModeFeature)
-
-        _ = self.expectation(forNotification: .urlInterceptAIChat, object: nil, handler: nil)
-
-        let url = URL(string: "https://duckduckgo.com/?ia=chat")!
-        let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
-
-        XCTAssertFalse(canNavigate)
-
-        waitForExpectations(timeout: 1) { error in
-            if let error = error {
-                XCTFail("Notification expectation failed: \(error)")
-            }
-        }
-    }
-
-    func testDoesNotAllowNavigationForAIChatPath() {
-        mockAIChatFullModeFeature.isAvailable = false
-        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-                                                  canPurchase: { true },
-                                                  aichatFullModeFeature: mockAIChatFullModeFeature)
-
-        let url = URL(string: "https://duckduckgo.com/?ia=chat")!
-        XCTAssertFalse(urlInterceptor.allowsNavigatingTo(url: url))
-    }
-    
-    func testAllowsNavigationForAIChatPathWhenFullModeFeatureIsAvailable() {
-        // Given
-        mockAIChatFullModeFeature.isAvailable = true
-        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-                                                  canPurchase: { true },
-                                                  aichatFullModeFeature: mockAIChatFullModeFeature)
-        
-        // When
-        let url = URL(string: "https://duckduckgo.com/?ia=chat")!
-        let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
-        
-        // Then
-        XCTAssertTrue(canNavigate)
-    }
-    
-    func testDoesNotPostNotificationForAIChatPathWhenFullModeFeatureIsAvailable() {
-        // Given
-        mockAIChatFullModeFeature.isAvailable = true
-        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-                                                  canPurchase: { true },
-                                                  aichatFullModeFeature: mockAIChatFullModeFeature)
-        
-        let notificationExpectation = expectation(forNotification: .urlInterceptAIChat, object: nil, handler: nil)
-        notificationExpectation.isInverted = true
-        
-        // When
-        let url = URL(string: "https://duckduckgo.com/?ia=chat")!
-        _ = urlInterceptor.allowsNavigatingTo(url: url)
-        
-        // Then
-        waitForExpectations(timeout: 0.5) { error in
-            if let error = error {
-                XCTFail("Notification should not be posted: \(error)")
-            }
-        }
     }
 
     func testWhenURLBelongsToTestDomainAndInternalModeIsDisabledThenNavigationIsNotIntercepted() async throws {

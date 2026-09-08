@@ -21,12 +21,22 @@ import Core
 import FeatureFlags_iOS
 
 class WebViewTransition: TabSwitcherTransition {
-    
+
     fileprivate let tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
-    
+
     fileprivate func tabSwitcherCellFrame(for attributes: UICollectionViewLayoutAttributes) -> CGRect {
         return self.tabSwitcherViewController.collectionView.convert(attributes.frame,
                                                                      to: self.tabSwitcherViewController.view)
+    }
+
+    fileprivate func animateCornerRadius(of view: UIView, to radius: CGFloat, duration: TimeInterval) {
+        let animation = CABasicAnimation(keyPath: "cornerRadius")
+        animation.fromValue = view.layer.cornerRadius
+        animation.toValue = radius
+        animation.duration = duration
+        animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        view.layer.add(animation, forKey: "cornerRadius")
+        view.layer.cornerRadius = radius
     }
 }
 
@@ -41,9 +51,36 @@ class FromWebViewTransition: WebViewTransition {
         super.init(tabSwitcherViewController: tabSwitcherViewController)
     }
     
+    /// Duck.ai tabs land on a rich card, not a screenshot. Crossfade a snapshot of the
+    /// destination cell over the webview preview so the shrink ends on matching content
+    /// instead of popping from screenshot to card. Gated on the rich-card flag: with it off
+    /// the AI cell is a screenshot, so there's nothing to crossfade to.
+    private func installAITabCellSnapshot(for tab: Tab, at indexPath: IndexPath) -> UIView? {
+        guard tab.isAITab,
+              mainViewController.featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard) else { return nil }
+
+        tabSwitcherViewController.collectionView.layoutIfNeeded()
+        guard let cell = tabSwitcherViewController.collectionView
+            .cellForItem(at: indexPath) as? TabViewGridCell else { return nil }
+
+        // Force the .image thumbnail in synchronously — its async load won't finish
+        // before snapshotView captures the cell.
+        cell.prepareForSnapshot()
+        let currentBorderHidden = cell.border.isHidden
+        cell.border.isHidden = true
+        defer { cell.border.isHidden = currentBorderHidden }
+
+        guard let snapshot = cell.snapshotView(afterScreenUpdates: true) else { return nil }
+        snapshot.frame = imageContainer.bounds
+        snapshot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        snapshot.alpha = 0
+        imageContainer.addSubview(snapshot)
+        return snapshot
+    }
+
     override func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
         prepareSubviews(using: transitionContext)
-        
+
         tabSwitcherViewController.view.alpha = 0
         transitionContext.containerView.insertSubview(tabSwitcherViewController.view, aboveSubview: solidBackground)
         tabSwitcherViewController.view.frame = transitionContext.finalFrame(for: tabSwitcherViewController)
@@ -54,6 +91,8 @@ class FromWebViewTransition: WebViewTransition {
               let rowIndex = tabSwitcherViewController.tabsModel.indexOf(tab: tab)
         else {
             tabSwitcherViewController.view.alpha = 1
+            removeTransitionViews()
+            mainViewController.endTabSwitcherToolbarOwnership()
             transitionContext.completeTransition(true)
             return
         }
@@ -65,59 +104,67 @@ class FromWebViewTransition: WebViewTransition {
               let preview = tabSwitcherViewController.previewsSource.preview(for: tab)
         else {
             tabSwitcherViewController.view.alpha = 1
+            removeTransitionViews()
+            mainViewController.endTabSwitcherToolbarOwnership()
             transitionContext.completeTransition(true)
             return
         }
 
         let theme = ThemeManager.shared.currentTheme
         let webViewFrame = webView.convert(webView.bounds, to: nil)
-        
+
         solidBackground.backgroundColor = theme.backgroundColor
         solidBackground.frame = webViewFrame
-        
-        imageContainer.frame = mainViewController.viewCoordinator.contentContainer.frame
-        imageContainer.frame = adjustFrame(imageContainer.frame,
-                                           forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
-                                           byHeight: -mainViewController.omniBar.barView.expectedHeight)
+
+        let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
+        let isFloating = mainViewController.isFloatingUIEnabled
+        let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
+        let reduceMotion = UIAccessibility.isReduceMotionEnabled
+        let toolbarSnapshot = installToolbarSnapshot(for: mainViewController,
+                                                     transitionContext: transitionContext,
+                                                     afterScreenUpdates: false)
+
+        var initialContainerFrame = mainViewController.viewCoordinator.contentContainer.frame
+        if isFloating {
+            initialContainerFrame = WebViewTransitionGeometry.webContentFrame(
+                from: initialContainerFrame,
+                topObscuredHeight: webView.scrollView.contentInset.top)
+        } else {
+            initialContainerFrame = adjustFrame(initialContainerFrame,
+                                                forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
+                                                byHeight: -mainViewController.omniBar.barView.expectedHeight)
+        }
+        setCardFrame(initialContainerFrame, cornerRadius: 0, shadowOpacity: 0)
+        imageContainer.backgroundColor = theme.backgroundColor
         imageView.frame = imageContainer.bounds
         imageView.image = preview
 
-        // Duck.ai tabs land on a rich card, not a screenshot. Crossfade a snapshot of the
-        // destination cell over the webview preview so the shrink ends on matching content
-        // instead of popping from screenshot to card. Gated on the rich-card flag: with it off
-        // the AI cell is a screenshot, so there's nothing to crossfade to
-        var cellSnapshot: UIView?
-        if tab.isAITab, mainViewController.featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard) {
-            tabSwitcherViewController.collectionView.layoutIfNeeded()
-            if let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell {
-                // Force the .image thumbnail in synchronously — its async load won't finish
-                // before snapshotView captures the cell.
-                cell.prepareForSnapshot()
-                let currentBorderHidden = cell.border.isHidden
-                cell.border.isHidden = true
-                if let snapshot = cell.snapshotView(afterScreenUpdates: true) {
-                    snapshot.frame = imageContainer.bounds
-                    snapshot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-                    snapshot.alpha = 0
-                    imageContainer.addSubview(snapshot)
-                    cellSnapshot = snapshot
-                }
-                cell.border.isHidden = currentBorderHidden
-            }
-               
-        }
+        let cellSnapshot = installAITabCellSnapshot(for: tab, at: indexPath)
+        prepareOutgoingTabChrome(at: indexPath, cellSnapshot: cellSnapshot)
 
-        UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
+        UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
 
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 let containerFrame = self.tabSwitcherCellFrame(for: layoutAttr)
-                self.imageContainer.frame = containerFrame
-                self.imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
+                self.setCardFrame(containerFrame,
+                                  cornerRadius: TabViewCell.Constants.cellCornerRadius,
+                                  shadowOpacity: 1)
                 self.imageView.frame = WebViewTransitionGeometry.previewFrame(for: containerFrame.size,
                                                                               previewSize: preview.size,
                                                                               isGridViewEnabled: self.tabSwitcherSettings.isGridViewEnabled)
+                if !self.tabSwitcherSettings.isGridViewEnabled {
+                    self.applyListChromePose(isVisible: true)
+                }
             }
-            
+
+            if self.tabSwitcherSettings.isGridViewEnabled {
+                UIView.addKeyframe(withRelativeStartTime: 0.25, relativeDuration: 0.55) {
+                    self.applyGridChromePose(
+                        isVisible: true,
+                        in: CGRect(origin: .zero, size: self.tabSwitcherCellFrame(for: layoutAttr).size))
+                }
+            }
+
             UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.7) {
                 self.tabSwitcherViewController.view.alpha = 1
             }
@@ -133,16 +180,58 @@ class FromWebViewTransition: WebViewTransition {
                     self.imageView.alpha = 0
                 }
             }
+
+            if let toolbarSnapshot {
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
+                    if !reduceMotion {
+                        toolbarSnapshot.transform = TabSwitcherTransition.collapsedToolbarTransform(for: toolbarSnapshot)
+                    }
+                    toolbarSnapshot.alpha = 0
+                }
+            }
         }, completion: { _ in
-            self.solidBackground.removeFromSuperview()
-            self.imageContainer.removeFromSuperview()
+            self.removeTransitionViews()
+            toolbarSnapshot?.removeFromSuperview()
+            if isFloating {
+                toolbar.alpha = 0
+                self.mainViewController.endTabSwitcherToolbarOwnership()
+            }
             transitionContext.completeTransition(true)
         })
 
     }
+
+    private func prepareOutgoingTabChrome(at indexPath: IndexPath, cellSnapshot: UIView?) {
+        if tabSwitcherSettings.isGridViewEnabled,
+           cellSnapshot == nil,
+           let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell {
+            prepareGridChromeSnapshot(for: cell, initiallyVisible: false)
+        } else if !tabSwitcherSettings.isGridViewEnabled,
+                  let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewListCell {
+            prepareListChrome(for: cell, initiallyVisible: false)
+        }
+    }
 }
 
 class ToWebViewTransition: WebViewTransition {
+
+    /// Crossfade fallback when the destination is no longer a web view; mirrors ToHomeScreenTransition.
+    /// Hands the toolbar back to its normal owner so a guard-failed transition can't strand it hidden.
+    private func completeWithCrossfadeFallback(using transitionContext: UIViewControllerContextTransitioning) {
+        let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController
+        if let mainViewController {
+            mainViewController.view.alpha = 1
+            concealLiveFloatingToolbar(of: mainViewController)
+        }
+        let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: mainViewController?.isFloatingUIEnabled ?? false)
+        UIView.animate(withDuration: duration, animations: {
+            self.tabSwitcherViewController.view.alpha = 0
+        }, completion: { _ in
+            self.removeTransitionViews()
+            mainViewController?.revealFloatingToolbarAfterTabSwitcherTransition()
+            transitionContext.completeTransition(true)
+        })
+    }
 
     override func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
         prepareSubviews(using: transitionContext)
@@ -153,33 +242,31 @@ class ToWebViewTransition: WebViewTransition {
               let rowIndex = tabSwitcherViewController.tabsModel.indexOf(tab: tab),
               let layoutAttr = tabSwitcherViewController.collectionView.layoutAttributesForItem(at: IndexPath(row: rowIndex, section: 0))
         else {
-            // Crossfade fallback when destination is no longer a web view; mirrors ToHomeScreenTransition.
-            if let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController {
-                mainViewController.view.alpha = 1
-            }
-            UIView.animate(withDuration: TabSwitcherTransition.Constants.duration, animations: {
-                self.tabSwitcherViewController.view.alpha = 0
-            }, completion: { _ in
-                self.solidBackground.removeFromSuperview()
-                self.imageContainer.removeFromSuperview()
-                transitionContext.completeTransition(true)
-            })
+            completeWithCrossfadeFallback(using: transitionContext)
             return
         }
-                
+
         let theme = ThemeManager.shared.currentTheme
-        let webViewFrame = webView.convert(webView.bounds, to: nil)
         mainViewController.view.alpha = 1
-        
+
+        let isFloating = mainViewController.isFloatingUIEnabled
+        let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
+        if isFloating {
+            mainViewController.chromeManager.reset(animated: false)
+            concealLiveFloatingToolbar(of: mainViewController)
+        }
+
         solidBackground.backgroundColor = theme.backgroundColor
         solidBackground.frame = webView.bounds
         // Put overlay above webview to hide its content till the end of the transition
         solidBackground.removeFromSuperview()
         webView.addSubview(solidBackground)
         
-        imageContainer.frame = tabSwitcherCellFrame(for: layoutAttr)
-        imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
-        
+        let initialContainerFrame = tabSwitcherCellFrame(for: layoutAttr)
+        setCardFrame(initialContainerFrame,
+                     cornerRadius: TabViewCell.Constants.cellCornerRadius,
+                     shadowOpacity: 1)
+        imageContainer.backgroundColor = theme.backgroundColor
         let preview = tabSwitcherViewController.previewsSource.preview(for: tab)
         if let preview = preview {
             imageView.frame = WebViewTransitionGeometry.previewFrame(for: imageContainer.bounds.size,
@@ -189,26 +276,58 @@ class ToWebViewTransition: WebViewTransition {
             imageView.frame = CGRect(origin: .zero, size: imageContainer.bounds.size)
         }
         imageView.image = preview
+
+        if tabSwitcherSettings.isGridViewEnabled,
+           let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewGridCell {
+            prepareGridChromeSnapshot(for: cell, initiallyVisible: true)
+        } else if let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewListCell {
+            prepareListChrome(for: cell, initiallyVisible: true)
+        }
         
         if !tabSwitcherSettings.isGridViewEnabled {
             self.imageView.alpha = 0
         }
         
         scrollIfOutsideViewport(collectionView: tabSwitcherViewController.collectionView, rowIndex: rowIndex, attributes: layoutAttr)
-        
-        UIView.animate(withDuration: TabSwitcherTransition.Constants.duration, animations: {
-            self.imageContainer.frame = mainViewController.viewCoordinator.contentContainer.frame
-            self.imageContainer.layer.cornerRadius = 0
 
-            self.imageView.frame = WebViewTransitionGeometry.destinationImageFrame(for: webViewFrame.size,
-                                                                                   previewSize: preview?.size)
-            self.imageView.alpha = 1
-            
-            self.solidBackground.alpha = 1
-            self.tabSwitcherViewController.view.alpha = 0
+        UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
+            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
+                var destinationFrame = mainViewController.viewCoordinator.contentContainer.frame
+                if isFloating {
+                    destinationFrame = WebViewTransitionGeometry.webContentFrame(
+                        from: destinationFrame,
+                        topObscuredHeight: webView.scrollView.contentInset.top)
+                }
+                self.setCardFrame(destinationFrame, cornerRadius: 0, shadowOpacity: 0)
+                self.imageView.frame = WebViewTransitionGeometry.destinationImageFrame(for: destinationFrame.size,
+                                                                                       previewSize: preview?.size)
+                self.imageView.alpha = 1
+                self.solidBackground.alpha = 1
+                if !self.tabSwitcherSettings.isGridViewEnabled {
+                    self.applyListChromePose(isVisible: false)
+                }
+            }
+
+            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.7) {
+                self.tabSwitcherViewController.view.alpha = 0
+            }
+
+            if self.tabSwitcherSettings.isGridViewEnabled {
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.55) {
+                    var destinationFrame = mainViewController.viewCoordinator.contentContainer.frame
+                    if isFloating {
+                        destinationFrame = WebViewTransitionGeometry.webContentFrame(
+                            from: destinationFrame,
+                            topObscuredHeight: webView.scrollView.contentInset.top)
+                    }
+                    self.applyGridChromePose(
+                        isVisible: false,
+                        in: CGRect(origin: .zero, size: destinationFrame.size))
+                }
+            }
         }, completion: { _ in
-            self.solidBackground.removeFromSuperview()
-            self.imageContainer.removeFromSuperview()
+            self.removeTransitionViews()
+            mainViewController.revealFloatingToolbarAfterTabSwitcherTransition()
             transitionContext.completeTransition(true)
         })
     }

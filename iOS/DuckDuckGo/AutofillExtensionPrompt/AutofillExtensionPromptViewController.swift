@@ -21,6 +21,7 @@ import UIKit
 import Persistence
 import SwiftUI
 import Core
+import PixelKit
 
 class AutofillExtensionPromptViewController: UIViewController {
 
@@ -46,7 +47,7 @@ class AutofillExtensionPromptViewController: UIViewController {
         setupView()
 
         manager.markPromotionPresented(for: .browser)
-        Pixel.fire(pixel: .autofillExtensionInlinePromoDisplayed)
+        PixelKit.fire(Pixel.Event.autofillExtensionInlinePromoDisplayed)
     }
 
     private func setupView() {
@@ -65,13 +66,13 @@ class AutofillExtensionPromptViewController: UIViewController {
 
 extension AutofillExtensionPromptViewController: UISheetPresentationControllerDelegate {
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        Pixel.fire(pixel: .autofillExtensionInlinePromoDismissed)
+        PixelKit.fire(Pixel.Event.autofillExtensionInlinePromoDismissed)
     }
 }
 
 extension AutofillExtensionPromptViewController: AutofillExtensionPromptViewModelDelegate {
     func autofillExtensionPromptViewModelDidSelectEnableExtension(_ viewModel: AutofillExtensionPromptViewModel) {
-        Pixel.fire(pixel: .autofillExtensionInlinePromoConfirmed)
+        PixelKit.fire(Pixel.Event.autofillExtensionInlinePromoConfirmed)
 
         dismiss(animated: true) { [weak self] in
             self?.completion(true)
@@ -79,14 +80,14 @@ extension AutofillExtensionPromptViewController: AutofillExtensionPromptViewMode
     }
 
     func autofillExtensionPromptViewModelDidSelectSetUpLater(_ viewModel: AutofillExtensionPromptViewModel) {
-        Pixel.fire(pixel: .autofillExtensionInlinePromoDismissedPermanently)
+        PixelKit.fire(Pixel.Event.autofillExtensionInlinePromoDismissedPermanently)
 
         manager.markPromotionDismissed(for: .browser)
         dismiss(animated: true)
     }
 
     func autofillExtensionPromptViewModelDidDismiss(_ viewModel: AutofillExtensionPromptViewModel) {
-        Pixel.fire(pixel: .autofillExtensionInlinePromoDismissed)
+        PixelKit.fire(Pixel.Event.autofillExtensionInlinePromoDismissed)
         dismiss(animated: true)
     }
 

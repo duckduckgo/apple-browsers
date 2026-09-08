@@ -33,7 +33,51 @@ extension PixelKit {
         var parameters: [String: String]? { get }
         /// Automatically implemented by the below extension using reflection, please implement the error, if needed as enum parameter
         var error: NSError? { get }
+        /// Where the iOS platform marker goes. Defaults to `.standard`.
+        var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { get }
+        /// Whether `name` may contain `.`, which the naming rules otherwise forbid.
+        /// Defaults to `false`. See the extension below.
+        var allowsDotInName: Bool { get }
+        /// What precedes `name`. Defaults to `.platformDefault`.
+        var namePrefix: PixelKitNamePrefix { get }
     }
+}
+
+public extension PixelKit.Event {
+
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .standard }
+
+    var namePrefix: PixelKitNamePrefix { .platformDefault }
+
+    /// A `.` in a pixel name is a mistake for anything new, so this is `false` by default and
+    /// firing such a pixel trips an assertion.
+    ///
+    /// Set it to `true` only for a legacy name that already shipped with a dot, where correcting
+    /// the name would break the metric. iOS `Pixel.Event` does this: several of its names
+    /// interpolate a bucketed value such as `0.5`.
+    var allowsDotInName: Bool { false }
+
+    /// Returns this event with `prefix` in front of its name, overriding `namePrefix`.
+    ///
+    /// For shared packages whose prefix is chosen by the host app rather than by the pixel, e.g.
+    /// `pixelKit.fire(event.prefixed(platform.pixelNamePrefix))`.
+    func prefixed(_ prefix: String) -> PixelKit.Event {
+        PixelKitPrefixedEvent(wrapped: self, namePrefix: .custom(prefix))
+    }
+}
+
+/// See `PixelKit.Event.prefixed(_:)`.
+struct PixelKitPrefixedEvent: PixelKit.Event {
+    let wrapped: PixelKit.Event
+    let namePrefix: PixelKitNamePrefix
+
+    var name: String { wrapped.name }
+    var parameters: [String: String]? { wrapped.parameters }
+    var standardParameters: [PixelKitStandardParameter]? { wrapped.standardParameters }
+    /// Declared so the reflection-based default inspects the wrapped event, not this wrapper.
+    var error: NSError? { wrapped.error }
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { wrapped.platformSuffixPolicy }
+    var allowsDotInName: Bool { wrapped.allowsDotInName }
 }
 
 /// Extract Error parameter from the PixelKit.Event, only one error is supported, if multiple errors are found we assert

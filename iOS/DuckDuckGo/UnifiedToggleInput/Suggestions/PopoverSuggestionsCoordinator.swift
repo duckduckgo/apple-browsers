@@ -137,11 +137,9 @@ final class PopoverSuggestionsCoordinator {
 
         let (chatManager, chatViewModel) = AIChatHistoryManager.makeHistoryManager(
             isFireTab: dependencies.isFireTab(),
-            isIPadExperience: true,
             featureFlagger: dependencies.featureFlagger,
             privacyConfigurationManager: dependencies.privacyConfigurationManager,
             chatSyncCleaner: dependencies.aiChatSyncCleaner,
-            chatSettings: dependencies.aiChatSettings,
             nativeStorageHandler: dependencies.duckAiNativeStorageHandler)
 
         let requestRunner = AutocompleteRequestRunner()

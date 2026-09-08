@@ -32,14 +32,11 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockAppSettings: AppSettingsMock!
     private var mockKeyValueStore: MockKeyValueStore!
-    private var testUserDefaults: UserDefaults!
     private var experimentalAIChatManager: ExperimentalAIChatManager!
     private var pickerStorage: NewAddressBarPickerStore!
     private var mockOnboardingSearchExperienceProvider: MockOnboardingSearchExperienceProvider!
     private var mockStatisticsStore: MockStatisticsStore!
     private var validator: NewAddressBarPickerDisplayValidator!
-
-    private let testSuiteName = "NewAddressBarPickerDisplayValidatorTests"
 
     override func setUp() {
         super.setUp()
@@ -49,12 +46,8 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         mockAppSettings = AppSettingsMock()
         mockKeyValueStore = MockKeyValueStore()
 
-        testUserDefaults = UserDefaults(suiteName: testSuiteName)!
-        testUserDefaults.removePersistentDomain(forName: testSuiteName)
-
         experimentalAIChatManager = ExperimentalAIChatManager(
-            featureFlagger: mockFeatureFlagger,
-            userDefaults: testUserDefaults
+            featureFlagger: mockFeatureFlagger
         )
         pickerStorage = NewAddressBarPickerStore(keyValueStore: mockKeyValueStore)
         mockOnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
@@ -78,8 +71,6 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         experimentalAIChatManager = nil
         mockOnboardingSearchExperienceProvider = nil
         mockStatisticsStore = nil
-        testUserDefaults.removePersistentDomain(forName: testSuiteName)
-        testUserDefaults = nil
         mockKeyValueStore = nil
         mockAppSettings = nil
         mockFeatureFlagger = nil
@@ -339,7 +330,6 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         // Given
         setupShowCriteriaMet()
         mockAIChatSettings.isAIChatAddressBarUserSettingsEnabled = false
-        testUserDefaults.set(true, forKey: "experimentalAIChatSettingsEnabled")
         mockKeyValueStore.set(true, forKey: NewAddressBarPickerStore.Key.hasBeenShown)
 
         // When
@@ -376,7 +366,6 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
 
     private func setupNoExclusionCriteria() {
         mockAIChatSettings.isAIChatAddressBarUserSettingsEnabled = true
-        testUserDefaults.set(false, forKey: "experimentalAIChatSettingsEnabled")
         mockKeyValueStore.set(false, forKey: NewAddressBarPickerStore.Key.hasBeenShown)
     }
 }

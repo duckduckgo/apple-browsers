@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 import Core
+import PixelKit
 
 struct WidgetEducationView: View {
     typealias Detail = NumberedParagraphConfig.Detail
@@ -54,7 +55,7 @@ struct WidgetEducationView: View {
         .navigationBarTitle("")
         .background(Color.background)
         .onFirstAppear {
-            Pixel.fire(pixel: .settingsNextStepsAddWidget)
+            PixelKit.fire(Pixel.Event.settingsNextStepsAddWidget)
         }
     }
 }

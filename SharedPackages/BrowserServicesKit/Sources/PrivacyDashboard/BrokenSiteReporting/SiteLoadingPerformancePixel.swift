@@ -20,7 +20,9 @@ import Foundation
 import PixelKit
 
 /// Tracks site loading performance metrics received via push notifications from Content Scope Scripts
-enum SiteLoadingPerformancePixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum SiteLoadingPerformancePixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering. 
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     // MARK: - Parameter Names
 
@@ -50,7 +52,9 @@ enum SiteLoadingPerformancePixel: PixelKit.Event, PixelKitEventWithCustomPrefix 
         }
     }
 
-    var namePrefix: String {
+    var namePrefix: PixelKitNamePrefix { .custom(namePrefixLiteral) }
+
+    private var namePrefixLiteral: String {
 #if os(iOS)
         switch self {
         case .performanceMetricsReceived:

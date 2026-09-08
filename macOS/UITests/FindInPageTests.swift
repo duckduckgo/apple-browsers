@@ -27,7 +27,6 @@ class FindInPageTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
 
         let bundle = Bundle(for: type(of: self))
         loremIpsumFileURL = try XCTUnwrap(bundle.url(forResource: "lorem_ipsum", withExtension: "html"), "Could not find lorem_ipsum.html in test bundle")

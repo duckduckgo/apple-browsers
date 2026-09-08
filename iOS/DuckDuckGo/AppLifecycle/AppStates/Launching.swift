@@ -29,6 +29,7 @@ import PixelKit
 import BrowserServicesKit
 import Subscription
 import RemoteMessaging
+import ScreenTimeDataCleaner
 import WebExtensions
 import FeatureFlags_iOS
 
@@ -111,6 +112,9 @@ struct Launching: LaunchingHandling {
             statisticsStore: StatisticsUserDefaults()
         )
 
+        // Pre-mark existing installs (before statistics load) so first_prompt_new_install can only fire on brand-new installs.
+        DuckAIFirstPromptNewInstallCohort.assignIfNeeded(statisticsStore: StatisticsUserDefaults())
+
         // MARK: - Service Initialization (continued)
         // Create and initialize remaining core services
         // These services are instantiated early in the app lifecycle for two main reasons:
@@ -192,7 +196,7 @@ struct Launching: LaunchingHandling {
         let launchTimeMetricsService = LaunchTimeMetricsService(featureFlagger: featureFlagger)
         let statisticsService = StatisticsService()
 
-        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared)
         let reportingService = ReportingService(fireproofing: fireproofing,
                                                 featureFlagging: featureFlagger,
                                                 userDefaults: UserDefaults.app,
@@ -379,6 +383,14 @@ struct Launching: LaunchingHandling {
         )
 
         let vpnService = VPNService(mainCoordinator: mainCoordinator, notificationServiceManager: notificationServiceManager)
+        let aiChatService = AIChatService(aiChatSettings: aiChatSettings)
+        let applicationShortcutItemsService = ApplicationShortcutItemsService(shortcutItemProviders: [
+            { aiChatService.shortcutItem() },
+            { await vpnService.shortcutItem() }
+        ], shortcutItemsFilter: { shortcutItems in
+            guard !vpnService.isSubscriptionPresent else { return shortcutItems }
+            return shortcutItems.filter { $0.type != ShortcutKey.openVPNSettings }
+        })
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
             featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
@@ -413,7 +425,8 @@ struct Launching: LaunchingHandling {
                                systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
                                inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
                                wideEventService: wideEventService,
-                               aiChatService: AIChatService(aiChatSettings: aiChatSettings),
+                               aiChatService: aiChatService,
+                               applicationShortcutItemsService: applicationShortcutItemsService,
                                eventHubService: eventHubService
         )
 
@@ -425,6 +438,16 @@ struct Launching: LaunchingHandling {
                 taskContext.finish()
             }
         })
+        if #available(iOS 26, *) {
+            launchTaskManager.register(task: BlockLaunchTask(name: "Report Screen Time Data") { taskContext in
+                Task { @MainActor in
+                    if await ScreenTimeDataCleaner().hasScreenTimeData() {
+                        PixelKit.fire(ScreenTimeDataPixel.recordsFound, frequency: .dailyAndCount)
+                    }
+                    taskContext.finish()
+                }
+            })
+        }
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
@@ -444,15 +467,6 @@ struct Launching: LaunchingHandling {
 #endif
 
         logAppLaunchTime()
-
-#if DEBUG
-        if LaunchOptionsHandler().shouldOpenPIRDashboardForTesting {
-            let mainCoordinator = mainCoordinator
-            Task { @MainActor in
-                mainCoordinator.presentDataBrokerProtectionDashboard()
-            }
-        }
-#endif
         // Keep this init method minimal and think twice before adding anything here.
         // - Use AppConfiguration for one-time setup.
         // - Use a service for functionality that persists throughout the app's lifecycle.
@@ -478,8 +492,7 @@ struct Launching: LaunchingHandling {
                     migrationKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup",
                     label: .default,
                     keyValueStore: keyValueStore,
-                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter(),
-                    lockedLaunchFixEnabled: featureFlagger.isFeatureOn(.duckAINativeStorageMigrationLockedLaunchFix)
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
                 ).run()
                 if outcome == .skip {
                     return nil
@@ -516,8 +529,8 @@ struct Launching: LaunchingHandling {
 
     private func logAppLaunchTime() {
         let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
-        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
-                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
+        PixelKit.fire(Pixel.Event.appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
+                      options: .parameters([PixelParameters.time: String(launchTime)]))
     }
 
     // MARK: -
@@ -535,6 +548,17 @@ struct Launching: LaunchingHandling {
             backgroundTaskManager: BackgroundTaskManager(featureFlagger: featureFlagger)
         )
     }
+
+}
+
+private enum ScreenTimeDataPixel: PixelKit.Event {
+
+    case recordsFound
+
+    var name: String { "screen-time_records-present" }
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
 
 }
 
@@ -564,70 +588,57 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
     func fire(_ event: DuckAiNativeStorageEvent) {
         switch event {
         case .initSuccess:
-            Pixel.fire(pixel: .duckAiNativeStorageInitSuccess)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageInitSuccess)
         case .initError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageInitError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageInitError.withError(error),
+                          frequency: .dailyAndStandard)
         case .migrationDone(let key):
-            UniquePixel.fire(pixel: .duckAiNativeStorageMigrationDoneUnique(key: key))
-            Pixel.fire(pixel: .duckAiNativeStorageMigrationDoneCount(key: key))
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageMigrationDoneUnique(key: key), frequency: .legacyInitial)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageMigrationDoneCount(key: key))
         case .migrationDoneBlankKey:
-            Pixel.fire(pixel: .duckAiNativeStorageMigrationDoneBlankCount)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageMigrationDoneBlankCount)
         case .migrationStarted:
-            Pixel.fire(pixel: .duckAiNativeStorageMigrationStarted)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageMigrationStarted)
         case .migrationAlreadyDone:
-            Pixel.fire(pixel: .duckAiNativeStorageMigrationAlreadyDone)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageMigrationAlreadyDone)
         case .migrationError(let error):
-            Pixel.fire(pixel: .duckAiNativeStorageMigrationError, error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageMigrationError.withError(error))
         case .settingsPutError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageSettingsPutError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageSettingsPutError.withError(error),
+                          frequency: .dailyAndStandard)
         case .settingsGetError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageSettingsGetError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageSettingsGetError.withError(error),
+                          frequency: .dailyAndStandard)
         case .settingsDeleteError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageSettingsDeleteError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageSettingsDeleteError.withError(error),
+                          frequency: .dailyAndStandard)
         case .chatPutError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageChatPutError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageChatPutError.withError(error),
+                          frequency: .dailyAndStandard)
         case .chatGetError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageChatGetError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageChatGetError.withError(error),
+                          frequency: .dailyAndStandard)
         case .chatDeleteError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageChatDeleteError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageChatDeleteError.withError(error),
+                          frequency: .dailyAndStandard)
         case .filePutError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFilePutError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageFilePutError.withError(error),
+                          frequency: .dailyAndStandard)
         case .fileGetError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFileGetError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageFileGetError.withError(error),
+                          frequency: .dailyAndStandard)
         case .fileListError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFileListError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageFileListError.withError(error),
+                          frequency: .dailyAndStandard)
         case .fileDeleteError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageFileDeleteError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageFileDeleteError.withError(error),
+                          frequency: .dailyAndStandard)
         case .lastUsedModelParseError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageLastUsedModelParseError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageLastUsedModelParseError.withError(error),
+                          frequency: .dailyAndStandard)
         case .lastUsedReasoningModeParseError(let error):
-            DailyPixel.fireDailyAndCount(pixel: .duckAiNativeStorageLastUsedReasoningModeParseError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageLastUsedReasoningModeParseError.withError(error),
+                          frequency: .dailyAndStandard)
         }
     }
 }

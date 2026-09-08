@@ -83,12 +83,11 @@ struct FireCoordinatorTests {
                         .init(pinned: false, closeTab: true, clearHistory: true, clearSiteData: true)
                     )
                 ),
-                frequency: .dailyAndCount,
-                doNotEnforcePrefix: true
+                frequency: .dailyAndCount
             ),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true),
-            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount),
+            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount)
         ]
 
         let result = FireDialogResult(clearingOption: .currentTab,
@@ -112,12 +111,11 @@ struct FireCoordinatorTests {
                         .init(pinned: false, closeTab: true, clearHistory: true, clearSiteData: true)
                     )
                 ),
-                frequency: .dailyAndCount,
-                doNotEnforcePrefix: true
+                frequency: .dailyAndCount
             ),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true),
-            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount),
+            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount)
         ]
 
         let result = FireDialogResult(clearingOption: .currentTab,
@@ -142,12 +140,11 @@ struct FireCoordinatorTests {
                         .init(hasPinnedTabs: !tabCollectionViewModel.pinnedTabs.isEmpty, closeWindow: true, clearHistory: true, clearSiteData: true)
                     )
                 ),
-                frequency: .dailyAndCount,
-                doNotEnforcePrefix: true
+                frequency: .dailyAndCount
             ),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true),
-            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount),
+            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount)
         ]
 
         let result = FireDialogResult(clearingOption: .currentWindow,
@@ -171,12 +168,11 @@ struct FireCoordinatorTests {
                         .init(hasPinnedTabs: !tabCollectionViewModel.pinnedTabs.isEmpty, closeWindow: true, clearHistory: true, clearSiteData: true)
                     )
                 ),
-                frequency: .dailyAndCount,
-                doNotEnforcePrefix: true
+                frequency: .dailyAndCount
             ),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true),
-            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount),
+            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount)
         ]
 
         let result = FireDialogResult(clearingOption: .currentWindow,
@@ -201,12 +197,11 @@ struct FireCoordinatorTests {
                         .init(hasPinnedTabs: !windowControllersManager.pinnedTabsManagerProvider.arePinnedTabsEmpty, closeWindows: true, clearHistory: true, clearSiteData: true, clearAIChats: true)
                     )
                 ),
-                frequency: .dailyAndCount,
-                doNotEnforcePrefix: true
+                frequency: .dailyAndCount
             ),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true),
-            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount),
+            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount)
         ]
 
         let result = FireDialogResult(clearingOption: .allData,
@@ -230,12 +225,11 @@ struct FireCoordinatorTests {
                         .init(hasPinnedTabs: !windowControllersManager.pinnedTabsManagerProvider.arePinnedTabsEmpty, closeWindows: true, clearHistory: true, clearSiteData: true, clearAIChats: false)
                     )
                 ),
-                frequency: .dailyAndCount,
-                doNotEnforcePrefix: true
+                frequency: .dailyAndCount
             ),
             .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
-            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true),
-            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+            .init(pixel: FireDialogPixel.fireStarted, frequency: .dailyAndCount),
+            .init(pixel: FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount)
         ]
 
         let result = FireDialogResult(clearingOption: .allData,

@@ -58,16 +58,16 @@ conditions holds:
 
 Each auto-close adds a one-line story explaining why.
 
-Tagging branch owners
----------------------
+Tagging and following branch owners
+-----------------------------------
 If a user-map file is provided via ``CW_USER_MAP_PATH`` (a flat YAML of
-``github_login: asana_user_gid``), the kickoff comment posted right
-after task creation ``@``-mentions both branch authors using Asana's
-rich-text format (``<a data-asana-gid="…"/>``). Asana auto-adds
-mentioned users as task followers, so a single comment delivers the
-inbox notification *and* the long-term association. When
-``CW_NO_MENTIONS=1`` the mentions collapse to plain author names and
-no notification fires.
+``github_login: asana_user_gid``), mapped branch authors are added as
+task followers at creation time. The kickoff comment posted immediately
+afterwards also ``@``-mentions both authors using Asana's rich-text
+format (``<a data-asana-gid="…"/>``). Adding followers explicitly keeps
+the long-term association independent of Asana's mention behaviour.
+When ``CW_NO_MENTIONS=1`` no followers are added, the mentions collapse
+to plain author names, and no notification fires.
 
 Configuration
 -------------
@@ -98,9 +98,10 @@ Optional (defaults shown):
     CW_MIN_CONFLICT_LINES=20
                           (skip pairs whose hard-conflict regions sum to
                            fewer lines after the always-ignore filter)
-    CW_NO_MENTIONS=0      (1 to render kickoff comments with plain author
-                           names instead of Asana @-mentions — no inbox
-                           notification fires; useful for first-run pilots)
+    CW_NO_MENTIONS=0      (1 to skip creation-time followers and render
+                           kickoff comments with plain author names instead
+                           of Asana @-mentions — no inbox notification fires;
+                           useful for first-run pilots)
     CW_BOT_AUTHORS=…      (comma-separated GitHub logins to skip)
     CW_BRANCH_SKIP_PATTERNS=…
                           (comma-separated fnmatch globs on branch name;
@@ -207,9 +208,9 @@ ALWAYS_IGNORE_PATTERNS = [
     if p.strip()
 ]
 MIN_CONFLICT_LINES = int(os.environ.get("CW_MIN_CONFLICT_LINES", "20"))
-# When set, suppress all Asana @-mentions and skip the addFollowers call so
-# the run writes tasks without notifying anyone. Useful for the first real
-# write while the team is still inspecting filter output.
+# When set, suppress all Asana @-mentions and creation-time followers so the
+# run writes tasks without notifying anyone. Useful for the first real write
+# while the team is still inspecting filter output.
 NO_MENTIONS = os.environ.get("CW_NO_MENTIONS", "0").lower() in ("1", "true", "yes")
 
 DEFAULT_BOT_AUTHORS = (
@@ -981,18 +982,21 @@ class AsanaClient:
                 break
         return out
 
-    def create_task(self, name: str, html_notes: str) -> dict:
+    def create_task(self, name: str, html_notes: str,
+                    follower_gids: Optional[list[str]] = None) -> dict:
         if self.dry_run:
-            logger.info("[dry-run] would create task: %s", name)
+            logger.info("[dry-run] would create task: %s (followers=%s)",
+                        name, ", ".join(follower_gids or []) or "none")
             return {"gid": "dry-run", "name": name, "permalink_url": ""}
-        body = {
-            "data": {
-                "name": name,
-                "html_notes": html_notes,
-                "workspace": self.workspace_gid,
-                "projects": [self.project_gid],
-            }
+        task_data = {
+            "name": name,
+            "html_notes": html_notes,
+            "workspace": self.workspace_gid,
+            "projects": [self.project_gid],
         }
+        if follower_gids:
+            task_data["followers"] = follower_gids
+        body = {"data": task_data}
         data = self._request("POST", "/tasks", body=body)
         return data.get("data", {})
 
@@ -1049,6 +1053,17 @@ def _branches_alpha(pair: ConflictPair) -> tuple[Branch, Branch]:
     if pair.a.name <= pair.b.name:
         return pair.a, pair.b
     return pair.b, pair.a
+
+
+def _follower_gids(pair: ConflictPair) -> list[str]:
+    """Mapped branch-owner gids to add as followers at task creation."""
+    if NO_MENTIONS:
+        return []
+    return list(dict.fromkeys(
+        branch.asana_gid
+        for branch in _branches_alpha(pair)
+        if branch.asana_gid
+    ))
 
 
 def render_task_body_html(pair: ConflictPair, today_local: str) -> str:
@@ -1110,10 +1125,10 @@ def render_task_body_html(pair: ConflictPair, today_local: str) -> str:
 
 
 def render_creation_comment_html(pair: ConflictPair) -> str:
-    """Kickoff comment posted right after task creation. Carries the
-    @-mentions (so this is what fires the inbox notification) and a
-    short next-steps prompt. In NO_MENTIONS mode the lead-in switches
-    to plain author names and no notification fires.
+    """Kickoff comment posted after mapped authors become task followers.
+
+    Carries @-mentions and a short next-steps prompt. In NO_MENTIONS mode
+    the lead-in switches to plain author names and no notification fires.
     """
     a_branch, b_branch = _branches_alpha(pair)
     rest = (
@@ -1177,15 +1192,17 @@ def reconcile(asana: AsanaClient, conflicts: list[ConflictPair],
             continue
 
         body_html = render_task_body_html(pair, today_local)
+        follower_gids = _follower_gids(pair)
         try:
-            created = asana.create_task(title, body_html)
+            created = asana.create_task(
+                title, body_html, follower_gids=follower_gids
+            )
             gid = created.get("gid", "")
             logger.info("Created Asana task %s for %s", gid, title)
             summary.tasks_created += 1
             _record_state(state, title, pair, gid, "new", today_utc)
-            # Kickoff comment carries the @-mentions (and therefore the
-            # inbox notification + auto-follow). Without it, the task
-            # would be silently created with no one notified.
+            # Mapped authors are already followers because create_task added
+            # them atomically. Post the kickoff comment only afterwards.
             if gid and gid != "dry-run":
                 comment_html = render_creation_comment_html(pair)
                 asana.add_comment(gid, comment_html, plain_preview="")

@@ -1,0 +1,15 @@
+appId: com.duckduckgo.mobile.ios
+
+---
+
+# On a web page with no contextual chat to return to, the address-bar Duck.ai button opens a menu
+# instead of a surface: New Chat opens full Duck.ai, Ask About Page opens the floating contextual
+# input with the page already attached. Once a chat exists the button reopens the sheet directly,
+# so this is only for the first contextual entry on a tab.
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible: "New Chat"
+- assertVisible: "Ask About Page"
+- tapOn: "Ask About Page"
+- waitForAnimationToEnd:
+    timeout: 3000

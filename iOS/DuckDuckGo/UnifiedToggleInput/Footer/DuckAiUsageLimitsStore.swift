@@ -18,54 +18,118 @@
 //
 
 import AIChat
+import Combine
 import Core
 import FeatureFlags_iOS
 import Foundation
 import os.log
 import PrivacyConfig
 
+/// Owns the app-side flag gating so the shared decision logic stays flag-agnostic, and builds the
+/// view model that drives the footer. Mirrors macOS's file of the same name.
 struct DuckAiUsageLimitsStore {
 
 #if DEBUG || ALPHA
-    @MainActor static var debugOverride: DuckAiUsageLimits?
+    @MainActor static var debugOverride: DuckAiUsageSnapshot?
 #endif
 
-    private let provider: DuckAiUsageLimitsProviding?
+    private let storageHandler: DuckAiNativeStorageHandling?
+    private let storageProvider: DuckAiUsageSnapshotProviding?
     private let featureFlagger: FeatureFlagger
+    private let dismissalStore: DuckAiUsageWarningDismissalStoring
 
     init(storageHandler: DuckAiNativeStorageHandling?,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         dismissalStore: DuckAiUsageWarningDismissalStoring = DuckAiUsageWarningDismissalStore(),
          dateProvider: @escaping () -> Date = Date.init) {
-        self.provider = storageHandler.map {
-            DuckAiUsageLimitsProvider(storage: $0,
-                                      pixelFiring: DuckAiNativeStoragePixelAdapter(),
-                                      dateProvider: dateProvider)
+        self.storageHandler = storageHandler
+        self.storageProvider = storageHandler.map {
+            DuckAiUsageSnapshotProvider(storage: $0,
+                                        pixelFiring: DuckAiNativeStoragePixelAdapter(),
+                                        dateProvider: dateProvider)
         }
         self.featureFlagger = featureFlagger
+        self.dismissalStore = dismissalStore
     }
 
-    func currentLimits() -> DuckAiUsageLimits? {
+    /// `nil` means inactive (flag off, or no storage bridge), which differs from having nothing to show.
+    func makeWarningViewModel(modelSuggester: DuckAiModelSuggesting,
+                              isTrialEligible: @escaping () -> Bool,
+                              isFireMode: @escaping () -> Bool) -> DuckAiUsageWarningViewModel? {
         guard featureFlagger.isFeatureOn(.utiDuckAIWarnings) else {
-            Logger.duckAIUsageWarnings.debug("[UsageWarnings] store inactive: utiDuckAIWarnings flag is off")
+            Logger.duckAIUsageWarnings.debug("[UsageWarnings] inactive: utiDuckAIWarnings flag is off")
             return nil
         }
+        guard let limitsProvider = makeLimitsProvider() else {
+            Logger.duckAIUsageWarnings.debug("[UsageWarnings] inactive: no native-storage bridge")
+            return nil
+        }
+        return DuckAiUsageWarningViewModel(
+            snapshotProvider: limitsProvider,
+            dismissalStore: dismissalStore,
+            modelSuggester: modelSuggester,
+            isTrialEligible: isTrialEligible,
+            isFireMode: isFireMode
+        )
+    }
+
+    /// Lets an open input update instead of waiting for the next activation, and is what releases
+    /// a message the user has already acted on.
+    var snapshotUpdates: AnyPublisher<Void, Never>? {
+        guard featureFlagger.isFeatureOn(.utiDuckAIWarnings),
+              let observing = storageHandler as? DuckAiNativeEntriesObserving else { return nil }
+
+        return observing.reservedEntryUpdatesPublisher
+            .filter { $0 == .usageLimits }
+            .map { _ in () }
+            .eraseToAnyPublisher()
+    }
+
+    /// There is no API for the hand-off: web reads this entry on its next hydration and turns it into
+    /// the bypass header itself. A fire tab carries an isolated handler, so a write can't leak.
+    @discardableResult
+    func write(_ entries: [DuckAiNativeStorageEntry]) -> Bool {
+        guard featureFlagger.isFeatureOn(.utiDuckAIWarnings), let storageHandler else { return false }
+
+        var didWriteAll = true
+        for entry in entries {
+            do {
+                try storageHandler.putEntry(key: entry.key, value: entry.value)
+                Logger.duckAIUsageWarnings.debug("[UsageWarnings] wrote entry '\(entry.key, privacy: .public)'")
+            } catch {
+                didWriteAll = false
+                Logger.duckAIUsageWarnings.error("""
+                    [UsageWarnings] failed to write entry '\(entry.key, privacy: .public)': \
+                    \(error.localizedDescription, privacy: .public)
+                    """)
+            }
+        }
+        return didWriteAll
+    }
+
+    private func makeLimitsProvider() -> DuckAiUsageSnapshotProviding? {
 #if DEBUG || ALPHA
-        if let override = MainActor.assumeIsolated({ Self.debugOverride }) {
+        // Wrapped rather than replaced, so "no storage bridge" still reads as inactive here exactly
+        // as it does in Release.
+        return storageProvider.map { DebugOverridableUsageLimitsProvider(wrapped: $0) }
+#else
+        return storageProvider
+#endif
+    }
+}
+
+#if DEBUG || ALPHA
+/// Lets the debug menu drive the real decision path from a hand-seeded snapshot.
+private struct DebugOverridableUsageLimitsProvider: DuckAiUsageSnapshotProviding {
+
+    let wrapped: DuckAiUsageSnapshotProviding
+
+    func currentSnapshot() -> DuckAiUsageSnapshot {
+        if let override = MainActor.assumeIsolated({ DuckAiUsageLimitsStore.debugOverride }) {
             Logger.duckAIUsageWarnings.debug("[UsageWarnings] using debug override snapshot")
             return override
         }
-#endif
-        guard let provider else {
-            Logger.duckAIUsageWarnings.debug("[UsageWarnings] store inactive: no native-storage bridge")
-            return nil
-        }
-        let limits = provider.currentUsageLimits()
-        Logger.duckAIUsageWarnings.debug("[UsageWarnings] limits read: daily=\(Self.describe(limits.daily), privacy: .private) weekly=\(Self.describe(limits.weekly), privacy: .private)")
-        return limits
-    }
-
-    private static func describe(_ usage: DuckAiUsageLimitWindow?) -> String {
-        guard let usage else { return "none" }
-        return "\(usage.percentUsed)% resets \(usage.resetsAt)"
+        return wrapped.currentSnapshot()
     }
 }
+#endif

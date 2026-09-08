@@ -50,7 +50,10 @@ final class DefaultTabTerminationErrorPageInstrumentation: TabTerminationErrorPa
     }
 }
 
-enum TabTerminationErrorPagePixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum TabTerminationErrorPagePixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
     case shown
     case reload
     case sendFeedback
@@ -70,7 +73,7 @@ enum TabTerminationErrorPagePixel: PixelKit.Event, PixelKitEventWithCustomPrefix
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 protocol TabTerminationErrorPageSettingsProviding {

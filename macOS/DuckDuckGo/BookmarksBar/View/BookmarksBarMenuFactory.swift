@@ -27,13 +27,13 @@ struct BookmarksBarMenuFactory {
         let index = menu.index(of: menuItem)
         guard index >= 0 else { return nil }
 
-        let item = makeMenuItem(prefs)
+        let item = makeMenuItem(prefs, visibleOnMacOS27: false)
         menu.replaceItem(at: index, with: item)
         return item
     }
 
     static func addToMenu(_ menu: NSMenu, prefs: AppearancePreferences) {
-        menu.addItem(makeMenuItem(prefs))
+        menu.addItem(makeMenuItem(prefs, visibleOnMacOS27: true))
     }
 
     static func addToMenuWithManageBookmarksSection(
@@ -51,16 +51,19 @@ struct BookmarksBarMenuFactory {
                 title: UserText.bookmarksBarContextMenuReorderByName,
                 action: reorderByNameSelector,
                 target: target
-            ).withImage(DesignSystemImages.Glyphs.Size12.arrowUpDown)
+            ).withImage(DesignSystemImages.Glyphs.Size12.arrowUpDown, visibleOnMacOS27: true)
             menu.addItem(reorderByNameItem)
             menu.addItem(.separator())
         }
-        menu.addItem(NSMenuItem(title: UserText.addFolder, action: addFolderSelector, target: target).withImage(DesignSystemImages.Glyphs.Size12.folderAdd))
-        menu.addItem(NSMenuItem(title: UserText.bookmarksManageBookmarks, action: manageBookmarksSelector, target: target).withImage(DesignSystemImages.Glyphs.Size12.bookmarks))
+        menu.addItem(NSMenuItem(title: UserText.addFolder, action: addFolderSelector, target: target)
+            .withImage(DesignSystemImages.Glyphs.Size12.folderAdd, visibleOnMacOS27: true))
+        menu.addItem(NSMenuItem(title: UserText.bookmarksManageBookmarks, action: manageBookmarksSelector, target: target)
+            .withImage(DesignSystemImages.Glyphs.Size12.bookmarks, visibleOnMacOS27: true))
     }
 
-    static func makeMenuItem( _ prefs: AppearancePreferences) -> NSMenuItem {
-        let item = NSMenuItem(title: UserText.showBookmarksBar, action: nil, keyEquivalent: "B").withImage(DesignSystemImages.Glyphs.Size12.toolbar)
+    static func makeMenuItem(_ prefs: AppearancePreferences, visibleOnMacOS27: Bool) -> NSMenuItem {
+        let item = NSMenuItem(title: UserText.showBookmarksBar, action: nil, keyEquivalent: "B")
+            .withImage(DesignSystemImages.Glyphs.Size12.toolbar, visibleOnMacOS27: visibleOnMacOS27)
         item.submenu = NSMenu(items: [
             BlockMenuItem(title: UserText.mainMenuBookmarksShowBookmarksBarAlways, isChecked: prefs.showBookmarksBar && prefs.bookmarksBarAppearance == .alwaysOn) {
                 prefs.bookmarksBarAppearance = .alwaysOn

@@ -24,7 +24,7 @@ final class NextStepsListUITests: UITestCase {
     private var webView: XCUIElement!
 
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
         resetNextSteps()

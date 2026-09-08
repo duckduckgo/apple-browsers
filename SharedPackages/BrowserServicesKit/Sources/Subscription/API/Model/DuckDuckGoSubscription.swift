@@ -206,6 +206,15 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         activeOffers.contains(where: { $0.type == .trial })
     }
 
+    /// Days in the active trial, derived from `startedAt`...`expiresOrRenewsAt` since `Offer` carries no duration itself; `nil` if there's no trial.
+    public func trialLengthInDays(calendar: Calendar = .current) -> Int? {
+        guard hasActiveTrialOffer else { return nil }
+        let days = calendar.dateComponents([.day],
+                                           from: calendar.startOfDay(for: startedAt),
+                                           to: calendar.startOfDay(for: expiresOrRenewsAt)).day ?? 0
+        return days > 0 ? days : nil
+    }
+
     /// Returns the pending plan with the earliest effective date if one exists, nil otherwise.
     public var firstPendingPlan: PendingPlan? {
         pendingPlans?.min(by: { $0.effectiveAt < $1.effectiveAt })

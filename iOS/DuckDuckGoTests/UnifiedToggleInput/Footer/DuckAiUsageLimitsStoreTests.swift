@@ -21,54 +21,130 @@ import AIChat
 import XCTest
 @testable import DuckDuckGo
 
+@MainActor
 final class DuckAiUsageLimitsStoreTests: XCTestCase {
 
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 
-    func test_currentLimits_isNilWhenTheFeatureFlagIsOff() {
+    override func tearDown() {
+#if DEBUG || ALPHA
+        DuckAiUsageLimitsStore.debugOverride = nil
+#endif
+        super.tearDown()
+    }
+
+    // MARK: - Feature gating
+
+    func test_makeWarningViewModel_isNilWhenTheFeatureFlagIsOff() {
         let sut = makeStore(storage: seededStorage(weeklyPercent: 80), isFeatureOn: false)
 
-        XCTAssertNil(sut.currentLimits())
+        XCTAssertNil(sut.makeWarningViewModel(modelSuggester: NullDuckAiModelSuggester(),
+                                              isTrialEligible: { false },
+                                              isFireMode: { false }))
     }
 
-    func test_currentLimits_isNilWhenThereIsNoStorageBridge() {
+    func test_makeWarningViewModel_isNilWhenThereIsNoStorageBridge() {
         let sut = makeStore(storage: nil)
 
-        XCTAssertNil(sut.currentLimits())
+        XCTAssertNil(sut.makeWarningViewModel(modelSuggester: NullDuckAiModelSuggester(),
+                                              isTrialEligible: { false },
+                                              isFireMode: { false }))
     }
 
-    func test_currentLimits_readsTheSnapshotWrittenByTheWebApp() {
-        let sut = makeStore(storage: seededStorage(weeklyPercent: 80, resetsAt: now.addingTimeInterval(172_800)))
+    // MARK: - Reading the snapshot
 
-        let limits = sut.currentLimits()
+    func test_warning_readsTheSnapshotWrittenByTheWebApp() {
+        let viewModel = makeViewModel(storage: seededStorage(weeklyPercent: 80))
 
-        XCTAssertEqual(limits?.weekly?.percentUsed, 80)
-        XCTAssertEqual(limits?.weekly?.resetsAt.timeIntervalSince1970 ?? 0,
-                       now.addingTimeInterval(172_800).timeIntervalSince1970,
-                       accuracy: 1)
+        viewModel?.refresh()
+
+        XCTAssertEqual(viewModel?.warning?.window, .weekly)
+        XCTAssertEqual(viewModel?.warning?.percent, 80)
     }
 
-    func test_currentLimits_isNoDataWhenStorageHoldsNothing() {
-        let sut = makeStore(storage: DuckAiNativeMemoryStorageHandler())
+    func test_warning_isNilWhenStorageHoldsNothing() {
+        let viewModel = makeViewModel(storage: DuckAiNativeMemoryStorageHandler())
 
-        XCTAssertEqual(sut.currentLimits(), .noData)
+        viewModel?.refresh()
+
+        XCTAssertNil(viewModel?.warning)
     }
 
-    func test_currentLimits_dropsAWindowThatHasAlreadyReset() {
-        let sut = makeStore(storage: seededStorage(weeklyPercent: 80, resetsAt: now.addingTimeInterval(-60)))
+    func test_warning_isNilWhenTheNoticeHasAlreadyReset() {
+        let viewModel = makeViewModel(storage: seededStorage(weeklyPercent: 80, resetsAt: now.addingTimeInterval(-60)))
 
-        XCTAssertEqual(sut.currentLimits(), .noData)
+        viewModel?.refresh()
+
+        XCTAssertNil(viewModel?.warning)
+    }
+
+    func test_warning_isNilInFireMode() {
+        let viewModel = makeViewModel(storage: seededStorage(weeklyPercent: 80), isFireMode: true)
+
+        viewModel?.refresh()
+
+        XCTAssertNil(viewModel?.warning)
+    }
+
+    // MARK: - Debug override
+
+#if DEBUG || ALPHA
+    func test_warning_prefersTheDebugOverrideSnapshot() {
+        let viewModel = makeViewModel(storage: seededStorage(weeklyPercent: 80))
+        DuckAiUsageLimitsStore.debugOverride = DuckAiUsageSnapshot.make(
+            entryValue: Self.snapshotJSON(weeklyPercent: 95, resetsAt: now.addingTimeInterval(172_800)),
+            now: now
+        )
+
+        viewModel?.refresh()
+
+        XCTAssertEqual(viewModel?.warning?.percent, 95)
+    }
+#endif
+
+    // MARK: - Writing the hand-off
+
+    /// Web owns the key and the value; the store writes exactly what it sent.
+    func test_write_putsTheEntriesWebNamed() throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+
+        XCTAssertTrue(makeStore(storage: storage).write([
+            DuckAiNativeStorageEntry(key: "duckai.fixedCostWindowBypassResetAtById",
+                                     value: "{\"day\":\"2026-08-22T00:00:00.000Z\"}")
+        ]))
+        XCTAssertEqual(try storage.getEntry(key: "duckai.fixedCostWindowBypassResetAtById") as? String,
+                       "{\"day\":\"2026-08-22T00:00:00.000Z\"}")
+    }
+
+    func test_write_isRefusedWhenTheFeatureFlagIsOff() throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+
+        XCTAssertFalse(makeStore(storage: storage, isFeatureOn: false)
+            .write([DuckAiNativeStorageEntry(key: "duckai.a", value: "{}")]))
+        XCTAssertNil(try storage.getEntry(key: "duckai.a"))
+    }
+
+    func test_write_isRefusedWhenThereIsNoStorageBridge() {
+        XCTAssertFalse(makeStore(storage: nil).write([DuckAiNativeStorageEntry(key: "duckai.a", value: "{}")]))
     }
 
     // MARK: - Helpers
 
     private func makeStore(storage: DuckAiNativeStorageHandling?, isFeatureOn: Bool = true) -> DuckAiUsageLimitsStore {
         DuckAiUsageLimitsStore(storageHandler: storage,
-                               featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isFeatureOn ? [.utiDuckAIWarnings] : []),
-                               dateProvider: { [unowned self] in now })
+                              featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isFeatureOn ? [.utiDuckAIWarnings] : []),
+                              dismissalStore: InMemoryDuckAiUsageWarningDismissalStore(),
+                              dateProvider: { [unowned self] in now })
     }
 
-    private func seededStorage(weeklyPercent: Double, resetsAt: Date? = nil) -> DuckAiNativeStorageHandling {
+    private func makeViewModel(storage: DuckAiNativeStorageHandling?,
+                               isFireMode: Bool = false) -> DuckAiUsageWarningViewModel? {
+        makeStore(storage: storage).makeWarningViewModel(modelSuggester: NullDuckAiModelSuggester(),
+                                                        isTrialEligible: { false },
+                                                        isFireMode: { isFireMode })
+    }
+
+    private func seededStorage(weeklyPercent: Int, resetsAt: Date? = nil) -> DuckAiNativeStorageHandling {
         let storage = DuckAiNativeMemoryStorageHandler()
         try? storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue,
                               value: Self.snapshotJSON(weeklyPercent: weeklyPercent,
@@ -76,106 +152,13 @@ final class DuckAiUsageLimitsStoreTests: XCTestCase {
         return storage
     }
 
-    private static func snapshotJSON(weeklyPercent: Double, resetsAt: Date) -> String {
+    /// The shape web writes now: a notice, not the windows older clients read.
+    private static func snapshotJSON(weeklyPercent: Int, resetsAt: Date) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return """
-        {"weekly":{"percentUsed":\(weeklyPercent),"resetsAt":"\(formatter.string(from: resetsAt))"}}
+        {"notice":{"id":"approaching","window":"weekly","percentUsed":\(weeklyPercent),\
+        "resetsAt":"\(formatter.string(from: resetsAt))","reached":false,"dismissible":true}}
         """
     }
-}
-
-final class UTIFooterWarningProviderTests: XCTestCase {
-
-    private let now = Date(timeIntervalSince1970: 1_800_000_000)
-
-    func test_currentWarning_resolvesTheSnapshotHeldInNativeStorage() {
-        let sut = makeProvider(weeklyPercent: 80)
-
-        let warning = sut.currentWarning()
-
-        guard case .usageThreshold(let window, let threshold, _) = warning else {
-            return XCTFail("Expected a usage threshold, got \(String(describing: warning))")
-        }
-        XCTAssertEqual(window, .weekly)
-        XCTAssertEqual(threshold, .seventyFive)
-    }
-
-    func test_currentWarning_isNilWhenTheFeatureIsInactive() {
-        let sut = makeProvider(weeklyPercent: 80, isFeatureOn: false)
-
-        XCTAssertNil(sut.currentWarning())
-    }
-
-    func test_currentWarning_isNilWhenUsageIsBelowEveryThreshold() {
-        let sut = makeProvider(weeklyPercent: 20)
-
-        XCTAssertNil(sut.currentWarning())
-    }
-
-    private func makeProvider(weeklyPercent: Double, isFeatureOn: Bool = true) -> UTIFooterWarningProvider {
-        let storage = DuckAiNativeMemoryStorageHandler()
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let json = """
-        {"weekly":{"percentUsed":\(weeklyPercent),"resetsAt":"\(formatter.string(from: now.addingTimeInterval(172_800)))"}}
-        """
-        try? storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue, value: json)
-
-        let store = DuckAiUsageLimitsStore(storageHandler: storage,
-                                           featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isFeatureOn ? [.utiDuckAIWarnings] : []),
-                                           dateProvider: { [unowned self] in now })
-        return UTIFooterWarningProvider(limitsStore: store)
-    }
-}
-
-final class UTIFireTabAwareFooterWarningProviderTests: XCTestCase {
-
-    private let normalWarning = UTIFooterWarning.usageThreshold(window: .weekly,
-                                                                threshold: .ninety,
-                                                                resetsAt: Date(timeIntervalSince1970: 1_800_172_800))
-    private let fireWarning = UTIFooterWarning.usageThreshold(window: .daily,
-                                                              threshold: .fifty,
-                                                              resetsAt: Date(timeIntervalSince1970: 1_800_086_400))
-
-    func test_currentWarning_readsTheNormalTabSourceOutsideAFireTab() {
-        let sut = makeProvider(isFireTab: { false })
-
-        XCTAssertEqual(sut.currentWarning(), normalWarning)
-    }
-
-    func test_currentWarning_readsTheFireTabSourceOnAFireTab() {
-        let sut = makeProvider(isFireTab: { true })
-
-        XCTAssertEqual(sut.currentWarning(), fireWarning)
-    }
-
-    func test_currentWarning_isNilOnAFireTabWithNoFireTabSource() {
-        let sut = UTIFireTabAwareFooterWarningProvider(normalTabProvider: StubUTIFooterWarningProvider(warning: normalWarning),
-                                                       fireTabProvider: nil,
-                                                       isFireTab: { true })
-
-        XCTAssertNil(sut.currentWarning())
-    }
-
-    func test_currentWarning_followsTheFireTabStateAcrossReads() {
-        var isFireTab = false
-        let sut = makeProvider(isFireTab: { isFireTab })
-
-        XCTAssertEqual(sut.currentWarning(), normalWarning)
-        isFireTab = true
-        XCTAssertEqual(sut.currentWarning(), fireWarning)
-    }
-
-    private func makeProvider(isFireTab: @escaping () -> Bool) -> UTIFireTabAwareFooterWarningProvider {
-        UTIFireTabAwareFooterWarningProvider(normalTabProvider: StubUTIFooterWarningProvider(warning: normalWarning),
-                                             fireTabProvider: StubUTIFooterWarningProvider(warning: fireWarning),
-                                             isFireTab: isFireTab)
-    }
-}
-
-private struct StubUTIFooterWarningProvider: UTIFooterWarningProviding {
-    let warning: UTIFooterWarning?
-
-    func currentWarning() -> UTIFooterWarning? { warning }
 }

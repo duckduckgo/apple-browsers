@@ -18,18 +18,33 @@
 //
 
 import XCTest
+import BrowserServicesKitTestsUtils
 @testable import Core
 @testable import DuckDuckGo
 import AIChat
+@_spi(Testing) import PixelKit
 
 final class AIChatPixelMetricHandlerTests: XCTestCase {
 
     private var handler: AIChatPixelMetricHandler!
+    private var pixelKitMock: PixelKitMock!
+
+    override func setUp() {
+        super.setUp()
+        pixelKitMock = PixelKitMock()
+    }
 
     override func tearDown() {
         handler = nil
-        PixelFiringMock.tearDown()
+        pixelKitMock = nil
         super.tearDown()
+    }
+
+    /// A user who has already submitted a Duck.ai prompt, so no first_prompt_new_install param is added.
+    private static func returningUserFeatureDiscovery() -> MockFeatureDiscovery {
+        let featureDiscovery = MockFeatureDiscovery()
+        featureDiscovery.setReturnValue(true, for: .duckAIPrompt)
+        return featureDiscovery
     }
 
     // MARK: - Initialization Tests
@@ -39,7 +54,7 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         let timeElapsed = 5
 
         // When
-        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: timeElapsed, pixelFiring: PixelFiringMock.self)
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: timeElapsed, pixelFiring: pixelKitMock)
 
         // Then
         XCTAssertNotNil(handler)
@@ -47,7 +62,7 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
 
     func testInitializationWithNilTimeElapsed() {
         // When
-        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil, pixelFiring: PixelFiringMock.self)
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil, pixelFiring: pixelKitMock)
 
         // Then
         XCTAssertNotNil(handler)
@@ -57,78 +72,84 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
 
     func testFireOpenAIChatWithoutTimeElapsed() {
         // Given
-        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil, pixelFiring: PixelFiringMock.self)
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil, pixelFiring: pixelKitMock)
 
         // When
         handler.fireOpenAIChat()
 
         // Then
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatOpen.name)
-        XCTAssertTrue(PixelFiringMock.lastParams?.isEmpty ?? false)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.aiChatOpen.name)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.last?.additionalParameters?.isEmpty ?? false)
     }
 
     func testFireOpenAIChatWithTimeElapsed() {
         // Given
         let timeElapsed = 10
-        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: timeElapsed, pixelFiring: PixelFiringMock.self)
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: timeElapsed, pixelFiring: pixelKitMock)
 
         // When
         handler.fireOpenAIChat()
 
         // Then
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatOpen.name)
-        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-minutes"], "10")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.aiChatOpen.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["delta-timestamp-minutes"], "10")
     }
 
     func testFireOpenAIChatWithZeroTimeElapsed() {
         // Given
-        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: 0, pixelFiring: PixelFiringMock.self)
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: 0, pixelFiring: pixelKitMock)
 
         // When
         handler.fireOpenAIChat()
 
         // Then
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatOpen.name)
-        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-minutes"], "0")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.aiChatOpen.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["delta-timestamp-minutes"], "0")
     }
 
     // MARK: - firePixelWithMetric Tests
 
     func testFirePixelWithMetricForKnownMetric() {
         // Given
-        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil, pixelFiring: PixelFiringMock.self)
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil,
+                                           pixelFiring: pixelKitMock,
+                                           featureDiscovery: Self.returningUserFeatureDiscovery())
         let metric = AIChatMetric(metricName: .userDidSubmitPrompt)
 
         // When
         handler.firePixelWithMetric(metric)
 
         // Then
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatMetricSentPromptOngoingChat.name)
-        XCTAssertTrue(PixelFiringMock.lastParams?.isEmpty ?? false)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.aiChatMetricSentPromptOngoingChat.name)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.last?.additionalParameters?.isEmpty ?? false)
     }
 
     func testFirePixelWithMetricForKnownMetricWithTimeElapsed() {
         // Given
         let timeElapsed = 15
-        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: timeElapsed, pixelFiring: PixelFiringMock.self)
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: timeElapsed,
+                                           pixelFiring: pixelKitMock,
+                                           featureDiscovery: Self.returningUserFeatureDiscovery())
         let metric = AIChatMetric(metricName: .userDidSubmitFirstPrompt)
 
         // When
         handler.firePixelWithMetric(metric)
 
         // Then
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatMetricStartNewConversation.name)
-        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-minutes"], "15")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.aiChatMetricStartNewConversation.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["delta-timestamp-minutes"], "15")
     }
 
     func testFirePixelWithMetricForAllKnownMetrics() {
         // Given
-        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil, pixelFiring: PixelFiringMock.self)
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil,
+                                           pixelFiring: pixelKitMock,
+                                           featureDiscovery: Self.returningUserFeatureDiscovery())
         let testCases: [(AIChatMetricName, Pixel.Event)] = [
             (.userDidSubmitPrompt, .aiChatMetricSentPromptOngoingChat),
             (.userDidSubmitFirstPrompt, .aiChatMetricStartNewConversation),
@@ -143,35 +164,81 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
             let metric = AIChatMetric(metricName: testCase.0)
             handler.firePixelWithMetric(metric)
 
-            XCTAssertEqual(PixelFiringMock.allPixelsFired.count, index + 1)
-            XCTAssertEqual(PixelFiringMock.allPixelsFired[index].pixelName, testCase.1.name)
+            XCTAssertEqual(pixelKitMock.actualFireCalls.count, index + 1)
+            XCTAssertEqual(pixelKitMock.actualFireCalls[index].pixel.name, testCase.1.name)
         }
     }
 
     func testFirePixelWithMetricForKeyboardReturnKey() {
         // Given
         let timeElapsed = 15
-        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: timeElapsed, pixelFiring: PixelFiringMock.self)
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: timeElapsed, pixelFiring: pixelKitMock)
         let metric = AIChatMetric(metricName: .userDidTapKeyboardReturnKey)
 
         // When
         handler.firePixelWithMetric(metric)
 
         // Then
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatMetricDuckAIKeyboardReturnPressed.name)
-        XCTAssertTrue(PixelFiringMock.lastParams?.isEmpty ?? false)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.aiChatMetricDuckAIKeyboardReturnPressed.name)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.last?.additionalParameters?.isEmpty ?? false)
+    }
+
+    // MARK: - First prompt
+
+    func testWhenFirstEverPromptReportedByFrontendThenFirstPromptParamIsTrueAndFlagIsMarked() {
+        // Given
+        let featureDiscovery = MockFeatureDiscovery()
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil,
+                                           pixelFiring: pixelKitMock,
+                                           featureDiscovery: featureDiscovery)
+
+        // When
+        handler.firePixelWithMetric(AIChatMetric(metricName: .userDidSubmitPrompt))
+
+        // Then
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["first_prompt_new_install"], "true")
+        XCTAssertTrue(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+
+    func testWhenReturningUserSubmitsPromptThenFirstPromptParamIsOmitted() {
+        // Given
+        let featureDiscovery = Self.returningUserFeatureDiscovery()
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil,
+                                           pixelFiring: pixelKitMock,
+                                           featureDiscovery: featureDiscovery)
+
+        // When
+        handler.firePixelWithMetric(AIChatMetric(metricName: .userDidSubmitFirstPrompt))
+
+        // Then
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters?["first_prompt_new_install"])
+    }
+
+    func testWhenNonPromptMetricFiresThenFirstPromptFlagIsUntouched() {
+        // Given
+        let featureDiscovery = MockFeatureDiscovery()
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil,
+                                           pixelFiring: pixelKitMock,
+                                           featureDiscovery: featureDiscovery)
+
+        // When
+        handler.firePixelWithMetric(AIChatMetric(metricName: .userDidOpenHistory))
+
+        // Then
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters?["first_prompt_new_install"])
+        XCTAssertFalse(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
     }
 
     func testFirePixelWithMetricForUnknownMetricDoesNothing() {
         // Given
-        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil, pixelFiring: PixelFiringMock.self)
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil, pixelFiring: pixelKitMock)
 
         // When - a metric name in neither the engagement nor the funnel table
         handler.firePixelWithMetric(AIChatMetric(metricName: .userDidAcceptTermsAndConditions))
 
         // Then
-        XCTAssertTrue(PixelFiringMock.allPixelsFired.isEmpty)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     // MARK: - Subscription Funnel Map Tests
@@ -211,26 +278,26 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
                        "The funnel table gained or lost entries this test does not cover")
 
         // A non-nil elapsed time proves the funnel branch does not inherit the engagement branch's timestamp
-        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: 7, pixelFiring: PixelFiringMock.self)
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: 7, pixelFiring: pixelKitMock)
 
         for testCase in testCases {
             // When
-            PixelFiringMock.tearDown()
+            let countBeforeView = pixelKitMock.actualFireCalls.count
             handler.firePixelWithMetric(AIChatMetric(metricName: testCase.view))
 
             // Then
-            XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1, "\(testCase.origin) view")
-            XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatSubscriptionFunnelImpression.name)
-            XCTAssertEqual(PixelFiringMock.lastParams, ["origin": testCase.origin])
+            XCTAssertEqual(pixelKitMock.actualFireCalls.count, countBeforeView + 1, "\(testCase.origin) view")
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.aiChatSubscriptionFunnelImpression.name)
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["origin": testCase.origin])
 
             // When
-            PixelFiringMock.tearDown()
+            let countBeforeClick = pixelKitMock.actualFireCalls.count
             handler.firePixelWithMetric(AIChatMetric(metricName: testCase.click))
 
             // Then
-            XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1, "\(testCase.origin) click")
-            XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatSubscriptionFunnelClick.name)
-            XCTAssertEqual(PixelFiringMock.lastParams, ["origin": testCase.origin])
+            XCTAssertEqual(pixelKitMock.actualFireCalls.count, countBeforeClick + 1, "\(testCase.origin) click")
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.aiChatSubscriptionFunnelClick.name)
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["origin": testCase.origin])
         }
     }
 
@@ -244,7 +311,9 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
     func testMultiplePixelFiresWithConsistentParameters() {
         // Given
         let timeElapsed = 20
-        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: timeElapsed, pixelFiring: PixelFiringMock.self)
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: timeElapsed,
+                                           pixelFiring: pixelKitMock,
+                                           featureDiscovery: Self.returningUserFeatureDiscovery())
 
         // When
         handler.fireOpenAIChat()
@@ -252,11 +321,11 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         handler.firePixelWithMetric(AIChatMetric(metricName: .userDidOpenHistory))
 
         // Then
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 3)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 3)
 
         // All pixels should have the same timestamp parameter
-        for capturedPixel in PixelFiringMock.allPixelsFired {
-            XCTAssertEqual(capturedPixel.params?["delta-timestamp-minutes"], "20")
+        for capturedPixel in pixelKitMock.actualFireCalls {
+            XCTAssertEqual(capturedPixel.additionalParameters?["delta-timestamp-minutes"], "20")
         }
     }
 }

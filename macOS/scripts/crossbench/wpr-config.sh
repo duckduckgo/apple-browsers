@@ -28,8 +28,8 @@ WPR_US_BROADBAND_WINDOW="${WPR_US_BROADBAND_WINDOW:-10}"
 
 # Default outer browser window size. Workflows may override it for constrained displays.
 # Browser chrome may still produce different content viewport dimensions.
-BROWSER_WINDOW_WIDTH="${BROWSER_WINDOW_WIDTH:-1366}"
-BROWSER_WINDOW_HEIGHT="${BROWSER_WINDOW_HEIGHT:-768}"
+BROWSER_WINDOW_WIDTH="${BROWSER_WINDOW_WIDTH:-800}"
+BROWSER_WINDOW_HEIGHT="${BROWSER_WINDOW_HEIGHT:-600}"
 
 normalize_wpr_site() {
   local value="$1"

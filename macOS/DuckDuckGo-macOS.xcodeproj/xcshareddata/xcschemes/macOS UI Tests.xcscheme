@@ -33,7 +33,7 @@
             ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
             <ActionContent
                title = "Run Script"
-               scriptText = "&quot;${PROJECT_DIR}/clean-app.sh&quot; review&#10;defaults write com.duckduckgo.macos.browser.review moveToApplicationsFolderAlertSuppress 1&#10;killall tests-server&#10;# integration tests resources dir&#10;pushd &quot;${METAL_LIBRARY_OUTPUT_DIR}&quot;&#10;&quot;${BUILT_PRODUCTS_DIR}/tests-server&quot; &amp;&#10;popd&#10;">
+               scriptText = "&quot;${PROJECT_DIR}/clean-app.sh&quot; review&#10;defaults write com.duckduckgo.macos.browser.review moveToApplicationsFolderAlertSuppress 1&#10;&quot;${PROJECT_DIR}/start-tests-server.sh&quot;&#10;echo &quot;Pre-test action done&quot;&#10;">
                <EnvironmentBuildable>
                   <BuildableReference
                      BuildableIdentifier = "primary"
@@ -51,7 +51,7 @@
             ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
             <ActionContent
                title = "Run Script"
-               scriptText = "# Type a script or drag a script file from your workspace to insert its path.&#10;killall tests-server&#10;">
+               scriptText = "/usr/bin/logger -t tests-server -- &quot;[tests-server] scheme post-action: killall tests-server&quot;&#10;killall tests-server&#10;">
             </ActionContent>
          </ExecutionAction>
       </PostActions>

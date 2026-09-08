@@ -41,7 +41,7 @@ struct SaveRecoveryPDFView: View {
                     .frame(width: 340)
                 HStack {
                     Button {
-                        viewModel.delegate?.copyCode()
+                        viewModel.delegate?.copyCode(code)
                     } label: {
                         Text(UserText.recoveryPDFCopyCodeButton)
                             .frame(width: 155, height: 28)

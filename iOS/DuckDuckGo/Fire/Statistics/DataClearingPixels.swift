@@ -28,11 +28,16 @@ enum DataClearingPixels {
 
     /// User performed action before data clearing completed
     case userActionBeforeCompletion
+
+    /// App switcher snapshot directory enumeration failed
+    case appSwitcherSnapshotEnumerationFailed(Error)
 }
 
 // MARK: - PixelKit.Event Protocol
 
 extension DataClearingPixels: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
 
     var name: String {
         switch self {
@@ -40,6 +45,8 @@ extension DataClearingPixels: PixelKit.Event {
             return "m_fire_retrigger_in_20s"
         case .userActionBeforeCompletion:
             return "m_fire_user_action_before_completion"
+        case .appSwitcherSnapshotEnumerationFailed:
+            return "app-switcher_snapshot_enumeration_failed"
         }
     }
 
@@ -48,7 +55,12 @@ extension DataClearingPixels: PixelKit.Event {
     }
 
     var error: NSError? {
-        return nil
+        switch self {
+        case .appSwitcherSnapshotEnumerationFailed(let error):
+            return error as NSError
+        default:
+            return nil
+        }
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
@@ -62,10 +74,9 @@ extension DataClearingPixels: PixelKit.Event {
 ///
 /// Kept separate from `DataClearingPixels` for two reasons, both of which would otherwise change
 /// pixels this type does not own:
-/// - it conforms to `PixelKitEventWithCustomPrefix`, which is what appends the `_ios_phone` /
-///   `_ios_tablet` suffix these four have always sent. `DataClearingPixels` has no such conformance,
-///   so retrofitting it there would start suffixing `m_fire_retrigger_in_20s` and
-///   `m_fire_user_action_before_completion` too.
+/// - these four have always sent the `_ios_phone` / `_ios_tablet` marker and `DataClearingPixels`
+///   never has, so the two need different `platformSuffixPolicy` values. Merging them would start
+///   marking `m_fire_retrigger_in_20s` and `m_fire_user_action_before_completion` too.
 /// - `DataClearingPixels` reports `pixelSource`, which these four do not declare in
 ///   `forget_all.json5`.
 enum DataClearingCompletionPixels {
@@ -85,11 +96,13 @@ enum DataClearingCompletionPixels {
 
 // MARK: - PixelKit.Event Protocol
 
-extension DataClearingCompletionPixels: PixelKit.Event, PixelKitEventWithCustomPrefix {
+extension DataClearingCompletionPixels: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     /// Empty: these names already carry their own `m_` prefix. The conformance exists solely for
     /// `platformSuffix`, which appends the form factor.
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 
     var name: String {
         switch self {

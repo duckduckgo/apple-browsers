@@ -27,7 +27,6 @@ class StateRestorationPromptTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp(arguments: ["CRASH_RESTORE_TEST"])
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
@@ -57,20 +56,19 @@ class StateRestorationPromptTests: UITestCase {
 
         addressBarTextField.pasteURL(urlForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
         waitForSessionFileToBeUpdated(since: lastSaved)
 
-        app.terminate()
-        app.launch()
+        app.restart(forceTerminate: true)
         app.openNewWindow()
 
         app.acceptSessionRestore()
 
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Visited site wasn't found in a webview with the expected title in a reasonable timeframe."
         )
 
@@ -96,14 +94,13 @@ class StateRestorationPromptTests: UITestCase {
 
         addressBarTextField.pasteURL(urlForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
         waitForSessionFileToBeUpdated(since: lastSaved)
 
-        app.terminate()
-        app.launch()
+        app.restart(forceTerminate: true)
         app.openNewWindow()
 
         app.rejectSessionRestore()

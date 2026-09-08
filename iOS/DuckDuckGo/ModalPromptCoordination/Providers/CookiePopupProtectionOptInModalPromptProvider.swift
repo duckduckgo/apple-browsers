@@ -25,6 +25,7 @@ import UIKit
 import WebExtensions
 import PrivacyConfig
 import FeatureFlags_iOS
+import PixelKit
 
 /// Persisted state for the Cookie Pop-up Protection opt-in dialog (for telemetry + showing conditions + debug reset).
 struct CookiePopupProtectionOptInPromptStore {
@@ -133,7 +134,7 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
             if let timeSinceShown = store.bucketedTimeSinceFirstShown() {
                 parameters[PixelParameters.timeSinceShown] = timeSinceShown
             }
-            Pixel.fire(pixel: .cookiePopupOptInOptionConfirmed, withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.cookiePopupOptInOptionConfirmed, options: .parameters(parameters))
         }))
     }
 
@@ -141,18 +142,17 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
         let parameters = [PixelParameters.autoconsentEnabled: AppUserDefaults().autoconsentEnabled ? "true" : "false"]
         if store.shownCount == 0 {
             store.firstShownDate = Date()
-            Pixel.fire(pixel: .cookiePopupOptInShownFirst, withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.cookiePopupOptInShownFirst, options: .parameters(parameters))
         } else {
-            Pixel.fire(pixel: .cookiePopupOptInShownRepeat, withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.cookiePopupOptInShownRepeat, options: .parameters(parameters))
         }
         store.shownCount += 1
     }
 
-    /// Shown only while the Cookie Pop-up Protection setting feature flag is on, at most `maxShowCount` times,
+    /// Shown only while the Cookie Pop-up Protection opt-in dialog feature flag is on, at most `maxShowCount` times,
     /// only ≥ `minDaysSinceInstall` days after install, and never after the user confirms.
     private var isEligibleToShow: Bool {
-        guard featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting),
-              featureFlagger.isFeatureOn(.cookiePopupOptInDialog) else { return false }
+        guard featureFlagger.isFeatureOn(.cookiePopupOptInDialog) else { return false }
         // Nothing to offer users already on the most-private setting — it already accepts no-opt-out cookies.
         guard AppUserDefaults().cookiePopupPreference != .max else { return false }
         guard !store.hasConfirmed, store.shownCount < Constants.maxShowCount else { return false }

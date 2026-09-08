@@ -106,6 +106,15 @@ final class OpenAIChatFromAddressBarHandlingTests: XCTestCase {
         wait(for: [ex], timeout: 1.0) // Timeout not strictly needed as it's sync
     }
 
+    func testAutoSubmittedDuckAIPromptRequiresContentAndAutoSend() {
+        XCTAssertFalse(MainViewController.hasAutoSubmittedDuckAIPrompt(query: nil, autoSend: true, hasAttachments: false))
+        XCTAssertFalse(MainViewController.hasAutoSubmittedDuckAIPrompt(query: "   ", autoSend: true, hasAttachments: false))
+        XCTAssertFalse(MainViewController.hasAutoSubmittedDuckAIPrompt(query: "prompt", autoSend: false, hasAttachments: false))
+        XCTAssertFalse(MainViewController.hasAutoSubmittedDuckAIPrompt(query: nil, autoSend: false, hasAttachments: true))
+        XCTAssertTrue(MainViewController.hasAutoSubmittedDuckAIPrompt(query: "prompt", autoSend: true, hasAttachments: false))
+        XCTAssertTrue(MainViewController.hasAutoSubmittedDuckAIPrompt(query: nil, autoSend: true, hasAttachments: true))
+    }
+
 }
 
 private extension URL {

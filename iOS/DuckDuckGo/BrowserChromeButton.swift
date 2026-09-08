@@ -147,6 +147,7 @@ class BrowserChromeButton: UIButton {
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
         if previousTraitCollection?.hasDifferentColorAppearance(comparedTo: traitCollection) == true {
             setNeedsDisplay()
         }
@@ -187,7 +188,7 @@ class BrowserChromeButton: UIButton {
         case .tabSwitcher:
             return .tabSwitcherDefault()
         case .toolbar:
-            return .omniBarDefault()
+            return .toolbarGlyph()
         }
     }
 }
@@ -243,6 +244,14 @@ private extension UIButton.Configuration {
 
         config.background.cornerRadius = 14
 
+        return config
+    }
+
+    static func toolbarGlyph() -> UIButton.Configuration {
+        var config = UIButton.Configuration.plain()
+        config.cornerStyle = .capsule
+        config.buttonSize = .medium
+        config.titleAlignment = .center
         return config
     }
 

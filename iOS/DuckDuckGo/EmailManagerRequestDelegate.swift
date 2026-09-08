@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import Networking
 import Core
+import PixelKit
 
 // MARK: - EmailManagerRequestDelegate
 extension EmailManagerRequestDelegate {
@@ -83,7 +84,7 @@ extension EmailManagerRequestDelegate {
             emailManager.forceSignOut()
         }
 
-        Pixel.fire(pixel: .emailAutofillKeychainError, withAdditionalParameters: parameters)
+        PixelKit.fire(Pixel.Event.emailAutofillKeychainError, options: .parameters(parameters))
     }
 
 }

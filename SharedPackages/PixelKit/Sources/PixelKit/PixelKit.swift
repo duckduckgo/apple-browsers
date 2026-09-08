@@ -948,8 +948,9 @@ public final class PixelKit {
     private func printDebugInfo(pixelName: String, frequency: Frequency, parameters: [String: String], skipped: Bool = false) {
         // Wide-event pixels (`m_mac_wide_*` / `m_ios_wide_*`) also log their parameters via the
         // POST endpoint payload in `DefaultWideEventSender`; skip the params here to avoid the noise.
+        let firedLogString = dryRun ? "Fired(dryRun)" : "Fired"
         guard !pixelName.contains("_wide_") else {
-            logger.debug("👾[\(frequency.description, privacy: .public)-\(skipped ? "Skipped" : "Fired", privacy: .public)] \(pixelName, privacy: .public)")
+            logger.debug("👾[\(frequency.description, privacy: .public)-\(skipped ? "Skipped" : firedLogString, privacy: .public)] \(pixelName, privacy: .public)")
             return
         }
 
@@ -959,7 +960,7 @@ public final class PixelKit {
 
         // Sort the params before logging them in debug mode to make it easier to compare multiple subsequent calls
         let sortedParamsString = params.map { "\"\($0.key)\": \"\($0.value)\"" }.joined(separator: ", ")
-        logger.debug("👾[\(frequency.description, privacy: .public)-\(skipped ? "Skipped" : "Fired", privacy: .public)] \(pixelName, privacy: .public) [\(sortedParamsString, privacy: .public)]")
+        logger.debug("👾[\(frequency.description, privacy: .public)-\(skipped ? "Skipped" : firedLogString, privacy: .public)] \(pixelName, privacy: .public) [\(sortedParamsString, privacy: .public)]")
     }
 
     /// The single place a pixel name reaches the network, and therefore the only place the platform

@@ -27,18 +27,18 @@ enum NewTabPageMessageInteraction {
 }
 
 protocol NewTabPageControllerDelegate: AnyObject {
-    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity)
-    func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity)
-    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController)
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab)
-    func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController)
-    func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: NewTabPageViewController)
-    func newTabPageDidScroll(_ controller: NewTabPageViewController)
-    func newTabPage(_ controller: NewTabPageViewController, didInteractWithMessage interaction: NewTabPageMessageInteraction)
+    func newTabPageDidSelectFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity)
+    func newTabPageDidEditFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity)
+    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: any NewTabPage)
+    func newTabPageDidRequestSwitchToTab(_ controller: any NewTabPage, tab: Tab)
+    func newTabPageDidRequestTabSwitcher(_ controller: any NewTabPage)
+    func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: any NewTabPage)
+    func newTabPageDidScroll(_ controller: any NewTabPage)
+    func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction)
 }
 
 extension NewTabPageControllerDelegate {
-    func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: NewTabPageViewController) { }
-    func newTabPageDidScroll(_ controller: NewTabPageViewController) { }
-    func newTabPage(_ controller: NewTabPageViewController, didInteractWithMessage interaction: NewTabPageMessageInteraction) { }
+    func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: any NewTabPage) { }
+    func newTabPageDidScroll(_ controller: any NewTabPage) { }
+    func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction) { }
 }

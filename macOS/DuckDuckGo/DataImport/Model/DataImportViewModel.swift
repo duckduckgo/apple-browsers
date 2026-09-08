@@ -21,6 +21,7 @@ import Common
 import FoundationExtensions
 import UniformTypeIdentifiers
 import PixelKit
+import WideEvent
 import os.log
 import BrowserServicesKit
 import Persistence

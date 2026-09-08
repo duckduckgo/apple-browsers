@@ -31,6 +31,7 @@ import Networking
 import os.log
 import Persistence
 import PixelKit
+import WideEvent
 import Subscription
 import VPN
 import WidgetKit

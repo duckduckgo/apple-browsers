@@ -56,6 +56,7 @@ import os.log
 import Persistence
 import PixelExperimentKit
 import PixelKit
+import WideEvent
 import SERPSettings
 import PrivacyConfig
 import PrivacyStats

@@ -17,6 +17,9 @@
 //
 
 import BrowserServicesKit
+import FeatureFlags_macOS
+import PixelExperimentKit
+import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 import PrivacyConfigTestsUtils
 import Subscription
@@ -46,7 +49,12 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         navigator = MockNavigator()
         syncLauncher = MockSyncLauncher()
 
-        actionHandler = NewTabPageNextStepsCardsActionHandler(
+        actionHandler = makeActionHandler(featureFlagger: MockFeatureFlagger())
+    }
+
+    @MainActor
+    private func makeActionHandler(featureFlagger: FeatureFlagger) -> NewTabPageNextStepsCardsActionHandler {
+        NewTabPageNextStepsCardsActionHandler(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
             dockCustomizer: dockCustomizer,
             dataImportProvider: capturingDataImportProvider,
@@ -54,11 +62,15 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
             privacyConfigurationManager: privacyConfigManager,
             pixelHandler: pixelHandler,
             newTabPageNavigator: navigator,
-            syncLauncher: syncLauncher
+            syncLauncher: syncLauncher,
+            featureFlagger: featureFlagger
         )
     }
 
     override func tearDown() {
+        PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(),
+                                        eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
+                                        fire: { _, _, _ in })
         actionHandler = nil
         capturingDefaultBrowserProvider = nil
         capturingDataImportProvider = nil
@@ -136,6 +148,54 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         XCTAssertTrue(syncLauncher.startDeviceSyncFlowCalled)
         XCTAssertEqual(syncLauncher.syncSource, .nextStepsCard)
         XCTAssertNotNil(syncLauncher.capturedCompletion)
+    }
+
+    @MainActor
+    func testSetupCardsReportExistingExperimentMetricsForBothCohorts() {
+        for cohort in [FeatureFlag.OnboardingNonBlockingCohort.control, .treatment] {
+            let flags = MockFeatureFlagger(resolveCohortStub: cohort)
+            flags.allActiveExperiments = [
+                MacOSBrowserConfigSubfeature.onboardingNonBlocking.rawValue: ExperimentData(
+                    parentID: PrivacyFeature.macOSBrowserConfig.rawValue,
+                    cohortID: cohort.rawValue, enrollmentDate: Date())
+            ]
+            var events: [PixelKit.Event] = []
+            PixelKit.configureExperimentKit(featureFlagger: flags,
+                                            eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
+                                            fire: { event, _, _ in events.append(event) })
+            let handler = makeActionHandler(featureFlagger: flags)
+
+            handler.performAction(for: .bringStuff, refreshCardsAction: nil)
+            handler.performAction(for: .addAppToDockMac, refreshCardsAction: nil)
+
+            XCTAssertTrue(capturingDataImportProvider.showImportWindowCalled)
+            XCTAssertTrue(dockCustomizer.isAddedToDock)
+            XCTAssertEqual(events.count, 6)
+            for metric in ["importRequested", "addToDockRequested"] {
+                let matching = events.filter { $0.parameters?["metric"] == metric }
+                XCTAssertEqual(Set(matching.compactMap { $0.parameters?["conversionWindowDays"] }), ["0-1", "0-5", "0-7"])
+                XCTAssertTrue(matching.allSatisfy { $0.parameters?["value"] == "true" })
+            }
+            XCTAssertFalse(flags.didCallResolveCohort)
+        }
+    }
+
+    @MainActor
+    func testSetupCardsDoNotEnrollOrReportExperimentMetricsForUnenrolledUsers() {
+        let flags = MockFeatureFlagger()
+        var events: [PixelKit.Event] = []
+        PixelKit.configureExperimentKit(featureFlagger: flags,
+                                        eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
+                                        fire: { event, _, _ in events.append(event) })
+        let handler = makeActionHandler(featureFlagger: flags)
+
+        handler.performAction(for: .bringStuff, refreshCardsAction: nil)
+        handler.performAction(for: .addAppToDockMac, refreshCardsAction: nil)
+
+        XCTAssertTrue(events.isEmpty)
+        XCTAssertFalse(flags.didCallResolveCohort)
+        XCTAssertTrue(capturingDataImportProvider.showImportWindowCalled)
+        XCTAssertTrue(dockCustomizer.isAddedToDock)
     }
 
     // MARK: - Pixel Tests

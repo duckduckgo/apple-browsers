@@ -39,9 +39,6 @@ public final class AIChatContextChipView: UIView {
         /// The offer reads as provisional, so its outline is heavier and broken rather than solid.
         static let suggestedBorderWidth: CGFloat = 1.5
         static let suggestedDashPattern: [NSNumber] = [5, 7]
-        /// The design puts a 24pt blur behind the pill; a shadow is the closest UIKit gets.
-        static let suggestedGlowRadius: CGFloat = 12
-        static let suggestedGlowOpacity: Float = 0.35
 
         static let faviconSize: CGFloat = 28
         /// The design's rounded variant shows a circular favicon, but its asset is a circle with its
@@ -165,8 +162,6 @@ public final class AIChatContextChipView: UIView {
             roundedRect: bounds.insetBy(dx: inset, dy: inset),
             cornerRadius: layer.cornerRadius - inset
         ).cgPath
-        // Without a path the glow renders as the layer's rectangle rather than the pill.
-        layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: layer.cornerRadius).cgPath
     }
 
     // MARK: - Configuration
@@ -236,6 +231,10 @@ private extension AIChatContextChipView {
         hideLoadingView()
         faviconView.isHidden = false
         titleLabel.isHidden = false
+        // Everything the suggested state adds, undone: it is the only state that draws them, and a
+        // chip is reused across states rather than rebuilt.
+        removeButton.backgroundColor = .clear
+        dashedBorderLayer.isHidden = true
 
         switch state {
         case .loading:
@@ -279,7 +278,6 @@ private extension AIChatContextChipView {
             accessibilityLabel = offer
             accessibilityTraits = .none
             applyDashedBorder(color: UIColor(designSystemColor: .accentPrimary))
-            applyGlow(color: UIColor(designSystemColor: .accentPrimary))
             isUserInteractionEnabled = true
             chipTapRecognizer.isEnabled = true
 
@@ -319,20 +317,6 @@ private extension AIChatContextChipView {
 
     /// Neutral states pass `lines`, not `decorationPrimary`: the design is black at 9%, which `lines`
     /// matches and `decorationPrimary` does not — it is 30%.
-    /// The pill would otherwise clip its own glow, so clipping is off while it is shown.
-    func applyGlow(color: UIColor) {
-        clipsToBounds = false
-        layer.shadowColor = color.cgColor
-        layer.shadowOffset = .zero
-        layer.shadowRadius = Constants.suggestedGlowRadius
-        layer.shadowOpacity = Constants.suggestedGlowOpacity
-    }
-
-    func clearGlow() {
-        clipsToBounds = true
-        layer.shadowOpacity = 0
-    }
-
     func applyDashedBorder(color: UIColor) {
         layer.borderWidth = 0
         dashedBorderLayer.isHidden = false

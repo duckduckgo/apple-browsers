@@ -483,6 +483,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Displays the Duck.ai shortcut in the iPad browser chrome (tabs bar).
     case iPadChromeShortcut
 
+    /// Replaces the iPad chrome split button with the single Duck.ai menu button the iPhone address bar uses.
+    case iPadChromeMenuButton
+
     /// Enables moving the AI Chat native-storage container from the shared App
     /// Group into the app's Application Support directory on iOS. Off keeps the
     /// legacy App Group path.

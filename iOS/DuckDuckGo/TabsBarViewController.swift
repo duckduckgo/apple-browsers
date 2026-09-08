@@ -43,6 +43,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController)
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController)
     func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController)
+    func tabsBarDidPressAIChatMenuButton(_ controller: TabsBarViewController)
     func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController)
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void)
 
@@ -67,6 +68,9 @@ class TabsBarViewController: UIViewController {
         /// Active-tab bottom fillet size (Figma spec).
         static let tabRampSize = CGSize(width: 10, height: 10)
         static let windowControlsTabGap: CGFloat = 16
+        static let aiChatMenuButtonCornerRadius: CGFloat = 9
+        static let aiChatMenuButtonImagePadding: CGFloat = 6
+        static let aiChatMenuButtonContentInsets = NSDirectionalEdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
     }
     
     enum NewTabType {
@@ -114,6 +118,31 @@ class TabsBarViewController: UIViewController {
         // Prevents a brief visible-then-hidden flicker if the flag or per-shortcut preference is off.
         chip.isHidden = true
         return chip
+    }()
+
+    /// Stands in for `aiChatChip` behind `aiChatChromeMenuButtonIPad`, styled after the macOS "Ask Duck.ai"
+    /// pill; `MainViewController` drives it with the same entry logic and menu as the iPhone address-bar button.
+    lazy var aiChatMenuButton: UIButton = {
+        var config = UIButton.Configuration.plain()
+        config.title = UserText.actionAskAIChat
+        config.image = DesignSystemImages.Glyphs.Size16.aiChat.withRenderingMode(.alwaysTemplate)
+        config.imagePadding = Constants.aiChatMenuButtonImagePadding
+        config.contentInsets = Constants.aiChatMenuButtonContentInsets
+        config.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
+        config.background.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        config.background.cornerRadius = Constants.aiChatMenuButtonCornerRadius
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = UIFont.preferredFont(forTextStyle: .body,
+                                                 compatibleWith: UITraitCollection(preferredContentSizeCategory: .large))
+            return outgoing
+        }
+        let button = UIButton(configuration: config)
+        button.isPointerInteractionEnabled = true
+        button.isHidden = true
+        button.accessibilityLabel = UserText.actionAskAIChat
+        button.accessibilityIdentifier = "Browser.TabsBar.AIChatMenuButton"
+        return button
     }()
 
     weak var delegate: TabsBarDelegate?
@@ -203,6 +232,7 @@ class TabsBarViewController: UIViewController {
         buttonsStack.alignment = .center
 
         buttonsStack.addArrangedSubview(aiChatChip)
+        buttonsStack.addArrangedSubview(aiChatMenuButton)
         buttonsStack.addArrangedSubview(fireButton)
         buttonsStack.addArrangedSubview(tabSwitcherButton)
 
@@ -226,6 +256,7 @@ class TabsBarViewController: UIViewController {
         addTabButton.addTarget(self, action: #selector(onNewTabPressed), for: .touchUpInside)
         aiChatChip.textButton.addTarget(self, action: #selector(onAIChatPressed), for: .touchUpInside)
         aiChatChip.iconButton.addTarget(self, action: #selector(onAIChatContextualSheetIconPressed), for: .touchUpInside)
+        aiChatMenuButton.addTarget(self, action: #selector(onAIChatMenuButtonPressed), for: .touchUpInside)
         configureAIChatChipMenu()
         fireButton.addTarget(self, action: #selector(onFireButtonPressed), for: .touchUpInside)
         tabSwitcherButton.delegate = self
@@ -269,7 +300,7 @@ class TabsBarViewController: UIViewController {
             return
         }
         overridesHandler.flagDidChangePublisher
-            .filter { $0.0 == .aiChatChromeShortcutIPad }
+            .filter { $0.0 == .aiChatChromeShortcutIPad || $0.0 == .aiChatChromeMenuButtonIPad }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateAIChatButtonVisibility()
@@ -280,12 +311,19 @@ class TabsBarViewController: UIViewController {
     private func updateAIChatButtonVisibility() {
         guard let featureFlagger, let aiChatSettings else {
             aiChatChip.isHidden = true
+            aiChatMenuButton.isHidden = true
             return
         }
         let shortcutEnabled = aiChatSettings.isAIChatTabBarUserSettingsEnabled
+        let showsMenuButton = DuckAIChromeShortcutVisibility.isChromeMenuButtonVisible(
+            featureFlagger: featureFlagger,
+            isTabBarShortcutEnabled: shortcutEnabled
+        )
+        aiChatMenuButton.isHidden = !showsMenuButton
+
         let showDuckAIButton = aiChatSettings.isAIChatTabBarDuckAIButtonVisible
         let showContextualSheetButton = aiChatSettings.isAIChatTabBarContextualSheetButtonVisible
-        aiChatChip.isHidden = !DuckAIChromeShortcutVisibility.isChromeButtonVisible(
+        aiChatChip.isHidden = showsMenuButton || !DuckAIChromeShortcutVisibility.isChromeButtonVisible(
             featureFlagger: featureFlagger,
             isTabBarShortcutEnabled: shortcutEnabled,
             isDuckAIButtonVisible: showDuckAIButton,
@@ -346,6 +384,10 @@ class TabsBarViewController: UIViewController {
             PixelKit.fire(Pixel.Event.aiChatNavigationBarContextualSheetOpened, frequency: .dailyAndCount)
         }
         delegate?.tabsBarDidRequestToggleAIChatContextualSheet(self)
+    }
+
+    @objc private func onAIChatMenuButtonPressed() {
+        delegate?.tabsBarDidPressAIChatMenuButton(self)
     }
 
     func refresh(tabsModel: TabsModelManaging?, scrollToSelected: Bool = false) {
@@ -1038,6 +1080,13 @@ extension MainViewController: TabsBarDelegate {
             fireAIChatEntryPointPixel(source: .contextualChat, opensNewTab: false, hasPrompt: false)
             currentTab.presentContextualAIChatSheet(from: self)
         }
+    }
+
+    func tabsBarDidPressAIChatMenuButton(_ controller: TabsBarViewController) {
+        // Materialize the focused tab's view controller first: with none, the entry resolves as a home tab.
+        _ = tabManager.current(createIfNeeded: true)
+        bindAIChatChromeChipToCurrentTab()
+        onAIChatPressed(prefilledText: nil, source: .tabsBarButton)
     }
 
     func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController) {

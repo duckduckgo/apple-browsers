@@ -27,7 +27,7 @@ protocol AIChatContextualFloatingInputFeatureProviding {
     var isAvailable: Bool { get }
 }
 
-/// Determines availability of the address-bar Duck.ai menu and the floating contextual input.
+/// Determines availability of the floating contextual input, which brings the address-bar Duck.ai menu to iPhone.
 struct AIChatContextualFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding {
 
     private let featureFlagger: any FeatureFlagger

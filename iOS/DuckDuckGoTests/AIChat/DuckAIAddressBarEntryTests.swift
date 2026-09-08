@@ -23,14 +23,14 @@ import XCTest
 final class DuckAIAddressBarEntryTests: XCTestCase {
 
     private func resolve(isContextualModeAvailable: Bool = true,
-                         isFloatingInputAvailable: Bool = true,
+                         isMenuAvailable: Bool = true,
                          isHomeTab: Bool = false,
                          isChatHistoryAvailable: Bool = true,
                          hasChatToReopen: Bool = false,
                          isContextualSurfacePresented: Bool = false) -> DuckAIAddressBarEntry {
         DuckAIAddressBarEntry.resolve(
             isContextualModeAvailable: isContextualModeAvailable,
-            isFloatingInputAvailable: isFloatingInputAvailable,
+            isMenuAvailable: isMenuAvailable,
             isHomeTab: isHomeTab,
             isChatHistoryAvailable: isChatHistoryAvailable,
             hasChatToReopen: hasChatToReopen,
@@ -40,7 +40,7 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
 
     // MARK: - Menu
 
-    func testWebPageWithFloatingInputAndNoChatShowsTheMenu() {
+    func testWebPageWithMenuAvailableAndNoChatShowsTheMenu() {
         XCTAssertEqual(resolve(), .menu)
     }
 
@@ -51,8 +51,9 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
         XCTAssertEqual(resolve(hasChatToReopen: true), .contextualSheet)
     }
 
-    func testWebPageWithoutFloatingInputGoesStraightToTheSheet() {
-        XCTAssertEqual(resolve(isFloatingInputAvailable: false), .contextualSheet)
+    /// iPhone without the floating input, or iPad without the chrome menu button.
+    func testWebPageWithoutMenuGoesStraightToTheSheet() {
+        XCTAssertEqual(resolve(isMenuAvailable: false), .contextualSheet)
     }
 
     // MARK: - Dismissal

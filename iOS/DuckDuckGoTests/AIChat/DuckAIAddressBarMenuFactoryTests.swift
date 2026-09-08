@@ -106,7 +106,8 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
         XCTAssertEqual(titles, [UserText.duckAiAddressBarMenuNewChat, UserText.aiChatAttachmentOptionAskAboutPage])
     }
 
-    func testRecentChatsRequiresBothFlagsOnIPhoneAndIsAlwaysHiddenOnIPad() {
+    /// iPad opens the duck.ai chats sidebar instead of the native history, so it only needs the kill switch.
+    func testRecentChatsRequiresBothFlagsOnIPhoneAndOnlyTheKillSwitchOnIPad() {
         let cases: [(flags: [FeatureFlag], idiom: UIUserInterfaceIdiom, showsRecentChats: Bool)] = [
             ([], .phone, false),
             ([.aiChatNativeChatHistory], .phone, false),
@@ -114,14 +115,14 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
             ([.aiChatNativeChatHistory, .aiChatAddressBarRecentChats], .phone, true),
             ([], .pad, false),
             ([.aiChatNativeChatHistory], .pad, false),
-            ([.aiChatAddressBarRecentChats], .pad, false),
-            ([.aiChatNativeChatHistory, .aiChatAddressBarRecentChats], .pad, false)
+            ([.aiChatAddressBarRecentChats], .pad, true),
+            ([.aiChatNativeChatHistory, .aiChatAddressBarRecentChats], .pad, true)
         ]
 
         for testCase in cases {
             XCTAssertEqual(DuckAIAddressBarMenuFactory.isChatHistoryAvailable(
                 featureFlagger: MockFeatureFlagger(enabledFeatureFlags: testCase.flags),
-                userInterfaceIdiom: testCase.idiom), testCase.showsRecentChats)
+                userInterfaceIdiom: testCase.idiom), testCase.showsRecentChats && testCase.idiom == .phone)
             let actions = flattenedActions(makeActions(
                 featureFlagger: MockFeatureFlagger(enabledFeatureFlags: testCase.flags),
                 userInterfaceIdiom: testCase.idiom))

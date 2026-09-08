@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_iOS
 import XCTest
 import UIKit
 
@@ -39,12 +40,65 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
         XCTAssertIdentical(controller.collectionView.delegate, controller)
         XCTAssertIdentical(controller.collectionView.dataSource, controller)
         XCTAssertEqual(controller.buttonsStack.spacing, TabsBarViewController.Constants.stackSpacing)
-        XCTAssertEqual(controller.buttonsStack.arrangedSubviews.count, 3)
+        XCTAssertEqual(controller.buttonsStack.arrangedSubviews.count, 4)
         XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[0], controller.aiChatChip)
-        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[1], controller.fireButton)
+        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[1], controller.aiChatMenuButton)
+        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[2], controller.fireButton)
         // addTabButton is positioned manually outside buttonsStack, see recomputeItemSize()/TabsBarLayout.
         XCTAssertFalse(controller.buttonsStack.arrangedSubviews.contains(controller.addTabButton))
         XCTAssertIdentical(controller.addTabButton.superview, controller.view)
+    }
+
+    // MARK: - Duck.ai chrome controls
+
+    @MainActor
+    private func makeAppearedController(flags: [FeatureFlag], isTabBarShortcutEnabled: Bool = true) -> TabsBarViewController {
+        let controller = TabsBarViewController.create()
+        controller.featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flags)
+        controller.aiChatSettings = MockAIChatSettingsProvider(isAIChatTabBarUserSettingsEnabled: isTabBarShortcutEnabled)
+        controller.loadViewIfNeeded()
+        controller.viewWillAppear(false)
+        return controller
+    }
+
+    /// Matches the macOS tab-bar pill: a 16pt template Duck.ai glyph beside "Ask Duck.ai".
+    @MainActor
+    func testAIChatMenuButtonIsTheAskDuckAIPill() throws {
+        let controller = TabsBarViewController.create()
+        controller.loadViewIfNeeded()
+
+        let configuration = try XCTUnwrap(controller.aiChatMenuButton.configuration)
+        XCTAssertEqual(configuration.title, UserText.actionAskAIChat)
+        let icon = try XCTUnwrap(configuration.image)
+        XCTAssertEqual(icon.size, CGSize(width: 16, height: 16))
+        XCTAssertEqual(icon.renderingMode, .alwaysTemplate)
+        XCTAssertEqual(configuration.background.cornerRadius, TabsBarViewController.Constants.aiChatMenuButtonCornerRadius)
+        XCTAssertEqual(controller.aiChatMenuButton.accessibilityLabel, UserText.actionAskAIChat)
+    }
+
+    @MainActor
+    func testWhenChromeMenuButtonFlagIsOnThenMenuButtonReplacesSplitChip() {
+        let controller = makeAppearedController(flags: [.aiChatChromeShortcutIPad, .aiChatChromeMenuButtonIPad])
+
+        XCTAssertFalse(controller.aiChatMenuButton.isHidden)
+        XCTAssertTrue(controller.aiChatChip.isHidden)
+    }
+
+    @MainActor
+    func testWhenChromeMenuButtonFlagIsOffThenSplitChipStays() {
+        let controller = makeAppearedController(flags: [.aiChatChromeShortcutIPad])
+
+        XCTAssertTrue(controller.aiChatMenuButton.isHidden)
+        XCTAssertFalse(controller.aiChatChip.isHidden)
+    }
+
+    @MainActor
+    func testWhenTabBarShortcutSettingIsOffThenNeitherChromeControlShows() {
+        let controller = makeAppearedController(flags: [.aiChatChromeShortcutIPad, .aiChatChromeMenuButtonIPad],
+                                                isTabBarShortcutEnabled: false)
+
+        XCTAssertTrue(controller.aiChatMenuButton.isHidden)
+        XCTAssertTrue(controller.aiChatChip.isHidden)
     }
 
     @MainActor

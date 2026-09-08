@@ -495,6 +495,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215105704317047
     case aiChatChromeShortcutIPad
 
+    /// Replaces the iPad chrome Duck.ai split button with the iPhone address-bar button behavior.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1218164193618191
+    case aiChatChromeMenuButtonIPad
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216000794365770?focus=true
     case iPadDuckAIBarControls
 
@@ -921,6 +925,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
+        case .aiChatChromeMenuButtonIPad:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeMenuButton))
         case .floatingUIAugust2026:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIAugust2026))
         case .aiChatTabSwitcherRichCard:

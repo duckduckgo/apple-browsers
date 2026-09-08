@@ -33,11 +33,13 @@ enum DuckAIAddressBarEntry: Equatable {
     /// Home tabs offer the menu when chat history is available. Web tabs retain contextual
     /// restoration and require floating input for the Ask About Page action.
     ///
+    /// - Parameter isMenuAvailable: The floating input brings the menu to iPhone; the chrome menu
+    ///   button flag brings it to iPad, where Ask About Page opens the sheet instead.
     /// - Parameter hasChatToReopen: A conversation this tab can go back to, whether it is still live
     ///   or was persisted by an earlier launch. Reopen this tab's conversation directly rather than
     ///   requiring the user to find it in Chats.
     static func resolve(isContextualModeAvailable: Bool,
-                        isFloatingInputAvailable: Bool,
+                        isMenuAvailable: Bool,
                         isHomeTab: Bool,
                         isChatHistoryAvailable: Bool,
                         hasChatToReopen: Bool,
@@ -47,7 +49,7 @@ enum DuckAIAddressBarEntry: Equatable {
         }
         guard isContextualModeAvailable else { return .legacyDuckAI }
         guard !isContextualSurfacePresented else { return .dismissContextualSurface }
-        guard isFloatingInputAvailable, !hasChatToReopen else { return .contextualSheet }
+        guard isMenuAvailable, !hasChatToReopen else { return .contextualSheet }
         return .menu
     }
 

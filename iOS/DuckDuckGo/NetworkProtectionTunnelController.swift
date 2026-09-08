@@ -483,6 +483,8 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         settings.resetEnforceRoutesIfUnavailable(
             strictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRoutingToggle))
 
+        settings.sessionHealthTelemetryEnabled = featureFlagger.isFeatureOn(.vpnSessionHealthTelemetry)
+
         tunnelManager.applyDuckDuckGoConfiguration(from: settings)
     }
 
@@ -551,6 +553,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
                 .setSelectedLocation,
                 .setDNSSettings,
                 .setShowInMenuBar,
+                .setSessionHealthTelemetryEnabled,
                 .setDisableRekeying:
             // Intentional no-op as this is handled by the extension or applied on the next connect
             break

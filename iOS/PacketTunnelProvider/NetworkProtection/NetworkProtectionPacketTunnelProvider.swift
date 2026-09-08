@@ -549,14 +549,20 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         let loopDetector = ConnectionFailureLoopDetector(store: loopDetectorStore)
 
-        self.wideEvent = WideEvent(useMockRequests: {
+        let wideEvent = WideEvent(useMockRequests: {
 #if DEBUG || REVIEW || ALPHA
             true
 #else
             false
 #endif
         }(),
-                                   featureFlagProvider: WideEventFeatureFlagProvider(featureFlagger: featureFlagger))
+                                  featureFlagProvider: WideEventFeatureFlagProvider(featureFlagger: featureFlagger))
+        self.wideEvent = wideEvent
+
+        let sessionHealth = DefaultVPNSessionHealthInstrumentation(
+            wideEvent: wideEvent,
+            extensionType: .app,
+            isEnabled: { settings.sessionHealthTelemetryEnabled })
 
         // Align Subscription environment to the VPN environment
         var subscriptionEnvironment = SubscriptionEnvironment.default
@@ -660,8 +666,10 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    defaults: .networkProtectionGroupDefaults,
                    wideEvent: wideEvent,
                    entitlementCheck: entitlementsCheck,
-                   loopDetector: loopDetector)
+                   loopDetector: loopDetector,
+                   sessionHealth: sessionHealth)
         startMonitoringMemoryPressureEvents()
+
         observeServerChanges()
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
     }

@@ -1807,7 +1807,6 @@
 		BD862E092B30F63E0073E2EE /* VPNMetadataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD862E082B30F63E0073E2EE /* VPNMetadataCollector.swift */; };
 		BDAA7F492E413DB7003A0833 /* DBPMetadataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAA7F482E413DB7003A0833 /* DBPMetadataCollector.swift */; };
 		BDC234F72B27F51100D3C798 /* UniquePixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDC234F62B27F51100D3C798 /* UniquePixel.swift */; };
-		5731BB5EFE8D0B92219C725D /* VPNTunnelPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E138C6A8544607EAAAC96D4 /* VPNTunnelPixel.swift */; };
 		CDE86798FACF6B64700DC3E7 /* VPNTunnelPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D267CC7EDA205E4651555CBA /* VPNTunnelPixelTests.swift */; };
 		BDD3B3552B8EF8DB005857A8 /* NetworkProtectionUNNotificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE3766DD2AC5945500AAB575 /* NetworkProtectionUNNotificationPresenter.swift */; };
 		BDE219E62C406D19005D5884 /* SubscriptionDataReporting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE219E52C406D19005D5884 /* SubscriptionDataReporting.swift */; };
@@ -4386,7 +4385,6 @@
 		BD862E082B30F63E0073E2EE /* VPNMetadataCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNMetadataCollector.swift; sourceTree = "<group>"; };
 		BDAA7F482E413DB7003A0833 /* DBPMetadataCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DBPMetadataCollector.swift; sourceTree = "<group>"; };
 		BDC234F62B27F51100D3C798 /* UniquePixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UniquePixel.swift; sourceTree = "<group>"; };
-		1E138C6A8544607EAAAC96D4 /* VPNTunnelPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNTunnelPixel.swift; sourceTree = "<group>"; };
 		D267CC7EDA205E4651555CBA /* VPNTunnelPixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNTunnelPixelTests.swift; sourceTree = "<group>"; };
 		BDE219E52C406D19005D5884 /* SubscriptionDataReporting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionDataReporting.swift; sourceTree = "<group>"; };
 		BDE219E92C457B46005D5884 /* SubscriptionDataReporterTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SubscriptionDataReporterTests.swift; sourceTree = "<group>"; };
@@ -10197,7 +10195,6 @@
 				0C1FD7423FDC4DE994AE2329 /* PixelUserAgent.swift */,
 				5C522B740A724721A361FC42 /* PixelKitExtensionSetup.swift */,
 				BDC234F62B27F51100D3C798 /* UniquePixel.swift */,
-				1E138C6A8544607EAAAC96D4 /* VPNTunnelPixel.swift */,
 				853A717520F62FE800FE60BC /* Pixel.swift */,
 				FC0A7B0A2F00000100AAB001 /* PixelKitParameterProvider.swift */,
 				6F03CB062C32F173004179A8 /* PixelFiring.swift */,
@@ -14439,7 +14436,6 @@
 				EE9D68DE2AE2A65600B55EF4 /* UserDefaults+NetworkProtection.swift in Sources */,
 				CB258D1F29A52B2500DEBA24 /* Configuration.swift in Sources */,
 				BDC234F72B27F51100D3C798 /* UniquePixel.swift in Sources */,
-				5731BB5EFE8D0B92219C725D /* VPNTunnelPixel.swift in Sources */,
 				98629D312C21765A001E6031 /* BookmarksStateValidation.swift in Sources */,
 				9847C00027A2DDBB00DB07AA /* AppPrivacyConfigurationDataProvider.swift in Sources */,
 				F143C3281E4A9A0E00CFDE3A /* StringExtension.swift in Sources */,

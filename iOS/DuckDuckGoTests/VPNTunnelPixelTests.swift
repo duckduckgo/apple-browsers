@@ -19,33 +19,20 @@
 
 import XCTest
 @testable import PixelKit
-import PersistenceTestingUtils
 @testable import Core
 
-/// Validates that firing VPN packet-tunnel pixels through `PixelKit` (via `VPNTunnelPixel` and the
-/// `fireVPNTunnel(…)` helpers) preserves the base names and `_d` / `_c` frequency suffixes while
-/// intentionally removing the legacy `_ios_phone` / `_ios_tablet` form-factor suffix.
-///
-/// The provider itself lives in the `PacketTunnelProvider` app-extension target, which has no unit
-/// test target, so the migration's correctness is validated here at the bridge/helper layer.
+/// Exercises the direct Pixel.Event + PixelKit retry contract used by the tunnel.
+/// The extension has no unit-test target; provider call-site mappings are audited separately.
 final class VPNTunnelPixelTests: XCTestCase {
 
-    private var appVersion: String { "1.2.3" }
-
-    // MARK: - Capture helper
-
-    private final class FiredPixel {
+    private struct FiredPixel {
         let name: String
-        let params: [String: String]
-        init(name: String, params: [String: String]) {
-            self.name = name
-            self.params = params
-        }
+        let parameters: [String: String]
     }
 
     private final class RetryQueueStore: PixelRetryQueueStoring {
         private let lock = NSLock()
-        private var stored = [PixelRetryQueueItem]()
+        private var stored: [PixelRetryQueueItem] = []
         var onRemove: ((Set<UUID>) -> Void)?
 
         var items: [PixelRetryQueueItem] {
@@ -63,7 +50,6 @@ final class VPNTunnelPixelTests: XCTestCase {
         func remove(itemsWithIDs ids: Set<UUID>) throws {
             lock.lock()
             stored.removeAll { ids.contains($0.id) }
-            let onRemove = onRemove
             lock.unlock()
             onRemove?(ids)
         }
@@ -73,11 +59,16 @@ final class VPNTunnelPixelTests: XCTestCase {
         }
     }
 
-    private final class RetryFireRequest {
+    private final class FireRequestRecorder {
         private let lock = NSLock()
         private var succeeds = false
-        private var replayedNames = [String]()
-        var onReplay: ((String) -> Void)?
+        private var recorded: [FiredPixel] = []
+
+        var pixels: [FiredPixel] {
+            lock.lock()
+            defer { lock.unlock() }
+            return recorded
+        }
 
         func startSucceeding() {
             lock.lock()
@@ -85,204 +76,124 @@ final class VPNTunnelPixelTests: XCTestCase {
             succeeds = true
         }
 
-        func replayedPixelNames() -> [String] {
+        lazy var fireRequest: PixelKit.FireRequest = { [weak self] name, _, parameters, _, _, completion in
+            guard let self else {
+                completion(false, nil)
+                return
+            }
             lock.lock()
-            defer { lock.unlock() }
-            return replayedNames
-        }
-
-        lazy var fireRequest: PixelKit.FireRequest = { [self] name, _, parameters, _, _, completion in
-            lock.lock()
+            recorded.append(FiredPixel(name: name, parameters: parameters))
             let succeeds = succeeds
-            if parameters["retriedPixel"] == "1" {
-                replayedNames.append(name)
-            }
-            let onReplay = onReplay
             lock.unlock()
-
             completion(succeeds, nil)
-            if parameters["retriedPixel"] == "1" {
-                onReplay?(name)
+        }
+    }
+
+    private let appVersion = "1.2.3"
+    private let fireDate = Date(timeIntervalSince1970: 1_700_000_000)
+
+    private func makePixelKit(source: PixelKit.Source = .iOS,
+                             store: RetryQueueStore,
+                             request: FireRequestRecorder) -> PixelKit {
+        let suiteName = "VPNTunnelPixelTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
+        return PixelKit(dryRun: false,
+                        appVersion: appVersion,
+                        source: source.rawValue,
+                        session: UUID().uuidString,
+                        channel: nil,
+                        defaultHeaders: [:],
+                        pixelCalendar: nil,
+                        dateGenerator: { [fireDate] in fireDate },
+                        defaults: defaults,
+                        retryQueueStore: store,
+                        fireRequest: request.fireRequest)
+    }
+
+    func testWhenVPNPixelFailsThenBothLegacyVariantsReplayWithOriginalParameters() {
+        for (source, suffix) in [(PixelKit.Source.iOS, "_ios_phone"), (.iPadOS, "_ios_tablet")] {
+            let store = RetryQueueStore()
+            let request = FireRequestRecorder()
+            let pixelKit = makePixelKit(source: source, store: store, request: request)
+            let error = NSError(domain: "VPNError", code: 42,
+                                userInfo: [NSUnderlyingErrorKey: NSError(domain: "UnderlyingVPNError", code: 7)])
+            let event = Pixel.Event.networkProtectionRekeyFailure.withError(error)
+            let expectedNames = ["m_netp_rekey_failure_c" + suffix, "m_netp_rekey_failure_d" + suffix]
+
+            pixelKit.fire(event, frequency: .legacyDailyAndCount, options: .withRetry)
+
+            XCTAssertEqual(request.pixels.map(\.name).sorted(), expectedNames)
+            XCTAssertEqual(store.items.map(\.pixelName).sorted(), expectedNames)
+            for pixel in request.pixels {
+                XCTAssertEqual(pixel.parameters["appVersion"], appVersion)
+                XCTAssertEqual(pixel.parameters["e"], "42")
+                XCTAssertEqual(pixel.parameters["d"], "VPNError")
+                XCTAssertEqual(pixel.parameters["ue"], "7")
+                XCTAssertEqual(pixel.parameters["ud"], "UnderlyingVPNError")
+                XCTAssertNil(pixel.parameters["originalPixelTimestamp"])
+                XCTAssertNil(pixel.parameters["retriedPixel"])
             }
-        }
-    }
 
-    /// Installs a `PixelKit` whose fire request records every emitted pixel, runs `body`, and
-    /// returns the recorded pixels.
-    private func capture(_ body: () -> Void) -> [FiredPixel] {
-        var fired: [FiredPixel] = []
-        PixelKit.setUp(dryRun: false,
-                       appVersion: appVersion,
-                       source: PixelKit.Source.iOS.rawValue,
-                       session: "VPNTunnelPixelTests",
-                       defaultHeaders: [:],
-                       defaults: InMemoryThrowingKeyValueStore()) { name, _, params, _, _, onComplete in
-            fired.append(FiredPixel(name: name, params: params))
-            onComplete(true, nil)
-        }
-        defer { PixelKit.tearDown() }
-        body()
-        return fired
-    }
-
-    private func firedNames(_ body: () -> Void) -> Set<String> {
-        Set(capture(body).map(\.name))
-    }
-
-    // MARK: - Wire names per helper
-
-    func testDailyAndCountHelperPreservesFrequencySuffixesWithoutFormFactorSuffix() {
-        // Expected suffixes are read from the same constant the legacy `DailyPixel` stack used.
-        // The migrated names intentionally omit the legacy `_ios_phone` / `_ios_tablet` suffix.
-        let dailySuffix = DailyPixel.Constant.legacyDailyPixelSuffixes.dailySuffix
-        let countSuffix = DailyPixel.Constant.legacyDailyPixelSuffixes.countSuffix
-        for event in Self.dailyAndCountEvents {
-            let names = firedNames { PixelKit.fireVPNTunnel(dailyAndCount: event) }
-            XCTAssertEqual(names, [event.name + dailySuffix, event.name + countSuffix],
-                           "Unexpected wire names for \(event.name)")
-            XCTAssertFalse(names.contains { $0.hasSuffix("_ios_phone") || $0.hasSuffix("_ios_tablet") })
-        }
-    }
-
-    func testAdapterShutdownDailyAndCountPixelsPreserveStandardFrequencySuffixes() {
-        for event in Self.standardDailyAndCountEvents {
-            let names = firedNames {
-                PixelKit.fireVPNTunnel(dailyAndCount: event, legacySuffixes: false)
+            let queued = store.items
+            let removed = expectation(description: "Successful replays remove both queued variants")
+            store.onRemove = { ids in
+                XCTAssertEqual(ids, Set(queued.map(\.id)))
+                removed.fulfill()
             }
-            XCTAssertEqual(names, [event.name + "_daily", event.name + "_count"],
-                           "Unexpected wire names for \(event.name)")
-            XCTAssertFalse(names.contains { $0.hasSuffix("_ios_phone") || $0.hasSuffix("_ios_tablet") })
+            request.startSucceeding()
+            // A successful non-retry event must also drain the new queue.
+            pixelKit.fire(Pixel.Event.networkProtectionTunnelStopAttempt)
+            wait(for: [removed], timeout: 2.0)
+
+            let replays = request.pixels.filter { $0.parameters["retriedPixel"] == "1" }
+            XCTAssertEqual(replays.map(\.name).sorted(), expectedNames)
+            for replay in replays {
+                let original = queued.first { $0.pixelName == replay.name }
+                var expectedParameters = original?.parameters ?? [:]
+                expectedParameters["originalPixelTimestamp"] = "2023-11-14T22:13:20Z"
+                expectedParameters["retriedPixel"] = "1"
+                XCTAssertEqual(replay.parameters, expectedParameters)
+            }
+            XCTAssertTrue(store.items.isEmpty)
         }
     }
 
-    func testDailyHelperEmitsUnsuffixedFormFactorName() {
-        for event in Self.dailyEvents {
-            let names = firedNames { PixelKit.fireVPNTunnel(daily: event) }
-            XCTAssertEqual(names, [event.name],
-                           "Unexpected wire names for \(event.name)")
-        }
-    }
-
-    func testStandardHelperEmitsUnsuffixedFormFactorName() {
-        for event in Self.standardEvents {
-            let names = firedNames { PixelKit.fireVPNTunnel(standard: event) }
-            XCTAssertEqual(names, [event.name],
-                           "Unexpected wire names for \(event.name)")
-        }
-    }
-
-    // MARK: - Parameters
-
-    /// appVersion is included by default, matching the legacy `includedParameters: [.appVersion]`.
-    func testAppVersionIsIncluded() {
-        let fired = capture { PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelStartAttempt) }
-        XCTAssertFalse(fired.isEmpty)
-        for pixel in fired {
-            XCTAssertEqual(pixel.params[PixelKit.Parameters.appVersion], appVersion)
-        }
-    }
-
-    /// Errors are encoded into the same `e` / `d` parameters the legacy stack used.
-    func testErrorIsEncodedAsErrorCodeAndDomain() {
-        let error = NSError(domain: "TestErrorDomain", code: 42)
-        let fired = capture {
-            PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelStartFailure, error: error)
-        }
-        XCTAssertFalse(fired.isEmpty)
-        for pixel in fired {
-            XCTAssertEqual(pixel.params[PixelKit.Parameters.errorCode], "42")
-            XCTAssertEqual(pixel.params[PixelKit.Parameters.errorDomain], "TestErrorDomain")
-        }
-    }
-
-    /// Additional parameters supplied at the call site are preserved.
-    func testAdditionalParametersArePreserved() {
-        let fired = capture {
-            PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionEnableAttemptSuccess,
-                                   withAdditionalParameters: ["source": "test-source"])
-        }
-        XCTAssertFalse(fired.isEmpty)
-        for pixel in fired {
-            XCTAssertEqual(pixel.params["source"], "test-source")
-        }
-    }
-
-    /// Retry-enabled failed sends are queued and replayed with the original wire names and parameters.
-    func testRetryEnabledFailedSendIsQueuedAndReplayed() {
+    func testWhenPersistentVPNEventsSucceedThenDailyIsSuppressedButCountContinues() {
         let store = RetryQueueStore()
-        let request = RetryFireRequest()
-        let pixelKit = PixelKit(dryRun: false,
-                                appVersion: appVersion,
-                                source: PixelKit.Source.iOS.rawValue,
-                                session: UUID().uuidString,
-                                channel: nil,
-                                defaultHeaders: [:],
-                                pixelCalendar: nil,
-                                dateGenerator: Date.init,
-                                defaults: InMemoryThrowingKeyValueStore(),
-                                retryQueueStore: store,
-                                fireRequest: request.fireRequest)
-        let replayed = expectation(description: "Expect queued pixels to replay")
-        replayed.expectedFulfillmentCount = 2
-        let removed = expectation(description: "Expect replayed pixels to be removed from the queue")
-        store.onRemove = { ids in
-            XCTAssertEqual(ids.count, 2)
-            removed.fulfill()
-        }
-        request.onReplay = { _ in replayed.fulfill() }
-
-        pixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelStartAttempt,
-                               retryOnFailure: true,
-                               withAdditionalParameters: ["source": "test-source"])
-
-        XCTAssertEqual(store.items.map(\.pixelName).sorted(),
-                       [Pixel.Event.networkProtectionTunnelStartAttempt.name + "_c",
-                        Pixel.Event.networkProtectionTunnelStartAttempt.name + "_d"])
-        XCTAssertTrue(store.items.allSatisfy { $0.parameters["source"] == "test-source" })
-
+        let request = FireRequestRecorder()
         request.startSucceeding()
-        pixelKit.fire(VPNTunnelPixel(.networkProtectionTunnelStopAttempt), frequency: .standard)
+        let pixelKit = makePixelKit(store: store, request: request)
 
-        wait(for: [replayed, removed], timeout: 1.0)
-        XCTAssertEqual(request.replayedPixelNames().sorted(),
-                       [Pixel.Event.networkProtectionTunnelStartAttempt.name + "_c",
-                        Pixel.Event.networkProtectionTunnelStartAttempt.name + "_d"])
+        for event in Self.persistentEvents {
+            pixelKit.fire(event, frequency: .legacyDailyAndCount, options: .withRetry)
+            pixelKit.fire(event, frequency: .legacyDailyAndCount, options: .withRetry)
+
+            let dailyName = event.name + "_d_ios_phone"
+            let countName = event.name + "_c_ios_phone"
+            XCTAssertEqual(request.pixels.filter { $0.name == dailyName }.count, 1, event.name)
+            XCTAssertEqual(request.pixels.filter { $0.name == countName }.count, 2, event.name)
+        }
+        XCTAssertTrue(store.items.isEmpty)
+        XCTAssertTrue(request.pixels.allSatisfy {
+            $0.parameters["originalPixelTimestamp"] == nil && $0.parameters["retriedPixel"] == nil
+        })
+    }
+
+    func testWhenVPNPixelDoesNotOptIntoRetryThenFailureIsNotQueued() {
+        let store = RetryQueueStore()
+        let request = FireRequestRecorder()
+        let pixelKit = makePixelKit(store: store, request: request)
+
+        pixelKit.fire(Pixel.Event.networkProtectionTunnelStopFailure.withError(NSError(domain: "VPNError", code: 42)),
+                      frequency: .legacyDailyAndCount)
+
+        XCTAssertEqual(request.pixels.count, 2)
         XCTAssertTrue(store.items.isEmpty)
     }
 
-    // MARK: - Migrated event tables (audit surface)
-    //
-    // Each event below is fired by NetworkProtectionPacketTunnelProvider. The grouping records the
-    // legacy firing mechanism it migrates from, which determines the PixelKit frequency:
-    //   • fireDailyAndCount / persistentPixel.fireDailyAndCount → .legacyDailyAndCount (name_d + name_c)
-    //   • adapter-shutdown DailyPixel.fireDailyAndCount          → .dailyAndCount (name_daily + name_count)
-    //   • DailyPixel.fire                                        → .legacyDailyNoSuffix (name verbatim)
-    //   • Pixel.fire                                             → .standard            (name verbatim)
-
-    /// Fired via `DailyPixel.fireDailyAndCount` or `persistentPixel.fireDailyAndCount`.
-    private static let dailyAndCountEvents: [Pixel.Event] = [
-        // Provider events
-        .networkProtectionConnectionTesterFailureDetected,
-        .networkProtectionConnectionTesterExtendedFailureDetected,
-        .networkProtectionConnectionTesterFailureRecovered(failureCount: 1),
-        .networkProtectionConnectionTesterExtendedFailureRecovered(failureCount: 1),
-        .networkProtectionEnableAttemptConnecting,
-        .networkProtectionEnableAttemptSuccess,
-        .networkProtectionEnableAttemptFailure,
-        .networkProtectionTunnelFailureDetected,
-        .networkProtectionTunnelFailureRecovered,
-        .networkProtectionLatency(quality: "excellent"),
-        .networkProtectionTunnelStopFailure,
-        .networkProtectionTunnelStopSuccess,
-        .networkProtectionTunnelWakeFailure,
-        .networkProtectionFailureRecoveryStarted,
-        .networkProtectionFailureRecoveryCompletedHealthy,
-        .networkProtectionFailureRecoveryCompletedUnhealthy,
-        .networkProtectionFailureRecoveryFailed,
-        .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
-        .networkProtectionDisconnected,
-        .subscriptionKeychainAccessError,
-        // Persistent-pixel events (retry now handled internally by PixelKit)
+    // These are the existing PersistentPixel events, not a production routing table.
+    private static let persistentEvents: [Pixel.Event] = [
         .networkProtectionRekeyAttempt,
         .networkProtectionRekeyFailure,
         .networkProtectionRekeyCompleted,
@@ -295,33 +206,6 @@ final class VPNTunnelPixelTests: XCTestCase {
         .networkProtectionServerMigrationAttempt,
         .networkProtectionServerMigrationAttemptFailure,
         .networkProtectionServerMigrationAttemptSuccess,
-        .networkProtectionConnectionFailureLoopDetected,
-        // Debug events — all funnel through a single fireDailyAndCount call site
-        .networkProtectionTunnelConfigurationNoServerRegistrationInfo,
-        .networkProtectionClientFailedToFetchServerList,
-        .networkProtectionKeychainReadError,
-        .networkProtectionWireguardErrorCannotStartWireguardBackend,
-        .networkProtectionUnhandledError,
-        .networkProtectionClientFailedToFetchServerStatus
-    ]
-
-    /// Fired via `DailyPixel.fireDailyAndCount` without legacy suffixes.
-    private static let standardDailyAndCountEvents: [Pixel.Event] = [
-        .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure,
-        .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess,
-        .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure
-    ]
-
-    /// Fired via `DailyPixel.fire` (once per day, name emitted verbatim).
-    private static let dailyEvents: [Pixel.Event] = [
-        .networkProtectionActiveUser,
-        .networkProtectionLatencyError,
-        .networkProtectionMemoryWarning,
-        .networkProtectionMemoryCritical
-    ]
-
-    /// Fired via `Pixel.fire` (every call, name emitted verbatim).
-    private static let standardEvents: [Pixel.Event] = [
-        .networkProtectionTunnelStopAttempt
+        .networkProtectionConnectionFailureLoopDetected
     ]
 }

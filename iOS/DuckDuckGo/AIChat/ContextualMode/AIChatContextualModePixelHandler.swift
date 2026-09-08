@@ -128,9 +128,9 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     // MARK: - Initialization
 
-    init(firePixel: @escaping (Pixel.Event) -> Void = { DailyPixel.fireDailyAndCount(pixel: $0) },
+    init(firePixel: @escaping (Pixel.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount) },
          firePixelWithParameters: @escaping (Pixel.Event, [String: String]) -> Void = {
-             DailyPixel.fireDailyAndCount(pixel: $0, withAdditionalParameters: $1)
+             PixelKit.fire($0, frequency: .dailyAndCount, options: .parameters($1))
          },
          firePixelKitEvent: @escaping (PixelKit.Event, PixelKit.Frequency) -> Void = {
              PixelKit.fire($0, frequency: $1)

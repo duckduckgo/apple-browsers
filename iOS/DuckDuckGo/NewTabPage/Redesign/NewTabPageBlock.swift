@@ -1,8 +1,8 @@
 //
-//  NewTabPage.swift
+//  NewTabPageBlock.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,12 +19,11 @@
 
 import UIKit
 
-protocol NewTabPage: UIViewController {
+/// One unit of New Tab Page content. Blocks are stacked vertically in the order given.
+///
+/// `id` is a stable string key for the block's persisted order and visibility.
+protocol NewTabPageBlock: AnyObject, Identifiable where ID == String {
 
-    var isDragging: Bool { get }
-
-    func dismiss()
-
-    func showNextDaxDialog()
-    func onboardingCompleted()
+    /// The block's content, installed as a child view controller of the page.
+    var viewController: UIViewController { get }
 }

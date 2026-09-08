@@ -252,16 +252,21 @@ final class SyncDialogController {
     }
 
     private func completeV2HostFlow(shouldWaitForDevicesToChange: Bool) {
-        guard didCreateSyncAccountDuringPairing else {
-            managementDialogModel.endFlow()
-            return
+        let shouldPresentSuccess = didCreateSyncAccountDuringPairing
+        didCreateSyncAccountDuringPairing = false
+
+        let complete: (SyncDialogController) -> Void = { controller in
+            if shouldPresentSuccess {
+                controller.showSyncSuccess()
+            } else {
+                controller.managementDialogModel.endFlow()
+            }
         }
 
-        didCreateSyncAccountDuringPairing = false
         if shouldWaitForDevicesToChange {
-            waitForDevicesToChangeThenPresentSuccess()
+            waitForDevicesToChange(then: complete)
         } else {
-            showSyncSuccess()
+            complete(self)
         }
     }
 
@@ -334,14 +339,14 @@ final class SyncDialogController {
         }
     }
 
-    private func waitForDevicesToChangeThenPresentSuccess() {
+    private func waitForDevicesToChange(then action: @escaping (SyncDialogController) -> Void) {
         $devices.removeDuplicates()
             .dropFirst()
             .prefix(1)
             .sink { [weak self] _ in
                 guard let self else { return }
                 Task {
-                    self.showSyncSuccess()
+                    action(self)
                 }
             }.store(in: &cancellables)
     }
@@ -761,7 +766,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
 
         // Temporary handling as devices don't update when 3p device added to account
         if shouldWaitForDevicesToChange {
-            waitForDevicesToChangeThenPresentSuccess()
+            waitForDevicesToChange { $0.showSyncSuccess() }
         } else {
             showSyncSuccess()
         }

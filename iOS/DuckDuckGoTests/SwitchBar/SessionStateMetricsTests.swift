@@ -20,22 +20,24 @@
 import XCTest
 @testable import DuckDuckGo
 @_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 
 final class SessionStateMetricsTests: XCTestCase {
 
     var mockStorage: MockKeyValueStore!
     var sut: SessionStateMetrics!
-    
+    var pixelKitMock: PixelKitMock!
+
     override func setUpWithError() throws {
         mockStorage = MockKeyValueStore()
-        sut = SessionStateMetrics(storage: mockStorage, pixelFiring: PixelFiringMock.self)
-        PixelFiringMock.tearDown()
+        pixelKitMock = PixelKitMock()
+        sut = SessionStateMetrics(storage: mockStorage, pixelFiring: pixelKitMock)
     }
 
     override func tearDownWithError() throws {
         mockStorage = nil
         sut = nil
-        PixelFiringMock.tearDown()
+        pixelKitMock = nil
     }
 
     // MARK: - Session Type Tests
@@ -46,9 +48,9 @@ final class SessionStateMetricsTests: XCTestCase {
         
         sut.finalizeSession()
         
-        XCTAssertEqual(PixelFiringMock.lastPixelName!, "m_aichat_experimental_omnibar_session_summary")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, "m_aichat_experimental_omnibar_session_summary")
         
-        let parameters = PixelFiringMock.lastParams
+        let parameters = pixelKitMock.actualFireCalls.last?.additionalParameters
         XCTAssertEqual(parameters?["searches_in_session"], "2")
         XCTAssertEqual(parameters?["prompts_in_session"], "0")
     }
@@ -60,9 +62,9 @@ final class SessionStateMetricsTests: XCTestCase {
         
         sut.finalizeSession()
         
-        XCTAssertEqual(PixelFiringMock.lastPixelName!, "m_aichat_experimental_omnibar_session_summary")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, "m_aichat_experimental_omnibar_session_summary")
         
-        let parameters = PixelFiringMock.lastParams
+        let parameters = pixelKitMock.actualFireCalls.last?.additionalParameters
         XCTAssertEqual(parameters?["searches_in_session"], "0")
         XCTAssertEqual(parameters?["prompts_in_session"], "3")
     }
@@ -74,9 +76,9 @@ final class SessionStateMetricsTests: XCTestCase {
         
         sut.finalizeSession()
         
-        XCTAssertEqual(PixelFiringMock.lastPixelName!, "m_aichat_experimental_omnibar_session_summary")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, "m_aichat_experimental_omnibar_session_summary")
         
-        let parameters = PixelFiringMock.lastParams
+        let parameters = pixelKitMock.actualFireCalls.last?.additionalParameters
         XCTAssertEqual(parameters?["searches_in_session"], "2")
         XCTAssertEqual(parameters?["prompts_in_session"], "1")
     }
@@ -84,8 +86,7 @@ final class SessionStateMetricsTests: XCTestCase {
     func testFinalizeSession_NoActivity_DoesNotFirePixel() throws {
         sut.finalizeSession()
         
-        XCTAssertNil(PixelFiringMock.lastPixelInfo)
-        XCTAssertNil(PixelFiringMock.lastParams)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
     }
     
     // MARK: - Session Reset Tests
@@ -100,7 +101,7 @@ final class SessionStateMetricsTests: XCTestCase {
         sut.incrementActivity(.searchSubmitted)
         sut.finalizeSession()
         
-        let parameters = PixelFiringMock.lastParams
+        let parameters = pixelKitMock.actualFireCalls.last?.additionalParameters
         XCTAssertEqual(parameters?["searches_in_session"], "1")
         XCTAssertEqual(parameters?["prompts_in_session"], "0")
     }
@@ -114,7 +115,7 @@ final class SessionStateMetricsTests: XCTestCase {
         
         sut.finalizeSession()
         
-        let parameters = PixelFiringMock.lastParams
+        let parameters = pixelKitMock.actualFireCalls.last?.additionalParameters
         XCTAssertEqual(parameters?["searches_in_session"], "3")
         XCTAssertEqual(parameters?["prompts_in_session"], "0")
     }
@@ -125,7 +126,7 @@ final class SessionStateMetricsTests: XCTestCase {
         
         sut.finalizeSession()
         
-        let parameters = PixelFiringMock.lastParams
+        let parameters = pixelKitMock.actualFireCalls.last?.additionalParameters
         XCTAssertEqual(parameters?["searches_in_session"], "0")
         XCTAssertEqual(parameters?["prompts_in_session"], "2")
     }
@@ -137,16 +138,15 @@ final class SessionStateMetricsTests: XCTestCase {
         sut.incrementActivity(.searchSubmitted)
         sut.finalizeSession()
         
-        let firstSessionParams = PixelFiringMock.lastParams
+        let firstSessionParams = pixelKitMock.actualFireCalls.last?.additionalParameters
         XCTAssertEqual(firstSessionParams?["searches_in_session"], "1")
         XCTAssertEqual(firstSessionParams?["prompts_in_session"], "0")
         
         // Second session: prompt only
-        PixelFiringMock.tearDown() // Clear previous pixel
         sut.incrementActivity(.promptSubmitted)
         sut.finalizeSession()
         
-        let secondSessionParams = PixelFiringMock.lastParams
+        let secondSessionParams = pixelKitMock.actualFireCalls.last?.additionalParameters
         XCTAssertEqual(secondSessionParams?["searches_in_session"], "0")
         XCTAssertEqual(secondSessionParams?["prompts_in_session"], "1")
     }

@@ -22,6 +22,38 @@ import DataBrokerProtectionCoreTestsUtils
 
 final class ActionRequestEncodingTests: XCTestCase {
 
+    private let captchaActionID = "solve-captcha-1"
+    private let captchaToken = "captcha-token"
+
+    func testWhenCaptchaIsSolvedWithAMatchedProfile_thenPayloadCarriesTokenAndBothProfiles() throws {
+        let action = SolveCaptchaAction(id: captchaActionID, actionType: .solveCaptcha)
+        let extractedProfile = ExtractedProfile(id: 42, name: "John Doe")
+
+        let payload: EncodedCaptchaRequest = try encodePayload(action: action,
+                                                               data: .solveCaptcha(CaptchaToken(token: captchaToken),
+                                                                                   makeProfileQuery(),
+                                                                                   extractedProfile))
+
+        XCTAssertEqual(payload.state.data.token, captchaToken)
+        XCTAssertEqual(payload.state.data.userProfile?.firstName, "John")
+        XCTAssertEqual(payload.state.data.userProfile?.lastName, "Doe")
+        XCTAssertEqual(payload.state.data.extractedProfile?.name, "John Doe")
+    }
+
+    func testWhenCaptchaIsSolvedOnAScanStep_thenPayloadCarriesTheUserProfileAndNoExtractedProfile() throws {
+        let action = SolveCaptchaAction(id: captchaActionID, actionType: .solveCaptcha)
+
+        let payload: EncodedCaptchaRequest = try encodePayload(action: action,
+                                                               data: .solveCaptcha(CaptchaToken(token: captchaToken),
+                                                                                   makeProfileQuery(),
+                                                                                   nil))
+
+        XCTAssertEqual(payload.state.data.token, captchaToken)
+        XCTAssertEqual(payload.state.data.userProfile?.firstName, "John")
+        XCTAssertEqual(payload.state.data.userProfile?.lastName, "Doe")
+        XCTAssertNil(payload.state.data.extractedProfile)
+    }
+
     func testWhenActionContainsRawJSON_thenEncodingUsesRawActionPayload() throws {
         let stepJSON = """
             {
@@ -328,4 +360,32 @@ final class ActionRequestEncodingTests: XCTestCase {
     private func makeProfileQuery() -> ProfileQuery {
         ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 1985)
     }
+
+    private func encodePayload<Payload: Decodable>(action: Action, data: CCFRequestData) throws -> Payload {
+        let encoded = try JSONEncoder().encode(Params(state: ActionRequest(action: action, data: data)))
+        return try JSONDecoder().decode(Payload.self, from: encoded)
+    }
+}
+
+private struct EncodedCaptchaRequest: Decodable {
+    struct State: Decodable {
+        let data: CaptchaData
+    }
+
+    struct CaptchaData: Decodable {
+        let token: String
+        let userProfile: UserProfile?
+        let extractedProfile: MatchedProfile?
+    }
+
+    struct UserProfile: Decodable {
+        let firstName: String
+        let lastName: String
+    }
+
+    struct MatchedProfile: Decodable {
+        let name: String?
+    }
+
+    let state: State
 }

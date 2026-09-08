@@ -43,12 +43,12 @@ protocol PermissionStore: AnyObject {
         decision: PersistedPermissionDecision,
         lastModified: Date
     ) throws -> StoredPermission
-    
+
     func clear(except: [StoredPermission], completionHandler: (@MainActor (Error?) -> Void)?)
 }
 
 extension PermissionStore {
-    
+
     func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, lastModified: Date?) {
         update(objectWithId: id, decision: decision, lastModified: lastModified, completionHandler: nil)
     }
@@ -172,7 +172,7 @@ final class LocalPermissionStore: PermissionStore {
             }
         }
     }
-    
+
     private func performAdd(
         domain: String,
         permissionType: PermissionType,
@@ -180,7 +180,7 @@ final class LocalPermissionStore: PermissionStore {
         lastModified: Date
     ) -> Result<NSManagedObjectID, Error>? {
         guard let context = context else { return nil }
-        
+
         var result: Result<NSManagedObjectID, Error>?
         context.performAndWait { [context] in
             let entityName = PermissionManagedObject.className()

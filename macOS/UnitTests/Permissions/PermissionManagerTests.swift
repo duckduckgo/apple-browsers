@@ -25,7 +25,7 @@ import XCTest
 final class PermissionManagerTests: XCTestCase {
     private static let referenceDate = Date(timeIntervalSince1970: 1_700_000_000)
     var store: PermissionStoreMock!
-    
+
     lazy var manager: PermissionManager! = {
         PermissionManager(store: store)
     }()

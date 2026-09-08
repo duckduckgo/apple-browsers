@@ -71,7 +71,7 @@ struct PermissionEntity: Equatable {
             assertionFailure("\(#file): Failed to create PermissionEntity from PermissionManagedObject")
             return nil
         }
-        
+
         self.permission = StoredPermission(
             id: managedObject.objectID,
             decision: managedObject.decision,

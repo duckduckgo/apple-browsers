@@ -133,7 +133,7 @@ public struct VPNSessionHealthWideEventData: WideEventData {
         params[Key.connectionTestFailureActiveAtEnd] = connectionTestFailureActive
         params[Key.staleHandshakeDetected] = staleHandshakeDetected
         params[Key.failureRecoveryAttempted] = failureRecoveryAttempted
-        params[Key.humanStopWithActiveFailure] = humanStopWithActiveFailure
+        params[Key.stoppedByUserWithActiveFailure] = stoppedByUserWithActiveFailure
         params[Key.ipLeakDetected] = leakDetected
 
         return params
@@ -188,7 +188,7 @@ private extension VPNSessionHealthWideEventData {
             return .cancelledWithError
         }
 
-        if humanStopWithActiveFailure {
+        if stoppedByUserWithActiveFailure {
             return .routingOutageAtUserDisable
         }
 
@@ -223,7 +223,7 @@ private extension VPNSessionHealthWideEventData {
         return .connectionTesterNeverReported
     }
 
-    var humanStopWithActiveFailure: Bool {
+    var stoppedByUserWithActiveFailure: Bool {
         endReason == .stoppedByUser && connectionTestFailureActive
     }
 
@@ -363,7 +363,7 @@ extension WideEventParameter {
         static let staleHandshakeRecovered = "feature.data.ext.stale_handshake_recovered"
         static let failureRecoveryAttempted = "feature.data.ext.failure_recovery_attempted"
         static let failureRecoverySucceeded = "feature.data.ext.failure_recovery_succeeded"
-        static let humanStopWithActiveFailure = "feature.data.ext.human_stop_with_active_failure"
+        static let stoppedByUserWithActiveFailure = "feature.data.ext.stopped_by_user_with_active_failure"
         static let timeToFirstError = "feature.data.ext.time_to_first_error_seconds_bucketed"
         static let ipLeakDetected = "feature.data.ext.ip_leak_detected"
     }

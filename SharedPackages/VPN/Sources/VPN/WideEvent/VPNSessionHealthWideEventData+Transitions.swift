@@ -40,14 +40,18 @@ extension VPNSessionHealthWideEventData {
 
     func markingMonitoringFailedToStart(at now: Date) -> Self {
         applying { next in
-            next.markMonitoringStopped(at: now, isIntentional: false)
+            next.markMonitoringStopped(at: now)
             next.monitoringInterrupted = true
         }
     }
 
     func markingMonitoringStopped(at now: Date, isIntentional: Bool) -> Self {
         applying { next in
-            next.markMonitoringStopped(at: now, isIntentional: isIntentional)
+            next.markMonitoringStopped(at: now)
+
+            if !next.isPaused && !isIntentional {
+                next.monitoringInterrupted = true
+            }
         }
     }
 
@@ -133,7 +137,7 @@ extension VPNSessionHealthWideEventData {
 
     func markingPaused(_ reason: PauseReason, at now: Date) -> Self {
         applying { next in
-            next.markMonitoringStopped(at: now, isIntentional: true)
+            next.markMonitoringStopped(at: now)
 
             // An intentional pause ends the outage; a reassert does not.
             if reason != .reconfiguration {
@@ -160,7 +164,7 @@ extension VPNSessionHealthWideEventData {
                 next.markFirstErrorDetectedIfNeeded(at: now)
             }
 
-            next.terminate(endReason, at: now)
+            next.markEnded(endReason, at: now)
         }
     }
 
@@ -197,7 +201,7 @@ extension VPNSessionHealthWideEventData {
         return next
     }
 
-    func markingProcessDeath(at now: Date) -> Self {
+    func markingOrphanedSessionEnded(at now: Date) -> Self {
         // This API is part of the Orphans Collection mechanism.
         // We'll backdate the termination event with the last observation timestamp.
         markingStopped(.processDied, at: min(now, lastObservedAt))
@@ -214,20 +218,16 @@ private extension VPNSessionHealthWideEventData {
         return next
     }
 
-    mutating func markMonitoringStopped(at now: Date, isIntentional: Bool) {
-        if !isPaused && !isIntentional {
-            monitoringInterrupted = true
-        }
-
+    mutating func markMonitoringStopped(at now: Date) {
+        /// Reset Monitoring Flags
         connectionMonitorsActive = false
         connectionTestDidReport = false
-        // The handshake monitor resets on restart; a continuing failure will be reported again.
         staleHandshakeActive = false
-        stopTrackingOutageTime(at: now)
+        stopTrackingOutageTimeAndRefreshStats(at: now)
     }
 
     mutating func markOutageAsEnded(at now: Date) {
-        stopTrackingOutageTime(at: now)
+        stopTrackingOutageTimeAndRefreshStats(at: now)
         activeOutageFailedCheckCount = 0
     }
 
@@ -251,7 +251,7 @@ private extension VPNSessionHealthWideEventData {
         }
     }
 
-    mutating func stopTrackingOutageTime(at now: Date) {
+    mutating func stopTrackingOutageTimeAndRefreshStats(at now: Date) {
         guard let began = outageTrackingStartedAt else {
             return
         }
@@ -260,8 +260,8 @@ private extension VPNSessionHealthWideEventData {
         outageTrackingStartedAt = nil
     }
 
-    mutating func terminate(_ reason: EventEndReason, at now: Date) {
-        stopTrackingOutageTime(at: now)
+    mutating func markEnded(_ reason: EventEndReason, at now: Date) {
+        stopTrackingOutageTimeAndRefreshStats(at: now)
 
         endedAt = now
         endReason = reason

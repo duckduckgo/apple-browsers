@@ -183,12 +183,11 @@ private extension DefaultVPNSessionHealthInstrumentation {
         }
 
         let timestamp = now()
-        let event = rolloverEventIfNeededLocked(previous, at: timestamp)
+        let event = rolloverEventIfNeededInLock(previous, at: timestamp)
         var next = transition(event, timestamp)
         next.lastObservedAt = timestamp
 
-        if next.hasEnded {
-            complete(next)
+        if completeEventIfEnded(next) {
             currentEvent = nil
             return
         }
@@ -197,25 +196,11 @@ private extension DefaultVPNSessionHealthInstrumentation {
         wideEvent.updateFlow(next)
     }
 
-    /// Closes at the UTC hour boundary when the next callback arrives.
-    func rolloverEventIfNeededLocked(_ event: VPNSessionHealthWideEventData, at timestamp: Date) -> VPNSessionHealthWideEventData {
-        guard let rollover = rolloverSchedule.rolloverDates(from: event.startedAt, to: timestamp) else {
-            return event
-        }
-
-        complete(event.markingStoppedForRollover(at: rollover.endedAt))
-
-        let nextEvent = event.makingNextEventAfterRollover(at: rollover.startedAt, globalData: WideEventGlobalData())
-        beginEventLocked(nextEvent)
-
-        return nextEvent
-    }
-
     func beginEvent(reason: VPNSessionHealthWideEventData.EventStartReason) {
         lock.lock()
         defer { lock.unlock() }
 
-        completeEventBeforeRestartLocked()
+        completeEventBeforeRestartInLock()
 
         completeOrphanedEvents()
 
@@ -224,36 +209,57 @@ private extension DefaultVPNSessionHealthInstrumentation {
         }
 
         let nextEvent = VPNSessionHealthWideEventData(startReason: reason, startedAt: now(), extensionType: extensionType, globalData: WideEventGlobalData())
-        beginEventLocked(nextEvent)
+        beginEventInLock(nextEvent)
+    }
+}
+
+// MARK: - Private: Non-locking Methods
+
+private extension DefaultVPNSessionHealthInstrumentation {
+
+    /// Closes at the UTC hour boundary when the next callback arrives.
+    func rolloverEventIfNeededInLock(_ event: VPNSessionHealthWideEventData, at timestamp: Date) -> VPNSessionHealthWideEventData {
+        guard let rollover = rolloverSchedule.rolloverDates(from: event.startedAt, to: timestamp) else {
+            return event
+        }
+
+        completeEventIfEnded(event.markingStoppedForRollover(at: rollover.endedAt))
+
+        let nextEvent = event.makingNextEventAfterRollover(at: rollover.startedAt, globalData: WideEventGlobalData())
+        beginEventInLock(nextEvent)
+
+        return nextEvent
     }
 
-    func beginEventLocked(_ fresh: VPNSessionHealthWideEventData) {
+    func beginEventInLock(_ fresh: VPNSessionHealthWideEventData) {
         currentEvent = fresh
         wideEvent.startFlow(fresh)
     }
 
     /// A physical start with an event still open means its stop was never observed. Closing it here keeps it out of the orphan sweep, which would otherwise misreport it as a dead process on a later start.
-    func completeEventBeforeRestartLocked() {
+    func completeEventBeforeRestartInLock() {
         guard let previous = currentEvent else {
             return
         }
 
         currentEvent = nil
-        complete(previous.markingStopped(.restartedWithoutStop, at: now()))
+        completeEventIfEnded(previous.markingStopped(.restartedWithoutStop, at: now()))
     }
 
     func completeOrphanedEvents() {
         for orphan in wideEvent.getAllFlowData(VPNSessionHealthWideEventData.self) {
-            complete(orphan.markingProcessDeath(at: now()))
+            completeEventIfEnded(orphan.markingOrphanedSessionEnded(at: now()))
         }
     }
 
-    func complete(_ data: VPNSessionHealthWideEventData) {
+    @discardableResult
+    func completeEventIfEnded(_ data: VPNSessionHealthWideEventData) -> Bool {
         guard let status = data.outcome?.status else {
-            return
+            return false
         }
 
         wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
+        return true
     }
 }
 

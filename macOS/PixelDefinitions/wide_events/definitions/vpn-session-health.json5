@@ -110,7 +110,7 @@
                         "type": "boolean",
                         "description": "Whether that recovery succeeded. Present only when a recovery finished."
                     },
-                    "human_stop_with_active_failure": {
+                    "stopped_by_user_with_active_failure": {
                         "type": "boolean",
                         "description": "Whether a deliberate user disable coincided with an active routing failure. The headline diagnostic for silently broken tunnels."
                     },

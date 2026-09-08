@@ -149,7 +149,7 @@ public final class PixelKit {
             case .dailyAndStandard: return "dailyAndStandard"
             // Shares `uniqueByName`'s map: both fire once ever, and `LegacyPixelStateMigration`
             // seeds this slot from the legacy `UniquePixel` store so a migrated user is not
-            // re-fired. Repointing this at its own key silently un-suppresses every migrated pixel.
+            // re-fired.
             case .legacyInitial: return "uniqueByName"
             case .legacyDailyNoSuffix: return "legacyDailyNoSuffix"
             // Shares `daily`'s map: it is a daily throttle, only with the error folded into the pixel-name

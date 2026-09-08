@@ -61,6 +61,55 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         return { info }
     }
 
+    func testClassificationCallbackReportsConfirmedLeak() async {
+        let classified = expectation(description: "Leak classification")
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressInfo: makeEgressInfoProvider(),
+            tunnelInterface: { .resolved(Self.systemInterface) },
+            httpClient: MockLeakCheckHTTPClient(ipv4: "8.8.8.8", ipv6Error: URLError(.cannotFindHost)),
+            stunClient: MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost)),
+            wideEvent: MockWideEventManager(),
+            onClassified: { leakDetected in
+                XCTAssertTrue(leakDetected)
+                classified.fulfill()
+            }
+        )
+        await service.runCheck(trigger: .tunnelStart)
+        await fulfillment(of: [classified], timeout: 1)
+    }
+
+    func testClassificationCallbackReportsNoLeakWhenProbesMatch() async {
+        let classified = expectation(description: "No leak classification")
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressInfo: makeEgressInfoProvider(),
+            tunnelInterface: { .resolved(Self.systemInterface) },
+            httpClient: MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost)),
+            stunClient: MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost)),
+            wideEvent: MockWideEventManager(),
+            onClassified: { leakDetected in
+                XCTAssertFalse(leakDetected)
+                classified.fulfill()
+            }
+        )
+        await service.runCheck(trigger: .tunnelStart)
+        await fulfillment(of: [classified], timeout: 1)
+    }
+
+    func testSkippedCheckDoesNotCallClassificationCallback() async {
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressInfo: makeEgressInfoProvider(),
+            tunnelInterface: { .unavailable },
+            httpClient: MockLeakCheckHTTPClient(ipv4: "8.8.8.8", ipv6Error: URLError(.cannotFindHost)),
+            stunClient: MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost)),
+            wideEvent: MockWideEventManager(),
+            onClassified: { _ in XCTFail("Skipped checks must not report a classification") }
+        )
+        await service.runCheck(trigger: .tunnelStart)
+    }
+
     func testAllTestsMatchEgress_allSuccess() async throws {
         let http = MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))
         let stun = MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost))

@@ -52,7 +52,6 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         switch event {
         case .userBecameActive:
-            // PixelKit drains its own retry queue after any successful fire.
             PixelKit.fire(Pixel.Event.networkProtectionActiveUser,
                           frequency: .legacyDailyNoSuffix,
                           options: .parameters([PixelParameters.vpnCohort: PixelKit.cohort(from: defaults.vpnFirstEnabled)]))

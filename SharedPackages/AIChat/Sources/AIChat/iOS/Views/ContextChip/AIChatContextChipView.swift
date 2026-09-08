@@ -38,6 +38,10 @@ public final class AIChatContextChipView: UIView {
         static let borderWidth: CGFloat = 1
         /// The offer reads as provisional, so its outline is heavier and broken rather than solid.
         static let suggestedBorderWidth: CGFloat = 1.5
+        /// The design asks for `--ds-accent-alt-primary` (#d6efff fill, the same blue at 16% for the
+        /// dashes). Neither has an iOS token, so the nearest ones are re-tinted to match.
+        static let suggestedFillAlpha: CGFloat = 0.4
+        static let suggestedBorderAlpha: CGFloat = 0.16
         static let suggestedDashPattern: [NSNumber] = [5, 7]
 
         static let faviconSize: CGFloat = 28
@@ -272,12 +276,14 @@ private extension AIChatContextChipView {
             faviconView.backgroundColor = .clear
             faviconView.layer.borderWidth = 0
             faviconView.layer.borderColor = nil
-            backgroundColor = UIColor(designSystemColor: .accentGlowSecondary)
+            backgroundColor = UIColor(designSystemColor: .accentAltGlowPrimary)
+                .withAlphaComponent(Constants.suggestedFillAlpha)
             isAccessibilityElement = false
             accessibilityIdentifier = "AIChat.ContextChip.Suggested"
             accessibilityLabel = offer
             accessibilityTraits = .none
-            applyDashedBorder(color: UIColor(designSystemColor: .accentPrimary))
+            applyDashedBorder(color: UIColor(designSystemColor: .accentPrimary)
+                .withAlphaComponent(Constants.suggestedBorderAlpha))
             isUserInteractionEnabled = true
             chipTapRecognizer.isEnabled = true
 

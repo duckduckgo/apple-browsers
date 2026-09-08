@@ -195,13 +195,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var isFireWindowProvider: (() -> Bool)?
 
-    /// Surface that opened this chat, consumed once at load and retained for the conversation's pixels.
+    /// Surface that opened this chat, consumed once per document and retained for its pixels.
     private var conversationSource: AIChatConversationSource?
-    private var didConsumeConversationSource = false
     private let conversationSourceHandler: AIChatConversationSourceHandler
 
-    /// Captured at load rather than read at prompt time: by then the page may have navigated off the
-    /// homepage (`?q=…&ia=chat`) as part of starting the very conversation being described.
+    /// Document the source was captured for, fragment stripped, so a real navigation re-captures
+    /// while the homepage's in-place `#chat` toggle keeps what that document captured.
+    private var didCaptureConversationSource = false
+    private var conversationSourceDocument: URL?
     private var loadedOnDuckDuckGoHomepage = false
 
     /// Whether page context with content is currently attached to this chat — set by the native
@@ -272,28 +273,32 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
-        // Read up front so no suspension splits the commit below. `!isDuckAIURL` because the chat
-        // itself can be served from a homepage-shaped URL (`?ia=chat`).
-        let isHomepage = await message.messageWebView?.url.map { $0.isDuckDuckGoHomepage && !$0.isDuckAIURL } == true
-
-        // Consume exactly once, at load, before the user can submit a prompt. Guarded by a flag (not
-        // by `conversationSource == nil`) so a chat that loaded with an empty mailbox can't later
-        // steal a different chat's pending source on a subsequent config fetch.
-        if !didConsumeConversationSource {
-            didConsumeConversationSource = true
-            // `??` so a first prompt racing ahead of this fetch keeps the source it already settled.
-            conversationSource = conversationSourceHandler.consumeData() ?? conversationSource
-            loadedOnDuckDuckGoHomepage = isHomepage
-        }
+        captureConversationSource(for: await message.messageWebView?.url)
         let isFireWindow = isFireWindowProvider?() ?? false
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
     }
 
-    /// duckduckgo.com fetches the config on every visit, so a homepage load drains the mailbox before
-    /// any chat starts; scoped to that case and the first prompt so no chat drains another's stamp.
+    /// duckduckgo.com fetches this config on every document load, so keying the capture to the
+    /// document is what keeps a source tied to one conversation: a real navigation re-captures
+    /// (clearing the previous conversation's source), while the homepage's same-document `#chat`
+    /// toggle keeps what that document captured.
+    private func captureConversationSource(for url: URL?) {
+        let document = url?.strippingFragment
+        guard !didCaptureConversationSource || document != conversationSourceDocument else { return }
+        didCaptureConversationSource = true
+        conversationSourceDocument = document
+        conversationSource = conversationSourceHandler.consumeData()
+        // A chat URL or `#chat` means the document opened as a chat, so no homepage started it here.
+        loadedOnDuckDuckGoHomepage = url.map {
+            $0.isDuckDuckGoHomepage && !$0.isDuckAIURL && !$0.isDuckAIChatFragment
+        } == true
+    }
+
+    /// The homepage switches to Duck.ai in place, so nothing native ever stamps a source for it;
+    /// infer one from what this document loaded as, and only when nothing else claimed the chat.
     private func resolveHomepageConversationSourceIfNeeded() {
         guard conversationSource == nil, loadedOnDuckDuckGoHomepage else { return }
-        conversationSource = conversationSourceHandler.consumeData() ?? .duckduckgoHomepage
+        conversationSource = .duckduckgoHomepage
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -1187,4 +1192,15 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         freeTrialConversionService.markDuckAIActivated()
     }
 
+}
+
+private extension URL {
+
+    /// Two URLs differing only by fragment are the same document, which is how the homepage's
+    /// `#chat` toggle is told apart from a navigation that starts a different conversation.
+    var strippingFragment: URL {
+        guard fragment != nil, var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return self }
+        components.fragment = nil
+        return components.url ?? self
+    }
 }

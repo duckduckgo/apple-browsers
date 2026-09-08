@@ -618,7 +618,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatConversationPixelPicksUpSourceStagedAfterAnEarlierEmptyConfigFetch() async {
         // Mirrors the omnibar reusing a tab already on duckduckgo.com: the homepage's config fetch
-        // drains the mailbox first, and only then does the omnibar stamp the real source.
+        // drains the mailbox, then the omnibar stamps the real source and navigates that same tab.
         let sourceHandler = AIChatConversationSourceHandler()
         let testPixelFiring = PixelKitMock()
         let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
@@ -628,9 +628,83 @@ struct AIChatUserScriptHandlerTests {
 
         sourceHandler.setData(.omnibar)
 
+        let chatWebView = mockWebView(url: "https://duckduckgo.com/?q=test&ia=chat")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: chatWebView))
         _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
 
         #expect(testPixelFiring.actualFireCalls.first?.pixel.parameters?["source"] == "omnibar")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Switching to Duck.ai in place keeps the homepage attribution", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatTheInPlaceChatToggleKeepsTheHomepageAttribution() async {
+        // `#chat` is a fragment change, so it is the same document and must not re-capture.
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+
+        let homepageWebView = mockWebView(url: "https://duckduckgo.com/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: homepageWebView))
+
+        let chatFragmentWebView = mockWebView(url: "https://duckduckgo.com/#chat")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: chatFragmentWebView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+
+        #expect(testPixelFiring.actualFireCalls.first?.pixel.parameters?["source"] == "duckduckgo-homepage")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A chat opened straight at #chat is not attributed to the homepage", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAChatOpenedStraightAtTheChatFragmentIsNotAttributedToTheHomepage() async {
+        // A bookmark or typed `duckduckgo.com/#chat`: homepage-shaped, but it opened as a chat.
+        let webView = mockWebView(url: "https://duckduckgo.com/#chat")
+        let parameters = await firedConversationParameters(source: nil, metric: .userDidSubmitFirstPrompt, webView: webView)
+        #expect(parameters?["source"] == "unattributed")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Leaving the homepage for Duck.ai in the same tab drops the homepage attribution", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatNavigatingFromTheHomepageToDuckAIIsNotAttributedToTheHomepage() async {
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+
+        let homepageWebView = mockWebView(url: "https://duckduckgo.com/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: homepageWebView))
+
+        let duckAIWebView = mockWebView(url: "https://duck.ai/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: duckAIWebView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+
+        #expect(testPixelFiring.actualFireCalls.first?.pixel.parameters?["source"] == "unattributed")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Returning to the homepage for a second conversation drops the first conversation's source", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatASecondConversationInTheSameTabDoesNotReuseTheFirstSource() async {
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+
+        let homepageWebView = mockWebView(url: "https://duckduckgo.com/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: homepageWebView))
+
+        sourceHandler.setData(.omnibar)
+        let chatWebView = mockWebView(url: "https://duckduckgo.com/?q=test&ia=chat")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: chatWebView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+        #expect(testPixelFiring.actualFireCalls.first?.pixel.parameters?["source"] == "omnibar")
+
+        // Back to the homepage in that same tab, then start a fresh conversation from its toggle.
+        let secondHomepageWebView = mockWebView(url: "https://duckduckgo.com/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: secondHomepageWebView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["source"] == "duckduckgo-homepage")
     }
 
     @available(iOS 16, macOS 13, *)

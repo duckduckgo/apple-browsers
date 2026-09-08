@@ -28,6 +28,7 @@ extension URL {
         static let bangQueryName = "q"
         static let supportedBangs: Set<String> = ["ai", "aichat", "chat", "duckai"]
         static let revokeAccessPath = "/revoke-duckai-access"
+        static let chatFragment = "chat"
     }
 
     static var duckDuckGoHost: String { DuckDuckGo.host }
@@ -83,6 +84,12 @@ extension URL {
     public var isDuckDuckGoHomepage: Bool {
         guard host == DuckDuckGo.host, path.isEmpty || path == "/" else { return false }
         return queryItems?.contains { $0.name == DuckDuckGo.bangQueryName } != true
+    }
+
+    /// Duck.ai's in-page chat route (`#chat`), which duckduckgo.com switches to without leaving the
+    /// document — invisible to `isDuckAIURL`, which only inspects the path and query.
+    public var isDuckAIChatFragment: Bool {
+        fragment?.lowercased().hasPrefix(DuckDuckGo.chatFragment) == true
     }
 
     /// Returns `true` if the URL points to Duck AI voice mode (`?mode=voice`).

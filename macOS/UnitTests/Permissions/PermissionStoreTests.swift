@@ -117,9 +117,8 @@ final class PermissionStoreTests: XCTestCase {
         XCTAssertEqual(permissions.map(\.permission.lastModified), [Self.referenceDate])
     }
 
-    func testWhenPermissionIsAddedWithoutLastModifiedThenItLoadsAsNil() throws {
-        // Mirrors a row written before the attribute existed: the optional attribute stays nil
-        // through a lightweight migration rather than defaulting to a date.
+    func testWhenLastModifiedIsClearedByAnUpdateThenItLoadsAsNil() throws {
+        // Clearing an existing timestamp must persist nil through a subsequent load.
         let stored = try store.add(domain: "duckduckgo.com",
                                    permissionType: .camera,
                                    decision: .allow,

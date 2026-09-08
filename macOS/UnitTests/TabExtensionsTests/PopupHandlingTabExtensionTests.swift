@@ -2111,6 +2111,10 @@ class MockPopupBlockingConfiguration: PopupBlockingConfiguration {
 }
 
 class TestPermissionManager: PermissionManagerProtocol {
+    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> {
+        Empty().eraseToAnyPublisher()
+    }
+
     var persistedPermissions: [String: [PermissionType: PersistedPermissionDecision]] = [:]
 
     var permissionPublisher: AnyPublisher<(domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision), Never> {

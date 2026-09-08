@@ -25,6 +25,7 @@ import Networking
 import Configuration
 import Persistence
 import WebKit
+import PixelKit
 #if canImport(DuckSansFont)
 import DuckSansFont
 #endif
@@ -72,7 +73,7 @@ struct AppConfiguration {
         AIChatSettingsMigration.migrate(from: UserDefaults.standard, to: {
             let sharedUserDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName)
             if sharedUserDefaults == nil {
-                Pixel.fire(pixel: .debugFailedToCreateAppConfigurationUserDefaultsInAIChatSettingsMigration)
+                PixelKit.fire(Pixel.Event.debugFailedToCreateAppConfigurationUserDefaultsInAIChatSettingsMigration)
             }
             return sharedUserDefaults ?? UserDefaults()
         })
@@ -111,7 +112,7 @@ struct AppConfiguration {
             let isBackground = UIApplication.shared.applicationState == .background
             
             Logger.general.error("💥 Temp directory still missing after all recreation attempts. Is background: \(isBackground)")
-            Pixel.fire(pixel: .tmpDirStillMissingAfterRecreation, withAdditionalParameters: ["isBackground": String(isBackground)])
+            PixelKit.fire(Pixel.Event.tmpDirStillMissingAfterRecreation, options: .parameters(["isBackground": String(isBackground)]))
         }
     }
 
@@ -126,7 +127,7 @@ struct AppConfiguration {
             Logger.general.info("🧹 Removed temp directory at: \(url.path)")
         } catch {
             Logger.general.error("⚠️ Failed to remove tmp dir: \(error.localizedDescription)")
-            Pixel.fire(pixel: .failedToRemoveTmpDir, error: error)
+            PixelKit.fire(Pixel.Event.failedToRemoveTmpDir.withError(error))
         }
     }
 
@@ -145,12 +146,12 @@ struct AppConfiguration {
                 Logger.general.info("📁 Recreated temp directory at: \(url.path)")
                 
                 if attempt > 0 {
-                    Pixel.fire(pixel: .recreateTmpSuccessOnRetry(attempt: attempt))
+                    PixelKit.fire(Pixel.Event.recreateTmpSuccessOnRetry(attempt: attempt))
                 }
                 return
             } catch {
                 Logger.general.error("❌ Failed to recreate tmp dir (attempt \(attempt)): \(error.localizedDescription)")
-                Pixel.fire(pixel: .recreateTmpAttemptFailed(attempt: attempt), error: error)
+                PixelKit.fire(Pixel.Event.recreateTmpAttemptFailed(attempt: attempt).withError(error))
 
                 let isLastAttempt = attempt == maxAttempts - 1
                 if isLastAttempt {
@@ -172,10 +173,10 @@ struct AppConfiguration {
         let fallbackSucceeded = FileManager.default.fileExists(atPath: url.path)
         if fallbackSucceeded {
             Logger.general.info("✅ WKWebView fallback successfully recreated temp directory")
-            Pixel.fire(pixel: .recreateTmpWebViewFallbackSucceeded)
+            PixelKit.fire(Pixel.Event.recreateTmpWebViewFallbackSucceeded)
         } else {
             Logger.general.error("❌ WKWebView fallback failed to recreate temp directory")
-            Pixel.fire(pixel: .recreateTmpWebViewFallbackFailed)
+            PixelKit.fire(Pixel.Event.recreateTmpWebViewFallbackFailed)
         }
     }
 

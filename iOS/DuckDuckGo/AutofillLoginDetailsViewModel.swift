@@ -27,6 +27,7 @@ import Foundation
 import SecureStorage
 import SwiftUI
 import UniformTypeIdentifiers
+import PixelKit
 
 protocol AutofillLoginDetailsViewModelDelegate: AnyObject {
     func autofillLoginDetailsViewModelDidSave()
@@ -252,12 +253,12 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
         case .username:
             message = UserText.autofillCopyToastUsernameCopied
             pasteboard.string = username
-            Pixel.fire(pixel: .autofillManagementCopyUsername)
+            PixelKit.fire(Pixel.Event.autofillManagementCopyUsername)
         case .password:
             message = UserText.autofillCopyToastPasswordCopied
             pasteboard.setItems([[UTType.utf8PlainText.identifier: password]],
                                 options: [.expirationDate: Date().addingTimeInterval(clipboardExpirationInterval)])
-            Pixel.fire(pixel: .autofillManagementCopyPassword)
+            PixelKit.fire(Pixel.Event.autofillManagementCopyPassword)
         case .address:
             message = UserText.autofillCopyToastAddressCopied
             pasteboard.string = address
@@ -288,7 +289,7 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
                 }
             }
         } catch {
-            Pixel.fire(pixel: .secureVaultError, error: error)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
         }
     }
 
@@ -373,7 +374,7 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
                 delegate?.autofillLoginDetailsViewModelDidAttemptToSaveDuplicateLogin()
             }
         } else {
-            Pixel.fire(pixel: .secureVaultError, error: error)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
         }
     }
 

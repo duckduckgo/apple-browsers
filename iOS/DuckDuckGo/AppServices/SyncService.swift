@@ -25,6 +25,7 @@ import Persistence
 import PrivacyConfig
 import AIChat
 import FeatureFlags_iOS
+import PixelKit
 
 final class SyncService {
 
@@ -123,11 +124,10 @@ final class SyncService {
         isSyncInProgressCancellable = sync.isSyncInProgressPublisher
             .filter { $0 }
             .sink { [weak sync] _ in
-                DailyPixel.fire(pixel: .syncDaily, includedParameters: [.appVersion])
+                PixelKit.fire(Pixel.Event.syncDaily, frequency: .legacyDailyNoSuffix)
                 sync?.syncDailyStats.sendStatsIfNeeded(handler: { params in
-                    Pixel.fire(pixel: .syncSuccessRateDaily,
-                               withAdditionalParameters: params,
-                               includedParameters: [.appVersion])
+                    PixelKit.fire(Pixel.Event.syncSuccessRateDaily,
+                                  options: .parameters(params))
                 })
             }
 

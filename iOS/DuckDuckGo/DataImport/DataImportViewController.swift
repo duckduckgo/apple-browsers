@@ -27,6 +27,7 @@ import Bookmarks
 import DDGSync
 import PrivacyConfig
 import FeatureFlags_iOS
+import PixelKit
 
 protocol DataImportViewControllerDelegate: AnyObject {
     func dataImportViewControllerDidFinish(_ controller: DataImportViewController)
@@ -65,14 +66,14 @@ final class DataImportViewController: UIViewController {
         super.viewDidLoad()
 
         setupView()
-        Pixel.fire(pixel: .importInstructionsDisplayed, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+        PixelKit.fire(Pixel.Event.importInstructionsDisplayed, options: .parameters([PixelParameters.source: importScreen.rawValue]))
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         if !summaryPresented {
             onCancelled?()
-            Pixel.fire(pixel: .importInstructionsCancelled, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+            PixelKit.fire(Pixel.Event.importInstructionsCancelled, options: .parameters([PixelParameters.source: importScreen.rawValue]))
         } else {
             onFinished?()
         }
@@ -99,7 +100,7 @@ final class DataImportViewController: UIViewController {
             present(documentPicker, animated: true)
         }
 
-        Pixel.fire(pixel: .importInstructionsFileButtonTapped, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
+        PixelKit.fire(Pixel.Event.importInstructionsFileButtonTapped, options: .parameters([PixelParameters.source: viewModel.state.importScreen.rawValue]))
     }
 
     private func presentDataTypePicker(for contents: ImportArchiveContents) {
@@ -233,11 +234,11 @@ extension DataImportViewController: UIDocumentPickerDelegate {
 
             switch fileType {
             case .zip, .json:
-                Pixel.fire(pixel: .importInstructionsFileSelectedZip, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
+                PixelKit.fire(Pixel.Event.importInstructionsFileSelectedZip, options: .parameters([PixelParameters.source: viewModel.state.importScreen.rawValue]))
             case .csv:
-                Pixel.fire(pixel: .importInstructionsFileSelectedCsv, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
+                PixelKit.fire(Pixel.Event.importInstructionsFileSelectedCsv, options: .parameters([PixelParameters.source: viewModel.state.importScreen.rawValue]))
             case .html:
-                Pixel.fire(pixel: .importInstructionsFileSelectedHtml, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
+                PixelKit.fire(Pixel.Event.importInstructionsFileSelectedHtml, options: .parameters([PixelParameters.source: viewModel.state.importScreen.rawValue]))
             }
 
         } catch {

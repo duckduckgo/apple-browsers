@@ -24,6 +24,22 @@ import XCTest
 @MainActor
 final class UnifiedToggleInputToolbarViewTests: XCTestCase {
 
+    func test_emptyInput_whenAIVoiceChatBecomesInactive_showsDisabledSubmitButton() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = false
+        sut.isAIVoiceChatActive = true
+
+        guard let submitButton = findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut) else {
+            XCTFail("Expected to find submit button")
+            return
+        }
+        XCTAssertTrue(submitButton.isEnabled)
+
+        sut.isAIVoiceChatActive = false
+
+        XCTAssertFalse(submitButton.isEnabled)
+    }
+
     func test_compactWidthWithLongModelName_keepsSubmitButtonVisible() {
         let sut = UnifiedToggleInputToolbarView()
         sut.translatesAutoresizingMaskIntoConstraints = false

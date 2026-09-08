@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Core
 import Combine
 import CombineExtensions
+import SitePermissions
 import WebKit
 
 protocol ContentBlockerRulesManagerProtocol: CompiledRuleListsSource {
@@ -41,11 +42,19 @@ public final class ContentBlockingUpdating {
         let rulesUpdate: ContentBlockerRulesManager.UpdateEvent
         let sourceProvider: ScriptSourceProviding
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+        var sitePermissionsMediaCaptureUserScript: MediaCaptureUserScript?
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
-            { [duckAiNativeStorageHandler] sourceProvider in
+            { [duckAiNativeStorageHandler, sitePermissionsMediaCaptureUserScript] sourceProvider in
                 UserScripts(with: sourceProvider,
+                            mediaCaptureUserScript: sitePermissionsMediaCaptureUserScript,
                             duckAiNativeStorageHandler: duckAiNativeStorageHandler)
             }
+        }
+
+        func includingSitePermissionsMediaCapture(_ userScript: MediaCaptureUserScript) -> Self {
+            var content = self
+            content.sitePermissionsMediaCaptureUserScript = userScript
+            return content
         }
     }
 

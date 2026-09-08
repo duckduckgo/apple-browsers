@@ -117,11 +117,11 @@ final class SubscriptionRestoreViewModel: ObservableObject {
         switch state.activationResult {
         case .expired,
              .notFound:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreFailureNotFound,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseStoreFailureNotFound,
+                          frequency: .legacyDailyAndCount)
         case .error:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreFailureOther,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseStoreFailureOther,
+                          frequency: .legacyDailyAndCount)
         default:
             break
         }
@@ -134,8 +134,8 @@ final class SubscriptionRestoreViewModel: ObservableObject {
     
     @MainActor
     func restoreAppstoreTransaction() {
-        DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreStart,
-                                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+        PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseStoreStart,
+                      frequency: .legacyDailyAndCount)
         
         let data = SubscriptionRestoreWideEventData(
             restorePlatform: .appleAccount,
@@ -151,8 +151,8 @@ final class SubscriptionRestoreViewModel: ObservableObject {
             do {
                 try await subFeature.restoreAccountFromAppStorePurchase()
                 
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreSuccess,
-                                             pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+                PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseStoreSuccess,
+                              frequency: .legacyDailyAndCount)
                 state.activationResult = .activated
                 
                 data.appleAccountRestoreDuration?.complete()

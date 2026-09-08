@@ -5220,6 +5220,15 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Odstrániť zariadenie?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Údaje servera boli zmazané";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Všetky zariadenia používajúce Sync & Backup budú odpojené a tvoje synchronizované údaje budú zmazané zo servera.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Chceš vypnúť Sync & Backup a zmazať údaje zo servera?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Bolo pridané nové zariadenie.";
 

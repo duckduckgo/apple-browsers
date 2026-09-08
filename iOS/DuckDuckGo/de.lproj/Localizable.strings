@@ -5220,6 +5220,15 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Gerät entfernen?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Serverdaten gelöscht";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Alle Geräte, die Sync & Backup verwenden, werden getrennt und deine synchronisierten Daten werden vom Server gelöscht.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Sync & Backup deaktivieren und Serverdaten löschen?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Neues Gerät hinzugefügt!";
 

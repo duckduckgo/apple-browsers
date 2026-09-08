@@ -5220,6 +5220,15 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Kas seade eemaldada?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Serveri andmed kustutatud";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Kõigi Sync & Backup kasutavate seadmete ühendus katkestatakse ja sinu sünkroonitud andmed kustutatakse serverist.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Kas lülitada Sync & Backup välja ja kustutada serveri andmed?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Uus seade lisatud!";
 

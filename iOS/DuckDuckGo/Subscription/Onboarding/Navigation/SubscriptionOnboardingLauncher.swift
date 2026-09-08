@@ -72,18 +72,12 @@ extension SubscriptionOnboardingFlowViewModel {
                                               freemiumDBPUserStateManager: FreemiumDBPUserStateManaging = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp, isUserAuthenticated: { false }, isFreemiumEnabled: { false }),
                                               @ViewBuilder pirScreen: @escaping () -> PIRScreen) async
     -> SubscriptionOnboardingFlowViewModel? {
-        async let vpnConfigured = vpnController.isVPNConfigured()
-        async let entitlement = subscriptionManager.getAllEntitlementStatus()
-
-        var persistor = persistor
-        if await vpnConfigured {
-            persistor.markComplete(.vpn)
-        }
-        if PIRActivation.isActivated(profileStateManager: profileStateManager,
-                                     freemiumDBPUserStateManager: freemiumDBPUserStateManager) {
-            persistor.markComplete(.pir)
-        }
-        let progress = SubscriptionOnboardingProgress(persistor: persistor, isPIRAvailable: isPIRAvailable, entitlement: await entitlement)
+        let progress = await makeProgress(persistor: persistor,
+                                          isPIRAvailable: isPIRAvailable,
+                                          subscriptionManager: subscriptionManager,
+                                          vpnController: vpnController,
+                                          profileStateManager: profileStateManager,
+                                          freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         return makeFlow(entryPoint: .postCheckout,
                         progress: progress,
                         onFinish: onFinish,
@@ -91,22 +85,64 @@ extension SubscriptionOnboardingFlowViewModel {
                         pirScreen: pirScreen)
     }
 
-    /// Resumes at the first unfinished section, and closes on the summary.
+    /// Resumes at the first unfinished section, and closes on the summary. Backfills the same as `postCheckout`.
     static func subscriptionSettings<PIRScreen: View>(persistor: SubscriptionOnboardingProgressPersisting,
                                                       isPIRAvailable: Bool,
                                                       subscriptionManager: any SubscriptionManager,
                                                       onFinish: @escaping () -> Void,
                                                       onRequestDuckAIChat: ((String?) -> Bool)? = nil,
+                                                      vpnController: SubscriptionOnboardingVPNControlling = DefaultSubscriptionOnboardingVPNController(),
+                                                      profileStateManager: DBPProfileStateManaging = DefaultDBPProfileStateManager(keyValueStore: UserDefaults.dbp),
+                                                      freemiumDBPUserStateManager: FreemiumDBPUserStateManaging = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp, isUserAuthenticated: { false }, isFreemiumEnabled: { false }),
                                                       @ViewBuilder pirScreen: @escaping () -> PIRScreen) async
     -> SubscriptionOnboardingFlowViewModel? {
-        let progress = await SubscriptionOnboardingProgress.make(persistor: persistor,
-                                                                  isPIRAvailable: isPIRAvailable,
-                                                                  subscriptionManager: subscriptionManager)
+        let progress = await makeProgress(persistor: persistor,
+                                          isPIRAvailable: isPIRAvailable,
+                                          subscriptionManager: subscriptionManager,
+                                          vpnController: vpnController,
+                                          profileStateManager: profileStateManager,
+                                          freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         return makeFlow(entryPoint: .subscriptionSettings,
                         progress: progress,
                         onFinish: onFinish,
                         onRequestDuckAIChat: onRequestDuckAIChat,
                         pirScreen: pirScreen)
+    }
+
+    /// Awaits the real entitlement, live-checks VPN/PIR and backfills either into `persistor` first — the
+    /// shared body of both entry points above.
+    private static func makeProgress(persistor: SubscriptionOnboardingProgressPersisting,
+                                     isPIRAvailable: Bool,
+                                     subscriptionManager: any SubscriptionManager,
+                                     vpnController: SubscriptionOnboardingVPNControlling,
+                                     profileStateManager: DBPProfileStateManaging,
+                                     freemiumDBPUserStateManager: FreemiumDBPUserStateManaging) async -> SubscriptionOnboardingProgress {
+        async let entitlement = subscriptionManager.getAllEntitlementStatus()
+        let persistor = await backfilledPersistor(persistor,
+                                                   vpnController: vpnController,
+                                                   profileStateManager: profileStateManager,
+                                                   freemiumDBPUserStateManager: freemiumDBPUserStateManager)
+        return SubscriptionOnboardingProgress(persistor: persistor, isPIRAvailable: isPIRAvailable, entitlement: await entitlement)
+    }
+
+    /// Live-checks VPN and PIR activation and marks either complete on `persistor`, skipping the check
+    /// entirely for whichever is already marked.
+    private static func backfilledPersistor(_ persistor: SubscriptionOnboardingProgressPersisting,
+                                             vpnController: SubscriptionOnboardingVPNControlling,
+                                             profileStateManager: DBPProfileStateManaging,
+                                             freemiumDBPUserStateManager: FreemiumDBPUserStateManaging) async -> SubscriptionOnboardingProgressPersisting {
+        var persistor = persistor
+        let completedItems = persistor.completedItems
+
+        if !completedItems.contains(.vpn), await vpnController.isVPNConfigured() {
+            persistor.markComplete(.vpn)
+        }
+        if !completedItems.contains(.pir),
+           PIRActivation.isActivated(profileStateManager: profileStateManager,
+                                     freemiumDBPUserStateManager: freemiumDBPUserStateManager) {
+            persistor.markComplete(.pir)
+        }
+        return persistor
     }
 
     /// A checklist that comes back empty means

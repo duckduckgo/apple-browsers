@@ -28,7 +28,7 @@ enum PIRAvailability {
     }
 }
 
-/// Shared by `SettingsViewModel` and `SubscriptionOnboardingLauncher`.
+/// Used by `SubscriptionOnboardingLauncher` to backfill `.pir` for a profile activated outside the flow.
 enum PIRActivation {
     static func isActivated(profileStateManager: DBPProfileStateManaging,
                             freemiumDBPUserStateManager: FreemiumDBPUserStateManaging) -> Bool {

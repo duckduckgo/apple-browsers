@@ -145,14 +145,6 @@ struct SubscriptionOnboardingProgress {
         self.checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable, entitlement: entitlement)
     }
 
-    /// Awaits the customer's real subscription entitlement, then builds `Progress` from it
-    static func make(persistor: SubscriptionOnboardingProgressPersisting,
-                     isPIRAvailable: Bool,
-                     subscriptionManager: any SubscriptionManager) async -> SubscriptionOnboardingProgress {
-        let entitlement = await subscriptionManager.getAllEntitlementStatus()
-        return SubscriptionOnboardingProgress(persistor: persistor, isPIRAvailable: isPIRAvailable, entitlement: entitlement)
-    }
-
     /// Read on demand, since items complete outside whatever screen is asking.
     var completedItems: Set<SubscriptionOnboardingChecklistItem> {
         persistor.completedItems

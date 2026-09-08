@@ -408,9 +408,11 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
             if let tier = metric.modelTier, case .plus = tier {
                 freeTrialConversionService.markDuckAIActivated()
                 // Also completes the subscription onboarding checklist's Duck.ai step
-                onboardingActivationRecorder.recordDuckAIActivated()
+                let wasAlreadyActivated = onboardingActivationRecorder.recordDuckAIActivatedIfNeeded()
                 Task {
-                    SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetric(isSubscriptionActive: await subscriptionManager.isActiveSubscription())
+                    SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(
+                        isSubscriptionActive: await subscriptionManager.isActiveSubscription(),
+                        isAlreadyActivated: wasAlreadyActivated)
                 }
             }
 

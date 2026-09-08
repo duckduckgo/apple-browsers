@@ -75,9 +75,11 @@ final class DBPService: NSObject {
                 // Marks the onboarding checklist's PIR step and reports the PIR-activated experiment metric.
                 // Fires for freemium saves too, so subscription status is checked rather than assumed.
                 onProfileSaved: {
-                    onboardingActivationRecorder.recordPIRActivated()
+                    let wasAlreadyActivated = onboardingActivationRecorder.recordPIRActivatedIfNeeded()
                     Task {
-                        SubscriptionOnboardingExperiment.firePIRActivatedMetric(isSubscriptionActive: await subscriptionManager.isActiveSubscription())
+                        SubscriptionOnboardingExperiment.firePIRActivatedMetricIfNeeded(
+                            isSubscriptionActive: await subscriptionManager.isActiveSubscription(),
+                            isAlreadyActivated: wasAlreadyActivated)
                     }
                 }
             )

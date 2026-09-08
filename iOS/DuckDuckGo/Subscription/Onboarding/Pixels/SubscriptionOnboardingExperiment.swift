@@ -84,21 +84,24 @@ enum SubscriptionOnboardingExperiment {
         hasStartedFlow && isEnrolledInTreatment(using: featureFlagger) && hasActiveSubscription
     }
 
-    /// Reports VPN activation while the subscription is active. No-ops if not enrolled in either experiment.
-    static func fireVPNActivatedMetric(isSubscriptionActive: Bool) {
-        guard isSubscriptionActive else { return }
+    /// Reports VPN activation while the subscription is active, unless already recorded. No-ops if not
+    /// enrolled in either experiment.
+    static func fireVPNActivatedMetricIfNeeded(isSubscriptionActive: Bool, isAlreadyActivated: Bool) {
+        guard isSubscriptionActive, !isAlreadyActivated else { return }
         fireActivationMetric(Metric.vpnActivated)
     }
 
-    /// Reports a paid Duck.ai chat while the subscription is active. No-ops if not enrolled in either experiment.
-    static func fireDuckAIPaidUsedMetric(isSubscriptionActive: Bool) {
-        guard isSubscriptionActive else { return }
+    /// Reports a paid Duck.ai chat while the subscription is active, unless already recorded. No-ops if not
+    /// enrolled in either experiment.
+    static func fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: Bool, isAlreadyActivated: Bool) {
+        guard isSubscriptionActive, !isAlreadyActivated else { return }
         fireActivationMetric(Metric.duckAiPaidUsed)
     }
 
-    /// Reports PIR activation while the subscription is active. No-ops if not enrolled in either experiment.
-    static func firePIRActivatedMetric(isSubscriptionActive: Bool) {
-        guard isSubscriptionActive else { return }
+    /// Reports PIR activation while the subscription is active, unless already recorded. No-ops if not
+    /// enrolled in either experiment.
+    static func firePIRActivatedMetricIfNeeded(isSubscriptionActive: Bool, isAlreadyActivated: Bool) {
+        guard isSubscriptionActive, !isAlreadyActivated else { return }
         fireActivationMetric(Metric.pirActivated)
     }
 

@@ -31,6 +31,39 @@ protocol SubscriptionOnboardingActivationRecording {
     func recordPIRActivated()
     /// Call when the customer has a VPN configuration installed.
     func recordVPNActivated()
+    /// Whether the Duck.ai step was already recorded before this call.
+    var isDuckAIActivated: Bool { get }
+    /// Whether the PIR step was already recorded before this call.
+    var isPIRActivated: Bool { get }
+    /// Whether the VPN step was already recorded before this call.
+    var isVPNActivated: Bool { get }
+}
+
+extension SubscriptionOnboardingActivationRecording {
+    /// Records the activation and reports whether it was already recorded beforehand, so a caller that also
+    /// fires a one-time experiment metric can guard it without risking the read/write ordering itself.
+    @discardableResult
+    func recordDuckAIActivatedIfNeeded() -> Bool {
+        let wasAlreadyActivated = isDuckAIActivated
+        recordDuckAIActivated()
+        return wasAlreadyActivated
+    }
+
+    /// See `recordDuckAIActivatedIfNeeded()`.
+    @discardableResult
+    func recordPIRActivatedIfNeeded() -> Bool {
+        let wasAlreadyActivated = isPIRActivated
+        recordPIRActivated()
+        return wasAlreadyActivated
+    }
+
+    /// See `recordDuckAIActivatedIfNeeded()`.
+    @discardableResult
+    func recordVPNActivatedIfNeeded() -> Bool {
+        let wasAlreadyActivated = isVPNActivated
+        recordVPNActivated()
+        return wasAlreadyActivated
+    }
 }
 
 struct SubscriptionOnboardingActivationRecorder: SubscriptionOnboardingActivationRecording {
@@ -53,6 +86,18 @@ struct SubscriptionOnboardingActivationRecorder: SubscriptionOnboardingActivatio
         markComplete(.vpn)
     }
 
+    var isDuckAIActivated: Bool {
+        SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore).completedItems.contains(.duckAI)
+    }
+
+    var isPIRActivated: Bool {
+        SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore).completedItems.contains(.pir)
+    }
+
+    var isVPNActivated: Bool {
+        SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore).completedItems.contains(.vpn)
+    }
+
     private func markComplete(_ item: SubscriptionOnboardingChecklistItem) {
         var persistor = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
         persistor.markComplete(item)
@@ -64,4 +109,7 @@ struct NullSubscriptionOnboardingActivationRecorder: SubscriptionOnboardingActiv
     func recordDuckAIActivated() {}
     func recordPIRActivated() {}
     func recordVPNActivated() {}
+    var isDuckAIActivated: Bool { false }
+    var isPIRActivated: Bool { false }
+    var isVPNActivated: Bool { false }
 }

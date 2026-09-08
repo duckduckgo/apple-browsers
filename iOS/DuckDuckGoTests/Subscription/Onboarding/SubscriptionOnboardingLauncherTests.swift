@@ -116,7 +116,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
         XCTAssertTrue(flow.progress.completedItems.contains(.pir))
     }
 
-    /// A freemium activation with no saved profile yet also counts — matches `SettingsViewModel.isPIRActivated`.
+    /// A freemium activation with no saved profile yet also counts.
     func testWhenFreemiumDidActivateButNoProfileExistsThenPIRIsStillMarkedComplete() async throws {
         subscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection,
                                               .identityTheftRestoration, .identityTheftRestorationGlobal,
@@ -234,10 +234,65 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             isPIRAvailable: true,
             subscriptionManager: subscriptionManager,
             onFinish: {},
+            vpnController: vpnController,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
         XCTAssertEqual(flow.sequence, [.vpnWidget, .vpnTips, .idtr, .duckAI, .progress])
+    }
+
+    /// A customer already marked `.vpn` complete shouldn't pay for a live VPN-IPC check on every flow launch.
+    func testWhenVPNIsAlreadyMarkedCompleteThenItIsNotLiveChecked() async throws {
+        subscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection,
+                                              .identityTheftRestoration, .paidAIChat]
+        var persistor = makePersistor()
+        persistor.markComplete(.vpn)
+
+        _ = await SubscriptionOnboardingFlowViewModel.subscriptionSettings(
+            persistor: persistor,
+            isPIRAvailable: true,
+            subscriptionManager: subscriptionManager,
+            onFinish: {},
+            vpnController: vpnController,
+            pirScreen: { EmptyView() })
+
+        XCTAssertEqual(vpnController.isVPNConfiguredCallCount, 0)
+    }
+
+    /// Mirrors `testWhenAVPNConfigurationIsAlreadyInstalledThenOnlyVPNActivationIsSkipped` for `postCheckout`.
+    func testWhenAVPNConfigurationIsAlreadyInstalledThenSubscriptionSettingsSkipsVPNActivation() async throws {
+        subscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection,
+                                              .identityTheftRestoration, .paidAIChat]
+
+        let result = await SubscriptionOnboardingFlowViewModel.subscriptionSettings(
+            persistor: makePersistor(),
+            isPIRAvailable: true,
+            subscriptionManager: subscriptionManager,
+            onFinish: {},
+            vpnController: MockVPNController(isConfigured: true),
+            pirScreen: { EmptyView() })
+        let flow = try XCTUnwrap(result)
+
+        XCTAssertEqual(flow.sequence, [.vpnWidget, .vpnTips, .idtr, .duckAI, .progress])
+    }
+
+    /// Mirrors `testWhenAPIRProfileAlreadyExistsThenPIRIsMarkedComplete` for `postCheckout`.
+    func testWhenAPIRProfileAlreadyExistsThenSubscriptionSettingsMarksPIRComplete() async throws {
+        subscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection,
+                                              .identityTheftRestoration, .paidAIChat]
+
+        let result = await SubscriptionOnboardingFlowViewModel.subscriptionSettings(
+            persistor: makePersistor(),
+            isPIRAvailable: true,
+            subscriptionManager: subscriptionManager,
+            onFinish: {},
+            vpnController: vpnController,
+            profileStateManager: MockDBPProfileStateManager(profileState: .hasProfile),
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            pirScreen: { EmptyView() })
+        let flow = try XCTUnwrap(result)
+
+        XCTAssertTrue(flow.progress.completedItems.contains(.pir))
     }
 
     func testWhenTheChecklistIsEmptyThenSubscriptionSettingsReturnsNil() async {
@@ -248,6 +303,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             isPIRAvailable: false,
             subscriptionManager: subscriptionManager,
             onFinish: {},
+            vpnController: vpnController,
             pirScreen: { EmptyView() })
 
         XCTAssertNil(flow)
@@ -268,6 +324,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
                 requestedModelID = modelID
                 return true
             },
+            vpnController: vpnController,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
@@ -293,8 +350,13 @@ private final class InMemoryThrowingStore: ThrowingKeyValueStoring {
 }
 
 /// Only `isVPNConfigured()` matters here; connection state and `start()` are unused.
-private struct MockVPNController: SubscriptionOnboardingVPNControlling {
+private final class MockVPNController: SubscriptionOnboardingVPNControlling {
     let isConfigured: Bool
+    private(set) var isVPNConfiguredCallCount = 0
+
+    init(isConfigured: Bool) {
+        self.isConfigured = isConfigured
+    }
 
     var isConnected: Bool { false }
     var isConnectedPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
@@ -302,7 +364,10 @@ private struct MockVPNController: SubscriptionOnboardingVPNControlling {
     var controllerErrorPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 
     func start() async {}
-    func isVPNConfigured() async -> Bool { isConfigured }
+    func isVPNConfigured() async -> Bool {
+        isVPNConfiguredCallCount += 1
+        return isConfigured
+    }
 }
 
 private struct MockDBPProfileStateManager: DBPProfileStateManaging {

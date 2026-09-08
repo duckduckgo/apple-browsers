@@ -76,6 +76,10 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject, Identifiable 
     /// to skip finished sections.
     var progress: SubscriptionOnboardingProgress
 
+    /// Sections this run has already reported completed, kept separate from `progress.completedItems` since
+    /// that value can be set externally (e.g. activating VPN outside the flow) without this run completing it.
+    private var reportedCompletions: Set<SubscriptionOnboardingSection> = []
+
     // MARK: - Dependencies
 
     /// Screens read cached results from this rather than fetching for themselves.
@@ -248,14 +252,11 @@ extension SubscriptionOnboardingFlowViewModel: SubscriptionOnboardingSectionDele
 
     func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
         if case .activation(let item) = section.kind {
-            guard !progress.completedItems.contains(item) else { return }
             progress.markComplete(item)
-        }
-        if section == .vpnActivation {
-            SubscriptionOnboardingExperiment.fireVPNActivatedMetric(isSubscriptionActive: true)
         }
         // `.vpnTips` completes nothing of its own
         guard section != .vpnTips else { return }
+        guard reportedCompletions.insert(section).inserted else { return }
         instrumentation.stepCompleted(section)
     }
 

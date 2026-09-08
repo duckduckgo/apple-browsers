@@ -394,6 +394,17 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         XCTAssertEqual(spy.completed, [.vpnActivation])
     }
 
+    /// The checklist item can be marked complete externally (e.g. VPN activated outside the flow) before this
+    /// run's own completion arrives — that must not suppress this run's completion pixel.
+    func testWhenTheChecklistItemWasAlreadyMarkedExternallyThenCompletionIsStillReported() {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .postCheckout, completed: [.vpn], instrumentation: spy)
+
+        sut.sectionDidComplete(.vpnActivation)
+
+        XCTAssertEqual(spy.completed, [.vpnActivation])
+    }
+
     /// `.vpnTips` is bundled with `.vpnWidget`: completing `.vpnWidget` is what counts as the bundle completing,
     /// and `.vpnTips` must never fire a completion pixel of its own — it would just duplicate `.vpnWidget`'s.
     func testWhenVpnTipsCompletesThenNoCompletionIsReported() {

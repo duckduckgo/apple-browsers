@@ -384,7 +384,10 @@ struct Launching: LaunchingHandling {
             inactivityStateStore: inactivityStateStore
         )
 
-        let vpnService = VPNService(mainCoordinator: mainCoordinator, notificationServiceManager: notificationServiceManager)
+        let vpnService = VPNService(mainCoordinator: mainCoordinator,
+                                    notificationServiceManager: notificationServiceManager,
+                                    onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(
+                                        keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
         let aiChatService = AIChatService(aiChatSettings: aiChatSettings)
         let applicationShortcutItemsService = ApplicationShortcutItemsService(shortcutItemProviders: [
             { aiChatService.shortcutItem() },

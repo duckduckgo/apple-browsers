@@ -148,10 +148,10 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
 
     // MARK: - VPN activated metric
 
-    func test_fireVPNActivatedMetric_subscriptionActiveAndEnrolled_fires() {
+    func test_fireVPNActivatedMetricIfNeeded_subscriptionActiveAndEnrolled_fires() {
         seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment")
 
-        SubscriptionOnboardingExperiment.fireVPNActivatedMetric(isSubscriptionActive: true)
+        SubscriptionOnboardingExperiment.fireVPNActivatedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
 
         XCTAssertEqual(firedEvents.count, 1)
         XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_treatment")
@@ -161,36 +161,44 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
     }
 
     /// Proves the window is per-experiment: paid-subs uses 0-30, not free-trials' 0-7.
-    func test_fireVPNActivatedMetric_enrolledInPaidSubsExperiment_firesWithThirtyDayWindow() {
+    func test_fireVPNActivatedMetricIfNeeded_enrolledInPaidSubsExperiment_firesWithThirtyDayWindow() {
         seedActiveExperiment(.subscriptionOnboardingPaidSubsSep2026, cohort: "treatment")
 
-        SubscriptionOnboardingExperiment.fireVPNActivatedMetric(isSubscriptionActive: true)
+        SubscriptionOnboardingExperiment.fireVPNActivatedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
 
         XCTAssertEqual(firedEvents.count, 1)
         XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingPaidSubsSep2026_treatment")
         XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-30")
     }
 
-    func test_fireVPNActivatedMetric_subscriptionInactive_doesNotFire() {
+    func test_fireVPNActivatedMetricIfNeeded_subscriptionInactive_doesNotFire() {
         seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment")
 
-        SubscriptionOnboardingExperiment.fireVPNActivatedMetric(isSubscriptionActive: false)
+        SubscriptionOnboardingExperiment.fireVPNActivatedMetricIfNeeded(isSubscriptionActive: false, isAlreadyActivated: false)
 
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
-    func test_fireVPNActivatedMetric_notEnrolled_doesNotFire() {
-        SubscriptionOnboardingExperiment.fireVPNActivatedMetric(isSubscriptionActive: true)
+    func test_fireVPNActivatedMetricIfNeeded_notEnrolled_doesNotFire() {
+        SubscriptionOnboardingExperiment.fireVPNActivatedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
+
+        XCTAssertTrue(firedEvents.isEmpty)
+    }
+
+    func test_fireVPNActivatedMetricIfNeeded_alreadyActivated_doesNotFire() {
+        seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment")
+
+        SubscriptionOnboardingExperiment.fireVPNActivatedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: true)
 
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
     // MARK: - Duck.ai paid used metric
 
-    func test_fireDuckAIPaidUsedMetric_subscriptionActiveAndEnrolled_fires() {
+    func test_fireDuckAIPaidUsedMetricIfNeeded_subscriptionActiveAndEnrolled_fires() {
         seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "control")
 
-        SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetric(isSubscriptionActive: true)
+        SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
 
         XCTAssertEqual(firedEvents.count, 1)
         XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_control")
@@ -199,26 +207,34 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
         XCTAssertEqual(firedEvents.first?.parameters?["value"], "1")
     }
 
-    func test_fireDuckAIPaidUsedMetric_subscriptionInactive_doesNotFire() {
+    func test_fireDuckAIPaidUsedMetricIfNeeded_subscriptionInactive_doesNotFire() {
         seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "control")
 
-        SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetric(isSubscriptionActive: false)
+        SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: false, isAlreadyActivated: false)
 
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
-    func test_fireDuckAIPaidUsedMetric_notEnrolled_doesNotFire() {
-        SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetric(isSubscriptionActive: true)
+    func test_fireDuckAIPaidUsedMetricIfNeeded_notEnrolled_doesNotFire() {
+        SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
+
+        XCTAssertTrue(firedEvents.isEmpty)
+    }
+
+    func test_fireDuckAIPaidUsedMetricIfNeeded_alreadyActivated_doesNotFire() {
+        seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "control")
+
+        SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: true)
 
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
     // MARK: - PIR activated metric
 
-    func test_firePIRActivatedMetric_enrolledInFreeTrialsExperiment_firesWithSevenDayWindow() {
+    func test_firePIRActivatedMetricIfNeeded_enrolledInFreeTrialsExperiment_firesWithSevenDayWindow() {
         seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment")
 
-        SubscriptionOnboardingExperiment.firePIRActivatedMetric(isSubscriptionActive: true)
+        SubscriptionOnboardingExperiment.firePIRActivatedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
 
         XCTAssertEqual(firedEvents.count, 1)
         XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_treatment")
@@ -227,10 +243,10 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
         XCTAssertEqual(firedEvents.first?.parameters?["value"], "1")
     }
 
-    func test_firePIRActivatedMetric_enrolledInPaidSubsExperiment_firesWithThirtyDayWindow() {
+    func test_firePIRActivatedMetricIfNeeded_enrolledInPaidSubsExperiment_firesWithThirtyDayWindow() {
         seedActiveExperiment(.subscriptionOnboardingPaidSubsSep2026, cohort: "treatment")
 
-        SubscriptionOnboardingExperiment.firePIRActivatedMetric(isSubscriptionActive: true)
+        SubscriptionOnboardingExperiment.firePIRActivatedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
 
         XCTAssertEqual(firedEvents.count, 1)
         XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingPaidSubsSep2026_treatment")
@@ -238,16 +254,24 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
         XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-30")
     }
 
-    func test_firePIRActivatedMetric_subscriptionInactive_doesNotFire() {
+    func test_firePIRActivatedMetricIfNeeded_subscriptionInactive_doesNotFire() {
         seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment")
 
-        SubscriptionOnboardingExperiment.firePIRActivatedMetric(isSubscriptionActive: false)
+        SubscriptionOnboardingExperiment.firePIRActivatedMetricIfNeeded(isSubscriptionActive: false, isAlreadyActivated: false)
 
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
-    func test_firePIRActivatedMetric_notEnrolled_doesNotFire() {
-        SubscriptionOnboardingExperiment.firePIRActivatedMetric(isSubscriptionActive: true)
+    func test_firePIRActivatedMetricIfNeeded_notEnrolled_doesNotFire() {
+        SubscriptionOnboardingExperiment.firePIRActivatedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
+
+        XCTAssertTrue(firedEvents.isEmpty)
+    }
+
+    func test_firePIRActivatedMetricIfNeeded_alreadyActivated_doesNotFire() {
+        seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment")
+
+        SubscriptionOnboardingExperiment.firePIRActivatedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: true)
 
         XCTAssertTrue(firedEvents.isEmpty)
     }

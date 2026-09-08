@@ -25,6 +25,9 @@ final class MockSubscriptionOnboardingActivationRecorder: SubscriptionOnboarding
     var recordDuckAIActivatedCalled = false
     var recordPIRActivatedCalled = false
     var recordVPNActivatedCalled = false
+    var isDuckAIActivated = false
+    var isPIRActivated = false
+    var isVPNActivated = false
 
     func recordDuckAIActivated() {
         recordDuckAIActivatedCalled = true

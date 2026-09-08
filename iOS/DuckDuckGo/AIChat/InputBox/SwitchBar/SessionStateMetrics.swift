@@ -20,6 +20,7 @@
 import Foundation
 import Persistence
 import Core
+import PixelKit
 
 /// Session activity types for switchbar usage
 enum SessionActivityType: CaseIterable {
@@ -39,9 +40,9 @@ final class SessionStateMetrics: SessionStateMetricsProviding {
     private let storage: KeyValueStoring
     private var searchCount: Int = 0
     private var promptCount: Int = 0
-    private let pixelFiring: PixelFiring.Type
-    
-    init(storage: KeyValueStoring, pixelFiring: PixelFiring.Type = Pixel.self) {
+    private let pixelFiring: (any PixelKitFiring)?
+
+    init(storage: KeyValueStoring, pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.storage = storage
         self.pixelFiring = pixelFiring
     }
@@ -69,8 +70,8 @@ final class SessionStateMetrics: SessionStateMetricsProviding {
             "prompts_in_session": String(promptCount)
         ]
         
-        pixelFiring.fire(.aiChatExperimentalOmnibarSessionSummary,
-                                     withAdditionalParameters: parameters)
+        pixelFiring?.fire(Pixel.Event.aiChatExperimentalOmnibarSessionSummary,
+                          options: .parameters(parameters))
         
         resetSessionCounters()
     }

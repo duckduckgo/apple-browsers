@@ -19,17 +19,18 @@
 
 import WebKit
 import Core
+import PixelKit
 
 protocol DuckPlayerOverlayPixelFiring {
 
-    var pixelFiring: PixelFiring.Type { get set }
+    var pixelFiring: (any PixelKitFiring)? { get set }
     var webView: WKWebView? { get set }
     var duckPlayerMode: DuckPlayerMode { get set }
 }
 
 final class DuckPlayerOverlayUsagePixels: NSObject, DuckPlayerOverlayPixelFiring {
 
-    var pixelFiring: PixelFiring.Type
+    var pixelFiring: (any PixelKitFiring)?
     var duckPlayerMode: DuckPlayerMode = .disabled
     private var isObserving = false
 
@@ -37,13 +38,13 @@ final class DuckPlayerOverlayUsagePixels: NSObject, DuckPlayerOverlayPixelFiring
 
     private var lastVisitedURL: URL? // Tracks the last known URL
 
-    init(pixelFiring: PixelFiring.Type = Pixel.self) {
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.pixelFiring = pixelFiring
     }
 
     private func firePixelIfNeeded(_ pixel: Pixel.Event, url: URL?) {
         if let url, url.isYoutubeWatch, duckPlayerMode == .alwaysAsk {
-            pixelFiring.fire(pixel, withAdditionalParameters: [:])
+            pixelFiring?.fire(pixel)
         }
     }
 }

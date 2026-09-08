@@ -29,6 +29,12 @@ public final class PixelKitMock: PixelFiring {
     ///
     public private(set) var actualFireCalls = [ExpectedFireCall]()
 
+    /// When set, every subsequent `fire` call completes with this error instead of succeeding.
+    ///
+    /// Lets callers that route through `fireAsync` (e.g. `AdAttributionPixelReporter`) exercise
+    /// their failure path: `fireAsync` throws whatever error the completion block is called with.
+    public var expectedFireError: Error?
+
     public init(expecting expectedFireCalls: [ExpectedFireCall] = []) {
         self.expectedFireCalls = expectedFireCalls
     }
@@ -42,7 +48,12 @@ public final class PixelKitMock: PixelFiring {
                                         additionalParameters: options.additionalParameters,
                                         includeAppVersionParameter: options.includeAppVersionParameter)
         actualFireCalls.append(fireCall)
-        onComplete(true, nil)
+
+        // A multi-request frequency completes once per leg and `fireAsync` waits for all of them,
+        // so completing once here would leave an awaiting caller suspended forever.
+        for _ in 0..<frequency.legCount {
+            onComplete(expectedFireError == nil, expectedFireError)
+        }
     }
 }
 

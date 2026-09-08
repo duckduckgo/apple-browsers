@@ -23,6 +23,7 @@ import Core
 import DDGSync
 import Persistence
 import Bookmarks
+import PixelKit
 
 final class DataImportHubViewController: UIViewController {
 
@@ -69,7 +70,7 @@ final class DataImportHubViewController: UIViewController {
         super.viewDidLoad()
         setupView()
         setupActions()
-        Pixel.fire(pixel: .importHubDisplayed, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
+        PixelKit.fire(Pixel.Event.importHubDisplayed, options: .parameters(entryPoint.importHubEntryPointParameters))
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -86,8 +87,8 @@ final class DataImportHubViewController: UIViewController {
     private func setupActions() {
         viewModel.onSourceSelected = { [weak self] source in
             guard let self else { return }
-            Pixel.fire(pixel: .importHubSourceSelected,
-                       withAdditionalParameters: DataImportHubPixelContext(entryPoint: self.entryPoint, source: source.id).parameters)
+            PixelKit.fire(Pixel.Event.importHubSourceSelected,
+                          options: .parameters(DataImportHubPixelContext(entryPoint: self.entryPoint, source: source.id).parameters))
             self.navigateToSource(source)
         }
     }
@@ -131,7 +132,7 @@ final class DataImportHubViewController: UIViewController {
         guard !didCallOnCancelled else { return }
         guard isBeingDismissed || navigationController?.isBeingDismissed == true || isMovingFromParent else { return }
         didCallOnCancelled = true
-        Pixel.fire(pixel: .importHubCancelled, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
+        PixelKit.fire(Pixel.Event.importHubCancelled, options: .parameters(entryPoint.importHubEntryPointParameters))
         onCancelled?()
     }
 }
@@ -141,7 +142,7 @@ final class DataImportHubViewController: UIViewController {
 extension DataImportHubViewController: ImportPasswordsViaSyncViewControllerDelegate {
 
     func importPasswordsViaSyncViewControllerDidRequestOpenSync(_ viewController: ImportPasswordsViaSyncViewController) {
-        Pixel.fire(pixel: .importHubSyncOpenSettingsTapped)
+        PixelKit.fire(Pixel.Event.importHubSyncOpenSettingsTapped)
 
         if let settingsVC = navigationController?.children.first as? SettingsHostingController {
             navigationController?.popToRootViewController(animated: true)

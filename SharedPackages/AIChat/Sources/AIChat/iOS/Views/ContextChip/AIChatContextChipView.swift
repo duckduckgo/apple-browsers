@@ -37,8 +37,12 @@ public final class AIChatContextChipView: UIView {
         static let cornerRadius: CGFloat = 24
         static let borderWidth: CGFloat = 1
         /// The offer reads as provisional, so its outline is heavier and broken rather than solid.
+        static let suggestedCornerRadius: CGFloat = 20
         static let suggestedBorderWidth: CGFloat = 1.5
         static let suggestedDashPattern: [NSNumber] = [5, 7]
+        /// The design puts a 24pt blur behind the pill; a shadow is the closest UIKit gets.
+        static let suggestedGlowRadius: CGFloat = 12
+        static let suggestedGlowOpacity: Float = 0.35
 
         static let faviconSize: CGFloat = 28
         /// The design's rounded variant shows a circular favicon, but its asset is a circle with its
@@ -153,7 +157,11 @@ public final class AIChatContextChipView: UIView {
     /// Clamped to a capsule: the design's 24 exceeds half the 44pt height and would kink.
     public override func layoutSubviews() {
         super.layoutSubviews()
-        layer.cornerRadius = min(Constants.cornerRadius, bounds.height / 2)
+        if case .suggested = currentState {
+            layer.cornerRadius = Constants.suggestedCornerRadius
+        } else {
+            layer.cornerRadius = min(Constants.cornerRadius, bounds.height / 2)
+        }
         removeButton.layer.cornerRadius = removeButton.bounds.height / 2
 
         dashedBorderLayer.frame = bounds
@@ -313,6 +321,20 @@ private extension AIChatContextChipView {
 
     /// Neutral states pass `lines`, not `decorationPrimary`: the design is black at 9%, which `lines`
     /// matches and `decorationPrimary` does not — it is 30%.
+    /// The pill would otherwise clip its own glow, so clipping is off while it is shown.
+    func applyGlow(color: UIColor) {
+        clipsToBounds = false
+        layer.shadowColor = color.cgColor
+        layer.shadowOffset = .zero
+        layer.shadowRadius = Constants.suggestedGlowRadius
+        layer.shadowOpacity = Constants.suggestedGlowOpacity
+    }
+
+    func clearGlow() {
+        clipsToBounds = true
+        layer.shadowOpacity = 0
+    }
+
     func applyDashedBorder(color: UIColor) {
         layer.borderWidth = 0
         dashedBorderLayer.isHidden = false

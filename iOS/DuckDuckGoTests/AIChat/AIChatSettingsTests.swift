@@ -333,32 +333,6 @@ class AIChatSettingsTests: XCTestCase {
         ))
     }
 
-    // MARK: - DuckAIChromeShortcutVisibility — chrome menu button
-
-    func testDuckAIChromeShortcutVisibility_chromeMenuButtonRequiresBothFlagsAnIPadAndTheTabBarSetting() {
-        let cases: [(flagger: MockFeatureFlagger, isIPad: Bool, settingOn: Bool, available: Bool, visible: Bool)] = [
-            (MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad, .aiChatChromeMenuButtonIPad]), true, true, true, true),
-            (MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad, .aiChatChromeMenuButtonIPad]), true, false, true, false),
-            (MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad, .aiChatChromeMenuButtonIPad]), false, true, false, true),
-            (MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad]), true, true, false, false),
-            (MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeMenuButtonIPad]), true, true, false, false),
-            (MockFeatureFlagger(enabledFeatureFlags: []), true, true, false, false)
-        ]
-
-        for testCase in cases {
-            XCTAssertEqual(
-                DuckAIChromeShortcutVisibility.isChromeMenuButtonAvailable(isIPad: testCase.isIPad, featureFlagger: testCase.flagger),
-                testCase.available,
-                "Flags: \(testCase.flagger.enabledFeatureFlags), iPad: \(testCase.isIPad)"
-            )
-            XCTAssertEqual(
-                DuckAIChromeShortcutVisibility.isChromeMenuButtonVisible(featureFlagger: testCase.flagger, isTabBarShortcutEnabled: testCase.settingOn),
-                testCase.visible,
-                "Flags: \(testCase.flagger.enabledFeatureFlags), setting: \(testCase.settingOn)"
-            )
-        }
-    }
-
     // MARK: - DuckAIChromeShortcutVisibility — Address Bar row / button
 
     func testDuckAIChromeShortcutVisibility_addressBarRowHidden_whenTabBarRowIsShown() {

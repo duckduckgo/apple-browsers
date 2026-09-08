@@ -174,16 +174,17 @@ final class BrowserToolbarViewTests: XCTestCase {
     }
 
     func testWhenFloatingThenCombinedChromeHeightMatchesTheSpacingSpec() {
-        // 16 top + 48 field + 12 gap + 44 buttons + 16 bottom — bottom address bar only. The outer
-        // padding matches the field's side inset so the glass keeps one gap on every edge.
+        // 14 top + 48 field + 12 gap + 44 buttons + 16 bottom.
         XCTAssertEqual(BrowserToolbarView.floatingEmbeddedButtonsHeight, 44)
+        XCTAssertEqual(BrowserToolbarView.floatingEmbeddedTopContentPadding, 14)
+        XCTAssertEqual(BrowserToolbarView.floatingEmbeddedBottomContentPadding, 16)
         XCTAssertEqual(
             BrowserToolbarView.totalHeight(withOmnibarHeight: 48, isFloating: true),
-            136,
+            134,
             accuracy: 0.01)
         XCTAssertEqual(
             BrowserToolbarView.singleRowHeight(withOmnibarHeight: 48),
-            80,
+            78,
             accuracy: 0.01)
     }
 
@@ -221,7 +222,7 @@ final class BrowserToolbarViewTests: XCTestCase {
         }
     }
 
-    func testWhenEmbeddedFloatingThenOuterInsetIsEqualOnEveryEdge() {
+    func testWhenEmbeddedFloatingThenOuterInsetsMatchTheBottomChromeSpec() {
         let sut = makeSUT(embeddedOmnibar: true)
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
         container.addSubview(sut)
@@ -230,11 +231,9 @@ final class BrowserToolbarViewTests: XCTestCase {
         let frame = sut.restingCapsuleFrame(in: container)
 
         if #available(iOS 26.0, *) {
-            // Device-specific inset (guide + tuck), equal on every edge.
-            let physical = BrowserToolbarView.floatingPhysicalInset(guideInsets: BrowserToolbarView.horizontalGuideInsets(in: container))
-            XCTAssertEqual(frame.minX, physical, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.width - frame.maxX, physical, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.maxY - frame.maxY, physical, accuracy: 0.01)
+            XCTAssertEqual(frame.minX, BrowserToolbarView.floatingEmbeddedHorizontalInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, BrowserToolbarView.floatingEmbeddedHorizontalInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.maxY - frame.maxY, BrowserToolbarView.floatingEmbeddedBottomMargin, accuracy: 0.01)
         } else {
             XCTAssertEqual(BrowserToolbarView.floatingEmbeddedHorizontalInset, 16)
             XCTAssertEqual(frame.minX, 16, accuracy: 0.01)
@@ -268,7 +267,7 @@ final class BrowserToolbarViewTests: XCTestCase {
 
         let frame = sut.restingCapsuleFrame(in: container)
         let guideInsets = BrowserToolbarView.horizontalGuideInsets(in: container)
-        let physical = BrowserToolbarView.floatingPhysicalInset(guideInsets: guideInsets)
+        let physical = BrowserToolbarView.floatingEmbeddedHorizontalInset
 
         // Each edge sits at its own guide, or at the physical inset when the guide is smaller.
         XCTAssertEqual(frame.minX, max(guideInsets.left, physical), accuracy: 0.01)
@@ -289,6 +288,7 @@ final class BrowserToolbarViewTests: XCTestCase {
     func testWhenConcentricGuideIsUnresolvedThenTheFallbackInsetIsUsed() {
         let concentric = BrowserToolbarView.floatingEmbeddedConcentricInset
         XCTAssertEqual(BrowserToolbarView.floatingPhysicalInset(guideInsets: (left: 0, right: 0)), concentric, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.floatingPhysicalInset(guideInsets: (left: 0.5, right: 0.5)), concentric, accuracy: 0.01)
         XCTAssertEqual(BrowserToolbarView.floatingPhysicalInset(guideInsets: (left: 57, right: 0)), concentric, accuracy: 0.01)
     }
 
@@ -345,11 +345,9 @@ final class BrowserToolbarViewTests: XCTestCase {
         let frame = sut.restingCapsuleFrame(in: container)
 
         if #available(iOS 26.0, *) {
-            // Device-specific inset (guide + tuck), equal on every edge.
-            let physical = BrowserToolbarView.floatingPhysicalInset(guideInsets: BrowserToolbarView.horizontalGuideInsets(in: container))
-            XCTAssertEqual(frame.minX, physical, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.width - frame.maxX, physical, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.maxY - frame.maxY, physical, accuracy: 0.01)
+            XCTAssertEqual(frame.minX, BrowserToolbarView.floatingEmbeddedHorizontalInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, BrowserToolbarView.floatingEmbeddedHorizontalInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.maxY - frame.maxY, BrowserToolbarView.floatingEmbeddedBottomMargin, accuracy: 0.01)
         }
     }
 
@@ -371,15 +369,15 @@ final class BrowserToolbarViewTests: XCTestCase {
     func testWhenEmbeddedFloatingThenBottomMarginMatchesPlatformGeometry() {
         let sut = makeSUT(embeddedOmnibar: true)
 
-        XCTAssertEqual(BrowserToolbarView.floatingEmbeddedBottomMargin, 16)
+        XCTAssertEqual(BrowserToolbarView.floatingEmbeddedBottomMargin, 12)
         if #available(iOS 26.0, *) {
-            XCTAssertEqual(sut.floatingBottomMargin, 20, accuracy: 0.01)
-            XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .bottom), 20)
-            XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .bottom), 20)
-        } else {
-            XCTAssertEqual(sut.floatingBottomMargin, 16, accuracy: 0.01)
+            XCTAssertEqual(sut.floatingBottomMargin, 12, accuracy: 0.01)
             XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .bottom), 16)
-            XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .bottom), 16)
+            XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .bottom), 12)
+        } else {
+            XCTAssertEqual(sut.floatingBottomMargin, 12, accuracy: 0.01)
+            XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .bottom), 16)
+            XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .bottom), 12)
         }
     }
 

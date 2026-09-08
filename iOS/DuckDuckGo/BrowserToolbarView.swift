@@ -139,12 +139,12 @@ final class BrowserToolbarView: UIView {
     /// In the floating style the toolbar is laid out against the safe-area bottom (so the chrome
     /// hide/show math stays valid), but the capsule should float this close to the physical device
     /// bottom. The glass is shifted down into the home-indicator region by the difference.
-    static let floatingEmbeddedBottomMargin: CGFloat = 16
+    static let floatingEmbeddedBottomMargin: CGFloat = 12
     static let floatingStandaloneBottomMargin: CGFloat = 21
 
     static func floatingOuterHorizontalInset(for addressBarPosition: AddressBarPosition) -> CGFloat {
         if #available(iOS 26.0, *) {
-            return floatingEmbeddedConcentricInset
+            return addressBarPosition.isBottom ? floatingEmbeddedHorizontalInset : floatingEmbeddedConcentricInset
         }
         return addressBarPosition.isBottom ? floatingEmbeddedHorizontalInset : floatingStandaloneHorizontalInset
     }
@@ -152,7 +152,7 @@ final class BrowserToolbarView: UIView {
     /// Physical edge inset: the guide's own inset plus a tuck, or the fallback if unresolved.
     static func floatingPhysicalInset(guideInsets: (left: CGFloat, right: CGFloat)) -> CGFloat {
         let resolved = min(max(0, guideInsets.left), max(0, guideInsets.right))
-        return resolved > 0 ? resolved + floatingConcentricTuck : floatingEmbeddedConcentricInset
+        return max(resolved + floatingConcentricTuck, floatingEmbeddedConcentricInset)
     }
 
     /// Extra inset needed inside the guide to reach `physicalInset`; zero once the guide covers it.
@@ -162,14 +162,15 @@ final class BrowserToolbarView: UIView {
 
     static func floatingBottomMargin(for addressBarPosition: AddressBarPosition) -> CGFloat {
         if #available(iOS 26.0, *) {
-            return floatingEmbeddedConcentricInset
+            return addressBarPosition.isBottom ? floatingEmbeddedBottomMargin : floatingEmbeddedConcentricInset
         }
         return addressBarPosition.isBottom ? floatingEmbeddedBottomMargin : floatingStandaloneBottomMargin
     }
 
     /// Inner padding of the combined bottom floating chrome (address field + buttons). The standalone
     /// floating toolbar used in top-address-bar mode keeps the original 2pt padding.
-    private static let floatingEmbeddedVerticalContentPadding: CGFloat = 16
+    static let floatingEmbeddedTopContentPadding: CGFloat = 14
+    static let floatingEmbeddedBottomContentPadding: CGFloat = 16
     private static let floatingEmbeddedOmnibarToButtonsSpacing: CGFloat = 12
     private static let defaultVerticalContentPadding: CGFloat = 2
     private static let defaultOmnibarToButtonsSpacing: CGFloat = 2
@@ -313,9 +314,15 @@ final class BrowserToolbarView: UIView {
         return usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBarOuterInsets : Self.floatingStandaloneBarOuterInsets
     }
 
-    /// Compensates the corner-adapted guide so the glass sits at the same physical inset every edge.
+    /// Adds only the inset not already provided by the guide.
     @available(iOS 26.0, *)
     private var floatingRestStateOuterInsets: UIEdgeInsets {
+        if usesEmbeddedBottomChromeMetrics {
+            return UIEdgeInsets(top: 0,
+                                left: Self.floatingEmbeddedHorizontalInset,
+                                bottom: 0,
+                                right: Self.floatingEmbeddedHorizontalInset)
+        }
         guard let host = superview, host.bounds.width > 0 else {
             return UIEdgeInsets(
                 top: 0,
@@ -327,9 +334,9 @@ final class BrowserToolbarView: UIView {
         let physicalInset = Self.floatingPhysicalInset(guideInsets: guideInsets)
         return UIEdgeInsets(
             top: 0,
-            left: Self.embeddedRestStateInnerInset(guideInset: guideInsets.left, physicalInset: physicalInset),
+            left: max(guideInsets.left, physicalInset),
             bottom: 0,
-            right: Self.embeddedRestStateInnerInset(guideInset: guideInsets.right, physicalInset: physicalInset))
+            right: max(guideInsets.right, physicalInset))
     }
 
     /// Distance from the physical bottom edge to the corner-adapted safe area guide.
@@ -345,9 +352,12 @@ final class BrowserToolbarView: UIView {
         guideBottomGap - physicalInset
     }
 
-    /// Physical inset the glass keeps from every screen edge.
+    /// Physical horizontal inset for the current chrome layout.
     @available(iOS 26.0, *)
-    private var floatingPhysicalInset: CGFloat {
+    private var floatingHorizontalInset: CGFloat {
+        if usesEmbeddedBottomChromeMetrics {
+            return Self.floatingEmbeddedHorizontalInset
+        }
         guard let host = superview, host.bounds.width > 0 else { return Self.floatingEmbeddedConcentricInset }
         return Self.floatingPhysicalInset(guideInsets: Self.horizontalGuideInsets(in: host))
     }
@@ -386,11 +396,15 @@ final class BrowserToolbarView: UIView {
     }
 
     private var usesEmbeddedBottomChromeMetrics: Bool {
-        isFloatingStyleEnabled && hasEmbeddedOmnibar
+        isFloatingStyleEnabled && (hasEmbeddedOmnibar || isOmnibarMorphing)
     }
 
-    private var currentVerticalContentPadding: CGFloat {
-        usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedVerticalContentPadding : Self.defaultVerticalContentPadding
+    private var currentTopContentPadding: CGFloat {
+        usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedTopContentPadding : Self.defaultVerticalContentPadding
+    }
+
+    private var currentBottomContentPadding: CGFloat {
+        usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBottomContentPadding : Self.defaultVerticalContentPadding
     }
 
     private var currentOmnibarToButtonsSpacing: CGFloat {
@@ -402,7 +416,8 @@ final class BrowserToolbarView: UIView {
             return isFloating ? floatingButtonsHeight : legacyButtonsHeight
         }
         if isFloating {
-            return (floatingEmbeddedVerticalContentPadding * 2)
+            return floatingEmbeddedTopContentPadding
+                + floatingEmbeddedBottomContentPadding
                 + floatingEmbeddedButtonsHeight
                 + omnibarHeight
                 + floatingEmbeddedOmnibarToButtonsSpacing
@@ -411,7 +426,7 @@ final class BrowserToolbarView: UIView {
     }
 
     static func singleRowHeight(withOmnibarHeight omnibarHeight: CGFloat) -> CGFloat {
-        (floatingEmbeddedVerticalContentPadding * 2) + omnibarHeight
+        floatingEmbeddedTopContentPadding + floatingEmbeddedBottomContentPadding + omnibarHeight
     }
 
     override init(frame: CGRect) {
@@ -510,9 +525,9 @@ final class BrowserToolbarView: UIView {
     }
 
     private func applyContentStackMetrics() {
-        contentStackTopConstraint.constant = currentVerticalContentPadding
+        contentStackTopConstraint.constant = currentTopContentPadding
         if !hasExpandedContent {
-            contentStackBottomConstraint.constant = -currentVerticalContentPadding
+            contentStackBottomConstraint.constant = -currentBottomContentPadding
         }
         let collapse = usesEmbeddedBottomChromeMetrics ? buttonRowCollapseProgress.clamped(to: 0...1) : 0
         contentStack.spacing = currentOmnibarToButtonsSpacing * (1 - collapse)
@@ -788,7 +803,7 @@ final class BrowserToolbarView: UIView {
             let collapseLayout = {
                 self.expandedContentHeightConstraint.constant = 0
                 self.contentStack.setCustomSpacing(0, after: self.expandedContentContainer)
-                self.contentStackBottomConstraint.constant = -self.currentVerticalContentPadding
+                self.contentStackBottomConstraint.constant = -self.currentBottomContentPadding
                 self.materialBackgroundTopConstraint.constant = self.currentBarOuterInsets.top
                 self.layoutIfNeeded()
             }
@@ -820,7 +835,7 @@ final class BrowserToolbarView: UIView {
         expandedContentHeightConstraint.constant = expandedContainerHeight
         expandedContentContainer.isHidden = false
         contentStack.setCustomSpacing(Self.expandedContentToOmnibarSpacing, after: expandedContentContainer)
-        contentStackBottomConstraint.constant = -(currentVerticalContentPadding + Self.expandedButtonsBottomPadding)
+        contentStackBottomConstraint.constant = -(currentBottomContentPadding + Self.expandedButtonsBottomPadding)
         materialBackgroundTopConstraint.constant = currentBarOuterInsets.top - expandedContainerHeight - Self.expandedContentToOmnibarSpacing
 
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -862,7 +877,7 @@ final class BrowserToolbarView: UIView {
 
     var floatingBottomMargin: CGFloat {
         if #available(iOS 26.0, *) {
-            return floatingPhysicalInset
+            return usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBottomMargin : floatingHorizontalInset
         }
         return hasEmbeddedOmnibar ? Self.floatingEmbeddedBottomMargin : Self.floatingStandaloneBottomMargin
     }
@@ -885,11 +900,17 @@ final class BrowserToolbarView: UIView {
         let right: CGFloat
         let bottom: CGFloat
         if #available(iOS 26.0, *) {
-            let guideInsets = Self.horizontalGuideInsets(in: view)
-            let physicalInset = Self.floatingPhysicalInset(guideInsets: guideInsets)
-            left = guideInsets.left + Self.embeddedRestStateInnerInset(guideInset: guideInsets.left, physicalInset: physicalInset)
-            right = guideInsets.right + Self.embeddedRestStateInnerInset(guideInset: guideInsets.right, physicalInset: physicalInset)
-            bottom = bounds.maxY - physicalInset
+            if usesEmbeddedBottomChromeMetrics {
+                left = Self.floatingEmbeddedHorizontalInset
+                right = Self.floatingEmbeddedHorizontalInset
+                bottom = bounds.maxY - Self.floatingEmbeddedBottomMargin
+            } else {
+                let guideInsets = Self.horizontalGuideInsets(in: view)
+                let horizontalInset = Self.floatingPhysicalInset(guideInsets: guideInsets)
+                left = guideInsets.left + Self.embeddedRestStateInnerInset(guideInset: guideInsets.left, physicalInset: horizontalInset)
+                right = guideInsets.right + Self.embeddedRestStateInnerInset(guideInset: guideInsets.right, physicalInset: horizontalInset)
+                bottom = bounds.maxY - horizontalInset
+            }
         } else {
             let insets = currentBarOuterInsets
             left = insets.left
@@ -952,7 +973,8 @@ final class BrowserToolbarView: UIView {
         if #available(iOS 26.0, *), isFloatingStyleEnabled {
             if let host = superview, host.bounds.height > 0 {
                 let guideBottomGap = Self.verticalGuideBottomInset(in: host)
-                target = Self.embeddedRestStateBottomOffset(guideBottomGap: guideBottomGap, physicalInset: floatingPhysicalInset)
+                let bottomMargin = usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBottomMargin : floatingHorizontalInset
+                target = Self.embeddedRestStateBottomOffset(guideBottomGap: guideBottomGap, physicalInset: bottomMargin)
             } else {
                 target = 0
             }

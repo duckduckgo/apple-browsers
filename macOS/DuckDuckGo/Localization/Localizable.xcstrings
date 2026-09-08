@@ -33939,7 +33939,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Öffnet Videos im Theatermodus, der verhindert, dass das, was du ansiehst, deinen YouTube-Feed beeinflusst."
+            "value" : "Öffnet Videos im Kino-Modus, der verhindert, dass das, was du ansiehst, deinen YouTube-Feed beeinflusst."
           }
         },
         "en" : {
@@ -115487,10 +115487,58 @@
       "comment" : "Button that confirms closing the Sync setup dialog before the devices finished connecting (V2)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schließen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Close"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть"
           }
         }
       }
@@ -115499,10 +115547,58 @@
       "comment" : "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn du dieses Fenster schließt, wird die Verbindung mit Sync & Backup beendet."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Closing this window will stop connecting Sync & Backup."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al cerrar esta ventana, se dejará de conectar Sync & Backup."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La fermeture de cette fenêtre interrompra la connexion à Sync & Backup."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se chiudi la finestra, la connessione a Sync & Backup verrà interrotta."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als je dit venster sluit, wordt het verbinden met Sync & Backup gestopt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknięcie tego okna zatrzyma łączenie z funkcją Sync & Backup."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar esta janela irá interromper a ligação ao Sync & Backup."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если закрыть это окно, подключение к Sync & Backup будет прервано."
           }
         }
       }
@@ -115511,10 +115607,58 @@
       "comment" : "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bist du sicher, dass du dieses Fenster schließen möchtest?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Are you sure you want to close this window?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Seguro que quieres cerrar esta ventana?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voulez-vous vraiment fermer cette fenêtre ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudere la finestra?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weet je zeker dat je dit venster wilt sluiten?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czy na pewno chcesz zamknąć to okno?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tens a certeza de que pretendes fechar esta janela?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы уверены, что хотите закрыть это окно?"
           }
         }
       }

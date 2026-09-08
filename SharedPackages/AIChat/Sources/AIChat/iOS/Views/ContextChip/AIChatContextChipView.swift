@@ -37,8 +37,8 @@ public final class AIChatContextChipView: UIView {
         static let cornerRadius: CGFloat = 24
         static let borderWidth: CGFloat = 1
         /// The offer reads as provisional, so its outline is heavier and broken rather than solid.
-        static let suggestedBorderWidth: CGFloat = 2
-        static let suggestedDashPattern: [NSNumber] = [6, 4]
+        static let suggestedBorderWidth: CGFloat = 1.5
+        static let suggestedDashPattern: [NSNumber] = [5, 7]
 
         static let faviconSize: CGFloat = 28
         /// The design's rounded variant shows a circular favicon, but its asset is a circle with its

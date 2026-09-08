@@ -1438,7 +1438,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenTheSavedChatIsStillInTheStoreThenItIsRestored() async throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess, .aiChatNativeStorage]
         try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
 
         let restored = await restoredURL()
@@ -1448,7 +1448,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenTheSavedChatWasDeletedThenItIsNotRestored() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess, .aiChatNativeStorage]
 
         let restored = await restoredURL()
 
@@ -1457,9 +1457,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenAnOpenChatIsDeletedElsewhereThenItDoesNotReopen() async throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess, .aiChatNativeStorage]
         try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
         await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+        sut.aiChatContextualSheetViewControllerDidDismiss(try XCTUnwrap(sut.sheetViewController))
         XCTAssertTrue(sut.sessionState.hasActiveChat)
 
         try mockNativeStorage.deleteChat(chatId: savedChatID)
@@ -1471,7 +1472,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenAnOpenChatStillExistsThenItReopens() async throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess, .aiChatNativeStorage]
         try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
         await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
 
@@ -1482,8 +1483,22 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenTheSheetIsOnScreenThenADeletionDoesNotStripItOfItsSession() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess, .aiChatNativeStorage]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+
+        try mockNativeStorage.deleteChat(chatId: savedChatID)
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertNotNil(sut.sheetViewController, "clearing the chat would orphan the sheet already on screen")
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertTrue(sut.sessionState.hasActiveChat)
+    }
+
+    @MainActor
     func testWhenTheSavedChatWasDeletedThenTheTabsStaleURLIsCleared() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess, .aiChatNativeStorage]
         mockDelegate.contextualChatURLUpdates = []
 
         _ = await restoredURL()
@@ -1494,7 +1509,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenTheSavedChatIsStillInTheStoreThenTheTabsURLIsLeftAlone() async throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess, .aiChatNativeStorage]
         try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
         mockDelegate.contextualChatURLUpdates = []
 
@@ -1506,7 +1521,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenTheStoreCannotBeReadThenTheSavedChatIsStillRestored() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess, .aiChatNativeStorage]
         mockNativeStorage.failsReads = true
 
         let restored = await restoredURL()
@@ -1516,7 +1531,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenTheStoreIsStillSettingUpThenTheSavedChatIsStillRestored() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess, .aiChatNativeStorage]
         mockNativeStorage.setupSucceeded = nil
 
         let restored = await restoredURL()
@@ -1526,7 +1541,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenTheStoreSetupFailedThenTheSavedChatIsStillRestored() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess, .aiChatNativeStorage]
         mockNativeStorage.setupSucceeded = false
 
         let restored = await restoredURL()
@@ -1536,7 +1551,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenTheStoreIsNotMigratedThenTheSavedChatIsStillRestored() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess, .aiChatNativeStorage]
         mockNativeStorage.migrationDone = false
 
         let restored = await restoredURL()
@@ -1546,7 +1561,16 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenNativeDataAccessIsOffThenTheSavedChatIsStillRestored() async {
-        mockFeatureFlagger.enabledFeatureFlags = []
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeStorage]
+
+        let restored = await restoredURL()
+
+        XCTAssertEqual(restored, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenTheFrontendIsNotWritingToTheStoreThenTheSavedChatIsStillRestored() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
 
         let restored = await restoredURL()
 

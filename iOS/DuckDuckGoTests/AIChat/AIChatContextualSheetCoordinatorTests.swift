@@ -1480,12 +1480,12 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenAskingAboutThePageAfterADeletionThenTheStaleChatIsCleared() async throws {
-        // The floating input is the other way in, and it reconciles the session too — otherwise it
-        // opens believing a deleted chat is live, and the prompt goes nowhere.
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
         try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
         await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
-        sut.dismissSheet()
+        // The real dismissal arrives through the delegate; `dismissSheet` alone leaves
+        // `isSheetPresented` true and the floating input bails at its guard.
+        sut.aiChatContextualSheetViewControllerDidDismiss(try XCTUnwrap(sut.sheetViewController))
         try mockNativeStorage.deleteChat(chatId: savedChatID)
 
         await sut.presentFloatingInput(from: mockPresentingVC)

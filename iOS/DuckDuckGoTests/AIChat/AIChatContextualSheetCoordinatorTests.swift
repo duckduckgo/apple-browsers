@@ -1483,8 +1483,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
         try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
         await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
-        // The real dismissal arrives through the delegate; `dismissSheet` alone leaves
-        // `isSheetPresented` true and the floating input bails at its guard.
         sut.aiChatContextualSheetViewControllerDidDismiss(try XCTUnwrap(sut.sheetViewController))
         try mockNativeStorage.deleteChat(chatId: savedChatID)
 

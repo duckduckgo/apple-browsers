@@ -21,6 +21,7 @@ import Foundation
 import Core
 import BrowserServicesKit
 import Combine
+import PixelKit
 
 final class NewTabPageViewModel: ObservableObject {
 
@@ -41,10 +42,10 @@ final class NewTabPageViewModel: ObservableObject {
     /// favourite reorder uses, so this is a coarse "the surface was moved" signal.
     var onDidScroll: (() -> Void)?
 
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
     init(fireTab: Bool,
-         pixelFiring: PixelFiring.Type = Pixel.self) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.fireTab = fireTab
         self.pixelFiring = pixelFiring
 

@@ -28,6 +28,7 @@ import Common
 import FoundationExtensions
 import SyncUI_iOS
 import SecureStorage
+@_spi(Testing) import PixelKit
 
 @Suite("Sync Settings scan-flow pixels", .serialized)
 @MainActor
@@ -39,6 +40,7 @@ final class SyncSettingsViewControllerPixelTests {
     private let syncCreditCardsAdapter: SyncCreditCardsAdapter
     private let syncPausedStateManager: CapturingSyncPausedStateManager
     private let syncAutoRestoreHandler: MockSyncAutoRestoreHandler
+    private let pixelKitMock = PixelKitMock()
 
     init() throws {
         let bundle = DDGSync.bundle
@@ -66,10 +68,6 @@ final class SyncSettingsViewControllerPixelTests {
         syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
     }
 
-    deinit {
-        PixelFiringMock.tearDown()
-    }
-
     @available(iOS 16, macOS 13, *)
     @Test("scanQRCodeScreenShown fires the scan-QR screen pixel", .timeLimit(.minutes(1)))
     func scanQRCodeScreenShownFiresScanQRScreenPixel() {
@@ -77,9 +75,9 @@ final class SyncSettingsViewControllerPixelTests {
 
         vc.scanQRCodeScreenShown()
 
-        #expect(PixelFiringMock.allPixelsFired.contains {
-            $0.pixelName == Pixel.Event.syncSetupScanQRScreenShown.name &&
-            $0.params == [
+        #expect(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == Pixel.Event.syncSetupScanQRScreenShown.name &&
+            $0.additionalParameters == [
                 "source": "test_source",
                 "my_kind": "ddg",
                 "flow_version": "v1",
@@ -95,9 +93,9 @@ final class SyncSettingsViewControllerPixelTests {
 
         vc.barcodeScreenShown()
 
-        #expect(PixelFiringMock.allPixelsFired.contains {
-            $0.pixelName == Pixel.Event.syncSetupBarcodeScreenShown.name &&
-            $0.params == [
+        #expect(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == Pixel.Event.syncSetupBarcodeScreenShown.name &&
+            $0.additionalParameters == [
                 "source": "test_source",
                 "my_kind": "ddg",
                 "flow_version": "v1",
@@ -113,10 +111,10 @@ final class SyncSettingsViewControllerPixelTests {
 
         vc.fireSyncSetupPixel(event: .anotherDevicePromptDismissed)
 
-        #expect(PixelFiringMock.allPixelsFired.contains {
-            $0.pixelName == Pixel.Event.settingsSyncAnotherDevicePromptDismissed.name &&
-            $0.params == ["ui_version": "v2"] &&
-            $0.includedParams == [.appVersion]
+        #expect(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == Pixel.Event.settingsSyncAnotherDevicePromptDismissed.name &&
+            $0.additionalParameters == ["ui_version": "v2"] &&
+            $0.includeAppVersionParameter == true
         })
     }
 
@@ -130,7 +128,7 @@ final class SyncSettingsViewControllerPixelTests {
             source: source,
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: enabledFeatureFlags),
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            pixelFiring: PixelFiringMock.self
+            pixelFiring: pixelKitMock
         )
     }
 }

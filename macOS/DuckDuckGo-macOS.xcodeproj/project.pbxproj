@@ -4290,8 +4290,8 @@
 		CCB5000000000000000003EB /* PromoServiceFactory+BrokenSite.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB500000000000000000003 /* PromoServiceFactory+BrokenSite.swift */; };
 		CCB5000000000000000007D2 /* BrokenSitePromptPresentationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB500000000000000000002 /* BrokenSitePromptPresentationCoordinator.swift */; };
 		CCB5000000000000000007D3 /* PromoServiceFactory+BrokenSite.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB500000000000000000003 /* PromoServiceFactory+BrokenSite.swift */; };
-		CCB50000000000000000A102 /* BrokenSitePromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB50000000000000000A101 /* BrokenSitePromoDelegateTests.swift */; };
-		CCB50000000000000000A103 /* BrokenSitePromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB50000000000000000A101 /* BrokenSitePromoDelegateTests.swift */; };
+		CCB50000000000000000A102 /* BrokenSitePromptPresentationCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB50000000000000000A101 /* BrokenSitePromptPresentationCoordinatorTests.swift */; };
+		CCB50000000000000000A103 /* BrokenSitePromptPresentationCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB50000000000000000A101 /* BrokenSitePromptPresentationCoordinatorTests.swift */; };
 		CCBC17F5FE1230434E075AD1 /* AIChatUsageWarningCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7540091F30236CC01253A41F /* AIChatUsageWarningCopyTests.swift */; };
 		CCBCF38A2F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCBCF3892F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift */; };
 		CCBCF38B2F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCBCF3892F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift */; };
@@ -7210,7 +7210,7 @@
 		CCB36B122E56382E00DBFE3A /* UserScriptError+Pixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserScriptError+Pixel.swift"; sourceTree = "<group>"; };
 		CCB500000000000000000002 /* BrokenSitePromptPresentationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrokenSitePromptPresentationCoordinator.swift; sourceTree = "<group>"; };
 		CCB500000000000000000003 /* PromoServiceFactory+BrokenSite.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+BrokenSite.swift"; sourceTree = "<group>"; };
-		CCB50000000000000000A101 /* BrokenSitePromoDelegateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrokenSitePromoDelegateTests.swift; sourceTree = "<group>"; };
+		CCB50000000000000000A101 /* BrokenSitePromptPresentationCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrokenSitePromptPresentationCoordinatorTests.swift; sourceTree = "<group>"; };
 		CCBCF3892F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromoDelegateTests.swift; sourceTree = "<group>"; };
 		CCC13FF32F6B0C74007DC7CC /* DockCustomizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockCustomizerTests.swift; sourceTree = "<group>"; };
 		CCC87D6C2E1412D00091344D /* ChromiumTopSitesReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumTopSitesReader.swift; sourceTree = "<group>"; };
@@ -13404,7 +13404,7 @@
 				CCB2EBCC2F62000C00C65813 /* PromoHistoryStoreTests.swift */,
 				CCB2EBCD2F62000C00C65813 /* PromoRegistryTests.swift */,
 				CCB2EBCE2F62000C00C65813 /* PromoServiceFactoryTests.swift */,
-				CCB50000000000000000A101 /* BrokenSitePromoDelegateTests.swift */,
+				CCB50000000000000000A101 /* BrokenSitePromptPresentationCoordinatorTests.swift */,
 				CCB2EBCF2F62000C00C65813 /* PromoServiceTests.swift */,
 				CCB2EBD02F62000C00C65813 /* PromoTestHelpers.swift */,
 				FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */,
@@ -17177,7 +17177,7 @@
 				3F2BB6FE74EBC0C4E2D2E3D0 /* AutofillToolbarPinningPromoDelegateTests.swift in Sources */,
 				CCB2EBD22F62000C00C65813 /* PromoServiceTests.swift in Sources */,
 				CCB2EBD32F62000C00C65813 /* PromoServiceFactoryTests.swift in Sources */,
-				CCB50000000000000000A102 /* BrokenSitePromoDelegateTests.swift in Sources */,
+				CCB50000000000000000A102 /* BrokenSitePromptPresentationCoordinatorTests.swift in Sources */,
 				CCB2EBD42F62000C00C65813 /* PromoTestHelpers.swift in Sources */,
 				CCB2EBD52F62000C00C65813 /* PromoHistoryStoreTests.swift in Sources */,
 				B603974F29C1F93600902A34 /* TabPermissionsTests.swift in Sources */,
@@ -19600,7 +19600,7 @@
 				EA4E2D3161EACC0CF28D704E /* AutofillToolbarPinningPromoDelegateTests.swift in Sources */,
 				CCB2EBD72F62000C00C65813 /* PromoServiceTests.swift in Sources */,
 				CCB2EBD82F62000C00C65813 /* PromoServiceFactoryTests.swift in Sources */,
-				CCB50000000000000000A103 /* BrokenSitePromoDelegateTests.swift in Sources */,
+				CCB50000000000000000A103 /* BrokenSitePromptPresentationCoordinatorTests.swift in Sources */,
 				CCB2EBD92F62000C00C65813 /* PromoTestHelpers.swift in Sources */,
 				CCB2EBDA2F62000C00C65813 /* PromoHistoryStoreTests.swift in Sources */,
 				4B59024C26B38BB800489384 /* ChromiumLoginReaderTests.swift in Sources */,

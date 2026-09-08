@@ -158,6 +158,14 @@ final class AIChatContextualSheetCoordinator {
         return provider.isNativeDataAccessEnabled() && provider.isNativeDataStorageEnabled()
     }
 
+    private func discardActiveChatIfDeleted() {
+        guard !isSheetPresented,
+              sessionState.hasActiveChat,
+              isChatDeleted(chatID: sessionState.contextualChatURL?.duckAIChatID) else { return }
+        Logger.aiChat.debug("[Contextual] Active chat was deleted, clearing it")
+        clearActiveChat()
+    }
+
     private func isChatDeleted(chatID: String?) -> Bool {
         guard let chatID,
               canTrustChatStorage,
@@ -277,6 +285,7 @@ final class AIChatContextualSheetCoordinator {
     func presentSheet(from presentingViewController: UIViewController,
                       restoreURL: URL? = nil,
                       skippingAutoAttach: Bool = false) async {
+        discardActiveChatIfDeleted()
         sessionState.refreshAutoAttachSetting()
         sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
         clearStaleManualContextIfNeeded()

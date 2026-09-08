@@ -20,9 +20,6 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
-"%@: %@" = "%1$@ : %2$@";
-
-/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -66,9 +63,6 @@
 
 /* Add action - button shown in alert */
 "action.title.add" = "Ajouter";
-
-/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
-"action.title.aiChat.askDuckAI" = "Demandez à Duck.ai";
 
 /* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
 "action.title.aiChat.hideContextualSheetButton" = "Masquer le raccourci de la feuille inférieure";
@@ -207,9 +201,6 @@
 
 /* Add to Favorites action */
 "action.title.save.favorite" = "Ajouter un favori";
-
-/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
-"action.title.searchWithDuckDuckGo" = "Rechercher";
 
 /* Settings action */
 "action.title.settings" = "Paramètres";
@@ -1918,9 +1909,6 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Les récents changements apportés à YouTube ont affecté la fonctionnalité de Duck Player. Nous nous efforçons de résoudre ces problèmes et vous remercions de votre compréhension.";
 
-/* Address bar Duck.ai menu option that opens a fresh chat with no page context */
-"duckai.address.bar.menu.new.chat" = "Nouvelle discussion";
-
 /* Fourth paragraph of the Duck.ai widget education screen */
 "duckai.addWidget.settings.fourthParagraph" = "Appuyez sur le widget pour le modifier, puis définissez **Duck.ai** et **Duck.ai Vocal** comme raccourcis";
 
@@ -2233,12 +2221,6 @@
 /* Suggested prompt submitted text: summarize the current page */
 "duckai.suggestion.summarize-page.prompt" = "Résume cette page.";
 
-/* Suggested prompt chip shown when the user has attached a text selection: summarize that selection */
-"duckai.suggestion.summarize-selection.label" = "Résumer cette sélection";
-
-/* Suggested prompt submitted text: summarize the attached text selection */
-"duckai.suggestion.summarize-selection.prompt" = "Résume cette sélection.";
-
 /* Suggested prompt chip: summarize a discussion thread */
 "duckai.suggestion.summarize-thread.label" = "Résumer cette discussion";
 
@@ -2263,12 +2245,6 @@
 /* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
 "duckai.suggestion.translate-page.prompt" = "Traduis cette page en %@.";
 
-/* Suggested prompt chip shown when the user has attached a text selection: translate that selection */
-"duckai.suggestion.translate-selection.label" = "Traduis cette sélection";
-
-/* Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language. */
-"duckai.suggestion.translate-selection.prompt" = "Traduis cette sélection en %@.";
-
 /* Suggested prompt chip: video key points */
 "duckai.suggestion.video-key-points.label" = "Quels sont les points clés ?";
 
@@ -2286,12 +2262,6 @@
 
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Ça vaut le coup de regarder ? Donne-moi un avis sans spoiler.";
-
-/* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
-"duckai.text-selection.context-title" = "Sélection de texte";
-
-/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
-"duckai.text-selection.limit-reached" = "Tu peux ajouter jusqu’à %d sélections de texte. Retire-en une pour en ajouter une autre.";
 
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Toutes les discussions sont %@ privées";
@@ -4454,25 +4424,25 @@
 "settings.complete.setup" = "Terminez votre configuration";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "We’ll aim to reject as many cookies as possible for you, then close the pop-ups.";
+"settings.cookie.auto-manage.explanation" = "Nous nous efforcerons de ne sélectionner que les options de cookies les plus respectueuses de la vie privée pour vous, puis de fermer ces fenêtres contextuelles.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Reject optional cookies";
+"settings.cookie.auto-manage.title" = "Gérer automatiquement les fenêtres contextuelles (cookies)";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Protection contre les fenêtres contextuelles des cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo can auto-manage cookie pop-ups to maximize privacy and minimize cookies before you even see them.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo peut gérer automatiquement les préférences en matière de cookies pour maximiser la confidentialité, minimiser les cookies et fermer ces fenêtres contextuelles.\n[En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Gérer les fenêtres contextuelles (cookies)";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "If there’s no reject option, we’ll save you a click, accept these cookies for you, and close the pop-ups.";
+"settings.cookie.popups-without-opt-outs.explanation" = "Laissez aussi DuckDuckGo vous épargner un clic en acceptant les cookies en votre nom pour fermer les fenêtres contextuelles qui ne vous permettent pas de refuser leur utilisation.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Accept cookies that can’t be rejected";
+"settings.cookie.popups-without-opt-outs.title" = "Fenêtres contextuelles sans option de refus";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Supprimer les onglets et les données";
@@ -4581,6 +4551,8 @@
 
 /* Link text for learning more about a feature */
 "settings.learn.more" = "En savoir plus";
+
+/* Switch button label. */
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Mots de passe et saisie automatique";
@@ -5809,3 +5781,26 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Que voulez-vous importer ?";
 
+/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
+"action.title.aiChat.askDuckAI" = "Demandez à Duck.ai";
+
+/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
+"action.title.searchWithDuckDuckGo" = "Rechercher";
+
+/* Suggested prompt chip shown when the user has attached a text selection: summarize that selection */
+"duckai.suggestion.summarize-selection.label" = "Résumer cette sélection";
+
+/* Suggested prompt submitted text: summarize the attached text selection */
+"duckai.suggestion.summarize-selection.prompt" = "Résume cette sélection.";
+
+/* Suggested prompt chip shown when the user has attached a text selection: translate that selection */
+"duckai.suggestion.translate-selection.label" = "Traduis cette sélection";
+
+/* Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-selection.prompt" = "Traduis cette sélection en %@.";
+
+/* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
+"duckai.text-selection.context-title" = "Sélection de texte";
+
+/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
+"duckai.text-selection.limit-reached" = "Tu peux ajouter jusqu’à %d sélections de texte. Retire-en une pour en ajouter une autre.";

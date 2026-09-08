@@ -20,6 +20,7 @@
 import Subscription
 import SwiftUI
 import DataBrokerProtection_iOS
+import PixelKit
 import os.log
 
 enum SubscriptionOnboardingEntryPoint {
@@ -128,9 +129,9 @@ extension SubscriptionOnboardingFlowViewModel {
     /// Live-checks VPN and PIR activation and marks either complete on `persistor`, skipping the check
     /// entirely for whichever is already marked.
     private static func backfilledPersistor(_ persistor: SubscriptionOnboardingProgressPersisting,
-                                             vpnController: SubscriptionOnboardingVPNControlling,
-                                             profileStateManager: DBPProfileStateManaging,
-                                             freemiumDBPUserStateManager: FreemiumDBPUserStateManaging) async -> SubscriptionOnboardingProgressPersisting {
+                                            vpnController: SubscriptionOnboardingVPNControlling,
+                                            profileStateManager: DBPProfileStateManaging,
+                                            freemiumDBPUserStateManager: FreemiumDBPUserStateManaging) async -> SubscriptionOnboardingProgressPersisting {
         var persistor = persistor
         let completedItems = persistor.completedItems
 
@@ -156,6 +157,11 @@ extension SubscriptionOnboardingFlowViewModel {
     -> SubscriptionOnboardingFlowViewModel? {
         guard !progress.checklist.isEmpty else {
             Logger.subscription.error("Onboarding checklist is empty at launch — refusing to present the flow")
+            // Only the post-checkout entry point represents a purchase that should have gotten onboarding;
+            // Settings re-entry is a customer manually retrying
+            if case .postCheckout = entryPoint {
+                PixelKit.fire(SubscriptionPixel.subscriptionOnboardingLaunchFailure(.emptyChecklist), frequency: .dailyAndCount)
+            }
             return nil
         }
         return SubscriptionOnboardingFlowViewModel(entryPoint: entryPoint,

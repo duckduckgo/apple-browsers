@@ -1036,5 +1036,21 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_onboarding_post_purchase_launch_failure": {
+        "description": "Fired when a purchase that should present onboarding fails to launch the flow. By design there is no retry, so this purchase never gets onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "Why the flow never launched",
+                "enum": ["missingPersistor", "emptyChecklist"]
+            }
+        ]
     }
 }

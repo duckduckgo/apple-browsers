@@ -154,12 +154,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1214798984829406
     case subscriptionPromoForExistingUsers
 
-    /// ABN test on the subscription onboarding flow, free-trial subscribers. Mutually exclusive with
-    /// `subscriptionOnboardingPaidSubsSep2026`. https://app.asana.com/1/137249556945/task/1215581300423035?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218291758637477
     case subscriptionOnboardingFreeTrialsSep2026
 
-    /// ABN test on the subscription onboarding flow, paid (non-trial) subscribers. Mutually exclusive with
-    /// `subscriptionOnboardingFreeTrialsSep2026`. https://app.asana.com/1/137249556945/task/1215581300423035?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218291758637484
     case subscriptionOnboardingPaidSubsSep2026
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187

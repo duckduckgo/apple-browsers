@@ -22,6 +22,15 @@ import PixelKit
 import Networking
 import Subscription
 
+/// Why a purchase that should have gotten onboarding never launched the flow.
+/// This is telemetry only
+enum SubscriptionOnboardingLaunchFailureReason: String {
+    /// `SubscriptionFlowView` has no onboarding key-value store to read a persistor from.
+    case missingPersistor
+    /// The checklist came back empty — something is wrong with the entitlement read
+    case emptyChecklist
+}
+
 enum SubscriptionPixel: PixelKit.Event {
     /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
@@ -57,6 +66,7 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionOnboardingConnectionInfoFailure(Error)
     case subscriptionOnboardingAIModelsFailure(Error)
     case subscriptionOnboardingSubscriptionFailure(Error)
+    case subscriptionOnboardingLaunchFailure(SubscriptionOnboardingLaunchFailureReason)
 
     var name: String {
         switch self {
@@ -89,6 +99,7 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionOnboardingConnectionInfoFailure: return "subscription_onboarding_connection-info_failure"
         case .subscriptionOnboardingAIModelsFailure: return "subscription_onboarding_ai-models_failure"
         case .subscriptionOnboardingSubscriptionFailure: return "subscription_onboarding_subscription_failure"
+        case .subscriptionOnboardingLaunchFailure: return "subscription_onboarding_post_purchase_launch_failure"
         }
     }
 
@@ -99,6 +110,7 @@ enum SubscriptionPixel: PixelKit.Event {
         static let vpnSubscriptionActiveKey = "vpnSubscriptionActive"
         static let entryPointKey = "entry_point"
         static let duckAIEnabledKey = "duck_ai_enabled"
+        static let reasonKey = "reason"
     }
 
     private static func vpnSubscriptionActiveValue(_ isSubscriptionActive: Bool?) -> String {
@@ -133,6 +145,8 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionOnboardingStepCompleted(_, let entryPoint),
                 .subscriptionOnboardingStepSkipped(_, let entryPoint):
             return [SubscriptionPixelsDefaults.entryPointKey: entryPoint]
+        case .subscriptionOnboardingLaunchFailure(let reason):
+            return [SubscriptionPixelsDefaults.reasonKey: reason.rawValue]
         default:
             return nil
         }
@@ -164,7 +178,8 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionOnboardingStepSkipped,
                 .subscriptionOnboardingConnectionInfoFailure,
                 .subscriptionOnboardingAIModelsFailure,
-                .subscriptionOnboardingSubscriptionFailure:
+                .subscriptionOnboardingSubscriptionFailure,
+                .subscriptionOnboardingLaunchFailure:
             return [.pixelSource]
         }
     }

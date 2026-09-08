@@ -24,6 +24,7 @@ import Core
 import DataBrokerProtection_iOS
 import PrivacyConfig
 import VPN
+import PixelKit
 
 struct SubscriptionFlowView: View {
 
@@ -207,7 +208,10 @@ struct SubscriptionFlowView: View {
     @MainActor
     private func startOnboarding() async {
         guard viewModel.state.shouldPresentOnboarding, onboardingFlow == nil else { return }
-        guard let persistor = viewModel.onboardingPersistor else { return }
+        guard let persistor = viewModel.onboardingPersistor else {
+            PixelKit.fire(SubscriptionPixel.subscriptionOnboardingLaunchFailure(.missingPersistor), frequency: .dailyAndCount)
+            return
+        }
         guard let flow = await SubscriptionOnboardingFlowViewModel.postCheckout(
             persistor: persistor,
             isPIRAvailable: viewModel.isPIRAvailable,

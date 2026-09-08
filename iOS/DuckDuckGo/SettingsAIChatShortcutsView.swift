@@ -55,17 +55,14 @@ enum DuckAIChromeShortcutVisibility {
             && (isDuckAIButtonVisible || isContextualSheetButtonVisible)
     }
 
-    /// The single Duck.ai button that stands in for the split chip and follows the iPhone address-bar
-    /// button's entry logic. Takes `isIPad` because the flag itself carries no device gating.
-    static func isChromeMenuButtonInPlay(isIPad: Bool, featureFlagger: FeatureFlagger) -> Bool {
+    static func isChromeMenuButtonAvailable(isIPad: Bool, featureFlagger: FeatureFlagger) -> Bool {
         isIPad
             && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
             && featureFlagger.isFeatureOn(.aiChatChromeMenuButtonIPad)
     }
 
-    /// Follows the master "Tab Bar" toggle alone: a single button has no halves to hide.
     static func isChromeMenuButtonVisible(featureFlagger: FeatureFlagger, isTabBarShortcutEnabled: Bool) -> Bool {
-        isChromeMenuButtonInPlay(isIPad: true, featureFlagger: featureFlagger) && isTabBarShortcutEnabled
+        isChromeMenuButtonAvailable(isIPad: true, featureFlagger: featureFlagger) && isTabBarShortcutEnabled
     }
 
     /// On iPad with the chrome shortcut in play, the in-address-bar Duck.ai button only

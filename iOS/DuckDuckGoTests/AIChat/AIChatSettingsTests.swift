@@ -335,48 +335,28 @@ class AIChatSettingsTests: XCTestCase {
 
     // MARK: - DuckAIChromeShortcutVisibility — chrome menu button
 
-    func testDuckAIChromeShortcutVisibility_chromeMenuButtonInPlay_onIPad_whenBothFlagsOn() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad, .aiChatChromeMenuButtonIPad])
-        XCTAssertTrue(DuckAIChromeShortcutVisibility.isChromeMenuButtonInPlay(isIPad: true, featureFlagger: flagger))
-    }
+    func testDuckAIChromeShortcutVisibility_chromeMenuButtonRequiresBothFlagsAnIPadAndTheTabBarSetting() {
+        let cases: [(flagger: MockFeatureFlagger, isIPad: Bool, settingOn: Bool, available: Bool, visible: Bool)] = [
+            (MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad, .aiChatChromeMenuButtonIPad]), true, true, true, true),
+            (MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad, .aiChatChromeMenuButtonIPad]), true, false, true, false),
+            (MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad, .aiChatChromeMenuButtonIPad]), false, true, false, true),
+            (MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad]), true, true, false, false),
+            (MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeMenuButtonIPad]), true, true, false, false),
+            (MockFeatureFlagger(enabledFeatureFlags: []), true, true, false, false)
+        ]
 
-    func testDuckAIChromeShortcutVisibility_chromeMenuButtonNotInPlay_onIPhone_evenWhenBothFlagsOn() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad, .aiChatChromeMenuButtonIPad])
-        XCTAssertFalse(DuckAIChromeShortcutVisibility.isChromeMenuButtonInPlay(isIPad: false, featureFlagger: flagger))
-    }
-
-    func testDuckAIChromeShortcutVisibility_chromeMenuButtonNotInPlay_whenChromeShortcutFlagOff() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeMenuButtonIPad])
-        XCTAssertFalse(DuckAIChromeShortcutVisibility.isChromeMenuButtonInPlay(isIPad: true, featureFlagger: flagger))
-    }
-
-    func testDuckAIChromeShortcutVisibility_chromeMenuButtonNotInPlay_whenMenuButtonFlagOff() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
-        XCTAssertFalse(DuckAIChromeShortcutVisibility.isChromeMenuButtonInPlay(isIPad: true, featureFlagger: flagger))
-    }
-
-    func testDuckAIChromeShortcutVisibility_chromeMenuButtonVisible_whenInPlay_andSettingOn() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad, .aiChatChromeMenuButtonIPad])
-        XCTAssertTrue(DuckAIChromeShortcutVisibility.isChromeMenuButtonVisible(
-            featureFlagger: flagger,
-            isTabBarShortcutEnabled: true
-        ))
-    }
-
-    func testDuckAIChromeShortcutVisibility_chromeMenuButtonHidden_whenSettingOff() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad, .aiChatChromeMenuButtonIPad])
-        XCTAssertFalse(DuckAIChromeShortcutVisibility.isChromeMenuButtonVisible(
-            featureFlagger: flagger,
-            isTabBarShortcutEnabled: false
-        ))
-    }
-
-    func testDuckAIChromeShortcutVisibility_chromeMenuButtonHidden_whenMenuButtonFlagOff() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
-        XCTAssertFalse(DuckAIChromeShortcutVisibility.isChromeMenuButtonVisible(
-            featureFlagger: flagger,
-            isTabBarShortcutEnabled: true
-        ))
+        for testCase in cases {
+            XCTAssertEqual(
+                DuckAIChromeShortcutVisibility.isChromeMenuButtonAvailable(isIPad: testCase.isIPad, featureFlagger: testCase.flagger),
+                testCase.available,
+                "Flags: \(testCase.flagger.enabledFeatureFlags), iPad: \(testCase.isIPad)"
+            )
+            XCTAssertEqual(
+                DuckAIChromeShortcutVisibility.isChromeMenuButtonVisible(featureFlagger: testCase.flagger, isTabBarShortcutEnabled: testCase.settingOn),
+                testCase.visible,
+                "Flags: \(testCase.flagger.enabledFeatureFlags), setting: \(testCase.settingOn)"
+            )
+        }
     }
 
     // MARK: - DuckAIChromeShortcutVisibility — Address Bar row / button

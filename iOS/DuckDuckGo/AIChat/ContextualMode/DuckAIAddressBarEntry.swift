@@ -33,8 +33,6 @@ enum DuckAIAddressBarEntry: Equatable {
     /// Home tabs offer the menu when chat history is available. Web tabs retain contextual
     /// restoration and require floating input for the Ask About Page action.
     ///
-    /// - Parameter isIPadChromeMenuButtonAvailable: iPad has no floating input, so its chrome menu
-    ///   button brings the menu on its own; there, Ask About Page opens the sheet instead.
     /// - Parameter hasChatToReopen: A conversation this tab can go back to, whether it is still live
     ///   or was persisted by an earlier launch. Reopen this tab's conversation directly rather than
     ///   requiring the user to find it in Chats.

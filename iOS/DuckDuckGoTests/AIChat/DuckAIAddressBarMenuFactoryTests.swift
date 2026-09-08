@@ -106,7 +106,6 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
         XCTAssertEqual(titles, [UserText.duckAiAddressBarMenuNewChat, UserText.aiChatAttachmentOptionAskAboutPage])
     }
 
-    /// iPad opens the duck.ai chats sidebar instead of the native history, so it only needs the kill switch.
     func testRecentChatsRequiresBothFlagsOnIPhoneAndOnlyTheKillSwitchOnIPad() {
         let cases: [(flags: [FeatureFlag], idiom: UIUserInterfaceIdiom, showsRecentChats: Bool)] = [
             ([], .phone, false),

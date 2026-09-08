@@ -51,8 +51,6 @@ enum DuckAIAddressBarMenuFactory {
             })
         }
         var groups: [UIMenuElement] = [UIMenu(title: "", options: .displayInline, children: chatActions)]
-        // iPhone opens the native chat history, so it needs that flag too; iPad falls back to the
-        // duck.ai chats sidebar and only needs the kill switch.
         let showsRecentChats = featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats)
             && (userInterfaceIdiom == .pad || featureFlagger.isFeatureOn(.aiChatNativeChatHistory))
         if showsRecentChats {

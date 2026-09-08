@@ -120,8 +120,6 @@ class TabsBarViewController: UIViewController {
         return chip
     }()
 
-    /// Stands in for `aiChatChip` behind `aiChatChromeMenuButtonIPad`, styled after the macOS "Ask Duck.ai"
-    /// pill; `MainViewController` drives it with the same entry logic and menu as the iPhone address-bar button.
     lazy var aiChatMenuButton: UIButton = {
         var config = UIButton.Configuration.plain()
         config.title = UserText.actionAskAIChat
@@ -1083,7 +1081,6 @@ extension MainViewController: TabsBarDelegate {
     }
 
     func tabsBarDidPressAIChatMenuButton(_ controller: TabsBarViewController) {
-        // Materialize the focused tab's view controller first: with none, the entry resolves as a home tab.
         _ = tabManager.current(createIfNeeded: true)
         bindAIChatChromeChipToCurrentTab()
         onAIChatPressed(prefilledText: nil, source: .tabsBarButton)

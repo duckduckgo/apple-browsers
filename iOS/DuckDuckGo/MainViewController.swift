@@ -1270,9 +1270,7 @@ class MainViewController: UIViewController {
 
     private func refreshAIChatChromeChip() {
         let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
-        // iPad's split chip already indicates sheet state; with the menu button in play, the narrow-width
-        // address-bar icon behaves like iPhone's, glyph included.
-        if UIDevice.current.userInterfaceIdiom == .phone || isChromeMenuButtonInPlay {
+        if UIDevice.current.userInterfaceIdiom == .phone || isChromeMenuButtonAvailable {
             omniBar.barView.updateAIChatButtonForContextualChat(hasContextualSession: hasContextualSession)
         }
         refreshDuckAIAddressBarMenu()

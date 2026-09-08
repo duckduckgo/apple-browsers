@@ -27,7 +27,7 @@ extension MainViewController {
         DuckAIAddressBarEntry.resolve(
             isContextualModeAvailable: aiChatContextualModeFeature.isAvailable,
             isFloatingInputAvailable: aiChatContextualFloatingInputFeature.isAvailable,
-            isIPadChromeMenuButtonAvailable: isChromeMenuButtonInPlay,
+            isIPadChromeMenuButtonAvailable: isChromeMenuButtonAvailable,
             isHomeTab: tabManager.currentTabsModel.currentTab?.isHomeTab ?? true,
             isChatHistoryAvailable: DuckAIAddressBarMenuFactory.isChatHistoryAvailable(
                 featureFlagger: featureFlagger,
@@ -38,9 +38,8 @@ extension MainViewController {
         )
     }
 
-    /// The iPad tabs-bar Duck.ai button runs on the same entry logic as the iPhone address-bar button.
-    var isChromeMenuButtonInPlay: Bool {
-        DuckAIChromeShortcutVisibility.isChromeMenuButtonInPlay(isIPad: isPad, featureFlagger: featureFlagger)
+    var isChromeMenuButtonAvailable: Bool {
+        DuckAIChromeShortcutVisibility.isChromeMenuButtonAvailable(isIPad: isPad, featureFlagger: featureFlagger)
     }
 
     /// A contextual surface — the sheet or the floating input — is on screen for this tab.
@@ -60,7 +59,7 @@ extension MainViewController {
         )
     }
 
-    /// Attaches the Duck.ai menu to the entry buttons, or detaches it so a tap acts directly.
+    /// Attaches the Duck.ai menu to the address-bar button, or detaches it so a tap acts directly.
     func refreshDuckAIAddressBarMenu() {
         let offersMenu = duckAIAddressBarEntry == .menu
         let addressBarButton = omniBar.barView.aiChatButton
@@ -76,7 +75,6 @@ extension MainViewController {
             duckAIMenuAnchor = nil
         }
         attachDuckAIMenu(to: addressBarButton, offersMenu: offersMenu, source: .addressBarIcon)
-        // The tabs-bar button sits outside the omnibar's glass group, so it needs no stand-in.
         attachDuckAIMenu(to: tabsBarController?.aiChatMenuButton, offersMenu: offersMenu, source: .tabsBarButton)
     }
 
@@ -127,7 +125,6 @@ extension MainViewController {
         if aiChatContextualFloatingInputFeature.isAvailable {
             currentTab.presentContextualFloatingInput(from: self)
         } else {
-            // iPad has no floating input, so the pre-submit sheet is its contextual surface.
             currentTab.presentContextualAIChatSheet(from: self)
         }
     }
@@ -172,8 +169,6 @@ extension MainViewController {
     private func openRecentChatsFromAddressBarMenu() {
         omniBar.endEditing()
         recordNewTabPageSessionDeparture()
-        // The native chat history sheet is iPhone-only; iPad gets the duck.ai chats sidebar, as the
-        // browsing menu and the contextual sheet's "View all chats" already do.
         if isPad {
             currentTab?.openChatListInNewTab()
         } else {

@@ -495,7 +495,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215105704317047
     case aiChatChromeShortcutIPad
 
-    /// Replaces the iPad chrome Duck.ai split button with the iPhone address-bar button behavior.
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1218164193618191
     case aiChatChromeMenuButtonIPad
 

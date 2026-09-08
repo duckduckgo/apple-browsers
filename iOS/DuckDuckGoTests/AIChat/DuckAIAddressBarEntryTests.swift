@@ -57,7 +57,6 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
 
     // MARK: - iPad chrome menu button
 
-    /// iPad has no floating input; the chrome menu button offers the menu on its own.
     func testIPadChromeMenuButtonShowsTheMenuWithoutTheFloatingInput() {
         let entry = DuckAIAddressBarEntry.resolve(
             isContextualModeAvailable: true,

@@ -340,8 +340,13 @@ final class SyncDialogController {
     }
 
     private func waitForDevicesToChange(then action: @escaping (SyncDialogController) -> Void) {
+        let localDeviceID = syncService.account?.deviceId
+        let knownDeviceIDs = Set(devices.map(\.id))
+
         $devices.removeDuplicates()
-            .dropFirst()
+            .filter { devices in
+                devices.contains { $0.id != localDeviceID && !knownDeviceIDs.contains($0.id) }
+            }
             .prefix(1)
             .sink { [weak self] _ in
                 guard let self else { return }

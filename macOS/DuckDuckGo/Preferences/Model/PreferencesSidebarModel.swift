@@ -209,6 +209,7 @@ final class PreferencesSidebarModel: ObservableObject {
                 includingSync: syncService.featureFlags.contains(.userInterface),
                 includingAIChat: includeAIChat,
                 includingYouTubeAdBlocking: adBlockingAvailability.isFeatureSupported,
+                includingWebsitePermissions: featureFlagger.isFeatureOn(.websitePermissionsSettings),
                 subscriptionState: currentSubscriptionFeatures
             )
         }

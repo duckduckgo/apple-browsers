@@ -131,6 +131,7 @@ enum SettingsPixel: PixelKit.Event {
             case .dataClearing: return "settings_data_clearing_opened"
             case .duckPlayer: return "settings_duckplayer_opened"
             case .youTubeAdBlocking: return "settings_youtubeadblocking_opened"
+            case .websitePermissions: return "settings_website_permissions_opened"
             case .aiChat:
                 assertionFailure("This pixel is not in use and AIChatPixel.aiChatSettingsDisplayed should be used instead")
                 return "settings_duck_ai_opened"

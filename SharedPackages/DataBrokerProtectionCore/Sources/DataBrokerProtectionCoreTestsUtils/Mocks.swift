@@ -261,6 +261,10 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
         return nil
     }
 
+    public func allSubfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] {
+        [:]
+    }
+
     public func userEnabledProtection(forDomain: String) {
 
     }

@@ -130,7 +130,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         highlightDismissTap.delegate = self
         omniBarView.aiChatTextView.addGestureRecognizer(highlightDismissTap)
 
-        omniBarView.isAIVoiceChatEnabled = DuckAIVoiceShortcutFeature(featureFlagger: dependencies.featureFlagger).isAvailable
         setUpModelPickerIfNeeded()
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
             guard let self else { return }
@@ -152,7 +151,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         let text = omniBarView.aiChatTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let hasAttachments = attachmentController?.hasAttachments ?? false
         // Voice only stands in for an empty prompt; pending attachments are a submittable input.
-        if text.isEmpty && !hasAttachments && omniBarView.isAIVoiceChatEnabled {
+        if text.isEmpty && !hasAttachments {
             omniDelegate?.onDuckAIVoiceModeRequested()
             return
         }

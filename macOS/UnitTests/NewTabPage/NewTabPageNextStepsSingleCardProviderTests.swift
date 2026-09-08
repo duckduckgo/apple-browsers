@@ -1109,6 +1109,9 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     @MainActor
     func testSkippedTreatmentPrioritizesDefaultAndDockInBothOrderingModes() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        OnboardingActionsManager.isOnboardingFinished = true
         for advanced in [false, true] {
             persistor = MockNewTabPageNextStepsCardsPersistor()
             let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
@@ -1125,6 +1128,67 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             XCTAssertFalse(provider.cards.contains(.defaultApp))
             XCTAssertEqual(provider.cards.first, .addAppToDockMac)
             provider.dismiss(.addAppToDockMac)
+        }
+    }
+
+    @MainActor
+    func testUnfinishedTreatmentPrioritizesEligibleDefaultAndDockInBothOrderingModes() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        OnboardingActionsManager.isOnboardingFinished = false
+
+        for advanced in [false, true] {
+            persistor = MockNewTabPageNextStepsCardsPersistor()
+            let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+            flags.enabledFeatureFlags = advanced ? [.nextStepsListAdvancedCardOrdering] : []
+            let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                          featureFlagger: flags, isAppStoreBuild: false)
+            XCTAssertEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
+
+            // A refresh that rotates the ordinary stack must retain unfinished setup's priority.
+            persistor.setTimesShown(5, for: .defaultApp)
+            NotificationCenter.default.post(name: OnboardingExperimentPersistor.outcomeDidChange, object: nil)
+            XCTAssertEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
+
+            if advanced {
+                OnboardingActionsManager.isOnboardingFinished = true
+                NotificationCenter.default.post(name: OnboardingExperimentPersistor.outcomeDidChange, object: nil)
+                XCTAssertEqual(provider.cards.first, .addAppToDockMac, "Completion allows normal impression rotation")
+                OnboardingActionsManager.isOnboardingFinished = false
+                NotificationCenter.default.post(name: OnboardingExperimentPersistor.outcomeDidChange, object: nil)
+            }
+
+            provider.dismiss(.defaultApp)
+            XCTAssertFalse(provider.cards.contains(.defaultApp))
+            XCTAssertEqual(provider.cards.first, .addAppToDockMac)
+            provider.dismiss(.addAppToDockMac)
+            XCTAssertFalse(provider.cards.contains(.addAppToDockMac))
+        }
+    }
+
+    @MainActor
+    func testUnfinishedTreatmentDoesNotShowAlreadyCompletedSetupCards() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        OnboardingActionsManager.isOnboardingFinished = false
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        let provider = createProvider(defaultBrowserIsDefault: true, dockStatus: true,
+                                      featureFlagger: flags, isAppStoreBuild: false)
+        XCTAssertFalse(provider.cards.contains(.defaultApp))
+        XCTAssertFalse(provider.cards.contains(.addAppToDockMac))
+    }
+
+    @MainActor
+    func testCompletedTreatmentAndUnfinishedControlUseNormalPriority() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        legacyPersistor.isFirstSession = true
+        for cohort in [FeatureFlag.OnboardingNonBlockingCohort.control, .treatment] {
+            OnboardingActionsManager.isOnboardingFinished = cohort == .treatment
+            let flags = MockFeatureFlagger(resolveCohortStub: cohort)
+            let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                          featureFlagger: flags, isFirstSession: true, isAppStoreBuild: false)
+            XCTAssertNotEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
         }
     }
 

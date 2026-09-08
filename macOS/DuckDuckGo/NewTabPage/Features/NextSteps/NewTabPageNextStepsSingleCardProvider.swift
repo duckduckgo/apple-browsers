@@ -274,7 +274,8 @@ private extension NewTabPageNextStepsSingleCardProvider {
     ///   - recordNewCardImpression: Whether to record an impression for the newly visible card if the first card in the list has changed after the refresh. Defaults to true.
     func refreshCardList(updateOrder: Bool = false, recordNewCardImpression: Bool = true) {
         var cards = visibleCards(updateOrder: updateOrder)
-        if OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking, didSkipOnboarding() {
+        if OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking,
+           !OnboardingActionsManager.isOnboardingFinished || didSkipOnboarding() {
             let priority: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac].filter(shouldShowCard)
             cards = priority + cards.filter { !priority.contains($0) }
             if shouldUseAdvancedCardOrdering {

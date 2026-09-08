@@ -1460,6 +1460,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
         try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
         await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+        sut.aiChatContextualSheetViewControllerDidDismiss(try XCTUnwrap(sut.sheetViewController))
         XCTAssertTrue(sut.sessionState.hasActiveChat)
 
         try mockNativeStorage.deleteChat(chatId: savedChatID)
@@ -1467,6 +1468,20 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         XCTAssertFalse(sut.sessionState.hasActiveChat)
         XCTAssertNil(sut.sessionState.contextualChatURL)
+    }
+
+    @MainActor
+    func testWhenTheSheetIsOnScreenThenADeletionLeavesItAlone() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+
+        try mockNativeStorage.deleteChat(chatId: savedChatID)
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertNotNil(sut.sheetViewController, "clearing the chat would orphan the sheet on screen")
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertTrue(sut.sessionState.hasActiveChat)
     }
 
     @MainActor

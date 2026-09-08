@@ -706,6 +706,7 @@ final class MainCoordinator {
 
     func onBackground() {
         homePageConfiguration.handleAppBackgrounded()
+        promoCoordinationService.handleAppBackgrounded()
         resetAppStartTime()
         Task {
             await privacyStats.handleAppTermination()

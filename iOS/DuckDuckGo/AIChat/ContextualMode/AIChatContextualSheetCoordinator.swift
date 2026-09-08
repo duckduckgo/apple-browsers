@@ -153,6 +153,12 @@ final class AIChatContextualSheetCoordinator {
 
     private static let chatLookupQueue = DispatchQueue(label: "com.duckduckgo.aichat.contextual.chatlookup")
 
+    /// `DuckAiNativeStorageHandling` is not `Sendable`, though its implementations serialize through a
+    /// GRDB `DatabaseQueue` or a lock, so it is safe to read from the lookup queue.
+    private struct UncheckedSendable<Value>: @unchecked Sendable {
+        let value: Value
+    }
+
     private var chatStorage: DuckAiNativeStorageHandling? {
         isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
     }
@@ -186,10 +192,15 @@ final class AIChatContextualSheetCoordinator {
         guard isNativeDataAccessEnabled,
               let storage = chatStorage,
               storage.setupSucceeded == true else { return false }
+        let box = UncheckedSendable(value: storage)
         return await withCheckedContinuation { continuation in
             Self.chatLookupQueue.async {
+                let storage = box.value
                 do {
-                    guard try storage.isMigrationDone() else { return continuation.resume(returning: false) }
+                    guard try storage.isMigrationDone() else {
+                        continuation.resume(returning: false)
+                        return
+                    }
                     continuation.resume(returning: try storage.getChat(chatId: chatID) == nil)
                 } catch {
                     Logger.aiChat.error("[Contextual] Could not verify \(chatID): \(error.localizedDescription)")

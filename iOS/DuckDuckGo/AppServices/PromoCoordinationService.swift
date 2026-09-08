@@ -202,6 +202,9 @@ extension PromoCoordinationService: AppRatingPromptGating {
     }
 
     func shouldRequestAppRatingPrompt() -> Bool {
+        // Only called on a search page, so this is the search that clears the unredeemed cap.
+        appRatingPromptCoordinator.didSearch()
+
         guard appRatingPromptCoordinator.isCoordinationEnabled else {
             return appRatingPromptCoordinator.shouldRequestUncoordinated()
         }

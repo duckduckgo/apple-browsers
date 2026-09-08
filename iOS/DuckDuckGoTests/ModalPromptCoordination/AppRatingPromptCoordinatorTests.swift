@@ -156,15 +156,17 @@ final class AppRatingPromptCoordinatorTests {
         #expect(sut.isEligibleToPresent(isOnboardingComplete: true) == scenario.isStillEligible)
     }
 
-    @Test("Redeeming clears the unredeemed count")
-    func redeemingClearsTheCount() {
-        let sut = makeCoordinator(isCoordinationEnabled: true)
+    @Test("A search clears the unredeemed count, so reaching the cap is not permanent")
+    func searchClearsTheCount() {
+        let sut = makeCoordinator(isCoordinationEnabled: true, maxUnredeemedSlots: 1)
         accrueUsageDays(3)
         sut.didReleaseDeferredSlot()
+        #expect(!sut.isEligibleToPresent(isOnboardingComplete: true))
 
-        sut.didRequestRating()
+        sut.didSearch()
 
         #expect(sut.unredeemedSlotCount == 0)
+        #expect(sut.isEligibleToPresent(isOnboardingComplete: true))
     }
 
     // MARK: - Debug reset

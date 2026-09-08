@@ -18,21 +18,28 @@
 //
 
 import DesignResourcesKitIcons
+import FeatureFlags_iOS
 import UIKit
 import XCTest
 @testable import DuckDuckGo
 
 final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
 
-    private func makeActions(onNewChat: @escaping () -> Void = {},
-                             onAskAboutPage: @escaping () -> Void = {}) -> [UIMenuElement] {
+    private func makeActions(featureFlagger: MockFeatureFlagger = MockFeatureFlagger(
+                                enabledFeatureFlags: [.aiChatNativeChatHistory, .aiChatAddressBarRecentChats]),
+                             userInterfaceIdiom: UIUserInterfaceIdiom = .phone,
+                             onNewChat: @escaping () -> Void = {},
+                             onAskAboutPage: @escaping () -> Void = {},
+                             onRecentChats: @escaping () -> Void = {}) -> [UIMenuElement] {
         DuckAIAddressBarMenuFactory.makeActions(
+            featureFlagger: featureFlagger,
+            userInterfaceIdiom: userInterfaceIdiom,
             onNewChat: onNewChat,
-            onAskAboutPage: onAskAboutPage
+            onAskAboutPage: onAskAboutPage,
+            onRecentChats: onRecentChats
         )
     }
 
-    /// Each action is wrapped in its own inline group so UIKit draws a separator between them.
     private func flattenedActions(_ elements: [UIMenuElement]) -> [UIAction] {
         elements.flatMap { element -> [UIAction] in
             if let action = element as? UIAction { return [action] }
@@ -43,18 +50,72 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
 
     // MARK: - Structure
 
-    func testActionsAreSplitIntoSeparateInlineGroupsSoASeparatorIsDrawn() {
-        let elements = makeActions()
-        let groups = elements.compactMap { $0 as? UIMenu }
+    func testNewChatAndAskAboutPageAreGroupedAboveRecentChats() throws {
+        let groups = makeActions().compactMap { $0 as? UIMenu }
 
         XCTAssertEqual(groups.count, 2)
         XCTAssertTrue(groups.allSatisfy { $0.options.contains(.displayInline) })
-        XCTAssertTrue(groups.allSatisfy { $0.children.count == 1 })
+        let newChatGroup = try XCTUnwrap(groups.first)
+        let historyGroup = try XCTUnwrap(groups.last)
+        XCTAssertEqual(newChatGroup.children.compactMap { ($0 as? UIAction)?.title },
+                       [UserText.duckAiAddressBarMenuNewChat, UserText.aiChatAttachmentOptionAskAboutPage])
+        XCTAssertEqual(historyGroup.children.compactMap { ($0 as? UIAction)?.title },
+                       [UserText.duckAiAddressBarMenuRecentChats])
     }
 
-    func testNewChatIsFirstAndAskAboutPageIsSecond() {
+    func testRecentChatsFollowsNewChatAndAskAboutPage() {
         let titles = flattenedActions(makeActions()).map(\.title)
+        XCTAssertEqual(titles, [UserText.duckAiAddressBarMenuNewChat,
+                               UserText.aiChatAttachmentOptionAskAboutPage,
+                               UserText.duckAiAddressBarMenuRecentChats])
+    }
+
+    func testRecentChatsGroupIsOmittedWhenFlagIsDisabled() {
+        let elements = makeActions(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatNativeChatHistory]))
+        let groups = elements.compactMap { $0 as? UIMenu }
+        XCTAssertEqual(groups.count, 1)
+        XCTAssertTrue(groups.allSatisfy { $0.options.contains(.displayInline) && $0.children.count == 2 })
+        let titles = flattenedActions(elements).map(\.title)
         XCTAssertEqual(titles, [UserText.duckAiAddressBarMenuNewChat, UserText.aiChatAttachmentOptionAskAboutPage])
+    }
+
+    func testRecentChatsRequiresBothFlagsOnIPhoneAndIsAlwaysHiddenOnIPad() {
+        let cases: [(flags: [FeatureFlag], idiom: UIUserInterfaceIdiom, showsRecentChats: Bool)] = [
+            ([], .phone, false),
+            ([.aiChatNativeChatHistory], .phone, false),
+            ([.aiChatAddressBarRecentChats], .phone, false),
+            ([.aiChatNativeChatHistory, .aiChatAddressBarRecentChats], .phone, true),
+            ([], .pad, false),
+            ([.aiChatNativeChatHistory], .pad, false),
+            ([.aiChatAddressBarRecentChats], .pad, false),
+            ([.aiChatNativeChatHistory, .aiChatAddressBarRecentChats], .pad, false)
+        ]
+
+        for testCase in cases {
+            let actions = flattenedActions(makeActions(
+                featureFlagger: MockFeatureFlagger(enabledFeatureFlags: testCase.flags),
+                userInterfaceIdiom: testCase.idiom))
+            let expectedTitles = [UserText.duckAiAddressBarMenuNewChat, UserText.aiChatAttachmentOptionAskAboutPage]
+                + (testCase.showsRecentChats ? [UserText.duckAiAddressBarMenuRecentChats] : [])
+            XCTAssertEqual(actions.map(\.title), expectedTitles, "Flags: \(testCase.flags), device: \(testCase.idiom)")
+        }
+    }
+
+    func testFactoryUsesCurrentFlagValuesOnEachCall() {
+        let featureFlagger = MockFeatureFlagger()
+        XCTAssertEqual(flattenedActions(makeActions(featureFlagger: featureFlagger)).count, 2)
+
+        featureFlagger.enabledFeatureFlags = [.aiChatNativeChatHistory, .aiChatAddressBarRecentChats]
+        XCTAssertEqual(flattenedActions(makeActions(featureFlagger: featureFlagger)).count, 3)
+
+        featureFlagger.enabledFeatureFlags = [.aiChatNativeChatHistory]
+        XCTAssertEqual(flattenedActions(makeActions(featureFlagger: featureFlagger)).count, 2)
+
+        featureFlagger.enabledFeatureFlags = [.aiChatNativeChatHistory, .aiChatAddressBarRecentChats]
+        XCTAssertEqual(flattenedActions(makeActions(featureFlagger: featureFlagger)).count, 3)
+
+        featureFlagger.enabledFeatureFlags = [.aiChatAddressBarRecentChats]
+        XCTAssertEqual(flattenedActions(makeActions(featureFlagger: featureFlagger)).count, 2)
     }
 
     // MARK: - Icons
@@ -63,6 +124,14 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
     func testAskAboutPageUsesTheChevronCircleDownGlyph() {
         let askAboutPage = flattenedActions(makeActions())[1]
         XCTAssertEqual(askAboutPage.image, DesignSystemImages.Glyphs.Size16.chevronCircleDown)
+    }
+
+    func testRecentChatsUsesTheSupplied16PointTemplateGlyph() throws {
+        let recentChats = flattenedActions(makeActions())[2]
+        let icon = try XCTUnwrap(recentChats.image)
+        XCTAssertEqual(icon, DesignSystemImages.Glyphs.Size16.chats)
+        XCTAssertEqual(icon.size, CGSize(width: 16, height: 16))
+        XCTAssertEqual(icon.renderingMode, .alwaysTemplate)
     }
 
     func testNewChatUsesTheComposeGlyph() {
@@ -79,15 +148,24 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
 
         var newChatCount = 0
         var askAboutPageCount = 0
+        var recentChatsCount = 0
         let actions = flattenedActions(makeActions(onNewChat: { newChatCount += 1 },
-                                                  onAskAboutPage: { askAboutPageCount += 1 }))
+                                                  onAskAboutPage: { askAboutPageCount += 1 },
+                                                  onRecentChats: { recentChatsCount += 1 }))
 
         actions[0].performWithSender(nil, target: nil)
         XCTAssertEqual(newChatCount, 1)
         XCTAssertEqual(askAboutPageCount, 0)
+        XCTAssertEqual(recentChatsCount, 0)
 
         actions[1].performWithSender(nil, target: nil)
         XCTAssertEqual(newChatCount, 1)
         XCTAssertEqual(askAboutPageCount, 1)
+        XCTAssertEqual(recentChatsCount, 0)
+
+        actions[2].performWithSender(nil, target: nil)
+        XCTAssertEqual(newChatCount, 1)
+        XCTAssertEqual(askAboutPageCount, 1)
+        XCTAssertEqual(recentChatsCount, 1)
     }
 }

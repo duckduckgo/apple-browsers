@@ -18,27 +18,41 @@
 //
 
 import DesignResourcesKitIcons
+import FeatureFlags_iOS
+import PrivacyConfig
 import UIKit
 
-/// Builds the address-bar Duck.ai menu offering a fresh chat or a chat about the current page.
+/// Builds the address-bar Duck.ai menu for new, contextual, and recent chats.
 enum DuckAIAddressBarMenuFactory {
 
-    /// Each action sits in its own inline group so UIKit draws a separator between them.
-    static func makeActions(onNewChat: @escaping () -> Void,
-                            onAskAboutPage: @escaping () -> Void) -> [UIMenuElement] {
-        [
+    /// Groups New Chat and Ask About Page above a separator, with Recent Chats below.
+    static func makeActions(featureFlagger: FeatureFlagger,
+                            userInterfaceIdiom: UIUserInterfaceIdiom,
+                            onNewChat: @escaping () -> Void,
+                            onAskAboutPage: @escaping () -> Void,
+                            onRecentChats: @escaping () -> Void) -> [UIMenuElement] {
+        var groups: [UIMenuElement] = [
             UIMenu(title: "", options: .displayInline, children: [
                 UIAction(title: UserText.duckAiAddressBarMenuNewChat,
                          image: DesignSystemImages.Glyphs.Size16.compose) { _ in
                     onNewChat()
-                }
-            ]),
-            UIMenu(title: "", options: .displayInline, children: [
+                },
                 UIAction(title: UserText.aiChatAttachmentOptionAskAboutPage,
                          image: DesignSystemImages.Glyphs.Size16.chevronCircleDown) { _ in
                     onAskAboutPage()
                 }
             ])
         ]
+        if userInterfaceIdiom != .pad,
+           featureFlagger.isFeatureOn(.aiChatNativeChatHistory),
+           featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats) {
+            groups.append(UIMenu(title: "", options: .displayInline, children: [
+                UIAction(title: UserText.duckAiAddressBarMenuRecentChats,
+                         image: DesignSystemImages.Glyphs.Size16.chats) { _ in
+                    onRecentChats()
+                }
+            ]))
+        }
+        return groups
     }
 }

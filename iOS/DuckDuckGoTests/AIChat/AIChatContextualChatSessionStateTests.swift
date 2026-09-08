@@ -2537,6 +2537,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireAddressBarMenuShown() {}
     func fireAddressBarMenuNewChatSelected() {}
     func fireAddressBarMenuAskAboutPageSelected() {}
+    func fireAddressBarMenuRecentChatsSelected() {}
     func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {}
     func fireFloatingInputPromotedToSheet() {}
     func firePageContextAutoAttached() { pageContextAutoAttachedFired = true }

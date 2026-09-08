@@ -1864,6 +1864,9 @@
 /* Address bar Duck.ai menu option that opens a fresh chat with no page context */
 "duckai.address.bar.menu.new.chat" = "New Chat";
 
+/* Address bar Duck.ai menu option that opens the list of recent chats */
+"duckai.address.bar.menu.recent.chats" = "Recent Chats";
+
 /* Fourth paragraph of the Duck.ai widget education screen */
 "duckai.addWidget.settings.fourthParagraph" = "Tap the widget to edit it, then set **Duck.ai** and **Duck.ai Voice** as your shortcuts";
 

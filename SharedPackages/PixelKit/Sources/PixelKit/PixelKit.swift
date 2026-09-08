@@ -147,7 +147,10 @@ public final class PixelKit {
             case .monthly: return "monthly"
             case .dailyAndCount: return "dailyAndCount"
             case .dailyAndStandard: return "dailyAndStandard"
-            case .legacyInitial: return "legacyInitial"
+            // Shares `uniqueByName`'s map: both fire once ever, and `LegacyPixelStateMigration`
+            // seeds this slot from the legacy `UniquePixel` store so a migrated user is not
+            // re-fired. Repointing this at its own key silently un-suppresses every migrated pixel.
+            case .legacyInitial: return "uniqueByName"
             case .legacyDailyNoSuffix: return "legacyDailyNoSuffix"
             // Shares `daily`'s map: it is a daily throttle, only with the error folded into the pixel-name
             // half of the key rather than the frequency half.
@@ -587,7 +590,7 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_d")
         if !pixelHasBeenFiredEver(pixelName) {
             do {
-                try updatePixelLastFireDate(pixelName: pixelName, frequency: .uniqueByName)
+                try updatePixelLastFireDate(pixelName: pixelName, frequency: .legacyInitial)
                 fireRequestWrapper(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .legacyInitial, retryOnFailure, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)

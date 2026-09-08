@@ -421,7 +421,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                                               adBlockingAvailability: adBlockingAvailability,
-                                                              eventHub: eventHub)
+                                                              eventHub: eventHub,
+                                                              webExtensionManagerProvider: { [weak self] in self?.webExtensionManager })
         controller.multiTabAttachmentContext = multiTabAttachmentContext
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
@@ -558,7 +559,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                                               adBlockingAvailability: adBlockingAvailability,
-                                                              eventHub: eventHub)
+                                                              eventHub: eventHub,
+                                                              webExtensionManagerProvider: { [weak self] in self?.webExtensionManager })
         controller.multiTabAttachmentContext = multiTabAttachmentContext
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,

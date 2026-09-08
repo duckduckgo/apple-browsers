@@ -1,5 +1,5 @@
 {
-  "originHash" : "d448693c91e5fb63189b5e868438006378d8ee772ff44c2880e612a518a38913",
+  "originHash" : "5fb960ab6c997fd6743d93879eac7bb6fc45796e567540d9fddc46be7debd0ee",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "e27d61495b3e8793e507a483d885b758e75c0732",
-        "version" : "17.0.0"
+        "revision" : "78ac8fe91528dfddaeab093dd88f8defcb13bc2a",
+        "version" : "17.1.0"
       }
     },
     {
@@ -188,15 +188,6 @@
       "state" : {
         "revision" : "a8cd6c976f335ed361dcecddb0dc39ebda51bc3e",
         "version" : "1.6.1"
-      }
-    },
-    {
-      "identity" : "swift-issue-reporting",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-issue-reporting",
-      "state" : {
-        "revision" : "71c7c9a761d1ca6ed4ccb6ced040fe1c1a39e8e7",
-        "version" : "2.1.0"
       }
     },
     {

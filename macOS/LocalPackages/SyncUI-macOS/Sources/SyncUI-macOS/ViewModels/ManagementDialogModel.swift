@@ -32,13 +32,14 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func recoveryCodeNextPressed()
     func turnOnSync()
     func enterRecoveryCodePressed()
-    func copyCode()
+    func copyCode(_ code: String)
     func syncAnotherDevicePromptDidAppear()
     func syncThisDeviceOnlyFromPrompt() async
     func syncWithAnotherDeviceFromPrompt()
     func openSystemPasswordSettings()
     func userConfirmedSwitchAccounts(recoveryCode: String)
     func userPressedCancel(from dialog: ManagementDialogKind)
+    func shouldEndFlow(from dialog: ManagementDialogKind) async -> Bool
     func switchAccountsCancelled()
     func enterCodeViewDidAppear()
     func didEndFlow()
@@ -58,6 +59,8 @@ public final class ManagementDialogModel: ObservableObject {
     @Published public var isSimplifiedSyncSetupV2Enabled: Bool = false
     @Published public var isConnectingThisDeviceOnly: Bool = false
     @Published public var isConnectingAnotherDevice: Bool = false
+
+    public var thisDeviceName: String?
 
     public var isConnecting: Bool {
         isConnectingThisDeviceOnly || isConnectingAnotherDevice
@@ -81,6 +84,14 @@ public final class ManagementDialogModel: ObservableObject {
             delegate?.userPressedCancel(from: currentDialog)
         }
         endFlow()
+    }
+
+    @MainActor
+    public func cancelPressedWithConfirmation() async {
+        if let currentDialog, let delegate {
+            guard await delegate.shouldEndFlow(from: currentDialog) else { return }
+        }
+        cancelPressed()
     }
 
     @MainActor

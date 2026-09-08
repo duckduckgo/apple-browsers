@@ -176,6 +176,7 @@ the surrounding code.
 | `.legacyDailyAndCount` | Once per day, plus every time | `_d` + `_c` |
 | `.legacyInitial` | Once per install, no `_u` requirement | none |
 | `.legacyDailyNoSuffix` | Once per day | none |
+| `.legacyDailyByError` | Once per day per distinct error | none |
 
 `.dailyAndCount` is the usual choice for anything that can spike: the `_daily` leg counts affected
 users, the `_count` leg counts occurrences. The `legacy` cases exist for pixels that already ship
@@ -291,7 +292,7 @@ below as the query string. The host is overridable with the `PIXEL_BASE_URL` env
 | `atb` | `Options.withATB`, and a `PixelKitParameterProviding` was injected at `setUp` |
 | `e`, `d` | The event carries an error: code and domain |
 | `ue`, `ud`, `ue2`, `ud2`, … | Underlying errors, one numbered pair per nesting level |
-| `sqlrc`, `sqlerc` | SQLite result codes, when present in the error's `userInfo` |
+| `sqlrc`, `sqlerc` | macOS only. SQLite result codes carried by the error or any error in its chain, read from `SQLiteResultCode` / `SQLiteExtendedResultCode` (`SecureStorageError`). Both come from the same error, outermost first, and never appear as a chain link |
 | `originalPixelTimestamp`, `retriedPixel` | The pixel was replayed from the retry queue |
 | the event's own | `Event.parameters` |
 | extras | `Options.additionalParameters`, which win on key collision |

@@ -59,7 +59,8 @@ final class PromoCoordinationServiceTests {
             modalPromptCoordinationManager: managerMock,
             mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            promoQueueCooldownPolicy: promoQueueCooldownPolicy
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
         )
 
         // WHEN
@@ -79,7 +80,8 @@ final class PromoCoordinationServiceTests {
             modalPromptCoordinationManager: managerMock,
             mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            promoQueueCooldownPolicy: promoQueueCooldownPolicy
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
         )
 
         // WHEN
@@ -103,7 +105,8 @@ final class PromoCoordinationServiceTests {
             modalPromptCoordinationManager: managerMock,
             mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            promoQueueCooldownPolicy: promoQueueCooldownPolicy
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
         )
 
         // WHEN
@@ -123,7 +126,8 @@ final class PromoCoordinationServiceTests {
             modalPromptCoordinationManager: managerMock,
             mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            promoQueueCooldownPolicy: promoQueueCooldownPolicy
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
         )
 
         // WHEN
@@ -145,7 +149,8 @@ final class PromoCoordinationServiceTests {
             modalPromptCoordinationManager: managerMock,
             mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            promoQueueCooldownPolicy: promoQueueCooldownPolicy
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
         )
 
         // WHEN
@@ -165,7 +170,8 @@ final class PromoCoordinationServiceTests {
             modalPromptCoordinationManager: managerMock,
             mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            promoQueueCooldownPolicy: promoQueueCooldownPolicy
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
         )
 
         // WHEN
@@ -190,6 +196,9 @@ final class PromoCoordinationServiceTests {
     func whenHigherPriorityProvidersReturnNilThenCorrectProviderIsUsed(priority: ProviderPriority) throws {
         // GIVEN
         let providers = ModalPromptProviders(
+            // Not eligible, so it cannot win ahead of the provider under test. Deferred ordering
+            // is covered by ModalPromptCoordinationManagerDeferredTests.
+            appRatingPrompt: MockModalPromptProvider(shouldReturnPrompt: false),
             newAddressBarPicker: MockModalPromptProvider(shouldReturnPrompt: priority == .newAddressBarPicker),
             defaultBrowser: MockModalPromptProvider(shouldReturnPrompt: priority == .defaultBrowser),
             winBackOffer: MockModalPromptProvider(shouldReturnPrompt: priority == .winBackOffer),
@@ -212,7 +221,8 @@ final class PromoCoordinationServiceTests {
             modalPromptCoordinationManager: manager,
             mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            promoQueueCooldownPolicy: promoQueueCooldownPolicy
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
         )
 
         // WHEN

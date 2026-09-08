@@ -32,6 +32,23 @@ final class WKHTTPCookieStoreProviderTests: XCTestCase {
         ])!
     }
 
+    func testWhenProviderIsInitialized_ThenCookieStoreIsNotCreatedUntilCookiesAreRequested() async {
+        let cookie = makeCookie(name: "a", domain: "duck.ai")
+        var didCreateStore = false
+        func makeStore() -> MockHTTPCookieStore {
+            didCreateStore = true
+            return MockHTTPCookieStore(allCookiesReturnValue: [cookie])
+        }
+        let provider = WKHTTPCookieStoreProvider(cookieStore: makeStore())
+
+        XCTAssertFalse(didCreateStore)
+
+        let result = await provider.cookies(for: URL(string: "https://duck.ai/")!)
+
+        XCTAssertTrue(didCreateStore)
+        XCTAssertEqual(result.map(\.name), ["a"])
+    }
+
     func testWhenCookieDomainExactlyMatchesHost_ThenCookieIsReturned() async {
         let cookie = makeCookie(name: "a", domain: "duck.ai")
         let store = MockHTTPCookieStore(allCookiesReturnValue: [cookie])

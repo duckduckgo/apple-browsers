@@ -21,6 +21,7 @@ import UIKit
 import Core
 import BrowserServicesKit
 import DesignResourcesKitIcons
+import PixelKit
 
 enum TabSwitcherToolbarState: Equatable {
     case regularSize(selectedCount: Int, totalCount: Int, containsWebPages: Bool, showAIChat: Bool, canDismissOnEmpty: Bool)
@@ -243,22 +244,22 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
         let menu = UIMenu(children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
-                Pixel.fire(pixel: .tabLongPressMenuDisplayed, withAdditionalParameters: [
+                PixelKit.fire(Pixel.Event.tabLongPressMenuDisplayed, options: .parameters([
                     PixelParameters.source: "tab_switcher"
-                ])
+                ]))
                 completion([
                     UIAction(title: UserText.actionNewFireTab,
                              image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
-                                 Pixel.fire(pixel: .tabLongPressMenuNewFireTab, withAdditionalParameters: [
+                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewFireTab, options: .parameters([
                                      PixelParameters.source: "tab_switcher"
-                                 ])
+                                 ]))
                                  self?.onNewFireTabTapped?()
                              },
                     UIAction(title: UserText.actionNewTab,
                              image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
-                                 Pixel.fire(pixel: .tabLongPressMenuNewNormalTab, withAdditionalParameters: [
+                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewNormalTab, options: .parameters([
                                      PixelParameters.source: "tab_switcher"
-                                 ])
+                                 ]))
                                  self?.onNewNormalTabTapped?()
                              }
                 ])

@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import Core
 import DDGSync
+import PixelKit
 
 protocol ImportPasswordsViaSyncViewControllerDelegate: AnyObject {
     func importPasswordsViaSyncViewControllerDidRequestOpenSync(_ viewController: ImportPasswordsViaSyncViewController)
@@ -56,7 +57,7 @@ final class ImportPasswordsViaSyncViewController: UIViewController {
         super.viewWillDisappear(animated)
 
         if isMovingFromParent && !viewModel.buttonWasPressed {
-            Pixel.fire(pixel: .autofillLoginsImportNoAction)
+            PixelKit.fire(Pixel.Event.autofillLoginsImportNoAction)
         }
     }
 

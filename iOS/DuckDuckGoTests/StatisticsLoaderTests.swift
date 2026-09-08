@@ -22,13 +22,13 @@ import OHHTTPStubs
 import OHHTTPStubsSwift
 @testable import Core
 @testable import BrowserServicesKit
-import PixelKit
+@_spi(Testing) import PixelKit
 
 class StatisticsLoaderTests: XCTestCase {
 
     var mockStatisticsStore: StatisticsStore!
     var mockUsageSegmentation: MockUsageSegmentation!
-    var mockPixelFiring: PixelFiringMock.Type!
+    var pixelKitMock: PixelKitMock!
     var testee: StatisticsLoader!
     private var fireAppRetentionExperimentPixelsCalled = false
     private var fireSearchExperimentPixelsCalled = false
@@ -38,9 +38,7 @@ class StatisticsLoaderTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        PixelFiringMock.tearDown()
-
-        mockPixelFiring = PixelFiringMock.self
+        pixelKitMock = PixelKitMock()
         mockStatisticsStore = MockStatisticsStore()
         mockUsageSegmentation = MockUsageSegmentation()
         testee = StatisticsLoader(statisticsStore: mockStatisticsStore,
@@ -49,7 +47,7 @@ class StatisticsLoaderTests: XCTestCase {
                                   fireSearchExperimentPixels: { self.fireSearchExperimentPixelsCalled = true },
                                   fireNewAIPromptExperimentPixels: { self.fireNewAIPromptExperimentPixelsCalled = true },
                                   fireOSDistributionPixel: { self.firedOSDistributionMetrics.append($0) },
-                                  pixelFiring: mockPixelFiring)
+                                  pixelFiring: pixelKitMock)
     }
 
     func testRefreshAppRetentionAtbFiresClientOSDistributionPixel() {
@@ -119,7 +117,6 @@ class StatisticsLoaderTests: XCTestCase {
 
     override func tearDown() {
         HTTPStubs.removeAllStubs()
-        PixelFiringMock.tearDown()
         super.tearDown()
     }
 
@@ -372,7 +369,7 @@ class StatisticsLoaderTests: XCTestCase {
         }
 
         wait(for: [testExpectation], timeout: 10.0)
-        XCTAssertEqual(mockPixelFiring.lastPixelName, Pixel.Event.appInstall.name)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.appInstall.name })
     }
 
     func loadSuccessfulAtbStub(version: String? = nil) {

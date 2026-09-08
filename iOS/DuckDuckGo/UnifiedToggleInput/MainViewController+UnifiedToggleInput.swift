@@ -27,6 +27,7 @@ import Suggestions
 import UIKit
 import WebKit
 import FeatureFlags_iOS
+import PixelKit
 
 // MARK: - Unified Toggle Input Setup
 
@@ -1068,8 +1069,7 @@ extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
-        coordinator.viewController.deactivateInput()
-        let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator.cachedOmnibarPlaceholderWindowX
+        let omnibarPlaceholderWindowX = omnibarPlaceholderWindowXForHandoff(coordinator)
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
@@ -1115,6 +1115,9 @@ extension MainViewController {
             },
             interruptCleanup: { [weak self] in
                 self?.restoreChromeAfterInterruptedOmnibarDismiss()
+            },
+            resigningInput: { [weak coordinator] in
+                coordinator?.viewController.deactivateInput()
             },
             completion: { [weak self] in
                 self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
@@ -1233,13 +1236,13 @@ extension MainViewController {
                                           queryContext: currentTab?.url),
               url.isDuckAIURL else { return nil }
 
-        DailyPixel.fireDailyAndCount(pixel: .aiChatDuckAIDirectNavigation, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.aiChatDuckAIDirectNavigation, frequency: .dailyAndCount, options: .parameters([
             "duckai_enabled": String(aiChatSettings.isAIChatEnabled),
             "toggle_enabled": String(aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
-        ])
+        ]))
 
         if !aiChatSettings.isAIChatEnabled {
-            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputDuckAIDirectNavigation)
+            PixelKit.fire(Pixel.Event.unifiedToggleInputDuckAIDirectNavigation, frequency: .dailyAndCount)
         }
 
         // `loadQuery` loads duck.ai in-tab without going through `openAIChat`, so this is the
@@ -1473,7 +1476,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
 extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     func aiChatTabChatHeaderDidTapChatList() {
-        DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarSidebarButtonTapped)
+        PixelKit.fire(Pixel.Event.aiChatOmnibarSidebarButtonTapped, frequency: .dailyAndCount)
         if featureFlagger.isFeatureOn(.aiChatNativeSidebar) {
             openAIChatHistory(source: .addressBar)
         } else {
@@ -1483,14 +1486,14 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderUpgradePlateDidBecomeVisible() {
-        Pixel.fire(pixel: .unifiedToggleInputChatHeaderUpgradeShown,
-                   withAdditionalParameters: [AttributionParameter.origin: SubscriptionFunnelOrigin.duckAIFreeLabel.rawValue])
+        PixelKit.fire(Pixel.Event.unifiedToggleInputChatHeaderUpgradeShown,
+                      options: .parameters([AttributionParameter.origin: SubscriptionFunnelOrigin.duckAIFreeLabel.rawValue]))
     }
 
     func aiChatTabChatHeaderDidTapUpgrade() {
         if let subscriptionState = unifiedToggleInputCoordinator?.subscriptionState, !subscriptionState.hasActiveSubscription {
-            Pixel.fire(pixel: .unifiedToggleInputChatHeaderUpgradeTapped,
-                       withAdditionalParameters: [AttributionParameter.origin: SubscriptionFunnelOrigin.duckAIFreeLabel.rawValue])
+            PixelKit.fire(Pixel.Event.unifiedToggleInputChatHeaderUpgradeTapped,
+                          options: .parameters([AttributionParameter.origin: SubscriptionFunnelOrigin.duckAIFreeLabel.rawValue]))
         }
         DuckAISubscriptionUpsellPresenter().presentPurchaseFlow(origin: .duckAIFreeLabel)
     }
@@ -1534,7 +1537,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewImage() {
-        DailyPixel.fireDailyAndCount(pixel: .aiChatNewImageTapped)
+        PixelKit.fire(Pixel.Event.aiChatNewImageTapped, frequency: .dailyAndCount)
         recordDuckAISessionNewChatCreatedOnCurrentTab()
         unifiedToggleInputCoordinator?.startNewChat()
         unifiedToggleInputCoordinator?.selectTool(.imageGeneration, createImageEntryPoint: .chatHeaderNewImage)

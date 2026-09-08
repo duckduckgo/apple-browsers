@@ -1027,15 +1027,20 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Duck.ai menu button (single-pill layout)
 
     private func presentDuckAIMenuButtonMenu(from sender: NSButton) {
-        let menu = makeDuckAIMenuButtonMenu()
-        // Right-align: anchor the menu's top-right corner to the button's bottom-right.
-        let origin = NSPoint(x: sender.bounds.width - menu.size.width, y: sender.bounds.height + 4)
-        menu.popUp(positioning: nil, at: origin, in: sender)
+        Task { @MainActor [weak self, weak sender] in
+            guard let self, let sender else { return }
+
+            let hasChats = isFireWindow ? false : await NSApp.delegateTyped.aiChatSuggestionsReader.hasChats()
+            let menu = makeDuckAIMenuButtonMenu(hasChats: hasChats)
+            // Right-align: anchor the menu's top-right corner to the button's bottom-right.
+            let origin = NSPoint(x: sender.bounds.width - menu.size.width, y: sender.bounds.height + 4)
+            menu.popUp(positioning: nil, at: origin, in: sender)
+        }
     }
 
     /// The pill's dropdown, rebuilt per press so the sidebar item's title/icon reflect the current
     /// tab and chat state.
-    private func makeDuckAIMenuButtonMenu() -> NSMenu {
+    private func makeDuckAIMenuButtonMenu(hasChats: Bool) -> NSMenu {
         let menu = NSMenu()
 
         let newChatItem = NSMenuItem(title: UserText.aiChatMenuNewChat, action: #selector(duckAIMenuNewChatAction), keyEquivalent: "")
@@ -1063,12 +1068,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         sidebarItem.keyEquivalentModifierMask = [.command, .option]
         menu.addItem(sidebarItem)
 
-        menu.addItem(.separator())
+        if hasChats {
+            menu.addItem(.separator())
 
-        let recentChatsItem = NSMenuItem(title: UserText.aiChatMenuRecentChats, action: #selector(duckAIMenuRecentChatsAction), keyEquivalent: "")
-        recentChatsItem.target = self
-        recentChatsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.chats), visibleOnMacOS27: true)
-        menu.addItem(recentChatsItem)
+            let recentChatsItem = NSMenuItem(title: UserText.aiChatMenuRecentChats, action: #selector(duckAIMenuRecentChatsAction), keyEquivalent: "")
+            recentChatsItem.target = self
+            recentChatsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.chats), visibleOnMacOS27: true)
+            menu.addItem(recentChatsItem)
+        }
 
         return menu
     }

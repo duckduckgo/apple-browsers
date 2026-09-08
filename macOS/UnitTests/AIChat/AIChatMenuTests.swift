@@ -384,6 +384,37 @@ final class AIChatMenuTests: XCTestCase {
     }
 }
 
+@MainActor
+final class AIChatSuggestionsReadingTests: XCTestCase {
+
+    func testHasChatsReturnsFalseWhenHistoryIsEmpty() async {
+        let reader = MockAIChatSuggestionsReader()
+        let hasChats = await reader.hasChats()
+
+        XCTAssertFalse(hasChats)
+    }
+
+    func testHasChatsReturnsTrueWhenThereIsAPinnedChat() async {
+        let reader = MockAIChatSuggestionsReader()
+        reader.pinnedChats = [makeChat(isPinned: true)]
+        let hasChats = await reader.hasChats()
+
+        XCTAssertTrue(hasChats)
+    }
+
+    func testHasChatsReturnsTrueWhenThereIsARecentChat() async {
+        let reader = MockAIChatSuggestionsReader()
+        reader.recentChats = [makeChat(isPinned: false)]
+        let hasChats = await reader.hasChats()
+
+        XCTAssertTrue(hasChats)
+    }
+
+    private func makeChat(isPinned: Bool) -> AIChatSuggestion {
+        AIChatSuggestion(id: "chat", title: "Chat", isPinned: isPinned, chatId: "chat", timestamp: .distantPast)
+    }
+}
+
 // MARK: - Mocks
 
 private final class StubAIChatHistoryCleaner: AIChatHistoryCleaning {

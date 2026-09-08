@@ -47,6 +47,11 @@ extension AIChatSuggestionsReading {
     func fetchSuggestions(query: String?) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
         return await fetchSuggestions(query: query, maxChats: maxHistoryCount)
     }
+
+    func hasChats() async -> Bool {
+        let chats = await fetchSuggestions(query: nil, maxChats: 1)
+        return !chats.pinned.isEmpty || !chats.recent.isEmpty
+    }
 }
 
 // MARK: - AIChatSuggestionsReader

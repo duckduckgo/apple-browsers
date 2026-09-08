@@ -1,0 +1,18 @@
+// App Store rating prompt requests. Two per install at most, so this fires at most twice.
+{
+    "app-rating-prompt_requested": {
+        "description": "Fires when the app asks iOS for the App Store rating dialog. iOS decides whether it draws the dialog, using a yearly quota and the user's in-app review setting, and gives no signal either way, so this counts requests rather than impressions.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "request",
+                "description": "Which of the two per-install requests this was. The first is due after 3 unique usage days, the second 4 unique usage days later.",
+                "type": "string",
+                "enum": ["first", "second"]
+            }
+        ]
+    }
+}

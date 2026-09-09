@@ -18,6 +18,7 @@
 //
 
 import Bookmarks
+import Core
 import Common
 import FoundationExtensions
 import Foundation

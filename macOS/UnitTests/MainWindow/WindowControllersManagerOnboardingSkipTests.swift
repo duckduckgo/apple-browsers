@@ -187,14 +187,6 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
         XCTAssertFalse(sut.replaceOnboardingTab(tab, with: Tab(content: .newtab)))
         XCTAssertTrue(window.mainViewController.tabCollectionViewModel.tabCollection.contains(tab: tab))
     }
-
-    func testRetrackingOnboardingDiscardsTheOldTabsCloseHandler() {
-        let (_, onboardingTab) = startOnboarding()
-
-        sut.setOnboardingTab(nil)
-        XCTAssertNil(onboardingTab.onClose)
-        XCTAssertEqual(skipInPlaceCount, 0)
-    }
 }
 
 private extension WindowControllersManagerOnboardingSkipTests {

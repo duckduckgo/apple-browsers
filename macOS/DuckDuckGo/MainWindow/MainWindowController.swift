@@ -164,13 +164,10 @@ final class MainWindowController: NSWindowController {
         startOnboardingIfNeeded()
     }
 
-    /// The experiment audience is first-time installers running as real users, not automation or an
-    /// overridden onboarding state, since either of those would draw a random cohort for a session
-    /// that isn't representative of a real install.
     private var isEligibleForNonBlockingExperiment: Bool {
-        guard !LaunchOptionsHandler().isAutomationSession else { return false }
-
-        guard case .notOverridden = LaunchOptionsHandler().onboardingStatus else { return false }
+        let launchOptions = LaunchOptionsHandler()
+        guard !launchOptions.isAutomationSession,
+              case .notOverridden = launchOptions.onboardingStatus else { return false }
 
         let reinstallDetector = DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore)
         return !reinstallDetector.isReinstallingUser
@@ -181,34 +178,26 @@ final class MainWindowController: NSWindowController {
             return
         }
 
-        // Enroll here, after the guard so we don't enroll on every window, and before reading
-        // `isNonBlocking` so the cohort is assigned before it's read (enroll() is the only thing
-        // that assigns; isNonBlocking/cohort never do).
+        // Assign the cohort before choosing the onboarding behavior.
         let experiment = featureFlagger.map(OnboardingNonBlockingExperiment.init)
         if isEligibleForNonBlockingExperiment {
             experiment?.enroll()
         }
-        // No flagger means we can't evaluate the experiment: keep today's blocking behavior.
         let isNonBlocking = experiment?.isNonBlocking == true
+        let windowControllersManager = Application.appDelegate.windowControllersManager
 
-        // Non-blocking onboarding leaves the UI unlocked, so a second window can open while the first is
-        // still onboarding. Only one tab hosts it at a time, otherwise the later window takes over
-        // the tracking and the earlier one is left onboarding with nothing listening.
-        if isNonBlocking, Application.appDelegate.windowControllersManager.hasOnboardingTab {
+        if isNonBlocking, windowControllersManager.hasOnboardingTab {
             return
         }
 
         selectedTab.startOnboarding()
 
         if isNonBlocking {
-            // The selected tab can change before the onboarding page loads, so record it now, while
-            // it is still unambiguous.
-            Application.appDelegate.windowControllersManager.setOnboardingTab(selectedTab)
+            // Track the source before selection can change or the page can be closed.
+            windowControllersManager.setOnboardingTab(selectedTab)
             selectedTab.onboardingActionsManager?.installNonBlockingHandlers()
         } else {
-            // During Onboarding, several UI elements get disabled. In order to prevent flickering,
-            // we'll disable them right after kicking off Onboarding.
-            // Locking up UI via `OnboardingUserScript.setInit` has a noticeable delay, where elements may flash.
+            // Lock immediately to avoid flicker while the onboarding script loads.
             userInteraction(prevented: true)
         }
     }

@@ -149,28 +149,17 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
         XCTAssertNil(experiment.cohort)
     }
 
-    func testIsNonBlockingIsTrueWhenLocalFlagIsOn() {
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.onboardingAsync]
-        let experiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
+    func testIsNonBlockingDependsOnLocalFlagOrTreatment() {
+        let cases: [(FeatureFlag.OnboardingNonBlockingCohort?, Bool, Bool)] = [
+            (nil, true, true), (.treatment, false, true), (.control, false, false)
+        ]
+        for (cohort, localFlag, expected) in cases {
+            let featureFlagger = cohort.map { MockFeatureFlagger(resolveCohortStub: $0) } ?? MockFeatureFlagger()
+            featureFlagger.enabledFeatureFlags = localFlag ? [.onboardingAsync] : []
+            let experiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
 
-        XCTAssertTrue(experiment.isNonBlocking)
-    }
-
-    func testIsNonBlockingIsTrueWhenCohortIsTreatment() {
-        let cohort = FeatureFlag.OnboardingNonBlockingCohort.treatment
-        let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
-        let experiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
-
-        XCTAssertTrue(experiment.isNonBlocking)
-    }
-
-    func testIsNonBlockingIsFalseOtherwise() {
-        let cohort = FeatureFlag.OnboardingNonBlockingCohort.control
-        let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
-        let experiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
-
-        XCTAssertFalse(experiment.isNonBlocking)
+            XCTAssertEqual(experiment.isNonBlocking, expected, "Cohort: \(String(describing: cohort)), local flag: \(localFlag)")
+        }
     }
 
     func testFireMetricDoesNotFireWhenNotEnrolled() {

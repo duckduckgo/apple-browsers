@@ -5845,3 +5845,5 @@
 /* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
 "aichat.createImage.modelSwitch.title" = "Nüüd on kasutusel %@";
 
+/* Address bar Duck.ai menu option that opens the full chat history */
+"duckai.address.bar.menu.all.chats" = "Kõik vestlused";

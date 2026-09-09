@@ -369,6 +369,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// pre-submit contextual sheet on iPhone.
     case contextualFloatingInput
 
+    /// Enables Recent Chats in the iOS address-bar Duck.ai menu.
+    case addressBarRecentChats
+
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
 

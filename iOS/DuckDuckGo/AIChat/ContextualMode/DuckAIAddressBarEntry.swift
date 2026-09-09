@@ -21,7 +21,7 @@ import Foundation
 
 /// What the address-bar Duck.ai button does for the current tab and session.
 enum DuckAIAddressBarEntry: Equatable {
-    /// Offer New Chat or Ask About Page.
+    /// Offer New Chat, Ask About Page, and Recent Chats when available.
     case menu
     /// Open the contextual sheet, restoring any chat already in progress.
     case contextualSheet
@@ -34,8 +34,8 @@ enum DuckAIAddressBarEntry: Equatable {
     /// page with no chat to return to and nothing already open.
     ///
     /// - Parameter hasChatToReopen: A conversation this tab can go back to, whether it is still live
-    ///   or was persisted by an earlier launch. Neither menu action reopens one, so offering the menu
-    ///   here would strand it.
+    ///   or was persisted by an earlier launch. Reopen this tab's conversation directly rather than
+    ///   requiring the user to find it in Recent Chats.
     static func resolve(isContextualModeAvailable: Bool,
                         isFloatingInputAvailable: Bool,
                         isHomeTab: Bool,

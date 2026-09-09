@@ -207,7 +207,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var didFinishTabURLSubject: CurrentValueSubject<URL?, Never>!
     private var cancellables: Set<AnyCancellable>!
     private var firedPixelEvents: [Pixel.Event] = []
-    private var firedSelectionPixelNames: [String] = []
+    private var firedPixelKitEventNames: [String] = []
 
     // MARK: - Setup
 
@@ -225,11 +225,11 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         originatingTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
         didFinishTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
         firedPixelEvents = []
-        firedSelectionPixelNames = []
+        firedPixelKitEventNames = []
         let pixelHandler = AIChatContextualModePixelHandler(
             firePixel: { [weak self] event in self?.firedPixelEvents.append(event) },
             firePixelWithParameters: { [weak self] event, _ in self?.firedPixelEvents.append(event) },
-            fireSelectionPixel: { [weak self] event, _ in self?.firedSelectionPixelNames.append(event.name) }
+            firePixelKitEvent: { [weak self] event, _ in self?.firedPixelKitEventNames.append(event.name) }
         )
         sut = AIChatContextualSheetCoordinator(
             voiceSearchHelper: MockVoiceSearchHelper(),
@@ -413,7 +413,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: url, faviconBase64: nil), from: mockPresentingVC)
 
         XCTAssertEqual(sut.sessionState.attachedSelections.count, 1)
-        XCTAssertEqual(firedSelectionPixelNames.filter { $0 == AIChatContextualSelectionPixel.attached.name }.count, 1)
+        XCTAssertEqual(firedPixelKitEventNames.filter { $0 == AIChatContextualSelectionPixel.attached.name }.count, 1)
     }
 
     /// Attaching a selection must not cost the user the conversation they already had.

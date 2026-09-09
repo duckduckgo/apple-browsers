@@ -44,8 +44,7 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
 
     // MARK: - Sheet
 
-    /// Live or restored from a previous launch — both menu actions start something new, so offering the
-    /// menu here would leave the conversation unreachable.
+    /// Live and restored conversations retain the direct route back to this tab's chat.
     func testAChatToReopenGoesStraightToTheSheet() {
         XCTAssertEqual(resolve(hasChatToReopen: true), .contextualSheet)
     }

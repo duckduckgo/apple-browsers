@@ -125,23 +125,30 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
 
     // MARK: - Removing the tab
 
-    func testBulkRemovalRecordsSkipInPlaceAndLeavesTheTabAlone() {
-        let (_, onboardingTab) = startOnboarding()
+    func testBulkCloseNotifiesOnlyRemovedTabsAndRecordsSkipOnce() {
+        let (window, onboardingTab) = startOnboarding()
+        let viewModel = window.mainViewController.tabCollectionViewModel
+        let keptTab = Tab(content: .newtab)
+        keptTab.onClose = { XCTFail("The preserved tab must not receive a close notification") }
+        viewModel.append(tab: keptTab)
 
-        let allowsRemoval = onboardingTab.closeInterceptor?(.bulk)
+        viewModel.removeAllTabs(except: 1)
+        sut.unregister(window)
 
-        XCTAssertEqual(allowsRemoval, false)
-        XCTAssertEqual(skipInPlaceCount, 1)
+        XCTAssertFalse(viewModel.tabCollection.contains(tab: onboardingTab))
+        XCTAssertTrue(viewModel.tabCollection.contains(tab: keptTab))
+        XCTAssertEqual(closeCount, 1)
+        XCTAssertEqual(skipInPlaceCount, 0)
         XCTAssertFalse(sut.hasOnboardingTab)
     }
 
-    func testBulkRemovalWhileQuittingRecordsNothingAndReleasesTracking() {
-        let (_, onboardingTab) = startOnboarding()
+    func testBulkCloseWhileQuittingRecordsNothing() {
+        let (window, _) = startOnboarding()
         sut.setOnboardingTab(nil)
 
-        let allowsRemoval = onboardingTab.closeInterceptor?(.bulk)
+        window.mainViewController.tabCollectionViewModel.removeAllTabs()
 
-        XCTAssertNil(allowsRemoval)
+        XCTAssertEqual(closeCount, 0)
         XCTAssertEqual(skipInPlaceCount, 0)
         XCTAssertFalse(sut.hasOnboardingTab)
     }
@@ -151,7 +158,7 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
         let viewModel = window.mainViewController.tabCollectionViewModel
         let index = try XCTUnwrap(viewModel.indexInAllTabs(of: onboardingTab))
 
-        viewModel.remove(at: index, reason: .userInitiated)
+        viewModel.close(at: index)
 
         XCTAssertTrue(viewModel.tabCollection.tabs.isEmpty)
         XCTAssertFalse(sut.hasOnboardingTab)
@@ -161,16 +168,6 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
 
     // MARK: - Only the first outcome counts
 
-    func testSkipIsRecordedOnceWhenSeveralPathsFireForTheSameSession() {
-        let (windowController, onboardingTab) = startOnboarding()
-
-        // The tab is swept up in a bulk close and its window then closes behind it.
-        _ = onboardingTab.closeInterceptor?(.bulk)
-        sut.unregister(windowController)
-
-        XCTAssertEqual(skipInPlaceCount, 1)
-    }
-
     func testQuitCleanupDetachesNavigationAndRejectsLateHandlerInstallation() {
         let (_, onboardingTab) = startOnboarding()
         sut.setOnboardingTab(nil)
@@ -179,7 +176,7 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
                                   onSkipInPlace: { XCTFail("Late skip handler") })
         onboardingTab.setContent(.newtab)
 
-        XCTAssertNil(onboardingTab.closeInterceptor)
+        XCTAssertNil(onboardingTab.onClose)
         XCTAssertEqual(skipInPlaceCount, 0)
         XCTAssertEqual(closeCount, 0)
     }
@@ -190,7 +187,7 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
         let browsingTab = Tab(content: .newtab)
         viewModel.append(tab: browsingTab)
         let index = try XCTUnwrap(viewModel.indexInAllTabs(of: browsingTab))
-        viewModel.remove(at: index, reason: .userInitiated)
+        viewModel.close(at: index)
 
         XCTAssertEqual(skipInPlaceCount, 0)
         XCTAssertEqual(closeCount, 0)
@@ -204,11 +201,10 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
 
     func testOldCloseCallbackCannotSkipOrClearAnotherOnboardingTab() {
         let (_, oldTab) = startOnboarding()
-        let oldInterceptor = oldTab.closeInterceptor
+        let oldOnClose = oldTab.onClose
         let (_, newTab) = startOnboarding()
 
-        XCTAssertEqual(oldInterceptor?(.bulk), false)
-        XCTAssertEqual(oldInterceptor?(.userInitiated), false)
+        oldOnClose?()
         XCTAssertEqual(skipInPlaceCount, 0)
         XCTAssertEqual(closeCount, 0)
         XCTAssertTrue(sut.onboardingTab(for: newTab.webView) === newTab)
@@ -222,13 +218,11 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
         XCTAssertTrue(window.mainViewController.tabCollectionViewModel.tabCollection.contains(tab: tab))
     }
 
-    func testRetrackingOnboardingDiscardsTheOldTabsInterceptor() {
+    func testRetrackingOnboardingDiscardsTheOldTabsCloseHandler() {
         let (_, onboardingTab) = startOnboarding()
 
         sut.setOnboardingTab(nil)
-        let allowsRemoval = onboardingTab.closeInterceptor?(.bulk)
-
-        XCTAssertNil(allowsRemoval)
+        XCTAssertNil(onboardingTab.onClose)
         XCTAssertEqual(skipInPlaceCount, 0)
     }
 }

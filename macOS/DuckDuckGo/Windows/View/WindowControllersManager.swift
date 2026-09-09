@@ -693,16 +693,15 @@ extension WindowControllersManager: OnboardingNavigating {
     func setOnboardingTab(_ tab: Tab?) {
         onboardingTabCancellable = nil
         onboardingSkipInPlaceHandler = nil
-        onboardingTab?.closeInterceptor = nil
+        onboardingTab?.onClose = nil
         onboardingTab = tab
         browsingBeforeCompletionObservedTabs.removeAll()
         browsingBeforeCompletionCancellables.removeAll()
     }
 
     /// Wires the onboarding tab so that leaving onboarding is always recorded as a skip:
-    /// `onClose` records a user-initiated close before normal tab removal,
-    /// `onSkipInPlace` when onboarding goes away on its own — navigated away from, swept up in a
-    /// bulk close, or carried off by its window closing.
+    /// `onClose` records any tab close before normal removal,
+    /// `onSkipInPlace` records navigation away or closure of the hosting window.
     @MainActor
     func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Void,
                                onSkipInPlace: @escaping @MainActor () -> Void) {
@@ -710,25 +709,10 @@ extension WindowControllersManager: OnboardingNavigating {
 
         onboardingSkipInPlaceHandler = onSkipInPlace
 
-        onboardingTab.closeInterceptor = { [weak self, weak onboardingTab] reason in
-            guard let self, let onboardingTab, self.onboardingTab === onboardingTab else { return false }
-#if DEBUG
-            Logger.general.debug("Onboarding close: owner=\(onboardingTab.uuid, privacy: .public) reason=\(String(describing: reason), privacy: .public)")
-#endif
-            switch reason {
-            case .userInitiated:
-                self.clearOnboardingTracking()
-                onClose(onboardingTab)
-                return false
-            case .bulk:
-                // Quit cleanup removes this interceptor before sweeping up tabs.
-                self.recordOnboardingSkipInPlace()
-                return false
-            case .programmatic:
-                // Not reachable — `removeUnpinnedTab` only consults the interceptor for
-                // `.userInitiated`, and bulk paths pass `.bulk` explicitly.
-                return false
-            }
+        onboardingTab.onClose = { [weak self, weak onboardingTab] in
+            guard let self, let onboardingTab, self.onboardingTab === onboardingTab else { return }
+            self.clearOnboardingTracking()
+            onClose(onboardingTab)
         }
 
         // Before the content subscription below, which republishes the current value on subscribe
@@ -817,7 +801,7 @@ extension WindowControllersManager: OnboardingNavigating {
     @MainActor
     private func clearOnboardingTracking() {
         onboardingSkipInPlaceHandler = nil
-        onboardingTab?.closeInterceptor = nil
+        onboardingTab?.onClose = nil
         onboardingTab = nil
         browsingBeforeCompletionObservedTabs.removeAll()
         browsingBeforeCompletionCancellables.removeAll()

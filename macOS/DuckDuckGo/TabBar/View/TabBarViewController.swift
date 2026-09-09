@@ -2681,7 +2681,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         if let tabID = tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.uuid {
             aiChatCoordinator?.closeFloatingWindow(for: tabID)
         }
-        tabCollectionViewModel.remove(at: tabIndex, reason: .userInitiated)
+        tabCollectionViewModel.close(at: tabIndex)
     }
 
     private func shouldWarnBeforeClosingFloatingAIChat(tabID: String) -> Bool {
@@ -2739,7 +2739,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     private func closeTab(for tabID: String) {
         aiChatCoordinator?.closeFloatingWindow(for: tabID)
         guard let tabIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == tabID }) else { return }
-        tabCollectionViewModel.remove(at: tabIndex, reason: .userInitiated)
+        tabCollectionViewModel.close(at: tabIndex)
     }
 
     func tabBarViewItemCloseOtherAction(_ tabBarViewItem: TabBarViewItem) {

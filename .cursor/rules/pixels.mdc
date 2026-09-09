@@ -17,7 +17,7 @@ Pixels have the following requirements:
 - Do not use values that are overly precise, e.g. if using an integer value in a parameter, bucket it into ranges rather than including the value verbatim
 - Never include PII, URLs, or other forms of user-identifiable information in pixel names or parameters
 
-PixelKit is the only pixel-firing API on iOS and macOS. The legacy iOS `Pixel`, `DailyPixel`, `UniquePixel`, `TimedPixel`, and `PersistentPixel` classes, and their `PixelFiring`/`PixelFiringAsync`/`DailyPixelFiring` protocols, have been removed; `PixelFiringMock` and the other legacy test mocks went with them - use `PixelKitMock` instead. `Pixel.Event` and `PixelParameters` survive as the catalogue of already-defined iOS pixel names and parameter keys (see below) - they are the only pieces of the old system still in use.
+PixelKit is the only pixel-firing API on iOS and macOS, and `PixelKitMock` is the mock to use in tests. `Pixel.Event` and `PixelParameters` are the catalogue of already-defined iOS pixel names and parameter keys (see below).
 
 ## Types of Pixels
 
@@ -51,7 +51,7 @@ pixelKit.fire(uniqueEvent, frequency: .uniqueByName)
 
 ### Existing iOS Pixels (`Pixel.Event`)
 
-Every iOS pixel defined before the PixelKit migration is a case on `Pixel.Event` in `iOS/Core/PixelEvent.swift`. Each enum case maps to an HTTP pixel name string via a computed `name` property, and every one of them fires through PixelKit: `PixelKit.fire(Pixel.Event.someCase, ...)`.
+`Pixel.Event` in `iOS/Core/PixelEvent.swift` is the catalogue of iOS pixel names that predate PixelKit. The iOS-only firing classes it was written for no longer exist, so it now serves purely to name pixels: each case maps to an HTTP pixel name string via a computed `name` property, and every case fires through PixelKit (`PixelKit.fire(Pixel.Event.someCase, ...)`).
 
 **`iOS/Core/PixelEvent.swift` does not take new pixels.** The file carries a top-of-file notice to that effect, and a Danger check hard-fails a PR that adds a new case (to the enum or to the `name` switch) - see `iOS Pixel Injection Pattern (PixelKit)` in `.cursor/BUGBOT.md`. Modifying or removing an existing case is fine. Define a new iOS pixel as its own `PixelKit.Event`-conforming type in a new file instead, the same way macOS already does (see `macOS Pixels (PixelKit)` below).
 

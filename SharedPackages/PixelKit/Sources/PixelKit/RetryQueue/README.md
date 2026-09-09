@@ -66,4 +66,3 @@ parameters. The case disappears as those queues age out.
 ## Related
 
 - `PixelKit.Options.retryOnFailure` — the caller-facing switch.
-- iOS's older, `PersistentPixel`-based retry system this was ported from and has since replaced.

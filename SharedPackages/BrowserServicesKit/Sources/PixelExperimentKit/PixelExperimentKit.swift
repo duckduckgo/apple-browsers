@@ -43,11 +43,9 @@ extension PixelKit {
         static let conversionWindowDaysKey = "conversionWindowDays"
         static let valueKey = "value"
         static let enrollmentDateKey = "enrollmentDate"
-        /// Public so callers firing extra per-experiment conversion windows outside
-        /// `fireSearchExperimentPixels` / `fireAppRetentionExperimentPixels` report under the same
-        /// metric name as those do — a mismatch here silently splits one metric into two.
+        /// Keeps additional per-experiment search windows under the standard search metric.
         public static let searchMetricValue = "search"
-        public static let appUseMetricValue = "app_use"
+        static let appUseMetricValue = "app_use"
         static let aiChatMetricValue = "duck_ai_prompt_sent"
         static let aiChatNewChatMetricValue = "duck_ai_new_chat"
     }

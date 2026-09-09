@@ -99,14 +99,14 @@ struct OnboardingNonBlockingExperiment {
 
     private static let cohortParameterKey = "onboardingNonBlockingCohort"
 
-    func fireMetric(_ metric: Metric, value: String = "true") {
+    func fireMetric(_ metric: Metric) {
         guard cohort != nil else { return }
         for window in metric.conversionWindows {
             PixelKit.fireExperimentPixel(
                 for: Self.subfeatureID,
                 metric: metric.rawValue,
                 conversionWindowDays: window,
-                value: value
+                value: "true"
             )
         }
     }

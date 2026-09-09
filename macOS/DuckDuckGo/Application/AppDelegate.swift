@@ -1639,12 +1639,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fireDailyActiveUserPixels() {
         PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily)
-        let isDefaultBrowser = defaultBrowserPreferences.isDefault
-        PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: isDefaultBrowser), frequency: .daily)
-        // Guardrail metric: is DuckDuckGo still the default browser on days 5-7 after enrollment.
-        // fireMetric checks the conversion window and dedupes internally, so it's safe to call on
-        // every activation; it only fires (and only once) when we land inside that window.
-        if isDefaultBrowser {
+        PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily)
+        if defaultBrowserPreferences.isDefault {
             onboardingNonBlockingExperiment.fireMetric(.setAsDefaultEnabled)
         }
         PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily)

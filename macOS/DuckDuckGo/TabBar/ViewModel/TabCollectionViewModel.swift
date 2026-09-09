@@ -619,12 +619,16 @@ final class TabCollectionViewModel: NSObject {
     // MARK: - Removal
 
     func removeAll(with content: Tab.TabContent) {
-        removeAll(matching: { $0 == content })
+        let matchingTabs = tabCollection.tabs.filter { $0.content == content }
+        for tab in matchingTabs {
+            if let index = indexInAllTabs(of: tab) {
+                remove(at: index)
+            }
+        }
     }
 
     func removeAll(matching condition: (Tab.TabContent) -> Bool) {
         let matchingTabs = tabCollection.tabs.filter { condition($0.content) }
-        notifyCloseInterceptors(of: matchingTabs)
         for tab in matchingTabs {
             if let index = indexInAllTabs(of: tab) {
                 remove(at: index)
@@ -778,11 +782,7 @@ final class TabCollectionViewModel: NSObject {
         let removed = tabCollection.tabs.enumerated()
             .filter { !keptIndices.contains($0.offset) }
             .map(\.element)
-        notifyCloseInterceptors(of: removed)
-    }
-
-    private func notifyCloseInterceptors(of tabs: [AnyTab]) {
-        for case .loaded(let tab) in tabs {
+        for case .loaded(let tab) in removed {
             if let interceptor = tab.closeInterceptor {
                 _ = interceptor(.bulk)
             }

@@ -427,9 +427,11 @@ public enum FeatureFlag: String, CaseIterable {
     case promoQueueCookiePopupsBlockedPromo
 
     /// Enables the "Update available" promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923084?focus=true
     case promoQueueUpdateAvailablePromo
 
     /// Enables the "Browser updated" promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923091?focus=true
     case promoQueueBrowserUpdatedPromo
 
     /// Enables showing browsing history domains in the first-time quit survey

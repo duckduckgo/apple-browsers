@@ -26,8 +26,9 @@ struct WebsitePermissionDetailView: View {
         static let chevronSize: CGFloat = 16
         static let searchWidth: CGFloat = 173
         static let searchHeight: CGFloat = 28
-        static let searchCornerRadius: CGFloat = 6
+        static let searchCornerRadius: CGFloat = 7
         static let emptyRowHeight: CGFloat = 56
+        static let backButtonSize: CGFloat = 32
     }
 
     @ObservedObject var model: WebsitePermissionDetailViewModel
@@ -45,7 +46,7 @@ struct WebsitePermissionDetailView: View {
     }
 
     private var detailHeader: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 4) {
             Button(action: onBack) {
                 Image(nsImage: DesignSystemImages.Glyphs.Size24.chevronLeft)
                     .renderingMode(.template)
@@ -53,6 +54,8 @@ struct WebsitePermissionDetailView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: Constants.chevronSize, height: Constants.chevronSize)
                     .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                    .frame(width: Constants.backButtonSize, height: Constants.backButtonSize)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(UserText.websitePermissionsBack)
@@ -119,7 +122,8 @@ struct WebsitePermissionDetailView: View {
                 .accessibilityLabel(UserText.websitePermissionsClearSearch)
             }
         }
-        .padding(.horizontal, 8)
+        .padding(.leading, 8)
+        .padding(.trailing, 6)
         .frame(width: Constants.searchWidth, height: Constants.searchHeight)
         .background(Color(designSystemColor: .containerFillSecondary))
         .clipShape(RoundedRectangle(cornerRadius: Constants.searchCornerRadius, style: .continuous))

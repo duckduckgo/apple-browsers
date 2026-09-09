@@ -1560,7 +1560,7 @@ struct UserText {
     static let websitePermissionsRemovePermission = NotLocalizedString("preferences.website-permissions.remove", value: "Remove", comment: "Accessibility label for the button that removes a saved website permission")
     static let websitePermissionsBack = NotLocalizedString("preferences.website-permissions.back", value: "Back", comment: "Accessibility label for the button returning to Website Permissions")
     static let websitePermissionsWebsites = NotLocalizedString("preferences.website-permissions.websites", value: "Websites", comment: "Header above saved website permissions")
-    static let websitePermissionsSearchPlaceholder = NotLocalizedString("preferences.website-permissions.search.placeholder", value: "Search", comment: "Placeholder in the Website Permissions search field")
+    static let websitePermissionsSearchPlaceholder = NotLocalizedString("preferences.website-permissions.search.placeholder", value: "Search…", comment: "Placeholder in the Website Permissions search field")
     static let websitePermissionsClearSearch = NotLocalizedString("preferences.website-permissions.search.clear", value: "Clear search", comment: "Accessibility label for the button that clears Website Permissions search")
     static let websitePermissionsEmpty = NotLocalizedString("preferences.website-permissions.empty", value: "No websites yet", comment: "Empty state for a Website Permissions category")
     static let websitePermissionsNoResults = NotLocalizedString("preferences.website-permissions.no-results", value: "No results for “%@”", comment: "Search result when no website permission matches, %@ is the search query")

@@ -86,6 +86,7 @@ struct WebsitePermissionDecisionControls: View {
     private enum Constants {
         static let minimumDropdownWidth: CGFloat = 124
         static let removeButtonSize: CGFloat = 16
+        static let controlSpacing: CGFloat = 12
     }
 
     let decision: PersistedPermissionDecision
@@ -96,6 +97,13 @@ struct WebsitePermissionDecisionControls: View {
     let onRemove: () -> Void
 
     var body: some View {
+        HStack(spacing: Constants.controlSpacing) {
+            picker
+            removeButton
+        }
+    }
+
+    private var picker: some View {
         Picker(selection: Binding(
             get: { decision },
             set: onDecisionChanged
@@ -109,7 +117,9 @@ struct WebsitePermissionDecisionControls: View {
         .frame(minWidth: Constants.minimumDropdownWidth)
         .accessibilityLabel(String(format: UserText.websitePermissionsDecisionAccessibilityLabel, domain))
         .accessibilityIdentifier("\(accessibilityIdentifier).Decision")
+    }
 
+    private var removeButton: some View {
         Button(action: onRemove) {
             Image(nsImage: DesignSystemImages.Glyphs.Size16.closeSmall)
                 .renderingMode(.template)

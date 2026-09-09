@@ -28,7 +28,11 @@ extension NetworkProtectionServerInfo {
     ///
     /// Duplicates are removed. The result is never empty: it always contains at least `port`.
     public func endpointPortCandidates(preferring rememberedPort: UInt16?) -> [UInt16] {
-        let advertisedPorts = [port] + (ports ?? [])
+        guard let ports else {
+            return [port]
+        }
+
+        let advertisedPorts = [port] + ports
 
         var candidates: [UInt16] = []
 
@@ -40,7 +44,7 @@ extension NetworkProtectionServerInfo {
             candidates.append(port)
         }
 
-        for candidate in ports ?? [] where candidate != 0 && !candidates.contains(candidate) {
+        for candidate in ports where candidate != 0 && !candidates.contains(candidate) {
             candidates.append(candidate)
         }
 

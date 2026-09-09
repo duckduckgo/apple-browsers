@@ -28,7 +28,7 @@ public enum SitePermissionsSheetState: Equatable, Sendable {
     case reminderOnly
 }
 
-public enum SitePermissionPickerOption: Hashable, Sendable {
+public enum SitePermissionPickerOption: String, Hashable, Sendable {
     case askEachTime
     case allowThisTime
     case alwaysAllow

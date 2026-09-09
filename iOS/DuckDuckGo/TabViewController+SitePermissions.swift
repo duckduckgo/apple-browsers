@@ -676,7 +676,7 @@ extension TabViewController {
     }
 
     private func presentSitePermissionsRemovalUndo(domain: String, restore: @escaping () -> Void) {
-        ActionMessageView.present(
+        let messageView = ActionMessageView.presentTracked(
             message: String(format: UserText.settingsSitePermissionsRemovedSiteFormat, domain),
             actionTitle: UserText.actionGenericUndo,
             presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom),
@@ -685,6 +685,8 @@ extension TabViewController {
                 self?.fireSitePermissionsEvent(.permissionRemoveUndo)
             }
         )
+        messageView?.accessibilityIdentifier = "SitePermissions.Toast"
+        messageView?.actionButton.accessibilityIdentifier = "SitePermissions.Toast.Undo"
     }
 
     func revokeSitePermissions(_ permissionTypes: Set<SitePermissionType>,
@@ -1179,6 +1181,7 @@ extension TabViewController {
                 sitePermissionsState.finishRecovery(recoveryToken: recoveryToken)
                 return
             }
+            messageView.accessibilityIdentifier = "SitePermissions.Toast"
             sitePermissionsState.recoveryMessageView = messageView
 
         case .reminder(let permissionTypes):

@@ -168,6 +168,7 @@ public final class SitePermissionsCoordinator {
     private let store: SitePermissionsStore
     private let isFireMode: Bool
     private let currentContext: CurrentContextProvider
+    private let currentSite: (() -> SitePermissionKey?)?
     private let authorizationState: AuthorizationStateProvider
     private let requestAuthorization: AuthorizationRequester
     private let recoveryHandler: RecoveryHandler
@@ -194,12 +195,14 @@ public final class SitePermissionsCoordinator {
                             systemPermissionClient: SystemPermissionClient,
                             isFireMode: Bool,
                             currentContext: @escaping CurrentContextProvider,
+                            currentSite: (() -> SitePermissionKey?)? = nil,
                             recoveryHandler: @escaping RecoveryHandler,
                             cancellationHandler: @escaping () -> Void = {},
                             eventHandler: @escaping EventHandler = { _ in }) {
         self.init(store: store,
                   isFireMode: isFireMode,
                   currentContext: currentContext,
+                  currentSite: currentSite,
                   authorizationState: systemPermissionClient.authorizationState,
                   requestAuthorization: systemPermissionClient.requestAuthorization,
                   recoveryHandler: recoveryHandler,
@@ -210,6 +213,7 @@ public final class SitePermissionsCoordinator {
     init(store: SitePermissionsStore,
          isFireMode: Bool,
          currentContext: @escaping CurrentContextProvider,
+         currentSite: (() -> SitePermissionKey?)? = nil,
          authorizationState: @escaping AuthorizationStateProvider,
          requestAuthorization: @escaping AuthorizationRequester,
          recoveryHandler: @escaping RecoveryHandler,
@@ -218,6 +222,7 @@ public final class SitePermissionsCoordinator {
         self.store = store
         self.isFireMode = isFireMode
         self.currentContext = currentContext
+        self.currentSite = currentSite
         self.authorizationState = authorizationState
         self.requestAuthorization = requestAuthorization
         self.recoveryHandler = recoveryHandler
@@ -324,7 +329,9 @@ public final class SitePermissionsCoordinator {
         let ephemeralPermissionTypes = isCurrentSite ? allowOnce : []
         let siteAllowedPermissionTypes = isCurrentSite ? siteAllowedPermissionTypesThisVisit : []
         let requestedPermissionTypes = isCurrentSite ? requestedPermissionTypesThisVisit : []
-        let currentCaptureStates = isCurrentSite ? captureStates : [:]
+        // Provisional navigation resets page grants before the committed page and its capture change.
+        let isCaptureSite = currentSite.map { $0() == site } ?? isCurrentSite
+        let currentCaptureStates = isCaptureSite ? captureStates : [:]
         let systemAuthorizationStates = SitePermissionsManagementSnapshot.managedPermissionTypes.reduce(into: [:]) { states, permissionType in
             states[permissionType] = authorizationState(permissionType)
         }

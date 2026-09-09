@@ -419,6 +419,33 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(harness.coordinator.captureState(for: .microphone), .active)
     }
 
+    func testManagementSnapshotShowsCommittedPageCaptureBeforeRequestsAndAfterProvisionalNavigation() throws {
+        let harness = try Harness()
+        let webView = MediaCaptureWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        webView.setCameraCaptureStateForTesting(.active)
+        webView.setMicrophoneCaptureStateForTesting(.muted)
+        harness.coordinator.observeMediaCapture(in: webView)
+        let otherSite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://other.example")!))
+
+        for resetsPage in [false, true] {
+            if resetsPage {
+                harness.coordinator.pageDidChange(.navigation)
+            }
+            let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+            XCTAssertEqual(snapshot.captureStates, [.camera: .active, .microphone: .paused])
+            XCTAssertTrue(snapshot.showsMenuEntry)
+            XCTAssertTrue(snapshot.ephemeralPermissionTypes.isEmpty)
+            XCTAssertTrue(snapshot.requestedPermissionTypesThisVisit.isEmpty)
+            XCTAssertTrue(harness.coordinator.managementSnapshot(for: otherSite).captureStates.isEmpty)
+        }
+
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.denyOnce)
+        }, completion: { _ in })
+        harness.committedSite = nil
+        XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).captureStates.isEmpty)
+    }
+
     func testInitialInactiveObservationAndActivePausedTransitionsRetainAllowOnceUntilCaptureEnds() async throws {
         let harness = try Harness()
         let grantCompletion = expectation(description: "Allow Once becomes active")
@@ -1451,6 +1478,7 @@ private final class Harness {
     let site: SitePermissionKey
     let isFireMode: Bool
     var context: SitePermissionRequestContext
+    var committedSite: SitePermissionKey?
     var systemStates: [SitePermissionType: SystemPermissionAuthorizationState] = [
         .camera: .authorized,
         .microphone: .authorized,
@@ -1470,6 +1498,7 @@ private final class Harness {
                   context.requestingFrameID == frameID else { return nil }
             return context
         },
+        currentSite: { [weak self] in self?.committedSite },
         authorizationState: { [weak self] permissionType in
             self?.systemStates[permissionType] ?? .unavailable
         },
@@ -1495,6 +1524,7 @@ private final class Harness {
         let context = try context ?? Self.makeContext()
         self.context = context
         site = context.topLevelSite
+        committedSite = context.topLevelSite
         self.isFireMode = isFireMode
         store = SitePermissionsStore(storage: keyValueStore.keyedStoring())
     }

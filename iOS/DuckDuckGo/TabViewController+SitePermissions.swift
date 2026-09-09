@@ -744,6 +744,9 @@ extension TabViewController {
             currentContext: { [weak self] tabID, requestingFrameID in
                 self?.currentSitePermissionContext(tabID: tabID, requestingFrameID: requestingFrameID)
             },
+            currentSite: { [weak self] in
+                self?.currentSitePermissionKey()
+            },
             recoveryHandler: { [weak self] recovery, completion in
                 guard let self else {
                     completion()

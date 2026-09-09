@@ -33,6 +33,7 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
     let excludeLocalNetworks: Bool
     let excludeCGNAT: Bool
     let enforceRoutes: Bool
+    let isSessionHealthDebugRolloverEnabled: Bool
     let sessionHealthTelemetryEnabled: Bool
 
     enum CodingKeys: String, CodingKey {
@@ -44,6 +45,7 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         case excludeLocalNetworks
         case excludeCGNAT
         case enforceRoutes
+        case isSessionHealthDebugRolloverEnabled
         case sessionHealthTelemetryEnabled
     }
 
@@ -58,6 +60,7 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         self.excludeCGNAT = settings.excludeCGNAT
         self.enforceRoutes = settings.enforceRoutes
         self.sessionHealthTelemetryEnabled = settings.sessionHealthTelemetryEnabled
+        self.isSessionHealthDebugRolloverEnabled = settings.isSessionHealthDebugRolloverEnabled
     }
 
     /// Create a snapshot with explicit values
@@ -69,7 +72,8 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
                 excludeLocalNetworks: Bool,
                 excludeCGNAT: Bool = UserDefaults.excludeCGNATDefaultValue,
                 enforceRoutes: Bool = UserDefaults.enforceRoutesDefaultValue,
-                sessionHealthTelemetryEnabled: Bool = UserDefaults.sessionHealthTelemetryEnabledDefaultValue) {
+                sessionHealthTelemetryEnabled: Bool = UserDefaults.sessionHealthTelemetryEnabledDefaultValue,
+                isSessionHealthDebugRolloverEnabled: Bool = false) {
         self.registrationKeyValidity = registrationKeyValidity
         self.selectedEnvironment = selectedEnvironment
         self.selectedServer = selectedServer
@@ -79,6 +83,7 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         self.excludeCGNAT = excludeCGNAT
         self.enforceRoutes = enforceRoutes
         self.sessionHealthTelemetryEnabled = sessionHealthTelemetryEnabled
+        self.isSessionHealthDebugRolloverEnabled = isSessionHealthDebugRolloverEnabled
     }
 
     /// Custom decoding so snapshots persisted by older versions still decode, falling back to default
@@ -93,6 +98,7 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         excludeLocalNetworks = try container.decode(Bool.self, forKey: .excludeLocalNetworks)
         excludeCGNAT = try container.decodeIfPresent(Bool.self, forKey: .excludeCGNAT) ?? UserDefaults.excludeCGNATDefaultValue
         enforceRoutes = try container.decodeIfPresent(Bool.self, forKey: .enforceRoutes) ?? UserDefaults.enforceRoutesDefaultValue
+        isSessionHealthDebugRolloverEnabled = try container.decodeIfPresent(Bool.self, forKey: .isSessionHealthDebugRolloverEnabled) ?? false
         sessionHealthTelemetryEnabled = try container.decodeIfPresent(Bool.self, forKey: .sessionHealthTelemetryEnabled) ?? UserDefaults.sessionHealthTelemetryEnabledDefaultValue
     }
 
@@ -107,6 +113,7 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         settings.excludeCGNAT = excludeCGNAT
         settings.enforceRoutes = enforceRoutes
         settings.sessionHealthTelemetryEnabled = sessionHealthTelemetryEnabled
+        settings.isSessionHealthDebugRolloverEnabled = isSessionHealthDebugRolloverEnabled
     }
 }
 

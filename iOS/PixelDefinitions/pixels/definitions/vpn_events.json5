@@ -290,7 +290,7 @@
         ]
     },
     "m_ios_wide_vpn_session_health": {
-        "description": "Wide pixel sent once per VPN runtime segment, measuring whether an already-running VPN stayed healthy, including tunnels that stayed connected but stopped routing traffic",
+        "description": "Wide pixel sent once per VPN runtime event, measuring whether an already-running VPN stayed healthy, including tunnels that stayed connected but stopped routing traffic",
         "owners": ["jleandroperez"],
         "triggers": ["other"],
         "suffixes": ["daily"],
@@ -318,15 +318,15 @@
                 "enum": ["vpn-session-health"]
             },
             {
-                "key": "feature.data.ext.segment_start_reason",
+                "key": "feature.data.ext.start_reason",
                 "type": "string",
-                "description": "Why the segment began. On the first callback after a UTC hour boundary, the existing segment closes at its scheduled boundary and a successor opens at the start of the callback's UTC hour. Intermediate hours are not backfilled; observations retain their actual timestamps.",
-                "enum": ["physical_tunnel_manual_start", "physical_tunnel_on_demand_start", "rollover_on_the_hour"]
+                "description": "Why the event began. On the first callback after a rollover boundary, the existing event closes at its scheduled boundary and a successor opens at the start of the callback's current interval. Intermediate intervals are not backfilled; observations retain their actual timestamps.",
+                "enum": ["physical_tunnel_manual_start", "physical_tunnel_on_demand_start", "rollover"]
             },
             {
-                "key": "feature.data.ext.segment_end_reason",
+                "key": "feature.data.ext.end_reason",
                 "type": "string",
-                "description": "Why the segment ended. Exactly one applies. `stopped_by_user` covers every VPN-off surface; `stopped_administratively` covers app and OS housekeeping; `process_died` is recovered on the next launch; `restarted_without_stop` means a start arrived while a segment was still open.",
+                "description": "Why the event ended. Exactly one applies. `stopped_by_user` covers every VPN-off surface; `stopped_administratively` covers app and OS housekeeping; `process_died` is recovered on the next launch; `restarted_without_stop` means a start arrived while an event was still open.",
                 "enum": [
                     "stopped_by_user",
                     "stopped_by_failure",
@@ -341,10 +341,10 @@
             {
                 "key": "feature.data.ext.failure_reason",
                 "type": "string",
-                "description": "The reason a segment FAILED. Absent on SUCCESS and UNKNOWN, which use status_reason. `routing_outage` = the tester crossed its extended failure threshold (8 consecutive failures); `stale_handshake` = no WireGuard handshake for over 5 minutes.",
+                "description": "The reason an event FAILED. Absent on SUCCESS and UNKNOWN, which use status_reason. `routing_outage` = the tester crossed its extended failure threshold (8 consecutive failures); `routing_outage_at_user_stop` = the user switched the VPN off while a tester outage was still active; `stale_handshake` = no WireGuard handshake for over 5 minutes.",
                 "enum": [
                     "routing_outage",
-                    "routing_outage_at_user_disable",
+                    "routing_outage_at_user_stop",
                     "stale_handshake",
                     "failure_recovery_failed",
                     "stopped_with_failure",
@@ -354,7 +354,7 @@
             {
                 "key": "feature.data.ext.status_reason",
                 "type": "string",
-                "description": "The activity that failed to produce a judgement, for a segment that ended UNKNOWN. `monitors_never_started` = the monitors this measurement needs never came up; `connection_tester_never_reported` = they came up but the segment ended before the first result.",
+                "description": "The activity that failed to produce a judgement, for an event that ended UNKNOWN. `monitors_never_started` = the monitors this measurement needs never came up; `connection_tester_never_reported` = they came up but the event ended before the first result.",
                 "enum": [
                     "monitors_never_started",
                     "connection_tester_never_reported",
@@ -365,7 +365,7 @@
             {
                 "key": "feature.data.ext.monitoring_coverage",
                 "type": "string",
-                "description": "How much of the segment was observed. Publish beside the SLI: rising `partial` or `none` means a degrading denominator, not better reliability.",
+                "description": "How much of the event was observed. Publish beside the SLI: rising `partial` or `none` means a degrading denominator, not better reliability.",
                 "enum": ["full", "partial", "none"]
             },
             {
@@ -377,7 +377,7 @@
             {
                 "key": "feature.data.ext.time_to_first_error_seconds_bucketed",
                 "type": "string",
-                "description": "Time from segment start to the first error of any kind, bucketed (lower end of bucket, in seconds). Absent when there were none.",
+                "description": "Time from event start to the first error of any kind, bucketed (lower end of bucket, in seconds). Absent when there were none.",
                 "enum": ["0", "60", "300", "1800", "7200", "28800", "86400"]
             },
             {
@@ -395,7 +395,7 @@
             {
                 "key": "feature.data.ext.extension_type",
                 "type": "string",
-                "description": "Which network extension served the segment.",
+                "description": "Which network extension served the event.",
                 "enum": ["app", "system", "unknown"]
             },
             {
@@ -411,7 +411,7 @@
             {
                 "key": "feature.data.ext.connection_tester_failure_active_at_end",
                 "type": "boolean",
-                "description": "Whether a tester failure was still active when the segment ended."
+                "description": "Whether a tester failure was still active when the event ended."
             },
             {
                 "key": "feature.data.ext.stale_handshake_seen",
@@ -441,7 +441,7 @@
             {
                 "key": "feature.data.ext.ip_leak_detected",
                 "type": "boolean",
-                "description": "Whether an IP leak was confirmed during the segment. Diagnostic only."
+                "description": "Whether an IP leak was confirmed during the event. Diagnostic only."
             }
         ]
     }

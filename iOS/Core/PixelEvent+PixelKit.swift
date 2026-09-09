@@ -36,6 +36,10 @@ extension Pixel.Event: PixelKit.Event {
     /// `LegacyPixelStateMigration`.
     public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .standard }
 
+    /// Several legacy names interpolate a bucketed value such as `0.5`, so they contain a `.`.
+    /// They shipped that way and the metric depends on the exact name.
+    public var allowsDotInName: Bool { true }
+
     /// Always `nil`: legacy `Pixel.Event` carried no parameters of its own, they came from the call site.
     public var parameters: [String: String]? { nil }
 
@@ -68,6 +72,7 @@ public struct LegacyNamedPixel: PixelKit.Event {
     public let name: String
     public let namePrefix: PixelKitNamePrefix = .none
     public let platformSuffixPolicy: PixelKitPlatformSuffixPolicy = .standard
+    public let allowsDotInName: Bool = true
     public let parameters: [String: String]? = nil
     public let standardParameters: [PixelKitStandardParameter]? = nil
     public let error: NSError? = nil
@@ -86,6 +91,7 @@ private struct LegacyPixelEventWithError: PixelKit.Event {
     var name: String { wrapped.name }
     var namePrefix: PixelKitNamePrefix { wrapped.namePrefix }
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { wrapped.platformSuffixPolicy }
+    var allowsDotInName: Bool { wrapped.allowsDotInName }
     var parameters: [String: String]? { wrapped.parameters }
     var standardParameters: [PixelKitStandardParameter]? { wrapped.standardParameters }
 }
@@ -97,6 +103,7 @@ private struct LegacyPixelEventWithoutPlatformSuffix: PixelKit.Event {
     var name: String { wrapped.name }
     var namePrefix: PixelKitNamePrefix { wrapped.namePrefix }
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+    var allowsDotInName: Bool { wrapped.allowsDotInName }
     var parameters: [String: String]? { wrapped.parameters }
     var standardParameters: [PixelKitStandardParameter]? { wrapped.standardParameters }
     var error: NSError? { wrapped.error }

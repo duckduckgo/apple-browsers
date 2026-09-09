@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 /// # Session Health Transitions: `event + timestamp -> new event`.
 ///
@@ -123,11 +123,7 @@ extension VPNSessionHealthWideEventData {
         }
     }
 
-    func applyingLeakCheckResult(leakDetected: Bool) -> Self {
-        guard leakDetected else {
-            return self
-        }
-
+    func markingLeakDetected() -> Self {
         return applying { next in
             next.leakDetected = true
         }
@@ -177,7 +173,7 @@ extension VPNSessionHealthWideEventData {
     }
 
     func makingNextEventAfterRollover(at now: Date, globalData: WideEventGlobalData) -> Self {
-        var next = Self(startReason: .rolloverOnTheHour, startedAt: now, extensionType: extensionType, globalData: globalData)
+        var next = Self(startReason: .rollover, startedAt: now, extensionType: extensionType, globalData: globalData)
 
         next.connectionMonitorsActive = connectionMonitorsActive
         next.isPaused = isPaused

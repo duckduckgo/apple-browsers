@@ -18,7 +18,7 @@
 
 import Foundation
 import FoundationExtensions
-import PixelKit
+import WideEvent
 
 /// # Session Health Wide Pixel
 public struct VPNSessionHealthWideEventData: WideEventData {
@@ -115,14 +115,14 @@ public struct VPNSessionHealthWideEventData: WideEventData {
         let end = endedAt ?? startedAt
 
         var params: [String: Encodable] = Dictionary(compacting: [
-            (Key.segmentEndReason, endReason?.rawValue),
+            (Key.endReason, endReason?.rawValue),
             (Key.failureReason, hasEnded ? failureReason?.rawValue : nil),
             (Key.timeToFirstError, timeToFirstError.map(Self.durationBucket)),
             (Key.staleHandshakeRecovered, staleHandshakeDetected ? staleHandshakeRecovered : nil),
             (Key.failureRecoverySucceeded, failureRecoverySucceeded),
         ])
 
-        params[Key.segmentStartReason] = startReason.rawValue
+        params[Key.startReason] = startReason.rawValue
         params[Key.extensionType] = extensionType.rawValue
         params[Key.monitoringCoverage] = monitoringCoverage.rawValue
         params[Key.eventDuration] = Self.durationBucket(eventDuration(asOf: end))
@@ -164,6 +164,7 @@ extension VPNSessionHealthWideEventData {
         }
 
         if endReason == .processDied {
+            // A later physical start recovered this persisted orphan.
             return .unknown(.extensionProcessDied)
         }
 
@@ -185,26 +186,32 @@ private extension VPNSessionHealthWideEventData {
 
     var failureReason: FailureReason? {
         if endReason == .cancelledWithError {
+            // The provider called cancelTunnel(with:).
             return .cancelledWithError
         }
 
         if stoppedByUserWithActiveFailure {
-            return .routingOutageAtUserDisable
+            // A user-initiated stop arrived during an active tester outage.
+            return .routingOutageAtUserStop
         }
 
         if failureRecoveryFailed {
+            // A recovery attempt failed, even if a later retry succeeded.
             return .failureRecoveryFailed
         }
 
         if staleHandshakeDetected {
+            // The handshake monitor reported a stale handshake, even if later recovered.
             return .staleHandshake
         }
 
         if extendedRoutingOutageDetected {
+            // One tester outage reached the extended failure threshold, even if later recovered.
             return .routingOutage
         }
 
         if endReason == .stoppedByFailure {
+            // The OS supplied a failure-class provider stop reason.
             return .stoppedWithFailure
         }
 
@@ -213,13 +220,16 @@ private extension VPNSessionHealthWideEventData {
 
     var unknownReason: UnknownReason {
         if !monitoringStarted {
+            // No successful monitoring start was recorded or inherited from rollover.
             return .monitorsNeverStarted
         }
 
         if endReason == .stoppedWithoutNetwork {
+            // The OS reported noNetworkAvailable before health monitoring ever activated.
             return .osStoppedWithoutNetwork
         }
 
+        // Monitors started, but no tester report established active, unpaused coverage in this event.
         return .connectionTesterNeverReported
     }
 
@@ -271,7 +281,7 @@ extension VPNSessionHealthWideEventData {
     public enum EventStartReason: String, Codable, CaseIterable {
         case physicalTunnelStartManual = "physical_tunnel_manual_start"
         case physicalTunnelStartOnDemand = "physical_tunnel_on_demand_start"
-        case rolloverOnTheHour = "rollover_on_the_hour"
+        case rollover
     }
 
     /// Why an event ended. Exactly one applies.
@@ -295,7 +305,7 @@ extension VPNSessionHealthWideEventData {
         case failureRecoveryFailed = "failure_recovery_failed"
         case staleHandshake = "stale_handshake"
         case routingOutage = "routing_outage"
-        case routingOutageAtUserDisable = "routing_outage_at_user_disable"
+        case routingOutageAtUserStop = "routing_outage_at_user_stop"
         case stoppedWithFailure = "stopped_with_failure"
     }
 
@@ -337,7 +347,7 @@ extension VPNSessionHealthWideEventData {
 
 extension VPNSessionHealthWideEventData.EventEndReason {
 
-    /// End reasons that are failures on their own, regardless of the segment's diagnostics.
+    /// End reasons that are failures on their own, regardless of the event's diagnostics.
     var isFailure: Bool {
         self == .stoppedByFailure || self == .cancelledWithError
     }
@@ -348,9 +358,9 @@ extension VPNSessionHealthWideEventData.EventEndReason {
 extension WideEventParameter {
 
     public enum VPNSessionHealthFeature {
-        static let segmentStartReason = "feature.data.ext.segment_start_reason"
+        static let startReason = "feature.data.ext.start_reason"
         static let extensionType = "feature.data.ext.extension_type"
-        static let segmentEndReason = "feature.data.ext.segment_end_reason"
+        static let endReason = "feature.data.ext.end_reason"
         static let failureReason = "feature.data.ext.failure_reason"
         static let monitoringCoverage = "feature.data.ext.monitoring_coverage"
         static let eventDuration = "feature.data.ext.event_duration_seconds_bucketed"

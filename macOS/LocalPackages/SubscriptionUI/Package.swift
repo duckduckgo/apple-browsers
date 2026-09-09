@@ -13,6 +13,7 @@ let package = Package(
             targets: ["SubscriptionUI"]),
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/WideEvent"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../PreferencesUI-macOS"),
         .package(path: "../SwiftUIExtensions"),
@@ -22,6 +23,7 @@ let package = Package(
         .target(
             name: "SubscriptionUI",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),

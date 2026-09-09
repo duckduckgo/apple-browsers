@@ -22,7 +22,7 @@ import FoundationExtensions
 import Foundation
 import os.log
 import Persistence
-import PixelKit
+import WideEvent
 import PrivacyConfig
 
 /// Orchestrates Wide Event tracking for Sparkle update cycles.

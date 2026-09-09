@@ -22,6 +22,7 @@ import FoundationExtensions
 import WebKit
 import os.log
 import PixelKit
+import WideEvent
 
 import WKAbstractions
 
@@ -185,7 +186,7 @@ public class WebCacheManager: WebsiteDataManaging {
             await cookieStore.deleteCookie(cookie)
         }
         let totalTime = CACurrentMediaTime() - startTime
-        Pixel.fire(pixel: .cookieDeletionTime(.init(number: totalTime)))
+        PixelKit.fire(Pixel.Event.cookieDeletionTime(.init(number: totalTime)))
     }
 
     public func clear(dataStore: any DDGWebsiteDataStore) async -> WebsiteDataClearingResult {
@@ -309,9 +310,9 @@ extension WebCacheManager {
     private func fireDataClearingTimePixel(scope: Scope, totalTime: Double) {
         switch scope {
         case .all:
-            Pixel.fire(pixel: .clearDataInDefaultPersistence(.init(number: totalTime)))
+            PixelKit.fire(Pixel.Event.clearDataInDefaultPersistence(.init(number: totalTime)))
         case .limited:
-            Pixel.fire(pixel: .clearDataInDefaultPersistenceSingleTab(.init(number: totalTime)))
+            PixelKit.fire(Pixel.Event.clearDataInDefaultPersistenceSingleTab(.init(number: totalTime)))
         }
     }
 

@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "description": "Sent once per VPN runtime segment: from the WireGuard adapter coming up until the provider stops, cancels, transitions unexpectedly, or the next UTC hour boundary rolls it over on the next instrumentation callback. Measures whether an already-running VPN stayed healthy. Separate from macos-vpn-connection, which measures startup.",
+    "description": "Sent once per VPN runtime event: from the WireGuard adapter coming up until the provider stops, cancels, transitions unexpectedly, or the next rollover boundary closes it on the next instrumentation callback. Measures whether an already-running VPN stayed healthy. Separate from macos-vpn-connection, which measures startup.",
     "$comment": "{\"owners\":[\"jleandroperez\"]}",
     "type": "object",
     "required": ["meta", "global", "feature", "app"],
@@ -76,14 +76,14 @@
                             "type": "object",
                             "additionalProperties": false,
                             "properties": {
-                                "segment_start_reason": {
+                                "start_reason": {
                                     "type": "string",
-                                    "description": "Why the segment began. On the first callback after a UTC hour boundary, the existing segment closes at its scheduled boundary and a successor opens at the start of the callback's UTC hour. Intermediate hours are not backfilled; observations retain their actual timestamps.",
-                                    "enum": ["physical_tunnel_manual_start", "physical_tunnel_on_demand_start", "rollover_on_the_hour"]
+                                    "description": "Why the event began. On the first callback after a rollover boundary, the existing event closes at its scheduled boundary and a successor opens at the start of the callback's current interval. Intermediate intervals are not backfilled; observations retain their actual timestamps.",
+                                    "enum": ["physical_tunnel_manual_start", "physical_tunnel_on_demand_start", "rollover"]
                                 },
-                                "segment_end_reason": {
+                                "end_reason": {
                                     "type": "string",
-                                    "description": "Why the segment ended. Exactly one applies. `stopped_by_user` covers every VPN-off surface; `stopped_administratively` covers app and OS housekeeping; `process_died` is recovered on the next launch; `restarted_without_stop` means a start arrived while a segment was still open.",
+                                    "description": "Why the event ended. Exactly one applies. `stopped_by_user` covers every VPN-off surface; `stopped_administratively` covers app and OS housekeeping; `process_died` is recovered on the next launch; `restarted_without_stop` means a start arrived while an event was still open.",
                                     "enum": [
                                         "stopped_by_user",
                                         "stopped_by_failure",
@@ -97,10 +97,10 @@
                                 },
                                 "failure_reason": {
                                     "type": "string",
-                                    "description": "The reason a segment FAILED. Absent on SUCCESS and UNKNOWN, which use status_reason. `routing_outage` = the tester crossed its extended failure threshold (8 consecutive failures); `stale_handshake` = no WireGuard handshake for over 5 minutes.",
+                                    "description": "The reason an event FAILED. Absent on SUCCESS and UNKNOWN, which use status_reason. `routing_outage` = the tester crossed its extended failure threshold (8 consecutive failures); `routing_outage_at_user_stop` = the user switched the VPN off while a tester outage was still active; `stale_handshake` = no WireGuard handshake for over 5 minutes.",
                                     "enum": [
                                         "routing_outage",
-                                        "routing_outage_at_user_disable",
+                                        "routing_outage_at_user_stop",
                                         "stale_handshake",
                                         "failure_recovery_failed",
                                         "stopped_with_failure",
@@ -109,7 +109,7 @@
                                 },
                                 "status_reason": {
                                     "type": "string",
-                                    "description": "The activity that failed to produce a judgement, for a segment that ended UNKNOWN. `monitors_never_started` = the monitors this measurement needs never came up; `connection_tester_never_reported` = they came up but the segment ended before the first result.",
+                                    "description": "The activity that failed to produce a judgement, for an event that ended UNKNOWN. `monitors_never_started` = the monitors this measurement needs never came up; `connection_tester_never_reported` = they came up but the event ended before the first result.",
                                     "enum": [
                                         "monitors_never_started",
                                         "connection_tester_never_reported",
@@ -119,7 +119,7 @@
                                 },
                                 "monitoring_coverage": {
                                     "type": "string",
-                                    "description": "How much of the segment was observed. Publish beside the SLI: rising `partial` or `none` means a degrading denominator, not better reliability.",
+                                    "description": "How much of the event was observed. Publish beside the SLI: rising `partial` or `none` means a degrading denominator, not better reliability.",
                                     "enum": ["full", "partial", "none"]
                                 },
                                 "event_duration_seconds_bucketed": {
@@ -129,7 +129,7 @@
                                 },
                                 "time_to_first_error_seconds_bucketed": {
                                     "type": "string",
-                                    "description": "Time from segment start to the first error of any kind, bucketed (lower end of bucket, in seconds). Absent when there were none.",
+                                    "description": "Time from event start to the first error of any kind, bucketed (lower end of bucket, in seconds). Absent when there were none.",
                                     "enum": ["0", "60", "300", "1800", "7200", "28800", "86400"]
                                 },
                                 "connection_tester_outage_count_bucketed": {
@@ -144,7 +144,7 @@
                                 },
                                 "extension_type": {
                                     "type": "string",
-                                    "description": "Which network extension served the segment.",
+                                    "description": "Which network extension served the event.",
                                     "enum": ["app", "system", "unknown"]
                                 },
                                 "connection_tester_failure_seen": {
@@ -157,7 +157,7 @@
                                 },
                                 "connection_tester_failure_active_at_end": {
                                     "type": "boolean",
-                                    "description": "Whether a tester failure was still active when the segment ended."
+                                    "description": "Whether a tester failure was still active when the event ended."
                                 },
                                 "stale_handshake_seen": {
                                     "type": "boolean",
@@ -181,7 +181,7 @@
                                 },
                                 "ip_leak_detected": {
                                     "type": "boolean",
-                                    "description": "Whether an IP leak was confirmed during the segment. Diagnostic only."
+                                    "description": "Whether an IP leak was confirmed during the event. Diagnostic only."
                                 }
                             }
                         }

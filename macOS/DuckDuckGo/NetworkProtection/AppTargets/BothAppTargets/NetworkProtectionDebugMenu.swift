@@ -50,6 +50,12 @@ final class NetworkProtectionDebugMenu: NSMenu {
     private let excludeDDGBrowserTrafficFromVPN = NSMenuItem(title: "DDG Browser", action: #selector(toggleExcludeDDGBrowser))
     private let excludeDBPTrafficFromVPN = NSMenuItem(title: "DBP Background Agent", action: #selector(toggleExcludeDBPBackgroundAgent))
 
+#if DEBUG
+    private let sessionHealthDebugRolloverMenuItem = NSMenuItem(
+        title: "4 Minutes Rollover",
+        action: #selector(toggleSessionHealthDebugRollover))
+#endif
+
     private let shouldEnforceRoutesMenuItem = NSMenuItem(title: "enforceRoutes", action: #selector(NetworkProtectionDebugMenu.toggleEnforceRoutesAction))
     private let shouldIncludeAllNetworksMenuItem = NSMenuItem(title: "includeAllNetworks", action: #selector(NetworkProtectionDebugMenu.toggleIncludeAllNetworks))
     private let disableRekeyingMenuItem = NSMenuItem(title: "Disable Rekeying", action: #selector(NetworkProtectionDebugMenu.toggleRekeyingDisabled))
@@ -191,6 +197,12 @@ final class NetworkProtectionDebugMenu: NSMenu {
                 NSMenuItem(title: "Validity").submenu(registrationKeyValidityMenu)
 #endif
             }
+
+#if DEBUG
+            NSMenuItem(title: "Session Health") {
+                sessionHealthDebugRolloverMenuItem.targetting(self)
+            }
+#endif
 
             NSMenuItem(title: "Simulate Subscription Expiration in Tunnel", action: #selector(NetworkProtectionDebugMenu.simulateSubscriptionExpirationInTunnel))
                 .targetting(self)
@@ -399,6 +411,12 @@ final class NetworkProtectionDebugMenu: NSMenu {
             try? await debugUtilities.expireRegistrationKeyNow()
         }
     }
+
+#if DEBUG
+    @objc private func toggleSessionHealthDebugRollover(_ sender: Any?) {
+        settings.isSessionHealthDebugRolloverEnabled.toggle()
+    }
+#endif
 
     @objc func toggleRekeyingDisabled(_ sender: Any?) {
         settings.disableRekeying.toggle()
@@ -645,6 +663,9 @@ final class NetworkProtectionDebugMenu: NSMenu {
     }
 
     private func updateNetworkProtectionMenuItemsState() {
+#if DEBUG
+        sessionHealthDebugRolloverMenuItem.state = settings.isSessionHealthDebugRolloverEnabled ? .on : .off
+#endif
         shouldEnforceRoutesMenuItem.state = settings.enforceRoutes ? .on : .off
         shouldIncludeAllNetworksMenuItem.state = settings.includeAllNetworks ? .on : .off
         excludeLocalNetworksMenuItem.state = settings.excludeLocalNetworks ? .on : .off

@@ -24,6 +24,7 @@ import NetworkExtension
 import Networking
 import os.log
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Subscription
 import VPN
@@ -528,7 +529,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let sessionHealth = DefaultVPNSessionHealthInstrumentation(
             wideEvent: wideEvent,
             extensionType: { Self.isAppex ? .app : .system }(),
-            isEnabled: { settings.sessionHealthTelemetryEnabled })
+            isTelemetryEnabled: { settings.sessionHealthTelemetryEnabled },
+            isDebugRolloverEnabled: { settings.isSessionHealthDebugRolloverEnabled })
 
         // MARK: - Subscription configuration
 

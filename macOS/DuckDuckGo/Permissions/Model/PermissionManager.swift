@@ -36,6 +36,7 @@ protocol PermissionManagerProtocol: AnyObject {
 
     typealias PublishedPermission = (domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision)
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { get }
+    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> { get }
 
     func hasPermissionPersisted(forDomain domain: String, permissionType: PermissionType) -> Bool
     func hasAnyPermissionPersisted(forDomain domain: String) -> Bool
@@ -45,7 +46,7 @@ protocol PermissionManagerProtocol: AnyObject {
     /// `nil` when nothing is persisted. Use only for cleanup or migration paths that genuinely need
     /// to know the on-disk state; everything else should call `permission(forDomain:permissionType:)`.
     func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision?
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType)
+    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType, lastModified: Date)
 
     func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
     func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
@@ -56,6 +57,12 @@ protocol PermissionManagerProtocol: AnyObject {
     var persistedPermissionTypes: Set<PermissionType> { get }
 }
 
+extension PermissionManagerProtocol {
+    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
+        setPermission(decision, forDomain: domain, permissionType: permissionType, lastModified: Date())
+    }
+}
+
 final class PermissionManager: PermissionManagerProtocol {
 
     private let store: PermissionStore
@@ -64,6 +71,10 @@ final class PermissionManager: PermissionManagerProtocol {
 
     private let permissionSubject = PassthroughSubject<PublishedPermission, Never>()
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { permissionSubject.eraseToAnyPublisher() }
+    private let persistedPermissionsSubject = CurrentValueSubject<[WebsitePermissionEntry], Never>([])
+    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> {
+        persistedPermissionsSubject.eraseToAnyPublisher()
+    }
 
     init(store: PermissionStore, decisionOverride: PermissionDecisionOverriding? = nil) {
         self.store = store
@@ -77,6 +88,7 @@ final class PermissionManager: PermissionManagerProtocol {
             for entity in entities {
                 self.set(entity.permission, forDomain: entity.domain.droppingWwwPrefix(), permissionType: entity.type)
             }
+            publishPersistedPermissions()
         } catch {
             Logger.general.error("PermissionStore: Failed to load permissions")
         }
@@ -88,6 +100,22 @@ final class PermissionManager: PermissionManagerProtocol {
     }
 
     private(set) var persistedPermissionTypes = Set<PermissionType>()
+
+    private func publishPersistedPermissions() {
+        let entries = permissions.flatMap { domain, permissions in
+            permissions.map { permissionType, storedPermission in
+                WebsitePermissionEntry(domain: domain, permissionType: permissionType, decision: storedPermission.decision)
+            }
+        }.sorted {
+            if $0.domain == $1.domain {
+                return $0.permissionType.rawValue < $1.permissionType.rawValue
+            }
+            return $0.domain < $1.domain
+        }
+
+        persistedPermissionTypes = Set(entries.map(\.permissionType))
+        persistedPermissionsSubject.send(entries)
+    }
 
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision {
         let normalized = domain.droppingWwwPrefix()
@@ -115,7 +143,12 @@ final class PermissionManager: PermissionManagerProtocol {
         return Array(domainPermissions.keys)
     }
 
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
+    func setPermission(
+        _ decision: PersistedPermissionDecision,
+        forDomain domain: String,
+        permissionType: PermissionType,
+        lastModified: Date = Date()
+    ) {
 
         let storedPermission: StoredPermission
         let domain = domain.droppingWwwPrefix()
@@ -131,17 +164,24 @@ final class PermissionManager: PermissionManagerProtocol {
         }
         if var oldValue = permissions[domain]?[permissionType] {
             oldValue.decision = decision
+            oldValue.lastModified = lastModified
             storedPermission = oldValue
-            store.update(objectWithId: oldValue.id, decision: decision)
+            store.update(objectWithId: oldValue.id, decision: decision, lastModified: lastModified)
         } else {
             do {
-                storedPermission = try store.add(domain: domain, permissionType: permissionType, decision: decision)
+                storedPermission = try store.add(
+                    domain: domain,
+                    permissionType: permissionType,
+                    decision: decision,
+                    lastModified: lastModified
+                )
             } catch {
                 Logger.general.error("PermissionStore: Failed to store permission")
                 return
             }
         }
         self.set(storedPermission, forDomain: domain, permissionType: permissionType)
+        publishPersistedPermissions()
     }
 
     func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
@@ -150,6 +190,7 @@ final class PermissionManager: PermissionManagerProtocol {
         permissions = permissions.filter {
             fireproofDomains.isFireproof(fireproofDomain: $0.key)
         }
+        publishPersistedPermissions()
         store.clear(except: permissions.values.reduce(into: [StoredPermission](), {
             $0.append(contentsOf: $1.values)
         }), completionHandler: { error in
@@ -168,6 +209,7 @@ final class PermissionManager: PermissionManagerProtocol {
             let baseDomain = tld.eTLDplus1(permission.key) ?? ""
             return !baseDomains.contains(baseDomain)
         }
+        publishPersistedPermissions()
         store.clear(except: permissions.values.reduce(into: [StoredPermission](), {
             $0.append(contentsOf: $1.values)
         }), completionHandler: { error in
@@ -186,6 +228,10 @@ final class PermissionManager: PermissionManagerProtocol {
 
         // Remove from in-memory cache
         permissions[domain]?[permissionType] = nil
+        if permissions[domain]?.isEmpty == true {
+            permissions[domain] = nil
+        }
+        publishPersistedPermissions()
 
         // Remove from persistent storage
         store.remove(objectWithId: storedPermission.id)
@@ -218,7 +264,8 @@ extension PermissionManager: PermissionManagerDebugging {
                                         permissionType: row.permissionType,
                                         allow: row.allow,
                                         isRemoved: row.isRemoved,
-                                        effectiveDecision: effectiveDecision)
+                                        effectiveDecision: effectiveDecision,
+                                        lastModified: row.lastModified)
         }
     }
 

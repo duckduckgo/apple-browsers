@@ -23,6 +23,7 @@ import Foundation
 import UIKit
 import UserNotifications
 import os.log
+import PixelKit
 import Subscription
 
 protocol SubscriptionExpirationReminderScheduling: AnyObject {
@@ -50,8 +51,7 @@ final class DefaultSubscriptionExpirationReminderScheduler: SubscriptionExpirati
     private let isFeatureEnabled: () -> Bool
     private let notificationCenter: UNUserNotificationCenterRepresentable
     private let dateProvider: () -> Date
-    private let pixelFiring: any PixelFiring.Type
-    private let dailyPixelFiring: any DailyPixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private var cancellables: Set<AnyCancellable> = []
 
     init(subscriptionManager: SubscriptionManager,
@@ -59,14 +59,12 @@ final class DefaultSubscriptionExpirationReminderScheduler: SubscriptionExpirati
          notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
          dateProvider: @escaping () -> Date = Date.init,
          notificationCenterObserver: NotificationCenter = .default,
-         pixelFiring: any PixelFiring.Type = Pixel.self,
-         dailyPixelFiring: any DailyPixelFiring.Type = DailyPixel.self) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.subscriptionManager = subscriptionManager
         self.isFeatureEnabled = isFeatureEnabled
         self.notificationCenter = notificationCenter
         self.dateProvider = dateProvider
         self.pixelFiring = pixelFiring
-        self.dailyPixelFiring = dailyPixelFiring
 
         // In-app subscription operations post .subscriptionDidChange after updating the cache.
         notificationCenterObserver.publisher(for: .subscriptionDidChange)
@@ -129,15 +127,11 @@ final class DefaultSubscriptionExpirationReminderScheduler: SubscriptionExpirati
 
         do {
             try await notificationCenter.add(request)
-            pixelFiring.fire(.subscriptionExpirationReminderScheduled, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.subscriptionExpirationReminderScheduled)
             Logger.subscription.log("Expiration reminder scheduled for \(fireDate, privacy: .public)")
         } catch {
             Logger.subscription.error("Failed to schedule expiration reminder: \(error.localizedDescription, privacy: .public)")
-            pixelFiring.fire(pixel: .subscriptionExpirationReminderSchedulingError,
-                             error: error,
-                             includedParameters: [.appVersion],
-                             withAdditionalParameters: [:],
-                             onComplete: { _ in })
+            pixelFiring?.fire(Pixel.Event.subscriptionExpirationReminderSchedulingError.withError(error))
         }
     }
 
@@ -165,7 +159,7 @@ final class DefaultSubscriptionExpirationReminderScheduler: SubscriptionExpirati
         if let subscription, Self.subscriptionWarrantsReminder(subscription) {
             return
         }
-        dailyPixelFiring.fireDailyAndCount(.subscriptionExpirationReminderCancelled, error: nil, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.subscriptionExpirationReminderCancelled, frequency: .dailyAndCount)
         cancelPendingReminder()
     }
 

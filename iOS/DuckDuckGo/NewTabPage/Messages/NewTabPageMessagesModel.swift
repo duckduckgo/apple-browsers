@@ -20,6 +20,7 @@
 import Combine
 import Core
 import Foundation
+import PixelKit
 import RemoteMessaging
 
 @MainActor
@@ -32,7 +33,7 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     private let homePageMessagesConfiguration: HomePageMessagesConfiguration
     private let notificationCenter: NotificationCenter
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private let subscriptionDataReporter: SubscriptionDataReporting?
     private let messageActionHandler: RemoteMessagingActionHandling
     private let imageLoader: RemoteMessagingImageLoading
@@ -41,7 +42,7 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
          notificationCenter: NotificationCenter = .default,
-         pixelFiring: PixelFiring.Type = Pixel.self,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
          messageActionHandler: RemoteMessagingActionHandling,
          imageLoader: RemoteMessagingImageLoading,
@@ -168,8 +169,8 @@ final class NewTabPageMessagesModel: ObservableObject {
                         await self.dismissHomeMessage(message, presentationContext: presentationContext)
                     }
                     if remoteMessage.isMetricsEnabled {
-                        pixelFiring.fire(.remoteMessageActionClicked,
-                                         withAdditionalParameters: self.additionalParameters(for: remoteMessage.id))
+                        pixelFiring?.fire(Pixel.Event.remoteMessageActionClicked,
+                                          options: .parameters(self.additionalParameters(for: remoteMessage.id)))
                     }
 
                 case .primaryAction(let isSharing):
@@ -177,8 +178,8 @@ final class NewTabPageMessagesModel: ObservableObject {
                         await self.dismissHomeMessage(message, presentationContext: presentationContext)
                     }
                     if remoteMessage.isMetricsEnabled {
-                        pixelFiring.fire(.remoteMessagePrimaryActionClicked,
-                                         withAdditionalParameters: self.additionalParameters(for: remoteMessage.id))
+                        pixelFiring?.fire(Pixel.Event.remoteMessagePrimaryActionClicked,
+                                          options: .parameters(self.additionalParameters(for: remoteMessage.id)))
                     }
 
                 case .secondaryAction(let isSharing):
@@ -186,15 +187,15 @@ final class NewTabPageMessagesModel: ObservableObject {
                         await self.dismissHomeMessage(message, presentationContext: presentationContext)
                     }
                     if remoteMessage.isMetricsEnabled {
-                        pixelFiring.fire(.remoteMessageSecondaryActionClicked,
-                                         withAdditionalParameters: self.additionalParameters(for: remoteMessage.id))
+                        pixelFiring?.fire(Pixel.Event.remoteMessageSecondaryActionClicked,
+                                          options: .parameters(self.additionalParameters(for: remoteMessage.id)))
                     }
 
                 case .close:
                     await self.dismissHomeMessage(message, presentationContext: presentationContext)
                     if remoteMessage.isMetricsEnabled {
-                        pixelFiring.fire(.remoteMessageDismissed,
-                                         withAdditionalParameters: self.additionalParameters(for: remoteMessage.id))
+                        pixelFiring?.fire(Pixel.Event.remoteMessageDismissed,
+                                          options: .parameters(self.additionalParameters(for: remoteMessage.id)))
                     }
 
                 }

@@ -22,7 +22,7 @@ import Foundation
 import FoundationExtensions
 import Network
 import os.log
-import PixelKit
+import WideEvent
 
 private enum LeakCheckIPError: Error, CustomNSError {
     case malformedObservedIP
@@ -71,8 +71,7 @@ public actor VPNLeakCheckService {
     private let stunClient: LeakCheckSTUNClient
     private let wideEvent: WideEventManaging
 
-    /// Reports `true` whether a completed check found a leak
-    private let onClassified: (@Sendable (Bool) -> Void)?
+    private let onLeakDetected: (@Sendable () -> Void)?
 
     private var currentCheck: Task<Void, Never>?
     private var currentCheckID: UInt64 = 0
@@ -100,7 +99,7 @@ public actor VPNLeakCheckService {
         httpClient: LeakCheckHTTPClient,
         stunClient: LeakCheckSTUNClient,
         wideEvent: WideEventManaging,
-        onClassified: (@Sendable (Bool) -> Void)? = nil
+        onLeakDetected: (@Sendable () -> Void)? = nil
     ) {
         self.configuration = configuration
         self.egressInfo = egressInfo
@@ -108,7 +107,7 @@ public actor VPNLeakCheckService {
         self.tunnelPathGeneration = tunnelPathGeneration
         self.httpClient = httpClient
         self.stunClient = stunClient
-        self.onClassified = onClassified
+        self.onLeakDetected = onLeakDetected
         self.wideEvent = wideEvent
     }
 
@@ -318,7 +317,9 @@ public actor VPNLeakCheckService {
         )
         wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
 
-        onClassified?(status == .failure)
+        if status == .failure {
+            onLeakDetected?()
+        }
     }
 
     private static func describeStatus(_ status: WideEventStatus) -> String {

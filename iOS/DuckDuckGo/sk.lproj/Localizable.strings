@@ -577,9 +577,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Chyba synchronizácie a zálohovania";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Nastavenia synchronizácie";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Skús to znova.";
 
@@ -2262,6 +2259,12 @@
 
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Zhrň túto knihu.";
+
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Zhrň tento dokument";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Zhrň tento dokument.";
 
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Zhrň túto stránku";
@@ -5194,17 +5197,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Upozornenie SwiftUI";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Kód obnovenia bol skopírovaný do schránky";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Zmazanie údajov servera";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Tvoja záloha bude vymazaná zo servera. Všetky zariadenia budú odpojené od synchronizácie, ale zo žiadneho zariadenia sa nič neodstráni.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Zmazať údaje servera?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Synchronizovať teraz";
@@ -5284,11 +5278,17 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Odstrániť zariadenie?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Údaje servera boli zmazané";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Všetky zariadenia používajúce Sync & Backup budú odpojené a tvoje synchronizované údaje budú zmazané zo servera.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Chceš vypnúť Sync & Backup a zmazať údaje zo servera?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Bolo pridané nové zariadenie.";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup je povolené";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Kód obnovy bol skopírovaný";

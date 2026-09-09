@@ -74,6 +74,9 @@ final class NetworkProtectionDebugViewController: UITableViewController {
     enum DebugFeatureRows: Int, CaseIterable {
         case toggleAlwaysOn
         case showDebugEventNotifications
+#if DEBUG
+        case isSessionHealthDebugRolloverEnabled
+#endif
     }
 
     enum TunnelSettingsRows: Int, CaseIterable {
@@ -205,6 +208,7 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         cell.textLabel?.textColor = .label
         cell.detailTextLabel?.text = nil
         cell.accessoryType = .none
+        cell.textLabel?.numberOfLines = 1
         cell.accessoryView = nil
         cell.isUserInteractionEnabled = true
         cell.selectionStyle = .default
@@ -418,6 +422,12 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             } else {
                 cell.accessoryType = .checkmark
             }
+#if DEBUG
+        case .isSessionHealthDebugRolloverEnabled:
+            cell.textLabel?.text = "Session Health: 4 Minutes Rollover"
+            cell.textLabel?.numberOfLines = 0
+            cell.accessoryType = AppDependencyProvider.shared.vpnSettings.isSessionHealthDebugRolloverEnabled ? .checkmark : .none
+#endif
         default:
             break
         }
@@ -431,6 +441,11 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         case .showDebugEventNotifications:
             AppDependencyProvider.shared.vpnSettings.showDebugVPNEventNotifications.toggle()
             tableView.reloadRows(at: [indexPath], with: .none)
+#if DEBUG
+        case .isSessionHealthDebugRolloverEnabled:
+            AppDependencyProvider.shared.vpnSettings.isSessionHealthDebugRolloverEnabled.toggle()
+            tableView.reloadRows(at: [indexPath], with: .none)
+#endif
         default:
             break
         }

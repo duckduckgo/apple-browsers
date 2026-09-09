@@ -22,6 +22,7 @@ import SwiftUI
 import LocalAuthentication
 import BrowserServicesKit
 import Core
+import PixelKit
 
 class AutofillLoginPromptViewController: UIViewController {
 
@@ -75,9 +76,9 @@ class AutofillLoginPromptViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         if trigger == AutofillUserScript.GetTriggerType.autoprompt {
-            Pixel.fire(pixel: .autofillLoginsFillLoginInlineAutopromptDisplayed)
+            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineAutopromptDisplayed)
         } else {
-            Pixel.fire(pixel: .autofillLoginsFillLoginInlineManualDisplayed)
+            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineManualDisplayed)
         }
     }
     
@@ -100,9 +101,9 @@ class AutofillLoginPromptViewController: UIViewController {
 extension AutofillLoginPromptViewController: UISheetPresentationControllerDelegate {
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
         if self.trigger == AutofillUserScript.GetTriggerType.autoprompt {
-            Pixel.fire(pixel: .autofillLoginsAutopromptDismissed)
+            PixelKit.fire(Pixel.Event.autofillLoginsAutopromptDismissed)
         } else {
-            Pixel.fire(pixel: .autofillLoginsFillLoginInlineManualDismissed)
+            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineManualDismissed)
         }
         completion?(nil, false)
     }
@@ -112,9 +113,9 @@ extension AutofillLoginPromptViewController: AutofillLoginPromptViewModelDelegat
     func autofillLoginPromptViewModel(_ viewModel: AutofillLoginPromptViewModel, didSelectAccount account: SecureVaultModels.WebsiteAccount) {
         let parameters = usageProvider.formattedFillDate.flatMap { [PixelParameters.lastUsed: $0] } ?? [:]
         if trigger == AutofillUserScript.GetTriggerType.autoprompt {
-            Pixel.fire(pixel: .autofillLoginsFillLoginInlineAutopromptConfirmed, withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineAutopromptConfirmed, options: .parameters(parameters))
         } else {
-            Pixel.fire(pixel: .autofillLoginsFillLoginInlineManualConfirmed, withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineManualConfirmed, options: .parameters(parameters))
         }
 
         onAccountSelected(account)
@@ -135,19 +136,19 @@ extension AutofillLoginPromptViewController: AutofillLoginPromptViewModelDelegat
             let completion = self.completion
             dismiss(animated: true, completion: nil)
             let reason = reason
-            Pixel.fire(pixel: .autofillLoginsFillLoginInlineAuthenticationDeviceDisplayed)
+            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineAuthenticationDeviceDisplayed)
             context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason ) { success, error in
             
                 DispatchQueue.main.async {
                     if success {
-                        Pixel.fire(pixel: .autofillLoginsFillLoginInlineAuthenticationDeviceAuthAuthenticated)
+                        PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineAuthenticationDeviceAuthAuthenticated)
                         AppDependencyProvider.shared.autofillLoginSession.startSession()
                         completion?(account, false)
                     } else {
                         if let error = error as? NSError, error.code == LAError.userCancel.rawValue {
-                            Pixel.fire(pixel: .autofillLoginsFillLoginInlineAuthenticationDeviceAuthCancelled)
+                            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineAuthenticationDeviceAuthCancelled)
                         } else {
-                            Pixel.fire(pixel: .autofillLoginsFillLoginInlineAuthenticationDeviceAuthFailed)
+                            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineAuthenticationDeviceAuthFailed)
                         }
                         print(error?.localizedDescription ?? "Failed to authenticate but error nil")
                         AppDependencyProvider.shared.autofillLoginSession.endSession()
@@ -159,7 +160,7 @@ extension AutofillLoginPromptViewController: AutofillLoginPromptViewModelDelegat
             // When system authentication isn't available, for now just fail silently
             // This should never happen since we check for auth avaiablity before showing anything
             // (or rarely if the user backgrounds the app, turns auth off, then comes back) 
-            Pixel.fire(pixel: .autofillLoginsFillLoginInlineAuthenticationDeviceAuthUnavailable)
+            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineAuthenticationDeviceAuthUnavailable)
             AppDependencyProvider.shared.autofillLoginSession.endSession()
             dismiss(animated: true) {
                 self.completion?(nil, false)
@@ -170,9 +171,9 @@ extension AutofillLoginPromptViewController: AutofillLoginPromptViewModelDelegat
     func autofillLoginPromptViewModelDidCancel(_ viewModel: AutofillLoginPromptViewModel) {
         dismiss(animated: true) {
             if self.trigger == AutofillUserScript.GetTriggerType.autoprompt {
-                Pixel.fire(pixel: .autofillLoginsAutopromptDismissed)
+                PixelKit.fire(Pixel.Event.autofillLoginsAutopromptDismissed)
             } else {
-                Pixel.fire(pixel: .autofillLoginsFillLoginInlineManualDismissed)
+                PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineManualDismissed)
             }
             
             self.completion?(nil, false)

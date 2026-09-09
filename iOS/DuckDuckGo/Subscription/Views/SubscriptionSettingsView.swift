@@ -27,6 +27,7 @@ import Subscription
 import VPN
 import UIComponents
 import BrowserServicesKit
+import PixelKit
 
 enum SubscriptionSettingsViewConfiguration {
     case subscribed
@@ -65,7 +66,7 @@ struct SubscriptionSettingsViewV2: View {
     var body: some View {
         optionsView
             .onFirstAppear {
-                Pixel.fire(pixel: .ddgSubscriptionSettings, debounce: 1)
+                PixelKit.fire(Pixel.Event.ddgSubscriptionSettings, frequency: .debounce(seconds: 1))
             }
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: settingsViewModel.state.subscription.shouldDisplayRestoreSubscriptionError) { value in
@@ -202,7 +203,7 @@ struct SubscriptionSettingsViewV2: View {
                         Task {
                             if active {
                                 viewModel.manageSubscription()
-                                Pixel.fire(pixel: .ddgSubscriptionManagementPlanBilling, debounce: 1)
+                                PixelKit.fire(Pixel.Event.ddgSubscriptionManagementPlanBilling, frequency: .debounce(seconds: 1))
                             } else if isEligibleForWinBackCampaign {
                                 takeWinBackOffer?()
                             } else {
@@ -262,7 +263,7 @@ struct SubscriptionSettingsViewV2: View {
                 message: Text(UserText.subscriptionRemoveFromDeviceConfirmText),
                 primaryButton: .cancel(Text(UserText.subscriptionRemoveCancel)) {},
                 secondaryButton: .destructive(Text(UserText.subscriptionRemove)) {
-                    Pixel.fire(pixel: .ddgSubscriptionManagementRemoval)
+                    PixelKit.fire(Pixel.Event.ddgSubscriptionManagementRemoval)
                     viewModel.removeSubscription()
                     dismiss()
                 }
@@ -555,7 +556,7 @@ struct SubscriptionSettingsViewV2: View {
         .onChange(of: isShowingManageEmailView) { value in
             if value {
                 if let email = viewModel.state.subscriptionEmail, !email.isEmpty {
-                    Pixel.fire(pixel: .ddgSubscriptionManagementEmail, debounce: 1)
+                    PixelKit.fire(Pixel.Event.ddgSubscriptionManagementEmail, frequency: .debounce(seconds: 1))
                 }
             }
         }

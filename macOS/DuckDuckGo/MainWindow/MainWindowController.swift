@@ -178,24 +178,28 @@ final class MainWindowController: NSWindowController {
             return
         }
 
-        // Assign the cohort before choosing the onboarding behavior.
-        let experiment = featureFlagger.map(OnboardingNonBlockingExperiment.init)
-        if isEligibleForNonBlockingExperiment {
-            experiment?.enroll()
-        }
-        let isNonBlocking = experiment?.isNonBlocking == true
-        let windowControllersManager = Application.appDelegate.windowControllersManager
-
-        if isNonBlocking, windowControllersManager.hasOnboardingTab {
+        let isNonBlocking = enrollInOnboardingExperiment()?.isNonBlocking == true
+        if isNonBlocking, Application.appDelegate.windowControllersManager.hasOnboardingTab {
             return
         }
 
         selectedTab.startOnboarding()
+        configureOnboardingInteraction(for: selectedTab, isNonBlocking: isNonBlocking)
+    }
 
+    private func enrollInOnboardingExperiment() -> OnboardingNonBlockingExperiment? {
+        let experiment = featureFlagger.map(OnboardingNonBlockingExperiment.init)
+        if isEligibleForNonBlockingExperiment {
+            experiment?.enroll()
+        }
+        return experiment
+    }
+
+    private func configureOnboardingInteraction(for tab: Tab, isNonBlocking: Bool) {
         if isNonBlocking {
             // Track the source before selection can change or the page can be closed.
-            windowControllersManager.setOnboardingTab(selectedTab)
-            selectedTab.onboardingActionsManager?.installNonBlockingHandlers()
+            Application.appDelegate.windowControllersManager.setOnboardingTab(tab)
+            tab.onboardingActionsManager?.installNonBlockingHandlers()
         } else {
             // Lock immediately to avoid flicker while the onboarding script loads.
             userInteraction(prevented: true)

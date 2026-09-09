@@ -76,6 +76,7 @@ extension View {
 private extension SubscriptionOnboardingLauncher {
 
     static func lockToPortrait() {
+        guard !DevicePlatform.isIpad else { return }
         setOrientationLock(.portrait, snapTo: .portrait)
     }
 

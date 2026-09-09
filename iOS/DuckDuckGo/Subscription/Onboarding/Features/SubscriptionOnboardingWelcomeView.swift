@@ -25,10 +25,6 @@ import UIComponents
 /// An overview of the four premium protections (VPN, Identity Theft Restoration, Advanced AI Models, Personal Information Removal).
 /// Tapping a row presents that feature's  info screen (``SubscriptionOnboardingInfoView``) as a sheet; the primary button starts the flow.
 struct SubscriptionOnboardingWelcomeView: View {
-    /// Drops `.vpnWidget` and `.vpnTips` on top of that, since neither is a "premium protection" of its own.
-    static func displayedFeatures(entitledChecklist: [SubscriptionOnboardingChecklistItem]) -> [SubscriptionOnboardingChecklistItem] {
-        entitledChecklist.filter { $0 != .vpnWidget && $0 != .vpnTips }
-    }
 
     var navigationButton: SubscriptionOnboardingNavigationButton?
     var features: [SubscriptionOnboardingChecklistItem] = SubscriptionOnboardingChecklistItem.allCases

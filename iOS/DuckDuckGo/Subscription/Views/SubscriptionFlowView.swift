@@ -165,7 +165,7 @@ struct SubscriptionFlowView: View {
             await startOnboarding()
         }
 
-        .subscriptionOnboardingSheet(item: $onboardingFlow) { flow in
+        .subscriptionOnboardingSheet(item: $onboardingFlow, onDismiss: { viewModel.onboardingFinished() }) { flow in
             SubscriptionOnboardingLauncher.launch(flow: flow)
                 .onFirstAppear { viewModel.didPresentOnboarding() }
         }
@@ -216,7 +216,7 @@ struct SubscriptionFlowView: View {
             persistor: persistor,
             isPIRAvailable: viewModel.isPIRAvailable,
             subscriptionManager: viewModel.subscriptionManager,
-            onFinish: { viewModel.onboardingFinished() },
+            onFinish: { onboardingFlow = nil },
             onRequestDuckAIChat: viewModel.onRequestDuckAIChat,
             pirScreen: { pirDestination }) else { return }
         onboardingFlow = flow

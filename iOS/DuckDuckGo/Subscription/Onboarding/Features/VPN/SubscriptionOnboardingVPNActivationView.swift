@@ -83,6 +83,7 @@ struct SubscriptionOnboardingVPNActivationView: View {
             tapAllowHint.permissionDenied()
         }
         .onReceive(tapAllowHint.$shouldShowHint) { shouldShow in
+            viewModel.setConfigAlertShowing(shouldShow)
             if shouldShow {
                 tapAllowHintWindow.show()
             } else {

@@ -70,6 +70,10 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     private var hasAttemptedActivation = false
     private var cancellables = Set<AnyCancellable>()
 
+    /// Safety net for a stuck `isActivating` if none of the controller's reset signals ever fire.
+    private static let activationTimeout: TimeInterval = 15
+    private var activationTimeoutTask: Task<Void, Never>?
+
     init(prefetcher: SubscriptionOnboardingPrefetcher,
          vpnController: SubscriptionOnboardingVPNControlling = DefaultSubscriptionOnboardingVPNController(),
          vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding = DefaultSubscriptionOnboardingVPNLocationProvider(),
@@ -148,6 +152,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     func onDisappear() {
         cancellables.removeAll()
+        activationTimeoutTask?.cancel()
     }
 
     /// Finishes this section, moving the flow to the next one.
@@ -159,7 +164,18 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     func turnOnVPN() async {
         hasAttemptedActivation = true
         isActivating = true
+        scheduleActivationTimeout()
         await vpnController.start()
+    }
+
+    /// Pauses the activation timeout while the system configuration alert is on screen
+    func setConfigAlertShowing(_ isShowing: Bool) {
+        guard isActivating else { return }
+        if isShowing {
+            activationTimeoutTask?.cancel()
+        } else {
+            scheduleActivationTimeout()
+        }
     }
 
     /// Whether a VPN configuration is already installed. When it isn't, starting shows the system permission prompt
@@ -233,6 +249,21 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         guard !hasReportedCompletion else { return }
         hasReportedCompletion = true
         onComplete()
+    }
+}
+
+// MARK: - Activation timeout
+
+private extension SubscriptionOnboardingVPNActivationViewModel {
+    func scheduleActivationTimeout() {
+        activationTimeoutTask?.cancel()
+        activationTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Self.activationTimeout * 1_000_000_000))
+            guard !Task.isCancelled, let self, self.isActivating else { return }
+            self.didFailToStartVPN = true
+            self.didDenyVPNPermission = false
+            self.isActivating = false
+        }
     }
 }
 

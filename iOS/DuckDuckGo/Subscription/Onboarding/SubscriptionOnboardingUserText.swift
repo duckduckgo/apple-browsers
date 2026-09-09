@@ -138,7 +138,7 @@ extension UserText {
     // MARK: - VPN tips screen
 
     public static let subscriptionOnboardingVPNTipsTitle = NotLocalizedString("subscription.onboarding.vpn.tips.title", value: "What to know about using your VPN", comment: "Title of the post-activation VPN tips screen")
-    public static let subscriptionOnboardingVPNTipsDoneButton = NotLocalizedString("subscription.onboarding.vpn.tips.done.button", value: "Got it", comment: "VPN tips screen primary button that returns to the VPN activation screen")
+    public static let subscriptionOnboardingVPNTipsDoneButton = NotLocalizedString("subscription.onboarding.vpn.tips.done.button", value: "Got It", comment: "VPN tips screen primary button that returns to the VPN activation screen")
 
     // MARK: - VPN info sheet
 

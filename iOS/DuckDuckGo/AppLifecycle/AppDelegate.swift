@@ -28,7 +28,6 @@ import Common
         UIDevice.current.userInterfaceIdiom == .pad ? .all : .allButUpsideDown
     }
 
-    /// Tightened while content needing a fixed orientation is on screen — see `SubscriptionOnboardingLauncher`.
     static var orientationLock = defaultOrientationMask
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {

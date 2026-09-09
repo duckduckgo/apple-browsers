@@ -397,8 +397,8 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         XCTAssertEqual(spy.completed, [.vpnActivation])
     }
 
-    /// `.vpnTips` is bundled with `.vpnWidget`: completing `.vpnWidget` is what counts as the bundle completing,
-    /// and `.vpnTips` must never fire a completion pixel of its own — it would just duplicate `.vpnWidget`'s.
+    /// Only `.vpnActivation` completes the VPN bundle; `.vpnWidget` and `.vpnTips` are informational
+    /// screens that must never fire a completion pixel or mark `.vpn` complete on their own.
     func testWhenVpnTipsCompletesThenNoCompletionIsReported() {
         let spy = SpyInstrumentation()
         let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
@@ -408,15 +408,23 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         XCTAssertTrue(spy.completed.isEmpty)
     }
 
-    /// `.vpnWidget`'s own completion is the bundle's one and only completion signal.
-    func testWhenVpnWidgetCompletesThenItAloneIsReportedCompleted() {
+    func testWhenVpnWidgetCompletesThenNoCompletionIsReported() {
         let spy = SpyInstrumentation()
         let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
 
         sut.sectionDidComplete(.vpnWidget)
         sut.sectionDidComplete(.vpnTips)
 
-        XCTAssertEqual(spy.completed, [.vpnWidget])
+        XCTAssertTrue(spy.completed.isEmpty)
+    }
+
+    func testWhenVpnWidgetOrVpnTipsCompletesThenVpnIsNotMarkedComplete() {
+        let sut = makeSUT(entryPoint: .postCheckout)
+
+        sut.sectionDidComplete(.vpnWidget)
+        sut.sectionDidComplete(.vpnTips)
+
+        XCTAssertFalse(sut.progress.completedItems.contains(.vpn))
     }
 
     /// The VPN's on-state "Next" and its permission-denied "Skip" share `advance()`, so the skip is derived

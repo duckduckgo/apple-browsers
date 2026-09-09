@@ -248,11 +248,11 @@ private extension SubscriptionOnboardingFlowViewModel {
 extension SubscriptionOnboardingFlowViewModel: SubscriptionOnboardingSectionDelegate {
 
     func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
+        // `.vpnWidget` and `.vpnTips` complete nothing of their own and report no completion.
+        guard section != .vpnWidget, section != .vpnTips else { return }
         if case .activation(let item) = section.kind {
             progress.markComplete(item)
         }
-        // `.vpnTips` completes nothing of its own
-        guard section != .vpnTips else { return }
         guard reportedCompletions.insert(section).inserted else { return }
         instrumentation.stepCompleted(section)
     }

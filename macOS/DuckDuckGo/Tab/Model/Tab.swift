@@ -1500,6 +1500,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     func didStart(_ navigation: Navigation) {
+        if navigation.url.isHttpOrHttps, navigation.navigationAction.navigationType != .alternateHtmlLoad {
+            Application.appDelegate.windowControllersManager.recordBrowsingBeforeOnboardingCompletion()
+        }
         delegate?.tabDidStartNavigation(self)
         permissions.tabDidStartNavigation()
         userInteractionDialog = nil

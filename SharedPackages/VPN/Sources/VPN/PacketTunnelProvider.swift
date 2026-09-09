@@ -1015,7 +1015,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         sessionHealth.tunnelStopped(reason: reason)
 
         do {
-            try await stopTunnel()
+            try await stopTunnel(isIntentional: reason == .userInitiated)
             providerEvents.fire(.tunnelStopAttempt(.success))
 
             // Disable Connect on Demand when disabling the tunnel from iOS settings on iOS 17.0+.
@@ -1049,7 +1049,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         sessionHealth.tunnelCancelledWithError()
 
         do {
-            try await stopTunnel()
+            try await stopTunnel(isIntentional: false)
             providerEvents.fire(.tunnelStopAttempt(.success))
         } catch {
             providerEvents.fire(.tunnelStopAttempt(.failure(error)))
@@ -1060,13 +1060,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - Tunnel Stop: Support Methods
 
-    /// Do not call this directly, call `cancelTunnel(with:)` instead.
-    ///
+    /// Stops resources after `stopTunnel(with:)` or `cancelTunnel(with:)` records the session outcome.
     @MainActor
-    private func stopTunnel() async throws {
+    private func stopTunnel(isIntentional: Bool) async throws {
         connectionStatus = .disconnecting
 
-        await stopMonitors()
+        await stopMonitors(isIntentional: isIntentional)
         if let service = leakCheckService {
             await service.stop()
             leakCheckService = nil

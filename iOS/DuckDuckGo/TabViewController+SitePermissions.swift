@@ -900,8 +900,9 @@ extension TabViewController {
 
     static func permissionsPolicyDisablesGeolocation(_ header: String?, for pageURL: URL?) -> Bool {
         guard let header else { return false }
+        guard let directives = splitPermissionsPolicyField(header[...], on: ",") else { return true }
 
-        let geolocationAllowLists = header.split(separator: ",", omittingEmptySubsequences: false).compactMap { directive -> Substring? in
+        let geolocationAllowLists = directives.compactMap { directive -> Substring? in
             let components = directive.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
             guard components.count == 2,
                   components[0].trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "geolocation" else {
@@ -914,7 +915,19 @@ extension TabViewController {
     }
 
     private static func geolocationAllowList(_ rawValue: Substring, includes pageURL: URL?) -> Bool {
-        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedValue = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let components = splitPermissionsPolicyField(trimmedValue[...], on: ";"),
+              let value = components.first else { return false }
+        // RFC 8941 parameters do not change the allowlist. Validate them before discarding them.
+        let parameterValue = [
+            #""(?:[\x20-\x21\x23-\x5B\x5D-\x7E]|\\["\\])*""#,
+            #"[A-Za-z*][A-Za-z0-9!#$%&'*+.^_`|~:/-]*"#,
+            #"-?(?:[0-9]{1,15}|[0-9]{1,12}\.[0-9]{1,3})"#,
+            #":(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}={0,2}|[A-Za-z0-9+/]{3}=?)?:"#,
+            #"\?[01]"#
+        ].joined(separator: "|")
+        let parameter = #"^ *[a-z*][a-z0-9_.*-]*(?:=(?:"# + parameterValue + #"))?$"#
+        guard components.dropFirst().allSatisfy({ $0.range(of: parameter, options: .regularExpression) != nil }) else { return false }
         if value == "*" { return true }
         guard value.first == "(", value.last == ")" else { return false }
 
@@ -925,6 +938,30 @@ extension TabViewController {
             guard let pageURL, let allowedURL = URL(string: token) else { return false }
             return sameOrigin(allowedURL, pageURL)
         }
+    }
+
+    private static func splitPermissionsPolicyField(_ value: Substring, on separator: Character) -> [Substring]? {
+        var isQuoted = false
+        var isEscaped = false
+        var listDepth = 0
+        var isMalformed = false
+        let components = value.split(omittingEmptySubsequences: false) { character in
+            if isEscaped {
+                isEscaped = false
+            } else if isQuoted && character == "\\" {
+                isEscaped = true
+            } else if character == "\"" {
+                isQuoted.toggle()
+            } else if !isQuoted {
+                if character == "(" { listDepth += 1 }
+                if character == ")" { listDepth -= 1 }
+                isMalformed = isMalformed || listDepth < 0 || listDepth > 1
+                return character == separator && listDepth == 0
+            }
+            return false
+        }
+        guard !isQuoted, !isEscaped, listDepth == 0, !isMalformed else { return nil }
+        return components
     }
 
     private static func sameOrigin(_ lhs: URL, _ rhs: URL) -> Bool {

@@ -743,6 +743,35 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertTrue(TabViewController.permissionsPolicyDisablesGeolocation("geolocation=invalid", for: pageURL))
     }
 
+    func testWhenPermissionsPolicyHasParametersThenOnlyTheAllowListControlsGeolocation() {
+        let pageURL = URL(string: "https://www.example.com/page")!
+        for allowList in ["*", "(self)", #"("https://www.example.com")"#] {
+            for parameters in [#";report-to="endpoint""#,
+                               #";data=:YQ:;more=:YWI:;empty=::"#,
+                               #";report-to="endpoint, geolocation=(); \"quoted\"";enabled;count=1;ratio=0.5;flag=?1;data=:YQ==:;token=value"#] {
+                XCTAssertFalse(TabViewController.permissionsPolicyDisablesGeolocation(
+                    "camera=(), geolocation=\(allowList)\(parameters), microphone=()", for: pageURL
+                ))
+            }
+        }
+        for allowList in ["()", #"("https://other.example")"#, #"("https://www.example.com:8443")"#, "invalid"] {
+            XCTAssertTrue(TabViewController.permissionsPolicyDisablesGeolocation(
+                "geolocation=\(allowList);report-to=\"endpoint\"", for: pageURL
+            ))
+        }
+        for malformed in [#"geolocation=*;=broken"#, #"geolocation=(self);report-to="unfinished"#,
+                          #"geolocation=*;report-to="bad\escape""#, "geolocation=(self);report-to=", "geolocation=*;",
+                          "geolocation=*;data=:A:", "geolocation=(self);data=:A=:"] {
+            XCTAssertTrue(TabViewController.permissionsPolicyDisablesGeolocation(malformed, for: pageURL))
+        }
+        XCTAssertFalse(TabViewController.permissionsPolicyDisablesGeolocation(
+            #"camera=();report-to="endpoint, geolocation=()", geolocation=(self)"#, for: pageURL
+        ))
+        XCTAssertTrue(TabViewController.permissionsPolicyDisablesGeolocation(
+            #"camera=();report-to="endpoint, geolocation=*", geolocation=();report-to="endpoint""#, for: pageURL
+        ))
+    }
+
     func testPermissionsPolicyHeaderIsPromotedOnlyOnCommitAndFailedProvisionalNavigationRestoresCommittedPage() {
         let pageURL = URL(string: "https://www.example.com/page")!
         let sut = makeSUT(committedURL: pageURL)

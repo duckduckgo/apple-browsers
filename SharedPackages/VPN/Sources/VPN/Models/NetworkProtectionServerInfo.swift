@@ -46,24 +46,6 @@ public struct NetworkProtectionServerInfo: Codable, Equatable, Sendable {
     public let ports: [UInt16]?
     public let attributes: ServerAttributes
 
-    init(name: String,
-         publicKey: String,
-         hostNames: [String],
-         ips: [AnyIPAddress],
-         internalIP: AnyIPAddress,
-         port: UInt16,
-         ports: [UInt16]?,
-         attributes: ServerAttributes) {
-        self.name = name
-        self.publicKey = publicKey
-        self.hostNames = hostNames
-        self.ips = ips
-        self.internalIP = internalIP
-        self.port = port
-        self.ports = ports
-        self.attributes = attributes
-    }
-
     enum CodingKeys: String, CodingKey {
         case name
         case publicKey

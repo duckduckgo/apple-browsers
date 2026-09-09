@@ -18,8 +18,6 @@
 
 import AIChat
 import Combine
-import FeatureFlags_macOS
-import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -383,58 +381,6 @@ final class AIChatMenuTests: XCTestCase {
 
     private func makeChat(chatId: String, title: String, timestamp: Date = .distantPast) -> AIChatSuggestion {
         AIChatSuggestion(id: chatId, title: title, isPinned: false, chatId: chatId, timestamp: timestamp)
-    }
-}
-
-@MainActor
-final class AIChatSuggestionsReadingTests: XCTestCase {
-
-    func testHasChatsReturnsFalseWhenHistoryIsEmpty() async {
-        let reader = MockAIChatSuggestionsReader()
-        let hasChats = await reader.hasChats()
-
-        XCTAssertFalse(hasChats)
-    }
-
-    func testHasChatsReturnsTrueWhenThereIsAPinnedChat() async {
-        let reader = MockAIChatSuggestionsReader()
-        reader.pinnedChats = [makeChat(isPinned: true)]
-        let hasChats = await reader.hasChats()
-
-        XCTAssertTrue(hasChats)
-    }
-
-    func testHasChatsReturnsTrueWhenThereIsARecentChat() async {
-        let reader = MockAIChatSuggestionsReader()
-        reader.recentChats = [makeChat(isPinned: false)]
-        let hasChats = await reader.hasChats()
-
-        XCTAssertTrue(hasChats)
-    }
-
-    private func makeChat(isPinned: Bool) -> AIChatSuggestion {
-        AIChatSuggestion(id: "chat", title: "Chat", isPinned: isPinned, chatId: "chat", timestamp: .distantPast)
-    }
-}
-
-final class AIChatChromeMenuRecentChatsFeatureFlagTests: XCTestCase {
-
-    func testFeatureFlagUsesSharedConfiguration() {
-        let featureFlag = FeatureFlag.aiChatChromeMenuRecentChats
-
-        guard case let .remoteReleasable(subfeature) = featureFlag.source else {
-            XCTFail("Expected a remotely releasable feature flag")
-            return
-        }
-
-        XCTAssertEqual(subfeature as? AIChatSubfeature, .addressBarRecentChats)
-        XCTAssertEqual(subfeature.parent, .aiChat)
-        XCTAssertEqual(subfeature.rawValue, "addressBarRecentChats")
-        guard case .enabled = featureFlag.defaultValue else {
-            XCTFail("Expected the feature flag to be enabled by default")
-            return
-        }
-        XCTAssertTrue(featureFlag.supportsLocalOverriding)
     }
 }
 

@@ -27,7 +27,7 @@ enum AIChatOpenTrigger {
     /// Opens a new, empty AI chat session.
     case newChat
 
-    /// Opens Duck.ai with the recent chats sidebar visible.
+    /// Opens Duck.ai with the chat history sidebar visible.
     case chatHistory
 
     /// Opens an AI chat with an optional pre-filled query.

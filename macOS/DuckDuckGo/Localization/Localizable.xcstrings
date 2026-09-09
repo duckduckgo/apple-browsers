@@ -717,6 +717,18 @@
         }
       }
     },
+    "action.title.chats" : {
+      "comment" : "Open Duck.ai chat history from the tab-bar menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chats"
+          }
+        }
+      }
+    },
     "Activate to select" : {
       "localizations" : {
         "de" : {
@@ -35908,18 +35920,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Вкл."
-          }
-        }
-      }
-    },
-    "duckai.address.bar.menu.all.chats" : {
-      "comment" : "Address bar Duck.ai menu option that opens the full chat history",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "All Chats"
           }
         }
       }

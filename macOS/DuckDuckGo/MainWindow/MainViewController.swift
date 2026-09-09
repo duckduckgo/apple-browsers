@@ -606,7 +606,7 @@ final class MainViewController: NSViewController {
     }
 
     func openDuckAIChatHistory() {
-        openDuckAIChatTab(with: .chatHistory, source: .tabBarViewAllChats)
+        openDuckAIChatTab(with: .chatHistory, source: .tabBarChats)
     }
 
     private func openDuckAIChatTab(with trigger: AIChatOpenTrigger, source: AIChatConversationSource) {

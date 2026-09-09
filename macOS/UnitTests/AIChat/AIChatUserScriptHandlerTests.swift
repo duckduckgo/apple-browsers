@@ -1488,7 +1488,7 @@ struct AIChatConversationSourcePixelTests {
         "tab-bar-button",
         "ask-about-page",
         "tab-bar-sidebar",
-        "tab-bar-view-all-chats",
+        "tab-bar-chats",
         "address-bar",
         "address-bar-suggestion",
         "address-bar-context-menu",
@@ -1576,11 +1576,11 @@ struct AIChatConversationSourcePixelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Tab-bar New Chat and All Chats use distinct sources", .timeLimit(.minutes(1)))
-    func testTabBarNewChatAndAllChatsAreDistinct() {
+    @Test("Tab-bar New Chat and Chats use distinct sources", .timeLimit(.minutes(1)))
+    func testTabBarNewChatAndChatsAreDistinct() {
         #expect(AIChatConversationSource.tabBarButton.rawValue == "tab-bar-button")
-        #expect(AIChatConversationSource.tabBarViewAllChats.rawValue == "tab-bar-view-all-chats")
-        #expect(AIChatConversationSource.tabBarButton != .tabBarViewAllChats)
+        #expect(AIChatConversationSource.tabBarChats.rawValue == "tab-bar-chats")
+        #expect(AIChatConversationSource.tabBarButton != .tabBarChats)
     }
 
     @available(iOS 16, macOS 13, *)

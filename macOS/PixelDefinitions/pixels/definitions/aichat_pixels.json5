@@ -298,8 +298,8 @@
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_aichat_all_chats_title_bar_menu": {
-        "description": "Fired when user picks All Chats from the tab-bar Ask Duck.ai menu",
+    "m_mac_aichat_chats_title_bar_menu": {
+        "description": "Fired when user picks Chats from the tab-bar Ask Duck.ai menu",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],

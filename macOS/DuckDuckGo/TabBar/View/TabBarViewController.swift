@@ -91,7 +91,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var aiChatFloatingStateCancellable: AnyCancellable?
     private var aiChatMenuConfigCancellable: AnyCancellable?
     private var aiChatButtonHoverCancellable: AnyCancellable?
-    private var duckAIMenuChatsFetchTask: Task<Void, Never>?
     private var duckAIChromeButtonsVisibilityCancellable: AnyCancellable?
     private var didPerformInitialChromeSidebarApply = false
     private var duckAIChromeDividerInsetConstraint: NSLayoutConstraint?
@@ -1028,30 +1027,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Duck.ai menu button (single-pill layout)
 
     private func presentDuckAIMenuButtonMenu(from sender: NSButton) {
-        let menu = makeDuckAIMenuButtonMenu(hasChats: false)
-        loadAllChatsItemIfNeeded(in: menu)
+        let menu = makeDuckAIMenuButtonMenu()
         // Right-align: anchor the menu's top-right corner to the button's bottom-right.
         let origin = NSPoint(x: sender.bounds.width - menu.size.width, y: sender.bounds.height + 4)
         menu.popUp(positioning: nil, at: origin, in: sender)
-        duckAIMenuChatsFetchTask?.cancel()
-        duckAIMenuChatsFetchTask = nil
-    }
-
-    private func loadAllChatsItemIfNeeded(in menu: NSMenu) {
-        duckAIMenuChatsFetchTask?.cancel()
-        guard !isFireWindow, featureFlagger.isFeatureOn(.aiChatChromeMenuRecentChats) else { return }
-
-        duckAIMenuChatsFetchTask = Task { @MainActor [weak self, weak menu] in
-            guard let self, let menu else { return }
-            let hasChats = await NSApp.delegateTyped.aiChatSuggestionsReader.hasChats()
-            guard !Task.isCancelled, hasChats else { return }
-            addAllChatsItem(to: menu)
-        }
     }
 
     /// The pill's dropdown, rebuilt per press so the sidebar item's title/icon reflect the current
     /// tab and chat state.
-    private func makeDuckAIMenuButtonMenu(hasChats: Bool) -> NSMenu {
+    private func makeDuckAIMenuButtonMenu() -> NSMenu {
         let menu = NSMenu()
 
         let newChatItem = NSMenuItem(title: UserText.aiChatMenuNewChat, action: #selector(duckAIMenuNewChatAction), keyEquivalent: "")
@@ -1079,20 +1063,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         sidebarItem.keyEquivalentModifierMask = [.command, .option]
         menu.addItem(sidebarItem)
 
-        if hasChats {
-            addAllChatsItem(to: menu)
+        if !isFireWindow, featureFlagger.isFeatureOn(.aiChatChromeMenuRecentChats) {
+            menu.addItem(.separator())
+
+            let chatsItem = NSMenuItem(title: UserText.actionChats, action: #selector(duckAIMenuChatsAction), keyEquivalent: "")
+            chatsItem.target = self
+            chatsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.chats), visibleOnMacOS27: true)
+            menu.addItem(chatsItem)
         }
 
         return menu
-    }
-
-    private func addAllChatsItem(to menu: NSMenu) {
-        menu.addItem(.separator())
-
-        let allChatsItem = NSMenuItem(title: UserText.duckAiAddressBarMenuAllChats, action: #selector(duckAIMenuAllChatsAction), keyEquivalent: "")
-        allChatsItem.target = self
-        allChatsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.chats), visibleOnMacOS27: true)
-        menu.addItem(allChatsItem)
     }
 
     /// The two-part control's "open sidebar" icon, copied and sized for a menu item. Copying avoids
@@ -1137,8 +1117,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         mainViewController.openNewDuckAIChatTab()
     }
 
-    @objc private func duckAIMenuAllChatsAction() {
-        PixelKit.fire(AIChatPixel.aiChatAllChatsTitleBarMenu, frequency: .dailyAndStandard)
+    @objc private func duckAIMenuChatsAction() {
+        PixelKit.fire(AIChatPixel.aiChatChatsTitleBarMenu, frequency: .dailyAndStandard)
         guard let mainViewController = parent as? MainViewController else {
             Logger.general.error("TabBarViewController: Failed to find MainViewController to open Duck.ai")
             return

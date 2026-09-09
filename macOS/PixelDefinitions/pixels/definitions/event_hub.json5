@@ -525,7 +525,7 @@
         ]
     },
     "detectorPerf_severe_macos": {
-        "description": "Fired immediately when Web Detection execution crosses the highest configured single-run, accumulated, or combined performance threshold.",
+        "description": "Fired immediately when Web Detection execution crosses a configured severe single-run or accumulated threshold, or the highest combined threshold.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "parameters": [

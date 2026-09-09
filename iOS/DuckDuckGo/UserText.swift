@@ -54,6 +54,9 @@ public struct UserText {
     public static let actionNewBackgroundTabForUrl = NSLocalizedString("action.title.newBackgroundTabForUrl", value: "Open in Background", comment: "Open in New Background Tab action")
     public static let actionForgetAll = NSLocalizedString("action.title.forgetAll", value: "Clear Tabs and Data", comment: "")
     public static let actionForgetAllDone = NSLocalizedString("action.title.forgetAllDone", value: "Tabs and data cleared", comment: "Confirmation message")
+    public static let sitePermissions = NotLocalizedString("site.permissions",
+                                                          value: "Site Permissions",
+                                                          comment: "Browser menu item that opens permission controls for the current website")
 
     // MARK: Scoped Fire Confirmation
 
@@ -181,6 +184,7 @@ public struct UserText {
     public static let actionSaveBookmark = NSLocalizedString("action.title.save.bookmark", value: "Add Bookmark", comment: "Add to Bookmarks action")
     public static let actionSaveFavorite = NSLocalizedString("action.title.save.favorite", value: "Add Favorite", comment: "Add to Favorites action")
     public static let actionReportBrokenSite = NSLocalizedString("action.title.reportBrokenSite", value: "Report Broken Site", comment: "Report broken site action")
+    public static let actionSendInternalFeedback = NotLocalizedString("action.title.sendInternalFeedback", value: "Send Internal Feedback", comment: "Internal only — not localized")
     public static let actionSettings = NSLocalizedString("action.title.settings", value: "Settings", comment: "Settings action")
     public static let actionGenericEdit = NSLocalizedString("action.generic.edit", value: "Edit", comment: "Buton label for Edit action")
     public static let actionGenericUndo = NSLocalizedString("action.generic.undo", value: "Undo", comment: "Button label for Undo action")
@@ -575,6 +579,20 @@ public struct UserText {
     public static let settingsAutoplayLabel = NSLocalizedString("settings.autoplay", value: "Autoplay", comment: "Settings label for the autoplay settings screen")
     public static let settingsAutoplayFooter = NSLocalizedString("settings.autoplay.footer", value: "Autoplay settings will only apply to newly opened tabs. Changes cannot be applied to existing tabs unless the application is restarted. To manage autoplay in Duck Player, go to ", comment: "Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings")
     public static let settingsAutoplayDuckPlayerLink = NSLocalizedString("settings.autoplay.duck.player.link", value: "Duck Player Settings", comment: "Link text in the autoplay settings footer that navigates to Duck Player settings")
+    public static let settingsSitePermissionsCamera = NotLocalizedString("settings.site.permissions.camera", value: "Camera", comment: "Camera permission title in Settings")
+    public static let settingsSitePermissionsMicrophone = NotLocalizedString("settings.site.permissions.microphone", value: "Microphone", comment: "Microphone permission title in Settings")
+    public static let settingsSitePermissionsLocation = NotLocalizedString("settings.site.permissions.location", value: "Location", comment: "Location permission title in Settings")
+    public static let settingsSitePermissionsAskEachTime = NotLocalizedString("settings.site.permissions.ask.each.time", value: "Ask Each Time", comment: "Site permission option that asks on each visit")
+    public static let settingsSitePermissionsAlwaysAllow = NotLocalizedString("settings.site.permissions.always.allow", value: "Always Allow", comment: "Site permission option that always grants access")
+    public static let settingsSitePermissionsNeverAllow = NotLocalizedString("settings.site.permissions.never.allow", value: "Never Allow", comment: "Site permission option that prevents access")
+    public static let settingsSitePermissionsManageSites = NotLocalizedString("settings.site.permissions.manage.sites", value: "Manage Sites", comment: "Header for sites with stored permissions")
+    public static let settingsSitePermissionsRemoveAll = NotLocalizedString("settings.site.permissions.remove.all", value: "Remove All Site Permissions", comment: "Button that removes every stored site permission")
+    public static let settingsSitePermissionsRemoveSite = NotLocalizedString("settings.site.permissions.remove.site", value: "Remove Permissions", comment: "Button that removes all stored permissions for one site")
+    public static let settingsSitePermissionsSystemSettingsFooterPrefix = NotLocalizedString("settings.site.permissions.system.settings.footer.prefix", value: "You can view and modify DuckDuckGo’s system permissions in ", comment: "Settings footer before the System Settings link")
+    public static let settingsSitePermissionsSystemSettingsLink = NotLocalizedString("settings.site.permissions.system.settings.link", value: "System Settings.", comment: "Link that opens the DuckDuckGo page in System Settings")
+    public static let settingsSitePermissionsRemovedAll = NotLocalizedString("settings.site.permissions.removed.all", value: "Permissions removed for all sites", comment: "Toast after all stored site permissions are removed")
+    public static let settingsSitePermissionsRemovedSiteFormat = NotLocalizedString("settings.site.permissions.removed.site.format", value: "Permissions removed for %@", comment: "Toast after one site's stored permissions are removed; placeholder is the domain")
+    public static let settingsSitePermissionsSiteHeaderFormat = NotLocalizedString("settings.site.permissions.site.header.format", value: "Permissions for %@", comment: "Header for one site's permission settings; placeholder is the domain")
     public static let settingsMediaSection = NSLocalizedString("settings.media.section", value: "Media", comment: "Header for the media section in general settings")
 
     public static let webJSAlertOKButton = NSLocalizedString("webJSAlert.OK.button", value: "OK", comment: "OK button for JavaScript alerts")
@@ -1342,8 +1360,6 @@ public struct UserText {
     // MARK: Sync
 
     public static let syncUserUserAuthenticationReason = NSLocalizedString("sync.user.auth.reason", value: "Unlock device to set up Sync & Backup", comment: "Reason for auth when setting up Sync")
-    public static let syncDeleteAllConfirmTitle = NSLocalizedString("sync.delete.all.confirm.title", value: "Delete server data?", comment: "Title of the dialog to confirm deleting Sync server data")
-    public static let syncDeleteAllConfirmMessage = NSLocalizedString("sync.delete.all.confirm.message", value: "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device.", comment: "Message for the dialog to confirm deleting Sync server data")
     public static let syncDeleteAllConfirmAction = NSLocalizedString("sync.delete.all.confirm.action", value: "Delete Server Data", comment: "Caption for a button to delete Sync server data")
     public static let syncRemoveDeviceTitle = NSLocalizedString("sync.remove-device.title", value: "Remove Device?", comment: "Title of the dialog to remove device from Sync")
     public static func syncRemoveDeviceMessage(_ deviceName: String) -> String {
@@ -1351,7 +1367,6 @@ public struct UserText {
         return message.format(arguments: deviceName)
     }
     public static let syncRemoveDeviceConfirmAction = NSLocalizedString("sync.remove-device.action", value: "Remove", comment: "Caption for a button to remove device from Sync")
-    public static let syncCodeCopied = NSLocalizedString("sync.code.copied", value: "Recovery code copied to clipboard", comment: "Message confirming that recovery code was copied to clipboard")
     public static let syncPairingV2ConfirmationTitle = NSLocalizedString("sync.pairing-v2.confirmation.title", value: "Sync new device?", comment: "Title of the dialog to confirm sync setup with another device")
     public static let syncPairingV2ConfirmationAction = NSLocalizedString("sync.pairing-v2.confirmation.action", value: "Sync Now", comment: "Caption for a button to confirm sync setup with another device")
     public static let syncPairingV2UnknownPeerName = NSLocalizedString("sync.pairing-v2.unknown-peer-name", value: "the other device", comment: "Fallback device name for confirmation dialogs")
@@ -1368,7 +1383,6 @@ public struct UserText {
     }
 
     // Simplified Sync
-    public static let simplifiedSyncEnabledToast = NSLocalizedString("sync.simplified.enabled.toast", value: "Sync & Backup enabled", comment: "Toast message shown after sync is successfully enabled")
     public static let simplifiedDeviceSyncedSuccessfullyToast = NSLocalizedString("sync.simplified.device-synced.toast", value: "New device added!", comment: "Toast message shown after sync is enabled by connecting with another device")
     public static let simplifiedSyncTurnOffTitle = NSLocalizedString("sync.simplified.turn.off.title", value: "Turn Off Sync & Backup?", comment: "Alert title when turning off sync")
     public static let simplifiedSyncTurnOffMessage = NSLocalizedString("sync.simplified.turn.off.message", value: "Your bookmarks and passwords on this device won't be affected.", comment: "Alert message when turning off sync")
@@ -1400,7 +1414,6 @@ public struct UserText {
     static let syncBadBookmarksRequestAlertDescription = NSLocalizedString("alert.sync-bookmarks-bad-data-error-description", value: "Some bookmarks are formatted incorrectly or too long and were not synced.", comment: "Description for alert shown when sync error occurs because of bad bookmarks data")
     static let syncBadCredentialsRequestAlertDescription = NSLocalizedString("alert.sync-credentials-bad-data-error-description", value: "Some passwords are formatted incorrectly or too long and were not synced.", comment: "Description for alert shown when sync error occurs because of bad credentials data")
     static let syncBadCreditCardsRequestAlertDescription = NSLocalizedString("alert.sync-credit-cards-bad-data-error-description", value: "Some credit cards are formatted incorrectly or too long and were not synced.", comment: "Description for alert shown when sync error occurs because of bad credit cards data")
-    static let syncErrorAlertAction  = NSLocalizedString("alert.sync-error-action", value: "Sync Settings", comment: "Sync error alert action button title, takes the user to the sync settings page.")
     static let syncBookmarkPausedAlertTitle = NSLocalizedString("alert.sync-bookmarks-paused-title", value: "Bookmark Sync is Paused", comment: "Title for alert shown when sync bookmarks paused for too many items")
     static let syncBookmarkPausedAlertDescription = NSLocalizedString("alert.sync-bookmarks-paused-description", value: "You've reached the maximum number of bookmarks. Please delete some bookmarks to resume sync.", comment: "Description for alert shown when sync bookmarks paused for too many items")
     static let syncCredentialsPausedAlertTitle = NSLocalizedString("alert.sync-credentials-paused-title", value: "Password Sync is Paused", comment: "Title for alert shown when sync credentials paused for too many items")
@@ -2259,6 +2272,7 @@ public struct UserText {
     public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take Photo", comment: "Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message")
     public static let aiChatAttachmentOptionAskAboutPage = NSLocalizedString("aichat.attachment.option.ask.about.page", value: "Ask About Page", comment: "Top-level attachment menu option to attach the current page content to an AI chat message")
     public static let duckAiAddressBarMenuNewChat = NSLocalizedString("duckai.address.bar.menu.new.chat", value: "New Chat", comment: "Address bar Duck.ai menu option that opens a fresh chat with no page context")
+    public static let duckAiAddressBarMenuAllChats = NSLocalizedString("duckai.address.bar.menu.all.chats", value: "All Chats", comment: "Address bar Duck.ai menu option that opens the full chat history")
     public static func aiChatAttachmentFileTooLarge(maxFileSizeMB: Int) -> String {
         let message = NSLocalizedString("aichat.attachment.file.too.large", value: "This file is too large. The maximum file size is %d MB.", comment: "Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes.")
         return message.format(arguments: maxFileSizeMB)
@@ -2350,9 +2364,9 @@ public struct UserText {
 
     // MARK: - Duck.ai Create Image model switch (unified toggle input footer)
 
-    public static let utiCreateImageModelSwitchTitle = NotLocalizedString("aichat.createImage.modelSwitch.title", value: "Now using %@", comment: "Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna'")
-    public static let utiCreateImageModelSwitchSubtitle = NotLocalizedString("aichat.createImage.modelSwitch.subtitle", value: "%@ doesn't support image creation.", comment: "Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral'")
-    public static let utiCreateImageModelSwitchPrivacyPreservingSubtitle = NotLocalizedString("aichat.createImage.modelSwitch.privacyPreserving.subtitle", value: "%@ can't create images. Its extra privacy protections won't apply until you switch back.", comment: "Subtitle of the Duck.ai input footer card shown when the model that was switched away from is one of the models with extra privacy protections. %@ is that model's short name, such as 'Gemma'")
+    public static let utiCreateImageModelSwitchTitle = NSLocalizedString("aichat.createImage.modelSwitch.title", value: "Now using %@", comment: "Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna'")
+    public static let utiCreateImageModelSwitchSubtitle = NSLocalizedString("aichat.createImage.modelSwitch.subtitle", value: "%@ doesn't support image creation.", comment: "Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral'")
+    public static let utiCreateImageModelSwitchPrivacyPreservingSubtitle = NSLocalizedString("aichat.createImage.modelSwitch.privacyPreserving.subtitle", value: "%@ can't create images. Zero Provider Visibility won't apply until you switch back.", comment: "Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma'")
     public static let aiChatHeaderNewVoiceChatTitle = NSLocalizedString("aichat.header.plusMenu.newVoiceChat", value: "New Voice Chat", comment: "Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu")
     public static let aiChatHeaderNewImageTitle = NSLocalizedString("aichat.header.plusMenu.newImage", value: "New Image", comment: "Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode")
     public static let aiChatHeaderNewTabTitle = NSLocalizedString("aichat.header.plusMenu.newTab", value: "New Tab", comment: "Title for the New Tab row in the Duck.ai tab header Plus (+) menu")

@@ -33,8 +33,10 @@ final class SitePermissionsPixelHandler: EventMapping<SitePermissionsEvent> {
 private struct SitePermissionsPixel: PixelKit.Event {
 
     let name: String
+    private let event: SitePermissionsEvent
 
     init(_ event: SitePermissionsEvent) {
+        self.event = event
         switch event {
         case .permissionDialogImpression(let type):
             name = "permission_dialog_impression_\(type.rawValue)"
@@ -48,10 +50,33 @@ private struct SitePermissionsPixel: PixelKit.Event {
             name = "permission_system_settings_opened_\(type.rawValue)"
         case .voiceSearchPermissionPrompt(let action):
             name = "voice_search_permission_prompt_\(action.rawValue)"
+        case .permissionCenterOpened:
+            name = "permission_center_opened"
+        case .permissionCenterChanged(let type, _, let to):
+            name = "permission_center_changed_\(type.rawValue)_to_\(to.rawValue)"
+        case .permissionCenterDismissedDirty:
+            name = "permission_center_dismissed_dirty"
+        case .permissionRemoveSite:
+            name = "permission_remove_site"
+        case .permissionRemoveAll:
+            name = "permission_remove_all"
+        case .permissionRemoveUndo:
+            name = "permission_remove_undo"
+        case .settingsSitePermissionsOpen:
+            name = "settings_site_permissions_open"
+        case .settingsSitePermissionsGlobalChanged(let type, let to):
+            name = "settings_site_permissions_global_changed_\(type.rawValue)_to_\(to.rawValue)"
         }
     }
 
-    var parameters: [String: String]? { nil }
+    var parameters: [String: String]? {
+        switch event {
+        case .permissionCenterChanged(_, let from, _):
+            return ["from": from.rawValue]
+        default:
+            return nil
+        }
+    }
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 

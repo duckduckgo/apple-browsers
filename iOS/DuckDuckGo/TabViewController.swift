@@ -516,6 +516,10 @@ class TabViewController: UIViewController {
         tabModel.isAITab
     }
 
+    /// The tab's chat identity: written on commit and on settled same-document URL rewrites.
+    /// Seeded from the stored link so a recreated controller's reload isn't a chat change.
+    private lazy var lastCommittedDuckAIChatID: String? = viewModel.currentAIChatId
+
     var emailManager: EmailManager? {
         return (parent as? MainViewController)?.emailManager
     }
@@ -779,6 +783,7 @@ class TabViewController: UIViewController {
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+            onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
             selectionJourneyScopeID: tabModel.uid
         )
         coordinator.delegate = self
@@ -874,6 +879,7 @@ class TabViewController: UIViewController {
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
                                                          featureDiscovery: featureDiscovery,
                                                          productSurfaceTelemetry: productSurfaceTelemetry,
+                                                         onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
                                                          unifiedToggleInputFeature: unifiedToggleInputFeature)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
@@ -1609,6 +1615,11 @@ class TabViewController: UIViewController {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
                 guard let self else { return }
                 self.webViewUrlHasChanged(previousURL: previousURL, newURL: self.webView.url)
+                // Settled same-document rewrites (FE assigning a chatID) update chat identity;
+                // in-flight loads are skipped — `didCommit` owns those.
+                if !self.webView.isLoading {
+                    self.lastCommittedDuckAIChatID = self.webView.url?.duckAIChatID
+                }
                 self.pullToRefreshViewAdapter?.setRefreshControlEnabled(!self.isAITab)
                 self.webView.scrollView.alwaysBounceVertical = !self.isAITab
                 (self.webView as? WebView)?.setInputAccessoryViewHidden(self.isAITab)
@@ -2425,7 +2436,16 @@ extension TabViewController: WKNavigationDelegate {
 
         addressBarURLFilter.commitNavigation(for: webView.url)
 
+        // Before `url = webView.url` — its didSet rewrites `tabModel.link`, poisoning the lazy seed.
+        let committedChatID = webView.url?.duckAIChatID
+        let didChangeDuckAIChat = committedChatID != lastCommittedDuckAIChatID
+        lastCommittedDuckAIChatID = committedChatID
+
         url = webView.url
+
+        if isAITab {
+            delegate?.tab(self, didCommitDuckAINavigationChangingChat: didChangeDuckAIChat)
+        }
         let tld = storageCache.tld
         let httpsForced = Self.isHTTPSForced(lastUpgradedURL: lastUpgradedURL, currentURL: webView.url, tld: tld)
         onWebpageDidStartLoading(httpsForced: httpsForced)

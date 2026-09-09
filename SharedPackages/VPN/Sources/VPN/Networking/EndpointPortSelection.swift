@@ -19,13 +19,8 @@
 import Foundation
 import os.log
 
-/// Probes advertised ports and prepares a configuration using the selected endpoint port.
+/// Probes advertised ports and chooses which endpoint port to use.
 struct EndpointPortSelection {
-
-    struct Selection {
-        let configuration: TunnelConfiguration
-        let decision: Decision
-    }
 
     private let prober: EndpointPortProbing
 
@@ -33,16 +28,11 @@ struct EndpointPortSelection {
         self.prober = prober
     }
 
-    /// Returns nil when the configuration or server has no usable endpoint.
+    /// Returns nil when probing is needed but the server has no usable endpoint.
     func select(for serverInfo: NetworkProtectionServerInfo,
-                in configuration: TunnelConfiguration,
                 previousPort: UInt16?,
-                preferring rememberedPort: UInt16?) async throws -> Selection? {
+                preferring rememberedPort: UInt16?) async throws -> Decision? {
         try Task.checkCancellation()
-        guard let configurationPort = configuration.peers.first?.endpoint?.port.rawValue else {
-            return nil
-        }
-
         let candidates = serverInfo.endpointPortCandidates(preferring: rememberedPort)
         let responding: Set<UInt16>
         if candidates.count > 1 {
@@ -57,17 +47,16 @@ struct EndpointPortSelection {
         try Task.checkCancellation()
 
         let decision = Self.decide(candidates: candidates,
-                                   currentPort: previousPort ?? configurationPort,
+                                   currentPort: previousPort ?? serverInfo.port,
                                    serverDefaultPort: serverInfo.port,
                                    responding: responding)
-        Logger.networkProtection.log("🔵 Port probe: candidates \(candidates, privacy: .public), \(responding.sorted(), privacy: .public) answered, using port \(decision.port, privacy: .public)")
+        Logger.networkProtection.log("Port probe: candidates \(candidates, privacy: .public), \(responding.sorted(), privacy: .public) answered, using port \(decision.port, privacy: .public)")
 
-        return Selection(configuration: decision.port == configurationPort ? configuration : configuration.replacingEndpointPort(with: decision.port),
-                         decision: decision)
+        return decision
     }
 
     struct Decision: Equatable {
-        /// Port the tunnel configuration should use.
+        /// Selected endpoint port.
         let port: UInt16
         /// Non-default port to retain for the next selection, including when no probe answered.
         /// Nil means the next selection falls back to that server's default port.
@@ -77,7 +66,7 @@ struct EndpointPortSelection {
     }
 
     /// `candidates` is the ordered list from `endpointPortCandidates(preferring:)`. `currentPort` is the
-    /// previous selection, or the generated configuration's port when no previous selection is supplied.
+    /// previous selection, or the server's default port when no previous selection is supplied.
     /// Rules: the first candidate that answered wins. If nothing answered, keep `currentPort` when it is a candidate,
     /// otherwise fall back to `serverDefaultPort` (a port carried over from another server must never be forced on
     /// one that does not advertise it).

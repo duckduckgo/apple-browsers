@@ -1261,21 +1261,22 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private func selectEndpointPort(for serverInfo: NetworkProtectionServerInfo, in configuration: TunnelConfiguration) async throws -> TunnelConfiguration {
         try Task.checkCancellation()
         let generation = tunnelPathGeneration
-        let selection = try await endpointPortSelector.select(for: serverInfo,
-                                                             in: configuration,
-                                                             previousPort: automaticEndpointPort,
-                                                             preferring: rememberedEndpointPort)
+        guard let currentPort = configuration.peers.first?.endpoint?.port.rawValue else {
+            return configuration
+        }
+        let decision = try await endpointPortSelector.select(for: serverInfo,
+                                                            previousPort: automaticEndpointPort ?? currentPort,
+                                                            preferring: rememberedEndpointPort)
         try Task.checkCancellation()
         guard generation == tunnelPathGeneration else { throw CancellationError() }
-        guard let selection else { return configuration }
+        guard let decision else { return configuration }
 
-        let decision = selection.decision
         automaticEndpointPort = decision.automaticPort
         if let remembered = decision.rememberedPort {
             rememberedEndpointPort = remembered
         }
 
-        return selection.configuration
+        return decision.port == currentPort ? configuration : configuration.replacingEndpointPort(with: decision.port)
     }
 
     @available(iOS 17.0, *)

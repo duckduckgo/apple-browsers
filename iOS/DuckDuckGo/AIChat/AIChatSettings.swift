@@ -35,6 +35,11 @@ final class AIChatSettings: AIChatSettingsProvider {
         static let defaultSessionTimeoutInMinutes: Int = 60
     }
 
+    struct AttachMoreTabsSettings: Decodable {
+        let aiChatAttachMoreTabsLimit: Int
+        static let defaultLimit: Int = 3
+    }
+
     enum SettingsValue: String {
         case aiChatURL
 
@@ -114,6 +119,17 @@ final class AIChatSettings: AIChatSettingsProvider {
 
     var sessionTimerInMinutes: Int {
         keepSessionSettings?.sessionTimeoutMinutes ?? KeepSessionSettings.defaultSessionTimeoutInMinutes
+    }
+
+    var aiChatAttachMoreTabsLimit: Int {
+        guard let settingsJSON = privacyConfigurationManager.privacyConfig.settings(for: AIChatSubfeature.contextualAttachMoreTabs),
+              let jsonData = settingsJSON.data(using: .utf8),
+              let limit = try? JSONDecoder().decode(AttachMoreTabsSettings.self, from: jsonData).aiChatAttachMoreTabsLimit,
+              limit > 0 else {
+            return AttachMoreTabsSettings.defaultLimit
+        }
+
+        return limit
     }
 
     var isAIChatEnabled: Bool {

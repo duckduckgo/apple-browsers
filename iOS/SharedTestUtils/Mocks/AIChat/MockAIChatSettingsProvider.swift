@@ -33,6 +33,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
     public var isAIChatTabBarDuckAIButtonVisible: Bool
     public var isAIChatTabBarContextualSheetButtonVisible: Bool
     public var sessionTimerInMinutes: Int
+    public var aiChatAttachMoreTabsLimit: Int
     public var isAIChatSearchInputUserSettingsEnabled: Bool
     public var isAIChatSearchInputUserSettingsDisabledByUser: Bool
     public var isAutomaticContextAttachmentEnabled: Bool
@@ -55,7 +56,8 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
                 isAutomaticContextAttachmentEnabled: Bool = false,
                 isChatSuggestionsEnabled: Bool = true,
                 defaultOmnibarMode: DefaultOmnibarMode = .search,
-                sessionTimerInMinutes: Int = 60) {
+                sessionTimerInMinutes: Int = 60,
+                aiChatAttachMoreTabsLimit: Int = 3) {
 
         self.aiChatURL = aiChatURL
         self.isAIChatEnabled = isAIChatEnabled
@@ -73,6 +75,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
         self.isChatSuggestionsEnabled = isChatSuggestionsEnabled
         self.defaultOmnibarMode = defaultOmnibarMode
         self.sessionTimerInMinutes = sessionTimerInMinutes
+        self.aiChatAttachMoreTabsLimit = aiChatAttachMoreTabsLimit
     }
     
     public func enableAIChatBrowsingMenuUserSettings(enable: Bool) {

@@ -92,7 +92,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var aiChatMenuConfigCancellable: AnyCancellable?
     private var aiChatButtonHoverCancellable: AnyCancellable?
     private var duckAIChromeButtonsVisibilityCancellable: AnyCancellable?
-    private var hasNativeChats = false
+    private var isChatsMenuItemEnabled = true
     private var didPerformInitialChromeSidebarApply = false
     private var duckAIChromeDividerInsetConstraint: NSLayoutConstraint?
     private var duckAIChromeDividerFullConstraint: NSLayoutConstraint?
@@ -1044,10 +1044,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         guard !isFireWindow else { return }
         nativeChatsObserver?.chatsPublisher()
             .map { !$0.isEmpty }
-            .replaceError(with: false)
+            .replaceError(with: true)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] hasChats in
-                self?.hasNativeChats = hasChats
+                self?.isChatsMenuItemEnabled = hasChats
             }
             .store(in: &cancellables)
     }
@@ -1088,7 +1088,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
             let chatsItem = NSMenuItem(title: UserText.actionChats, action: #selector(duckAIMenuChatsAction), keyEquivalent: "")
             chatsItem.target = self
-            chatsItem.isEnabled = hasNativeChats
+            chatsItem.isEnabled = isChatsMenuItemEnabled
             chatsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.chats), visibleOnMacOS27: true)
             menu.addItem(chatsItem)
         }

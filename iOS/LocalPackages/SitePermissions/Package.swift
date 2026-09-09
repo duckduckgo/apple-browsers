@@ -34,13 +34,30 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../../SharedPackages/Persistence")
+        .package(path: "../DuckUI"),
+        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
+        .package(path: "../../../SharedPackages/Infrastructure/MetricBuilder"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
+        .package(path: "../../../SharedPackages/Persistence"),
+        .package(path: "../../../SharedPackages/UIComponents")
     ],
     targets: [
         .target(
             name: "SitePermissions",
             dependencies: [
-                .product(name: "Persistence", package: "Persistence")
+                .product(name: "DuckUI", package: "DuckUI"),
+                .product(name: "UserScript", package: "BrowserServicesKit"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                "DesignResourcesKit",
+                .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
+                .product(name: "MetricBuilder", package: "MetricBuilder"),
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "UIComponents", package: "UIComponents")
+            ],
+            resources: [
+                .process("jsSources")
             ]
         ),
         .testTarget(

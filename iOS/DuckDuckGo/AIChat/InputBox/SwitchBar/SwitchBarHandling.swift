@@ -56,6 +56,9 @@ protocol SwitchBarHandling: AnyObject {
     /// Suppresses the in-pill voice button — used when an external flank already provides one.
     var hidesVoiceButton: Bool { get set }
 
+    /// A spent Duck.ai allowance: the field takes no more text and no prompt can be sent.
+    var isInputBlockedByUsageLimit: Bool { get }
+
     var hasSubmittedPrompt: Bool { get set }
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { get }
     var submitsAIChatOnKeyboardReturn: Bool { get }
@@ -93,5 +96,6 @@ extension SwitchBarHandling {
     var usesExpandedAIChatTextEntryLayout: Bool { false }
     var usesLegacyLayoutMetrics: Bool { false }
     var submitsAIChatOnKeyboardReturn: Bool { true }
+    var isInputBlockedByUsageLimit: Bool { false }
     var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
 }

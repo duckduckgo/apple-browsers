@@ -19,6 +19,7 @@
 import XCTest
 import Network
 import PixelKit
+import WideEvent
 @testable import VPN
 
 final class VPNLeakCheckServiceTests: XCTestCase {

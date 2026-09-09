@@ -19,6 +19,7 @@
 
 import Combine
 import WebKit
+import PixelKit
 
 /// WKWebsiteDataStore is basically non-functional until a web view has been instanciated and a page is successfully loaded.
 public class DataStoreWarmup {
@@ -35,9 +36,9 @@ public class DataStoreWarmup {
 
     @MainActor
     public func ensureReady(applicationState: ApplicationState, fireMode: Bool) async {
-        Pixel.fire(pixel: .webkitWarmupStart(appState: applicationState.rawValue))
+        PixelKit.fire(Pixel.Event.webkitWarmupStart(appState: applicationState.rawValue))
         await BlockingNavigationDelegate(fireMode: fireMode).loadInBackgroundWebView(url: URL(string: "about:blank")!)
-        Pixel.fire(pixel: .webkitWarmupFinished(appState: applicationState.rawValue))
+        PixelKit.fire(Pixel.Event.webkitWarmupFinished(appState: applicationState.rawValue))
     }
 
 }
@@ -61,18 +62,18 @@ public class BlockingNavigationDelegate: NSObject, WKNavigationDelegate {
             finished.send()
             self.finished = nil
         } else {
-            Pixel.fire(pixel: .webKitWarmupUnexpectedDidFinish, includedParameters: [.appVersion])
+            PixelKit.fire(Pixel.Event.webKitWarmupUnexpectedDidFinish)
         }
     }
 
     public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        Pixel.fire(pixel: .webKitDidTerminateDuringWarmup)
+        PixelKit.fire(Pixel.Event.webKitDidTerminateDuringWarmup)
 
         if let finished {
             finished.send()
             self.finished = nil
         } else {
-            Pixel.fire(pixel: .webKitWarmupUnexpectedDidTerminate, includedParameters: [.appVersion])
+            PixelKit.fire(Pixel.Event.webKitWarmupUnexpectedDidTerminate)
         }
     }
 

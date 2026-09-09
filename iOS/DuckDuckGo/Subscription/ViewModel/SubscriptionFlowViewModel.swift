@@ -25,7 +25,9 @@ import Core
 import PrivacyConfig
 import DataBrokerProtection_iOS
 import PixelKit
+import WideEvent
 import FeatureFlags_iOS
+import Persistence
 
 enum SubscriptionFlowType {
     case firstPurchase
@@ -88,6 +90,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         var selectedFeature: SelectedFeature = .none
         var viewTitle: String = UserText.subscriptionTitle
         var shouldGoBackToSettings: Bool = false
+        var shouldPresentOnboarding: Bool = false
     }
     
     // Read only View State - Should only be modified from the VM
@@ -95,6 +98,88 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     var isPIREnabled: Bool {
         featureFlagger.isFeatureOn(.personalInformationRemoval)
+    }
+
+    // MARK: - Post-checkout onboarding
+
+    /// `nil` unless this flow came from `makeSubscribeFlowV2`
+    private let onboardingKeyValueStore: ThrowingKeyValueStoring?
+
+    private let meetsPIRLocaleRequirement: () -> Bool
+
+    /// `nil` unless this flow came from `makePurchaseFlowV2`; falls back to `SubscriptionOnboardingDuckAIChatLauncher`.
+    private let onRequestDuckAIChatHandler: ((String?) -> Bool)?
+
+    private var didHandOffToDuckAI = false
+
+    var onRequestDuckAIChat: ((String?) -> Bool)? {
+        onRequestDuckAIChatHandler.map { handler in
+            { [weak self] (modelID: String?) -> Bool in
+                let didHandOff = handler(modelID)
+                self?.didHandOffToDuckAI = didHandOff
+                return didHandOff
+            }
+        }
+    }
+
+    var isPIRAvailable: Bool {
+        PIRAvailability.isAvailable(isPIREnabled: isPIREnabled,
+                                    meetsLocaleRequirement: meetsPIRLocaleRequirement(),
+                                    provider: dataBrokerProtectionViewControllerProvider)
+    }
+
+    /// Latched once the flow is actually presented, so a defensive re-invocation of `onPurchaseCompleted` cannot re-offer it.
+    private var didRequestOnboarding = false
+
+    /// `nil` unless this flow came from `makeSubscribeFlowV2`.
+    var onboardingPersistor: SubscriptionOnboardingProgressPersisting? {
+        guard let onboardingKeyValueStore else { return nil }
+        return SubscriptionOnboardingProgressPersistor(keyValueStore: onboardingKeyValueStore)
+    }
+
+    static func shouldRequestOnboarding(flowType: SubscriptionFlowType,
+                                        hasOnboardingStore: Bool,
+                                        didAlreadyRequest: Bool,
+                                        isFeatureEnabled: () async -> Bool) async -> Bool {
+        guard !didAlreadyRequest, flowType == .firstPurchase, hasOnboardingStore else { return false }
+        return await isFeatureEnabled()
+    }
+
+    /// Reads the customer's current subscription and reports whether onboarding should be presented for it.
+    /// Skips enrollment entirely on a fetch failure rather than defaulting to "not on trial".
+    static func isOnboardingFeatureEnabled(subscriptionManager: any SubscriptionManager, featureFlagger: FeatureFlagger, locale: Locale = .current) async -> Bool {
+        guard let subscription = try? await subscriptionManager.getSubscription() else { return false }
+        return SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: subscription.hasActiveTrialOffer, locale: locale) == .treatment
+    }
+
+    /// Called when the App Store purchase itself completes
+    @MainActor
+    private func requestOnboardingIfNeeded() async {
+        let shouldRequest = await Self.shouldRequestOnboarding(
+            flowType: flowType,
+            hasOnboardingStore: onboardingKeyValueStore != nil,
+            didAlreadyRequest: didRequestOnboarding) {
+                await Self.isOnboardingFeatureEnabled(subscriptionManager: self.subscriptionManager, featureFlagger: self.featureFlagger)
+            }
+        guard shouldRequest else { return }
+        state.shouldPresentOnboarding = true
+    }
+
+    /// Called once the onboarding sheet has actually appeared.
+    @MainActor
+    func didPresentOnboarding() {
+        state.shouldPresentOnboarding = false
+        didRequestOnboarding = true
+    }
+
+    /// Called once the onboarding flow finishes, so this screen dismisses with it.
+    @MainActor
+    func onboardingFinished() {
+        guard !didHandOffToDuckAI else {
+            didHandOffToDuckAI = false
+            return
+        }
+        state.shouldGoBackToSettings = true
     }
 
     /// Returns the subscription URL type based on the current flow type
@@ -120,7 +205,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
          urlOpener: URLOpener = UIApplication.shared,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
-         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+         onboardingKeyValueStore: ThrowingKeyValueStoring?,
+         meetsPIRLocaleRequirement: @escaping () -> Bool,
+         onRequestDuckAIChat: ((String?) -> Bool)? = nil) {
         self.initialURL = initialURL
         self.flowType = flowType
         self.userScript = userScript
@@ -131,6 +219,9 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.featureFlagger = featureFlagger
         self.wideEvent = wideEvent
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
+        self.onboardingKeyValueStore = onboardingKeyValueStore
+        self.meetsPIRLocaleRequirement = meetsPIRLocaleRequirement
+        self.onRequestDuckAIChatHandler = onRequestDuckAIChat
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 
@@ -160,33 +251,38 @@ final class SubscriptionFlowViewModel: ObservableObject {
             .store(in: &cancellables)
         
         
-        subFeature.onBackToSettings = {
+        subFeature.onBackToSettings = { [weak self] in
             DispatchQueue.main.async {
-                self.state.shouldGoBackToSettings = true
+                self?.state.shouldGoBackToSettings = true
             }
         }
-        
-        subFeature.onActivateSubscription = {
+
+        subFeature.onActivateSubscription = { [weak self] in
             DispatchQueue.main.async {
-                self.state.shouldActivateSubscription = true
-                self.setTransactionStatus(.idle)
+                self?.state.shouldActivateSubscription = true
+                self?.setTransactionStatus(.idle)
             }
         }
-        
+
+        subFeature.onPurchaseCompleted = { [weak self] in
+            guard let strongSelf = self else { return }
+            Task { await strongSelf.requestOnboardingIfNeeded() }
+        }
+
          subFeature.onFeatureSelected = { feature in
              DispatchQueue.main.async {
                  switch feature {
                  case .networkProtection:
-                     UniquePixel.fire(pixel: .subscriptionWelcomeVPN)
+                     PixelKit.fire(Pixel.Event.subscriptionWelcomeVPN, frequency: .uniqueByName)
                      self.state.selectedFeature = .netP
                  case .dataBrokerProtection:
-                     UniquePixel.fire(pixel: .subscriptionWelcomePersonalInformationRemoval)
+                     PixelKit.fire(Pixel.Event.subscriptionWelcomePersonalInformationRemoval, frequency: .uniqueByName)
                      self.state.selectedFeature = .dbp
                  case .identityTheftRestoration, .identityTheftRestorationGlobal:
-                     UniquePixel.fire(pixel: .subscriptionWelcomeIdentityRestoration)
+                     PixelKit.fire(Pixel.Event.subscriptionWelcomeIdentityRestoration, frequency: .uniqueByName)
                      self.state.selectedFeature = .itr
                  case .paidAIChat:
-                     UniquePixel.fire(pixel: .subscriptionWelcomeAIChat)
+                     PixelKit.fire(Pixel.Event.subscriptionWelcomeAIChat, frequency: .uniqueByName)
                      self.urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
                  case .unknown:
                      break
@@ -215,16 +311,16 @@ final class SubscriptionFlowViewModel: ObservableObject {
         
         switch error {
         case .purchaseFailed:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureStoreError,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureStoreError,
+                          frequency: .legacyDailyAndCount)
             state.transactionError = .purchaseFailed
         case .purchasePendingTransaction:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureStoreError,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureStoreError,
+                          frequency: .legacyDailyAndCount)
             state.transactionError = .purchasePendingTransaction
         case .missingEntitlements:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureBackendError,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureBackendError,
+                          frequency: .legacyDailyAndCount)
             state.transactionError = .missingEntitlements
         case .failedToGetSubscriptionOptions:
             state.transactionError = .failedToGetSubscriptionOptions
@@ -233,8 +329,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
         case .cancelledByUser:
             state.transactionError = .cancelledByUser
         case .accountCreationFailed:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureAccountNotCreated,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureAccountNotCreated,
+                          frequency: .legacyDailyAndCount)
             state.transactionError = .generalError
         case .activeSubscriptionAlreadyPresent:
             state.transactionError = .hasActiveSubscription
@@ -248,8 +344,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
             // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
             state.transactionError = .failedToRestorePastPurchase
         case .generalError:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureOther,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureOther,
+                          frequency: .legacyDailyAndCount)
             state.transactionError = .generalError
         }
     }
@@ -395,10 +491,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 .queryItems?
                 .first(where: { $0.name == AttributionParameter.origin })?
                 .value
-            Pixel.fire(
-                pixel: pixel,
-                withAdditionalParameters: origin.map { [AttributionParameter.origin: $0] } ?? [:]
-            )
+            PixelKit.fire(pixel,
+                          options: .parameters(origin.map { [AttributionParameter.origin: $0] } ?? [:]))
         }
     }
 

@@ -262,6 +262,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             },
             onManualDismiss: {
                 metrics.report(.upsellDismissed)
+                onGotItPressed()
                 onManualDismiss()
             }
         )

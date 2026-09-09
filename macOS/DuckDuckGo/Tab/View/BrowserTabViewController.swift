@@ -890,15 +890,10 @@ final class BrowserTabViewController: NSViewController {
         onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: displayedDialogType)
         let experiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
         if experiment.isNonBlocking {
-            guard onboardingDialogTypeProvider.state != .onboardingCompleted else { return }
             onboardingPixelReporter.measureDialogDismissed(dialogType: displayedDialogType)
             experiment.fireMetric(.contextualDismissed)
             onboardingDialogTypeProvider.turnOffFeature()
             return
-        }
-        if displayedDialogType == .subscriptionUpsell,
-           onboardingDialogTypeProvider.lastDialog == displayedDialogType {
-            handleContextualOnboardingOnGotItPressed(dialogType: displayedDialogType)
         }
         handleContextualOnboardingOnDismiss(dialogType: displayedDialogType)
     }

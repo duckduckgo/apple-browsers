@@ -129,6 +129,7 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
             },
             onManualDismiss: {
                 metrics.report(.upsellDismissed)
+                onGotItPressed()
                 onManualDismiss()
             }
         )

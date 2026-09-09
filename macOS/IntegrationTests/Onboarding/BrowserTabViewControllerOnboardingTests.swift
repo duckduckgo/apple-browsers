@@ -540,6 +540,29 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenUpsellXCompletesFirstThenNonBlockingDismissalStillRuns() {
+        featureFlagger.featuresStub[FeatureFlag.onboardingAsync.rawValue] = true
+        dialogProvider.state = .ongoing
+        dialogProvider.isContextualOnboardingCompleted = false
+        presentDialog(.subscriptionUpsell)
+
+        factory.performOnGotItPressed()
+        dialogProvider.state = .onboardingCompleted
+        dialogProvider.isContextualOnboardingCompleted = true
+        let turnedOff = self.expectation(description: "X turns off contextual onboarding even after completion")
+        turnedOff.expectedFulfillmentCount = 2
+        dialogProvider.turnOffFeatureCalledExpectation = turnedOff
+
+        factory.performOnManualDismiss()
+        factory.performOnManualDismiss()
+
+        wait(for: [turnedOff], timeout: 1)
+        XCTAssertEqual(pixelReporter.gotItPressedDialog, .subscriptionUpsell)
+        XCTAssertEqual(pixelReporter.manuallyDismissedDialog, .subscriptionUpsell)
+        XCTAssertEqual(pixelReporter.dismissedDialog, .subscriptionUpsell)
+    }
+
+    @MainActor
     func testWhenUpsellCTACompletesBeforeNavigationThenDismissalIsNotReported() throws {
         presentDialog(.subscriptionUpsell)
         let presentationsBefore = factory.makeViewCallCount

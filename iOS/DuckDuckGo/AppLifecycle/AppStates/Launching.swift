@@ -193,7 +193,7 @@ struct Launching: LaunchingHandling {
                                     freemiumPIRDebugSettings: freemiumPIRDebugSettings)
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
-        let launchTimeMetricsService = LaunchTimeMetricsService(featureFlagger: featureFlagger)
+        let launchTimeMetricsService = LaunchTimeMetricsService()
         let statisticsService = StatisticsService()
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared)

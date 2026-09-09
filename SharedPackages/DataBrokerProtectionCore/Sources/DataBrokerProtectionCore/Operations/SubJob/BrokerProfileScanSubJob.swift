@@ -19,7 +19,7 @@
 import Foundation
 import Common
 import BrowserServicesKit
-import PixelKit
+import WideEvent
 import os.log
 
 struct BrokerProfileScanSubJob {

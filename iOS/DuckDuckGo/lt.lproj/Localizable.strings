@@ -577,9 +577,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Sinchronizavimo ir atsarginės kopijos kūrimo klaida";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Sinchronizavimo parametrai";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Bandykite dar kartą.";
 
@@ -2262,6 +2259,12 @@
 
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Pateik šios knygos santrauką.";
+
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Pateik šio dokumento santrauką";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Pateik šio dokumento santrauką.";
 
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Pateik šio puslapio santrauką";
@@ -5194,17 +5197,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI įspėjimas";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Atkūrimo kodas nukopijuotas į mainų sritį";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Ištrinti serverio duomenis";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Jūsų atsarginė kopija bus ištrinta iš serverio. Visi įrenginiai bus atjungti nuo sinchronizavimo, bet iš nė vieno įrenginio niekas nebus ištrinta.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Ištrinti serverio duomenis?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Sinchronizuok dabar";
@@ -5284,11 +5278,17 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Pašalinti įrenginį?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Serverio duomenys ištrinti";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Visi įrenginiai, naudojantys „Sync & Backup“, bus atjungti, o tavo sinchronizuoti duomenys bus ištrinti iš serverio.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Išjungti „Sync & Backup“ ir ištrinti serverio duomenis?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Pridėtas naujas įrenginys!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sinchronizavimas ir atsarginis kopijavimas įjungtas";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Atkūrimo kodas nukopijuotas";

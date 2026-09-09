@@ -25,13 +25,17 @@ struct PromptBarPixelHandler: DuckAIPromptPixelFiring {
 
     func fire(_ event: DuckAIPromptPixelEvent) {
         guard let pixel = Self.promptBarPixel(for: event) else { return }
+        PixelKit.fire(pixel, frequency: Self.frequency(for: event), includeAppVersionParameter: true)
+    }
 
-        switch pixel {
-        case .newVoiceChat:
-            // The frequency its address bar counterpart uses.
-            PixelKit.fire(pixel, frequency: .dailyAndStandard, includeAppVersionParameter: true)
+    static func frequency(for event: DuckAIPromptPixelEvent) -> PixelKit.Frequency {
+        switch event {
+        case .voiceChatOpened:
+            return .dailyAndStandard
+        case .createImageUnavailable:
+            return .daily
         default:
-            PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            return .dailyAndCount
         }
     }
 
@@ -60,6 +64,13 @@ struct PromptBarPixelHandler: DuckAIPromptPixelFiring {
         case .modelPickerShown: .modelPickerShown(origin: SubscriptionFunnelOrigin.promptBarModelPicker.rawValue)
         case .reasoningPickerShown: .reasoningPickerShown(origin: SubscriptionFunnelOrigin.promptBarReasoningDropdown.rawValue)
         case .voiceChatOpened: .newVoiceChat
+        case .createImageModelSwitched(let fromModelId, let toModelId, let fromModelPrivacyPreserving):
+            .createImageModelSwitched(fromModelId: fromModelId,
+                                      toModelId: toModelId,
+                                      fromModelPrivacyPreserving: fromModelPrivacyPreserving)
+        case .createImageModelSwitchNoticeDismissed: .createImageModelSwitchNoticeDismissed
+        case .createImageUnavailable: .createImageUnavailable
+        case .createImageSubmittedWithUnsupportedModel: .createImageSubmittedWithUnsupportedModel
         case .submittedWithTabs,
                 .tabAttachmentRemoved,
                 .tabPickerShown,

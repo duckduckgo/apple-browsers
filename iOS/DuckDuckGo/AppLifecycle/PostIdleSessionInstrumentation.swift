@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 /// Interaction state shared by the return-session and post-idle payloads.
 protocol ReturnSessionInteractionData: AnyObject {

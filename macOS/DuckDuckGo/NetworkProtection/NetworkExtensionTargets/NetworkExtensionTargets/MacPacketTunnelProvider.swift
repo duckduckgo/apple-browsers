@@ -24,6 +24,7 @@ import NetworkExtension
 import Networking
 import os.log
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Subscription
 import VPN

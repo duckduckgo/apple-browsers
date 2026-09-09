@@ -29,6 +29,7 @@ import DDGSync
 import AuthenticationServices
 import PrivacyConfig
 import FeatureFlags_iOS
+import PixelKit
 
 protocol AutofillSettingsViewModelDelegate: AnyObject {
     func navigateToPasswords(viewModel: AutofillSettingsViewModel)
@@ -86,9 +87,9 @@ final class AutofillSettingsViewModel: ObservableObject {
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.autofillEnabledChange, object: self)
 
             if savePasswordsEnabled {
-                Pixel.fire(pixel: .autofillLoginsSettingsEnabled)
+                PixelKit.fire(Pixel.Event.autofillLoginsSettingsEnabled)
             } else {
-                Pixel.fire(pixel: .autofillLoginsSettingsDisabled, withAdditionalParameters: ["source": source.rawValue])
+                PixelKit.fire(Pixel.Event.autofillLoginsSettingsDisabled, options: .parameters(["source": source.rawValue]))
             }
         }
     }
@@ -107,9 +108,9 @@ final class AutofillSettingsViewModel: ObservableObject {
                 NotificationCenter.default.post(name: AppUserDefaults.Notifications.autofillEnabledChange, object: self)
 
                 if newValue {
-                    Pixel.fire(pixel: .autofillCardsSettingsEnabled)
+                    PixelKit.fire(Pixel.Event.autofillCardsSettingsEnabled)
                 } else {
-                    Pixel.fire(pixel: .autofillCardsSettingsDisabled, withAdditionalParameters: ["source": source.rawValue])
+                    PixelKit.fire(Pixel.Event.autofillCardsSettingsDisabled, options: .parameters(["source": source.rawValue]))
                 }
             }
         )
@@ -289,18 +290,18 @@ final class AutofillSettingsViewModel: ObservableObject {
     
     func resetExcludedSites() {
         showingResetConfirmation = true
-        Pixel.fire(pixel: .autofillLoginsSettingsResetExcludedDisplayed)
+        PixelKit.fire(Pixel.Event.autofillLoginsSettingsResetExcludedDisplayed)
     }
     
     func confirmResetExcludedSites() {
         _ = autofillNeverPromptWebsitesManager.deleteAllNeverPromptWebsites()
         showingResetConfirmation = false
-        Pixel.fire(pixel: .autofillLoginsSettingsResetExcludedConfirmed)
+        PixelKit.fire(Pixel.Event.autofillLoginsSettingsResetExcludedConfirmed)
     }
     
     func cancelResetExcludedSites() {
         showingResetConfirmation = false
-        Pixel.fire(pixel: .autofillLoginsSettingsResetExcludedDismissed)
+        PixelKit.fire(Pixel.Event.autofillLoginsSettingsResetExcludedDismissed)
     }
 
 }

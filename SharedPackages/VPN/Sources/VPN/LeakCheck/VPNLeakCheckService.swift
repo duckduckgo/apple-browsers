@@ -22,7 +22,7 @@ import Foundation
 import FoundationExtensions
 import Network
 import os.log
-import PixelKit
+import WideEvent
 
 private enum LeakCheckIPError: Error, CustomNSError {
     case malformedObservedIP

@@ -577,9 +577,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Erro de sincronização e cópia de segurança";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Definições de sincronização";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Tenta novamente.";
 
@@ -2262,6 +2259,12 @@
 
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Resume este livro.";
+
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Resume este documento";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Resume este documento.";
 
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Resume esta página";
@@ -5194,17 +5197,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Alerta SwiftUI";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Código de recuperação copiado para a área de transferência";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Eliminar dados do servidor";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "A tua cópia de segurança será eliminada do servidor. Todos os dispositivos serão desligados da sincronização, mas nada será eliminado dos dispositivos.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Eliminar dados do servidor?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Sincronizar agora";
@@ -5284,11 +5278,17 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Remover dispositivo?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Dados do servidor eliminados";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Todos os dispositivos que usam Sync & Backup serão desconectados e os dados sincronizados serão eliminados do servidor.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Desativar Sync & Backup e eliminar dados do servidor?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Novo dispositivo adicionado!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sincronização e cópia de segurança ativada";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Código de recuperação copiado";

@@ -577,9 +577,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Pogreška Sinkronizacije i sigurnosnog kopiranja";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Postavke sinkronizacije";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Pokušaj ponovno.";
 
@@ -2262,6 +2259,12 @@
 
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Sažmi ovu knjigu.";
+
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Sažmi ovaj dokument";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Sažmi ovaj dokument.";
 
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Sažmi ovu stranicu";
@@ -5194,17 +5197,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI upozorenje";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Šifra za oporavak kopirana je u međuspremnik";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Brisanje podataka poslužitelja";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Tvoja sigurnosna kopija bit će izbrisana s poslužitelja. Svi uređaji bit će isključeni iz sinkronizacije, ali ništa se neće izbrisati s bilo kojeg uređaja.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Izbrisati podatke poslužitelja?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Sinkroniziraj";
@@ -5284,11 +5278,17 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Želiš li ukloniti uređaj?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Podaci poslužitelja su izbrisani";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Svi uređaji koji koriste Sync & Backup bit će isključeni, a tvoji sinkronizirani podaci bit će izbrisani s poslužitelja.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Isključi Sync & Backup i izbriši podatke poslužitelja?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Dodan je novi uređaj!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup je uključen";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Šifra za oporavak je kopirana";

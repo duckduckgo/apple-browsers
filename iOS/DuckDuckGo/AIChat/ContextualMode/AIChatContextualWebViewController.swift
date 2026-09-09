@@ -24,6 +24,7 @@ import Common
 import FoundationExtensions
 import Core
 import os.log
+import PixelKit
 import PrivacyConfig
 import UIKit
 import UserScript
@@ -35,6 +36,7 @@ protocol AIChatContextualWebViewControllerDelegate: AnyObject {
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestToLoad url: URL)
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didUpdateContextualChatURL url: URL?)
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestOpenDownloadWithFileName fileName: String)
+    func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didPersistChatWithID chatID: String)
 }
 
 final class AIChatContextualWebViewController: UIViewController {
@@ -67,6 +69,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let userAgentManager: UserAgentManaging
     private let utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)?
     private var utiHost: AIChatContextualUTIHost?
+    private var chatPersistenceCancellable: AnyCancellable?
     private var webViewBottomConstraint: NSLayoutConstraint?
 
     private(set) var aiChatContentHandler: AIChatContentHandling
@@ -173,7 +176,7 @@ final class AIChatContextualWebViewController: UIViewController {
         self.userAgentManager = userAgentManager
         self.utiHostInstaller = utiHostInstaller
 
-        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared)
         self.aiChatContentHandler = AIChatContentHandler(
             aiChatSettings: aiChatSettings,
             featureDiscovery: featureDiscovery,
@@ -497,6 +500,12 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
         utiHost?.bindToUserScript(userScripts.aiChatUserScript)
         if let chatUpdatesPublisher = userScripts.duckAiNativeStorageUserScript?.chatUpdatesPublisher {
             utiHost?.observeChatUpdates(chatUpdatesPublisher)
+            chatPersistenceCancellable = chatUpdatesPublisher
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] chatID in
+                    guard let self else { return }
+                    self.delegate?.contextualWebViewController(self, didPersistChatWithID: chatID)
+                }
         }
 
         isContentHandlerReady = true

@@ -26,6 +26,7 @@ import FoundationExtensions
 import History
 import os.log
 import PrivacyConfig
+import WebKit
 
 @MainActor
 protocol WindowControllersManagerProtocol: AnyObject {
@@ -202,6 +203,9 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         guard let onboardingTab else { return }
         guard windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: onboardingTab) != nil else { return }
 
+#if DEBUG
+        Logger.general.debug("Onboarding window close: owner=\(onboardingTab.uuid, privacy: .public)")
+#endif
         recordOnboardingSkipInPlace()
     }
 
@@ -700,21 +704,24 @@ extension WindowControllersManager: OnboardingNavigating {
     /// `onSkipInPlace` when onboarding goes away on its own — navigated away from, swept up in a
     /// bulk close, or carried off by its window closing.
     @MainActor
-    func setOnboardingHandlers(onClose: @escaping @MainActor () -> Void,
+    func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Bool,
                                onSkipInPlace: @escaping @MainActor () -> Void) {
         guard let onboardingTab else { return }
 
         onboardingSkipInPlaceHandler = onSkipInPlace
 
-        onboardingTab.closeInterceptor = { [weak self] reason in
+        onboardingTab.closeInterceptor = { [weak self, weak onboardingTab] reason in
+            guard let self, let onboardingTab, self.onboardingTab === onboardingTab else { return false }
+#if DEBUG
+            Logger.general.debug("Onboarding close: owner=\(onboardingTab.uuid, privacy: .public) reason=\(String(describing: reason), privacy: .public)")
+#endif
             switch reason {
             case .userInitiated:
                 // `onClose` swaps the tab out itself, so cancel the plain removal.
-                onClose()
-                return true
+                return onClose(onboardingTab)
             case .bulk:
                 // Quit cleanup removes this interceptor before sweeping up tabs.
-                self?.recordOnboardingSkipInPlace()
+                self.recordOnboardingSkipInPlace()
                 return false
             case .programmatic:
                 // Not reachable — `removeUnpinnedTab` only consults the interceptor for
@@ -731,7 +738,13 @@ extension WindowControllersManager: OnboardingNavigating {
         onboardingTabCancellable = onboardingTab.$content
             .filter { if case .onboarding = $0 { false } else { true } }
             .first()
-            .sink { [weak self] _ in self?.recordOnboardingSkipInPlace() }
+            .sink { [weak self, weak onboardingTab] _ in
+                guard let self, let onboardingTab, self.onboardingTab === onboardingTab else { return }
+#if DEBUG
+                Logger.general.debug("Onboarding content exit: owner=\(onboardingTab.uuid, privacy: .public)")
+#endif
+                self.recordOnboardingSkipInPlace()
+            }
     }
 
     /// Fires `.browsingBeforeCompletion` the first time the user completes a navigation to a real
@@ -809,6 +822,28 @@ extension WindowControllersManager: OnboardingNavigating {
         browsingBeforeCompletionCancellables.removeAll()
     }
 
+    /// Resolve the sender, never the selected tab: the user may have switched tabs or windows.
+    func onboardingTab(for webView: WKWebView?) -> Tab? {
+        guard let webView else { return nil }
+        for windowController in mainWindowControllers {
+            let viewModel = windowController.mainViewController.tabCollectionViewModel
+            let tabs = viewModel.tabCollection.tabs + (viewModel.pinnedTabsManager?.tabCollection.tabs ?? [])
+            for case .loaded(let tab) in tabs where tab.webView === webView {
+                guard case .onboarding = tab.content else { return nil }
+                return tab
+            }
+        }
+        return nil
+    }
+
+    func replaceOnboardingTab(_ source: Tab, with tab: Tab) -> Bool {
+        guard onboardingTab(for: source.webView) === source else { return false }
+        if onboardingTab === source {
+            setOnboardingTab(nil)
+        }
+        return replaceTab(source, with: tab)
+    }
+
     /// Replaces the onboarding tab, falling back to the selected tab when none is tracked
     /// (the non-async flow keeps the UI locked, so the two are the same tab there).
     @MainActor
@@ -820,11 +855,12 @@ extension WindowControllersManager: OnboardingNavigating {
     }
 
     @MainActor
-    private func replaceTab(_ tabToRemove: Tab, with tab: Tab) {
+    @discardableResult
+    private func replaceTab(_ tabToRemove: Tab, with tab: Tab) -> Bool {
         // Resolve the window that actually holds the tab, not whichever one is key — otherwise the
         // index lookup below searches the wrong collection and silently gives up.
-        guard let windowController = windowController(containing: tabToRemove) ?? mainWindowController else { return }
-        guard let index = windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tabToRemove) else { return }
+        guard let windowController = windowController(containing: tabToRemove) ?? mainWindowController else { return false }
+        guard let index = windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tabToRemove) else { return false }
         var tabToAppend = tab
         if windowController.mainViewController.isBurner {
             let burnerMode = windowController.mainViewController.tabCollectionViewModel.burnerMode
@@ -833,6 +869,7 @@ extension WindowControllersManager: OnboardingNavigating {
         // Append before remove: the tab count must never hit zero, or the window closes.
         windowController.mainViewController.tabCollectionViewModel.append(tab: tabToAppend)
         windowController.mainViewController.tabCollectionViewModel.remove(at: index)
+        return true
     }
 
     @MainActor

@@ -55,6 +55,7 @@ class OnboardingManagerTests: XCTestCase {
         originalOnboardingFinished = OnboardingActionsManager.isOnboardingFinished
         OnboardingActionsManager.isOnboardingFinished = false
         navigationDelegate = CapturingOnboardingNavigation()
+        navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
         dockCustomization = CapturingDockCustomizer()
         defaultBrowserProvider = CapturingDefaultBrowserProvider()
         appearancePersistor = MockAppearancePreferencesPersistor()
@@ -235,7 +236,7 @@ class OnboardingManagerTests: XCTestCase {
         navigationDelegate.preventUserInteraction = false
 
         // When
-        manager.onboardingStarted()
+        manager.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertTrue(navigationDelegate.updatePreventUserInteractionCalled)
@@ -248,7 +249,7 @@ class OnboardingManagerTests: XCTestCase {
         isOnboardingFinished.wrappedValue = false
 
         // When
-        manager.goToAddressBar()
+        manager.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertTrue(navigationDelegate.replaceTabCalled)
@@ -264,7 +265,7 @@ class OnboardingManagerTests: XCTestCase {
         isOnboardingFinished.wrappedValue = false
 
         // When
-        manager.goToAddressBar()
+        manager.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertTrue(navigationDelegate.replaceTabCalled)
@@ -284,7 +285,7 @@ class OnboardingManagerTests: XCTestCase {
         // Given
         let isOnboardingFinished = UserDefaultsWrapper(key: .onboardingFinished, defaultValue: true)
         isOnboardingFinished.wrappedValue = false
-        manager.goToAddressBar()
+        manager.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
         navigationDelegate.fireNavigationDidEnd()
         XCTAssertTrue(navigationDelegate.focusOnAddressBarCalled)
         navigationDelegate.focusOnAddressBarCalled = false
@@ -298,7 +299,7 @@ class OnboardingManagerTests: XCTestCase {
 
     func testGoToAddressBar_NavigatesToSettings() {
         // When
-        manager.goToSettings()
+        manager.goToSettings(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertTrue(navigationDelegate.replaceTabCalled)
@@ -395,7 +396,7 @@ class OnboardingManagerTests: XCTestCase {
 
     func testWelcomeShownPixelFired_WhenOnboardingStarted() {
         // When
-        manager.onboardingStarted()
+        manager.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.welcome(.shown)])
@@ -451,7 +452,7 @@ class OnboardingManagerTests: XCTestCase {
         let managerWithTreatment = makeExperimentManager(featureFlagger: featureFlagger)
 
         // When
-        managerWithTreatment.onboardingStarted()
+        managerWithTreatment.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertEqual(
@@ -467,7 +468,7 @@ class OnboardingManagerTests: XCTestCase {
         let managerWithControl = makeExperimentManager(featureFlagger: featureFlagger)
 
         // When
-        managerWithControl.onboardingStarted()
+        managerWithControl.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertTrue(managerWithControl.configuration.stepDefinitions.getStarted.options.isEmpty)
@@ -480,7 +481,7 @@ class OnboardingManagerTests: XCTestCase {
         let managerWithTreatment = makeExperimentManager(featureFlagger: featureFlagger, canInstall: false)
 
         // When
-        managerWithTreatment.onboardingStarted()
+        managerWithTreatment.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertTrue(managerWithTreatment.configuration.stepDefinitions.getStarted.options.isEmpty)
@@ -494,7 +495,7 @@ class OnboardingManagerTests: XCTestCase {
         let experimentManager = makeExperimentManager(featureFlagger: featureFlagger)
 
         // When
-        experimentManager.onboardingStarted()
+        experimentManager.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertTrue(experimentManager.configuration.stepDefinitions.getStarted.options.isEmpty)
@@ -507,13 +508,13 @@ class OnboardingManagerTests: XCTestCase {
         let experimentManager = makeExperimentManager(featureFlagger: featureFlagger, canInstall: false)
 
         // First access: not install-eligible → must not enroll
-        experimentManager.onboardingStarted()
+        experimentManager.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
         XCTAssertTrue(experimentManager.configuration.stepDefinitions.getStarted.options.isEmpty)
         XCTAssertFalse(featureFlagger.didCallResolveCohort)
 
         // Later access: now install-eligible → must enroll and show treatment option
         chromeExtensionInstaller.canInstallDDGExtension = true
-        experimentManager.onboardingStarted()
+        experimentManager.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
         XCTAssertEqual(
             experimentManager.configuration.stepDefinitions.getStarted.options,
             [OnboardingOption.chromeExtensionInstall.rawValue]
@@ -539,7 +540,7 @@ class OnboardingManagerTests: XCTestCase {
             fire: { event, _, _ in firedEvents.append(event) }
         )
         let experimentManager = makeExperimentManager(featureFlagger: featureFlagger)
-        experimentManager.onboardingStarted()
+        experimentManager.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // When
         experimentManager.setAsDefault()
@@ -706,7 +707,7 @@ class OnboardingManagerTests: XCTestCase {
         manager.setBookmarkBar(enabled: true)
         manager.setSessionRestore(enabled: true)
         manager.setHomeButtonPosition(enabled: true)
-        manager.goToAddressBar()
+        manager.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.customization(.clicked([.bookmarksBar, .restoreSession, .homeButton]))])
@@ -732,7 +733,7 @@ class OnboardingManagerTests: XCTestCase {
 
         // When
         manager.setDuckAiInAddressBar(enabled: false)
-        manager.goToAddressBar()
+        manager.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.searchExperience(.clicked(.searchOnly))])
@@ -810,11 +811,11 @@ class OnboardingManagerTests: XCTestCase {
         let managerWithTreatment = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
 
         // When
-        managerWithTreatment.onboardingStarted()
+        managerWithTreatment.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertFalse(navigationDelegate.updatePreventUserInteractionCalled)
-        XCTAssertNotNil(navigationDelegate.onboardingOnClose)
+        XCTAssertNil(navigationDelegate.onboardingOnClose, "Page initialization must not replace native handlers")
     }
 
     func testOnboardingStarted_ControlCohort_TakesLockingBranch() {
@@ -823,7 +824,7 @@ class OnboardingManagerTests: XCTestCase {
         let managerWithControl = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
 
         // When
-        managerWithControl.onboardingStarted()
+        managerWithControl.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertTrue(navigationDelegate.updatePreventUserInteractionCalled)
@@ -837,7 +838,7 @@ class OnboardingManagerTests: XCTestCase {
         let managerWithoutEnrollment = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
 
         // When
-        managerWithoutEnrollment.onboardingStarted()
+        managerWithoutEnrollment.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertTrue(navigationDelegate.updatePreventUserInteractionCalled)
@@ -854,7 +855,7 @@ class OnboardingManagerTests: XCTestCase {
         let managerWithControl = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
 
         // When
-        managerWithControl.goToAddressBar()
+        managerWithControl.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertTrue(experimentFiredEvents.contains(where: { $0.parameters?["metric"] == "onboardingCompleted" }))
@@ -870,7 +871,7 @@ class OnboardingManagerTests: XCTestCase {
         let managerWithControl = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
 
         // When
-        managerWithControl.skipOnboarding()
+        managerWithControl.skipOnboarding(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertTrue(experimentFiredEvents.contains(where: { $0.parameters?["metric"] == "onboardingSkipped" }))
@@ -886,7 +887,7 @@ class OnboardingManagerTests: XCTestCase {
         contextualOnboardingState.state = .notStarted
 
         // When
-        managerUnderTest.skipOnboarding()
+        managerUnderTest.skipOnboarding(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertEqual(contextualOnboardingState.state, .onboardingCompleted)
@@ -901,7 +902,7 @@ class OnboardingManagerTests: XCTestCase {
         contextualOnboardingState.state = .onboardingCompleted
 
         // When
-        managerUnderTest.goToAddressBar()
+        managerUnderTest.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertEqual(contextualOnboardingState.state, .onboardingCompleted)
@@ -915,7 +916,7 @@ class OnboardingManagerTests: XCTestCase {
         contextualOnboardingState.state = .onboardingCompleted
 
         // When
-        managerUnderTest.skipOnboarding()
+        managerUnderTest.skipOnboarding(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertEqual(contextualOnboardingState.state, .onboardingCompleted)
@@ -925,6 +926,8 @@ class OnboardingManagerTests: XCTestCase {
     func testLateCallbacksCannotReplaceBrowsingAfterEitherOutcome() {
         for outcome in [OnboardingExperimentPersistor.Outcome.completed, .skipped] {
             OnboardingActionsManager.isOnboardingFinished = false
+            navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
+            let source = navigationDelegate.onboardingSourceTab!.webView
             let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
             let store = MockKeyValueFileStore()
             let early = makeNonBlockingExperimentManager(featureFlagger: flags,
@@ -932,16 +935,16 @@ class OnboardingManagerTests: XCTestCase {
             let full = makeNonBlockingExperimentManager(featureFlagger: flags,
                                                         experimentPersistor: OnboardingExperimentPersistor(keyValueStore: store))
             switch outcome {
-            case .completed: early.goToAddressBar()
-            case .skipped: early.skipOnboarding()
+            case .completed: early.goToAddressBar(from: source)
+            case .skipped: early.skipOnboarding(from: source)
             }
             navigationDelegate.replaceTabCalled = false
             navigationDelegate.updatePreventUserInteractionCalled = false
 
             for manager in [early, full] {
-                manager.goToAddressBar()
-                manager.goToSettings()
-                manager.skipOnboarding()
+                manager.goToAddressBar(from: source)
+                manager.goToSettings(from: source)
+                manager.skipOnboarding(from: source)
             }
 
             XCTAssertFalse(navigationDelegate.replaceTabCalled)
@@ -954,6 +957,8 @@ class OnboardingManagerTests: XCTestCase {
     func testFailedOutcomeWriteStillFinishesAndReportsOnceAcrossManagers() {
         for outcome in [OnboardingExperimentPersistor.Outcome.completed, .skipped] {
             OnboardingActionsManager.isOnboardingFinished = false
+            navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
+            let source = navigationDelegate.onboardingSourceTab!.webView
             experimentFiredEvents = []
             navigationDelegate.replaceTabCalled = false
             let cohort = FeatureFlag.OnboardingNonBlockingCohort.treatment
@@ -966,8 +971,8 @@ class OnboardingManagerTests: XCTestCase {
             let full = makeNonBlockingExperimentManager(featureFlagger: flags,
                                                         experimentPersistor: OnboardingExperimentPersistor(keyValueStore: store))
             switch outcome {
-            case .completed: early.goToAddressBar()
-            case .skipped: early.skipOnboarding()
+            case .completed: early.goToAddressBar(from: source)
+            case .skipped: early.skipOnboarding(from: source)
             }
             XCTAssertTrue(navigationDelegate.replaceTabCalled)
             XCTAssertTrue(OnboardingActionsManager.isOnboardingFinished)
@@ -978,15 +983,79 @@ class OnboardingManagerTests: XCTestCase {
 
             navigationDelegate.replaceTabCalled = false
             for manager in [early, full] {
-                manager.goToAddressBar()
-                manager.goToSettings()
-                manager.skipOnboarding()
+                manager.goToAddressBar(from: source)
+                manager.goToSettings(from: source)
+                manager.skipOnboarding(from: source)
             }
             XCTAssertFalse(navigationDelegate.replaceTabCalled)
             XCTAssertEqual(experimentFiredEvents.filter { $0.parameters?["metric"] == metric }.count, 3)
             let otherMetric = outcome == .completed ? "onboardingSkipped" : "onboardingCompleted"
             XCTAssertFalse(experimentFiredEvents.contains { $0.parameters?["metric"] == otherMetric })
         }
+    }
+
+    @MainActor
+    func testLiveOnboardingCanExitWithAnAlreadyRecordedOutcome() {
+        for outcome in [OnboardingExperimentPersistor.Outcome.skipped, .completed] {
+            for action in ["browse", "settings", "close"] {
+                let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+                configureNonBlockingExperimentKit(cohort: .treatment, featureFlagger: flags)
+                experimentFiredEvents = []
+                let store = MockKeyValueFileStore()
+                let persistor = OnboardingExperimentPersistor(keyValueStore: store)
+                persistor.record(outcome)
+                OnboardingActionsManager.isOnboardingFinished = true
+                navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
+                navigationDelegate.replaceTabCalled = false
+                let manager = makeNonBlockingExperimentManager(featureFlagger: flags, experimentPersistor: persistor)
+                let source = navigationDelegate.onboardingSourceTab!.webView
+
+                switch action {
+                case "settings": manager.goToSettings(from: source)
+                case "close": XCTAssertTrue(manager.skipOnboarding(from: source))
+                default: manager.goToAddressBar(from: source)
+                }
+
+                XCTAssertTrue(navigationDelegate.replaceTabCalled, action)
+                XCTAssertEqual(persistor.outcome, outcome)
+                XCTAssertTrue(experimentFiredEvents.isEmpty)
+            }
+        }
+    }
+
+    @MainActor
+    func testSameManagerCanFinishNewOnboardingAfterResetWithoutQuitting() {
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        let persistor = OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
+        let manager = makeNonBlockingExperimentManager(featureFlagger: flags, experimentPersistor: persistor)
+        let oldSource = navigationDelegate.onboardingSourceTab!.webView
+        manager.skipOnboarding(from: oldSource)
+
+        persistor.reset()
+        OnboardingActionsManager.isOnboardingFinished = false
+        navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
+        navigationDelegate.replaceTabCalled = false
+        manager.goToAddressBar(from: oldSource)
+        XCTAssertFalse(navigationDelegate.replaceTabCalled)
+        XCTAssertNil(persistor.outcome)
+        XCTAssertFalse(OnboardingActionsManager.isOnboardingFinished)
+
+        manager.goToAddressBar(from: navigationDelegate.onboardingSourceTab!.webView)
+        XCTAssertTrue(navigationDelegate.replaceTabCalled)
+        XCTAssertEqual(persistor.outcome, .completed)
+    }
+
+    @MainActor
+    func testMessageFromBrowsingTabCannotRecordAnOutcomeOrReplaceTabs() {
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        let persistor = OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
+        let manager = makeNonBlockingExperimentManager(featureFlagger: flags, experimentPersistor: persistor)
+        let browsingTab = Tab(content: .newtab)
+        manager.goToAddressBar(from: browsingTab.webView)
+        manager.goToSettings(from: nil)
+        XCTAssertFalse(navigationDelegate.replaceTabCalled)
+        XCTAssertNil(persistor.outcome)
+        XCTAssertFalse(OnboardingActionsManager.isOnboardingFinished)
     }
 
     @MainActor
@@ -999,8 +1068,8 @@ class OnboardingManagerTests: XCTestCase {
         managerUnderTest.installNonBlockingHandlers()
         XCTAssertNotNil(navigationDelegate.onboardingOnClose)
         navigationDelegate.onboardingOnClose?()
-        managerUnderTest.onboardingStarted()
-        managerUnderTest.goToAddressBar()
+        managerUnderTest.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
+        managerUnderTest.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
 
         XCTAssertEqual(contextualOnboardingState.state, .notStarted)
         XCTAssertTrue(experimentFiredEvents.contains { $0.parameters?["metric"] == "onboardingSkipped" })
@@ -1013,7 +1082,7 @@ class OnboardingManagerTests: XCTestCase {
         let managerUnderTest = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
         contextualOnboardingState.state = .ongoing
 
-        managerUnderTest.skipOnboarding()
+        managerUnderTest.skipOnboarding(from: navigationDelegate.onboardingSourceTab?.webView)
 
         XCTAssertEqual(contextualOnboardingState.state, .ongoing)
     }
@@ -1024,7 +1093,7 @@ class OnboardingManagerTests: XCTestCase {
         let managerUnderTest = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
         contextualOnboardingState.state = .ongoing
 
-        managerUnderTest.goToAddressBar()
+        managerUnderTest.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
 
         XCTAssertEqual(contextualOnboardingState.state, .ongoing)
     }
@@ -1037,7 +1106,7 @@ class OnboardingManagerTests: XCTestCase {
         contextualOnboardingState.state = .ongoing
 
         // When
-        managerUnderTest.goToAddressBar()
+        managerUnderTest.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertEqual(contextualOnboardingState.state, .ongoing)
@@ -1051,7 +1120,7 @@ class OnboardingManagerTests: XCTestCase {
         let managerWithoutEnrollment = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
 
         // When
-        managerWithoutEnrollment.goToAddressBar()
+        managerWithoutEnrollment.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
 
         // Then
         XCTAssertTrue(experimentFiredEvents.isEmpty)

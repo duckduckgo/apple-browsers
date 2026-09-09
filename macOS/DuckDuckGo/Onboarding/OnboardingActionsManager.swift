@@ -27,6 +27,7 @@ import Onboarding
 import os.log
 import PixelKit
 import PrivacyConfig
+import WebKit
 
 enum OnboardingSteps: String, CaseIterable {
     case welcome
@@ -59,13 +60,13 @@ protocol OnboardingActionsManaging {
     var configuration: OnboardingConfiguration { get }
 
     /// Used for any setup necessary for during the onboarding
-    func onboardingStarted()
+    func onboardingStarted(from webView: WKWebView?)
 
     /// At the end of the onboarding the user will be taken to the DuckDuckGo search page
-    func goToAddressBar()
+    func goToAddressBar(from webView: WKWebView?)
 
     /// At the end of the onboarding the user can be taken to the Settings page
-    func goToSettings()
+    func goToSettings(from webView: WKWebView?)
 
     /// At user imput adds the app to the dock
     func addToDock()
@@ -106,10 +107,12 @@ protocol OnboardingActionsManaging {
 
 protocol OnboardingNavigating: AnyObject {
     func replaceTabWith(_ tab: Tab)
+    func onboardingTab(for webView: WKWebView?) -> Tab?
+    func replaceOnboardingTab(_ source: Tab, with tab: Tab) -> Bool
     func focusOnAddressBar()
     func showImportDataView()
     func updatePreventUserInteraction(prevent: Bool)
-    func setOnboardingHandlers(onClose: @escaping @MainActor () -> Void,
+    func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Bool,
                                onSkipInPlace: @escaping @MainActor () -> Void)
 }
 
@@ -136,7 +139,10 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     /// Early and fully installed scripts can have different managers for the same first-run flow.
     private var canEndOnboarding: Bool {
-        !hasEnded && (!nonBlockingExperiment.isNonBlocking || (!Self.isOnboardingFinished && experimentPersistor.outcome == nil))
+        if nonBlockingExperiment.isNonBlocking {
+            return !Self.isOnboardingFinished && experimentPersistor.outcome == nil
+        }
+        return !hasEnded
     }
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
@@ -286,15 +292,16 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         guard nonBlockingExperiment.isNonBlocking, !hasInstalledHandlers, canEndOnboarding else { return }
         hasInstalledHandlers = true
         navigation.setOnboardingHandlers(
-            onClose: { [weak self] in self?.skipOnboarding() },
+            onClose: { [weak self] tab in self?.skipOnboarding(from: tab.webView) == true },
             onSkipInPlace: { [weak self] in self?.recordSkipInPlace() }
         )
     }
 
-    func onboardingStarted() {
-        if nonBlockingExperiment.isNonBlocking, !canEndOnboarding { return }
+    func onboardingStarted(from webView: WKWebView?) {
         if nonBlockingExperiment.isNonBlocking {
-            installNonBlockingHandlers()
+            guard navigation.onboardingTab(for: webView) != nil, canEndOnboarding else { return }
+            // Native handlers are installed by the tab before page initialization. The shared
+            // script manager must not replace another tab's handlers when a page initializes.
         } else {
             navigation.updatePreventUserInteraction(prevent: true)
         }
@@ -306,41 +313,47 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     @MainActor
-    func goToAddressBar() {
-        guard finishOnboarding(.completed) else { return }
-        let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
-        navigation.replaceTabWith(tab)
-
-        tab.navigationDidEndPublisher
-            .first()
-            .sink { [weak self] _ in
-                self?.navigation.focusOnAddressBar()
-            }
-            .store(in: &cancellables)
+    func goToAddressBar(from webView: WKWebView?) {
+        guard let tab = leaveOnboarding(.completed, for: webView, content: .url(URL.duckDuckGo, source: .ui)) else { return }
+        focusAddressBarAfterNavigation(in: tab)
     }
 
     @MainActor
-    func goToSettings() {
-        guard finishOnboarding(.completed) else { return }
-        let tab = Tab(content: .settings(pane: nil))
-        navigation.replaceTabWith(tab)
+    func goToSettings(from webView: WKWebView?) {
+        _ = leaveOnboarding(.completed, for: webView, content: .settings(pane: nil))
     }
 
-    /// The user closed the onboarding tab. Records the skip and puts a browsing tab in its place,
-    /// so closing onboarding leaves them somewhere to be rather than with nothing.
+    /// Closing a live onboarding tab must still work if its outcome was already recorded.
     @MainActor
-    func skipOnboarding() {
-        // A late callback from either script must not replace a browsing tab after onboarding ended.
-        guard finishOnboarding(.skipped) else { return }
+    @discardableResult
+    func skipOnboarding(from webView: WKWebView?) -> Bool {
+        guard let tab = leaveOnboarding(.skipped, for: webView, content: .url(URL.duckDuckGo, source: .ui)) else { return false }
+        focusAddressBarAfterNavigation(in: tab)
+        return true
+    }
 
-        let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
+    @MainActor
+    private func leaveOnboarding(_ outcome: OnboardingExperimentPersistor.Outcome,
+                                 for webView: WKWebView?, content: TabContent) -> Tab? {
+        if nonBlockingExperiment.isNonBlocking {
+            // Validate before recording anything. A late message from a page that is no longer
+            // onboarding must neither finish a new session nor replace its browsing tab.
+            guard let source = navigation.onboardingTab(for: webView) else { return nil }
+            _ = finishOnboarding(outcome)
+            let tab = Tab(content: content)
+            return navigation.replaceOnboardingTab(source, with: tab) ? tab : nil
+        }
+        guard finishOnboarding(outcome) else { return nil }
+        let tab = Tab(content: content)
         navigation.replaceTabWith(tab)
+        return tab
+    }
 
+    @MainActor
+    private func focusAddressBarAfterNavigation(in tab: Tab) {
         tab.navigationDidEndPublisher
             .first()
-            .sink { [weak self] _ in
-                self?.navigation.focusOnAddressBar()
-            }
+            .sink { [weak self] _ in self?.navigation.focusOnAddressBar() }
             .store(in: &cancellables)
     }
 

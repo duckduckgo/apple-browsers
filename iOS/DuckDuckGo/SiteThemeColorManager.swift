@@ -154,7 +154,6 @@ final class SiteThemeColorManager {
         if isFloatingUIEnabled {
             // nil = WebKit's page-derived color (what the glass policy reads); still never the site theme color (#6554).
             tabViewController?.webView?.underPageBackgroundColor = nil
-            tabViewController?.webView?.scrollView.backgroundColor = UIColor(designSystemColor: .surfaceCanvas)
         } else {
             tabViewController?.webView?.underPageBackgroundColor = newColor
             tabViewController?.webView?.scrollView.backgroundColor = newColor

@@ -290,16 +290,18 @@ final class FloatingUIPullToRefreshTests: XCTestCase {
         let pageScrollView = UIScrollView(frame: pullableView.bounds)
         hostView.addSubview(pullableView)
         pullableView.addSubview(pageScrollView)
-        _ = PullToRefreshViewAdapter(with: pageScrollView,
-                                     pullableView: pullableView,
-                                     isFloatingUIEnabled: false,
-                                     onRefresh: {})
+        let adapter = PullToRefreshViewAdapter(with: pageScrollView,
+                                               pullableView: pullableView,
+                                               isFloatingUIEnabled: false,
+                                               onRefresh: {})
+        adapter.backgroundColor = .red
         let refreshHost = try XCTUnwrap(hostView.subviews.compactMap { $0 as? UIScrollView }.first)
 
         XCTAssertLessThan(try XCTUnwrap(hostView.subviews.firstIndex(of: refreshHost)),
                           try XCTUnwrap(hostView.subviews.firstIndex(of: pullableView)))
         XCTAssertTrue(refreshHost.isUserInteractionEnabled)
         XCTAssertEqual(refreshHost.contentInsetAdjustmentBehavior, .automatic)
+        XCTAssertEqual(refreshHost.refreshControl?.backgroundColor, .red)
     }
 
     func testWhenTopOffsetChangesThenBackdropStaysFixedAndRefreshHostAllowsOverflow() throws {

@@ -77,7 +77,6 @@ final class PullToRefreshViewAdapter: NSObject {
     private var didBeginGestureAtTop = false
     private var pullableViewClipsToBoundsBeforePull: Bool?
     private var pullableViewBackgroundColorBeforePull: UIColor?
-    private var scrollViewBackgroundColorBeforePull: UIColor?
     private var webViewBackgroundColorBeforePull: UIColor?
     private var refreshBackgroundColorDuringPull: UIColor?
 
@@ -173,7 +172,7 @@ final class PullToRefreshViewAdapter: NSObject {
         let refreshBackgroundColor = Self.refreshBackgroundColor(pageBackgroundColor: pageBackgroundColor)
         backdropView.backgroundColor = refreshBackgroundColor
         fakeScrollView.backgroundColor = .clear
-        refreshControl.backgroundColor = .clear
+        refreshControl.backgroundColor = isFloatingUIEnabled ? .clear : refreshBackgroundColor
         refreshControl.tintColor = determineRefreshControlTintColor(for: refreshBackgroundColor)
 
         if isFloatingUIEnabled, !isFloatingRefreshBackgroundActive {
@@ -276,7 +275,6 @@ final class PullToRefreshViewAdapter: NSObject {
                 pullableViewClipsToBoundsBeforePull = pullableView?.clipsToBounds
                 pullableView?.clipsToBounds = true
                 pullableViewBackgroundColorBeforePull = pullableView?.backgroundColor
-                scrollViewBackgroundColorBeforePull = scrollView.backgroundColor
                 if let webView {
                     webViewBackgroundColorBeforePull = webView.backgroundColor
                     refreshBackgroundColorDuringPull = Self.refreshBackgroundColor(
@@ -284,9 +282,6 @@ final class PullToRefreshViewAdapter: NSObject {
                     )
                 }
                 applyFloatingRefreshBackground()
-            }
-            if isFloatingUIEnabled {
-                scrollView.contentOffset.y = -scrollView.adjustedContentInset.top
             }
             scrollView.bounces = false
             isPulling = true
@@ -384,8 +379,6 @@ final class PullToRefreshViewAdapter: NSObject {
         pullableView?.clipsToBounds = pullableViewClipsToBoundsBeforePull
         pullableView?.backgroundColor = pullableViewBackgroundColorBeforePull
         pullableViewBackgroundColorBeforePull = nil
-        scrollView?.backgroundColor = scrollViewBackgroundColorBeforePull
-        scrollViewBackgroundColorBeforePull = nil
         webView?.backgroundColor = webViewBackgroundColorBeforePull
         webViewBackgroundColorBeforePull = nil
         webView?.underPageBackgroundColor = nil

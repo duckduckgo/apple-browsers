@@ -19,6 +19,7 @@
 import Combine
 import Foundation
 import Networking
+import Persistence
 
 /// Persists and publishes changes to tunnel settings.
 ///
@@ -98,6 +99,12 @@ public final class VPNSettings {
                 return URL(string: "https://staging1.netp.duckduckgo.com")!
             }
         }
+    }
+
+    private let debugSettingsStore: KeyValueStoring
+
+    private enum DebugSettingKey: String {
+        case isSessionHealthDebugRolloverEnabled = "vpn.session-health.debug-rollover"
     }
 
     private let defaults: UserDefaults
@@ -244,6 +251,7 @@ public final class VPNSettings {
 
     public init(defaults: UserDefaults) {
         self.defaults = defaults
+        self.debugSettingsStore = defaults
     }
 
     // MARK: - Resetting to Defaults
@@ -262,6 +270,7 @@ public final class VPNSettings {
         defaults.resetDNSSettings()
         defaults.resetNetworkProtectionSettingShowInMenuBar()
         defaults.resetVPNSettingSessionHealthTelemetryEnabled()
+        debugSettingsStore.removeObject(forKey: DebugSettingKey.isSessionHealthDebugRolloverEnabled.rawValue)
         defaults.resetVPNSettingEnforceRoutes()
     }
 
@@ -377,6 +386,22 @@ public final class VPNSettings {
     }
 
     // MARK: - Session Health Telemetry
+
+    /// Debug override, applied on the next physical tunnel start rather than through live settings updates.
+    public var isSessionHealthDebugRolloverEnabled: Bool {
+        get {
+#if DEBUG
+            debugSettingsStore.object(forKey: DebugSettingKey.isSessionHealthDebugRolloverEnabled.rawValue) as? Bool ?? false
+#else
+            false
+#endif
+        }
+        set {
+#if DEBUG
+            debugSettingsStore.set(newValue, forKey: DebugSettingKey.isSessionHealthDebugRolloverEnabled.rawValue)
+#endif
+        }
+    }
 
     public var sessionHealthTelemetryEnabledPublisher: AnyPublisher<Bool, Never> {
         defaults.vpnSettingSessionHealthTelemetryEnabledPublisher

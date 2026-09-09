@@ -18,37 +18,51 @@
 
 import Foundation
 
+/// Calculates UTC-aligned rollover boundaries, evaluated on instrumentation callbacks rather than by a timer.
 struct VPNSessionHealthRolloverSchedule {
 
-    private let calendar: Calendar = {
-        var calendar = Calendar.current
-        if #available(macOS 13.0, iOS 16.0, *) {
-            calendar.timeZone = .gmt
-        } else {
-            calendar.timeZone = TimeZone(secondsFromGMT: .zero) ?? .current
-        }
+    private enum Constants {
+        static let defaultRolloverInterval: TimeInterval = 60 * 60
+        static let debugRolloverInterval: TimeInterval = 4 * 60
+    }
 
-        return calendar
-    }()
+    let interval: TimeInterval
 
-    /// Detects if an hour boundary has been crossed between `start` and `now`,
-    /// returning the end of the old hour and the start of the new one (or `nil` if not).
+    /// Defaults to hourly rollover. Debug builds can opt into four-minute boundaries (:00, :04, :08, ...).
+    /// Release builds always use hourly boundaries, regardless of `isDebugRolloverEnabled`.
+    init(isDebugRolloverEnabled: Bool = false) {
+#if DEBUG
+        interval = isDebugRolloverEnabled ? Constants.debugRolloverInterval : Constants.defaultRolloverInterval
+#else
+        interval = Constants.defaultRolloverInterval
+#endif
+    }
+
+    /// Returns the first boundary after `start` as `endedAt` and the boundary at or before `now` as `startedAt`.
+    /// Returns `nil` if both dates fall in the same interval or `now` is not after `start`.
+    /// If multiple boundaries were crossed, the dates skip intervening intervals rather than creating empty events.
     ///
-    /// # Examples:
-    ///     - start = 10:45, now = 11:10 → (endedAt: 11:00, startedAt: 11:00)
+    /// # Examples with the default hourly interval (all times UTC):
+    ///     - start = 10:45, now = 11:00 → (endedAt: 11:00, startedAt: 11:00)
     ///     - start = 10:20, now = 13:05 → (endedAt: 11:00, startedAt: 13:00)
-    ///     - start = 10:05, now = 10:50 → nil (same hour)
+    ///
+    /// # Examples with the four-minute debug interval (all times UTC):
+    ///     - start = 10:45, now = 10:48 → (endedAt: 10:48, startedAt: 10:48)
+    ///     - start = 10:20, now = 10:31 → (endedAt: 10:24, startedAt: 10:28)
+    ///     - start = 10:04, now = 10:05 → nil (same interval)
     ///     - start = 11:00, now = 10:00 → nil (now not after start)
     func rolloverDates(from start: Date, to now: Date) -> (endedAt: Date, startedAt: Date)? {
-        guard now > start, !calendar.isDate(start, equalTo: now, toGranularity: .hour) else {
+        guard now > start else {
             return nil
         }
 
-        /// Please do note that `dateInterval(of: .hour` returns the whole Hour (Start / End) in which a given Date falls
-        guard let endedAt = calendar.dateInterval(of: .hour, for: start)?.end, let startedAt = calendar.dateInterval(of: .hour, for: now)?.start else {
+        let startInterval = (start.timeIntervalSince1970 / interval).rounded(.down)
+        let currentInterval = (now.timeIntervalSince1970 / interval).rounded(.down)
+        guard currentInterval > startInterval else {
             return nil
         }
 
-        return (endedAt: endedAt, startedAt: startedAt)
+        return (endedAt: Date(timeIntervalSince1970: (startInterval + 1) * interval),
+                startedAt: Date(timeIntervalSince1970: currentInterval * interval))
     }
 }

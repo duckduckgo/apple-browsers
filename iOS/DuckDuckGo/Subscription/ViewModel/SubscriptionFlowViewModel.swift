@@ -108,7 +108,19 @@ final class SubscriptionFlowViewModel: ObservableObject {
     private let meetsPIRLocaleRequirement: () -> Bool
 
     /// `nil` unless this flow came from `makePurchaseFlowV2`; falls back to `SubscriptionOnboardingDuckAIChatLauncher`.
-    let onRequestDuckAIChat: ((String?) -> Bool)?
+    private let onRequestDuckAIChatHandler: ((String?) -> Bool)?
+
+    private var didHandOffToDuckAI = false
+
+    var onRequestDuckAIChat: ((String?) -> Bool)? {
+        onRequestDuckAIChatHandler.map { handler in
+            { [weak self] (modelID: String?) -> Bool in
+                let didHandOff = handler(modelID)
+                self?.didHandOffToDuckAI = didHandOff
+                return didHandOff
+            }
+        }
+    }
 
     var isPIRAvailable: Bool {
         PIRAvailability.isAvailable(isPIREnabled: isPIREnabled,
@@ -163,6 +175,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
     /// Called once the onboarding flow finishes, so this screen dismisses with it.
     @MainActor
     func onboardingFinished() {
+        guard !didHandOffToDuckAI else {
+            didHandOffToDuckAI = false
+            return
+        }
         state.shouldGoBackToSettings = true
     }
 
@@ -205,7 +221,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.onboardingKeyValueStore = onboardingKeyValueStore
         self.meetsPIRLocaleRequirement = meetsPIRLocaleRequirement
-        self.onRequestDuckAIChat = onRequestDuckAIChat
+        self.onRequestDuckAIChatHandler = onRequestDuckAIChat
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 

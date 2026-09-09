@@ -180,6 +180,7 @@ extension MainViewController {
     /// a prompt whenever the field is being edited, and New Chat must always open empty.
     private func openFreshDuckAIChatFromAddressBarMenu(source: AIChatEntryPointSource) {
         omniBar.endEditing()
-        openAIChat(source: source)
+        // iPad has no unified toggle input, so the boundary rule would load the chat over the page.
+        openAIChat(source: source, forcesNewTab: isPad)
     }
 }

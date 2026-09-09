@@ -173,7 +173,7 @@ extension VPNSessionHealthWideEventData {
     }
 
     func makingNextEventAfterRollover(at now: Date, globalData: WideEventGlobalData) -> Self {
-        var next = Self(startReason: .rolloverOnTheHour, startedAt: now, extensionType: extensionType, globalData: globalData)
+        var next = Self(startReason: .rollover, startedAt: now, extensionType: extensionType, globalData: globalData)
 
         next.connectionMonitorsActive = connectionMonitorsActive
         next.isPaused = isPaused

@@ -289,6 +289,7 @@ final class PermissionModel {
     func remove(_ permission: PermissionType) {
         removePermissionFromCurrentPage(permission)
 
+        // Remove from persisted storage
         if let domain = currentDomain {
             permissionManager.removePermission(forDomain: domain, permissionType: permission)
         } else {
@@ -297,8 +298,10 @@ final class PermissionModel {
     }
 
     private func removePermissionFromCurrentPage(_ permission: PermissionType) {
+        // Track as explicitly removed to prevent re-adding via updatePermissions()
         guard removedPermissions.insert(permission).inserted else { return }
 
+        // First revoke the permission
         switch permission {
         case .camera, .microphone, .geolocation:
             webView?.revokePermissions([permission])
@@ -306,6 +309,7 @@ final class PermissionModel {
             break
         }
 
+        // Remove from dictionary (will trigger @Published update)
         permissions[permission] = nil
     }
 

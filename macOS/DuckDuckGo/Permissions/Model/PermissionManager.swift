@@ -173,10 +173,12 @@ final class PermissionManager: PermissionManagerProtocol {
             store.update(objectWithId: oldValue.id, decision: decision, lastModified: lastModified)
         } else {
             do {
-                storedPermission = try store.add(domain: domain,
-                                                 permissionType: permissionType,
-                                                 decision: decision,
-                                                 lastModified: lastModified)
+                storedPermission = try store.add(
+                    domain: domain,
+                    permissionType: permissionType,
+                    decision: decision,
+                    lastModified: lastModified
+                )
             } catch {
                 Logger.general.error("PermissionStore: Failed to store permission")
                 return

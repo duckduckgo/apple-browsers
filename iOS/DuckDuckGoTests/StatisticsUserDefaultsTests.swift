@@ -46,4 +46,25 @@ final class StatisticsUserDefaultsTests: XCTestCase {
         XCTAssertEqual(store.atbWithVariant, "v123-4ru")
     }
 
+    func testWhenAtbIsMissingThenAtbWithVariantReturnsNil() {
+        let store: BrowserServicesKit.StatisticsStore = StatisticsUserDefaults(groupName: Self.suiteName)
+        store.variant = "ru"
+
+        XCTAssertNil(store.atbWithVariant)
+    }
+
+    func testWhenVariantIsMissingThenAtbWithVariantReturnsAtb() {
+        let store: BrowserServicesKit.StatisticsStore = StatisticsUserDefaults(groupName: Self.suiteName)
+        store.atb = "v123-4"
+
+        XCTAssertEqual(store.atbWithVariant, "v123-4")
+    }
+
+    func testWhenVariantIsEmptyThenAtbWithVariantReturnsAtb() {
+        let store: BrowserServicesKit.StatisticsStore = StatisticsUserDefaults(groupName: Self.suiteName)
+        store.atb = "v123-4"
+        store.variant = ""
+
+        XCTAssertEqual(store.atbWithVariant, "v123-4")
+    }
 }

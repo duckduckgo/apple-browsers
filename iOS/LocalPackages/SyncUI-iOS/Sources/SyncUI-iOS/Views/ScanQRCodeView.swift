@@ -1,5 +1,5 @@
 //
-//  ScanQRCodeViewV2.swift
+//  ScanQRCodeView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -27,7 +27,7 @@ import UIComponents
 import PreviewSnapshots
 #endif
 
-public struct ScanQRCodeViewV2: View {
+public struct ScanQRCodeView: View {
 
     enum Tab {
         case scanQRCode
@@ -100,7 +100,7 @@ public struct ScanQRCodeViewV2: View {
 }
 
 #if DEBUG
-struct ScanQRCodeViewV2_Previews: PreviewProvider {
+struct ScanQRCodeView_Previews: PreviewProvider {
 
     static let sampleCode = "https://duckduckgo.com/sync/pairing/#&code2=eyJ2ZXJzaW9uIjoiMiIsImNoYW5uZWxJZCI6IjY4MEQ0NUI1LTVFNkUtNDM0Ny05QzQ0LUI2RkJFODBGQzRBNyIsInB1YmxpY0tleSI6IkFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaIn0"
 
@@ -108,7 +108,7 @@ struct ScanQRCodeViewV2_Previews: PreviewProvider {
         snapshots.previews
     }
 
-    static let snapshots = PreviewSnapshots<ScanQRCodeViewV2.Tab>(
+    static let snapshots = PreviewSnapshots<ScanQRCodeView.Tab>(
         configurations: [
             .init(name: "Scan QR Code", state: .scanQRCode),
             .init(name: "Enter Code", state: .enterCode)
@@ -116,7 +116,7 @@ struct ScanQRCodeViewV2_Previews: PreviewProvider {
         configure: { tab in
             NavigationView {
                 RebrandedPreview(isRebranded: true) {
-                    ScanQRCodeViewV2(
+                    ScanQRCodeView(
                         model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect),
                         selectedTab: tab
                     )

@@ -1,5 +1,5 @@
 //
-//  SyncSuccessViewV2.swift
+//  SyncSuccessView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -22,7 +22,7 @@ import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 
-struct SyncSuccessViewV2: View {
+struct SyncSuccessView: View {
 
     @ObservedObject var model: SyncSettingsViewModel
     let isRecovery: Bool
@@ -62,14 +62,14 @@ struct SyncSuccessViewV2: View {
 
     private var title: String {
         isRecovery
-            ? UserText.simplifiedRecoveryCompleteV2Title
-            : UserText.simplifiedDeviceAddedV2Title(model.thisDeviceName ?? UserText.simplifiedDeviceAddedV2FallbackDeviceName)
+            ? UserText.simplifiedRecoveryCompleteTitle
+            : UserText.simplifiedDeviceAddedTitle(model.thisDeviceName ?? UserText.simplifiedDeviceAddedFallbackDeviceName)
     }
 
     private var description: String {
         isRecovery
-            ? UserText.simplifiedRecoveryCompleteV2Description
-            : UserText.simplifiedDeviceAddedV2Description
+            ? UserText.simplifiedRecoveryCompleteDescription
+            : UserText.simplifiedDeviceAddedDescription
     }
 
     @ViewBuilder
@@ -185,19 +185,19 @@ private extension SyncSettingsViewModel {
 
 #Preview("Device Added") {
     RebrandedPreview(isRebranded: true) {
-        SyncSuccessViewV2(model: .syncSuccessPreview(), isRecovery: false)
+        SyncSuccessView(model: .syncSuccessPreview(), isRecovery: false)
     }
 }
 
 #Preview("Device Added – No Auto-Restore") {
     RebrandedPreview(isRebranded: true) {
-        SyncSuccessViewV2(model: .syncSuccessPreview(isAutoRestoreAvailable: false), isRecovery: false)
+        SyncSuccessView(model: .syncSuccessPreview(isAutoRestoreAvailable: false), isRecovery: false)
     }
 }
 
 #Preview("Recovery Complete") {
     RebrandedPreview(isRebranded: true) {
-        SyncSuccessViewV2(model: .syncSuccessPreview(), isRecovery: true)
+        SyncSuccessView(model: .syncSuccessPreview(), isRecovery: true)
     }
 }
 

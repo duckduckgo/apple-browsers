@@ -28,7 +28,8 @@ struct EndpointPortSelection {
         self.prober = prober
     }
 
-    /// Returns nil when probing is needed but the server has no usable endpoint.
+    /// Chooses a server port by probing its advertised candidates.
+    /// Skips probing for a single candidate. Returns nil if probing requires a host the server does not provide.
     func select(for serverInfo: NetworkProtectionServerInfo,
                 previousPort: UInt16?,
                 preferring rememberedPort: UInt16?) async throws -> Decision? {
@@ -55,21 +56,19 @@ struct EndpointPortSelection {
         return decision
     }
 
+    /// A selected port and the values to retain for future selections.
     struct Decision: Equatable {
         /// Selected endpoint port.
         let port: UInt16
-        /// Non-default port to retain for the next selection, including when no probe answered.
-        /// Nil means the next selection falls back to that server's default port.
+        /// Selected non-default port to retain if later probes receive no replies.
+        /// Nil when the selected port is the server default.
         let automaticPort: UInt16?
-        /// Port to remember for the next connection: only a port that actually answered.
+        /// Responding port to prefer next time, or nil if no candidate answered.
         let rememberedPort: UInt16?
     }
 
-    /// `candidates` is the ordered list from `endpointPortCandidates(preferring:)`. `currentPort` is the
-    /// previous selection, or the server's default port when no previous selection is supplied.
-    /// Rules: the first candidate that answered wins. If nothing answered, keep `currentPort` when it is a candidate,
-    /// otherwise fall back to `serverDefaultPort` (a port carried over from another server must never be forced on
-    /// one that does not advertise it).
+    /// Chooses the first responding port in candidate priority order.
+    /// If none respond, keeps `currentPort` when it is a candidate; otherwise uses `serverDefaultPort`.
     func decide(candidates: [UInt16], currentPort: UInt16, serverDefaultPort: UInt16, responding: Set<UInt16>) -> Decision {
         let respondingPort = candidates.first(where: { responding.contains($0) })
         let fallbackPort = candidates.contains(currentPort) ? currentPort : serverDefaultPort

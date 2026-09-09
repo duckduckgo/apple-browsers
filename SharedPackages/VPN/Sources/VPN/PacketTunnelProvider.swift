@@ -336,10 +336,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     public let lastSelectedServerInfoPublisher = CurrentValueSubject<NetworkProtectionServerInfo?, Never>(nil)
 
-    /// Port chosen by automatic fallback (set by the port-fallback logic; nil until it runs).
+    /// Selected non-default port to retain if later probes receive no replies.
+    /// Nil before selection or when the selected port is the server default.
     @MainActor var automaticEndpointPort: UInt16?
 
-    /// Port that the probe last found reachable. Tried first on the next connection when the server advertises it.
+    /// Last port that answered a probe, preferred while the server still advertises it.
     @MainActor var rememberedEndpointPort: UInt16?
 
     private let endpointPortSelector = EndpointPortSelection()
@@ -1256,7 +1257,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - Endpoint Port Selection
 
-    /// Applies a port selection to provider state only while this tunnel operation is current.
+    /// Selects a port and applies it to the tunnel configuration.
+    /// Updates port state only while this tunnel operation is current.
     @MainActor
     private func selectEndpointPort(for serverInfo: NetworkProtectionServerInfo, in configuration: TunnelConfiguration) async throws -> TunnelConfiguration {
         try Task.checkCancellation()

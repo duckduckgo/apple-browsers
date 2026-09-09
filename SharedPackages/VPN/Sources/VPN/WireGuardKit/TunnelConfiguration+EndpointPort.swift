@@ -21,7 +21,8 @@ import Network
 
 extension TunnelConfiguration {
 
-    /// A copy of this configuration with every peer endpoint moved to `port`. Peers without an endpoint are left as they are.
+    /// Returns a copy using `port` for every existing peer endpoint.
+    /// Leaves peers without endpoints unchanged.
     func replacingEndpointPort(with port: UInt16) -> TunnelConfiguration {
         guard let nwPort = NWEndpoint.Port(rawValue: port) else { return self }
 

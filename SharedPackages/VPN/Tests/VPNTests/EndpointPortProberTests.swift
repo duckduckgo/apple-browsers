@@ -119,7 +119,7 @@ final class EndpointPortProberTests: XCTestCase {
 
 }
 
-/// A UDP listener bound to loopback that replies to every `DDGPROBE` datagram it receives with a fixed payload.
+/// Simulates UDP probe replies on loopback, including dropped or invalid responses.
 private final class LoopbackResponder {
 
     let port: UInt16

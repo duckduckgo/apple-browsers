@@ -19,15 +19,17 @@
 import Foundation
 import Network
 
-/// Finds which of a server's advertised WireGuard ports are reachable from this network.
+/// Identifies server ports that answer a reachability probe.
 protocol EndpointPortProbing {
 
-    /// Sends the probe to every port in parallel and returns the ports that answered within the timeout.
+    /// Returns the ports that answer concurrent probes before the timeout.
+    /// Cancelling the task stops pending probes and throws `CancellationError`.
     func respondingPorts(host: NWEndpoint.Host, ports: [UInt16]) async throws -> Set<UInt16>
 
 }
 
-/// Sends `DDGPROBE` over UDP and treats a `DDG` reply as proof the port is reachable.
+/// Checks server port reachability with parallel UDP probes.
+/// Retries `DDGPROBE` until an exact `DDG` reply arrives, the timeout expires, or the task is cancelled.
 final class EndpointPortProber: EndpointPortProbing {
 
     static let request = Data("DDGPROBE".utf8)
@@ -78,6 +80,7 @@ final class EndpointPortProber: EndpointPortProbing {
         }
     }
 
+    /// Completes one UDP probe on reply, timeout, or cancellation.
     /// All mutable state is confined to `queue`, including cancellation before `start`.
     private final class Probe: @unchecked Sendable {
         private let queue = DispatchQueue(label: "com.duckduckgo.EndpointPortProber")

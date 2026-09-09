@@ -20,13 +20,10 @@ import Foundation
 
 extension NetworkProtectionServerInfo {
 
-    /// The ports to try for the WireGuard endpoint, in order of preference.
+    /// Returns advertised ports in selection priority order, without duplicates.
     ///
-    /// - The remembered port comes first, but only if this server advertises it.
-    /// - The server's primary `port` follows.
-    /// - Then any remaining advertised `ports`, in the order the server listed them.
-    ///
-    /// Duplicates are removed. The result is never empty: it always contains at least `port`.
+    /// An advertised remembered port comes first, followed by the default and remaining ports in server order.
+    /// Always includes the default port; returns only that port when `ports` is nil.
     public func endpointPortCandidates(preferring rememberedPort: UInt16?) -> [UInt16] {
         guard let ports else {
             return [port]

@@ -19,6 +19,7 @@
 import Foundation
 import NetworkExtension
 import PixelKit
+import WideEvent
 
 /// # Session Health Telemetry
 ///

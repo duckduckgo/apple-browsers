@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 /// # Session Health Transitions: `event + timestamp -> new event`.
 ///

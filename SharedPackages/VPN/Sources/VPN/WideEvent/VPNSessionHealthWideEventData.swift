@@ -18,7 +18,7 @@
 
 import Foundation
 import FoundationExtensions
-import PixelKit
+import WideEvent
 
 /// # Session Health Wide Pixel
 public struct VPNSessionHealthWideEventData: WideEventData {

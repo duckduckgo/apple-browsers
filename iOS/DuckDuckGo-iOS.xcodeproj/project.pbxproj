@@ -1531,6 +1531,7 @@
 		ABA18ED2F9373DE1F5B57B66 /* RebrandedOnboardingAddressBarPositionPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 392856D96DBE03E4E18EFCF8 /* RebrandedOnboardingAddressBarPositionPicker.swift */; };
 		AD5E1ED02B0000000000F004 /* AIChatTextSelectionFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F003 /* AIChatTextSelectionFeatureTests.swift */; };
 		AD5E1ED02B0000000000F008 /* AIChatSelectionContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F007 /* AIChatSelectionContextTests.swift */; };
+		548EE230566447B89EF615BC /* AIChatUserScriptMultiTabTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B3909758A14A3195A9325F /* AIChatUserScriptMultiTabTests.swift */; };
 		AD5E1ED02B0000000000F00C /* AIChatTextSelectionActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F00B /* AIChatTextSelectionActionTests.swift */; };
 		AD5E1ED02B0000000000F10A /* SelectionFrameUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F109 /* SelectionFrameUserScript.swift */; };
 		AD5E1ED02B0000000000F20A /* SelectionFrameUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F209 /* SelectionFrameUserScriptTests.swift */; };
@@ -3831,6 +3832,7 @@
 		AC7D7E5EB7B04D2385E0E48E /* AfterInactivityOptionAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AfterInactivityOptionAdapterTests.swift; sourceTree = "<group>"; };
 		AD5E1ED02B0000000000F003 /* AIChatTextSelectionFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTextSelectionFeatureTests.swift; sourceTree = "<group>"; };
 		AD5E1ED02B0000000000F007 /* AIChatSelectionContextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSelectionContextTests.swift; sourceTree = "<group>"; };
+		42B3909758A14A3195A9325F /* AIChatUserScriptMultiTabTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptMultiTabTests.swift; sourceTree = "<group>"; };
 		AD5E1ED02B0000000000F00B /* AIChatTextSelectionActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTextSelectionActionTests.swift; sourceTree = "<group>"; };
 		AD5E1ED02B0000000000F109 /* SelectionFrameUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionFrameUserScript.swift; sourceTree = "<group>"; };
 		AD5E1ED02B0000000000F209 /* SelectionFrameUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionFrameUserScriptTests.swift; sourceTree = "<group>"; };
@@ -5300,6 +5302,7 @@
 				C11F41142F2CCBE900C126C3 /* AIChatContextualChatSessionStateTests.swift */,
 				AD5E1ED02B0000000000F003 /* AIChatTextSelectionFeatureTests.swift */,
 				AD5E1ED02B0000000000F007 /* AIChatSelectionContextTests.swift */,
+				42B3909758A14A3195A9325F /* AIChatUserScriptMultiTabTests.swift */,
 				AD5E1ED02B0000000000F00B /* AIChatTextSelectionActionTests.swift */,
 				FADE0001C0FFEE00A5311008 /* ContextualSuggestionsMatcherTests.swift */,
 				31F43E202F4734B8001BBCDA /* AIChatAddressBarExperienceTests.swift */,
@@ -12122,6 +12125,7 @@
 				C11F41152F2CCBE900C126C3 /* AIChatContextualChatSessionStateTests.swift in Sources */,
 				AD5E1ED02B0000000000F004 /* AIChatTextSelectionFeatureTests.swift in Sources */,
 				AD5E1ED02B0000000000F008 /* AIChatSelectionContextTests.swift in Sources */,
+				548EE230566447B89EF615BC /* AIChatUserScriptMultiTabTests.swift in Sources */,
 				AD5E1ED02B0000000000F00C /* AIChatTextSelectionActionTests.swift in Sources */,
 				FADE0001C0FFEE00A5311007 /* ContextualSuggestionsMatcherTests.swift in Sources */,
 				9F06EB8C2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift in Sources */,

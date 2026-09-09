@@ -5845,3 +5845,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Que voulez-vous importer ?";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ ne peut pas créer d’images. L’option Zéro visibilité du fournisseur ne s’appliquera pas tant que tu ne reviendras pas à ce modèle.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ ne prend pas en charge la création d’images.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Utilise désormais %@";
+

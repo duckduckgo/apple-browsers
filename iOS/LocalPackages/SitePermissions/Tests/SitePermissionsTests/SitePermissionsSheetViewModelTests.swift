@@ -273,6 +273,26 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         XCTAssertEqual(cleanDismissal, .clean)
     }
 
+    func testWhenPickerChangeIsCommittedThenReloadCaptionStateLastsUntilDismissal() throws {
+        let harness = try Harness()
+        let sut = harness.makeViewModel(snapshot: harness.snapshot(stored: [.camera: .ask]))
+
+        XCTAssertFalse(sut.hasCommittedChanges)
+        sut.beginEditing()
+        XCTAssertFalse(sut.hasCommittedChanges)
+        sut.select(.askEachTime, for: .camera)
+        XCTAssertFalse(sut.hasCommittedChanges)
+
+        sut.select(.alwaysAllow, for: .camera)
+        XCTAssertTrue(sut.hasCommittedChanges)
+        sut.refresh(with: harness.snapshot(captureStates: [.camera: .active]))
+        XCTAssertTrue(sut.hasCommittedChanges)
+
+        sut.dismiss()
+        XCTAssertFalse(sut.hasCommittedChanges)
+        XCTAssertFalse(harness.makeViewModel(snapshot: harness.snapshot()).hasCommittedChanges)
+    }
+
     func testSystemSettingsActionCarriesOnlyBlockedTypes() throws {
         let harness = try Harness()
         var openedTypes = Set<SitePermissionType>()

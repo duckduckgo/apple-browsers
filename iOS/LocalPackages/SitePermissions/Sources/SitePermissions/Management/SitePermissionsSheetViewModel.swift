@@ -109,6 +109,7 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
 
     @Published public private(set) var rows = [Row]()
     @Published public private(set) var state = SitePermissionsSheetState.permissionsOnly
+    @Published public private(set) var hasCommittedChanges = false
 
     public let site: SitePermissionKey
 
@@ -220,6 +221,7 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
         }
         updateSystemBlock(for: permissionType)
         rebuild()
+        hasCommittedChanges = true
 
         onDecisionChanged(change)
         if option == .neverAllow {
@@ -245,6 +247,7 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
     public func dismiss() {
         guard !hasDismissed else { return }
         hasDismissed = true
+        hasCommittedChanges = false
         onDismiss(dismissalState)
     }
 

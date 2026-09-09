@@ -41,7 +41,7 @@ final class DataBrokerTests: XCTestCase {
         XCTAssertTrue(scanStep.actions[0] is NavigateAction)
         XCTAssertTrue(scanStep.actions[1] is ConditionAction)
         XCTAssertTrue(scanStep.actions[2] is ExtractAction)
-        let executeScriptAction = try XCTUnwrap(scanStep.actions.first { $0.actionType == .executeScript } as? ExecuteScriptAction)
+        let executeScriptAction = try XCTUnwrap(scanStep.actions[3] as? ExecuteScriptAction)
         XCTAssertEqual(executeScriptAction.script, "document.body.dataset.result = 'ok';")
 
         let optOutStep = broker.optOutStep()!

@@ -22,17 +22,59 @@ import DataBrokerProtectionCoreTestsUtils
 
 final class ActionRequestEncodingTests: XCTestCase {
 
-    func testWhenExecuteScriptActionIsEncoded_thenActionRequestPreservesScriptPayload() throws {
+    func testWhenBrokerJSONContainsExecuteScriptAction_thenActionRequestPreservesRawPayload() throws {
+        let stepJSON = """
+            {
+                "stepType": "scan",
+                "actions": [
+                    {
+                        "actionType": "executeScript",
+                        "id": "execute-script-1",
+                        "script": "document.body.dataset.result = 'ok';",
+                        "someNewField": "hello-world"
+                    }
+                ]
+            }
+            """
+        let step = try JSONDecoder().decode(Step.self, from: Data(stepJSON.utf8))
+        let action = try XCTUnwrap(step.actions.first)
+
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil, [:])))
+        let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
+
+        XCTAssertEqual(rawActionPayload["actionType"] as? String, "executeScript")
+        XCTAssertEqual(rawActionPayload["id"] as? String, "execute-script-1")
+        XCTAssertEqual(rawActionPayload["script"] as? String, "document.body.dataset.result = 'ok';")
+        XCTAssertEqual(rawActionPayload["someNewField"] as? String, "hello-world")
+    }
+
+    func testWhenExecuteScriptActionDoesNotContainRawJSON_thenActionRequestEncodingFallsBackToTypedAction() throws {
         let action = ExecuteScriptAction(id: "execute-script-1",
                                          actionType: .executeScript,
                                          script: "document.body.dataset.result = 'ok';")
 
-        let payload: EncodedExecuteScriptRequest = try encodePayload(action: action,
-                                                                     data: .userData(makeProfileQuery(), nil, nil, [:]))
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil, [:])))
+        let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
 
-        XCTAssertEqual(payload.state.action.actionType, .executeScript)
-        XCTAssertEqual(payload.state.action.id, action.id)
-        XCTAssertEqual(payload.state.action.script, action.script)
+        XCTAssertEqual(rawActionPayload["actionType"] as? String, "executeScript")
+        XCTAssertEqual(rawActionPayload["id"] as? String, "execute-script-1")
+        XCTAssertEqual(rawActionPayload["script"] as? String, "document.body.dataset.result = 'ok';")
+    }
+
+    func testWhenStepContainsExecuteScriptActionWithoutRawJSON_thenEncodingFallsBackToTypedAction() throws {
+        let action = ExecuteScriptAction(id: "execute-script-1",
+                                         actionType: .executeScript,
+                                         script: "document.body.dataset.result = 'ok';")
+        let step = Step(type: .scan, actions: [action])
+
+        let encodedStep = try JSONEncoder().encode(step)
+        let rawStep = try XCTUnwrap(try JSONSerialization.jsonObject(with: encodedStep) as? [String: Any])
+        let rawActions = try XCTUnwrap(rawStep["actions"] as? [[String: Any]])
+        let rawAction = try XCTUnwrap(rawActions.first)
+
+        XCTAssertEqual(rawAction["actionType"] as? String, "executeScript")
+        XCTAssertEqual(rawAction["id"] as? String, "execute-script-1")
+        XCTAssertEqual(rawAction["script"] as? String, "document.body.dataset.result = 'ok';")
     }
 
     func testWhenActionContainsRawJSON_thenEncodingUsesRawActionPayload() throws {
@@ -341,17 +383,4 @@ final class ActionRequestEncodingTests: XCTestCase {
     private func makeProfileQuery() -> ProfileQuery {
         ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 1985)
     }
-
-    private func encodePayload<Payload: Decodable>(action: Action, data: CCFRequestData) throws -> Payload {
-        let encoded = try JSONEncoder().encode(Params(state: ActionRequest(action: action, data: data)))
-        return try JSONDecoder().decode(Payload.self, from: encoded)
-    }
-}
-
-private struct EncodedExecuteScriptRequest: Decodable {
-    struct State: Decodable {
-        let action: ExecuteScriptAction
-    }
-
-    let state: State
 }

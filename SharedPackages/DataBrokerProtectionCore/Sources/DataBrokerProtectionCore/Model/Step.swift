@@ -160,6 +160,8 @@ extension Array where Element == Action {
                 try container.encode(clickAction)
             } else if let expectationAction = action as? ExpectationAction {
                 try container.encode(expectationAction)
+            } else if let executeScriptAction = action as? ExecuteScriptAction {
+                try container.encode(executeScriptAction)
             } else if let conditionAction = action as? ConditionAction {
                 try container.encode(conditionAction)
             } else {

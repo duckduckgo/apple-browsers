@@ -379,7 +379,7 @@
         return payload;
     };
 
-    const positionError = (code, message) => ({ code, message });
+    const positionError = (code, message) => ({ code, message, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 });
 
     const deniedError = () => positionError(1, "Geolocation is not allowed in this context");
     const deniedResult = () => ({ status: "error", ...deniedError() });

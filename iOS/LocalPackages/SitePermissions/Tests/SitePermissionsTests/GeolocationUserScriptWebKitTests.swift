@@ -247,6 +247,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
 
         XCTAssertEqual(state["isSecureContext"] as? Bool, false, "Page state: \(state)")
         assertDenied(state)
+        XCTAssertEqual(state["errorConstants"] as? [Int], [1, 2, 3])
         XCTAssertEqual(delegate.positionRequestCount, 0)
         XCTAssertEqual(delegate.permissionQueryCount, 0)
     }
@@ -398,6 +399,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
             permissionState: permission.state,
             requestStatus: result.status,
             errorCode: result.error?.code ?? 0,
+            errorConstants: result.error ? [result.error.PERMISSION_DENIED, result.error.POSITION_UNAVAILABLE, result.error.TIMEOUT] : [],
             latitude: result.position?.coords.latitude ?? 0
         };
         """)

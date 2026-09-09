@@ -390,6 +390,8 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(promptCount, 0)
 
         harness.coordinator.captureDidEnd([.camera])
+        XCTAssertEqual(harness.coordinator.queryState(for: .camera, context: harness.context), .prompt)
+        XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).ephemeralPermissionTypes, [.camera])
         harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
             promptCount += 1
         }, completion: { _ in })
@@ -446,6 +448,33 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).captureStates.isEmpty)
     }
 
+    func testRenewedAllowOnceGrantsBeforeCaptureStartsAndGlobalNeverBlocksOnlyAfterCaptureEnds() async throws {
+        let harness = try Harness()
+        for _ in 0..<2 {
+            let granted = expectation(description: "Allow Once grants")
+            harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+                respond(.allowOnce)
+            }, completion: { resolution in
+                XCTAssertEqual(resolution, .grant)
+                granted.fulfill()
+            })
+            await fulfillment(of: [granted], timeout: 1)
+            XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .granted)
+            harness.coordinator.updateGeolocationCaptureState(.active)
+            harness.coordinator.updateGeolocationCaptureState(.inactive)
+            XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .prompt)
+        }
+
+        harness.store.setGlobalDefault(.deny, for: .location)
+        XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .denied)
+        var deniedResolution: SitePermissionResolution?
+        harness.coordinator.request(harness.request([.location]), promptHandler: { _, _ in
+            XCTFail("An ended Allow Once must not bypass global Never")
+        }, completion: { deniedResolution = $0 })
+        XCTAssertEqual(deniedResolution, .deny(systemBlocks: []))
+        XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).showsMenuEntry)
+    }
+
     func testInitialInactiveObservationAndActivePausedTransitionsRetainAllowOnceUntilCaptureEnds() async throws {
         let harness = try Harness()
         let grantCompletion = expectation(description: "Allow Once becomes active")
@@ -486,7 +515,7 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(promptCount, 1)
     }
 
-    func testCaptureEndExpiresOnlyTheMatchingAllowOncePermission() async throws {
+    func testCaptureEndRepromptsOnlyTheMatchingAllowOncePermission() async throws {
         let harness = try Harness()
         let grantCompletion = expectation(description: "Combined Allow Once becomes active")
         harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, respond in
@@ -503,6 +532,7 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         webView.setMicrophoneCaptureStateForTesting(.active)
         webView.setCameraCaptureStateForTesting(.muted)
         webView.setCameraCaptureStateForTesting(.none)
+        XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).ephemeralPermissionTypes, [.camera, .microphone])
 
         var microphoneResolution: SitePermissionResolution?
         harness.coordinator.request(harness.request([.microphone]), promptHandler: { _, _ in

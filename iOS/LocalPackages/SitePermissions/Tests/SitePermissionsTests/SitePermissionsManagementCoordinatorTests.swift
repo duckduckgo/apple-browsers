@@ -75,26 +75,45 @@ final class SitePermissionsManagementCoordinatorTests: XCTestCase {
         XCTAssertTrue(snapshot.showsMenuEntry)
     }
 
-    func testSuccessfulAllowOnceExposesAllowThisTimeUntilCaptureEnds() async throws {
-        let harness = try CoordinatorHarness()
-        harness.systemStates[.microphone] = .authorized
-        let requestCompleted = expectation(description: "Request completed")
+    func testSuccessfulAllowOnceKeepsMenuEntryAfterCaptureEndsUntilReload() async throws {
+        for permissionType in SitePermissionType.allCases {
+            let harness = try CoordinatorHarness()
+            harness.systemStates[permissionType] = .authorized
+            let requestCompleted = expectation(description: "Request completed")
 
-        harness.coordinator.request(harness.request([.microphone]), promptHandler: { _, respond in
-            respond(.allowOnce)
-        }, completion: { _ in
-            requestCompleted.fulfill()
-        })
+            harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, respond in
+                respond(.allowOnce)
+            }, completion: { resolution in
+                XCTAssertEqual(resolution, .grant)
+                requestCompleted.fulfill()
+            })
 
-        await fulfillment(of: [requestCompleted], timeout: 1)
-        XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).ephemeralPermissionTypes, [.microphone])
+            await fulfillment(of: [requestCompleted], timeout: 1)
+            XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).showsMenuEntry)
 
-        harness.coordinator.captureDidEnd([.microphone])
+            if permissionType == .location {
+                harness.coordinator.updateGeolocationCaptureState(.active)
+                harness.coordinator.updateGeolocationCaptureState(.inactive)
+            } else {
+                harness.coordinator.captureDidEnd([permissionType])
+            }
 
-        let ended = harness.coordinator.managementSnapshot(for: harness.site)
-        XCTAssertTrue(ended.ephemeralPermissionTypes.isEmpty)
-        XCTAssertTrue(ended.siteAllowedPermissionTypesThisVisit.isEmpty)
-        XCTAssertFalse(ended.showsMenuEntry)
+            let ended = harness.coordinator.managementSnapshot(for: harness.site)
+            XCTAssertEqual(ended.ephemeralPermissionTypes, [permissionType])
+            XCTAssertEqual(ended.siteAllowedPermissionTypesThisVisit, [permissionType])
+            XCTAssertEqual(ended.relevantPermissionTypes, [permissionType])
+            XCTAssertTrue(ended.showsMenuEntry)
+            XCTAssertEqual(harness.coordinator.captureState(for: permissionType), .inactive)
+            XCTAssertNil(harness.store.decision(for: permissionType, at: harness.site))
+
+            harness.coordinator.pageDidChange(.reload)
+
+            let reloaded = harness.coordinator.managementSnapshot(for: harness.site)
+            XCTAssertTrue(reloaded.ephemeralPermissionTypes.isEmpty)
+            XCTAssertTrue(reloaded.siteAllowedPermissionTypesThisVisit.isEmpty)
+            XCTAssertFalse(reloaded.showsMenuEntry)
+            XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .prompt)
+        }
     }
 
     func testWhenExplicitAskAllowsOnceAndSystemDeniesThenReminderRemainsReachable() async throws {

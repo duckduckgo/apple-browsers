@@ -68,7 +68,7 @@ public struct SitePermissionPrompt: Equatable, Sendable {
 
 /// The user's response to an on-site permission prompt.
 public enum SitePermissionPromptDecision: Equatable, Sendable {
-    /// Allows access until capture ends without storing a persistent site decision.
+    /// Keeps a page-scoped grant without persisting it; a new request may prompt after capture ends.
     case allowOnce
     /// Grants access and stores an Allow decision for the site outside Fire mode.
     case allowWhileUsingSite
@@ -285,7 +285,7 @@ public final class SitePermissionsCoordinator {
                 if deniedForPage.contains(permissionType) {
                     return .deny
                 }
-                if allowOnce.contains(permissionType) {
+                if allowOnce.contains(permissionType), captureStates[permissionType] != .inactive {
                     continue
                 }
                 if store.globalDefault(for: permissionType) == .deny {
@@ -311,8 +311,11 @@ public final class SitePermissionsCoordinator {
     }
 
     public func captureDidEnd(_ permissionTypes: Set<SitePermissionType>) {
-        allowOnce.subtract(permissionTypes)
-        siteAllowedPermissionTypesThisVisit.subtract(permissionTypes)
+        for permissionType in permissionTypes {
+            // Keep the page grant for management; an explicit inactive state allows the next request to prompt.
+            // No state means capture has not started yet, including the initial inactive WebKit observation.
+            captureStates[permissionType] = .inactive
+        }
     }
 
     public func managementSnapshot(for site: SitePermissionKey) -> SitePermissionsManagementSnapshot {
@@ -504,7 +507,6 @@ public final class SitePermissionsCoordinator {
         guard previousState != state else { return }
 
         if state == .inactive {
-            captureStates[permissionType] = nil
             captureDidEnd([permissionType])
         } else {
             captureStates[permissionType] = state
@@ -647,6 +649,9 @@ public final class SitePermissionsCoordinator {
             if blocks.isEmpty {
                 if activatesAllowOnce {
                     allowOnce.formUnion(pendingRequest.request.permissionTypes)
+                    for permissionType in pendingRequest.request.permissionTypes where captureStates[permissionType] == .inactive {
+                        captureStates[permissionType] = nil
+                    }
                 }
                 finish(pendingRequest, with: .grant)
             } else {

@@ -431,8 +431,8 @@ public final class GeolocationProvider {
         locationCaptureState = state
         locationActivityHandler?(state)
         if state == .inactive {
-            // The coordinator expires Allow Once from the activity callback above. Re-query only
-            // after that mutation so existing PermissionStatus objects observe the new state.
+            // Capture ending lets the next request prompt again. Re-query after the activity callback
+            // so existing PermissionStatus objects observe the new state.
             refreshPermissionStatuses()
         }
     }

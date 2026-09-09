@@ -117,7 +117,7 @@ public struct EmailService: EmailServiceProtocol {
         if let httpResponse = response as? HTTPURLResponse {
             if !(200...299).contains(httpResponse.statusCode) {
                 servicePixel.fireGenerateEmailHTTPError(statusCode: httpResponse.statusCode)
-                let message = body.isEmpty ? nil : String(decoding: body.prefix(200), as: UTF8.self)
+                let message = body.isEmpty ? nil : String(bytes: body.prefix(200), encoding: .utf8)
                 throw EmailError.httpError(statusCode: httpResponse.statusCode,
                                            message: message)
             }

@@ -28,6 +28,8 @@ public struct SitePermissionDialogView: View {
     private enum Constants {
         static let cardWidth: CGFloat = 300
         static let contentHorizontalPadding: CGFloat = 8
+        static let contentTopPadding: CGFloat = 8
+        static let contentSpacing: CGFloat = 10
         static let iconSize: CGFloat = 24
         static let iconSpacing: CGFloat = 8
         static let iconContainerSize: CGFloat = 48
@@ -53,7 +55,7 @@ public struct SitePermissionDialogView: View {
     public var body: some View {
         PermissionDialogCard(width: Constants.cardWidth,
                              accessibilityIdentifier: "SitePermissions.Dialog") {
-            VStack(spacing: 0) {
+            VStack(spacing: Constants.contentSpacing) {
                 VStack(alignment: .leading, spacing: Constants.headerSpacing) {
                     HStack(spacing: Constants.iconSpacing) {
                         ForEach(viewModel.icons, id: \.self) { icon in
@@ -74,6 +76,7 @@ public struct SitePermissionDialogView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, Constants.contentHorizontalPadding)
+                .padding(.top, Constants.contentTopPadding)
 
                 VStack(spacing: Constants.buttonSpacing) {
                     ForEach(viewModel.actions) { item in

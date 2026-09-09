@@ -18,6 +18,7 @@
 
 import Foundation
 import NetworkExtension
+import os.log
 import PixelKit
 import WideEvent
 
@@ -95,11 +96,13 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
         self.extensionType = extensionType
         self.isEnabled = isEnabled
         self.now = now
+        Logger.networkProtectionSessionHealth.debug("Initialized session health instrumentation")
     }
 
     // MARK: - Lifecycle
 
     public func tunnelStarted(reason: PacketTunnelProvider.AdapterStartReason) {
+        Logger.networkProtectionSessionHealth.debug("tunnelStarted: reason=\(String(describing: reason), privacy: .public)")
         switch reason {
         case .manual:
             beginEvent(reason: .physicalTunnelStartManual)
@@ -111,62 +114,75 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
     }
 
     public func tunnelResumed() {
+        Logger.networkProtectionSessionHealth.debug("tunnelResumed")
         applyTransition { $0.markingResumed(at: $1) }
     }
 
     // MARK: - Monitoring
 
     public func monitoringStarted() {
+        Logger.networkProtectionSessionHealth.debug("monitoringStarted")
         applyTransition { $0.markingMonitoringStarted(at: $1) }
     }
 
     public func monitoringFailedToStart() {
+        Logger.networkProtectionSessionHealth.debug("monitoringFailedToStart")
         applyTransition { $0.markingMonitoringFailedToStart(at: $1) }
     }
 
     public func monitoringStopped(isIntentional: Bool) {
+        Logger.networkProtectionSessionHealth.debug("monitoringStopped: isIntentional=\(isIntentional, privacy: .public)")
         applyTransition { $0.markingMonitoringStopped(at: $1, isIntentional: isIntentional) }
     }
 
     // MARK: - Health
 
     public func connectionTestCompleted(_ result: ConnectionTestingResult) {
+        Logger.networkProtectionSessionHealth.debug("connectionTestCompleted: result=\(String(describing: result), privacy: .public)")
         applyTransition { $0.applyingConnectionTestResult(result, at: $1) }
     }
 
     public func handshakeCheckCompleted(_ result: NetworkProtectionTunnelFailureMonitor.Result) {
+        Logger.networkProtectionSessionHealth.debug("handshakeCheckCompleted: result=\(String(describing: result))")
         applyTransition { $0.applyingHandshakeCheckResult(result, at: $1) }
     }
 
     public func failureRecoveryStepChanged(_ step: FailureRecoveryStep) {
+        Logger.networkProtectionSessionHealth.debug("failureRecoveryStepChanged: step=\(String(describing: step))")
         applyTransition { $0.applyingFailureRecoveryStep(step, at: $1) }
     }
 
     public func leakDetected() {
+        Logger.networkProtectionSessionHealth.debug("leakDetected")
         applyTransition { event, _ in event.markingLeakDetected() }
     }
 
     // MARK: - Availability
 
     public func deviceWentToSleep() {
+        Logger.networkProtectionSessionHealth.debug("deviceWentToSleep")
         applyTransition { $0.markingPaused(.sleep, at: $1) }
     }
 
     public func snoozeStarted() {
+        Logger.networkProtectionSessionHealth.debug("snoozeStarted")
         applyTransition { $0.markingPaused(.snooze, at: $1) }
     }
 
     public func tunnelReconfigurationStarted() {
+        Logger.networkProtectionSessionHealth.debug("tunnelReconfigurationStarted")
         applyTransition { $0.markingPaused(.reconfiguration, at: $1) }
     }
 
     // MARK: - Termination
 
     public func tunnelStopped(reason: NEProviderStopReason) {
+        Logger.networkProtectionSessionHealth.debug("tunnelStopped: reason=\(reason.rawValue, privacy: .public)")
         applyTransition { $0.markingStopped(reason.asEventEndReason, at: $1) }
     }
 
     public func tunnelCancelledWithError() {
+        Logger.networkProtectionSessionHealth.debug("tunnelCancelledWithError")
         applyTransition { $0.markingCancelledWithError(at: $1) }
     }
 }
@@ -259,7 +275,16 @@ private extension DefaultVPNSessionHealthInstrumentation {
             return false
         }
 
-        wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
+        Logger.networkProtectionSessionHealth.log("Completing vpn_session_health pixel: status=\(status.description, privacy: .public)")
+
+        wideEvent.completeFlow(data, status: status) { success, error in
+            if success {
+                Logger.networkProtectionSessionHealth.log("vpn_session_health pixel completion succeeded")
+            } else {
+                Logger.networkProtectionSessionHealth.error("vpn_session_health pixel was not sent: \(String(describing: error))")
+            }
+        }
+
         return true
     }
 }

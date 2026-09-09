@@ -608,7 +608,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Najlepsze do codziennego użytku"
+            "value" : "Najlepszy do codziennego użytku"
           }
         },
         "pt" : {
@@ -770,7 +770,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Solidny, ale szybciej zużywa limity"
+            "value" : "Solidny, ale szybciej osiąga limity"
           }
         },
         "pt" : {
@@ -821,10 +821,34 @@
       "comment" : "Title for the button that re-attaches the current page's content after the user removed it",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попитайте за страницата"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeptat se ohledně stránky"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spørg om siden"
+          }
+        },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Frage zur Seite"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ρωτήστε για τη σελίδα"
           }
         },
         "en" : {
@@ -839,16 +863,64 @@
             "value" : "Preguntar sobre la página"
           }
         },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Küsi lehe kohta"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kysy sivusta"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Posez des questions sur la page"
           }
         },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pitaj o stranici"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kérdés az oldalról"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chiedi informazioni sulla pagina"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ページについてお尋ねください"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klausk apie puslapį"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jautā par lapu"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spør om-siden"
           }
         },
         "nl" : {
@@ -869,10 +941,40 @@
             "value" : "Perguntar sobre a página"
           }
         },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Întreabă despre pagină"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Задать вопрос о странице"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opýtaj sa na stránku"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vprašajte o strani"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fråga om sidan"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sayfa Hakkında Soru Sor"
           }
         }
       }

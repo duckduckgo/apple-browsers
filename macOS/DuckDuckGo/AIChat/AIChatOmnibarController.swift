@@ -153,6 +153,12 @@ final class AIChatOmnibarController {
     /// warning does — activation included, which is what `cleanup()` dropped it for.
     var onUsageWarningsRefreshed: (() -> Void)?
 
+    /// Turns the card's lifecycle into pixels. Lives here rather than on the container VC because
+    /// submit and teardown — two of the events — are this type's to report.
+    private(set) lazy var usageWarningMeasurement = DuckAiUsageWarningMeasurement(
+        pixelFiring: DuckAiUsageWarningPixelAdapter(surface: surface.usageWarningPixelSurface)
+    )
+
     /// Advanced models have no allowance left until web republishes. Read off the snapshot, not the
     /// message: switching to a free model retires the message while the limit it named still stands.
     var isAdvancedModelUsageExhausted: Bool {
@@ -169,9 +175,11 @@ final class AIChatOmnibarController {
     private func performUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
+            usageWarningMeasurement.ctaTapped(.switchModel)
             updateSelectedModel(suggestion.modelId)
         case .tryForFree:
             // Confirms first, the same as a gated pick in either picker, rather than navigating on tap.
+            usageWarningMeasurement.ctaTapped(.upsell)
             onSubscriptionUpsellDialogRequested?(surface.usageLimitFunnelOrigin)
         case .startUsingWeeklyLimit(let entries):
             // Web reads the entry on its next hydration, so there is nothing to reload here.
@@ -860,13 +868,23 @@ final class AIChatOmnibarController {
     private func switchToImageGenerationModelIfNeeded() -> AIChatCreateImageModelSwitchNotice? {
         guard isUpdatedCreateImageEnabled,
               let previousModel = selectedModel,
-              !previousModel.supportsTool(.imageGeneration),
-              let fallbackModel = imageGenerationModel else {
+              !previousModel.supportsTool(.imageGeneration) else {
+            return nil
+        }
+
+        guard let fallbackModel = imageGenerationModel else {
+            pixelHandler.fire(.createImageUnavailable)
             return nil
         }
 
         updateSelectedModel(fallbackModel.id)
-        return AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
+        let notice = AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
+        pixelHandler.fire(.createImageModelSwitched(
+            fromModelId: previousModel.id,
+            toModelId: fallbackModel.id,
+            fromModelPrivacyPreserving: notice.previousModelHasExtraPrivacyProtections
+        ))
+        return notice
     }
 
     /// The model ID to use for the current submission. In image-generation mode an
@@ -1177,6 +1195,8 @@ final class AIChatOmnibarController {
         activeToolMode = nil
         hasImageAttachments = false
         hasBeenActivated = false
+        // Whatever the user was going to do about the card, they have now done it.
+        usageWarningMeasurement.inputSessionEnded()
         usageWarningViewModel?.clear()
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
@@ -1355,13 +1375,9 @@ final class AIChatOmnibarController {
             return
         }
 
-        pixelHandler.fire(.promptSubmitted)
-
-        if isImageGenerationMode {
-            pixelHandler.fire(.imageGenerationSubmitted)
-        } else if isWebSearchMode {
-            pixelHandler.fire(.webSearchSubmitted)
-        }
+        firePromptSubmissionPixels()
+        // After the URL branch: navigating away is not a prompt spent against the allowance.
+        usageWarningMeasurement.promptSubmitted()
 
         // Snapshot everything that could change between now and when the async submit Task
         // resumes. `await waitForAttachmentsReady?()` can take seconds for large images, and
@@ -1491,6 +1507,22 @@ final class AIChatOmnibarController {
         }
 
         currentText = ""
+    }
+
+    private func firePromptSubmissionPixels() {
+        pixelHandler.fire(.promptSubmitted)
+
+        switch activeToolMode {
+        case .imageGeneration:
+            if !selectedModelSupportsImageGeneration {
+                pixelHandler.fire(.createImageSubmittedWithUnsupportedModel)
+            }
+            pixelHandler.fire(.imageGenerationSubmitted)
+        case .webSearch:
+            pixelHandler.fire(.webSearchSubmitted)
+        case nil:
+            break
+        }
     }
 
     /// Eagerly extracts the page context for each omnibar-attached tab, returning a

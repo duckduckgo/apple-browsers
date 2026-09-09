@@ -21,6 +21,7 @@ import Foundation
 import SwiftUI
 import Core
 import AIChat
+import PixelKit
 
 @MainActor
 final class AutoClearSettingsViewModel: ObservableObject {
@@ -56,14 +57,14 @@ final class AutoClearSettingsViewModel: ObservableObject {
             set: { newValue in
                 self.autoClearEnabled = newValue
                 if newValue {
-                    Pixel.fire(pixel: .settingsAutomaticallyClearDataOn)
+                    PixelKit.fire(Pixel.Event.settingsAutomaticallyClearDataOn)
                     // Enable with default values if turning on
                     self.clearTabs = true
                     self.clearCookies = true
                     self.clearDuckAIChats = false
                     self.selectedTiming = .termination
                 } else {
-                    Pixel.fire(pixel: .settingsAutomaticallyClearDataOff)
+                    PixelKit.fire(Pixel.Event.settingsAutomaticallyClearDataOff)
                 }
                 self.persistSettings()
             }
@@ -168,7 +169,7 @@ final class AutoClearSettingsViewModel: ObservableObject {
             if options.isEmpty {
                 appSettings.autoClearAction = FireRequest.Options()
                 autoClearEnabled = false
-                Pixel.fire(pixel: .settingsAutomaticallyClearDataOff)
+                PixelKit.fire(Pixel.Event.settingsAutomaticallyClearDataOff)
             } else {
                 appSettings.autoClearAction = options
             }
@@ -188,11 +189,11 @@ final class AutoClearSettingsViewModel: ObservableObject {
         let effectiveData = autoClearEnabled && clearCookies
         let effectiveChats = autoClearEnabled && clearDuckAIChats && showDuckAIChatsToggle
 
-        Pixel.fire(pixel: .settingsAutomaticDataClearingOptionsUpdated,
-                   withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.settingsAutomaticDataClearingOptionsUpdated,
+                      options: .parameters([
                        "tabs": String(effectiveTabs),
                        "data": String(effectiveData),
                        "chats": String(effectiveChats)
-                   ])
+                   ]))
     }
 }

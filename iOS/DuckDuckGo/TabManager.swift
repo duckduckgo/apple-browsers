@@ -32,7 +32,9 @@ import os.log
 import AIChat
 import Combine
 import PrivacyConfig
+import SitePermissions
 import WebExtensions
+import PixelKit
 
 protocol TabManaging {
     var currentTabsModel: TabsModelManaging { get }
@@ -175,6 +177,16 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private weak var controllerPendingTerminationRecovery: TabViewController?
+    let sitePermissionsPixelHandler = SitePermissionsPixelHandler()
+
+    @MainActor
+    private lazy var sitePermissionsDependencies = SitePermissionsDependencies(
+        store: SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
+        systemPermissionClient: SystemPermissionClient(),
+        eventHandler: { [sitePermissionsPixelHandler] event in
+            sitePermissionsPixelHandler.fire(event)
+        }
+    )
 
     // Save debouncing. Fires after `saveDebounceInterval` of quiet, or `saveMaxWait` since
     // the first call in the burst (whichever comes first) so sustained activity cannot push
@@ -314,10 +326,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             return
         }
         _currentBrowsingMode = mode
-        Pixel.fire(pixel: .browsingModeSwitched, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.browsingModeSwitched, options: .parameters([
             PixelParameters.browsingMode: mode.pixelParamValue,
             PixelParameters.source: source.rawValue
-        ])
+        ]))
     }
 
     func tabsModel(for mode: BrowsingMode) -> TabsModelManaging {
@@ -393,7 +405,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                                               adBlockingAvailability: adBlockingAvailability,
-                                                              eventHub: eventHub)
+                                                              eventHub: eventHub,
+                                                              webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+                                                              sitePermissionsDependenciesProvider: { [weak self] in
+                                                                  self?.sitePermissionsDependencies
+                                                              })
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -523,7 +539,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                                               adBlockingAvailability: adBlockingAvailability,
-                                                              eventHub: eventHub)
+                                                              eventHub: eventHub,
+                                                              webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+                                                              sitePermissionsDependenciesProvider: { [weak self] in
+                                                                  self?.sitePermissionsDependencies
+                                                              })
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,
@@ -676,6 +696,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             tabControllerCache.remove(at: index)
         }
         tabTerminationErrorPageDetector.removeHistory(forTabID: controller.tabModel.uid)
+        controller.closeSitePermissions()
         controller.dismiss()
     }
 
@@ -738,10 +759,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             }
 
             if reloadCurrent {
-                DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+                PixelKit.fire(Pixel.Event.webKitTerminationDidReloadCurrentTab, frequency: .dailyAndStandard)
 
                 if controller.url?.isDuckAIURL == true {
-                    DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
+                    PixelKit.fire(Pixel.Event.aiChatTabDidReloadAfterTermination, frequency: .dailyAndCount)
                 }
 
                 current()?.reload()
@@ -1064,9 +1085,9 @@ extension TabManager {
         let totalTabs = allTabsModel.tabs.count
 
         if let storedPreviews = totalStoredPreviews, storedPreviews > totalTabs {
-            Pixel.fire(pixel: .cachedTabPreviewsExceedsTabCount, withAdditionalParameters: [
+            PixelKit.fire(Pixel.Event.cachedTabPreviewsExceedsTabCount, options: .parameters([
                 PixelParameters.tabPreviewCountDelta: "\(storedPreviews - totalTabs)"
-            ])
+            ]))
             let validTabIDs = Set(allTabsModel.tabs.map { $0.uid })
             let previewsSourceForCleanup = previewsSource
             Task(priority: .utility) {

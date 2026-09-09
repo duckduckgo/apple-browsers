@@ -149,6 +149,68 @@ final class AIChatContextualSheetCoordinator {
         unifiedToggleInputFeature.isAvailable
     }
 
+    private var persistedChatIDs: Set<String> = []
+
+    private static let chatLookupQueue = DispatchQueue(label: "com.duckduckgo.aichat.contextual.chatlookup")
+
+    /// `DuckAiNativeStorageHandling` is not `Sendable`. The reads taken on the lookup queue —
+    /// `isMigrationDone` and `getChat` — reach only immutable state, an `NSLock`-guarded settings blob
+    /// and GRDB's own serialized `DatabaseQueue`, so calling them from off the main thread is sound.
+    private struct UncheckedSendable<Value>: @unchecked Sendable {
+        let value: Value
+    }
+
+    private var chatStorage: DuckAiNativeStorageHandling? {
+        isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
+    }
+
+    private var isNativeDataAccessEnabled: Bool {
+        AIChatFeatureFlagProvider(featureFlagger: featureFlagger).isNativeDataAccessEnabled()
+    }
+
+    private func discardActiveChatIfDeleted() async {
+        guard !isSheetPresented,
+              sessionState.hasActiveChat,
+              let chatID = sessionState.contextualChatURL?.duckAIChatID,
+              persistedChatIDs.contains(chatID) else { return }
+        guard await isChatDeleted(chatID: chatID) else { return }
+        Logger.aiChat.debug("[Contextual] Active chat was deleted, clearing it")
+        persistedChatIDs.remove(chatID)
+        clearActiveChat()
+    }
+
+    private func vettedRestoreURL(_ restoreURL: URL?) async -> URL? {
+        guard let chatID = restoreURL?.duckAIChatID else { return restoreURL }
+        guard await isChatDeleted(chatID: chatID) else {
+            persistedChatIDs.insert(chatID)
+            return restoreURL
+        }
+        delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
+        return nil
+    }
+
+    private func isChatDeleted(chatID: String) async -> Bool {
+        guard isNativeDataAccessEnabled,
+              let storage = chatStorage,
+              storage.setupSucceeded == true else { return false }
+        let box = UncheckedSendable(value: storage)
+        return await withCheckedContinuation { continuation in
+            Self.chatLookupQueue.async {
+                let storage = box.value
+                do {
+                    guard try storage.isMigrationDone() else {
+                        continuation.resume(returning: false)
+                        return
+                    }
+                    continuation.resume(returning: try storage.getChat(chatId: chatID) == nil)
+                } catch {
+                    Logger.aiChat.error("[Contextual] Could not verify \(chatID): \(error.localizedDescription)")
+                    continuation.resume(returning: false)
+                }
+            }
+        }
+    }
+
     private var isImmediateContextualUTIEnabled: Bool {
         isWebUTIEnabled && featureFlagger.isFeatureOn(.aiChatContextualUnifiedToggleInput)
     }
@@ -254,6 +316,8 @@ final class AIChatContextualSheetCoordinator {
     func presentSheet(from presentingViewController: UIViewController,
                       restoreURL: URL? = nil,
                       skippingAutoAttach: Bool = false) async {
+        let restoreURL = await vettedRestoreURL(restoreURL)
+        await discardActiveChatIfDeleted()
         sessionState.refreshAutoAttachSetting()
         sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
         clearStaleManualContextIfNeeded()
@@ -551,6 +615,9 @@ final class AIChatContextualSheetCoordinator {
             await presentFloatingInput(from: presentingViewController, skippingAutoAttach: true)
         } else {
             await presentSheet(from: presentingViewController, restoreURL: restoreURL, skippingAutoAttach: true)
+            if action.attachesSelection {
+                persistentUTIHost?.activateInput()
+            }
         }
         refreshSelectionChips()
 
@@ -1152,8 +1219,8 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         handleSheetDismissed()
     }
 
-    func aiChatContextualSheetViewControllerDidDetectActiveChatRemoved(_ viewController: AIChatContextualSheetViewController) {
-        resetToNativeInputState()
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didPersistChatWithID chatID: String) {
+        persistedChatIDs.insert(chatID)
     }
 
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController) {

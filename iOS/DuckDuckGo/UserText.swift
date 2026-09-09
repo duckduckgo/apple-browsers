@@ -464,11 +464,6 @@ public struct UserText {
 
     public static let tabSwitcherBookmarkAllTabs = NSLocalizedString("tab.switcher.bookmarkAll", value: "Bookmark All Tabs", comment: "Bookmark all tabs menu item")
 
-    public static let tabSwitcherDeleteTabAndData = NotLocalizedString(
-        "tab.switcher.delete.tab.and.data",
-        value: "Delete Tab and Data",
-        comment: "Delete a tab and its site data menu item")
-
     public static func tabSwitcherSelectTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "tab.switcher.select-tabs.withCount", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
@@ -1347,8 +1342,6 @@ public struct UserText {
     // MARK: Sync
 
     public static let syncUserUserAuthenticationReason = NSLocalizedString("sync.user.auth.reason", value: "Unlock device to set up Sync & Backup", comment: "Reason for auth when setting up Sync")
-    public static let syncDeleteAllConfirmTitle = NSLocalizedString("sync.delete.all.confirm.title", value: "Delete server data?", comment: "Title of the dialog to confirm deleting Sync server data")
-    public static let syncDeleteAllConfirmMessage = NSLocalizedString("sync.delete.all.confirm.message", value: "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device.", comment: "Message for the dialog to confirm deleting Sync server data")
     public static let syncDeleteAllConfirmAction = NSLocalizedString("sync.delete.all.confirm.action", value: "Delete Server Data", comment: "Caption for a button to delete Sync server data")
     public static let syncRemoveDeviceTitle = NSLocalizedString("sync.remove-device.title", value: "Remove Device?", comment: "Title of the dialog to remove device from Sync")
     public static func syncRemoveDeviceMessage(_ deviceName: String) -> String {
@@ -1356,7 +1349,6 @@ public struct UserText {
         return message.format(arguments: deviceName)
     }
     public static let syncRemoveDeviceConfirmAction = NSLocalizedString("sync.remove-device.action", value: "Remove", comment: "Caption for a button to remove device from Sync")
-    public static let syncCodeCopied = NSLocalizedString("sync.code.copied", value: "Recovery code copied to clipboard", comment: "Message confirming that recovery code was copied to clipboard")
     public static let syncPairingV2ConfirmationTitle = NSLocalizedString("sync.pairing-v2.confirmation.title", value: "Sync new device?", comment: "Title of the dialog to confirm sync setup with another device")
     public static let syncPairingV2ConfirmationAction = NSLocalizedString("sync.pairing-v2.confirmation.action", value: "Sync Now", comment: "Caption for a button to confirm sync setup with another device")
     public static let syncPairingV2UnknownPeerName = NSLocalizedString("sync.pairing-v2.unknown-peer-name", value: "the other device", comment: "Fallback device name for confirmation dialogs")
@@ -1373,16 +1365,15 @@ public struct UserText {
     }
 
     // Simplified Sync
-    public static let simplifiedSyncEnabledToast = NSLocalizedString("sync.simplified.enabled.toast", value: "Sync & Backup enabled", comment: "Toast message shown after sync is successfully enabled")
     public static let simplifiedDeviceSyncedSuccessfullyToast = NSLocalizedString("sync.simplified.device-synced.toast", value: "New device added!", comment: "Toast message shown after sync is enabled by connecting with another device")
     public static let simplifiedSyncTurnOffTitle = NSLocalizedString("sync.simplified.turn.off.title", value: "Turn Off Sync & Backup?", comment: "Alert title when turning off sync")
     public static let simplifiedSyncTurnOffMessage = NSLocalizedString("sync.simplified.turn.off.message", value: "Your bookmarks and passwords on this device won't be affected.", comment: "Alert message when turning off sync")
     public static let simplifiedSyncTurnOffAction = NSLocalizedString("sync.simplified.turn.off.action", value: "Turn Off", comment: "Alert button to confirm turning off sync")
     public static let simplifiedRecoveryCodeCopiedToast = NSLocalizedString("sync.simplified.recovery.code.copied.toast", value: "Recovery code copied", comment: "Toast message shown after copying recovery code to clipboard from settings")
     public static let simplifiedSyncSetupFailedToast = NSLocalizedString("sync.simplified.setup.failed.toast", value: "Couldn't enable Sync & Backup", comment: "Toast message shown when sync setup fails")
-    public static let simplifiedSyncDeleteAllConfirmTitle = NotLocalizedString("sync.simplified.delete.all.confirm.title", value: "Turn Off Sync & Backup and Delete Server Data?", comment: "Title of the dialog to confirm turning off sync and deleting server data")
-    public static let simplifiedSyncDeleteAllConfirmMessage = NotLocalizedString("sync.simplified.delete.all.confirm.message", value: "All devices using Sync & Backup will be disconnected and your synced data will be deleted from the server.", comment: "Message for the dialog to confirm turning off sync and deleting server data")
-    public static let simplifiedSyncDataDeletedToast = NotLocalizedString("sync.simplified.data-deleted.toast", value: "Server Data Deleted", comment: "Toast message shown after synced server data is deleted")
+    public static let simplifiedSyncDeleteAllConfirmTitle = NSLocalizedString("sync.simplified.delete.all.confirm.title", value: "Turn Off Sync & Backup and Delete Server Data?", comment: "Title of the dialog to confirm turning off sync and deleting server data")
+    public static let simplifiedSyncDeleteAllConfirmMessage = NSLocalizedString("sync.simplified.delete.all.confirm.message", value: "All devices using Sync & Backup will be disconnected and your synced data will be deleted from the server.", comment: "Message for the dialog to confirm turning off sync and deleting server data")
+    public static let simplifiedSyncDataDeletedToast = NSLocalizedString("sync.simplified.data-deleted.toast", value: "Server Data Deleted", comment: "Toast message shown after synced server data is deleted")
 
     // MARK: Sync Errors
     static let syncLimitExceededTitle = NSLocalizedString("prefrences.sync.limit-exceeded-title", value: "Sync Paused", comment: "Title for sync limits exceeded warning")
@@ -1405,7 +1396,6 @@ public struct UserText {
     static let syncBadBookmarksRequestAlertDescription = NSLocalizedString("alert.sync-bookmarks-bad-data-error-description", value: "Some bookmarks are formatted incorrectly or too long and were not synced.", comment: "Description for alert shown when sync error occurs because of bad bookmarks data")
     static let syncBadCredentialsRequestAlertDescription = NSLocalizedString("alert.sync-credentials-bad-data-error-description", value: "Some passwords are formatted incorrectly or too long and were not synced.", comment: "Description for alert shown when sync error occurs because of bad credentials data")
     static let syncBadCreditCardsRequestAlertDescription = NSLocalizedString("alert.sync-credit-cards-bad-data-error-description", value: "Some credit cards are formatted incorrectly or too long and were not synced.", comment: "Description for alert shown when sync error occurs because of bad credit cards data")
-    static let syncErrorAlertAction  = NSLocalizedString("alert.sync-error-action", value: "Sync Settings", comment: "Sync error alert action button title, takes the user to the sync settings page.")
     static let syncBookmarkPausedAlertTitle = NSLocalizedString("alert.sync-bookmarks-paused-title", value: "Bookmark Sync is Paused", comment: "Title for alert shown when sync bookmarks paused for too many items")
     static let syncBookmarkPausedAlertDescription = NSLocalizedString("alert.sync-bookmarks-paused-description", value: "You've reached the maximum number of bookmarks. Please delete some bookmarks to resume sync.", comment: "Description for alert shown when sync bookmarks paused for too many items")
     static let syncCredentialsPausedAlertTitle = NSLocalizedString("alert.sync-credentials-paused-title", value: "Password Sync is Paused", comment: "Title for alert shown when sync credentials paused for too many items")
@@ -2339,30 +2329,25 @@ public struct UserText {
     public static let aiChatHeaderPlusMenuAccessibilityLabel = NSLocalizedString("aichat.header.plusMenu.a11y", value: "New", comment: "Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions")
 
     // MARK: - Duck.ai usage warnings (unified toggle input footer)
-    // NotLocalizedString while the copy is being finalised behind `utiDuckAIWarnings`; these must
-    // become NSLocalizedString with .xcstrings entries before the feature ships externally.
 
-    public static let utiDuckAIWarningsWeeklyUsageTitle = NotLocalizedString("aichat.usageWarnings.weeklyUsage.title", value: "%d%% of weekly limit", comment: "Title of the Duck.ai input footer warning, telling the user what share of their weekly message limit is used. %d is a percentage")
-    public static let utiDuckAIWarningsDailyUsageTitle = NotLocalizedString("aichat.usageWarnings.dailyUsage.title", value: "%d%% of daily limit", comment: "Title of the Duck.ai input footer warning, telling the user what share of their daily message limit is used. %d is a percentage")
-    public static let utiDuckAIWarningsWeeklyLimitReached = NotLocalizedString("aichat.usageWarnings.weeklyLimitReached.title", value: "Weekly usage limit reached", comment: "Title of the Duck.ai input footer warning shown once the user's weekly message limit is used up")
-    public static let utiDuckAIWarningsDailyLimitReached = NotLocalizedString("aichat.usageWarnings.dailyLimitReached.title", value: "Daily limit reached", comment: "Title of the Duck.ai input footer warning shown once the user's daily message limit is used up")
-    public static let utiDuckAIWarningsAdvancedModelsLimitReached = NotLocalizedString("aichat.usageWarnings.advancedModelsLimitReached.title", value: "Advanced AI models limit reached", comment: "Title of the Duck.ai input footer warning shown once the allowance for advanced AI models specifically is used up, while free models remain available")
-    public static let utiDuckAIWarningsResetsIn = NotLocalizedString("aichat.usageWarnings.resetsIn", value: "Resets in %@", comment: "Subtitle of the Duck.ai input footer warning saying how long until the usage limit resets. %@ is a duration such as '2 days'")
-    public static let utiDuckAIWarningsSwitchToModel = NotLocalizedString("aichat.usageWarnings.action.switchToModel", value: "Switch to %@", comment: "Button in the Duck.ai input footer warning offering a model that uses the allowance more slowly. %@ is the model's short name, such as '5.4 mini'")
-    public static let utiDuckAIWarningsSwitchModel = NotLocalizedString("aichat.usageWarnings.action.switchModel", value: "Switch Model", comment: "Button in the Duck.ai input footer warning offering a model that uses the allowance more slowly, used when the suggested model has no short name to show")
-    public static let utiDuckAIWarningsSwitchToFreeModel = NotLocalizedString("aichat.usageWarnings.action.switchToFreeModel", value: "Switch to a Free Model", comment: "Button in the Duck.ai input footer warning offering a free-tier model, shown once the advanced-model allowance is used up")
-    public static let utiDuckAIWarningsStartUsingWeeklyLimit = NotLocalizedString("aichat.usageWarnings.action.startUsingWeeklyLimit", value: "Start Using Weekly Limit", comment: "Button in the Duck.ai input footer letting a paid user keep chatting on their weekly allowance after the daily one is spent")
-    public static let utiDuckAIWarningsSwitch = NotLocalizedString("aichat.usageWarnings.action.switch", value: "Switch Model", comment: "Button in the Duck.ai input footer warning that moves the user onto the suggested model")
-    public static let utiDuckAIWarningsTryForFree = NotLocalizedString("aichat.usageWarnings.action.tryForFree", value: "Try Subscription for Free", comment: "Button in the Duck.ai input footer warning taking a user who is still eligible for a free trial to the subscription flow")
-    public static let utiDuckAIWarningsSubscribe = NotLocalizedString("aichat.usageWarnings.action.subscribe", value: "Subscribe", comment: "Button in the Duck.ai input footer warning taking a user who has already used their free trial to the subscription flow")
-    public static let utiDuckAIWarningsDismissAccessibilityLabel = NotLocalizedString("aichat.usageWarnings.dismiss.a11y", value: "Dismiss", comment: "Accessibility label for the button that dismisses the Duck.ai input footer warning")
+    public static let utiDuckAIWarningsWeeklyUsageTitle = NSLocalizedString("aichat.usageWarnings.weeklyUsage.title", value: "%d%% of weekly limit", comment: "Title of the Duck.ai input footer warning, telling the user what share of their weekly message limit is used. %d is a percentage")
+    public static let utiDuckAIWarningsDailyUsageTitle = NSLocalizedString("aichat.usageWarnings.dailyUsage.title", value: "%d%% of daily limit", comment: "Title of the Duck.ai input footer warning, telling the user what share of their daily message limit is used. %d is a percentage")
+    public static let utiDuckAIWarningsWeeklyLimitReached = NSLocalizedString("aichat.usageWarnings.weeklyLimitReached.title", value: "Weekly usage limit reached", comment: "Title of the Duck.ai input footer warning shown once the user's weekly message limit is used up")
+    public static let utiDuckAIWarningsDailyLimitReached = NSLocalizedString("aichat.usageWarnings.dailyLimitReached.title", value: "Daily limit reached", comment: "Title of the Duck.ai input footer warning shown once the user's daily message limit is used up")
+    public static let utiDuckAIWarningsAdvancedModelsLimitReached = NSLocalizedString("aichat.usageWarnings.advancedModelsLimitReached.title", value: "Advanced AI models limit reached", comment: "Title of the Duck.ai input footer warning shown once the allowance for advanced AI models specifically is used up, while free models remain available")
+    public static let utiDuckAIWarningsResetsIn = NSLocalizedString("aichat.usageWarnings.resetsIn", value: "Resets in %@", comment: "Subtitle of the Duck.ai input footer warning saying how long until the usage limit resets. %@ is a duration such as '2 days'")
+    public static let utiDuckAIWarningsStartUsingWeeklyLimit = NSLocalizedString("aichat.usageWarnings.action.startUsingWeeklyLimit", value: "Start Using Weekly Limit", comment: "Button in the Duck.ai input footer letting a paid user keep chatting on their weekly allowance after the daily one is spent")
+    public static let utiDuckAIWarningsSwitch = NSLocalizedString("aichat.usageWarnings.action.switch", value: "Switch Model", comment: "Button in the Duck.ai input footer warning that moves the user onto the suggested model")
+    public static let utiDuckAIWarningsTryForFree = NSLocalizedString("aichat.usageWarnings.action.tryForFree", value: "Try Subscription for Free", comment: "Button in the Duck.ai input footer warning taking a user who is still eligible for a free trial to the subscription flow")
+    public static let utiDuckAIWarningsSubscribe = NSLocalizedString("aichat.usageWarnings.action.subscribe", value: "Subscribe", comment: "Button in the Duck.ai input footer warning taking a user who has already used their free trial to the subscription flow")
+    public static let utiDuckAIWarningsDismissAccessibilityLabel = NSLocalizedString("aichat.usageWarnings.dismiss.a11y", value: "Dismiss", comment: "Accessibility label for the button that dismisses the Duck.ai input footer warning")
+    public static let utiDuckAIWarningsHighUsageModel = NSLocalizedString("aichat.usageWarnings.highUsageModel", value: "%@ uses limits up to 2-5x faster than basic models.", comment: "Duck.ai input footer notice shown while a costly model is selected. %@ is the model's short name, such as 'Opus 4.8'")
 
     // MARK: - Duck.ai Create Image model switch (unified toggle input footer)
 
     public static let utiCreateImageModelSwitchTitle = NotLocalizedString("aichat.createImage.modelSwitch.title", value: "Now using %@", comment: "Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna'")
     public static let utiCreateImageModelSwitchSubtitle = NotLocalizedString("aichat.createImage.modelSwitch.subtitle", value: "%@ doesn't support image creation.", comment: "Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral'")
     public static let utiCreateImageModelSwitchPrivacyPreservingSubtitle = NotLocalizedString("aichat.createImage.modelSwitch.privacyPreserving.subtitle", value: "%@ can't create images. Its extra privacy protections won't apply until you switch back.", comment: "Subtitle of the Duck.ai input footer card shown when the model that was switched away from is one of the models with extra privacy protections. %@ is that model's short name, such as 'Gemma'")
-    public static let utiDuckAIWarningsHighUsageModel = NotLocalizedString("aichat.usageWarnings.highUsageModel", value: "%@ uses limits up to 2-5x faster than basic models.", comment: "Duck.ai input footer notice shown while a costly model is selected. %@ is the model's short name, such as 'Opus 4.8'")
     public static let aiChatHeaderNewVoiceChatTitle = NSLocalizedString("aichat.header.plusMenu.newVoiceChat", value: "New Voice Chat", comment: "Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu")
     public static let aiChatHeaderNewImageTitle = NSLocalizedString("aichat.header.plusMenu.newImage", value: "New Image", comment: "Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode")
     public static let aiChatHeaderNewTabTitle = NSLocalizedString("aichat.header.plusMenu.newTab", value: "New Tab", comment: "Title for the New Tab row in the Duck.ai tab header Plus (+) menu")

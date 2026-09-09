@@ -43,6 +43,7 @@ class BookmarksBarVisibilityTests: UITestCase {
         bookmarksBarPromptPopover = app.popovers.containing(\.title, equalTo: "Show Bookmarks Bar?").element
 
         app.resetBookmarks()
+        app.resetPromo(withID: "bookmark-toolbar")
         skipOnboarding()
         app.enforceSingleWindow()
     }

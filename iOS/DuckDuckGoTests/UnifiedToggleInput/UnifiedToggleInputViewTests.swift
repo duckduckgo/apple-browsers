@@ -897,7 +897,6 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var currentText: String = ""
     var currentToggleState: TextEntryMode
     var isVoiceSearchEnabled: Bool = false
-    var isAIVoiceChatEnabled: Bool = false
     var hasUserInteractedWithText: Bool = false
     var isCurrentTextValidURL: Bool = false
     var buttonState: SwitchBarButtonState = .noButtons

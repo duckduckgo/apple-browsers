@@ -27,7 +27,8 @@ extension PromoServiceFactory {
         promoType: PromoType(.nextSteps),
         context: .newTabPage,
         coexistingPromoIDs: [PromoServiceFactory.bookmarkToolbarPromoID,
-                             PromoServiceFactory.syncFaviconsPromoID],
+                             PromoServiceFactory.syncFaviconsPromoID,
+                             PromoServiceFactory.autofillToolbarPinningPromoID],
         delegate: nil
     )
 }

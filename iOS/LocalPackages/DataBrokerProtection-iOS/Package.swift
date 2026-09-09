@@ -31,6 +31,7 @@ let package = Package(
             targets: ["DataBrokerProtection-iOS"])
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/WideEvent"),
         .package(path: "../../../SharedPackages/Common"),
         .package(path: "../../../SharedPackages/Persistence"),
         .package(path: "../../../SharedPackages/PixelKit"),
@@ -42,6 +43,7 @@ let package = Package(
         .target(
             name: "DataBrokerProtection-iOS",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),

@@ -23,7 +23,7 @@ import os.log
 import Networking
 import Common
 import FoundationExtensions
-import PixelKit
+import WideEvent
 
 public enum StripePurchaseFlowError: DDGError {
     case noProductsFound

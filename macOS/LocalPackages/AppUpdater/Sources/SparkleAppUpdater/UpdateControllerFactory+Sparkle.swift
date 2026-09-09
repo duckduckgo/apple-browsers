@@ -21,6 +21,7 @@ import BrowserServicesKit
 import FeatureFlags_macOS
 import Persistence
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Subscription
 

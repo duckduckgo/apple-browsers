@@ -936,7 +936,10 @@ class OnboardingManagerTests: XCTestCase {
                                                         experimentPersistor: OnboardingExperimentPersistor(keyValueStore: store))
             switch outcome {
             case .completed: early.goToAddressBar(from: source)
-            case .skipped: early.skipOnboarding(from: source)
+            case .skipped:
+                early.skipOnboarding(from: source)
+                XCTAssertFalse(navigationDelegate.replaceTabCalled)
+                navigationDelegate.onboardingSourceTab = nil
             }
             navigationDelegate.replaceTabCalled = false
             navigationDelegate.updatePreventUserInteractionCalled = false
@@ -972,9 +975,12 @@ class OnboardingManagerTests: XCTestCase {
                                                         experimentPersistor: OnboardingExperimentPersistor(keyValueStore: store))
             switch outcome {
             case .completed: early.goToAddressBar(from: source)
-            case .skipped: early.skipOnboarding(from: source)
+            case .skipped:
+                early.skipOnboarding(from: source)
+                XCTAssertFalse(navigationDelegate.replaceTabCalled)
+                navigationDelegate.onboardingSourceTab = nil
             }
-            XCTAssertTrue(navigationDelegate.replaceTabCalled)
+            XCTAssertEqual(navigationDelegate.replaceTabCalled, outcome == .completed)
             XCTAssertTrue(OnboardingActionsManager.isOnboardingFinished)
             XCTAssertNil(OnboardingExperimentPersistor(keyValueStore: store).outcome)
             let metric = outcome == .completed ? "onboardingCompleted" : "onboardingSkipped"
@@ -997,7 +1003,7 @@ class OnboardingManagerTests: XCTestCase {
     @MainActor
     func testLiveOnboardingCanExitWithAnAlreadyRecordedOutcome() {
         for outcome in [OnboardingExperimentPersistor.Outcome.skipped, .completed] {
-            for action in ["browse", "settings", "close"] {
+            for action in ["browse", "settings"] {
                 let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
                 configureNonBlockingExperimentKit(cohort: .treatment, featureFlagger: flags)
                 experimentFiredEvents = []
@@ -1012,7 +1018,6 @@ class OnboardingManagerTests: XCTestCase {
 
                 switch action {
                 case "settings": manager.goToSettings(from: source)
-                case "close": XCTAssertTrue(manager.skipOnboarding(from: source))
                 default: manager.goToAddressBar(from: source)
                 }
 

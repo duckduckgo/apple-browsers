@@ -700,11 +700,11 @@ extension WindowControllersManager: OnboardingNavigating {
     }
 
     /// Wires the onboarding tab so that leaving onboarding is always recorded as a skip:
-    /// `onClose` runs when the user closes the tab outright and something has to take its place,
+    /// `onClose` records a user-initiated close before normal tab removal,
     /// `onSkipInPlace` when onboarding goes away on its own — navigated away from, swept up in a
     /// bulk close, or carried off by its window closing.
     @MainActor
-    func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Bool,
+    func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Void,
                                onSkipInPlace: @escaping @MainActor () -> Void) {
         guard let onboardingTab else { return }
 
@@ -717,8 +717,9 @@ extension WindowControllersManager: OnboardingNavigating {
 #endif
             switch reason {
             case .userInitiated:
-                // `onClose` swaps the tab out itself, so cancel the plain removal.
-                return onClose(onboardingTab)
+                self.clearOnboardingTracking()
+                onClose(onboardingTab)
+                return false
             case .bulk:
                 // Quit cleanup removes this interceptor before sweeping up tabs.
                 self.recordOnboardingSkipInPlace()

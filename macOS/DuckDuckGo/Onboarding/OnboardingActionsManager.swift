@@ -112,7 +112,7 @@ protocol OnboardingNavigating: AnyObject {
     func focusOnAddressBar()
     func showImportDataView()
     func updatePreventUserInteraction(prevent: Bool)
-    func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Bool,
+    func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Void,
                                onSkipInPlace: @escaping @MainActor () -> Void)
 }
 
@@ -292,7 +292,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         guard nonBlockingExperiment.isNonBlocking, !hasInstalledHandlers, canEndOnboarding else { return }
         hasInstalledHandlers = true
         navigation.setOnboardingHandlers(
-            onClose: { [weak self] tab in self?.skipOnboarding(from: tab.webView) == true },
+            onClose: { [weak self] tab in self?.skipOnboarding(from: tab.webView) },
             onSkipInPlace: { [weak self] in self?.recordSkipInPlace() }
         )
     }
@@ -314,36 +314,35 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     @MainActor
     func goToAddressBar(from webView: WKWebView?) {
-        guard let tab = leaveOnboarding(.completed, for: webView, content: .url(URL.duckDuckGo, source: .ui)) else { return }
+        guard let tab = leaveOnboarding(from: webView, content: .url(URL.duckDuckGo, source: .ui)) else { return }
         focusAddressBarAfterNavigation(in: tab)
     }
 
     @MainActor
     func goToSettings(from webView: WKWebView?) {
-        _ = leaveOnboarding(.completed, for: webView, content: .settings(pane: nil))
+        _ = leaveOnboarding(from: webView, content: .settings(pane: nil))
     }
 
-    /// Closing a live onboarding tab must still work if its outcome was already recorded.
+    /// Records a skip before the caller performs normal tab removal.
     @MainActor
-    @discardableResult
-    func skipOnboarding(from webView: WKWebView?) -> Bool {
-        guard let tab = leaveOnboarding(.skipped, for: webView, content: .url(URL.duckDuckGo, source: .ui)) else { return false }
-        focusAddressBarAfterNavigation(in: tab)
-        return true
+    func skipOnboarding(from webView: WKWebView?) {
+        if nonBlockingExperiment.isNonBlocking {
+            guard navigation.onboardingTab(for: webView) != nil else { return }
+        }
+        _ = finishOnboarding(.skipped)
     }
 
     @MainActor
-    private func leaveOnboarding(_ outcome: OnboardingExperimentPersistor.Outcome,
-                                 for webView: WKWebView?, content: TabContent) -> Tab? {
+    private func leaveOnboarding(from webView: WKWebView?, content: TabContent) -> Tab? {
         if nonBlockingExperiment.isNonBlocking {
             // Validate before recording anything. A late message from a page that is no longer
             // onboarding must neither finish a new session nor replace its browsing tab.
             guard let source = navigation.onboardingTab(for: webView) else { return nil }
-            _ = finishOnboarding(outcome)
+            _ = finishOnboarding(.completed)
             let tab = Tab(content: content)
             return navigation.replaceOnboardingTab(source, with: tab) ? tab : nil
         }
-        guard finishOnboarding(outcome) else { return nil }
+        guard finishOnboarding(.completed) else { return nil }
         let tab = Tab(content: content)
         navigation.replaceTabWith(tab)
         return tab

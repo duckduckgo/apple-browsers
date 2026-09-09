@@ -68,11 +68,12 @@ class CapturingOnboardingNavigation: OnboardingNavigating {
     var onboardingOnClose: (@MainActor () -> Void)?
     var onboardingOnSkipInPlace: (@MainActor () -> Void)?
 
-    func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Bool,
+    func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Void,
                                onSkipInPlace: @escaping @MainActor () -> Void) {
         onboardingOnClose = { [weak self] in
             guard let source = self?.onboardingSourceTab else { return }
-            _ = onClose(source)
+            onClose(source)
+            self?.onboardingSourceTab = nil
         }
         onboardingOnSkipInPlace = onSkipInPlace
     }

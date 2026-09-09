@@ -82,7 +82,7 @@ final class WindowControllersManagerBrowsingBeforeCompletionTests: XCTestCase {
         let (windowController, tabCollectionViewModel) = makeWindowController(initialTab: onboardingTab)
         sut.register(windowController)
         sut.setOnboardingTab(onboardingTab)
-        sut.setOnboardingHandlers(onClose: { _ in false }, onSkipInPlace: {})
+        sut.setOnboardingHandlers(onClose: { _ in }, onSkipInPlace: {})
 
         let browsingTab = Tab(content: .url(URL(string: "https://example.com")!, source: .ui))
         tabCollectionViewModel.tabCollection.append(tab: browsingTab)
@@ -97,7 +97,7 @@ final class WindowControllersManagerBrowsingBeforeCompletionTests: XCTestCase {
         let (firstWindowController, _) = makeWindowController(initialTab: onboardingTab)
         sut.register(firstWindowController)
         sut.setOnboardingTab(onboardingTab)
-        sut.setOnboardingHandlers(onClose: { _ in false }, onSkipInPlace: {})
+        sut.setOnboardingHandlers(onClose: { _ in }, onSkipInPlace: {})
 
         // A second window, opened after tracking had already started.
         let (secondWindowController, secondTabCollectionViewModel) = makeWindowController(initialTab: Tab(content: .newtab))
@@ -122,7 +122,7 @@ final class WindowControllersManagerBrowsingBeforeCompletionTests: XCTestCase {
         let (windowController, tabCollectionViewModel) = makeWindowController(initialTab: onboardingTab)
         sut.register(windowController)
         sut.setOnboardingTab(onboardingTab)
-        sut.setOnboardingHandlers(onClose: { _ in false }, onSkipInPlace: {})
+        sut.setOnboardingHandlers(onClose: { _ in }, onSkipInPlace: {})
 
         onboardingTab.setContent(.url(URL(string: "https://duckduckgo.com")!, source: .ui))
 
@@ -139,7 +139,7 @@ final class WindowControllersManagerBrowsingBeforeCompletionTests: XCTestCase {
         let (windowController, tabCollectionViewModel) = makeWindowController(initialTab: onboardingTab)
         sut.register(windowController)
         sut.setOnboardingTab(onboardingTab)
-        sut.setOnboardingHandlers(onClose: { _ in false }, onSkipInPlace: {})
+        sut.setOnboardingHandlers(onClose: { _ in }, onSkipInPlace: {})
 
         let newTab = Tab(content: .newtab)
         tabCollectionViewModel.tabCollection.append(tab: newTab)
@@ -156,7 +156,7 @@ final class WindowControllersManagerBrowsingBeforeCompletionTests: XCTestCase {
         let (windowController, tabCollectionViewModel) = makeWindowController(initialTab: onboardingTab)
         sut.register(windowController)
         sut.setOnboardingTab(onboardingTab)
-        sut.setOnboardingHandlers(onClose: { _ in false }, onSkipInPlace: {})
+        sut.setOnboardingHandlers(onClose: { _ in }, onSkipInPlace: {})
 
         let browsingTab = Tab(content: .url(URL(string: "https://example.com")!, source: .ui))
         tabCollectionViewModel.tabCollection.append(tab: browsingTab)
@@ -171,7 +171,7 @@ final class WindowControllersManagerBrowsingBeforeCompletionTests: XCTestCase {
         let (windowController, tabCollectionViewModel) = makeWindowController(initialTab: onboardingTab)
         sut.register(windowController)
         sut.setOnboardingTab(onboardingTab)
-        sut.setOnboardingHandlers(onClose: { _ in false }, onSkipInPlace: {})
+        sut.setOnboardingHandlers(onClose: { _ in }, onSkipInPlace: {})
 
         // Onboarding tracking ends (e.g. completion replaced the tab, or the tab was closed).
         sut.setOnboardingTab(nil)

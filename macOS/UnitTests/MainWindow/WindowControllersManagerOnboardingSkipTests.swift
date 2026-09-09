@@ -146,14 +146,17 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
         XCTAssertFalse(sut.hasOnboardingTab)
     }
 
-    func testUserInitiatedCloseHandsOverToOnCloseAndAllowsRemoval() {
-        let (_, onboardingTab) = startOnboarding()
+    func testUserInitiatedCloseRecordsSkipAndRemovesLastTabWithoutReplacement() throws {
+        let (window, onboardingTab) = startOnboarding()
+        let viewModel = window.mainViewController.tabCollectionViewModel
+        let index = try XCTUnwrap(viewModel.indexInAllTabs(of: onboardingTab))
 
-        let allowsRemoval = onboardingTab.closeInterceptor?(.userInitiated)
+        viewModel.remove(at: index, reason: .userInitiated)
 
-        XCTAssertEqual(allowsRemoval, true)
+        XCTAssertTrue(viewModel.tabCollection.tabs.isEmpty)
+        XCTAssertFalse(sut.hasOnboardingTab)
         XCTAssertEqual(closeCount, 1)
-        XCTAssertEqual(skipInPlaceCount, 0, "Closing the tab is reported by the onClose path, not as a skip in place.")
+        XCTAssertEqual(skipInPlaceCount, 0)
     }
 
     // MARK: - Only the first outcome counts
@@ -172,7 +175,7 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
         let (_, onboardingTab) = startOnboarding()
         sut.setOnboardingTab(nil)
 
-        sut.setOnboardingHandlers(onClose: { _ in XCTFail("Late close handler"); return false },
+        sut.setOnboardingHandlers(onClose: { _ in XCTFail("Late close handler") },
                                   onSkipInPlace: { XCTFail("Late skip handler") })
         onboardingTab.setContent(.newtab)
 
@@ -212,12 +215,6 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
         XCTAssertTrue(sut.hasOnboardingTab)
     }
 
-    func testUnhandledOnboardingCloseAllowsNormalRemoval() {
-        let (_, tab) = startOnboarding()
-        sut.setOnboardingHandlers(onClose: { _ in false }, onSkipInPlace: {})
-        XCTAssertEqual(tab.closeInterceptor?(.userInitiated), false)
-    }
-
     func testSourceScopedReplacementRejectsTabThatAlreadyNavigatedAway() {
         let (window, tab) = startOnboarding()
         tab.setContent(.newtab)
@@ -246,7 +243,7 @@ private extension WindowControllersManagerOnboardingSkipTests {
         sut.register(windowController)
         sut.setOnboardingTab(onboardingTab)
         sut.setOnboardingHandlers(
-            onClose: { [weak self] _ in self?.closeCount += 1; return true },
+            onClose: { [weak self] _ in self?.closeCount += 1 },
             onSkipInPlace: { [weak self] in self?.skipInPlaceCount += 1 }
         )
 

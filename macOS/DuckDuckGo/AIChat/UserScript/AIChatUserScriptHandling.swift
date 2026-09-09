@@ -124,6 +124,12 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     @MainActor func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable?
+
+    // MARK: Browser tools
+
+    @MainActor func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
@@ -192,6 +198,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let migrationStore = AIChatMigrationStore()
     private let voiceChatFailureHandler: DuckAiVoiceChatFailureHandling
+    private let browserTools: AIChatBrowserToolsService
 
     var isFireWindowProvider: (() -> Bool)?
 
@@ -222,11 +229,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         freeTrialConversionService: FreeTrialConversionInstrumentationService = Application.appDelegate.freeTrialConversionService,
         notificationCenter: NotificationCenter = .default,
         voiceChatFailureHandler: DuckAiVoiceChatFailureHandling? = nil,
-        conversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
+        conversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
+        browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
+        self.browserTools = browserTools
         self.pixelFiring = pixelFiring
         self.aiChatUserScriptErrorEventMapper = aiChatUserScriptErrorEventMapper ?? AIChatUserScriptErrorEventMapper(pixelFiring: pixelFiring)
         self.statisticsLoader = statisticsLoader
@@ -1169,4 +1178,62 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         freeTrialConversionService.markDuckAIActivated()
     }
 
+}
+
+// MARK: - Browser tools
+
+extension AIChatUserScriptHandler {
+
+    /// MCP `initialize`.
+    ///
+    /// Always answers, even when the payload is unreadable: the bridge has no timeout, so a
+    /// silent drop would leave the front end's promise pending forever. An unreadable payload
+    /// simply yields a session with no elicitation capability.
+    @MainActor
+    func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
+        let request: MCPInitializeRequest? = DecodableHelper.decode(from: params)
+
+        if let ownerTabID = ownerTabID(for: message) {
+            browserTools.sessions.applyInitialize(forOwnerTabID: ownerTabID,
+                                                  protocolVersion: request?.protocolVersion,
+                                                  supportsElicitationForm: request?.supportsElicitationForm ?? false)
+        }
+
+        return MCPInitializeResult(serverName: AIChatBrowserToolsService.serverName,
+                                   serverVersion: AppVersion.shared.versionAndBuildNumber)
+    }
+
+    /// MCP `notifications/initialized`.
+    ///
+    /// The bridge decides whether this reply is delivered — a message carrying an envelope `id`
+    /// gets it, a plain notification discards it — so returning a result is correct either way.
+    @MainActor
+    func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let ownerTabID = ownerTabID(for: message) {
+            browserTools.sessions.markInitialized(forOwnerTabID: ownerTabID)
+        }
+        return MCPEmptyResult()
+    }
+
+    /// MCP `tools/list`.
+    ///
+    /// A listing failure is reported as a top-level `error` token, unlike `tools/call`, which
+    /// carries failures inside the MCP result envelope.
+    @MainActor
+    func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let ownerTabID = ownerTabID(for: message),
+              let session = browserTools.sessions.session(forOwnerTabID: ownerTabID),
+              session.isInitialized else {
+            return BrowserToolsListResponse(failure: .notInitialized)
+        }
+
+        return BrowserToolsListResponse(tools: browserTools.catalog.enabledTools.map { $0.descriptor() })
+    }
+
+    /// The Duck.ai owner tab this message belongs to — the host tab for a sidebar or detached
+    /// window, the chat's own tab otherwise. Sessions and tool scoping are keyed on it.
+    @MainActor
+    private func ownerTabID(for message: UserScriptMessage) -> TabIdentifier? {
+        AIChatTabPickerSource.ownerTabID(for: message.messageWebView, in: windowControllersManager)
+    }
 }

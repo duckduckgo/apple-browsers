@@ -142,8 +142,21 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                                            currentCohorts: currentCohorts,
                                            themeVariant: themeVariant)
         do {
-            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager, excludedFeatures: [PrivacyFeature.autoconsent.rawValue])
-            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager)
+            // `aiChatBrowserTools` is native-only: Duck.ai gates on the `supportsBrowserTools` config
+            // value and never reads this key. Windows found that injecting it broke
+            // content-scope-scripts' aiChat message-bridge setup for the sidebar web view, and
+            // content-scope-scripts is shared across platforms, so keep it out of the injected config
+            // here too. A no-op until the feature is added to the remote privacy config, which is
+            // exactly the point — it cannot then be forgotten.
+            let nativeOnlyFeatures = [PrivacyFeature.aiChatBrowserTools.rawValue]
+            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
+                featureFlagger: sourceProvider.featureFlagger,
+                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                excludedFeatures: [PrivacyFeature.autoconsent.rawValue] + nativeOnlyFeatures)
+            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(
+                featureFlagger: sourceProvider.featureFlagger,
+                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures + nativeOnlyFeatures)
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: isolatedConfigGenerator)
         } catch {

@@ -54,6 +54,23 @@ enum AIChatTabPickerSource {
         }
     }
 
+    /// The Duck.ai owner tab for `webView`.
+    ///
+    /// A sidebar or detached Duck.ai window belongs to the tab it was opened from; a Duck.ai
+    /// loaded as an ordinary tab owns itself. Browser-tool sessions and scoping are keyed on this,
+    /// so a sidebar and its host tab share one session.
+    static func ownerTabID(for webView: WKWebView?,
+                           in windowControllersManager: WindowControllersManagerProtocol) -> TabIdentifier? {
+        guard let webView else { return nil }
+        if let hostTabID = hostingAIChatViewController(of: webView)?.tabID {
+            return hostTabID
+        }
+        return windowControllersManager.allTabCollectionViewModels
+            .flatMap { ($0.pinnedTabsCollection?.loadedTabs ?? []) + $0.tabCollection.loadedTabs }
+            .first { $0.webView === webView }?
+            .uuid
+    }
+
     private static func hostingAIChatViewController(of webView: WKWebView) -> AIChatViewController? {
         var responder: NSResponder? = webView
         while let current = responder {

@@ -202,6 +202,16 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getAIChatOpenTabs
         case .getAIChatTabContent:
             return handler.getAIChatTabContent
+
+        // Browser tools. Answered regardless of the feature flag: the catalog is empty when it is
+        // off, so `tools/list` comes back empty rather than leaving the front end waiting.
+        case .initialize:
+            return handler.mcpInitialize
+        case .notificationsInitialized:
+            return handler.mcpNotificationsInitialized
+        case .toolsList:
+            return handler.mcpToolsList
+
         case .reportMetric:
             return handler.reportMetric
         case .togglePageContextTelemetry:

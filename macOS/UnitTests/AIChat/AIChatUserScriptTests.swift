@@ -143,6 +143,35 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertTrue(mockHandler.didGetAIChatTabContent, "getAIChatTabContent should be called")
     }
 
+    // MARK: - Browser tools
+
+    @MainActor func testWhenInitializeIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.initialize.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPInitialize)
+    }
+
+    @MainActor func testWhenInitializedNotificationIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.notificationsInitialized.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPNotificationsInitialized)
+    }
+
+    @MainActor func testWhenToolsListIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsList.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPToolsList)
+    }
+
+    /// `tools/call` lands in the next change; until then it must not resolve to a handler, so the
+    /// front end gets a method-not-found error rather than silence.
+    @MainActor func testWhenToolsCallIsReceivedThenNoHandlerResolvesYet() {
+        XCTAssertNil(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsCall.rawValue))
+    }
+
     // MARK: - Open Settings handshake
 
     @MainActor func testRequestOpenSettingsActionArmsHandshake() {
@@ -374,6 +403,25 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable? {
         didGetAIChatTabContent = true
+        return nil
+    }
+
+    var didCallMCPInitialize = false
+    var didCallMCPNotificationsInitialized = false
+    var didCallMCPToolsList = false
+
+    func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didCallMCPInitialize = true
+        return nil
+    }
+
+    func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didCallMCPNotificationsInitialized = true
+        return nil
+    }
+
+    func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didCallMCPToolsList = true
         return nil
     }
 

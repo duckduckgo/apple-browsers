@@ -150,7 +150,8 @@ extension AIChatMessageHandler {
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider()),
             attachmentLimits: featureFlagger.isFeatureOn(.aiChatTabAttachmentLimit)
                 ? AIChatNativeAttachmentLimits(tabs: .init(maxAttached: AIChatOmnibarController.maxTabAttachments))
-                : nil
+                : nil,
+            supportsBrowserTools: featureFlagger.isFeatureOn(.aiChatBrowserTools)
         )
     }
 

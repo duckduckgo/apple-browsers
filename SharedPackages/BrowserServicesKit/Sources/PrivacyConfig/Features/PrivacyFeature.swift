@@ -89,6 +89,7 @@ public enum PrivacyFeature: String {
     case promoQueue
     case adBlockingExtension
     case eventHub
+    case aiChatBrowserTools
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -519,6 +520,38 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Warns users as they approach their daily/weekly Duck.ai limits, using the usage snapshot the
     /// web app writes into the reserved `usageLimits` native-storage entry.
     case usageWarnings
+}
+
+/// Native browser capabilities Duck.ai can discover and invoke over the MCP-shaped contract.
+///
+/// The parent feature is the kill switch: with it off there are no tools at all. Each tool then
+/// has its own gate, so one can be withdrawn without touching the rest — a disabled tool is
+/// absent from `tools/list` and reports `unavailable` if called anyway.
+public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .aiChatBrowserTools
+    }
+
+    /// Kill switch for the whole browser-tools bridge.
+    case featureEnabled
+
+    /// Lists the open tabs of the owner tab's window (title and URL only).
+    case listOpenTabs
+
+    /// Searches local browsing history.
+    case searchHistory
+
+    /// Switches to an open tab in the owner tab's window.
+    case switchToTab
+
+    /// Reads the text content of an open tab.
+    case readTabContent
+
+    /// Finds text on a page and reports match counts and snippets.
+    case findInPage
+
+    /// Paints previously-found matches on a page.
+    case highlightInPage
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

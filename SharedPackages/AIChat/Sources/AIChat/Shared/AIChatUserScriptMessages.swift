@@ -117,5 +117,21 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     /// Posted by the Customize Responses card placement when the user dismisses it.
     case customizeResponsesModalClosed
+
+    // MARK: - Browser tools
+
+    /// MCP `initialize` — negotiates protocol version and capabilities for browser tools.
+    /// Opens the session that `toolsList` and `toolsCall` require.
+    case initialize
+
+    /// MCP `notifications/initialized` — the FE is ready for tools traffic. Sent without an
+    /// envelope `id`, so it is answered only when the FE asks for a reply.
+    case notificationsInitialized = "notifications/initialized"
+
+    /// MCP `tools/list` — the browser tools this FE may discover, after remote-config gating.
+    case toolsList = "tools/list"
+
+    /// MCP `tools/call` — invoke a registered browser tool.
+    case toolsCall = "tools/call"
 }
 // swiftlint:enable inclusive_language

@@ -519,6 +519,30 @@ public enum FeatureFlag: String, CaseIterable {
     /// and the warnings that will be built on top of it. Internal-only while the UI is in development.
     case aiChatUsageWarnings
 
+    /// Gates the Duck.ai browser tools bridge: the MCP-shaped contract that lets Duck.ai discover
+    /// and invoke native browser capabilities with per-tool user consent. Parent kill switch — with
+    /// it off there are no tools at all. Internal-only while the front end is in development.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
+    case aiChatBrowserTools
+
+    /// Gates the `listOpenTabs` browser tool. https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
+    case aiChatBrowserToolListOpenTabs
+
+    /// Gates the `searchHistory` browser tool. https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
+    case aiChatBrowserToolSearchHistory
+
+    /// Gates the `switchToTab` browser tool. https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
+    case aiChatBrowserToolSwitchToTab
+
+    /// Gates the `readTabContent` browser tool. https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
+    case aiChatBrowserToolReadTabContent
+
+    /// Gates the `findInPage` browser tool. https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
+    case aiChatBrowserToolFindInPage
+
+    /// Gates the `highlightInPage` browser tool. https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
+    case aiChatBrowserToolHighlightInPage
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -868,6 +892,20 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
+        case .aiChatBrowserTools:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled), category: .duckAI)
+        case .aiChatBrowserToolListOpenTabs:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.listOpenTabs), category: .duckAI)
+        case .aiChatBrowserToolSearchHistory:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.searchHistory), category: .duckAI)
+        case .aiChatBrowserToolSwitchToTab:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.switchToTab), category: .duckAI)
+        case .aiChatBrowserToolReadTabContent:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.readTabContent), category: .duckAI)
+        case .aiChatBrowserToolFindInPage:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.findInPage), category: .duckAI)
+        case .aiChatBrowserToolHighlightInPage:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.highlightInPage), category: .duckAI)
         }
     }
 

@@ -266,6 +266,58 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.aiChatNtpImageGeneration)
     }
 
+    var isUpdatedCreateImageEnabled: Bool {
+        isImageGenerationEnabled && featureFlagger.isFeatureOn(.updatedCreateImage)
+    }
+
+    @MainActor
+    var imageGenerationModelId: String? {
+        guard isUpdatedCreateImageEnabled else { return nil }
+        return imageGenerationModel(in: availableModelsProvider())?.id
+    }
+
+    @MainActor
+    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? {
+        guard isUpdatedCreateImageEnabled else { return nil }
+
+        let models = availableModelsProvider()
+        let previousModel = models.first(where: { $0.id == aiChatPreferencesPersistor.selectedModelId })
+        guard let imageModel = imageGenerationModel(in: models),
+              previousModel?.id != imageModel.id else {
+            return nil
+        }
+
+        aiChatPreferencesPersistor.selectedModelId = imageModel.id
+        aiChatPreferencesPersistor.selectedModelShortName = imageModel.shortName
+        clearReasoningEffortIfUnsupported(by: imageModel)
+
+        guard let previousModel else { return nil }
+        let notice = AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: imageModel)
+        return NewTabPageDataModel.OmnibarCreateImageModelSwitch(
+            message: notice.localizedTitle,
+            secondaryText: notice.localizedSubtitle
+        )
+    }
+
+    private func imageGenerationModel(in models: [AIChatModel]) -> AIChatModel? {
+        if let selectedModel = models.first(where: { $0.id == aiChatPreferencesPersistor.selectedModelId }),
+           selectedModel.entityHasAccess,
+           selectedModel.supportsTool(.imageGeneration) {
+            return selectedModel
+        }
+        return AIChatModel.preferredImageGenerationModel(in: models)
+    }
+
+    private func clearReasoningEffortIfUnsupported(by model: AIChatModel) {
+        guard let rawValue = aiChatPreferencesPersistor.selectedReasoningEffort else { return }
+        guard let effort = AIChatReasoningEffort(rawValue: rawValue) else {
+            aiChatPreferencesPersistor.selectedReasoningEffort = nil
+            return
+        }
+        guard !model.supportedReasoningEffort.contains(effort) else { return }
+        aiChatPreferencesPersistor.selectedReasoningEffort = nil
+    }
+
     var isWebSearchEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatNtpWebSearch)
     }

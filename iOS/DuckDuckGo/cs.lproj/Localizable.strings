@@ -577,9 +577,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Chyba synchronizace a zálohování";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Nastavení synchronizace";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Zkus to znovu.";
 
@@ -2262,6 +2259,12 @@
 
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Shrň mi tuhle knihu.";
+
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Shrň mi tenhle dokument";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Shrň mi tenhle dokument.";
 
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Shrň mi tuhle stránku";
@@ -5194,17 +5197,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Upozornění SwiftUI";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Kód pro obnovení je zkopírovaný do schránky";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Smazat data ze serveru";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Tvoje záloha bude ze serveru smazána. Všechna zařízení budou odpojena od synchronizace, ale z žádného zařízení nebude nic smazáno.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Smazat data ze serveru?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Synchronizovat";
@@ -5284,11 +5278,17 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Smazat zařízení?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Data byla smazána ze serveru";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Dojde k odpojení všech zařízení používajících Sync & Backup a smazání synchronizovaných dat ze serveru.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Vypnout Sync & Backup a smazat data ze serveru?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Přidáno nové zařízení!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup zapnuto";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Kód pro obnovení je zkopírovaný";
@@ -5836,3 +5836,14 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chceš importovat?";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ neumí vytvářet obrázky. Záruka „Poskytovatel nic nevidí“ nebude platit, dokud nepřepneš zpátky.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ nepodporuje vytváření obrázků.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Nyní používáš %@";
+
+/* Address bar Duck.ai menu option that opens the full chat history */
+"duckai.address.bar.menu.all.chats" = "Všechny chaty";

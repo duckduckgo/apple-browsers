@@ -177,6 +177,7 @@ final class BrowserTabViewControllerContentOverlayDismissalTests: XCTestCase {
                 preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
                 internalUserDecider: featureFlagger.internalUserDecider),
+            permissionManager: PermissionManagerMock(),
             pinningManager: MockPinningManager(),
             onContentOverlayDismissalRequested: { spy.record() })
 

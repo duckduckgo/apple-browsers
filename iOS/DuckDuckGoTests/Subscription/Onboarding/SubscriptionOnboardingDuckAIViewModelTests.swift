@@ -317,7 +317,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         AIChatModel(id: id, name: name, provider: .openAI, supportsImageUpload: false, entityHasAccess: hasAccess, accessTier: tier)
     }
 
-    /// Runs `trigger`, then waits until `publisher` emits a value satisfying `predicate`. 
+    /// Runs `trigger`, then waits until `publisher` emits a value satisfying `predicate`.
     private func wait<T>(_ publisher: Published<T>.Publisher,
                          until predicate: @escaping (T) -> Bool,
                          trigger: () -> Void) async {

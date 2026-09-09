@@ -19,7 +19,7 @@
 
 import Foundation
 import FoundationExtensions
-import PixelKit
+import WideEvent
 
 /// Wide-event payload for the Duck.ai session pixel (`m_ios_wide_duckai_session`): one visit to a
 /// full Duck.ai tab, from the tab becoming visible until Duck.ai is left, the app backgrounds, or the process ends.

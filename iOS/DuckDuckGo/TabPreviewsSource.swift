@@ -19,6 +19,7 @@
 
 import UIKit
 import Core
+import PixelKit
 
 protocol TabPreviewsSource: AnyObject {
 
@@ -106,7 +107,7 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
                 try FileManager.default.removeItem(at: url)
             }
         } catch {
-            Pixel.fire(pixel: .cachedTabPreviewRemovalError, error: error)
+            PixelKit.fire(Pixel.Event.cachedTabPreviewRemovalError.withError(error))
         }
 
         removeFullScreenSnapshot(forTabUID: tab.uid)

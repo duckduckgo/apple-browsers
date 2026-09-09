@@ -127,6 +127,8 @@ extension MainViewController {
 
     private func duckAIAddressBarMenuChildren() -> [UIMenuElement] {
         DuckAIAddressBarMenuFactory.makeActions(
+            featureFlagger: featureFlagger,
+            userInterfaceIdiom: UIDevice.current.userInterfaceIdiom,
             onNewChat: { [weak self] in
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuNewChatSelected()
                 self?.openFreshDuckAIChatFromAddressBarMenu()
@@ -134,8 +136,17 @@ extension MainViewController {
             onAskAboutPage: { [weak self] in
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutPageSelected()
                 self?.askAboutCurrentPageFromAddressBar()
+            },
+            onRecentChats: { [weak self] in
+                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuRecentChatsSelected()
+                self?.openRecentChatsFromAddressBarMenu()
             }
         )
+    }
+
+    private func openRecentChatsFromAddressBarMenu() {
+        omniBar.endEditing()
+        openAIChatHistory(source: .addressBar)
     }
 
     /// `openAIChat()` rather than `openAIChatFromAddressBar`: the latter sends the omnibar's text as

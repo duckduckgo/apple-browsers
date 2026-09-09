@@ -34,6 +34,7 @@ import Combine
 import PrivacyConfig
 import SitePermissions
 import WebExtensions
+import PixelKit
 
 protocol TabManaging {
     var currentTabsModel: TabsModelManaging { get }
@@ -179,11 +180,17 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     let sitePermissionsPixelHandler = SitePermissionsPixelHandler()
 
     @MainActor
+    lazy var sitePermissionsStore = SitePermissionsStore(storage: UserDefaults.app.keyedStoring())
+
+    @MainActor
     private lazy var sitePermissionsDependencies = SitePermissionsDependencies(
-        store: SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
+        store: sitePermissionsStore,
         systemPermissionClient: SystemPermissionClient(),
         eventHandler: { [sitePermissionsPixelHandler] event in
             sitePermissionsPixelHandler.fire(event)
+        },
+        revokePermissionsInOtherTabs: { [weak self] site, permissionTypes, sourceTabID in
+            self?.revokeSitePermissions(permissionTypes, for: site, excluding: sourceTabID)
         }
     )
 
@@ -308,6 +315,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.adBlockingAvailability = adBlockingAvailability
         self.eventHub = eventHub
         registerForNotifications()
+        AppDependencyProvider.shared.internalFeedbackTabCountProvider.counter = self
     }
 
     deinit {
@@ -325,10 +333,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             return
         }
         _currentBrowsingMode = mode
-        Pixel.fire(pixel: .browsingModeSwitched, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.browsingModeSwitched, options: .parameters([
             PixelParameters.browsingMode: mode.pixelParamValue,
             PixelParameters.source: source.rawValue
-        ])
+        ]))
     }
 
     func tabsModel(for mode: BrowsingMode) -> TabsModelManaging {
@@ -439,6 +447,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     
     func controller(for tab: Tab) -> TabViewController? {
         return tabControllerCache.first { $0.tabModel === tab }
+    }
+
+    func revokeSitePermissions(_ permissionTypes: Set<SitePermissionType>,
+                               for site: SitePermissionKey,
+                               excluding excludedTabID: String? = nil) {
+        for tab in allTabsModel.tabs where tab.uid != excludedTabID {
+            controller(for: tab)?.revokeSitePermissions(permissionTypes, for: site)
+        }
     }
 
     @MainActor
@@ -758,10 +774,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             }
 
             if reloadCurrent {
-                DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+                PixelKit.fire(Pixel.Event.webKitTerminationDidReloadCurrentTab, frequency: .dailyAndStandard)
 
                 if controller.url?.isDuckAIURL == true {
-                    DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
+                    PixelKit.fire(Pixel.Event.aiChatTabDidReloadAfterTermination, frequency: .dailyAndCount)
                 }
 
                 current()?.reload()
@@ -1020,6 +1036,22 @@ extension TabManager {
 }
 
 
+// MARK: - Internal Feedback
+
+extension TabManager: InternalFeedbackTabCounting {
+
+    @MainActor
+    var openTabCount: Int {
+        allTabsModel.tabs.count
+    }
+
+    @MainActor
+    var activeTabCount: Int {
+        tabControllerCache.count
+    }
+
+}
+
 // MARK: - Debugging Pixels
 
 extension TabManager {
@@ -1084,9 +1116,9 @@ extension TabManager {
         let totalTabs = allTabsModel.tabs.count
 
         if let storedPreviews = totalStoredPreviews, storedPreviews > totalTabs {
-            Pixel.fire(pixel: .cachedTabPreviewsExceedsTabCount, withAdditionalParameters: [
+            PixelKit.fire(Pixel.Event.cachedTabPreviewsExceedsTabCount, options: .parameters([
                 PixelParameters.tabPreviewCountDelta: "\(storedPreviews - totalTabs)"
-            ])
+            ]))
             let validTabIDs = Set(allTabsModel.tabs.map { $0.uid })
             let previewsSourceForCleanup = previewsSource
             Task(priority: .utility) {

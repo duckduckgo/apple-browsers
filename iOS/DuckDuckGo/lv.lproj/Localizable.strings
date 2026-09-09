@@ -577,9 +577,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Sinhronizācijas un dublēšanas kļūda";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Sinhronizācijas iestatījumi";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Lūdzu, mēģini vēlreiz.";
 
@@ -2262,6 +2259,12 @@
 
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Apkopo šo grāmatu.";
+
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Apkopo šo dokumentu";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Apkopo šo dokumentu.";
 
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Apkopot šo lapu";
@@ -5194,17 +5197,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI brīdinājums";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Atgūšanas kods ir nokopēts starpliktuvē";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Dzēst servera datus";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Tavs dublējums tiks dzēsts no servera. Visas ierīces tiks atvienotas no sinhronizācijas, bet nekas netiks dzēsts ne no vienas ierīces.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Dzēst servera datus?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Sinhronizēt tagad";
@@ -5284,11 +5278,17 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Noņemt ierīci?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Servera dati izdzēsti";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Visas ierīces, kas izmanto Sync & Backup, tiks atvienotas, un tavi sinhronizētie dati tiks dzēsti no servera.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Vai izslēgt Sync & Backup un dzēst servera datus?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Pievienota jauna ierīce!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup iespējots";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Atgūšanas kods nokopēts";
@@ -5836,3 +5836,14 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ nevar izveidot attēlus. Pilnīga neredzamība pakalpojumu sniedzējam netiks piemērota, kamēr nepārslēgsies atpakaļ.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ neatbalsta attēlu izveidi.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Tagad izmanto %@";
+
+/* Address bar Duck.ai menu option that opens the full chat history */
+"duckai.address.bar.menu.all.chats" = "Visas tērzēšanas sarunas";

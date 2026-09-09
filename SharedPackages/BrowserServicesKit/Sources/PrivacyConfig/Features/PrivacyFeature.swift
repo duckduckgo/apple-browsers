@@ -369,6 +369,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// pre-submit contextual sheet on iPhone.
     case contextualFloatingInput
 
+    /// Enables Recent Chats in the iOS address-bar Duck.ai menu.
+    case addressBarRecentChats
+
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
 
@@ -580,6 +583,10 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Toggle for the Copy VPN Diagnostics button in VPN settings/status.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
     case showCopyDiagnosticsButton
+
+    /// VPN Session Health Telemetry
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218245909089002?focus=true
+    case sessionHealthTelemetry
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {
@@ -641,6 +648,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionExpirationReminderNotification
     case subscriptionPromoForExistingUsers
     case monthlyFreeTrialExperiment2
+    case subscriptionOnboardingFreeTrialsSep2026
+    case subscriptionOnboardingPaidSubsSep2026
     case onboardingSubscriptionUpsellExperiment
 }
 

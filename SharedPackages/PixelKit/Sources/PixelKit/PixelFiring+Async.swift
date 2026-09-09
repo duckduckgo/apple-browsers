@@ -25,46 +25,70 @@ extension PixelFiring {
     /// Prefer the synchronous `fire` unless the caller genuinely needs the outcome: awaiting a
     /// pixel makes the caller wait on a network round trip.
     ///
-    /// - Returns: `.sent` if a request was sent, `.suppressed` if the event's frequency rules
-    ///   suppressed it. Suppression is a normal outcome, not a failure.
-    /// - Throws: the underlying error if sending the request failed.
+    /// A multi-request frequency such as `.dailyAndCount` fires one request per leg, and this
+    /// waits for every one of them before returning.
+    ///
+    /// - Returns: `.sent` if any leg sent a request, `.suppressed` if the event's frequency rules
+    ///   suppressed all of them. Suppression is a normal outcome, not a failure.
+    /// - Throws: the first error reported by any leg, once every leg has finished.
     @discardableResult
     public func fireAsync(_ event: PixelKit.Event,
                           frequency: PixelKit.Frequency = .standard,
                           options: PixelKit.Options = .default) async throws -> PixelKit.FireResult {
-        let firstCompletion = OneTimeFlag()
+        let legs = LegAggregator(expecting: frequency.legCount)
         return try await withCheckedThrowingContinuation { continuation in
             fire(event: event,
                  frequency: frequency,
                  options: options) { fired, error in
-                // Multi-request frequencies such as `.dailyAndCount` complete more than once.
-                // Resolve on the first completion and drop the rest, otherwise the second resume
-                // traps.
-                guard firstCompletion.trySet() else { return }
+                guard let outcome = legs.record(fired: fired, error: error) else { return }
 
-                if let error {
+                switch outcome {
+                case .failure(let error):
                     continuation.resume(throwing: error)
-                    return
+                case .success(let result):
+                    continuation.resume(returning: result)
                 }
-
-                continuation.resume(returning: fired ? .sent : .suppressed)
             }
         }
     }
 }
 
-/// Thread-safe latch that can only be set once. Guards the continuation above against the multiple
-/// completions of multi-request frequencies, which would otherwise trap on the second resume.
-private final class OneTimeFlag {
+/// Collects the completions of a frequency's legs and yields the combined outcome once, on the
+/// completion that satisfies the last one.
+///
+/// A two-leg frequency completes twice - each leg completes whether it sent or was suppressed - and
+/// resuming a continuation twice traps, so exactly one completion may resolve it.
+private final class LegAggregator {
     private let lock = NSLock()
-    private var isSet = false
+    private let expected: Int
+    private var received = 0
+    private var firstError: Error?
+    private var anyLegSent = false
+    private var hasResolved = false
 
-    /// Sets the flag, returning `true` only for the call that actually set it.
-    func trySet() -> Bool {
+    init(expecting expected: Int) {
+        self.expected = max(expected, 1)
+    }
+
+    /// Records one leg's completion, returning the combined outcome only on the completion that
+    /// brings the total up to the expected leg count, and `nil` for every other call. Returns
+    /// `nil` for anything after that, so an over-completing handler cannot resume twice.
+    func record(fired: Bool, error: Error?) -> Result<PixelKit.FireResult, Error>? {
         lock.lock()
         defer { lock.unlock() }
-        guard !isSet else { return false }
-        isSet = true
-        return true
+
+        guard !hasResolved else { return nil }
+
+        received += 1
+        anyLegSent = anyLegSent || fired
+        if firstError == nil { firstError = error }
+
+        guard received >= expected else { return nil }
+        hasResolved = true
+
+        if let firstError {
+            return .failure(firstError)
+        }
+        return .success(anyLegSent ? .sent : .suppressed)
     }
 }

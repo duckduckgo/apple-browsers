@@ -18,6 +18,7 @@
 
 import XCTest
 import PixelKit
+import WideEvent
 @testable import Subscription
 
 final class SubscriptionWideEventTests: XCTestCase {

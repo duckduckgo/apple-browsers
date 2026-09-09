@@ -577,9 +577,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Senkronizasyon ve Yedekleme Hatası";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Senkronizasyon Ayarları";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Lütfen tekrar deneyin.";
 
@@ -2262,6 +2259,12 @@
 
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Bu kitabı özetle.";
+
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Bu belgeyi özetle";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Bu belgeyi özetle.";
 
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Bu Sayfayı Özetle";
@@ -5194,17 +5197,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI Uyarısı";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Kurtarma kodu panoya kopyalandı";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Sunucu Verilerini Sil";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Yedekleriniz sunucudan silinecektir. Tüm cihazların senkronizasyon bağlantısı kesilecek, ancak hiçbir cihazdan hiçbir şey silinmeyecektir.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Sunucu Verileri Silinsin mi?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Şimdi Senkronize Et";
@@ -5284,11 +5278,17 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Cihaz Kaldırılsın mı?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Sunucu verileri silindi";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Sync & Backup kullanan tüm cihazların bağlantısı kesilecek ve senkronize edilen verileriniz sunucudan silinecektir.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Sync & Backup Kapatılsın ve Sunucu Verileri Silinsin mi?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Yeni cihaz eklendi!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup etkin";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Kurtarma Kodu Kopyalandı";
@@ -5836,3 +5836,14 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Neyi içe aktarmak istiyorsunuz?";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ görsel oluşturamaz. Sıfır Sağlayıcı Görünürlüğü, geri dönene kadar geçerli olmayacak.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ görsel oluşturmayı desteklemiyor.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Artık %@ kullanılıyor";
+
+/* Address bar Duck.ai menu option that opens the full chat history */
+"duckai.address.bar.menu.all.chats" = "Tüm Sohbetler";

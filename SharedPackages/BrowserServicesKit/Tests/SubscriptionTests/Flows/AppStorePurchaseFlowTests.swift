@@ -21,7 +21,7 @@ import XCTest
 @testable import Networking
 import SubscriptionTestingUtilities
 import NetworkingTestingUtils
-@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 
 @available(iOS 15.0, *)
 final class AppStorePurchaseFlowTests: XCTestCase {

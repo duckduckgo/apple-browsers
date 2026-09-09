@@ -577,9 +577,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Eroare de sincronizare și backup";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Setări de sincronizare";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Încearcă din nou.";
 
@@ -2262,6 +2259,12 @@
 
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Rezumă această carte.";
+
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Rezumă acest document";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Rezumă acest document.";
 
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Rezumă această pagină";
@@ -5194,17 +5197,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Alertă SwiftUI";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Codul de recuperare a fost copiat în clipboard";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Șterge datele serverului";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Copia de rezervă va fi ștearsă de pe server. Toate dispozitivele vor fi deconectate de la sincronizare, dar nimic nu va fi șters de pe niciun dispozitiv.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Ștergi datele serverului?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Sincronizează acum";
@@ -5284,11 +5278,17 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Elimini dispozitivul?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Datele de pe server au fost șterse";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Toate dispozitivele care folosesc Sync & Backup vor fi deconectate, iar datele tale sincronizate vor fi șterse de pe server.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Dorești să oprești Sync & Backup și să ștergi datele de pe server?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "A fost adăugat un dispozitiv nou!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup activat";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Codul de recuperare a fost copiat";
@@ -5836,3 +5836,14 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ nu poate crea imagini. Vizibilitatea zero din partea furnizorului nu se va aplica până când nu revii.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ nu acceptă crearea de imagini.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Acum folosești %@";
+
+/* Address bar Duck.ai menu option that opens the full chat history */
+"duckai.address.bar.menu.all.chats" = "Toate chaturile";

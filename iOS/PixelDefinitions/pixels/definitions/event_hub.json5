@@ -517,14 +517,14 @@
         ]
     },
     "webTelemetry_detectorPerf_day": {
-        "description": "Daily bucketed counts of measured pages, Web Detection runs and failures, and detector performance threshold crossings. Fired by EventHub at the end of each 1-day period.",
+        "description": "Daily bucketed counts of measured pages, Web Detection group runs and failures, and group performance threshold crossings. Fired by EventHub at the end of each 1-day period.",
         "owners": ["miasma13"],
         "triggers": ["scheduled"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
-                "keyPattern": "^(pagesMeasured|webDetectionRan|webDetectionFailed|webDetectionOver(8|16|50|150)|webDetectionTotalOver(50|100|250|500)|combinedOver(100|250|500))$",
+                "keyPattern": "^(pagesMeasured|(adwalls|captcha|commentsDisabled|other)(Ran|Failed|Over(8|16|50|150)|TotalOver(50|100|250|500))|combinedOver(100|250|500))$",
                 "type": "string",
                 "description": "Bucketed count for the period.",
                 "pattern": "^\\d+(-\\d+|\\+)?$"
@@ -537,14 +537,14 @@
         ]
     },
     "webTelemetry_detectorPerf_week": {
-        "description": "Weekly bucketed counts of measured pages, Web Detection runs and failures, and detector performance threshold crossings. Fired by EventHub at the end of each 7-day period.",
+        "description": "Weekly bucketed counts of measured pages, Web Detection group runs and failures, and group performance threshold crossings. Fired by EventHub at the end of each 7-day period.",
         "owners": ["miasma13"],
         "triggers": ["scheduled"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
-                "keyPattern": "^(pagesMeasured|webDetectionRan|webDetectionFailed|webDetectionOver(8|16|50|150)|webDetectionTotalOver(50|100|250|500)|combinedOver(100|250|500))$",
+                "keyPattern": "^(pagesMeasured|(adwalls|captcha|commentsDisabled|other)(Ran|Failed|Over(8|16|50|150)|TotalOver(50|100|250|500))|combinedOver(100|250|500))$",
                 "type": "string",
                 "description": "Bucketed count for the period.",
                 "pattern": "^\\d+(-\\d+|\\+)?$"
@@ -572,7 +572,7 @@
             {
                 "key": "detector",
                 "type": "string",
-                "description": "The Web Detection config ID for single-run crossings, or the pooled accumulator name for total and combined crossings.",
+                "description": "The Web Detection config ID for single-run crossings, the detector group for total crossings, or combined for combined crossings.",
                 "pattern": "^[a-zA-Z0-9]+([._-][a-zA-Z0-9]+)*$"
             },
             {

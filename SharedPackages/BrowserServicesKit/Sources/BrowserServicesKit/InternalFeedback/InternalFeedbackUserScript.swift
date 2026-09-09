@@ -145,11 +145,11 @@ public final class InternalFeedbackAttachmentsProvider: InternalFeedbackAttachme
 
     @MainActor
     public func attachments() -> InternalFeedbackAttachments {
+        defer { clear() }
         guard let screenshotPNGData,
               !screenshotPNGData.isEmpty,
               let screenshotExpirationDate,
               screenshotExpirationDate > Date() else {
-            clear()
             return InternalFeedbackAttachments()
         }
         return InternalFeedbackAttachments(

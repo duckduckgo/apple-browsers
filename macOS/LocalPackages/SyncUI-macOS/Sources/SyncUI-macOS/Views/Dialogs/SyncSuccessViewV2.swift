@@ -64,7 +64,7 @@ struct SyncSuccessViewV2: View {
             Button(UserText.done) {
                 model.endFlow()
             }
-            .buttonStyle(DismissActionButtonStyle(showsBorder: true, stateColors: .themedDismissButton))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
             .accessibilityIdentifier("SyncSuccessDoneButton")
         }
     }

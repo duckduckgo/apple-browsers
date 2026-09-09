@@ -72,3 +72,13 @@ struct SaveRecoveryPDFView: View {
         .frame(width: 420)
     }
 }
+
+#if DEBUG
+#Preview("Default") {
+    let model = ManagementDialogModel()
+    model.isAppRebranded = true
+    let code = String(repeating: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ", count: 3)
+    return SaveRecoveryPDFView(code: code)
+        .environmentObject(model)
+}
+#endif

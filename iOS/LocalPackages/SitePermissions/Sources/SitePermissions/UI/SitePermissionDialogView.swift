@@ -31,7 +31,7 @@ public struct SitePermissionDialogView: View {
         static let iconSize: CGFloat = 24
         static let iconSpacing: CGFloat = 8
         static let iconContainerSize: CGFloat = 48
-        static let iconContainerCornerRadius: CGFloat = 12
+        static let iconContainerCornerRadius: CGFloat = 16
         static let headerSpacing: CGFloat = 16
         static let bodySpacing: CGFloat = 8
         static let actionsTopPadding: CGFloat = 24
@@ -149,10 +149,7 @@ public struct SitePermissionDialogView: View {
         case .camera:
             return Image(systemName: "video")
         case .microphone:
-            if #available(iOS 18.0, *) {
-                return Image(systemName: "microphone")
-            }
-            return Image(systemName: "mic")
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)
         case .location:
             return Image(uiImage: DesignSystemImages.Glyphs.Size24.location)
         case .duckDuckGo:

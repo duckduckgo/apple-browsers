@@ -18,7 +18,6 @@
 
 import AppKit
 import Common
-import DesignResourcesKitIcons
 
 struct WebsitePermissionsViewState: Equatable {
     var recents: [RecentRow] = []
@@ -36,39 +35,9 @@ extension WebsitePermissionsViewState {
 
         var id: WebsitePermissionCategory { category }
 
-        var title: String {
-            switch category {
-            case .notifications:
-                return UserText.permissionNotification
-            case .location:
-                return UserText.permissionGeolocation
-            case .camera:
-                return UserText.permissionCamera
-            case .microphone:
-                return UserText.permissionMicrophone
-            case .externalApps:
-                return UserText.permissionCenterExternalApps
-            case .popups:
-                return UserText.permissionPopups
-            }
-        }
+        var title: String { category.title }
 
-        var icon: NSImage {
-            switch category {
-            case .notifications:
-                return DesignSystemImages.Glyphs.Size16.permissionsNotification
-            case .location:
-                return DesignSystemImages.Glyphs.Size16.permissionsLocation
-            case .camera:
-                return DesignSystemImages.Glyphs.Size16.permissionCamera
-            case .microphone:
-                return DesignSystemImages.Glyphs.Size16.permissionMicrophone
-            case .externalApps:
-                return DesignSystemImages.Glyphs.Size16.openIn
-            case .popups:
-                return DesignSystemImages.Glyphs.Size16.popupBlocked
-            }
-        }
+        var icon: NSImage { category.icon }
 
         var accessibilityIdentifier: String {
             "WebsitePermissions.\(category)"

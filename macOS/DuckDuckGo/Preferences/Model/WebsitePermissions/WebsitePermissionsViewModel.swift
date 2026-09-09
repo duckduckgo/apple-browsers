@@ -29,6 +29,9 @@ final class WebsitePermissionsViewModel: ObservableObject {
     @Published
     private(set) var viewState = WebsitePermissionsViewState()
 
+    @Published
+    private(set) var detailModel: WebsitePermissionDetailViewModel?
+
     private let permissionManager: PermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
     private var permissionsCancellable: AnyCancellable?
@@ -53,6 +56,16 @@ final class WebsitePermissionsViewModel: ObservableObject {
         case .removeRecent(let row):
             guard row.permissionType.isUserEditable(forDomain: row.domain, featureFlagger: featureFlagger) else { return }
             permissionManager.removePermission(forDomain: row.domain, permissionType: row.permissionType)
+
+        case .openDetail(let category):
+            detailModel = WebsitePermissionDetailViewModel(
+                category: category,
+                permissionManager: permissionManager,
+                featureFlagger: featureFlagger
+            )
+
+        case .closeDetail:
+            detailModel = nil
         }
     }
 
@@ -96,28 +109,18 @@ final class WebsitePermissionsViewModel: ObservableObject {
     }
 
     private func makeRecentRow(from entry: WebsitePermissionEntry) -> WebsitePermissionsViewState.RecentRow {
-        // Unsupported saved denials behave as Always Ask, as they do in Permission Center.
-        let decision: PersistedPermissionDecision = entry.decision == .deny && !entry.permissionType.canPersistDeniedDecision ? .ask : entry.decision
         return .init(
             domain: entry.domain,
             permissionType: entry.permissionType,
-            decision: decision,
+            decision: entry.displayedDecision,
             permissionTitle: permissionTitle(for: entry.permissionType),
-            availableDecisions: availableDecisions(for: entry.permissionType)
+            availableDecisions: entry.permissionType.editableDecisions
         )
     }
 
     private func permissionTitle(for permissionType: PermissionType) -> String {
         guard permissionType.isExternalScheme else { return permissionType.localizedDescription }
         return String(format: UserText.websitePermissionsExternalAppFormat, permissionType.localizedDescription)
-    }
-
-    private func availableDecisions(for permissionType: PermissionType) -> [PersistedPermissionDecision] {
-        if permissionType.canPersistDeniedDecision {
-            return [.ask, .allow, .deny]
-        } else {
-            return [.ask, .allow]
-        }
     }
 
     private func makeRows(from entries: [WebsitePermissionEntry]) -> [WebsitePermissionsViewState.Row] {
@@ -135,5 +138,7 @@ extension WebsitePermissionsViewModel {
         case onAppear
         case changeRecentDecision(WebsitePermissionsViewState.RecentRow, PersistedPermissionDecision)
         case removeRecent(WebsitePermissionsViewState.RecentRow)
+        case openDetail(WebsitePermissionCategory)
+        case closeDetail
     }
 }

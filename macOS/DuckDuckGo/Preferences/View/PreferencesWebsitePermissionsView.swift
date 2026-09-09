@@ -24,117 +24,95 @@ import SwiftUI
 
 struct PreferencesWebsitePermissionsView: View {
     private enum Constants {
-        static let cornerRadius: CGFloat = 12
-        static let separatorHeight: CGFloat = 1
         static let rowHeight: CGFloat = 56
         static let rowPadding: CGFloat = 16
         static let iconSize: CGFloat = 16
         static let chevronSize: CGFloat = 12
         static let countSeparatorSize: CGFloat = 3
-        static let faviconSize: CGFloat = 16
-        static let removeButtonSize: CGFloat = 16
-        static let minimumDropdownWidth: CGFloat = 124
     }
 
     @ObservedObject
     var model: WebsitePermissionsViewModel
+    let onDetailNavigation: () -> Void
+
+    init(model: WebsitePermissionsViewModel, onDetailNavigation: @escaping () -> Void = {}) {
+        self.model = model
+        self.onDetailNavigation = onDetailNavigation
+    }
 
     var body: some View {
-        PreferencePane(UserText.websitePermissions) {
-            if model.viewState.hasRecents {
-                recentsSection
+        Group {
+            if let detailModel = model.detailModel {
+                WebsitePermissionDetailView(model: detailModel) {
+                    model.send(action: .closeDetail)
+                    onDetailNavigation()
+                }
+            } else {
+                overview
             }
-            permissionsSection
         }
         .task {
             model.send(action: .onAppear)
         }
     }
 
+    private var overview: some View {
+        PreferencePane(UserText.websitePermissions) {
+            if model.viewState.hasRecents {
+                recentsSection
+            }
+            permissionsSection
+        }
+    }
+
     private var recentsSection: some View {
         PreferencePaneSection(UserText.websitePermissionsRecentsSection) {
-            VStack(spacing: 0) {
-                ForEach(Array(model.viewState.recents.enumerated()), id: \.element.id) { index, row in
-                    recentRow(row)
+            WebsitePermissionListContainer {
+                VStack(spacing: 0) {
+                    ForEach(Array(model.viewState.recents.enumerated()), id: \.element.id) { index, row in
+                        recentRow(row)
 
-                    if index < model.viewState.recents.count - 1 {
-                        Rectangle()
-                            .fill(Color(designSystemColor: .containerBorderPrimary))
-                            .frame(height: Constants.separatorHeight)
+                        if index < model.viewState.recents.count - 1 {
+                            WebsitePermissionListSeparator()
+                        }
                     }
                 }
             }
-            .frame(maxWidth: .infinity)
-            .background(Color(designSystemColor: .containerFillSecondary))
-            .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous))
         }
     }
 
     private func recentRow(_ row: WebsitePermissionsViewState.RecentRow) -> some View {
-        HStack(spacing: 10) {
-            FaviconView(url: row.faviconURL, size: Constants.faviconSize)
-
-            Text(row.domain)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .lineLimit(1)
-                .truncationMode(.middle)
-
-            Spacer(minLength: 10)
-
-            Text(row.permissionTitle)
-                .font(.system(size: 13))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .lineLimit(1)
-
-            Picker(selection: Binding(
-                get: { row.decision },
-                set: { model.send(action: .changeRecentDecision(row, $0)) }),
-                   label: EmptyView()) {
-                ForEach(row.availableDecisions, id: \.self) { decision in
-                    Text(decision.localizedTitle).tag(decision)
-                }
-            }
-            .labelsHidden()
-            .fixedSize()
-            .frame(minWidth: Constants.minimumDropdownWidth)
-            .accessibilityIdentifier("\(row.accessibilityIdentifier).Decision")
-
-            Button {
-                model.send(action: .removeRecent(row))
-            } label: {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.closeSmall)
-                    .renderingMode(.template)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: Constants.removeButtonSize, height: Constants.removeButtonSize)
-                    .foregroundColor(Color(designSystemColor: .iconsTertiary))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(UserText.websitePermissionsRemovePermission)
-            .accessibilityIdentifier("\(row.accessibilityIdentifier).Remove")
-        }
-        .padding(Constants.rowPadding)
-        .frame(height: Constants.rowHeight)
-        .accessibilityIdentifier(row.accessibilityIdentifier)
+        WebsitePermissionSiteRow(
+            domain: row.domain,
+            faviconURL: row.faviconURL,
+            permissionTitle: row.permissionTitle,
+            decision: row.decision,
+            availableDecisions: row.availableDecisions,
+            accessibilityIdentifier: row.accessibilityIdentifier,
+            onDecisionChanged: { model.send(action: .changeRecentDecision(row, $0)) },
+            onRemove: { model.send(action: .removeRecent(row)) }
+        )
     }
 
     private var permissionsSection: some View {
         PreferencePaneSection(UserText.permissionsSection) {
-            VStack(spacing: 0) {
-                ForEach(Array(model.viewState.rows.enumerated()), id: \.element.id) { index, row in
-                    permissionRow(row)
+            WebsitePermissionListContainer {
+                VStack(spacing: 0) {
+                    ForEach(Array(model.viewState.rows.enumerated()), id: \.element.id) { index, row in
+                        Button {
+                            model.send(action: .openDetail(row.category))
+                            onDetailNavigation()
+                        } label: {
+                            permissionRow(row)
+                        }
+                        .buttonStyle(.plain)
 
-                    if shouldShowSeparator(afterRowAt: index) {
-                        Rectangle()
-                            .fill(Color(designSystemColor: .containerBorderPrimary))
-                            .frame(height: Constants.separatorHeight)
+                        if shouldShowSeparator(afterRowAt: index) {
+                            WebsitePermissionListSeparator()
+                        }
                     }
                 }
             }
-            .frame(maxWidth: .infinity)
-            .background(Color(designSystemColor: .containerFillSecondary))
-            .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous))
         }
     }
 

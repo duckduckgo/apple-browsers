@@ -103,6 +103,10 @@ extension PermissionType {
         }
     }
 
+    var editableDecisions: [PersistedPermissionDecision] {
+        canPersistDeniedDecision ? [.ask, .allow, .deny] : [.ask, .allow]
+    }
+
     var isExternalScheme: Bool {
         if case .externalScheme = self {
             return true

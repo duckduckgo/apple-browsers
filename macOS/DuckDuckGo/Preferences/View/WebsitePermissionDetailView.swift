@@ -1,0 +1,180 @@
+//
+//  WebsitePermissionDetailView.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import DesignResourcesKit
+import DesignResourcesKitIcons
+import PreferencesUI_macOS
+import SwiftUI
+
+struct WebsitePermissionDetailView: View {
+    private enum Constants {
+        static let chevronSize: CGFloat = 16
+        static let searchWidth: CGFloat = 173
+        static let searchHeight: CGFloat = 28
+        static let searchCornerRadius: CGFloat = 6
+        static let emptyRowHeight: CGFloat = 56
+    }
+
+    @ObservedObject var model: WebsitePermissionDetailViewModel
+    let onBack: () -> Void
+
+    var body: some View {
+        PreferencePane(nil) {
+            detailHeader
+            websitesSection
+        }
+        .accessibilityIdentifier("WebsitePermissions.Detail")
+        .task {
+            model.send(action: .onAppear)
+        }
+    }
+
+    private var detailHeader: some View {
+        HStack(spacing: 8) {
+            Button(action: onBack) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size24.chevronLeft)
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: Constants.chevronSize, height: Constants.chevronSize)
+                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(UserText.websitePermissionsBack)
+            .accessibilityIdentifier("WebsitePermissions.Detail.Back")
+
+            TextMenuTitle(model.viewState.category.title)
+                .accessibilityIdentifier("WebsitePermissions.Detail.Title")
+        }
+    }
+
+    private var websitesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                TextMenuItemHeader(UserText.websitePermissionsWebsites)
+                Spacer()
+                if !model.viewState.isEmpty {
+                    searchField
+                }
+            }
+
+            WebsitePermissionListContainer {
+                if model.viewState.isEmpty {
+                    emptyState
+                } else if model.viewState.hasNoResults {
+                    noResultsState
+                } else {
+                    siteRows
+                }
+            }
+        }
+        .padding(.bottom, 16)
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 6) {
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.searchFind)
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 16, height: 16)
+                .foregroundColor(Color(designSystemColor: .iconsTertiary))
+
+            TextField(
+                UserText.websitePermissionsSearchPlaceholder,
+                text: Binding(
+                    get: { model.viewState.searchQuery },
+                    set: { model.send(action: .setSearchQuery($0)) }
+                )
+            )
+            .textFieldStyle(.plain)
+
+            if !model.viewState.searchQuery.isEmpty {
+                Button {
+                    model.send(action: .setSearchQuery(""))
+                } label: {
+                    Image(nsImage: DesignSystemImages.Glyphs.Size16.closeSmall)
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 16, height: 16)
+                        .foregroundColor(Color(designSystemColor: .iconsTertiary))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(UserText.websitePermissionsClearSearch)
+            }
+        }
+        .padding(.horizontal, 8)
+        .frame(width: Constants.searchWidth, height: Constants.searchHeight)
+        .background(Color(designSystemColor: .containerFillSecondary))
+        .clipShape(RoundedRectangle(cornerRadius: Constants.searchCornerRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Constants.searchCornerRadius, style: .continuous)
+                .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
+        }
+        .accessibilityIdentifier("WebsitePermissions.Detail.Search")
+    }
+
+    private var siteRows: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(model.viewState.visibleSites.enumerated()), id: \.element.id) { index, row in
+                WebsitePermissionSiteRow(
+                    domain: row.domain,
+                    faviconURL: row.faviconURL,
+                    permissionTitle: row.permissionTitle,
+                    decision: row.decision,
+                    availableDecisions: row.availableDecisions,
+                    accessibilityIdentifier: row.accessibilityIdentifier,
+                    onDecisionChanged: { model.send(action: .changeDecision(row, $0)) },
+                    onRemove: { model.send(action: .remove(row)) }
+                )
+
+                if index < model.viewState.visibleSites.count - 1 {
+                    WebsitePermissionListSeparator()
+                }
+            }
+        }
+    }
+
+    private var emptyState: some View {
+        emptyRow(UserText.websitePermissionsEmpty)
+            .accessibilityIdentifier("WebsitePermissions.Detail.Empty")
+    }
+
+    private var noResultsState: some View {
+        emptyRow(String(format: UserText.websitePermissionsNoResults, model.viewState.trimmedSearchQuery))
+            .accessibilityIdentifier("WebsitePermissions.Detail.NoResults")
+    }
+
+    private func emptyRow(_ title: String) -> some View {
+        HStack(spacing: 10) {
+            Image(nsImage: model.viewState.category.icon)
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 16, height: 16)
+                .foregroundColor(Color(designSystemColor: .iconsSecondary))
+
+            Text(title)
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+        }
+        .padding(.horizontal, 16)
+        .frame(height: Constants.emptyRowHeight)
+    }
+}

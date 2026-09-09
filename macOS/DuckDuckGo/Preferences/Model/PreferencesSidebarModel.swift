@@ -580,6 +580,11 @@ final class PreferencesSidebarModel: ObservableObject {
         scrollTarget = nil
     }
 
+    @MainActor
+    func scrollToTop() {
+        scrollTarget = .top
+    }
+
     /// Redirect navigations targeting panes that have been folded into a parent surface.
     /// Currently: `.duckPlayer` → `.youTubeAdBlocking` when ad blocking is available, since
     /// Duck Player settings live as a sub-section of YouTube Ad Blocking in that build.

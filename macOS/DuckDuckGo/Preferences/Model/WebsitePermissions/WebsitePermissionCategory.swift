@@ -16,6 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKit
+import DesignResourcesKitIcons
+
 enum WebsitePermissionCategory: CaseIterable, Hashable, Identifiable {
     case notifications
     case location
@@ -25,6 +28,40 @@ enum WebsitePermissionCategory: CaseIterable, Hashable, Identifiable {
     case popups
 
     var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .notifications:
+            return UserText.permissionNotification
+        case .location:
+            return UserText.permissionGeolocation
+        case .camera:
+            return UserText.permissionCamera
+        case .microphone:
+            return UserText.permissionMicrophone
+        case .externalApps:
+            return UserText.permissionCenterExternalApps
+        case .popups:
+            return UserText.permissionPopups
+        }
+    }
+
+    var icon: NSImage {
+        switch self {
+        case .notifications:
+            return DesignSystemImages.Glyphs.Size16.permissionsNotification
+        case .location:
+            return DesignSystemImages.Glyphs.Size16.permissionsLocation
+        case .camera:
+            return DesignSystemImages.Glyphs.Size16.permissionCamera
+        case .microphone:
+            return DesignSystemImages.Glyphs.Size16.permissionMicrophone
+        case .externalApps:
+            return DesignSystemImages.Glyphs.Size16.openIn
+        case .popups:
+            return DesignSystemImages.Glyphs.Size16.popupBlocked
+        }
+    }
 
     /// The category a permission belongs to, or `nil` for types this pane does not show (autoplay).
     static func category(for permissionType: PermissionType) -> WebsitePermissionCategory? {

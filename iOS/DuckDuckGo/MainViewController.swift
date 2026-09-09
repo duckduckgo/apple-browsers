@@ -441,6 +441,15 @@ class MainViewController: UIViewController {
                               isFloatingUIEnabled: isFloatingUIEnabled)
     }()
 
+    // Re-run the glass policy when WebKit's page-derived color changes; otherwise it only ran on tab-switch/trait changes.
+    private var pageBackgroundColorObservation: NSKeyValueObservation?
+
+    private func observePageBackgroundColor(for tab: TabViewController) {
+        pageBackgroundColorObservation = tab.webView.observe(\.underPageBackgroundColor, options: [.initial, .new]) { [weak self] _, _ in
+            self?.refreshSettledFloatingGlassAppearance()
+        }
+    }
+
     private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create()
 
     let themeManager: ThemeManaging
@@ -2194,6 +2203,9 @@ class MainViewController: UIViewController {
             return
         }
 
+        pageBackgroundColorObservation = nil
+        refreshSettledFloatingGlassAppearance()
+
         // Reset chrome state on every NTP attach — the previous tab may have been a Duck.ai tab
         // with the AI header shown and the standard toolbar hidden. Some attach paths
         // (e.g. tab switcher long-press → newTab) don't go through `refreshControls`, so
@@ -2843,6 +2855,7 @@ class MainViewController: UIViewController {
         chromeManager.attach(to: tab.webView.scrollView)
         chromeManager.reset(animated: false)
         themeColorManager.attach(to: tab)
+        observePageBackgroundColor(for: tab)
         tab.chromeDelegate = self
         tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
 
@@ -5871,7 +5884,7 @@ extension MainViewController: OmniBarDelegate {
     func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
 
         let selectQueryText = !(isSERPPresented && !skipSERPFlow)
-        skipSERPFlow = false
+        resetSERPFlowAfterOmnibarFocus()
         
         if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
@@ -5880,10 +5893,8 @@ extension MainViewController: OmniBarDelegate {
         return selectQueryText
     }
 
-    func shouldAutoSelectTextForSERPQuery() -> Bool {
-        let shouldSelect = isSERPPresented && skipSERPFlow
+    func resetSERPFlowAfterOmnibarFocus() {
         skipSERPFlow = false
-        return shouldSelect
     }
 
     func onRefreshPressed() {
@@ -7981,7 +7992,7 @@ extension MainViewController {
         FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
         viewCoordinator.omniBar.adjust(for: appSettings.currentAddressBarPosition)
         viewCoordinator.updateToolbarLayoutForAddressBarPosition(appSettings.currentAddressBarPosition)
-        viewCoordinator.bringFloatingTopNavigationBarToFrontIfNeeded()
+        viewCoordinator.bringFloatingNavigationBarToFrontIfNeeded()
         (viewCoordinator.omniBar as? DefaultOmniBarViewController)?.reconcileShadowClip()
         reconcileAIChromeForCurrentTab()
     }
@@ -8237,6 +8248,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
 
     func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling) {
         recordDuckAISessionNewChatCreated(for: handler)
+        Logger.unifiedInputState.debug("FE newChatStarted received — deferring startNewChat")
         DispatchQueue.main.async { [weak self] in
             self?.unifiedToggleInputCoordinator?.startNewChat()
             self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)

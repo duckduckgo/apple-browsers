@@ -20,7 +20,7 @@
 import Foundation
 import Common
 import FoundationExtensions
-import PixelKit
+import WideEvent
 
 final class DuckAIPromptWideEventData: WideEventData {
 

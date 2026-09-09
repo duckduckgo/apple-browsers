@@ -229,6 +229,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866713701189
     case vpnMenuItem
 
+    /// Gates the VPN Session Health Telemetry
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218245909089002?focus=true
+    case vpnSessionHealthTelemetry
+
     /// Gates the "Strict routing" VPN toggle.
     case vpnStrictRoutingToggle
 
@@ -513,10 +517,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064256?focus=true
     case syncCanReadUnifiedDeviceList
 
-    /// Gates the Simplified Sync Setup follow-up screens.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216075349711580
-    case simplifiedSyncSetupV2
-
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
     case searchTokenExperimentV4
@@ -727,6 +727,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .vpnMenuItem:
             Config(source: .remoteReleasable(PrivacyProSubfeature.vpnMenuItem))
+        case .vpnSessionHealthTelemetry:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.sessionHealthTelemetry))
         case .vpnStrictRoutingToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle))
         case .forgetAllInSettings:
@@ -770,7 +772,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAutoAttachContextByDefault:
             Config(source: .remoteReleasable(AIChatSubfeature.autoAttachContextByDefault))
         case .aiChatPdfPageContext:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.pdfPageContext))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext))
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:
@@ -911,8 +913,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canWriteUnifiedDeviceList))
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
-        case .simplifiedSyncSetupV2:
-            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
         case .iPadTabsBarInWindowControlsRow:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
         case .nativeAIPromptEditing:

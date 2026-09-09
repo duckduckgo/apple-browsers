@@ -31,6 +31,7 @@ import DataBrokerProtection_iOS
 import RemoteMessaging
 import PageRefreshMonitor
 import PixelKit
+import WideEvent
 import PixelExperimentKit
 import PrivacyConfig
 import Networking
@@ -59,7 +60,6 @@ protocol DependencyProvider {
     var serverInfoObserver: ConnectionServerInfoObserver { get }
     var connectionErrorObserver: ConnectionErrorObserver { get }
     var vpnSettings: VPNSettings { get }
-    var persistentPixel: PersistentPixelFiring { get }
     var wideEvent: WideEventManaging { get }
     var freeTrialConversionService: FreeTrialConversionInstrumentationService { get }
     var subscriptionManager: any SubscriptionManager { get }
@@ -107,7 +107,6 @@ final class AppDependencyProvider: DependencyProvider {
     lazy var connectionErrorObserver: ConnectionErrorObserver = ConnectionErrorObserverThroughSession()
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
-    let persistentPixel: PersistentPixelFiring = PersistentPixel()
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
@@ -317,7 +316,6 @@ final class AppDependencyProvider: DependencyProvider {
         vpnFeatureVisibility = DefaultNetworkProtectionVisibility(authenticationStateProvider: authenticationStateProvider)
         networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,
                                                                               featureFlagger: featureFlagger,
-                                                                              persistentPixel: persistentPixel,
                                                                               settings: vpnSettings,
                                                                               wideEvent: wideEvent,
                                                                               freeTrialConversionService: freeTrialConversionService

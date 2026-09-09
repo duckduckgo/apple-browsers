@@ -165,7 +165,12 @@ extension MainViewController {
         // Only AI tabs have an AI chat input to reconcile. For a non-AI tabs this can
         //  cause glitches in the positioning of the bars.
         guard currentTab?.isAITab == true else { return }
-        viewCoordinator.setAITabBottomChromeHidden(aiTabChromeDecision().hidesInputBar)
+        let hidesInputBar = aiTabChromeDecision().hidesInputBar
+        if hidesInputBar {
+            // Hiding the bar doesn't resign its text field, which would leave the keyboard up over nothing.
+            unifiedToggleInputCoordinator?.viewController.deactivateInput()
+        }
+        viewCoordinator.setAITabBottomChromeHidden(hidesInputBar)
     }
 
     /// Hides the header chats/compose pill while a voice session is in progress. Idempotent.
@@ -574,8 +579,9 @@ private extension MainViewController {
         if keyboardShowing,
            !coordinator.viewController.isInputFirstResponder,
            currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true {
-            DispatchQueue.main.async { [weak coordinator] in
-                guard let coordinator, coordinator.isAITabExpanded else { return }
+            DispatchQueue.main.async { [weak self, weak coordinator] in
+                guard let self, let coordinator, coordinator.isAITabExpanded,
+                      !self.aiTabChromeDecision().hidesInputBar else { return }
                 coordinator.activateInput()
             }
         }
@@ -643,6 +649,7 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
+
         NotificationCenter.default.publisher(for: .aiChatShowModelPicker)
             .compactMap { $0.object as? WKWebView }
             .receive(on: DispatchQueue.main)
@@ -660,6 +667,7 @@ private extension MainViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.handleShowPicker(.attachment, for: $0) }
             .store(in: &unifiedToggleInputCancellables)
+
     }
 
     private enum AIChatPickerRequest {
@@ -851,8 +859,9 @@ private extension MainViewController {
         case .showCollapsed(let expandAfterRefresh):
             coordinator.showCollapsed()
             guard expandAfterRefresh else { return }
-            DispatchQueue.main.async { [weak coordinator] in
-                guard let coordinator, coordinator.isAITabState else { return }
+            DispatchQueue.main.async { [weak self, weak coordinator] in
+                guard let self, let coordinator, coordinator.isAITabState,
+                      !self.aiTabChromeDecision().hidesInputBar else { return }
                 coordinator.showExpanded(inputMode: .aiChat)
             }
         }
@@ -1069,8 +1078,7 @@ extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
-        coordinator.viewController.deactivateInput()
-        let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator.cachedOmnibarPlaceholderWindowX
+        let omnibarPlaceholderWindowX = omnibarPlaceholderWindowXForHandoff(coordinator)
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
@@ -1116,6 +1124,9 @@ extension MainViewController {
             },
             interruptCleanup: { [weak self] in
                 self?.restoreChromeAfterInterruptedOmnibarDismiss()
+            },
+            resigningInput: { [weak coordinator] in
+                coordinator?.viewController.deactivateInput()
             },
             completion: { [weak self] in
                 self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
@@ -1278,19 +1289,18 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         coordinator.updateInputMode(inputMode, animated: false)
         let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         coordinator.updateToggleEnabled(isToggleEnabled)
+        resetSERPFlowForQuery(currentText)
         coordinator.activateFromOmnibar(prefilledText: currentText,
-                                        shouldSelectAllText: shouldAutoSelectOmnibarText(currentText),
                                         inputMode: inputMode,
                                         cardPosition: position)
         return .intercept
     }
 
-    private func shouldAutoSelectOmnibarText(_ text: String?) -> Bool {
-        guard let text = text?.trimmingWhitespace(), !text.isEmpty else { return false }
-        if URL(trimmedAddressBarString: text, useUnifiedLogic: isUnifiedURLPredictionEnabled) != nil {
-            return true
-        }
-        return shouldAutoSelectTextForSERPQuery()
+    private func resetSERPFlowForQuery(_ text: String?) {
+        guard let text = text?.trimmingWhitespace(),
+              !text.isEmpty,
+              URL(trimmedAddressBarString: text, useUnifiedLogic: isUnifiedURLPredictionEnabled) == nil else { return }
+        resetSERPFlowAfterOmnibarFocus()
     }
 }
 
@@ -1565,6 +1575,21 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         requestTabSwitcher()
     }
 
+}
+
+// MARK: - TabDelegate (Duck.ai navigation)
+
+extension MainViewController {
+
+    // Non-private: a private method can't witness the cross-file `TabDelegate` conformance.
+    func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool) {
+        unifiedToggleInputCoordinator?.handleNavigationCommit(
+            tabUID: tab.tabModel.uid,
+            didChangeChat: didChangeChat,
+            // Voice-mode documents assert hidden input natively before the FE can (`refreshAITab`).
+            startsWithHiddenInput: tab.webView.url?.isDuckAIVoiceMode == true
+        )
+    }
 }
 
 // MARK: - AIChatEditHeaderViewDelegate

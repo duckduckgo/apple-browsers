@@ -23,6 +23,7 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
 import Core
+import DuckAiDataStore
 import WebKit
 @testable import DuckDuckGo
 
@@ -192,6 +193,9 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var sut: AIChatContextualSheetCoordinator!
     private var mockDelegate: MockDelegate!
     private var mockPresentingVC: MockPresentingViewController!
+    private var mockNativeStorage: MockDuckAiChatStorage!
+    private let savedChatID = "760d681e-9173-4abd-a120-d660783787e9"
+    private lazy var savedChatURL = URL(string: "https://duckduckgo.com/?ia=chat&chatID=\(savedChatID)")!
     private var mockSettings: MockAIChatSettingsProvider!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
@@ -210,6 +214,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     @MainActor
     override func setUp() {
         super.setUp()
+        mockNativeStorage = MockDuckAiChatStorage()
         mockSettings = MockAIChatSettingsProvider()
         mockFeatureFlagger = MockFeatureFlagger()
         mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
@@ -240,6 +245,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
                 originating: originatingTabURLSubject.eraseToAnyPublisher(),
                 didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
             ),
+            duckAiNativeStorageHandler: mockNativeStorage,
             pixelHandler: pixelHandler,
             selectionJourneyInstrumentation: mockSelectionJourneyInstrumentation
         )
@@ -1422,6 +1428,175 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         }
     }
 
+    // MARK: - Restoring a chat that may have been deleted
+
+    @MainActor
+    private func restoredURL() async -> URL? {
+        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+        return sut.sessionState.contextualChatURL
+    }
+
+    @MainActor
+    func testWhenTheSavedChatIsStillInTheStoreThenItIsRestored() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+
+        let restored = await restoredURL()
+
+        XCTAssertEqual(restored, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenTheSavedChatWasDeletedThenItIsNotRestored() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+
+        let restored = await restoredURL()
+
+        XCTAssertNil(restored)
+    }
+
+    @MainActor
+    func testWhenAnOpenChatIsDeletedElsewhereThenItDoesNotReopen() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+        sut.aiChatContextualSheetViewControllerDidDismiss(try XCTUnwrap(sut.sheetViewController))
+        XCTAssertTrue(sut.sessionState.hasActiveChat)
+
+        try mockNativeStorage.deleteChat(chatId: savedChatID)
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertFalse(sut.sessionState.hasActiveChat)
+        XCTAssertNil(sut.sessionState.contextualChatURL)
+    }
+
+    @MainActor
+    func testWhenTheSheetIsOnScreenThenADeletionLeavesItAlone() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+
+        try mockNativeStorage.deleteChat(chatId: savedChatID)
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertNotNil(sut.sheetViewController, "clearing the chat would orphan the sheet on screen")
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertTrue(sut.sessionState.hasActiveChat)
+    }
+
+    @MainActor
+    func testWhenAnOpenChatStillExistsThenItReopens() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertTrue(sut.sessionState.hasActiveChat)
+        XCTAssertEqual(sut.sessionState.contextualChatURL, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenANewChatHasNotBeenWrittenYetThenItsAbsenceIsNotTreatedAsDeletion() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        sut.sessionState.handlePromptSubmission("hello", url: savedChatURL)
+        sut.aiChatContextualSheetViewControllerDidDismiss(sheet)
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertTrue(sut.sessionState.hasActiveChat, "the frontend had named the chat but not yet saved it")
+        XCTAssertEqual(sut.sessionState.contextualChatURL, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenTheBridgeConfirmedTheWriteThenALaterAbsenceIsTreatedAsDeletion() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        sut.sessionState.handlePromptSubmission("hello", url: savedChatURL)
+        sut.aiChatContextualSheetViewController(sheet, didPersistChatWithID: savedChatID)
+        sut.aiChatContextualSheetViewControllerDidDismiss(sheet)
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertFalse(sut.sessionState.hasActiveChat)
+        XCTAssertNil(sut.sessionState.contextualChatURL)
+    }
+
+    @MainActor
+    func testWhenTheSavedChatWasDeletedThenTheTabsStaleURLIsCleared() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockDelegate.contextualChatURLUpdates = []
+
+        _ = await restoredURL()
+
+        XCTAssertTrue(mockDelegate.contextualChatURLUpdates.contains { $0 == nil },
+                      "the tab must be told to drop the URL of a chat that no longer exists")
+    }
+
+    @MainActor
+    func testWhenTheSavedChatIsStillInTheStoreThenTheTabsURLIsLeftAlone() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+        mockDelegate.contextualChatURLUpdates = []
+
+        _ = await restoredURL()
+
+        XCTAssertFalse(mockDelegate.contextualChatURLUpdates.contains { $0 == nil },
+                       "a chat that restored fine must keep the tab's URL")
+    }
+
+    @MainActor
+    func testWhenTheStoreCannotBeReadThenTheSavedChatIsStillRestored() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockNativeStorage.failsReads = true
+
+        let restored = await restoredURL()
+
+        XCTAssertEqual(restored, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenTheStoreIsStillSettingUpThenTheSavedChatIsStillRestored() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockNativeStorage.setupSucceeded = nil
+
+        let restored = await restoredURL()
+
+        XCTAssertEqual(restored, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenTheStoreSetupFailedThenTheSavedChatIsStillRestored() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockNativeStorage.setupSucceeded = false
+
+        let restored = await restoredURL()
+
+        XCTAssertEqual(restored, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenTheStoreIsNotMigratedThenTheSavedChatIsStillRestored() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockNativeStorage.migrationDone = false
+
+        let restored = await restoredURL()
+
+        XCTAssertEqual(restored, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenNativeDataAccessIsOffThenTheSavedChatIsStillRestored() async {
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        let restored = await restoredURL()
+
+        XCTAssertEqual(restored, savedChatURL)
+    }
+
     private func makeTestContext(title: String = "Test Page", url: String = "https://example.com") -> AIChatPageContext {
         let contextData = AIChatPageContextData(
             title: title,
@@ -1446,4 +1621,42 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTFail("Expected attached chip state", file: file, line: line)
     }
 
+}
+
+final class MockDuckAiChatStorage: DuckAiNativeStorageHandling {
+
+    struct ReadFailure: Error {}
+
+    var failsReads = false
+    var migrationDone = true
+    var setupSucceeded: Bool? = true
+
+    private let backing = DuckAiNativeMemoryStorageHandler()
+
+    func getChat(chatId: String) throws -> DuckAiChatRecord? {
+        if failsReads { throw ReadFailure() }
+        return try backing.getChat(chatId: chatId)
+    }
+
+    func isMigrationDone() throws -> Bool { migrationDone }
+    func isMigrationDone(key: String) throws -> Bool { migrationDone }
+
+    func putEntry(key: String, value: Any) throws { try backing.putEntry(key: key, value: value) }
+    func getEntry(key: String) throws -> Any? { try backing.getEntry(key: key) }
+    func getAllEntries() throws -> [String: Any] { try backing.getAllEntries() }
+    func deleteEntry(key: String) throws { try backing.deleteEntry(key: key) }
+    func deleteAllEntries() throws { try backing.deleteAllEntries() }
+    func replaceAllEntries(_ entries: [String: Any]) throws { try backing.replaceAllEntries(entries) }
+    func putChat(chatId: String, data: Data) throws { try backing.putChat(chatId: chatId, data: data) }
+    func putChats(_ chats: [DuckAiChatRecord]) throws { try backing.putChats(chats) }
+    func getAllChats() throws -> [DuckAiChatRecord] { try backing.getAllChats() }
+    func deleteChat(chatId: String) throws { try backing.deleteChat(chatId: chatId) }
+    func deleteAllChats() throws { try backing.deleteAllChats() }
+    func putFile(uuid: String, chatId: String, data: Data) throws { try backing.putFile(uuid: uuid, chatId: chatId, data: data) }
+    func getFile(uuid: String) throws -> DuckAiFileContent? { try backing.getFile(uuid: uuid) }
+    func listFiles() throws -> [DuckAiFileMetadata] { try backing.listFiles() }
+    func deleteFile(uuid: String) throws { try backing.deleteFile(uuid: uuid) }
+    func deleteFiles(chatId: String) throws { try backing.deleteFiles(chatId: chatId) }
+    func deleteAllFiles() throws { try backing.deleteAllFiles() }
+    func markMigrationDone(key: String) throws { try backing.markMigrationDone(key: key) }
 }

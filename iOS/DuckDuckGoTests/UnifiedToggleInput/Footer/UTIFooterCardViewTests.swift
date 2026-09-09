@@ -357,7 +357,7 @@ final class UTIFooterCardViewTests: XCTestCase {
 
     /// The Create Image switch card: a headline over body copy, with no CTA to compete for width.
     private func makeSwitchNotice(
-        subtitle: String = "Mistral can't create images. Its extra privacy protections won't apply until you switch back."
+        subtitle: String = "Mistral can't create images. Zero Provider Visibility won't apply until you switch back."
     ) -> UTIFooterMessage {
         UTIFooterMessage(icon: .modelSwitch,
                          title: "Now using 5.6 Luna",

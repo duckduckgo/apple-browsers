@@ -20,7 +20,7 @@
 import Foundation
 import PixelKit
 import class Common.EventMapping
-import class Core.Pixel
+import enum Core.Pixel
 import SetDefaultBrowserCore
 
 final class DefaultBrowserPromptManagerDebugPixelHandler: EventMapping<DefaultBrowserManagerDebugEvent>, DefaultBrowserPromptEventMapping {

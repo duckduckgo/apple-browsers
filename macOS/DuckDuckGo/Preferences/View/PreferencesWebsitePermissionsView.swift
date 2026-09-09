@@ -16,14 +16,141 @@
 //  limitations under the License.
 //
 
+import AppKit
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import PreferencesUI_macOS
 import SwiftUI
 
 struct PreferencesWebsitePermissionsView: View {
+    private enum Constants {
+        static let cornerRadius: CGFloat = 12
+        static let separatorHeight: CGFloat = 1
+        static let rowHeight: CGFloat = 56
+        static let rowPadding: CGFloat = 16
+        static let iconSize: CGFloat = 16
+        static let chevronSize: CGFloat = 12
+        static let countSeparatorSize: CGFloat = 3
+    }
+
+    @ObservedObject
+    var model: WebsitePermissionsViewModel
+
     var body: some View {
-        PreferencePane {
-            TextMenuTitle(UserText.websitePermissions)
-            Text(verbatim: "Website Content")
+        PreferencePane(UserText.websitePermissions) {
+            permissionsSection
+        }
+        .task {
+            model.send(action: .onAppear)
         }
     }
+
+    private var permissionsSection: some View {
+        PreferencePaneSection(UserText.permissionsSection) {
+            VStack(spacing: 0) {
+                ForEach(Array(model.viewState.rows.enumerated()), id: \.element.id) { index, row in
+                    permissionRow(row)
+
+                    if shouldShowSeparator(afterRowAt: index) {
+                        Rectangle()
+                            .fill(Color(designSystemColor: .containerBorderPrimary))
+                            .frame(height: Constants.separatorHeight)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .background(Color(designSystemColor: .containerFillSecondary))
+            .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous))
+        }
+    }
+
+    private func shouldShowSeparator(afterRowAt index: Int) -> Bool {
+        index < model.viewState.rows.count - 1
+    }
+
+    private func permissionRow(_ row: WebsitePermissionsViewState.Row) -> some View {
+        HStack(spacing: 10) {
+            Image(nsImage: row.icon)
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: Constants.iconSize, height: Constants.iconSize)
+                .foregroundColor(Color(designSystemColor: .iconsSecondary))
+
+            HStack(spacing: 6) {
+                Text(row.title)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+
+                if row.count > 0 {
+                    Circle()
+                        .fill(Color(designSystemColor: .textTertiary))
+                        .frame(width: Constants.countSeparatorSize, height: Constants.countSeparatorSize)
+
+                    Text(verbatim: String(row.count))
+                        .font(.system(size: 13))
+                        .foregroundColor(Color(designSystemColor: .textTertiary))
+                }
+            }
+
+            Spacer()
+
+            Image(nsImage: .chevronRight12)
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: Constants.chevronSize, height: Constants.chevronSize)
+                .foregroundColor(Color(designSystemColor: .iconsTertiary))
+        }
+        .padding(Constants.rowPadding)
+        .frame(height: Constants.rowHeight)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(row.accessibilityIdentifier)
+    }
 }
+
+#if DEBUG
+@MainActor
+private func previewModel(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {
+    let permissionManager = PermissionManagerMock()
+    for entry in entries {
+        permissionManager.setPermission(entry.decision, forDomain: entry.domain, permissionType: entry.permissionType)
+    }
+    return WebsitePermissionsViewModel(permissionManager: permissionManager)
+}
+
+private let previewEntries: [WebsitePermissionEntry] = [
+    WebsitePermissionEntry(domain: "duckduckgo.com", permissionType: .notification, decision: .allow),
+    WebsitePermissionEntry(domain: "example.com", permissionType: .notification, decision: .deny),
+    WebsitePermissionEntry(domain: "maps.example.com", permissionType: .geolocation, decision: .allow),
+    WebsitePermissionEntry(domain: "meet.example.com", permissionType: .camera, decision: .allow),
+    WebsitePermissionEntry(domain: "meet.example.com", permissionType: .microphone, decision: .allow),
+    WebsitePermissionEntry(domain: "example.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow),
+    WebsitePermissionEntry(domain: "example.com", permissionType: .externalScheme(scheme: "zoommtg"), decision: .ask),
+    WebsitePermissionEntry(domain: "shop.example.com", permissionType: .popups, decision: .deny),
+]
+
+#Preview("Website Permissions - Light") {
+    PreferencesWebsitePermissionsView(model: previewModel(entries: previewEntries))
+        .frame(width: 544, alignment: .topLeading)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 32)
+        .preferredColorScheme(.light)
+}
+
+#Preview("Website Permissions - Dark") {
+    PreferencesWebsitePermissionsView(model: previewModel(entries: previewEntries))
+        .frame(width: 544, alignment: .topLeading)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 32)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Website Permissions - No Saved Permissions") {
+    PreferencesWebsitePermissionsView(model: previewModel())
+        .frame(width: 544, alignment: .topLeading)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 32)
+}
+#endif

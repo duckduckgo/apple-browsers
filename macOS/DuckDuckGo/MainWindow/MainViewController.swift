@@ -246,6 +246,7 @@ final class MainViewController: NSViewController {
             dockPreferences: dockPreferences,
             accessibilityPreferences: accessibilityPreferences,
             duckPlayer: duckPlayer,
+            permissionManager: permissionManager,
             pinningManager: pinningManager,
             adBlockingAvailability: adBlockingAvailability
         )

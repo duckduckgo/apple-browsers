@@ -1745,6 +1745,60 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.suggestionsScope, .selection)
     }
 
+    func testDocumentContextReachesTheResolverSoSummarizeIsWordedForADocument() {
+        let expected = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize", prompt: "Summarize.", icon: "summary")]
+        let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            suggestedPromptsProvider: mockProvider
+        )
+        let loaded = expectation(description: "suggestions loaded")
+        sessionState.$viewState
+            .dropFirst()
+            .sink { state in
+                if state.suggestionsLoadState == .loaded, state.suggestions == expected {
+                    loaded.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        sessionState.markPendingSignalsOnlyCollection()
+        sessionState.updateContext(makeDocumentContext())
+
+        wait(for: [loaded], timeout: 1.0)
+        XCTAssertTrue(mockProvider.lastInput?.isDocument == true)
+    }
+
+    func testWebPageContextIsNotResolvedAsADocument() {
+        let expected = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize", prompt: "Summarize.", icon: "summary")]
+        let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            suggestedPromptsProvider: mockProvider
+        )
+        let loaded = expectation(description: "suggestions loaded")
+        sessionState.$viewState
+            .dropFirst()
+            .sink { state in
+                if state.suggestionsLoadState == .loaded, state.suggestions == expected {
+                    loaded.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        sessionState.markPendingSignalsOnlyCollection()
+        sessionState.updateContext(makeTestContext())
+
+        wait(for: [loaded], timeout: 1.0)
+        XCTAssertFalse(mockProvider.lastInput?.isDocument == true)
+    }
+
     func testWhenAttachedChipIsRemovedThenAskAboutPageReplacesLastSuggestionUntilContextIsAttachedAgain() {
         // Given
         let expected = makeSuggestedPrompts(ids: ["one", "two", "three", "four"])

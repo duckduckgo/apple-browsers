@@ -403,7 +403,7 @@ public enum FeatureFlag: String, CaseIterable {
     case aiChatChromeMenuButton
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1218269247464414?focus=true
-    case aiChatChromeMenuRecentChats
+    case aiChatChromeMenuChats
 
     /// Enable Look Up (three-finger click) while keeping link preview disabled
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
@@ -808,7 +808,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebar), category: .duckAI)
         case .aiChatChromeMenuButton:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.chromeMenuButton), category: .duckAI)
-        case .aiChatChromeMenuRecentChats:
+        case .aiChatChromeMenuChats:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.addressBarRecentChats), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))

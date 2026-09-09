@@ -1083,7 +1083,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         sidebarItem.keyEquivalentModifierMask = [.command, .option]
         menu.addItem(sidebarItem)
 
-        if !isFireWindow, featureFlagger.isFeatureOn(.aiChatChromeMenuRecentChats) {
+        if !isFireWindow, featureFlagger.isFeatureOn(.aiChatChromeMenuChats) {
             menu.addItem(.separator())
 
             let chatsItem = NSMenuItem(title: UserText.actionChats, action: #selector(duckAIMenuChatsAction), keyEquivalent: "")

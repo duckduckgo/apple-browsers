@@ -1030,7 +1030,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         Task { @MainActor [weak self, weak sender] in
             guard let self, let sender else { return }
 
-            let hasChats = isFireWindow ? false : await NSApp.delegateTyped.aiChatSuggestionsReader.hasChats()
+            let hasChats: Bool
+            if isFireWindow || !featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats) {
+                hasChats = false
+            } else {
+                hasChats = await NSApp.delegateTyped.aiChatSuggestionsReader.hasChats()
+            }
             let menu = makeDuckAIMenuButtonMenu(hasChats: hasChats)
             // Right-align: anchor the menu's top-right corner to the button's bottom-right.
             let origin = NSPoint(x: sender.bounds.width - menu.size.width, y: sender.bounds.height + 4)
@@ -1071,7 +1076,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         if hasChats {
             menu.addItem(.separator())
 
-            let recentChatsItem = NSMenuItem(title: UserText.aiChatMenuRecentChats, action: #selector(duckAIMenuRecentChatsAction), keyEquivalent: "")
+            let recentChatsItem = NSMenuItem(title: UserText.duckAiAddressBarMenuAllChats, action: #selector(duckAIMenuRecentChatsAction), keyEquivalent: "")
             recentChatsItem.target = self
             recentChatsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.chats), visibleOnMacOS27: true)
             menu.addItem(recentChatsItem)
@@ -1123,7 +1128,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     @objc private func duckAIMenuRecentChatsAction() {
-        PixelKit.fire(AIChatPixel.aiChatRecentChatsTitleBarMenu, frequency: .dailyAndStandard)
+        PixelKit.fire(AIChatPixel.aiChatAllChatsTitleBarMenu, frequency: .dailyAndStandard)
         guard let mainViewController = parent as? MainViewController else {
             Logger.general.error("TabBarViewController: Failed to find MainViewController to open Duck.ai")
             return

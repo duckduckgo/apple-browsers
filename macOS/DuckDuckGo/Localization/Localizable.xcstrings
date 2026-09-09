@@ -35732,6 +35732,18 @@
         }
       }
     },
+    "duckai.address.bar.menu.all.chats" : {
+      "comment" : "Address bar Duck.ai menu option that opens the full chat history",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "All Chats"
+          }
+        }
+      }
+    },
     "duckai.menu.ask-about-page" : {
       "comment" : "Duck.ai menu item to open the sidebar and attach the current page's content",
       "extractionState" : "extracted_with_value",

@@ -18,6 +18,8 @@
 
 import AIChat
 import Combine
+import FeatureFlags_macOS
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -412,6 +414,27 @@ final class AIChatSuggestionsReadingTests: XCTestCase {
 
     private func makeChat(isPinned: Bool) -> AIChatSuggestion {
         AIChatSuggestion(id: "chat", title: "Chat", isPinned: isPinned, chatId: "chat", timestamp: .distantPast)
+    }
+}
+
+final class AIChatAddressBarRecentChatsFeatureFlagTests: XCTestCase {
+
+    func testFeatureFlagMatchesIOSConfiguration() {
+        let featureFlag = FeatureFlag.aiChatAddressBarRecentChats
+
+        guard case let .remoteReleasable(subfeature) = featureFlag.source else {
+            XCTFail("Expected a remotely releasable feature flag")
+            return
+        }
+
+        XCTAssertEqual(subfeature as? AIChatSubfeature, .addressBarRecentChats)
+        XCTAssertEqual(subfeature.parent, .aiChat)
+        XCTAssertEqual(subfeature.rawValue, "addressBarRecentChats")
+        guard case .enabled = featureFlag.defaultValue else {
+            XCTFail("Expected the feature flag to be enabled by default")
+            return
+        }
+        XCTAssertTrue(featureFlag.supportsLocalOverriding)
     }
 }
 

@@ -724,6 +724,7 @@ struct UserText {
     static let aiChatMenuDeleteAllChatsAlertMessage = NSLocalizedString("duckai.menu.delete-all-chats.alert-message", value: "This will permanently delete all your Duck.ai chats.", comment: "Message body of the confirmation dialog before deleting all Duck.ai chats")
     static let aiChatMenuDeleteAllChatsConfirmButton = NSLocalizedString("duckai.menu.delete-all-chats.confirm-button", value: "Delete Chats", comment: "Confirm button in the Delete All Duck.ai Chats alert")
 
+    static let duckAiAddressBarMenuAllChats = NSLocalizedString("duckai.address.bar.menu.all.chats", value: "All Chats", comment: "Address bar Duck.ai menu option that opens the full chat history")
     static let aiChatAddressBarTrustedIndicator = NSLocalizedString("aichat.address-bar.trusted-indicator", value: "Duck.ai", comment: "Label for the AI Chat displayed in the address bar")
 
     static let aiChatSummarize = NSLocalizedString("duckai.summarize.context-menu-action", value: "Summarize with Duck.ai", comment: "Context menu option that triggers Duck.ai-assisted summarization of selected text")

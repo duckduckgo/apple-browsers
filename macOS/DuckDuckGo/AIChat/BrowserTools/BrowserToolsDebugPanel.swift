@@ -109,6 +109,22 @@ final class BrowserToolsDebugPanel: NSWindowController {
         ])
     }
 
+    /// `listOpenTabs` is not part of this change, so there is otherwise no way to discover a tabId
+    /// to hand to `switchToTab`. This reads the window directly rather than going through a tool.
+    @objc private func listWindowTabs() {
+        guard let collection = windowControllersManager.lastKeyMainWindowController?
+            .mainViewController.tabCollectionViewModel else {
+            appendToLog("→ no window")
+            return
+        }
+        let tabs = (collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs
+        appendToLog("→ tabs in this window (panel only, not a tool)")
+        for tab in tabs {
+            appendToLog("   \(tab.uuid)  \(tab.title ?? "")  \(tab.url?.absoluteString ?? "")")
+        }
+        appendToLog("")
+    }
+
     @objc private func refreshTarget() {
         guard let tab = selectedTab else {
             targetLabel.stringValue = "No tab selected — open a tab to act as the Duck.ai owner tab."
@@ -188,6 +204,7 @@ final class BrowserToolsDebugPanel: NSWindowController {
             makeButton("initialize", #selector(initializeSession)),
             makeButton("notifications/initialized", #selector(notifyInitialized)),
             makeButton("tools/list", #selector(listTools)),
+            makeButton("Show tab IDs", #selector(listWindowTabs)),
             makeButton("Refresh target", #selector(refreshTarget))
         ])
         buttons.orientation = .horizontal

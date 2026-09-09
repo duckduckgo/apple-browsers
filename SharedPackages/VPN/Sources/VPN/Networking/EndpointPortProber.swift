@@ -81,7 +81,6 @@ final class EndpointPortProber: EndpointPortProbing {
     }
 
     /// Completes one UDP probe on reply, timeout, or cancellation.
-    /// All mutable state is confined to `queue`, including cancellation before `start`.
     private final class Probe: @unchecked Sendable {
         private let queue = DispatchQueue(label: "com.duckduckgo.EndpointPortProber")
         private let connection: NWConnection

@@ -28,8 +28,7 @@ struct EndpointPortSelection {
         self.prober = prober
     }
 
-    /// Chooses a server port by probing its advertised candidates.
-    /// Skips probing for a single candidate. Returns nil if probing requires a host the server does not provide.
+    /// Chooses an endpoint port based on availability and candidate priority.
     func select(for serverInfo: NetworkProtectionServerInfo,
                 previousPort: UInt16?,
                 preferring rememberedPort: UInt16?) async throws -> Decision? {

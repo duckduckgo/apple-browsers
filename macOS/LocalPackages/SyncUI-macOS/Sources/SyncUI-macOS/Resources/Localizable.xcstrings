@@ -4739,6 +4739,18 @@
         }
       }
     },
+    "preferences.sync.authentication-cancelled-v2.try-again-button" : {
+      "comment" : "Button to retry device authentication from the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Again"
+          }
+        }
+      }
+    },
     "preferences.sync.bookmarks-section-title-v2" : {
       "comment" : "Bookmarks options section title in sync settings (V2)",
       "extractionState" : "extracted_with_value",

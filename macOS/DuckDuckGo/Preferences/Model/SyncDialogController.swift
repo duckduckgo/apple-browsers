@@ -104,6 +104,7 @@ final class SyncDialogController {
 
     private var cancellables = Set<AnyCancellable>()
     private var syncPromoSource: String?
+    private var authenticationCancelledPromptContinuation: (@MainActor () -> Void)?
     private var pairingV2PeerKind: PairingV2DeviceKind?
     private var didCreateSyncAccountDuringPairing = false
     private var displayedCodeSetupSource: SyncSetupSource?
@@ -398,14 +399,16 @@ final class SyncDialogController {
         }
     }
 
-    private func checkAuthenticated(presentDialogOnCancel: Bool = false) async -> Bool {
+    private func checkAuthenticated(presentDialogOnCancel: Bool = false, continueAfterPromptRetry: (@MainActor () -> Void)? = nil) async -> Bool {
         let authenticationResult = await userAuthenticator.authenticateUser(reason: .syncSettings)
         guard authenticationResult.authenticated else {
             if authenticationResult == .noAuthAvailable {
                 presentDialog(for: .empty)
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice)
                 coordinationDelegate?.didEndFlow()
-            } else if presentDialogOnCancel, !incrementAuthenticationCancelledPromptCountReturningLimitReached() {
+            } else if presentDialogOnCancel, let presentationCount = incrementAuthenticationCancelledPromptCountIfWithinLimit() {
+                authenticationCancelledPromptContinuation = presentationCount == 1 ? continueAfterPromptRetry : nil
+                managementDialogModel.authenticationCancelledPromptOffersRetry = authenticationCancelledPromptContinuation != nil
                 presentDialog(for: .syncAuthenticationCancelled)
                 pixelFiring?.fire(SyncSettingsPixelKitEvent.authenticationCancelledPromptShown)
             } else {
@@ -416,13 +419,14 @@ final class SyncDialogController {
         return true
     }
 
-    private func incrementAuthenticationCancelledPromptCountReturningLimitReached() -> Bool {
+    private func incrementAuthenticationCancelledPromptCountIfWithinLimit() -> Int? {
         let count = keyValueStore.object(forKey: Constants.authenticationCancelledPromptCountKey) as? Int ?? 0
         guard count < Constants.authenticationCancelledPromptMaxPresentationCount else {
-            return true
+            return nil
         }
-        keyValueStore.set(count + 1, forKey: Constants.authenticationCancelledPromptCountKey)
-        return false
+        let presentationCount = count + 1
+        keyValueStore.set(presentationCount, forKey: Constants.authenticationCancelledPromptCountKey)
+        return presentationCount
     }
 }
 
@@ -669,6 +673,18 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEntryScreenShown(flowVersion: syncSetupFlowVersion))
     }
 
+    func authenticationCancelledPromptClosePressed() async {
+        let continuation = authenticationCancelledPromptContinuation
+        authenticationCancelledPromptContinuation = nil
+        managementDialogModel.currentDialog = nil
+        guard let continuation,
+              await userAuthenticator.authenticateUser(reason: .syncSettings).authenticated else {
+            managementDialogModel.endFlow()
+            return
+        }
+        continuation()
+    }
+
     func didEndFlow() {
         didCreateSyncAccountDuringPairing = false
         let controller = self.connectionController
@@ -718,9 +734,15 @@ extension SyncDialogController: SyncSettingsViewHandling {
             syncPromoSource = source.rawValue
         }
 
-        guard await checkAuthenticated(presentDialogOnCancel: featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)) else {
+        guard await checkAuthenticated(presentDialogOnCancel: featureFlagger.isFeatureOn(.simplifiedSyncSetupV2),
+                                       continueAfterPromptRetry: { [weak self] in self?.continueSyncWithAnotherDevice() }) else {
             return
         }
+        continueSyncWithAnotherDevice()
+    }
+
+    @MainActor
+    private func continueSyncWithAnotherDevice() {
         if syncService.account != nil {
             startExchangeOrRecovery()
         } else {
@@ -731,9 +753,17 @@ extension SyncDialogController: SyncSettingsViewHandling {
     @MainActor
     func syncWithServerPressed() async {
         let isSimplifiedSetupV2 = featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
-        guard await checkAuthenticated(presentDialogOnCancel: isSimplifiedSetupV2) else {
+        guard await checkAuthenticated(presentDialogOnCancel: isSimplifiedSetupV2,
+                                       continueAfterPromptRetry: { [weak self] in
+                                           self?.continueSyncWithServer(isSimplifiedSetupV2: isSimplifiedSetupV2)
+                                       }) else {
             return
         }
+        continueSyncWithServer(isSimplifiedSetupV2: isSimplifiedSetupV2)
+    }
+
+    @MainActor
+    private func continueSyncWithServer(isSimplifiedSetupV2: Bool) {
         if isSimplifiedSetupV2 {
             presentDialog(for: .syncAnotherDevicePrompt)
         } else {

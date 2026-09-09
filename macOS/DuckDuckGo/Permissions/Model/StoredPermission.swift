@@ -25,6 +25,17 @@ enum PersistedPermissionDecision {
     case allow
     case ask
 
+    var localizedTitle: String {
+        switch self {
+        case .ask:
+            return UserText.permissionCenterAlwaysAsk
+        case .allow:
+            return UserText.permissionCenterAlwaysAllow
+        case .deny:
+            return UserText.permissionCenterNeverAllow
+        }
+    }
+
     init(allow: Bool, isRemoved: Bool) {
         switch (allow, isRemoved) {
         case (_, true):

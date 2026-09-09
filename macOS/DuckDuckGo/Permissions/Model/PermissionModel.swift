@@ -229,10 +229,15 @@ final class PermissionModel {
     private func permissionManager(_: PermissionManagerProtocol,
                                    didChangePermanentDecisionFor permissionType: PermissionType,
                                    forDomain domain: String,
-                                   to decision: PersistedPermissionDecision) {
+                                   to decision: PersistedPermissionDecision?) {
 
         // If Always Allow/Deny for the current host: Grant/Revoke the permission
-        guard webView?.url?.host?.droppingWwwPrefix() == domain else { return }
+        guard currentDomain?.droppingWwwPrefix() == domain else { return }
+
+        guard let decision else {
+            removePermissionFromCurrentPage(permissionType)
+            return
+        }
 
         // If decision changed to "allow", remove from removedPermissions so updatePermissions() can track it again
         if decision == .allow {
@@ -282,10 +287,18 @@ final class PermissionModel {
 
     /// Removes a permission completely (revokes and removes from tracking)
     func remove(_ permission: PermissionType) {
-        // Track as explicitly removed to prevent re-adding via updatePermissions()
-        removedPermissions.insert(permission)
+        removePermissionFromCurrentPage(permission)
 
-        // First revoke the permission
+        if let domain = currentDomain {
+            permissionManager.removePermission(forDomain: domain, permissionType: permission)
+        } else {
+            assertionFailure("webView URL should not be nil when removing a permission")
+        }
+    }
+
+    private func removePermissionFromCurrentPage(_ permission: PermissionType) {
+        guard removedPermissions.insert(permission).inserted else { return }
+
         switch permission {
         case .camera, .microphone, .geolocation:
             webView?.revokePermissions([permission])
@@ -293,15 +306,7 @@ final class PermissionModel {
             break
         }
 
-        // Remove from dictionary (will trigger @Published update)
         permissions[permission] = nil
-
-        // Remove from persisted storage
-        if let domain = currentDomain {
-            permissionManager.removePermission(forDomain: domain, permissionType: permission)
-        } else {
-            assertionFailure("webView URL should not be nil when removing a permission")
-        }
     }
 
     /// Checks if a permission is granted (either persistently via "Always Allow" or for this session via one-time grant).

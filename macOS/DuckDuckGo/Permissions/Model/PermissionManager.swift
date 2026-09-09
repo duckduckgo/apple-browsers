@@ -34,7 +34,8 @@ protocol PermissionDecisionOverriding: AnyObject {
 
 protocol PermissionManagerProtocol: AnyObject {
 
-    typealias PublishedPermission = (domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision)
+    /// A nil decision means the saved permission was removed, rather than changed to Always Ask.
+    typealias PublishedPermission = (domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision?)
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { get }
     var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> { get }
 
@@ -238,7 +239,7 @@ final class PermissionManager: PermissionManagerProtocol {
         store.remove(objectWithId: storedPermission.id)
 
         // Notify subscribers
-        permissionSubject.send((domain, permissionType, .ask))
+        permissionSubject.send((domain, permissionType, nil))
     }
 
 }
@@ -296,8 +297,9 @@ extension PermissionManager: PermissionManagerDebugging {
             permissionsByType.keys.map { (domain: domain, type: $0) }
         }
         permissions.removeAll()
+        publishPersistedPermissions()
         for permission in removedPermissions {
-            permissionSubject.send((permission.domain, permission.type, .ask))
+            permissionSubject.send((permission.domain, permission.type, nil))
         }
         store.clear(except: [])
         return count

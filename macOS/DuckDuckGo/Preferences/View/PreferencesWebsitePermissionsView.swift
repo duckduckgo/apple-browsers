@@ -33,7 +33,7 @@ struct PreferencesWebsitePermissionsView: View {
         static let countSeparatorSize: CGFloat = 3
         static let faviconSize: CGFloat = 16
         static let removeButtonSize: CGFloat = 16
-        static let dropdownWidth: CGFloat = 124
+        static let minimumDropdownWidth: CGFloat = 124
     }
 
     @ObservedObject
@@ -92,11 +92,12 @@ struct PreferencesWebsitePermissionsView: View {
                 set: { model.send(action: .changeRecentDecision(row, $0)) }),
                    label: EmptyView()) {
                 ForEach(row.availableDecisions, id: \.self) { decision in
-                    Text(decision.websitePermissionsLabel).tag(decision)
+                    Text(decision.localizedTitle).tag(decision)
                 }
             }
             .labelsHidden()
-            .frame(width: Constants.dropdownWidth)
+            .fixedSize()
+            .frame(minWidth: Constants.minimumDropdownWidth)
             .accessibilityIdentifier("\(row.accessibilityIdentifier).Decision")
 
             Button {

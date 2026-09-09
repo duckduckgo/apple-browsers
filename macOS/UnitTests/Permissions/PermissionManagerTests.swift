@@ -186,7 +186,7 @@ final class PermissionManagerTests: XCTestCase {
         }
     }
 
-    func testWhenPermissionIsRemovedThenSubjectIsPublished() {
+    func testWhenPermissionIsChangedToAskThenSubjectIsPublished() {
         store.permissions = [.entity2]
 
         let e = expectation(description: "permission published")
@@ -325,12 +325,38 @@ final class PermissionManagerTests: XCTestCase {
         let cancellable = manager.persistedPermissionsPublisher.sink { entries in
             receivedEntries = entries
         }
+        var receivedChanges = [PermissionManagerProtocol.PublishedPermission]()
+        let changesCancellable = manager.permissionPublisher.sink { receivedChanges.append($0) }
 
         manager.removePermission(forDomain: PermissionEntity.entity1.domain, permissionType: PermissionEntity.entity1.type)
 
         XCTAssertTrue(receivedEntries.isEmpty)
         XCTAssertTrue(manager.persistedPermissionTypes.isEmpty)
-        withExtendedLifetime(cancellable) {}
+        XCTAssertEqual(receivedChanges.count, 1)
+        XCTAssertEqual(receivedChanges.first?.domain, PermissionEntity.entity1.domain)
+        XCTAssertEqual(receivedChanges.first?.permissionType, PermissionEntity.entity1.type)
+        XCTAssertNil(receivedChanges.first?.decision)
+        withExtendedLifetime((cancellable, changesCancellable)) {}
+    }
+
+    func testWhenAllPermissionsAreRemovedThenSnapshotsAndRemovalEventsArePublished() {
+        store.permissions = [.entity1, .entity2]
+        var snapshots = [[WebsitePermissionEntry]]()
+        let snapshotsCancellable = manager.persistedPermissionsPublisher.sink { snapshots.append($0) }
+        var changes = [PermissionManagerProtocol.PublishedPermission]()
+        let changesCancellable = manager.permissionPublisher.sink { changes.append($0) }
+
+        _ = manager.removeAllPermissions()
+
+        XCTAssertEqual(snapshots.first?.count, 2)
+        XCTAssertEqual(snapshots.last, [])
+        XCTAssertTrue(manager.persistedPermissionTypes.isEmpty)
+        XCTAssertEqual(changes.count, 2)
+        XCTAssertTrue(changes.allSatisfy { $0.decision == nil })
+        var replayedEntries: [WebsitePermissionEntry]?
+        let replayCancellable = manager.persistedPermissionsPublisher.sink { replayedEntries = $0 }
+        XCTAssertEqual(replayedEntries, [])
+        withExtendedLifetime((snapshotsCancellable, changesCancellable, replayCancellable)) {}
     }
 
     func testWhenPermissionsBurnedThenTheyAreCleared() {

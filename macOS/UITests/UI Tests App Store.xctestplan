@@ -56,8 +56,6 @@
         "FindInPageTests\/test_findPrevious_viaMenuShortcutAndButton()",
         "FindInPageTests\/test_hideAndReactivate_keepsTextAndNextWorks()",
         "FireWindowTests\/testCrendentialsAreAutoFilledInFireWindows()",
-        "NewPermissionViewTests\/test_locationPermissions_whenAccepted_showCorrectStateInBrowser()",
-        "NewPermissionViewTests\/test_locationPermissions_whenNeverAllowIsSelected_alwaysDenies()",
         "PermissionsTests",
         "PrintingTests",
         "PrintingTests\/test_pdf_contextMenuOpenWithPreview_opensPreviewAndValidatesContent()",

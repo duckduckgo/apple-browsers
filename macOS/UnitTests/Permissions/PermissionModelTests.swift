@@ -847,7 +847,7 @@ final class PermissionModelTests: XCTestCase {
                        .allow)
     }
 
-    func testWhenGrantedPermissionIsRemovedThenActivePermissionStaysActive() {
+    func testWhenGrantedPermissionIsChangedToAskThenActivePermissionStaysActive() {
         webView.urlValue = URL(string: "http://www.duckduckgo.com")!
         self.webView.cameraCaptureState = .active
         self.webView.microphoneCaptureState = .active
@@ -860,8 +860,46 @@ final class PermissionModelTests: XCTestCase {
             XCTFail("unexpected call")
         }
 
-        permissionManagerMock.removePermission(forDomain: URL.duckDuckGo.host!, permissionType: .camera)
+        permissionManagerMock.setPermission(.ask, forDomain: URL.duckDuckGo.host!, permissionType: .camera)
         permissionManagerMock.permissionSubject.send( (URL.duckDuckGo.host!, .camera, .ask) )
+    }
+
+    func testWhenPermissionIsRemovedThenMatchingTabsRevokeAccess() {
+        let domain = URL.duckDuckGo.host!
+        permissionManagerMock.setPermission(.allow, forDomain: domain, permissionType: .microphone)
+        webView.urlValue = URL(string: "https://www.duckduckgo.com")!
+        webView.microphoneCaptureState = .active
+
+        let secondWebView = WebViewMock(frame: .zero, configuration: WKWebViewConfiguration())
+        secondWebView.urlValue = URL.duckDuckGo
+        secondWebView.microphoneCaptureState = .active
+        let secondModel = PermissionModel(webView: secondWebView, permissionManager: permissionManagerMock,
+                                          geolocationService: geolocationServiceMock, systemPermissionManager: systemPermissionManagerMock)
+
+        let unrelatedWebView = WebViewMock(frame: .zero, configuration: WKWebViewConfiguration())
+        unrelatedWebView.urlValue = URL(string: "https://example.com")!
+        unrelatedWebView.microphoneCaptureState = .active
+        let unrelatedModel = PermissionModel(webView: unrelatedWebView, permissionManager: permissionManagerMock,
+                                             geolocationService: geolocationServiceMock, systemPermissionManager: systemPermissionManagerMock)
+
+        let revoked = expectation(description: "Microphone revoked in both matching tabs")
+        revoked.expectedFulfillmentCount = 2
+        for matchingWebView in [webView!, secondWebView] {
+            matchingWebView.setMicCaptureStateHandler = { state in
+                XCTAssertEqual(state, .none)
+                revoked.fulfill()
+            }
+            matchingWebView.setCameraCaptureStateHandler = { _ in XCTFail("Camera should not be revoked") }
+        }
+        unrelatedWebView.setMicCaptureStateHandler = { _ in XCTFail("Unrelated tab should retain access") }
+
+        permissionManagerMock.removePermission(forDomain: domain, permissionType: .microphone)
+
+        wait(for: [revoked], timeout: 1)
+        XCTAssertNil(model.permissions[.microphone])
+        XCTAssertNil(secondModel.permissions[.microphone])
+        XCTAssertEqual(unrelatedModel.permissions[.microphone], .active)
+        XCTAssertFalse(permissionManagerMock.hasPermissionPersisted(forDomain: domain, permissionType: .microphone))
     }
 
     func testWhenMicrophoneIsMutedThenSetMediaCaptureMutedIsCalled() {

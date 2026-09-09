@@ -115,13 +115,11 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
 
     func testWhenNoPermissionHasATimestampThenRecentsIsEmpty() {
         let permissionManager = PermissionManagerMock()
-        permissionManager.setPersistedPermissions([
+        let model = makeRecentsModel([
             WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .allow, lastModified: nil),
-        ])
-        let model = WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: featureFlagger)
+        ], permissionManager: permissionManager)
 
-        model.send(action: .onAppear)
-
+        XCTAssertEqual(model.viewState.rows.first { $0.category == .camera }?.count, 1)
         XCTAssertTrue(model.viewState.recents.isEmpty)
         XCTAssertFalse(model.viewState.hasRecents)
     }
@@ -167,28 +165,38 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         XCTAssertEqual(model.viewState.recents.first?.availableDecisions, [.ask, .allow])
     }
 
-    func testWhenRecentIsPopupsAlreadyDeniedThenDeniedDecisionStaysSelectable() {
+    func testWhenRecentIsPopupsAlreadyDeniedThenItShowsAskWithoutOfferingDeny() {
         let entries = [
             WebsitePermissionEntry(domain: "popups.com", permissionType: .popups, decision: .deny, lastModified: Date()),
         ]
 
         let model = makeRecentsModel(entries, permissionManager: PermissionManagerMock())
 
-        XCTAssertEqual(model.viewState.recents.first?.availableDecisions, [.deny, .ask, .allow])
+        XCTAssertEqual(model.viewState.recents.first?.decision, .ask)
+        XCTAssertEqual(model.viewState.recents.first?.availableDecisions, [.ask, .allow])
     }
 
-    func testWhenRecentDecisionIsChangedThenPermissionManagerIsUpdated() {
+    func testWhenRecentDecisionIsChangedThenItMovesToTheTopWithUpdatedDecision() {
         let entries = [
-            WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .allow, lastModified: Date()),
+            WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .allow,
+                                   lastModified: Date(timeIntervalSince1970: 100)),
+            WebsitePermissionEntry(domain: "newer.com", permissionType: .camera, decision: .allow,
+                                   lastModified: Date(timeIntervalSince1970: 200)),
         ]
         let permissionManager = PermissionManagerMock()
         let model = makeRecentsModel(entries, permissionManager: permissionManager)
-        guard let row = model.viewState.recents.first else {
+        guard let row = model.viewState.recents.first(where: { $0.domain == "example.com" }) else {
             return XCTFail("Expected a recent row")
         }
 
-        model.send(action: .changeRecentDecision(row, .deny))
+        XCTAssertEqual(model.viewState.recents.first?.domain, "newer.com")
+        waitForViewStateUpdate(model) {
+            model.send(action: .changeRecentDecision(row, .deny))
+        }
 
+        XCTAssertEqual(model.viewState.recents.map(\.domain), ["example.com", "newer.com"])
+        XCTAssertEqual(model.viewState.recents.first?.decision, .deny)
+        XCTAssertEqual(model.viewState.rows.first { $0.category == .camera }?.count, 2)
         XCTAssertEqual(permissionManager.setPermissionCalls.count, 1)
         XCTAssertEqual(permissionManager.setPermissionCalls.first?.domain, "example.com")
         XCTAssertEqual(permissionManager.setPermissionCalls.first?.decision, .deny)
@@ -220,9 +228,14 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
             return XCTFail("Expected a recent row")
         }
 
-        model.send(action: .removeRecent(row))
+        waitForViewStateUpdate(model) {
+            model.send(action: .removeRecent(row))
+        }
 
         XCTAssertFalse(permissionManager.hasPermissionPersisted(forDomain: "example.com", permissionType: .camera))
+        XCTAssertTrue(model.viewState.recents.isEmpty)
+        XCTAssertFalse(model.viewState.hasRecents)
+        XCTAssertEqual(model.viewState.rows.first { $0.category == .camera }?.count, 0)
     }
 
     func testWhenRecentIsExternalSchemeThenTitleUsesTheOpenAppFormat() {
@@ -307,9 +320,7 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
     }
 
     private func createSUT(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {
-        for entry in entries {
-            permissionManager.setPermission(entry.decision, forDomain: entry.domain, permissionType: entry.permissionType)
-        }
+        permissionManager.setPersistedPermissions(entries)
         return WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: featureFlagger)
     }
 

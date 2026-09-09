@@ -96,12 +96,14 @@ final class WebsitePermissionsViewModel: ObservableObject {
     }
 
     private func makeRecentRow(from entry: WebsitePermissionEntry) -> WebsitePermissionsViewState.RecentRow {
-        .init(
+        // Unsupported saved denials behave as Always Ask, as they do in Permission Center.
+        let decision: PersistedPermissionDecision = entry.decision == .deny && !entry.permissionType.canPersistDeniedDecision ? .ask : entry.decision
+        return .init(
             domain: entry.domain,
             permissionType: entry.permissionType,
-            decision: entry.decision,
+            decision: decision,
             permissionTitle: permissionTitle(for: entry.permissionType),
-            availableDecisions: availableDecisions(for: entry.permissionType, decision: entry.decision)
+            availableDecisions: availableDecisions(for: entry.permissionType)
         )
     }
 
@@ -110,12 +112,9 @@ final class WebsitePermissionsViewModel: ObservableObject {
         return String(format: UserText.websitePermissionsExternalAppFormat, permissionType.localizedDescription)
     }
 
-    private func availableDecisions(
-        for permissionType: PermissionType,
-        decision: PersistedPermissionDecision
-    ) -> [PersistedPermissionDecision] {
-        if permissionType.canPersistDeniedDecision || decision == .deny {
-            return [.deny, .ask, .allow]
+    private func availableDecisions(for permissionType: PermissionType) -> [PersistedPermissionDecision] {
+        if permissionType.canPersistDeniedDecision {
+            return [.ask, .allow, .deny]
         } else {
             return [.ask, .allow]
         }

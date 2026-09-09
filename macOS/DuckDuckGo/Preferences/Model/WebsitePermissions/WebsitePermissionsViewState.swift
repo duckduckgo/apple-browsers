@@ -100,18 +100,3 @@ extension WebsitePermissionsViewState {
         }
     }
 }
-
-extension PersistedPermissionDecision {
-    /// Label shown in the Website Permissions dropdowns. Reuses the Permission Center wording so a
-    /// decision reads the same wherever the user meets it.
-    var websitePermissionsLabel: String {
-        switch self {
-        case .allow:
-            return UserText.permissionCenterAlwaysAllow
-        case .deny:
-            return UserText.permissionCenterNeverAllow
-        case .ask:
-            return UserText.permissionCenterAlwaysAsk
-        }
-    }
-}

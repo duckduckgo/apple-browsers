@@ -20,6 +20,9 @@ import Foundation
 
 extension PromoServiceFactory {
 
+    static let updateAvailablePromoID = "update-available"
+    static let browserUpdatedPromoID = "browser-updated"
+
     @MainActor
     static func updateAvailable(dependencies: PromoDependencies) -> Promo {
         let delegate = UpdateAvailablePromoDelegate(updateController: dependencies.updateController,
@@ -27,11 +30,12 @@ extension PromoServiceFactory {
                                                     featureFlagger: dependencies.featureFlagger)
         dependencies.updateNotificationBridge?.updateAvailableDelegate = delegate
 
-        return InternalPromo(id: "update-available",
+        return InternalPromo(id: updateAvailablePromoID,
                              triggers: [.updateAvailable],
                              initiated: .app,
                              promoType: PromoType(.featureTip, customTimeoutResult: .ignored(cooldown: .days(7))),
                              context: .global,
+                             coexistingPromoIDs: [PromoServiceFactory.nextSteps.id],
                              respectsGlobalCooldown: false,
                              setsGlobalCooldown: false,
                              delegate: delegate)
@@ -46,11 +50,12 @@ extension PromoServiceFactory {
                                                    featureFlagger: dependencies.featureFlagger)
         bridge.browserUpdatedDelegate = delegate
 
-        return InternalPromo(id: "browser-updated",
+        return InternalPromo(id: browserUpdatedPromoID,
                              triggers: [.browserUpdated],
                              initiated: .app,
                              promoType: PromoType(.featureTip, customTimeoutResult: .ignored(cooldown: 0)),
                              context: .global,
+                             coexistingPromoIDs: [PromoServiceFactory.nextSteps.id],
                              respectsGlobalCooldown: false,
                              setsGlobalCooldown: false,
                              delegate: delegate)

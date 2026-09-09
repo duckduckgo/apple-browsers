@@ -35,7 +35,7 @@ final class EndpointPortProberTests: XCTestCase {
 
         let prober = EndpointPortProber(timeout: 1)
 
-        let responding = await prober.respondingPorts(host: .ipv4(.loopback), ports: [responder.port, unusedPort])
+        let responding = try await prober.respondingPorts(host: .ipv4(.loopback), ports: [responder.port, unusedPort])
 
         XCTAssertEqual(responding, [responder.port])
     }
@@ -48,17 +48,73 @@ final class EndpointPortProberTests: XCTestCase {
 
         let prober = EndpointPortProber(timeout: 1)
 
-        let responding = await prober.respondingPorts(host: .ipv4(.loopback), ports: [responder.port])
+        let responding = try await prober.respondingPorts(host: .ipv4(.loopback), ports: [responder.port])
 
         XCTAssertTrue(responding.isEmpty)
     }
 
-    func testRespondingPorts_EmptyPortListReturnsEmptySetWithoutOpeningAnything() async {
+    func testRespondingPorts_EmptyPortListReturnsEmptySetWithoutOpeningAnything() async throws {
         let prober = EndpointPortProber(timeout: 1)
 
-        let responding = await prober.respondingPorts(host: .ipv4(.loopback), ports: [])
+        let responding = try await prober.respondingPorts(host: .ipv4(.loopback), ports: [])
 
         XCTAssertTrue(responding.isEmpty)
+    }
+
+    func testRespondingPorts_CancelledBeforeStartingThrowsCancellation() async {
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try await EndpointPortProber().respondingPorts(host: .ipv4(.loopback), ports: [])
+        }
+
+        do {
+            _ = try await task.value
+            XCTFail("Expected cancellation, not an empty probe result")
+        } catch is CancellationError {
+            // Expected.
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testRespondingPorts_CancellationCompletesAllPendingProbesBeforeTimeout() async throws {
+        let received = expectation(description: "Both probes reached their listeners")
+        received.expectedFulfillmentCount = 2
+        let first = try await LoopbackResponder(reply: nil, onFirstProbe: { received.fulfill() })
+        let second = try await LoopbackResponder(reply: nil, onFirstProbe: { received.fulfill() })
+        defer {
+            first.stop()
+            second.stop()
+        }
+        let completed = expectation(description: "Cancelled probes completed")
+
+        let task = Task {
+            defer { completed.fulfill() }
+            return try await EndpointPortProber(timeout: 5).respondingPorts(
+                host: .ipv4(.loopback), ports: [first.port, second.port])
+        }
+        await fulfillment(of: [received], timeout: 2)
+        task.cancel()
+        await fulfillment(of: [completed], timeout: 1)
+
+        do {
+            _ = try await task.value
+            XCTFail("Cancellation must not be treated as unreachable ports")
+        } catch is CancellationError {
+            // Expected.
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testRespondingPorts_RetransmitsWhenTheFirstDatagramGetsNoReply() async throws {
+        let responder = try await LoopbackResponder(reply: EndpointPortProber.expectedResponse, replyAfterRequests: 2)
+        defer { responder.stop() }
+
+        let responding = try await EndpointPortProber(timeout: 2, retransmitInterval: 0.05)
+            .respondingPorts(host: .ipv4(.loopback), ports: [responder.port])
+
+        XCTAssertEqual(responding, [responder.port])
     }
 
 }
@@ -69,8 +125,9 @@ private final class LoopbackResponder {
     let port: UInt16
     private let listener: NWListener
     private let queue: DispatchQueue
+    private let stopConnections: () -> Void
 
-    init(reply: Data) async throws {
+    init(reply: Data?, replyAfterRequests: Int = 1, onFirstProbe: (() -> Void)? = nil) async throws {
         // All stored properties are assigned from these locals once the await below completes: a class's
         // async init must not leave any property unset across a suspension point.
         let queue = DispatchQueue(label: "LoopbackResponder")
@@ -78,12 +135,23 @@ private final class LoopbackResponder {
         parameters.requiredInterfaceType = .loopback
         let listener = try NWListener(using: parameters, on: .any)
 
+        var connections: [NWConnection] = []
         listener.newConnectionHandler = { [queue] connection in
+            connections.append(connection)
             connection.start(queue: queue)
-            connection.receiveMessage { content, _, _, _ in
-                guard content == EndpointPortProber.request else { return }
-                connection.send(content: reply, completion: .contentProcessed { _ in })
+            var requests = 0
+            func receive() {
+                connection.receiveMessage { content, _, _, error in
+                    guard error == nil, content == EndpointPortProber.request else { return }
+                    requests += 1
+                    if requests == 1 { onFirstProbe?() }
+                    if let reply, requests >= replyAfterRequests {
+                        connection.send(content: reply, completion: .contentProcessed { _ in })
+                    }
+                    receive()
+                }
             }
+            receive()
         }
 
         let resolvedPort: UInt16 = try await withCheckedThrowingContinuation { continuation in
@@ -109,10 +177,17 @@ private final class LoopbackResponder {
         self.queue = queue
         self.listener = listener
         self.port = resolvedPort
+        self.stopConnections = {
+            queue.async {
+                connections.forEach { $0.cancel() }
+                connections.removeAll()
+            }
+        }
     }
 
     func stop() {
         listener.cancel()
+        stopConnections()
     }
 
 }

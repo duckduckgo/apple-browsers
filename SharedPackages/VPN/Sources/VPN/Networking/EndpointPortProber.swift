@@ -23,7 +23,7 @@ import Network
 protocol EndpointPortProbing {
 
     /// Sends the probe to every port in parallel and returns the ports that answered within the timeout.
-    func respondingPorts(host: NWEndpoint.Host, ports: [UInt16]) async -> Set<UInt16>
+    func respondingPorts(host: NWEndpoint.Host, ports: [UInt16]) async throws -> Set<UInt16>
 
 }
 
@@ -41,8 +41,9 @@ final class EndpointPortProber: EndpointPortProbing {
         self.retransmitInterval = retransmitInterval
     }
 
-    func respondingPorts(host: NWEndpoint.Host, ports: [UInt16]) async -> Set<UInt16> {
-        await withTaskGroup(of: (UInt16, Bool).self) { group in
+    func respondingPorts(host: NWEndpoint.Host, ports: [UInt16]) async throws -> Set<UInt16> {
+        try Task.checkCancellation()
+        let responding = await withTaskGroup(of: (UInt16, Bool).self) { group in
             for port in ports {
                 group.addTask {
                     (port, await self.probe(host: host, port: port))
@@ -55,80 +56,102 @@ final class EndpointPortProber: EndpointPortProbing {
             }
             return responding
         }
+        try Task.checkCancellation()
+        return responding
     }
 
     private func probe(host: NWEndpoint.Host, port: UInt16) async -> Bool {
-        guard let nwPort = NWEndpoint.Port(rawValue: port) else { return false }
+        guard !Task.isCancelled, let nwPort = NWEndpoint.Port(rawValue: port) else { return false }
 
         let parameters = NWParameters.udp
         // The probe must reach the physical network, not loop back through a tunnel that's already up.
         parameters.prohibitedInterfaceTypes = [.other]
-
         let connection = NWConnection(host: host, port: nwPort, using: parameters)
-        let queue = DispatchQueue(label: "com.duckduckgo.EndpointPortProber.\(port)")
+        let probe = Probe(connection: connection, timeout: timeout, retransmitInterval: retransmitInterval)
 
-        return await withCheckedContinuation { continuation in
-            var didResume = false
-
-            func resume(_ result: Bool) {
-                dispatchPrecondition(condition: .onQueue(queue))
-                guard !didResume else { return }
-                didResume = true
-                connection.cancel()
-                continuation.resume(returning: result)
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                probe.start(continuation)
             }
+        } onCancel: {
+            probe.cancel()
+        }
+    }
 
-            func send() {
-                dispatchPrecondition(condition: .onQueue(queue))
-                guard !didResume else { return }
-                connection.send(content: Self.request, completion: .contentProcessed { _ in })
-            }
+    /// All mutable state is confined to `queue`, including cancellation before `start`.
+    private final class Probe: @unchecked Sendable {
+        private let queue = DispatchQueue(label: "com.duckduckgo.EndpointPortProber")
+        private let connection: NWConnection
+        private let timeout: TimeInterval
+        private let retransmitInterval: TimeInterval
+        private var continuation: CheckedContinuation<Bool, Never>?
+        private var didFinish = false
 
-            // Arms a single-shot receive; a reply that isn't the expected one (garbled, stray, or from
-            // an unrelated retransmit) just re-arms rather than failing the probe.
-            func armReceive() {
-                connection.receiveMessage { content, _, _, _ in
-                    queue.async {
-                        guard !didResume else { return }
-                        if content == Self.expectedResponse {
-                            resume(true)
-                        } else {
-                            armReceive()
-                        }
-                    }
+        init(connection: NWConnection, timeout: TimeInterval, retransmitInterval: TimeInterval) {
+            self.connection = connection
+            self.timeout = timeout
+            self.retransmitInterval = retransmitInterval
+        }
+
+        func start(_ continuation: CheckedContinuation<Bool, Never>) {
+            queue.async {
+                guard !self.didFinish else {
+                    continuation.resume(returning: false)
+                    return
                 }
-            }
-
-            // A lost datagram shouldn't be read as a dead port: keep resending until `resume` runs.
-            func scheduleRetransmit() {
-                queue.asyncAfter(deadline: .now() + self.retransmitInterval) {
-                    guard !didResume else { return }
-                    send()
-                    scheduleRetransmit()
-                }
-            }
-
-            connection.stateUpdateHandler = { state in
-                queue.async {
+                self.continuation = continuation
+                self.connection.stateUpdateHandler = { [weak self] state in
+                    guard let self, !self.didFinish else { return }
                     switch state {
                     case .ready:
-                        armReceive()
-                        send()
-                        scheduleRetransmit()
+                        self.receive()
+                        self.send()
                     case .failed, .cancelled:
-                        resume(false)
+                        self.finish(false)
                     default:
                         break
                     }
                 }
+                self.connection.start(queue: self.queue)
+                self.queue.asyncAfter(deadline: .now() + self.timeout) { [weak self] in
+                    self?.finish(false)
+                }
             }
+        }
 
-            connection.start(queue: queue)
+        func cancel() {
+            queue.async {
+                self.finish(false)
+            }
+        }
 
-            queue.asyncAfter(deadline: .now() + timeout) {
-                resume(false)
+        private func finish(_ responded: Bool) {
+            dispatchPrecondition(condition: .onQueue(queue))
+            guard !didFinish else { return }
+            didFinish = true
+            connection.stateUpdateHandler = nil
+            connection.cancel()
+            continuation?.resume(returning: responded)
+            continuation = nil
+        }
+
+        private func receive() {
+            connection.receiveMessage { [weak self] content, _, _, _ in
+                guard let self, !self.didFinish else { return }
+                if content == EndpointPortProber.expectedResponse {
+                    self.finish(true)
+                } else {
+                    self.receive()
+                }
+            }
+        }
+
+        private func send() {
+            guard !didFinish else { return }
+            connection.send(content: EndpointPortProber.request, completion: .contentProcessed { _ in })
+            queue.asyncAfter(deadline: .now() + retransmitInterval) { [weak self] in
+                self?.send()
             }
         }
     }
-
 }

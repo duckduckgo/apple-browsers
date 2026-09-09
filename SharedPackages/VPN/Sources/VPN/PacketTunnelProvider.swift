@@ -966,6 +966,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     private func startTunnel(with tunnelConfiguration: TunnelConfiguration, onDemand: Bool) async throws {
+        try Task.checkCancellation()
 
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             adapter.start(tunnelConfiguration: tunnelConfiguration) { [weak self] error in
@@ -1131,15 +1132,18 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             providerEvents.fire(.reportConnectionAttempt(attempt: .connecting, source: attemptSource))
         }
 
+        var configurationGeneration = tunnelPathGeneration
         try await TunnelConfigurationUpdateOperation.run(
             reassert: reassert,
             generateTunnelConfiguration: {
                 switch updateMethod {
                 case .selectServer(let serverSelectionMethod):
-                    return try await generateTunnelConfiguration(
+                    let configuration = try await generateTunnelConfiguration(
                         serverSelectionMethod: serverSelectionMethod,
                         dnsSettings: settings.dnsSettings,
                         regenerateKey: regenerateKey)
+                    configurationGeneration = tunnelPathGeneration
+                    return configuration
 
                 case .useConfiguration(let newTunnelConfiguration):
                     return newTunnelConfiguration
@@ -1149,7 +1153,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 await self?.stopMonitorsForReconfiguration(preservingFailureRecovery: attemptSource.preservesFailureRecoveryDuringReassertUpdate)
             },
             updateAdapterConfiguration: { [weak self] tunnelConfiguration in
-                guard let self else { throw CancellationError() }
+                guard let self, configurationGeneration == self.tunnelPathGeneration else { throw CancellationError() }
                 try await self.updateAdapterConfiguration(tunnelConfiguration: tunnelConfiguration, reassert: reassert)
             },
             handleAdapterStarted: { [weak self] in
@@ -1246,11 +1250,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
 
         let newSelectedServer = configurationResult.server
-        self.lastSelectedServer = newSelectedServer
 
         Logger.networkProtection.log("⚪️ Generated tunnel configuration for server at location: \(newSelectedServer.serverInfo.serverLocation, privacy: .public) (preferred server is \(newSelectedServer.serverInfo.name, privacy: .public))")
 
-        return await selectEndpointPort(for: newSelectedServer.serverInfo, in: configurationResult.tunnelConfiguration)
+        let configuration = try await selectEndpointPort(for: newSelectedServer.serverInfo, in: configurationResult.tunnelConfiguration)
+        self.lastSelectedServer = newSelectedServer
+        return configuration
     }
 
     // MARK: - Endpoint Port Selection
@@ -1258,7 +1263,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     /// Probes the server's advertised ports and moves the endpoint to the first candidate that answers.
     /// A single advertised port skips probing.
     @MainActor
-    private func selectEndpointPort(for serverInfo: NetworkProtectionServerInfo, in configuration: TunnelConfiguration) async -> TunnelConfiguration {
+    private func selectEndpointPort(for serverInfo: NetworkProtectionServerInfo, in configuration: TunnelConfiguration) async throws -> TunnelConfiguration {
+        try Task.checkCancellation()
+        let generation = tunnelPathGeneration
         guard let currentPort = configuration.peers.first?.endpoint?.port.rawValue else { return configuration }
 
         let candidates = serverInfo.endpointPortCandidates(preferring: rememberedEndpointPort)
@@ -1267,10 +1274,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         if candidates.count > 1 {
             // Prefer the IP literal: the probe must not depend on name resolution through a possibly dead tunnel.
             guard let host = serverInfo.ips.first?.host ?? serverInfo.endpoint?.host else { return configuration }
-            responding = await endpointPortProber.respondingPorts(host: host, ports: candidates)
+            responding = try await endpointPortProber.respondingPorts(host: host, ports: candidates)
         } else {
             responding = []
         }
+
+        try Task.checkCancellation()
+        guard generation == tunnelPathGeneration else { throw CancellationError() }
 
         let decision = EndpointPortSelection.decide(
             candidates: candidates,
@@ -1496,8 +1506,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     private func handleFailureRecoveryConfigUpdate(result: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws {
+        let tunnelConfiguration = try await selectEndpointPort(for: result.server.serverInfo, in: result.tunnelConfiguration)
         self.lastSelectedServer = result.server
-        let tunnelConfiguration = await selectEndpointPort(for: result.server.serverInfo, in: result.tunnelConfiguration)
         try await updateTunnelConfiguration(updateMethod: .useConfiguration(tunnelConfiguration), reassert: true, attemptSource: .failureRecovery)
     }
 

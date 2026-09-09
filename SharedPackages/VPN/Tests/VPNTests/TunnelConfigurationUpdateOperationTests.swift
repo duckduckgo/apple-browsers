@@ -249,4 +249,62 @@ final class TunnelConfigurationUpdateOperationTests: XCTestCase {
 
         XCTAssertEqual(events, ["generate", "update", "failure"])
     }
+    func testRun_cancelledDuringConfigurationGeneration_doesNotStopMonitorsOrApplyConfiguration() async {
+        await assertCancellationPreventsAdapterUpdate(cancelDuringMonitorShutdown: false)
+    }
+
+    func testRun_cancelledDuringMonitorShutdown_doesNotApplyConfigurationOrRestartMonitors() async {
+        await assertCancellationPreventsAdapterUpdate(cancelDuringMonitorShutdown: true)
+    }
+
+    private func assertCancellationPreventsAdapterUpdate(cancelDuringMonitorShutdown: Bool) async {
+        let suspended = expectation(description: "Operation suspended")
+        var resumeOperation: CheckedContinuation<Void, Never>?
+        var events: [String] = []
+        let task = Task {
+            try await TunnelConfigurationUpdateOperation.run(
+                reassert: true,
+                generateTunnelConfiguration: {
+                    events.append("generate")
+                    if !cancelDuringMonitorShutdown {
+                        await withCheckedContinuation { continuation in
+                            resumeOperation = continuation
+                            suspended.fulfill()
+                        }
+                    }
+                    return .make()
+                },
+                stopMonitors: {
+                    events.append("stop")
+                    if cancelDuringMonitorShutdown {
+                        await withCheckedContinuation { continuation in
+                            resumeOperation = continuation
+                            suspended.fulfill()
+                        }
+                    }
+                },
+                updateAdapterConfiguration: { _ in events.append("update") },
+                handleAdapterStarted: { events.append("start") },
+                handleFailure: { _ in
+                    events.append("failure")
+                    return false
+                },
+                restartMonitorsAfterFailure: { events.append("restart") }
+            )
+        }
+        await fulfillment(of: [suspended], timeout: 1)
+        task.cancel()
+        resumeOperation?.resume()
+
+        do {
+            try await task.value
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {
+            // Expected.
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+        XCTAssertEqual(events, cancelDuringMonitorShutdown ? ["generate", "stop"] : ["generate"])
+    }
+
 }

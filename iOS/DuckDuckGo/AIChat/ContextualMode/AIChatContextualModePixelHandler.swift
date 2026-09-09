@@ -417,7 +417,7 @@ enum AIChatAddressBarMenuPixel: PixelKit.Event {
     var name: String {
         switch self {
         case .recentChatsSelected:
-            return "aichat_contextual_address_bar_menu_recent_chats_selected"
+            return "aichat_contextual_address_bar_menu_all_chats_selected"
         }
     }
 

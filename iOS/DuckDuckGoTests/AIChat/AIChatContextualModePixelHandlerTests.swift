@@ -574,7 +574,7 @@ final class AIChatContextualModePixelHandlerTests {
 
         sut.fireAddressBarMenuRecentChatsSelected()
 
-        #expect(firedEventNames == ["aichat_contextual_address_bar_menu_recent_chats_selected"])
+        #expect(firedEventNames == ["aichat_contextual_address_bar_menu_all_chats_selected"])
     }
 
     @Test("Concurrent reset and navigation calls are thread-safe")

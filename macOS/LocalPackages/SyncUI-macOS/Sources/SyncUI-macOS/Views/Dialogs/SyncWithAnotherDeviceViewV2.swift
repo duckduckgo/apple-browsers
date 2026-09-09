@@ -27,6 +27,7 @@ import PreviewSnapshots
 
 struct SyncWithAnotherDeviceViewV2: View {
 
+    @Environment(\.colorScheme) private var parentColorScheme
     @EnvironmentObject private var model: ManagementDialogModel
     @EnvironmentObject private var recoveryCodeModel: RecoveryCodeViewModel
 
@@ -337,7 +338,7 @@ struct SyncWithAnotherDeviceViewV2: View {
         .multilineTextAlignment(.leading)
         .frame(width: 240, alignment: .leading)
         .padding(16)
-        .environment(\.colorScheme, .dark)
+        .environment(\.colorScheme, parentColorScheme)
     }
 
     private func shareContent(_ sharedText: String) {

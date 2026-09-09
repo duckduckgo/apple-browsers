@@ -61,6 +61,7 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
     func makeUseNewDuckAddressEntry() -> BrowsingMenuEntry?
     func makeKeepSignInEntry() -> BrowsingMenuEntry?
     func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry?
+    func makeSendInternalFeedbackEntry() -> BrowsingMenuEntry?
 }
 
 protocol BrowsingMenuBuilding: AnyObject {

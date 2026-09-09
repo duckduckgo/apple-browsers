@@ -309,6 +309,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.adBlockingAvailability = adBlockingAvailability
         self.eventHub = eventHub
         registerForNotifications()
+        AppDependencyProvider.shared.internalFeedbackTabCountProvider.counter = self
     }
 
     deinit {
@@ -1020,6 +1021,22 @@ extension TabManager {
     }
 }
 
+
+// MARK: - Internal Feedback
+
+extension TabManager: InternalFeedbackTabCounting {
+
+    @MainActor
+    var openTabCount: Int {
+        allTabsModel.tabs.count
+    }
+
+    @MainActor
+    var activeTabCount: Int {
+        tabControllerCache.count
+    }
+
+}
 
 // MARK: - Debugging Pixels
 

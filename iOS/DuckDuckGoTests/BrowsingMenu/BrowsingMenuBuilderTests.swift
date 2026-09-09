@@ -74,6 +74,24 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         ])
     }
 
+    func testInternalFeedbackEntryIsAppendedToBrowsingMenus() {
+        let entryBuilder = MockBrowsingMenuEntryBuilder(
+            chatsEntry: nil,
+            internalFeedbackEntry: .named(MockBrowsingMenuEntryBuilder.internalFeedbackName)
+        )
+
+        for context in [BrowsingMenuContext.newTabPage, .website] {
+            let model = makeBuilder(entryBuilder: entryBuilder).buildMenu(
+                context: context,
+                bookmarksInterface: MockMenuBookmarksInteractor(),
+                mobileCustomization: makeMobileCustomization(),
+                clearTabsAndData: {}
+            )
+
+            XCTAssertEqual(model?.sections.last?.items.map(\.name), [MockBrowsingMenuEntryBuilder.internalFeedbackName])
+        }
+    }
+
     // MARK: - Privacy Protection toggle SERP gating
 
     func testToggleProtectionDomainIsNilOnSERP() {
@@ -120,12 +138,15 @@ private final class MockBrowsingMenuEntryBuilder: BrowsingMenuEntryBuilding {
 
     static let chatsName = "Chats"
     static let downloadsName = "Downloads"
+    static let internalFeedbackName = "Send Internal Feedback"
     static let openBookmarksName = "Bookmarks"
 
     private let chatsEntry: BrowsingMenuEntry?
+    private let internalFeedbackEntry: BrowsingMenuEntry?
 
-    init(chatsEntry: BrowsingMenuEntry?) {
+    init(chatsEntry: BrowsingMenuEntry?, internalFeedbackEntry: BrowsingMenuEntry? = nil) {
         self.chatsEntry = chatsEntry
+        self.internalFeedbackEntry = internalFeedbackEntry
     }
 
     func makeShortcutsMenu() -> [BrowsingMenuEntry] { [] }
@@ -158,6 +179,7 @@ private final class MockBrowsingMenuEntryBuilder: BrowsingMenuEntryBuilding {
     func makeUseNewDuckAddressEntry() -> BrowsingMenuEntry? { nil }
     func makeKeepSignInEntry() -> BrowsingMenuEntry? { nil }
     func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry? { nil }
+    func makeSendInternalFeedbackEntry() -> BrowsingMenuEntry? { internalFeedbackEntry }
 }
 
 private final class MockMenuBookmarksInteractor: MenuBookmarksInteracting {

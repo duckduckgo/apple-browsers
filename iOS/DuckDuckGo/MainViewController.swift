@@ -1276,6 +1276,7 @@ class MainViewController: UIViewController {
         refreshDuckAIAddressBarMenu()
         guard let tabsBarController else { return }
         tabsBarController.updateAIChatChipState(isContextualSheetPresented: isSheetPresented)
+        tabsBarController.updateAIChatMenuButtonForContextualChat(hasContextualSession: hasContextualSession)
     }
 
     func startAddFavoriteFlow() {

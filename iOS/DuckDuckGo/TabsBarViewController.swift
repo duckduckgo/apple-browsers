@@ -122,8 +122,8 @@ class TabsBarViewController: UIViewController {
 
     lazy var aiChatMenuButton: UIButton = {
         var config = UIButton.Configuration.plain()
-        config.title = UserText.actionAskAIChat
-        config.image = DesignSystemImages.Glyphs.Size16.aiChat.withRenderingMode(.alwaysTemplate)
+        config.title = UserText.actionOpenAIChat
+        config.image = Self.aiChatMenuButtonGlyph(hasContextualSession: false)
         config.imagePadding = Constants.aiChatMenuButtonImagePadding
         config.contentInsets = Constants.aiChatMenuButtonContentInsets
         config.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
@@ -138,7 +138,7 @@ class TabsBarViewController: UIViewController {
         let button = UIButton(configuration: config)
         button.isPointerInteractionEnabled = true
         button.isHidden = true
-        button.accessibilityLabel = UserText.actionAskAIChat
+        button.accessibilityLabel = UserText.accessibilityLabelOpenAIChat
         button.accessibilityIdentifier = "Browser.TabsBar.AIChatMenuButton"
         return button
     }()
@@ -335,6 +335,18 @@ class TabsBarViewController: UIViewController {
     /// current tab changes or its contextual sheet is presented/dismissed.
     func updateAIChatChipState(isContextualSheetPresented: Bool) {
         aiChatChip.setSheetState(isContextualSheetPresented ? .open : .closed)
+    }
+
+    /// Mirrors the iPhone address-bar glyph so the pill and that button never disagree.
+    func updateAIChatMenuButtonForContextualChat(hasContextualSession: Bool) {
+        aiChatMenuButton.configuration?.image = Self.aiChatMenuButtonGlyph(hasContextualSession: hasContextualSession)
+    }
+
+    private static func aiChatMenuButtonGlyph(hasContextualSession: Bool) -> UIImage {
+        let glyph = hasContextualSession
+            ? DesignSystemImages.Glyphs.Size16.aiChatDown
+            : DesignSystemImages.Glyphs.Size16.aiChat
+        return glyph.withRenderingMode(.alwaysTemplate)
     }
 
     @objc private func onFireButtonPressed() {

@@ -87,6 +87,26 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertFalse(didPrompt)
     }
 
+    func testWhenCameraGlobalNeverAppliesThenCombinedRequestDeclinesButMicrophoneAlonePrompts() throws {
+        let harness = try Harness()
+        harness.store.setGlobalDefault(.deny, for: .camera)
+        harness.store.setGlobalDefault(.ask, for: .microphone)
+        var resolution: SitePermissionResolution?
+
+        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, _ in
+            XCTFail("A combined WebKit grant would bypass the camera block")
+        }, completion: { resolution = $0 })
+
+        XCTAssertEqual(resolution, .deny(systemBlocks: []))
+
+        var prompts = [SitePermissionPrompt]()
+        harness.coordinator.request(harness.request([.microphone]), promptHandler: { prompt, _ in
+            prompts.append(prompt)
+        }, completion: { _ in })
+
+        XCTAssertEqual(prompts, [SitePermissionPrompt(site: harness.site, permissionTypes: [.microphone])])
+    }
+
     func testPermissionQueryMatchesNextRequestAcrossStoredGlobalAndSystemPrecedence() async throws {
         struct Scenario {
             let stored: SitePermissionDecision?

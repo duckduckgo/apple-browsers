@@ -284,6 +284,8 @@ public final class SitePermissionsCoordinator {
                     continue
                 }
                 if store.globalDefault(for: permissionType) == .deny {
+                    // WebKit resolves cameraAndMicrophone with one decision: granting either grants both.
+                    // A bundled request must not bypass a global block by prompting for the other type.
                     return .deny
                 }
                 disposition = .prompt

@@ -57,7 +57,7 @@ struct PromoServiceFactory {
     }
 
     @MainActor
-    private static func makeAllPromos(dependencies: PromoDependencies) -> [Promo] {
+    static func makeAllPromos(dependencies: PromoDependencies) -> [Promo] {
         var promos: [Promo] = [
             sessionRestore(coordinator: dependencies.sessionRestoreCoordinator),
             remoteMessageNewTabPage(model: dependencies.activeRemoteMessageModel),
@@ -74,7 +74,8 @@ struct PromoServiceFactory {
             cookiePopupProtectionOptIn(dependencies: dependencies),
             syncFavicons(dependencies: dependencies),
             bookmarkToolbar(dependencies: dependencies),
-            autoplayDiscoverability(dependencies: dependencies)
+            autoplayDiscoverability(dependencies: dependencies),
+            quitSurvey(observer: dependencies.quitSurveyPromoObserver)
         ]
 
         if includeTestPromos {

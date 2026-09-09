@@ -74,7 +74,8 @@ final class PromoRegistryTests: XCTestCase {
                 onboardingStateUpdater: MockOnboardingStateUpdater(),
                 autoconsentStats: MockAutoconsentStats()
             ),
-            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator()
+            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
+            quitSurveyPromoObserver: QuitSurveyPromoObserver()
         )
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 

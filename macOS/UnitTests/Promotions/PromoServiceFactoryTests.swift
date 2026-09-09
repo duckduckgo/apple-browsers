@@ -197,7 +197,8 @@ extension PromoServiceFactoryTests {
                 onboardingStateUpdater: MockOnboardingStateUpdater(),
                 autoconsentStats: MockAutoconsentStats()
             ),
-            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator()
+            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
+            quitSurveyPromoObserver: QuitSurveyPromoObserver()
         )
     }
 }

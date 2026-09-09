@@ -417,10 +417,10 @@ final class AIChatSuggestionsReadingTests: XCTestCase {
     }
 }
 
-final class AIChatAddressBarRecentChatsFeatureFlagTests: XCTestCase {
+final class AIChatChromeMenuRecentChatsFeatureFlagTests: XCTestCase {
 
-    func testFeatureFlagMatchesIOSConfiguration() {
-        let featureFlag = FeatureFlag.aiChatAddressBarRecentChats
+    func testFeatureFlagUsesSharedConfiguration() {
+        let featureFlag = FeatureFlag.aiChatChromeMenuRecentChats
 
         guard case let .remoteReleasable(subfeature) = featureFlag.source else {
             XCTFail("Expected a remotely releasable feature flag")

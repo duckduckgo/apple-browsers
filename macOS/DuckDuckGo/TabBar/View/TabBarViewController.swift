@@ -1031,7 +1031,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             guard let self, let sender else { return }
 
             let hasChats: Bool
-            if isFireWindow || !featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats) {
+            if isFireWindow || !featureFlagger.isFeatureOn(.aiChatChromeMenuRecentChats) {
                 hasChats = false
             } else {
                 hasChats = await NSApp.delegateTyped.aiChatSuggestionsReader.hasChats()

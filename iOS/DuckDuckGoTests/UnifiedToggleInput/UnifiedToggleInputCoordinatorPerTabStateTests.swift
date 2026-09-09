@@ -82,6 +82,22 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertFalse(sut.hasSubmittedPrompt)
     }
 
+    func test_startNewChat_thenSubmitBeforeURLSettles_keepsSubmittedState() {
+        let sut = makeSUT(stateStore: FakeInputStateStore())
+        let script = makeTestUserScript()
+        sut.activateForTab("tab-A")
+        sut.bindToTab(script, hasExistingChat: true)
+        sut.startNewChat()
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+
+        sut.bindToTab(script, hasExistingChat: false)
+
+        XCTAssertTrue(sut.hasSubmittedPrompt,
+                      "the fresh-chat URL settling must not read the pre-new-chat state as a chat exit")
+    }
+
     func test_bindToTab_freshChatAfterSubmission_keepsSubmittedState() {
         let sut = makeSUT(stateStore: FakeInputStateStore())
         let script = makeTestUserScript()

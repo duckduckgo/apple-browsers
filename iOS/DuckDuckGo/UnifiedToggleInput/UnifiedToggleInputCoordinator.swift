@@ -1513,6 +1513,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentController.resetPasteConversation()
         isNewChatPending = true
         hasSubmittedPrompt = false
+        // The context is a fresh chat now — a leftover `true` would read the settling
+        // chatID-less URL as a chat exit and reset a prompt submitted in the meantime.
+        lastSyncedHasExistingChat = false
         isModelPickerForcedVisible = false
         isSubmitBlockedByRecoveryCard = false
         resetToolsSelection()

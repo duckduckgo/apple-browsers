@@ -18,6 +18,7 @@
 
 #if os(iOS)
 import Foundation
+import FoundationExtensions
 
 public struct UserText {
     public static let downloadComplete = NSLocalizedString("aichat.download.complete", bundle: Bundle.module, value: "Download complete for %@", comment: "Download complete for duck.ai")
@@ -39,14 +40,10 @@ public struct UserText {
     public static let askAboutPage = NSLocalizedString("duckai.contextual.ask.about.page", bundle: Bundle.module, value: "Ask About Page", comment: "Title for the button that re-attaches the current page's content after the user removed it")
 
     /// Falls back to `askAboutPage` when the page has no title.
+    /// Not localised yet — translations to follow.
     public static func askAboutPage(title: String) -> String {
         guard !title.isEmpty else { return askAboutPage }
-        let format = NSLocalizedString(
-            "duckai.contextual.ask.about.page.title",
-            bundle: Bundle.module,
-            value: "Ask About %@",
-            comment: "Title for the chip offering to attach the page the user just navigated to. %@ is the page title"
-        )
+        let format = NotLocalizedString("duckai.contextual.ask.about.page.title", bundle: Bundle.module, value: "Ask About %@", comment: "Title for the chip offering to attach the page the user just navigated to. %@ is the page title")
         return String(format: format, title)
     }
 

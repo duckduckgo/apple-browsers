@@ -123,11 +123,7 @@ extension VPNSessionHealthWideEventData {
         }
     }
 
-    func applyingLeakCheckResult(leakDetected: Bool) -> Self {
-        guard leakDetected else {
-            return self
-        }
-
+    func markingLeakDetected() -> Self {
         return applying { next in
             next.leakDetected = true
         }

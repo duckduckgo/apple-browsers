@@ -51,7 +51,7 @@ public protocol VPNSessionHealthInstrumentation: AnyObject, Sendable {
     func failureRecoveryStepChanged(_ step: FailureRecoveryStep)
 
     /// Diagnostic only: an existing security SLO owns this property.
-    func leakCheckCompleted(leakDetected: Bool)
+    func leakDetected()
 
     /// Pauses eligible-time accrual: the VPN is intentionally unavailable, so the period must not count against it.
     func deviceWentToSleep()
@@ -141,8 +141,8 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
         applyTransition { $0.applyingFailureRecoveryStep(step, at: $1) }
     }
 
-    public func leakCheckCompleted(leakDetected: Bool) {
-        applyTransition { event, _ in event.applyingLeakCheckResult(leakDetected: leakDetected) }
+    public func leakDetected() {
+        applyTransition { event, _ in event.markingLeakDetected() }
     }
 
     // MARK: - Availability

@@ -1433,8 +1433,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                     httpClient: DefaultLeakCheckHTTPClient(),
                     stunClient: DefaultLeakCheckSTUNClient(),
                     wideEvent: wideEvent,
-                    onClassified: { [sessionHealth] status in
-                        sessionHealth.leakCheckCompleted(leakDetected: status)
+                    onLeakDetected: { [sessionHealth] in
+                        sessionHealth.leakDetected()
                     }
                 )
                 leakCheckService = service

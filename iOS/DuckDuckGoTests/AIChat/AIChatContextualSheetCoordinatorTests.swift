@@ -894,7 +894,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testImmediateUTINotifyPageChangedSendsAttachAffordanceWhenSheetDismissedButRetained() async {
+    func testImmediateUTINotifyPageChangedSendsFrontendSignalWhenSheetDismissedButRetained() async {
         // Given - immediate UTI keeps a persistent host while the sheet is dismissed
         mockUnifiedToggleInputFeature.isAvailable = true
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
@@ -918,8 +918,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         // When - navigate while the immediate UTI sheet is dismissed
         await sut.notifyPageChanged()
 
-        // Then - remember that the next sheet presentation should offer manual attach
-        XCTAssertTrue(receivedTargets?.contains(.utiAttachAffordance) == true)
+        // Then - the navigation still signals the frontend, and does not touch the chip
+        XCTAssertTrue(receivedTargets?.contains(.frontendBridge) == true)
         XCTAssertTrue(receivedTargets?.contains(.utiChip) == false)
     }
 

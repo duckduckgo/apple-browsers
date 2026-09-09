@@ -62,7 +62,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     private var originatingURL: URL?
     /// Presentation-only pending/delivered flag; set solely by `setAttached`, never decided by the chip.
     private var attachmentDeliveryState: PageContextAttachmentDeliveryState = .pendingSubmit
-    private var isShowingAttachAffordance = false
     private var isLoading = false
     private var cancellables = Set<AnyCancellable>()
 
@@ -89,7 +88,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     }
 
     func setAttached(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
-        isShowingAttachAffordance = false
         isLoading = false
         suggestedContext = nil
         updateAttachment(context, deliveryState: deliveryState)
@@ -116,7 +114,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     }
 
     func clearAttached() {
-        isShowingAttachAffordance = false
         isLoading = false
         clearAttachmentState()
         Logger.contextualUTI.debug("PageContextChip detached")
@@ -133,16 +130,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     func endLoading() {
         guard isLoading else { return }
         isLoading = false
-        recompute()
-    }
-
-    func showAttachAffordance() {
-        guard pendingAttachedContextData == nil else {
-            Logger.contextualUTI.debug("PageContextChip keeping pending attachment instead of showing attach affordance")
-            return
-        }
-        isShowingAttachAffordance = true
-        Logger.contextualUTI.debug("PageContextChip showing attach affordance")
         recompute()
     }
 
@@ -220,6 +207,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
             case nil: return "none"
             }
         }()
-        Logger.contextualUTI.debug("ChipViewModel recompute → \(branch, privacy: .public) state=\(stateDesc, privacy: .public) affordance=\(self.isShowingAttachAffordance, privacy: .public) auto=\(self.isAutoAttachEnabled(), privacy: .public) attached=\(self.attachedContext != nil, privacy: .public) attachedURL=\(self.attachedURL?.shortDescription ?? "nil", privacy: .private) originatingURL=\(self.originatingURL?.shortDescription ?? "nil", privacy: .private)")
+        Logger.contextualUTI.debug("ChipViewModel recompute → \(branch, privacy: .public) state=\(stateDesc, privacy: .public) auto=\(self.isAutoAttachEnabled(), privacy: .public) attached=\(self.attachedContext != nil, privacy: .public) attachedURL=\(self.attachedURL?.shortDescription ?? "nil", privacy: .private) originatingURL=\(self.originatingURL?.shortDescription ?? "nil", privacy: .private)")
     }
 }

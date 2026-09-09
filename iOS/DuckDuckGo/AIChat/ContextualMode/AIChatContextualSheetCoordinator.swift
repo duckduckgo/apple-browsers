@@ -968,10 +968,6 @@ private extension AIChatContextualSheetCoordinator {
             deliverToUTIChip(context, host: host)
         }
 
-        if let host = persistentUTIHost, targets.contains(.utiAttachAffordance) {
-            host.showAttachAffordance()
-        }
-
         if let host = persistentUTIHost, targets.contains(.utiSuggestedContext) {
             if let suggestion = sessionState.suggestedContext {
                 host.setSuggestedContext(suggestion)

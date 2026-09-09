@@ -146,36 +146,6 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqual(sut.attachedContext?.title, "Cat")
     }
 
-    func test_showAttachAffordance_preservesDeliveredAttachmentAndDrawsNothing() {
-        let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
-        originatingURL.send(URL(string: attachedUrl))
-        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl), initialAttachmentDeliveryState: .delivered)
-        XCTAssertNil(sut.state)
-
-        sut.showAttachAffordance()
-
-        XCTAssertNil(sut.state)
-        XCTAssertNil(sut.pendingAttachedContextData)
-
-        sut.tapToAttach()
-        XCTAssertEqual(attachCalls, 1)
-
-        sut.setAttached(makeContext(title: "Dog", url: "https://en.wikipedia.org/wiki/Dog"))
-        XCTAssertEqualState(sut.state, .attached(title: "Dog", favicon: nil))
-        XCTAssertEqual(sut.pendingAttachedContextData?.url, "https://en.wikipedia.org/wiki/Dog")
-    }
-
-    func test_showAttachAffordance_doesNotOverridePendingAttachment() {
-        let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
-        originatingURL.send(URL(string: attachedUrl))
-        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl), initialAttachmentDeliveryState: .pendingSubmit)
-
-        sut.showAttachAffordance()
-
-        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
-        XCTAssertEqual(sut.pendingAttachedContextData?.url, attachedUrl)
-    }
-
     func test_autoAttachOn_navigationAway_preservesAttachment() {
         autoAttachEnabled = true
         let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
@@ -554,17 +524,6 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqual(removeCalls, 0)
         XCTAssertNil(sut.state)
         XCTAssertNil(sut.suggestedContext)
-    }
-
-    func test_showAttachAffordance_doesNotClearASuggestion() {
-        let url = "https://en.wikipedia.org/wiki/Tokamak"
-        originatingURL.send(URL(string: url))
-        makeSUT()
-        sut.setSuggested(makeContext(title: "Tokamak", url: url))
-
-        sut.showAttachAffordance()
-
-        XCTAssertEqualState(sut.state, .suggested(title: "Tokamak", favicon: nil))
     }
 
     func test_beginLoading_takesPrecedenceOverASuggestion() {

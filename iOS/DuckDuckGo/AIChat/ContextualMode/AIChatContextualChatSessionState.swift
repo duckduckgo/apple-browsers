@@ -96,8 +96,7 @@ struct PageContextDeliveryTargets: OptionSet {
 
     static let utiChip = PageContextDeliveryTargets(rawValue: 1 << 0)
     static let frontendBridge = PageContextDeliveryTargets(rawValue: 1 << 1)
-    static let utiAttachAffordance = PageContextDeliveryTargets(rawValue: 1 << 2)
-    static let utiSuggestedContext = PageContextDeliveryTargets(rawValue: 1 << 3)
+    static let utiSuggestedContext = PageContextDeliveryTargets(rawValue: 1 << 2)
 }
 
 // MARK: - Session State
@@ -538,16 +537,8 @@ final class AIChatContextualChatSessionState {
     /// Used when auto-collect is OFF, so the FE can show the "Ask about page"
     /// button for the new page.
     func notifyFrontendOfMultiContextNavigation() {
-        var targets: PageContextDeliveryTargets = []
-        if shouldDeliverToFrontendBridge(nil) {
-            targets.insert(.frontendBridge)
-        }
-        if shouldOfferPageContext() {
-            targets.insert(.utiAttachAffordance)
-        }
-
-        guard !targets.isEmpty else { return }
-        emit(.deliverPageContext(nil, targets: targets))
+        guard shouldDeliverToFrontendBridge(nil) else { return }
+        emit(.deliverPageContext(nil, targets: .frontendBridge))
         Logger.aiChat.debug("[SessionState] Sent null context navigation signal")
     }
 

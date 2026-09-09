@@ -207,10 +207,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.clearRejectionBanner()
     }
 
-    func showAttachAffordance() {
-        chipViewModel.showAttachAffordance()
-    }
-
     /// Routes UTI-submitted prompts through the contextual chat's JS message channel (same as the FE).
     /// Also wires the user script's page-context provider so every prompt payload carries whatever
     /// the chip says is currently attached — no duplicate state, single source of truth.

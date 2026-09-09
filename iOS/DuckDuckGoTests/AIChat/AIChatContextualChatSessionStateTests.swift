@@ -1381,14 +1381,14 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
             XCTAssertNil(contextData)
             XCTAssertEqual(targets, .frontendBridge)
             XCTAssertFalse(targets.contains(.utiChip))
-            XCTAssertFalse(targets.contains(.utiAttachAffordance))
         } else {
             XCTFail("Expected deliverPageContext effect with nil")
         }
     }
 
-    func testNotifyFrontendOfNavigationEmitsUTIAttachAffordanceWhenUTIActive() {
-        // Given - chat with initial context, UTI active
+    func testNotifyFrontendOfNavigationEmitsFrontendOnlyWhenUTIActive() {
+        // Given - chat with initial context, UTI active. The native offer rides its own
+        // .utiSuggestedContext path, so this signal carries only the frontend bridge.
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateUnifiedToggleInputActive(true)
         sessionState.updateContext(makeTestContext(title: "Page A"))
@@ -1412,11 +1412,10 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         waitForExpectations(timeout: 1.0)
 
-        // Then - nil is a multi-context navigation affordance, not a detach
+        // Then - nil is a multi-context navigation signal, not a detach
         if case .deliverPageContext(let contextData, let targets) = receivedEffect {
             XCTAssertNil(contextData)
-            XCTAssertTrue(targets.contains(.frontendBridge))
-            XCTAssertTrue(targets.contains(.utiAttachAffordance))
+            XCTAssertEqual(targets, .frontendBridge)
             XCTAssertFalse(targets.contains(.utiChip))
         } else {
             XCTFail("Expected deliverPageContext effect with nil")

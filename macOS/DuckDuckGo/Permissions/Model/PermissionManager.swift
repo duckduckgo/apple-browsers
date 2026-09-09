@@ -46,7 +46,7 @@ protocol PermissionManagerProtocol: AnyObject {
     /// `nil` when nothing is persisted. Use only for cleanup or migration paths that genuinely need
     /// to know the on-disk state; everything else should call `permission(forDomain:permissionType:)`.
     func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision?
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType)
+    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType, lastModified: Date)
 
     func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
     func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
@@ -55,6 +55,12 @@ protocol PermissionManagerProtocol: AnyObject {
     func removePermission(forDomain domain: String, permissionType: PermissionType)
 
     var persistedPermissionTypes: Set<PermissionType> { get }
+}
+
+extension PermissionManagerProtocol {
+    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
+        setPermission(decision, forDomain: domain, permissionType: permissionType, lastModified: Date())
+    }
 }
 
 final class PermissionManager: PermissionManagerProtocol {
@@ -137,7 +143,12 @@ final class PermissionManager: PermissionManagerProtocol {
         return Array(domainPermissions.keys)
     }
 
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
+    func setPermission(
+        _ decision: PersistedPermissionDecision,
+        forDomain domain: String,
+        permissionType: PermissionType,
+        lastModified: Date = Date()
+    ) {
 
         let storedPermission: StoredPermission
         let domain = domain.droppingWwwPrefix()
@@ -153,11 +164,17 @@ final class PermissionManager: PermissionManagerProtocol {
         }
         if var oldValue = permissions[domain]?[permissionType] {
             oldValue.decision = decision
+            oldValue.lastModified = lastModified
             storedPermission = oldValue
-            store.update(objectWithId: oldValue.id, decision: decision)
+            store.update(objectWithId: oldValue.id, decision: decision, lastModified: lastModified)
         } else {
             do {
-                storedPermission = try store.add(domain: domain, permissionType: permissionType, decision: decision)
+                storedPermission = try store.add(
+                    domain: domain,
+                    permissionType: permissionType,
+                    decision: decision,
+                    lastModified: lastModified
+                )
             } catch {
                 Logger.general.error("PermissionStore: Failed to store permission")
                 return
@@ -247,7 +264,8 @@ extension PermissionManager: PermissionManagerDebugging {
                                         permissionType: row.permissionType,
                                         allow: row.allow,
                                         isRemoved: row.isRemoved,
-                                        effectiveDecision: effectiveDecision)
+                                        effectiveDecision: effectiveDecision,
+                                        lastModified: row.lastModified)
         }
     }
 

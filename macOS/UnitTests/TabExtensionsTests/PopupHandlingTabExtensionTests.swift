@@ -2142,7 +2142,10 @@ class TestPermissionManager: PermissionManagerProtocol {
         return persistedPermissions[domain]?[permissionType]
     }
 
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
+    func setPermission(_ decision: PersistedPermissionDecision,
+                       forDomain domain: String,
+                       permissionType: PermissionType,
+                       lastModified: Date = Date()) {
         if persistedPermissions[domain] == nil {
             persistedPermissions[domain] = [:]
         }

@@ -103,6 +103,26 @@ final class VPNSettingsSessionHealthTests: XCTestCase {
         XCTAssertEqual(values, [true, false])
     }
 
+    func testWhenDebugRolloverIsChangedThenPersistenceRespectsBuildConfiguration() {
+        XCTAssertFalse(settings.isSessionHealthDebugRolloverEnabled)
+        settings.isSessionHealthDebugRolloverEnabled = true
+#if DEBUG
+        XCTAssertTrue(VPNSettings(defaults: defaults).isSessionHealthDebugRolloverEnabled)
+#else
+        XCTAssertFalse(VPNSettings(defaults: defaults).isSessionHealthDebugRolloverEnabled)
+#endif
+        settings.isSessionHealthDebugRolloverEnabled = false
+        XCTAssertFalse(VPNSettings(defaults: defaults).isSessionHealthDebugRolloverEnabled)
+    }
+
+    func testWhenSettingsAreResetThenDebugRolloverIsDisabled() {
+        settings.isSessionHealthDebugRolloverEnabled = true
+        settings.resetToDefaults()
+
+        XCTAssertFalse(settings.isSessionHealthDebugRolloverEnabled)
+        XCTAssertFalse(VPNSettings(defaults: defaults).isSessionHealthDebugRolloverEnabled)
+    }
+
     // MARK: - Startup snapshots
 
     func testSnapshotEncodingPreservesExplicitEnablement() throws {

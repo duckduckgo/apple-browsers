@@ -19,7 +19,7 @@
 import Foundation
 import NetworkExtension
 import XCTest
-@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 @testable import VPN
 
 final class VPNSessionHealthInstrumentationTests: XCTestCase {
@@ -137,7 +137,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         instrumentation.connectionTestCompleted(.disconnected(failureCount: 1))
         instrumentation.handshakeCheckCompleted(.failureDetected)
         instrumentation.failureRecoveryStepChanged(.started)
-        instrumentation.leakCheckCompleted(leakDetected: true)
+        instrumentation.leakDetected()
         instrumentation.deviceWentToSleep()
         instrumentation.snoozeStarted()
         instrumentation.tunnelReconfigurationStarted()
@@ -157,7 +157,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertEqual(try latestEvent().lastObservedAt, inputs.date)
 
         inputs.date = hourStart.addingTimeInterval(630)
-        instrumentation.leakCheckCompleted(leakDetected: true)
+        instrumentation.leakDetected()
 
         XCTAssertEqual(try latestEvent().lastObservedAt, inputs.date)
         XCTAssertTrue(try latestEvent().leakDetected)
@@ -211,7 +211,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
 
         XCTAssertEqual(sleepEvent.outcome, .success)
         XCTAssertEqual(snoozeEvent.outcome, .success)
-        XCTAssertEqual(reconfigurationEvent.outcome, .failure(.routingOutageAtUserDisable))
+        XCTAssertEqual(reconfigurationEvent.outcome, .failure(.routingOutageAtUserStop))
     }
 
     // MARK: - Hourly rollover
@@ -264,6 +264,37 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertEqual(try latestEvent().startedAt, hourStart.addingTimeInterval(10_800))
         XCTAssertEqual(try latestEvent().totalOutageDuration, 0)
         XCTAssertFalse(try latestEvent().isPaused)
+    }
+
+    func testWhenDebugSettingChangesThenRolloverScheduleIsCapturedAtEachPhysicalStart() throws {
+        // Startup settings may arrive after instrumentation construction.
+        inputs.debugRolloverEnabled = true
+        startMonitoredSession()
+        inputs.debugRolloverEnabled = false
+        inputs.date = hourStart.addingTimeInterval(720)
+        instrumentation.tunnelStarted(reason: .reconnected)
+
+#if DEBUG
+        XCTAssertEqual(wideEvent.started.count, 2)
+        XCTAssertEqual(try completedEvent().endedAt, inputs.date)
+        XCTAssertEqual(try latestEvent().startReason, .rollover)
+#else
+        XCTAssertEqual(wideEvent.started.count, 1)
+        XCTAssertTrue(wideEvent.completions.isEmpty)
+#endif
+
+        instrumentation.tunnelStopped(reason: .userInitiated)
+        startMonitoredSession()
+        let startedCount = wideEvent.started.count
+        inputs.debugRolloverEnabled = true
+        inputs.date = hourStart.addingTimeInterval(960)
+        instrumentation.connectionTestCompleted(.connected)
+        XCTAssertEqual(wideEvent.started.count, startedCount)
+
+        inputs.date = hourStart.addingTimeInterval(3_600)
+        instrumentation.connectionTestCompleted(.connected)
+        XCTAssertEqual(wideEvent.started.count, startedCount + 1)
+        XCTAssertEqual(try latestEvent().startedAt, inputs.date)
     }
 
     // MARK: - Stopping and orphan recovery
@@ -375,7 +406,8 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         return DefaultVPNSessionHealthInstrumentation(
             wideEvent: wideEvent,
             extensionType: .system,
-            isEnabled: { inputs.enabled },
+            isTelemetryEnabled: { inputs.enabled },
+            isDebugRolloverEnabled: { inputs.debugRolloverEnabled },
             now: { inputs.date })
     }
 
@@ -401,6 +433,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
 private final class InstrumentationSettings: @unchecked Sendable {
     var date: Date
     var enabled = true
+    var debugRolloverEnabled = false
 
     init(date: Date) {
         self.date = date

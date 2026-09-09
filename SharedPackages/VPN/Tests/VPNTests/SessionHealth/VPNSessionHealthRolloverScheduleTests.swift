@@ -64,4 +64,25 @@ final class VPNSessionHealthRolloverScheduleTests: XCTestCase {
         XCTAssertEqual(result.endedAt, midnight)
         XCTAssertEqual(result.startedAt, midnight)
     }
+
+    func testWhenDebugRolloverIsEnabledThenBoundariesRespectBuildConfiguration() throws {
+        let schedule = VPNSessionHealthRolloverSchedule(isDebugRolloverEnabled: true)
+        let start = midnight.addingTimeInterval(60)
+#if DEBUG
+        XCTAssertNil(schedule.rolloverDates(from: start, to: midnight.addingTimeInterval(239)))
+        let boundary = try XCTUnwrap(schedule.rolloverDates(from: start, to: midnight.addingTimeInterval(240)))
+        XCTAssertEqual(boundary.endedAt, midnight.addingTimeInterval(240))
+        XCTAssertEqual(boundary.startedAt, boundary.endedAt)
+        let delayed = try XCTUnwrap(schedule.rolloverDates(from: start, to: midnight.addingTimeInterval(750)))
+        XCTAssertEqual(delayed.endedAt, midnight.addingTimeInterval(240))
+        XCTAssertEqual(delayed.startedAt, midnight.addingTimeInterval(720))
+#else
+        XCTAssertNil(schedule.rolloverDates(from: start, to: midnight.addingTimeInterval(240)))
+        let boundary = try XCTUnwrap(schedule.rolloverDates(from: start, to: midnight.addingTimeInterval(3_600)))
+        XCTAssertEqual(boundary.endedAt, midnight.addingTimeInterval(3_600))
+        XCTAssertEqual(boundary.startedAt, boundary.endedAt)
+#endif
+        XCTAssertNil(schedule.rolloverDates(from: start, to: start))
+        XCTAssertNil(schedule.rolloverDates(from: start, to: midnight))
+    }
 }

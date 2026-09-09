@@ -18,7 +18,7 @@
 
 import Foundation
 import XCTest
-import PixelKit
+import WideEvent
 @testable import VPN
 
 final class VPNSessionHealthWideEventDataTests: XCTestCase {
@@ -43,8 +43,8 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
             .markingStopped(.stoppedByUser, at: timestamp(after: 60))
         let parameters = data.jsonParameters()
 
-        XCTAssertEqual(parameters["feature.data.ext.segment_start_reason"] as? String, "physical_tunnel_manual_start")
-        XCTAssertEqual(parameters["feature.data.ext.segment_end_reason"] as? String, "stopped_by_user")
+        XCTAssertEqual(parameters["feature.data.ext.start_reason"] as? String, "physical_tunnel_manual_start")
+        XCTAssertEqual(parameters["feature.data.ext.end_reason"] as? String, "stopped_by_user")
         XCTAssertEqual(parameters["feature.data.ext.extension_type"] as? String, "app")
         XCTAssertEqual(parameters["feature.data.ext.monitoring_coverage"] as? String, "full")
         XCTAssertEqual(parameters["feature.data.ext.connection_tester_failure_seen"] as? Bool, false)
@@ -124,7 +124,8 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
             .applyingHandshakeCheckResult(.failureDetected, at: timestamp(after: 125))
             .markingStopped(.stoppedByUser, at: timestamp(after: 130))
 
-        XCTAssertEqual(data.outcome, .failure(.routingOutageAtUserDisable))
+        XCTAssertEqual(data.outcome, .failure(.routingOutageAtUserStop))
+        XCTAssertEqual(data.jsonParameters()["feature.data.ext.failure_reason"] as? String, "routing_outage_at_user_stop")
         XCTAssertEqual(data.jsonParameters()["feature.data.ext.stopped_by_user_with_active_failure"] as? Bool, true)
     }
 
@@ -275,8 +276,8 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
 
     func testLeakIsStickyDiagnosticAndDoesNotFailSession() {
         let data = makeMonitoredEvent()
-            .applyingLeakCheckResult(leakDetected: true)
-            .applyingLeakCheckResult(leakDetected: false)
+            .markingLeakDetected()
+            .markingLeakDetected()
             .markingStoppedForRollover(at: sessionStart)
 
         XCTAssertEqual(data.jsonParameters()["feature.data.ext.ip_leak_detected"] as? Bool, true)
@@ -297,12 +298,13 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
     func testRolloverCarriesActiveFailuresAndResetsSegmentDiagnostics() {
         let previous = makeEventWithOutage(failedChecks: 8)
             .applyingHandshakeCheckResult(.failureDetected, at: timestamp(after: 130))
-            .applyingLeakCheckResult(leakDetected: true)
+            .markingLeakDetected()
             .applyingFailureRecoveryStep(.failed(NSError(domain: "test", code: 1)), at: timestamp(after: 140))
         let next = previous.makingNextEventAfterRollover(at: timestamp(after: 3_600), globalData: WideEventGlobalData())
 
         XCTAssertNotEqual(next.globalData.id, previous.globalData.id)
-        XCTAssertEqual(next.startReason, .rolloverOnTheHour)
+        XCTAssertEqual(next.startReason, .rollover)
+        XCTAssertEqual(next.jsonParameters()["feature.data.ext.start_reason"] as? String, "rollover")
         XCTAssertEqual(next.connectionTestOutageCount, 1)
         XCTAssertTrue(next.extendedRoutingOutageDetected)
         XCTAssertTrue(next.staleHandshakeDetected)

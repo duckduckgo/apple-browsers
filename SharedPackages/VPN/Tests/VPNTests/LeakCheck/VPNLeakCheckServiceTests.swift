@@ -62,7 +62,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         return { info }
     }
 
-    func testClassificationCallbackReportsConfirmedLeak() async {
+    func testWhenLeakIsConfirmedThenLeakCallbackIsCalled() async {
         let classified = expectation(description: "Leak classification")
         let service = VPNLeakCheckService(
             configuration: .default,
@@ -71,8 +71,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             httpClient: MockLeakCheckHTTPClient(ipv4: "8.8.8.8", ipv6Error: URLError(.cannotFindHost)),
             stunClient: MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost)),
             wideEvent: MockWideEventManager(),
-            onClassified: { leakDetected in
-                XCTAssertTrue(leakDetected)
+            onLeakDetected: {
                 classified.fulfill()
             }
         )
@@ -80,8 +79,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
         await fulfillment(of: [classified], timeout: 1)
     }
 
-    func testClassificationCallbackReportsNoLeakWhenProbesMatch() async {
-        let classified = expectation(description: "No leak classification")
+    func testWhenProbesMatchThenLeakCallbackIsNotCalled() async {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfoProvider(),
@@ -89,16 +87,25 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             httpClient: MockLeakCheckHTTPClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost)),
             stunClient: MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost)),
             wideEvent: MockWideEventManager(),
-            onClassified: { leakDetected in
-                XCTAssertFalse(leakDetected)
-                classified.fulfill()
-            }
+            onLeakDetected: { XCTFail("Matching probes must not report a leak") }
         )
         await service.runCheck(trigger: .tunnelStart)
-        await fulfillment(of: [classified], timeout: 1)
     }
 
-    func testSkippedCheckDoesNotCallClassificationCallback() async {
+    func testWhenProbesFailThenLeakCallbackIsNotCalled() async {
+        let service = VPNLeakCheckService(
+            configuration: .default,
+            egressInfo: makeEgressInfoProvider(),
+            tunnelInterface: { .resolved(Self.systemInterface) },
+            httpClient: MockLeakCheckHTTPClient(ipv4Error: URLError(.timedOut), ipv6Error: URLError(.cannotFindHost)),
+            stunClient: MockLeakCheckSTUNClient(ipv4Error: URLError(.timedOut), ipv6Error: URLError(.cannotFindHost)),
+            wideEvent: MockWideEventManager(),
+            onLeakDetected: { XCTFail("Failed probes must not report a leak") })
+
+        await service.runCheck(trigger: .tunnelStart)
+    }
+
+    func testWhenCheckIsSkippedThenLeakCallbackIsNotCalled() async {
         let service = VPNLeakCheckService(
             configuration: .default,
             egressInfo: makeEgressInfoProvider(),
@@ -106,7 +113,7 @@ final class VPNLeakCheckServiceTests: XCTestCase {
             httpClient: MockLeakCheckHTTPClient(ipv4: "8.8.8.8", ipv6Error: URLError(.cannotFindHost)),
             stunClient: MockLeakCheckSTUNClient(ipv4: "1.2.3.4", ipv6Error: URLError(.cannotFindHost)),
             wideEvent: MockWideEventManager(),
-            onClassified: { _ in XCTFail("Skipped checks must not report a classification") }
+            onLeakDetected: { XCTFail("Skipped checks must not report a leak") }
         )
         await service.runCheck(trigger: .tunnelStart)
     }

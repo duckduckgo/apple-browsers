@@ -79,11 +79,11 @@ final class WebsitePermissionsViewModel: ObservableObject {
     private func isOrderedBefore(_ first: WebsitePermissionEntry, _ second: WebsitePermissionEntry) -> Bool {
         if first.lastModified != second.lastModified {
             return (first.lastModified ?? .distantPast) > (second.lastModified ?? .distantPast)
-        }
-        if first.domain != second.domain {
+        } else if first.domain != second.domain {
             return first.domain < second.domain
+        } else {
+            return first.permissionType.rawValue < second.permissionType.rawValue
         }
-        return first.permissionType.rawValue < second.permissionType.rawValue
     }
 
     private func makeRecentRow(from entry: WebsitePermissionEntry) -> WebsitePermissionsViewState.RecentRow {

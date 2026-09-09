@@ -171,25 +171,6 @@ final class StatisticsUserDefaultsTests: XCTestCase {
         XCTAssertNil(otherStore.atb)
     }
 
-    func testWhenAtbIsMissingThenAtbWithVariantReturnsNil() {
-        testee.variant = Constants.variant
-
-        XCTAssertNil(testee.atbWithVariant)
-    }
-
-    func testWhenVariantIsMissingThenAtbWithVariantReturnsAtb() {
-        testee.atb = Constants.atb
-
-        XCTAssertEqual(testee.atbWithVariant, Constants.atb)
-    }
-
-    func testWhenAtbAndVariantExistThenAtbWithVariantReturnsCombinedValue() {
-        testee.atb = Constants.atb
-        testee.variant = Constants.variant
-
-        XCTAssertEqual(testee.atbWithVariant, Constants.atb + Constants.variant)
-    }
-
     private func removePersistentDomains() {
         UserDefaults.standard.removePersistentDomain(forName: Constants.suiteName)
         UserDefaults.standard.removePersistentDomain(forName: Constants.otherSuiteName)

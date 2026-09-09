@@ -105,9 +105,4 @@ public class StatisticsUserDefaults {
             userDefaults?.setValue(newValue, forKey: Keys.duckAIRetentionAtb)
         }
     }
-
-    public var atbWithVariant: String? {
-        guard let atb else { return nil }
-        return atb + (variant ?? "")
-    }
 }

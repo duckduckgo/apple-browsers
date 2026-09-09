@@ -14,7 +14,7 @@
         "parameters": ["appVersion"]
     },
     "permission_dialog_click": {
-        "description": "Fires when the user selects an option in the on-site permission dialog.",
+        "description": "Fires when the user selects an option in the on-site permission dialog or dismisses it.",
         "owners": ["bkunat"],
         "triggers": ["other"],
         "suffixes": [
@@ -23,8 +23,8 @@
                 "enum": ["camera", "microphone", "camera_and_microphone", "geolocation"]
             },
             {
-                "description": "Option selected in the on-site permission dialog.",
-                "enum": ["allow_once", "allow_always", "never"]
+                "description": "Option selected in the on-site permission dialog, or dismissed for a one-time denial.",
+                "enum": ["allow_once", "allow_always", "never", "dismissed"]
             },
             "platform",
             "form_factor"

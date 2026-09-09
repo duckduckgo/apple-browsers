@@ -1360,6 +1360,41 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         }
     }
 
+    func testDismissingPermissionDialogDeniesWithoutPersistingOrPromptingAgain() async throws {
+        var events = [SitePermissionsEvent]()
+        let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+        let promptPresented = expectation(description: "Site prompt presented")
+        let sut = makeSUT(store: store, eventHandler: { event in
+            events.append(event)
+            if event == .permissionDialogImpression(type: .camera) {
+                promptPresented.fulfill()
+            }
+        })
+        defer { sut.closeSitePermissions() }
+
+        let request = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+        await fulfillment(of: [promptPresented], timeout: 1)
+        let dialog = try XCTUnwrap(sut.children.compactMap {
+            ($0 as? UIHostingController<SitePermissionDialogView>)?.rootView
+        }.first)
+
+        dialog.onAction(.dismissed)
+
+        let decision = await request.value
+        XCTAssertEqual(decision, .deny)
+        XCTAssertFalse(sut.children.contains { $0 is UIHostingController<SitePermissionDialogView> })
+        XCTAssertFalse(sut.isSitePermissionsManagementAvailable)
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
+        XCTAssertTrue(store.permissions(for: site).isEmpty)
+
+        let repeatedDecision = await requestPermissionThroughBridge(on: sut, originHost: "top-level.example", captureType: .camera)
+        XCTAssertEqual(repeatedDecision, .deny)
+        XCTAssertEqual(events, [
+            .permissionDialogImpression(type: .camera),
+            .permissionDialogClick(type: .camera, selection: .dismissed)
+        ])
+    }
+
     func testPermissionDialogFiresImpressionAndClickEventsAndRoutesSelectedAction() async throws {
         var events = [SitePermissionsEvent]()
         var decisions = [WKPermissionDecision]()

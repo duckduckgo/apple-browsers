@@ -616,6 +616,9 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
             respond(.denyOnce)
         }, completion: { firstResolution = $0 })
         XCTAssertEqual(firstResolution, .deny(systemBlocks: []))
+        XCTAssertEqual(harness.coordinator.queryState(for: .camera, context: harness.context), .denied)
+        XCTAssertNil(harness.store.decision(for: .camera, at: harness.site))
+        XCTAssertFalse(harness.coordinator.managementSnapshot(for: harness.site).showsMenuEntry)
 
         var promptCount = 0
         var repeatedResolution: SitePermissionResolution?
@@ -626,6 +629,7 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(promptCount, 0)
 
         harness.coordinator.pageDidChange(.reload)
+        XCTAssertEqual(harness.coordinator.queryState(for: .camera, context: harness.context), .prompt)
         harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
             promptCount += 1
         }, completion: { _ in })

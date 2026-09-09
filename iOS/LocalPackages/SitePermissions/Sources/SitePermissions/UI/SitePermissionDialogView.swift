@@ -54,7 +54,8 @@ public struct SitePermissionDialogView: View {
 
     public var body: some View {
         PermissionDialogCard(width: Constants.cardWidth,
-                             accessibilityIdentifier: "SitePermissions.Dialog") {
+                             accessibilityIdentifier: "SitePermissions.Dialog",
+                             onDismiss: { onAction(.dismissed) }) {
             VStack(spacing: Constants.contentSpacing) {
                 VStack(alignment: .leading, spacing: Constants.headerSpacing) {
                     HStack(spacing: Constants.iconSpacing) {
@@ -168,6 +169,8 @@ public struct SitePermissionDialogView: View {
             return "SitePermissions.Dialog.AllowWhileUsingSite"
         case .neverAllow:
             return "SitePermissions.Dialog.NeverAllow"
+        case .dismissed:
+            return "SitePermissions.Dialog.Dismissed"
         }
     }
 }

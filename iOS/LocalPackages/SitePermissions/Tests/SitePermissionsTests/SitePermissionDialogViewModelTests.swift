@@ -73,10 +73,10 @@ final class SitePermissionDialogViewModelTests: XCTestCase {
     }
 
     func testWhenDialogActionsAreSelectedThenDecisionsAndPixelSelectionsMatch() {
-        let actions: [SitePermissionDialogAction] = [.allowOnce, .allowWhileUsingSite, .neverAllow]
+        let actions: [SitePermissionDialogAction] = [.allowOnce, .allowWhileUsingSite, .neverAllow, .dismissed]
 
-        XCTAssertEqual(actions.map(\.promptDecision), [.allowOnce, .allowWhileUsingSite, .neverAllow])
-        XCTAssertEqual(actions.map(\.pixelDialogSelection), [.allowOnce, .allowAlways, .never])
+        XCTAssertEqual(actions.map(\.promptDecision), [.allowOnce, .allowWhileUsingSite, .neverAllow, .denyOnce])
+        XCTAssertEqual(actions.map(\.pixelDialogSelection), [.allowOnce, .allowAlways, .never, .dismissed])
     }
 
     private func prompt(for permissionTypes: Set<SitePermissionType>) -> SitePermissionPrompt {

@@ -46,7 +46,8 @@ public struct PermissionReminderDialogView: View {
 
     public var body: some View {
         PermissionDialogCard(width: Constants.cardWidth,
-                             accessibilityIdentifier: "SitePermissions.Reminder") {
+                             accessibilityIdentifier: "SitePermissions.Reminder",
+                             onDismiss: { onAction(.cancel) }) {
             VStack(spacing: Constants.contentSpacing) {
                 VStack(alignment: .leading, spacing: Constants.copySpacing) {
                     Text(viewModel.title)

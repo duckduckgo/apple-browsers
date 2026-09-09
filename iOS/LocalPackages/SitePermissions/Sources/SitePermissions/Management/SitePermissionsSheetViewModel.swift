@@ -30,7 +30,6 @@ public enum SitePermissionsSheetState: Equatable, Sendable {
 
 public enum SitePermissionPickerOption: String, Hashable, Sendable {
     case askEachTime
-    case allowThisTime
     case alwaysAllow
     case neverAllow
 
@@ -38,7 +37,7 @@ public enum SitePermissionPickerOption: String, Hashable, Sendable {
         switch self {
         case .askEachTime:
             return .ask
-        case .allowThisTime, .alwaysAllow:
+        case .alwaysAllow:
             return .allow
         case .neverAllow:
             return .deny
@@ -209,14 +208,12 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
                 store.setPersistentDecision(.allow, for: permissionType, at: site)
             case .neverAllow:
                 store.setPersistentDecision(.deny, for: permissionType, at: site)
-            case .allowThisTime:
-                return
             }
         }
 
         storedPermissions[permissionType] = option.decision
         ephemeralPermissionTypes.remove(permissionType)
-        if option == .alwaysAllow || option == .allowThisTime {
+        if option == .alwaysAllow {
             siteAllowedPermissionTypesThisVisit.insert(permissionType)
         } else {
             siteAllowedPermissionTypesThisVisit.remove(permissionType)
@@ -281,11 +278,8 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
     private func makeRow(for permissionType: SitePermissionType) -> Row {
         let decision = storedPermissions[permissionType] ?? .ask
         let captureState = captureStates[permissionType] ?? .inactive
-        let hasEphemeralGrant = ephemeralPermissionTypes.contains(permissionType) && decision == .ask
-        let options: [SitePermissionPickerOption] = hasEphemeralGrant
-            ? [.allowThisTime, .alwaysAllow, .neverAllow]
-            : [.askEachTime, .alwaysAllow, .neverAllow]
-        let selectedOption = hasEphemeralGrant ? SitePermissionPickerOption.allowThisTime : decision.pickerOption
+        let options: [SitePermissionPickerOption] = [.askEachTime, .alwaysAllow, .neverAllow]
+        let selectedOption = decision.pickerOption
         let stateText = UserText.PermissionManagement.title(for: selectedOption)
         let accessibilityValue: String
         switch captureState {

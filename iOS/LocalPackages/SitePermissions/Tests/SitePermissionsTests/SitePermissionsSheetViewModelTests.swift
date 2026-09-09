@@ -84,11 +84,12 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         _ = SitePermissionsSheetView(viewModel: reminderOnly).body
     }
 
-    func testPickerUsesThreeNormalOptionsAndReplacesAskWithCheckedAllowThisTimeForEphemeralGrant() throws {
+    func testWhenEphemeralGrantIsActiveThenPickerShowsAskEachTimeAndInUseState() throws {
         let harness = try Harness()
         let sut = harness.makeViewModel(snapshot: harness.snapshot(
             stored: [.location: .ask],
-            ephemeral: [.microphone]
+            ephemeral: [.microphone],
+            captureStates: [.microphone: .active]
         ))
 
         let location = try XCTUnwrap(sut.rows.first { $0.permissionType == .location })
@@ -96,9 +97,11 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         XCTAssertEqual(location.selectedOption, .askEachTime)
 
         let microphone = try XCTUnwrap(sut.rows.first { $0.permissionType == .microphone })
-        XCTAssertEqual(microphone.options, [.allowThisTime, .alwaysAllow, .neverAllow])
-        XCTAssertEqual(microphone.selectedOption, .allowThisTime)
-        XCTAssertFalse(microphone.options.contains(.askEachTime))
+        XCTAssertEqual(microphone.options, [.askEachTime, .alwaysAllow, .neverAllow])
+        XCTAssertEqual(microphone.selectedOption, .askEachTime)
+        XCTAssertEqual(microphone.stateText, "Ask Each Time")
+        XCTAssertEqual(microphone.iconState, .inUse)
+        XCTAssertEqual(microphone.accessibilityValue, "Ask Each Time, in use")
     }
 
     func testIconAndAccessibilityStatesCoverInactiveInUseAndPaused() throws {

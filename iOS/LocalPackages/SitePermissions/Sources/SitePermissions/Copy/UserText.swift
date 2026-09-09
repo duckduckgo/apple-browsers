@@ -176,9 +176,6 @@ enum UserText {
         static let askEachTime = NotLocalizedString("sitePermissions.management.ask-each-time", bundle: Bundle.module,
                                                    value: "Ask Each Time",
                                                    comment: "Permission picker option that asks again when a site requests access.")
-        static let allowThisTime = NotLocalizedString("sitePermissions.management.allow-this-time", bundle: Bundle.module,
-                                                     value: "Allow This Time",
-                                                     comment: "Checked permission picker option while a one-time grant is active.")
         static let alwaysAllow = NotLocalizedString("sitePermissions.management.always-allow", bundle: Bundle.module,
                                                    value: "Always Allow",
                                                    comment: "Permission picker option that always allows this site.")
@@ -219,8 +216,6 @@ enum UserText {
             switch option {
             case .askEachTime:
                 return askEachTime
-            case .allowThisTime:
-                return allowThisTime
             case .alwaysAllow:
                 return alwaysAllow
             case .neverAllow:

@@ -301,13 +301,24 @@ private extension DefaultVPNSessionHealthInstrumentation {
     }
 
     func logPixelDetails(_ data: VPNSessionHealthWideEventData) {
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: data.jsonParameters(), options: [.prettyPrinted, .sortedKeys]),
-              let details = String(data: jsonData, encoding: .utf8) else {
-            Logger.networkProtectionSessionHealth.error("Failed to serialize vpn_session_health pixel details")
-            return
-        }
+        let details = PixelDetailsFormatter.prettyPrinted(data.jsonParameters())
 
         Logger.networkProtectionSessionHealth.log("vpn_session_health pixel details:\n\(details, privacy: .public)")
+    }
+}
+
+/// Renders wide event parameters for debug logging.
+private enum PixelDetailsFormatter {
+
+    /// `isValidJSONObject` first: `data(withJSONObject:)` raises an ObjC exception Swift cannot catch.
+    static func prettyPrinted(_ parameters: [String: Encodable]) -> String {
+        guard JSONSerialization.isValidJSONObject(parameters),
+              let jsonData = try? JSONSerialization.data(withJSONObject: parameters, options: [.prettyPrinted, .sortedKeys]),
+              let json = String(data: jsonData, encoding: .utf8) else {
+            return String(describing: parameters.sorted { $0.key < $1.key })
+        }
+
+        return json
     }
 }
 

@@ -976,6 +976,7 @@ class TabViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        setSitePermissionsGeolocationActive(true)
         
         registerForResignActive()
         registerForKeyboardNotifications()
@@ -983,6 +984,7 @@ class TabViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        setSitePermissionsGeolocationActive(false)
 
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
 
@@ -2159,6 +2161,7 @@ class TabViewController: UIViewController {
     }
 
     func dismiss() {
+        setSitePermissionsGeolocationActive(false)
         privacyDashboard?.dismiss(animated: true)
         progressWorker.progressBar = nil
         chromeDelegate?.omniBar.cancelAllAnimations()

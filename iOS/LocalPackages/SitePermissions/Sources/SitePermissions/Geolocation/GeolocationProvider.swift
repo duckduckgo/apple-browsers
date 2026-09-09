@@ -46,8 +46,12 @@ public final class GeolocationProvider {
         let retainedFrame: RetainedFrame
         let options: GeolocationRequestOptions
         let completion: (GeolocationPositionResult) -> Void
-        var isAuthorized = false
+        var hasRequestedPermission = false
+        var resolution: SitePermissionResolution?
+        var isAuthorized: Bool { resolution == .grant }
         var acquisitionStartedAt: Date?
+        var remainingTimeout: TimeInterval?
+        var timeoutStartedAt: TimeInterval?
         var timeoutTask: Task<Void, Never>?
 
         init(retainedFrame: RetainedFrame,
@@ -56,6 +60,7 @@ public final class GeolocationProvider {
             self.retainedFrame = retainedFrame
             self.options = options
             self.completion = completion
+            remainingTimeout = options.timeout
         }
     }
 
@@ -66,8 +71,12 @@ public final class GeolocationProvider {
         let options: GeolocationRequestOptions
         let deliver: @MainActor (GeolocationPositionResult) -> Bool
         let deliverTerminal: @MainActor (GeolocationPositionResult) -> Bool
-        var isAuthorized = false
+        var hasRequestedPermission = false
+        var resolution: SitePermissionResolution?
+        var isAuthorized: Bool { resolution == .grant }
         var acquisitionStartedAt: Date?
+        var remainingTimeout: TimeInterval?
+        var timeoutStartedAt: TimeInterval?
         var hasDeliveredPosition = false
         var timeoutTask: Task<Void, Never>?
 
@@ -78,6 +87,7 @@ public final class GeolocationProvider {
             self.userScript = userScript
             self.retainedFrame = retainedFrame
             self.options = options
+            remainingTimeout = options.timeout
             deliver = { [weak userScript] result in
                 userScript?.send(result, toWatchWithID: requestID) == true
             }
@@ -91,6 +101,7 @@ public final class GeolocationProvider {
              deliver: @escaping @MainActor (GeolocationPositionResult) -> Bool) {
             self.retainedFrame = retainedFrame
             self.options = options
+            remainingTimeout = options.timeout
             self.deliver = deliver
             deliverTerminal = deliver
         }
@@ -112,6 +123,8 @@ public final class GeolocationProvider {
     private var queryFrames = [UUID: RetainedFrame]()
     private var locationUpdateHandlerID: UUID?
     private var latestLocation: CLLocation?
+    private var isActive = true
+    private var resumedAt: Date?
     private var isClosed = false
 
     public init(systemPermissionClient: SystemPermissionClient,
@@ -133,6 +146,37 @@ public final class GeolocationProvider {
             .filter { $0.context.tabID == tabID && $0.context.requestingFrameID == requestingFrameID }
             .compactMap(validatedContext)
             .first
+    }
+
+    /// Suspends acquisition and timeout budgets while the owning tab is not visible and active.
+    /// Watches and permission decisions survive; resuming requires a new location fix.
+    public func setIsActive(_ isActive: Bool) {
+        guard !isClosed, self.isActive != isActive else { return }
+        self.isActive = isActive
+        if isActive {
+            resumedAt = Date()
+            systemPermissionClient.refreshAuthorizationStates()
+            Array(oneShotRequests.keys).forEach(resumeOneShot)
+            Array(watches.keys).forEach(resumeWatch)
+        } else {
+            latestLocation = nil
+            let now = ProcessInfo.processInfo.systemUptime
+            for request in oneShotRequests.values {
+                request.timeoutTask?.cancel()
+                if let startedAt = request.timeoutStartedAt, let remaining = request.remainingTimeout {
+                    request.remainingTimeout = max(0, remaining - (now - startedAt))
+                }
+                request.timeoutStartedAt = nil
+            }
+            for watch in watches.values {
+                watch.timeoutTask?.cancel()
+                if let startedAt = watch.timeoutStartedAt, let remaining = watch.remainingTimeout {
+                    watch.remainingTimeout = max(0, remaining - (now - startedAt))
+                }
+                watch.timeoutStartedAt = nil
+            }
+        }
+        updateLocationSubscription()
     }
 
     /// Cancels work belonging to the current page without permanently closing the provider.
@@ -180,25 +224,33 @@ public final class GeolocationProvider {
                 continuation.resume(returning: result)
             }
             oneShotRequests[identifier] = request
-            requestPermission(retainedFrame.context) { [weak self] resolution in
-                self?.resolvePermission(forOneShot: identifier, resolution: resolution)
-            }
+            resumeOneShot(identifier)
         }
     }
 
-    private func resolvePermission(forOneShot identifier: UUID, resolution: SitePermissionResolution) {
-        guard let request = oneShotRequests[identifier] else { return }
-        guard resolution == .grant, validatedContext(request.retainedFrame) != nil else {
+    private func resumeOneShot(_ identifier: UUID) {
+        guard isActive, let request = oneShotRequests[identifier] else { return }
+        if !request.hasRequestedPermission {
+            request.hasRequestedPermission = true
+            requestPermission(request.retainedFrame.context) { [weak self, weak request] resolution in
+                request?.resolution = resolution
+                self?.resumeOneShot(identifier)
+            }
+            return
+        }
+        guard let resolution = request.resolution else { return }
+        guard resolution == .grant,
+              systemPermissionClient.authorizationState(for: .location) == .authorized,
+              validatedContext(request.retainedFrame) != nil else {
             finishOneShot(identifier, with: .failure(.init(code: .permissionDenied, message: Message.denied)))
             return
         }
 
-        request.isAuthorized = true
         request.acquisitionStartedAt = Date()
         if let location = reusableLocation(maximumAge: request.options.maximumAge) {
             finishOneShot(identifier, with: .success(.init(location: location)))
         } else {
-            scheduleOneShotTimeout(identifier, after: request.options.timeout)
+            scheduleOneShotTimeout(identifier, after: request.remainingTimeout)
             updateLocationSubscription()
         }
     }
@@ -212,25 +264,36 @@ public final class GeolocationProvider {
 
     private func scheduleOneShotTimeout(_ identifier: UUID, after timeout: TimeInterval?) {
         guard let timeout, timeout.isFinite else { return }
+        oneShotRequests[identifier]?.timeoutStartedAt = ProcessInfo.processInfo.systemUptime
         oneShotRequests[identifier]?.timeoutTask = timeoutTask(after: timeout) { [weak self] in
             self?.finishOneShot(identifier, with: .failure(.init(code: .timeout, message: Message.timeout)))
         }
     }
 
-    private func resolvePermission(forWatch requestID: String, resolution: SitePermissionResolution) {
-        guard let watch = watches[requestID] else { return }
-        guard resolution == .grant, validatedContext(watch.retainedFrame) != nil else {
+    private func resumeWatch(_ requestID: String) {
+        guard isActive, let watch = watches[requestID] else { return }
+        if !watch.hasRequestedPermission {
+            watch.hasRequestedPermission = true
+            requestPermission(watch.retainedFrame.context) { [weak self, weak watch] resolution in
+                watch?.resolution = resolution
+                self?.resumeWatch(requestID)
+            }
+            return
+        }
+        guard let resolution = watch.resolution else { return }
+        guard resolution == .grant,
+              systemPermissionClient.authorizationState(for: .location) == .authorized,
+              validatedContext(watch.retainedFrame) != nil else {
             send(.failure(.init(code: .permissionDenied, message: Message.denied)), toWatch: requestID, thenRemove: true)
             return
         }
 
-        watch.isAuthorized = true
         watch.acquisitionStartedAt = Date()
         if let location = reusableLocation(maximumAge: watch.options.maximumAge) {
             send(.success(.init(location: location)), toWatch: requestID)
             watch.hasDeliveredPosition = true
         } else {
-            scheduleWatchTimeout(requestID, after: watch.options.timeout)
+            scheduleWatchTimeout(requestID, after: watch.remainingTimeout)
         }
         updateLocationSubscription()
     }
@@ -238,6 +301,7 @@ public final class GeolocationProvider {
     private func scheduleWatchTimeout(_ requestID: String, after timeout: TimeInterval?) {
         guard let timeout, timeout.isFinite, let watch = watches[requestID] else { return }
         watch.timeoutTask?.cancel()
+        watch.timeoutStartedAt = ProcessInfo.processInfo.systemUptime
         watch.timeoutTask = timeoutTask(after: timeout) { [weak self] in
             self?.send(.failure(.init(code: .timeout, message: Message.timeout)), toWatch: requestID)
         }
@@ -246,6 +310,8 @@ public final class GeolocationProvider {
     private func send(_ result: GeolocationPositionResult, toWatch requestID: String, thenRemove: Bool = false) {
         guard let watch = watches[requestID] else { return }
         watch.timeoutTask?.cancel()
+        watch.timeoutStartedAt = nil
+        watch.remainingTimeout = nil
         let wasDelivered = thenRemove ? watch.deliverTerminal(result) : watch.deliver(result)
         if thenRemove || !wasDelivered {
             watches.removeValue(forKey: requestID)
@@ -254,8 +320,10 @@ public final class GeolocationProvider {
     }
 
     private func updateLocationSubscription() {
-        let needsUpdates = oneShotRequests.values.contains(where: \.isAuthorized)
-            || watches.values.contains(where: \.isAuthorized)
+        let needsUpdates = isActive
+            && systemPermissionClient.authorizationState(for: .location) == .authorized
+            && (oneShotRequests.values.contains(where: \.isAuthorized)
+            || watches.values.contains(where: \.isAuthorized))
         let needsHighAccuracy = oneShotRequests.values.contains {
             $0.isAuthorized && $0.options.enableHighAccuracy
         } || watches.values.contains {
@@ -277,9 +345,11 @@ public final class GeolocationProvider {
     }
 
     private func handleLocationUpdate(_ update: SystemPermissionClient.LocationUpdate) {
+        guard isActive else { return }
         switch update {
         case .success(let location):
             guard isValid(location) else { return }
+            if let resumedAt, location.timestamp < resumedAt { return }
             latestLocation = location
             let oneShotIDs = oneShotRequests.filter { $0.value.isAuthorized }.map(\.key)
             oneShotIDs.forEach { identifier in
@@ -365,6 +435,7 @@ public final class GeolocationProvider {
             let nanoseconds = UInt64(min(max(0, timeout), maximumSeconds) * 1_000_000_000)
             do {
                 try await Task.sleep(nanoseconds: nanoseconds)
+                guard !Task.isCancelled else { return }
                 action()
             } catch {
                 // Cancellation is the expected completion path after a result or page change.
@@ -385,9 +456,7 @@ public final class GeolocationProvider {
         guard !isClosed, watches[requestID] == nil else { return }
         let retainedFrame = RetainedFrame(context: context)
         watches[requestID] = Watch(retainedFrame: retainedFrame, options: options, deliver: deliver)
-        requestPermission(context) { [weak self] resolution in
-            self?.resolvePermission(forWatch: requestID, resolution: resolution)
-        }
+        resumeWatch(requestID)
     }
 
     func cancelWatch(withID requestID: String) {
@@ -434,15 +503,11 @@ extension GeolocationProvider: GeolocationUserScriptDelegate {
         }
 
         watches[requestID] = Watch(userScript: userScript, requestID: requestID, retainedFrame: retainedFrame, options: options)
-        requestPermission(retainedFrame.context) { [weak self] resolution in
-            self?.resolvePermission(forWatch: requestID, resolution: resolution)
-        }
+        resumeWatch(requestID)
     }
 
     public func geolocationUserScript(_ userScript: GeolocationUserScript,
                                       didCancelWatchWithID requestID: String) {
-        guard let watch = watches.removeValue(forKey: requestID) else { return }
-        watch.timeoutTask?.cancel()
-        updateLocationSubscription()
+        cancelWatch(withID: requestID)
     }
 }

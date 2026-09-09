@@ -51,6 +51,9 @@ final class SitePermissionsState {
     fileprivate var mediaCaptureUserScript: MediaCaptureUserScript?
     fileprivate var geolocationProvider: GeolocationProvider?
     fileprivate var geolocationUserScript: GeolocationUserScript?
+    fileprivate var isGeolocationActive = false
+    fileprivate var isGeolocationBackgrounded = false
+    fileprivate var geolocationActivitySubscription: AnyCancellable?
     fileprivate var retiredGeolocationUserScripts = [GeolocationUserScript]()
     fileprivate var shouldRetireGeolocationOnNavigation = false
     fileprivate var isCommittedGeolocationPolicyBlocked = false
@@ -246,6 +249,7 @@ final class SitePermissionsState {
     func close() {
         cancelContentBlockingWaits()
         featureFlagSubscription = nil
+        geolocationActivitySubscription = nil
         isClosed = true
         dismissDialog()
         denyPendingBridgeRequests()
@@ -724,7 +728,7 @@ extension TabViewController {
         return coordinator
     }
 
-    func configureSitePermissionsGeolocation(with userScript: GeolocationUserScript?) {
+    func configureSitePermissionsGeolocation(with userScript: GeolocationUserScript?, notificationCenter: NotificationCenter = .default) {
         guard let userScript else {
             // An already-loaded page keeps its injected shim until the next navigation. Retain its
             // weakly-held message handler until then so outstanding page promises still resolve.
@@ -778,7 +782,23 @@ extension TabViewController {
             }
         )
         sitePermissionsState.geolocationProvider = provider
+        sitePermissionsState.isGeolocationBackgrounded = UIApplication.shared.applicationState == .background
+        setSitePermissionsGeolocationActive(sitePermissionsState.isGeolocationActive)
+        sitePermissionsState.geolocationActivitySubscription = notificationCenter.publisher(for: UIApplication.didEnterBackgroundNotification)
+            .map { _ in true }
+            .merge(with: notificationCenter.publisher(for: UIApplication.didBecomeActiveNotification).map { _ in false })
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isBackgrounded in
+                guard let self else { return }
+                self.sitePermissionsState.isGeolocationBackgrounded = isBackgrounded
+                self.setSitePermissionsGeolocationActive(self.sitePermissionsState.isGeolocationActive)
+            }
         userScript.delegate = provider
+    }
+
+    func setSitePermissionsGeolocationActive(_ isActive: Bool) {
+        sitePermissionsState.isGeolocationActive = isActive
+        sitePermissionsState.geolocationProvider?.setIsActive(isActive && !sitePermissionsState.isGeolocationBackgrounded)
     }
 
     private func shouldActivateSitePermissionsGeolocation(in frame: GeolocationFrame) -> Bool {

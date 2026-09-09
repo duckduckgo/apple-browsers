@@ -1032,6 +1032,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         enum PageChange: String, CaseIterable {
             case navigation
             case processReplacement
+            case tabSwitch
         }
 
         for pageChange in PageChange.allCases {
@@ -1069,11 +1070,72 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                 sut.webView(sut.webView, didStartProvisionalNavigation: nil)
             case .processReplacement:
                 sut.webViewWebContentProcessDidTerminate(sut.webView)
+            case .tabSwitch:
+                sut.dismiss()
             }
 
             XCTAssertEqual(locationManager.stopUpdatingCallCount, 1, pageChange.rawValue)
             locationManager.send(CLLocation(latitude: 52.2297, longitude: 21.0122))
             XCTAssertEqual(locationManager.stopUpdatingCallCount, 1, pageChange.rawValue)
+            if pageChange == .tabSwitch {
+                sut.viewWillAppear(false)
+                XCTAssertEqual(locationManager.startUpdatingCallCount, 2)
+                sut.closeSitePermissions()
+                XCTAssertEqual(locationManager.stopUpdatingCallCount, 2)
+            }
+        }
+    }
+
+    func testAppBackgroundPausesGeolocationAndForegroundResumesOnlyVisibleTabs() async throws {
+        let notificationCenter = NotificationCenter()
+        func post(_ name: Notification.Name) async {
+            notificationCenter.post(name: name, object: nil)
+            await withCheckedContinuation { continuation in
+                DispatchQueue.main.async { continuation.resume() }
+            }
+        }
+
+        for isVisible in [true, false] {
+            let locationManager = Phase5MockLocationManager()
+            let systemPermissionClient = SystemPermissionClient(
+                locationManager: locationManager,
+                locationServicesEnabled: { true },
+                avAuthorizationStatus: { _ in .authorized },
+                avRequestAccess: { _, completion in completion(true) },
+                notificationCenter: NotificationCenter()
+            )
+            let sut = makeSUT(systemPermissionClient: systemPermissionClient)
+            var promptCount = 0
+            sut.sitePermissionsPromptHandlerOverride = { _, completion in
+                promptCount += 1
+                completion(.allowOnce)
+            }
+            let userScript = GeolocationUserScript(installImmediately: true)
+            sut.configureSitePermissionsGeolocation(with: userScript, notificationCenter: notificationCenter)
+            let delegate = try XCTUnwrap(userScript.delegate)
+            let frame = geolocationFrame(on: sut.webView, originURL: URL(string: "https://top-level.example/frame")!)
+            delegate.geolocationUserScript(
+                userScript,
+                didStartWatchWithID: String(repeating: "a", count: 32) + ":1",
+                options: .init(),
+                constraints: .init(isSecureContext: true, isSandboxed: false, isPolicyAllowed: true),
+                in: frame
+            )
+            for _ in 0..<100 where locationManager.startUpdatingCallCount == 0 {
+                await Task.yield()
+            }
+            XCTAssertEqual(locationManager.startUpdatingCallCount, 1)
+
+            await post(UIApplication.willResignActiveNotification)
+            XCTAssertEqual(locationManager.stopUpdatingCallCount, 0, "System permission sheets must not pause location")
+            sut.setSitePermissionsGeolocationActive(isVisible)
+            await post(UIApplication.didEnterBackgroundNotification)
+            XCTAssertEqual(locationManager.stopUpdatingCallCount, 1)
+
+            await post(UIApplication.didBecomeActiveNotification)
+            XCTAssertEqual(locationManager.startUpdatingCallCount, isVisible ? 2 : 1)
+            XCTAssertEqual(promptCount, 1, "Resuming must preserve the existing grant")
+            sut.closeSitePermissions()
         }
     }
 
@@ -1425,6 +1487,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             eventHandler: eventHandler
         )
         sut.sitePermissionsDependenciesProvider = { dependencies }
+        sut.setSitePermissionsGeolocationActive(true)
         if hasCommittedMainFrame {
             sut.webView(sut.webView, didCommit: nil)
         }

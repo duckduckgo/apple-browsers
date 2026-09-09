@@ -8248,6 +8248,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
 
     func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling) {
         recordDuckAISessionNewChatCreated(for: handler)
+        Logger.unifiedInputState.debug("FE newChatStarted received — deferring startNewChat")
         DispatchQueue.main.async { [weak self] in
             self?.unifiedToggleInputCoordinator?.startNewChat()
             self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)

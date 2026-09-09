@@ -17,6 +17,8 @@
 //
 
 import AppKitExtensions
+import os.log
+import SharedTestUtilities
 import XCTest
 
 /// UI Tests for the permission authorization view and permission center.
@@ -947,5 +949,182 @@ private extension CIImage {
         }
 
         return max(redValueOfSample, greenValueOfSample) == redValueOfSample ? .red : .green
+    }
+}
+
+// MARK: - Website Permissions Recents (exploratory)
+
+/// Exploratory end-to-end check of the Website Permissions "Recently changed" section.
+/// Drives real decisions on `https://permission.site` and inspects the Settings pane.
+class WebsitePermissionsRecentsExplorationTests: UITestCase {
+
+    private var addressBarTextField: XCUIElement!
+    private var permissionsSiteURL: URL!
+
+    private static let recentGeolocationRowID = "WebsitePermissions.Recent.permission.site|geolocation"
+    private static let recentNotificationRowID = "WebsitePermissions.Recent.permission.site|notification"
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+
+        permissionsSiteURL = try XCTUnwrap(URL(string: "https://permission.site"),
+                                           "It wasn't possible to unwrap a URL that the test depends on.")
+
+        app = XCUIApplication.setUp(featureFlags: ["websitePermissionsSettings": true])
+        addressBarTextField = app.addressBar
+        app.enforceSingleWindow()
+
+        XCTAssertTrue(
+            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The address bar text field didn't become available in a reasonable timeframe."
+        )
+    }
+
+    func test_recentsSection_reflectsDecisionsMadeOnPermissionSite() throws {
+        // MARK: Given a decision made on permission.site
+
+        addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
+
+        let locationButton = app.webViews.buttons["Location"]
+        XCTAssertTrue(
+            locationButton.waitForExistence(timeout: UITests.Timeouts.navigation),
+            "permission.site didn't load its Location button in a reasonable timeframe."
+        )
+        logWebViewButtonLabels()
+        locationButton.click()
+
+        let allowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
+        allowButton.clickAfterExistenceTestSucceeds()
+        takeScreenshot("01-location-allowed-on-permission-site")
+
+        // MARK: When opening Settings › Website Permissions
+
+        app.openSettings()
+        let prefs = app.preferencesWindow
+        XCTAssertTrue(
+            prefs.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The Settings window didn't appear in a reasonable timeframe."
+        )
+
+        let websitePermissionsPaneButton = prefs.buttons["PreferencesSidebar.websitePermissionsButton"]
+        XCTAssertTrue(
+            websitePermissionsPaneButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The Website Permissions pane is missing from the sidebar — the websitePermissionsSettings flag didn't take effect."
+        )
+        websitePermissionsPaneButton.click()
+        takeScreenshot("02-website-permissions-pane")
+
+        // MARK: Then the recents section lists that decision
+
+        let geolocationRow = prefs.descendants(matching: .any)
+            .matching(identifier: Self.recentGeolocationRowID).firstMatch
+        XCTAssertTrue(
+            geolocationRow.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Allowing Location on permission.site didn't produce a row in the Recents section."
+        )
+        logRecentsSectionTree(in: prefs)
+
+        let geolocationDecision = prefs.popUpButtons["\(Self.recentGeolocationRowID).Decision"]
+        XCTAssertTrue(
+            geolocationDecision.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The Recents row didn't expose its decision dropdown."
+        )
+        Logger.log("🔵 geolocation recents decision reads: \(geolocationDecision.value ??? "<nil>")")
+
+        // MARK: And changing the decision from the pane persists
+
+        geolocationDecision.click()
+        app.menuItems["Never allow"].clickAfterExistenceTestSucceeds()
+        takeScreenshot("03-recents-decision-changed-to-never-allow")
+
+        XCTAssertEqual(
+            geolocationDecision.value as? String, "Never allow",
+            "Changing the Recents dropdown didn't stick."
+        )
+
+        // MARK: And the row survives reopening the pane
+
+        app.closePreferencesWindow()
+        app.openSettings()
+        prefs.buttons["PreferencesSidebar.websitePermissionsButton"].clickAfterExistenceTestSucceeds()
+        XCTAssertTrue(
+            geolocationRow.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The Recents row didn't come back after reopening the pane, so it isn't reading from the store."
+        )
+        XCTAssertEqual(
+            geolocationDecision.value as? String, "Never allow",
+            "The changed decision wasn't persisted across reopening the pane."
+        )
+        takeScreenshot("04-recents-after-reopening-pane")
+
+        // MARK: And removing the row clears it
+
+        let removeButton = prefs.buttons["\(Self.recentGeolocationRowID).Remove"]
+        XCTAssertTrue(
+            removeButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The Recents row didn't expose its remove button."
+        )
+        removeButton.click()
+        XCTAssertTrue(
+            geolocationRow.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+            "Removing the Recents row didn't take it out of the section."
+        )
+        takeScreenshot("05-recents-after-removal")
+    }
+
+    func test_recentsSection_ordersMostRecentDecisionFirst() throws {
+        addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
+
+        let locationButton = app.webViews.buttons["Location"]
+        XCTAssertTrue(
+            locationButton.waitForExistence(timeout: UITests.Timeouts.navigation),
+            "permission.site didn't load its Location button in a reasonable timeframe."
+        )
+        locationButton.click()
+        app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"].clickAfterExistenceTestSucceeds()
+
+        let notificationsButton = app.webViews.buttons["Notifications"]
+        XCTAssertTrue(
+            notificationsButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "permission.site didn't expose a Notifications button."
+        )
+        notificationsButton.click()
+        app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"].clickAfterExistenceTestSucceeds()
+
+        app.openSettings()
+        let prefs = app.preferencesWindow
+        prefs.buttons["PreferencesSidebar.websitePermissionsButton"].clickAfterExistenceTestSucceeds()
+
+        let notificationRow = prefs.descendants(matching: .any)
+            .matching(identifier: Self.recentNotificationRowID).firstMatch
+        let geolocationRow = prefs.descendants(matching: .any)
+            .matching(identifier: Self.recentGeolocationRowID).firstMatch
+
+        XCTAssertTrue(
+            notificationRow.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The notification decision didn't reach the Recents section."
+        )
+        XCTAssertTrue(geolocationRow.exists, "The geolocation decision didn't reach the Recents section.")
+
+        logRecentsSectionTree(in: prefs)
+        takeScreenshot("06-recents-with-two-entries")
+
+        XCTAssertLessThan(
+            notificationRow.frame.minY, geolocationRow.frame.minY,
+            "The most recently changed permission should be listed first."
+        )
+    }
+
+    // MARK: - Logging helpers
+
+    private func logWebViewButtonLabels() {
+        let buttons = app.webViews.buttons.allElementsBoundByIndex
+        let labels = buttons.map { $0.label.isEmpty ? ($0.identifier) : $0.label }
+        Logger.log("🔵 permission.site buttons: \(labels)")
+    }
+
+    private func logRecentsSectionTree(in prefs: XCUIElement) {
+        let descr = (try? prefs.snapshot().toDictionary(ignoringElementsOfType: [.menu, .menuItem, .menuBar])) ??? "<nil>"
+        Logger.log("🔵 Settings window tree: \(descr)")
     }
 }

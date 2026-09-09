@@ -22,7 +22,6 @@ import Foundation
 @MainActor
 final class WebsitePermissionsViewModel: ObservableObject {
     private enum Constants {
-        /// The design shows at most three recently changed permissions.
         static let maximumRecentRows = 3
     }
 
@@ -31,7 +30,6 @@ final class WebsitePermissionsViewModel: ObservableObject {
 
     private let permissionManager: PermissionManagerProtocol
     private var permissionsCancellable: AnyCancellable?
-    private var didAppear = false
 
     init(permissionManager: PermissionManagerProtocol) {
         self.permissionManager = permissionManager
@@ -42,12 +40,12 @@ final class WebsitePermissionsViewModel: ObservableObject {
     func send(action: Action) {
         switch action {
         case .onAppear:
-            guard !didAppear else { return }
-            didAppear = true
             setupObserver()
+            
         case .changeRecentDecision(let row, let decision):
             guard decision != row.decision else { return }
             permissionManager.setPermission(decision, forDomain: row.domain, permissionType: row.permissionType)
+            
         case .removeRecent(let row):
             permissionManager.removePermission(forDomain: row.domain, permissionType: row.permissionType)
         }
@@ -67,56 +65,43 @@ final class WebsitePermissionsViewModel: ObservableObject {
             }
     }
 
-    /// The most recently changed decisions, newest first. Entries without a `lastModified` predate the
-    /// stored timestamp, so they are excluded rather than being presented as recent.
     private func makeRecentRows(from entries: [WebsitePermissionEntry]) -> [WebsitePermissionsViewState.RecentRow] {
         entries
             .filter { entry in
                 entry.lastModified != nil && WebsitePermissionCategory.category(for: entry.permissionType) != nil
             }
-            .sorted(by: Self.isMoreRecent)
+            .sorted {
+                ($0.lastModified ?? .distantPast) > ($1.lastModified ?? .distantPast)
+            }
             .prefix(Constants.maximumRecentRows)
             .map(makeRecentRow)
     }
 
-    /// Orders by recency, falling back to domain then permission so equal timestamps stay stable.
-    private static func isMoreRecent(_ lhs: WebsitePermissionEntry, _ rhs: WebsitePermissionEntry) -> Bool {
-        guard let lhsDate = lhs.lastModified, let rhsDate = rhs.lastModified else {
-            return lhs.lastModified != nil
-        }
-        if lhsDate != rhsDate {
-            return lhsDate > rhsDate
-        }
-        if lhs.domain != rhs.domain {
-            return lhs.domain < rhs.domain
-        }
-        return lhs.permissionType.rawValue < rhs.permissionType.rawValue
-    }
-
     private func makeRecentRow(from entry: WebsitePermissionEntry) -> WebsitePermissionsViewState.RecentRow {
-        WebsitePermissionsViewState.RecentRow(
+        .init(
             domain: entry.domain,
             permissionType: entry.permissionType,
             decision: entry.decision,
-            permissionTitle: Self.permissionTitle(for: entry.permissionType),
-            availableDecisions: Self.availableDecisions(for: entry.permissionType, decision: entry.decision))
+            permissionTitle: permissionTitle(for: entry.permissionType),
+            availableDecisions: availableDecisions(for: entry.permissionType, decision: entry.decision))
     }
 
-    private static func permissionTitle(for permissionType: PermissionType) -> String {
+    private func permissionTitle(for permissionType: PermissionType) -> String {
         guard permissionType.isExternalScheme else { return permissionType.localizedDescription }
         return String(format: UserText.websitePermissionsExternalAppFormat, permissionType.localizedDescription)
     }
 
-    /// Pop-ups cannot persist a denied decision, so they only offer Ask and Allow — unless one was
-    /// already stored, in which case it stays selectable so the user can see and change it.
-    private static func availableDecisions(for permissionType: PermissionType,
-                                           decision: PersistedPermissionDecision) -> [PersistedPermissionDecision] {
-        guard permissionType.canPersistDeniedDecision || decision == .deny else {
+    private func availableDecisions(
+        for permissionType: PermissionType,
+        decision: PersistedPermissionDecision
+    ) -> [PersistedPermissionDecision] {
+        if permissionType.canPersistDeniedDecision || decision == .deny {
+            return [.deny, .ask, .allow]
+        } else {
             return [.ask, .allow]
         }
-        return [.deny, .ask, .allow]
     }
-
+    
     private func makeRows(from entries: [WebsitePermissionEntry]) -> [WebsitePermissionsViewState.Row] {
         WebsitePermissionCategory.allCases.map { category in
             WebsitePermissionsViewState.Row(

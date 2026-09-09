@@ -87,43 +87,35 @@ struct PreferencesWebsitePermissionsView: View {
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .lineLimit(1)
 
-            decisionPicker(row)
+            Picker(selection: Binding(
+                get: { row.decision },
+                set: { model.send(action: .changeRecentDecision(row, $0)) }),
+                   label: EmptyView()) {
+                ForEach(row.availableDecisions, id: \.self) { decision in
+                    Text(decision.websitePermissionsLabel).tag(decision)
+                }
+            }
+            .labelsHidden()
+            .frame(width: Constants.dropdownWidth)
+            .accessibilityIdentifier("\(row.accessibilityIdentifier).Decision")
 
-            removeButton(row)
+            Button {
+                model.send(action: .removeRecent(row))
+            } label: {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.closeSmall)
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: Constants.removeButtonSize, height: Constants.removeButtonSize)
+                    .foregroundColor(Color(designSystemColor: .iconsTertiary))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(UserText.websitePermissionsRemovePermission)
+            .accessibilityIdentifier("\(row.accessibilityIdentifier).Remove")
         }
         .padding(Constants.rowPadding)
         .frame(height: Constants.rowHeight)
         .accessibilityIdentifier(row.accessibilityIdentifier)
-    }
-
-    private func decisionPicker(_ row: WebsitePermissionsViewState.RecentRow) -> some View {
-        Picker(selection: Binding(
-            get: { row.decision },
-            set: { model.send(action: .changeRecentDecision(row, $0)) }),
-               label: EmptyView()) {
-            ForEach(row.availableDecisions, id: \.self) { decision in
-                Text(decision.websitePermissionsLabel).tag(decision)
-            }
-        }
-        .labelsHidden()
-        .frame(width: Constants.dropdownWidth)
-        .accessibilityIdentifier("\(row.accessibilityIdentifier).Decision")
-    }
-
-    private func removeButton(_ row: WebsitePermissionsViewState.RecentRow) -> some View {
-        Button {
-            model.send(action: .removeRecent(row))
-        } label: {
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.closeSmall)
-                .renderingMode(.template)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: Constants.removeButtonSize, height: Constants.removeButtonSize)
-                .foregroundColor(Color(designSystemColor: .iconsSecondary))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(UserText.websitePermissionsRemovePermission)
-        .accessibilityIdentifier("\(row.accessibilityIdentifier).Remove")
     }
 
     private var permissionsSection: some View {
@@ -176,7 +168,7 @@ struct PreferencesWebsitePermissionsView: View {
 
             Spacer()
 
-            Image(nsImage: .chevronRight12)
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
                 .renderingMode(.template)
                 .resizable()
                 .aspectRatio(contentMode: .fit)

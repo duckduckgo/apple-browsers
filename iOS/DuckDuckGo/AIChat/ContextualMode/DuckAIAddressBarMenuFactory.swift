@@ -22,10 +22,10 @@ import FeatureFlags_iOS
 import PrivacyConfig
 import UIKit
 
-/// Builds the address-bar Duck.ai menu for new, contextual, and recent chats.
+/// Builds the address-bar Duck.ai menu for new chats, page questions, and chat history.
 enum DuckAIAddressBarMenuFactory {
 
-    /// Groups New Chat and Ask About Page above a separator, with Recent Chats below.
+    /// Groups New Chat and Ask About Page above a separator, with All Chats below.
     static func makeActions(featureFlagger: FeatureFlagger,
                             userInterfaceIdiom: UIUserInterfaceIdiom,
                             onNewChat: @escaping () -> Void,
@@ -47,7 +47,7 @@ enum DuckAIAddressBarMenuFactory {
            featureFlagger.isFeatureOn(.aiChatNativeChatHistory),
            featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats) {
             groups.append(UIMenu(title: "", options: .displayInline, children: [
-                UIAction(title: UserText.duckAiAddressBarMenuRecentChats,
+                UIAction(title: UserText.duckAiAddressBarMenuAllChats,
                          image: DesignSystemImages.Glyphs.Size16.chats) { _ in
                     onRecentChats()
                 }

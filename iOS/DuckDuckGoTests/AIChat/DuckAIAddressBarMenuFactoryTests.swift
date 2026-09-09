@@ -60,14 +60,14 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
         XCTAssertEqual(newChatGroup.children.compactMap { ($0 as? UIAction)?.title },
                        [UserText.duckAiAddressBarMenuNewChat, UserText.aiChatAttachmentOptionAskAboutPage])
         XCTAssertEqual(historyGroup.children.compactMap { ($0 as? UIAction)?.title },
-                       [UserText.duckAiAddressBarMenuRecentChats])
+                       [UserText.duckAiAddressBarMenuAllChats])
     }
 
     func testRecentChatsFollowsNewChatAndAskAboutPage() {
         let titles = flattenedActions(makeActions()).map(\.title)
         XCTAssertEqual(titles, [UserText.duckAiAddressBarMenuNewChat,
                                UserText.aiChatAttachmentOptionAskAboutPage,
-                               UserText.duckAiAddressBarMenuRecentChats])
+                               UserText.duckAiAddressBarMenuAllChats])
     }
 
     func testRecentChatsGroupIsOmittedWhenFlagIsDisabled() {
@@ -96,7 +96,7 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
                 featureFlagger: MockFeatureFlagger(enabledFeatureFlags: testCase.flags),
                 userInterfaceIdiom: testCase.idiom))
             let expectedTitles = [UserText.duckAiAddressBarMenuNewChat, UserText.aiChatAttachmentOptionAskAboutPage]
-                + (testCase.showsRecentChats ? [UserText.duckAiAddressBarMenuRecentChats] : [])
+                + (testCase.showsRecentChats ? [UserText.duckAiAddressBarMenuAllChats] : [])
             XCTAssertEqual(actions.map(\.title), expectedTitles, "Flags: \(testCase.flags), device: \(testCase.idiom)")
         }
     }

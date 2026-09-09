@@ -128,6 +128,37 @@ class FloatingUIXCUITestCase: XCTestCase {
         assertConfiguredBarPosition()
     }
 
+    func verifyExistingSearchReplacement(toggleEnabled: Bool) {
+        app.terminate()
+        launchApp(toggleEnabled: toggleEnabled)
+        searchField.tap()
+        XCTAssertTrue(element(withIdentifier: AccessibilityID.utiDismiss).waitForHittable(timeout: timeout))
+        XCTAssertEqual(element(withIdentifier: "AddressBar.Button.DuckAI").isHittable, toggleEnabled)
+        searchField.typeText("original query\r")
+        XCTAssertTrue(app.staticTexts[Page.oneHeading].waitForExistence(timeout: timeout))
+        XCTAssertTrue(element(withIdentifier: AccessibilityID.utiDismiss).waitForNotHittable(timeout: timeout))
+
+        for returnsFromBackground in [false, true] {
+            if returnsFromBackground {
+                XCUIDevice.shared.press(.home)
+                XCTAssertTrue(app.wait(for: .runningBackground, timeout: timeout))
+                app.activate()
+            }
+
+            XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+            searchField.tap()
+            XCTAssertTrue(element(withIdentifier: AccessibilityID.utiDismiss).waitForHittable(timeout: timeout))
+            XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: timeout))
+            XCTAssertEqual(searchField.value as? String, "original query")
+
+            searchField.typeText("replacement query")
+            XCTAssertEqual(searchField.value as? String, "replacement query")
+
+            element(withIdentifier: AccessibilityID.utiDismiss).tap()
+            XCTAssertTrue(element(withIdentifier: AccessibilityID.utiDismiss).waitForNotHittable(timeout: timeout))
+        }
+    }
+
     func verifyTabSwitcherTransitions() {
         tabSwitcherButton.tap()
 
@@ -484,7 +515,7 @@ class FloatingUIXCUITestCase: XCTestCase {
         app.webViews.firstMatch
     }
 
-    private func launchApp() {
+    private func launchApp(toggleEnabled: Bool? = nil) {
         app.launchArguments = [
             "-clearAllDefaults",
             "isRunningUITests",
@@ -494,6 +525,12 @@ class FloatingUIXCUITestCase: XCTestCase {
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_GB",
         ]
+        if let toggleEnabled {
+            app.launchArguments += [
+                "-aichat.settings.isEnabled", "true",
+                "-aichat.settings.showAIChatExperimentalSearchInput", String(toggleEnabled),
+            ]
+        }
         app.launchEnvironment = [
             "UITEST_MODE": "1",
             "BASE_URL": serverBaseURL,
@@ -826,6 +863,9 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
 
     override var barPosition: FloatingUIBarPosition { .top }
 
+    func testExistingSearchReplacementWithToggleEnabled() { verifyExistingSearchReplacement(toggleEnabled: true) }
+    func testExistingSearchReplacementWithToggleDisabled() { verifyExistingSearchReplacement(toggleEnabled: false) }
+
     func testUnifiedToggleInputTransitions() { verifyUnifiedToggleInputTransitions() }
     func testTabSwitcherTransitions() { verifyTabSwitcherTransitions() }
     func testBrowserChromeLongPressMenus() { verifyBrowserChromeLongPressMenus() }
@@ -853,6 +893,9 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
 final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
 
     override var barPosition: FloatingUIBarPosition { .bottom }
+
+    func testExistingSearchReplacementWithToggleEnabled() { verifyExistingSearchReplacement(toggleEnabled: true) }
+    func testExistingSearchReplacementWithToggleDisabled() { verifyExistingSearchReplacement(toggleEnabled: false) }
 
     func testUnifiedToggleInputTransitions() { verifyUnifiedToggleInputTransitions() }
     func testTabSwitcherTransitions() { verifyTabSwitcherTransitions() }

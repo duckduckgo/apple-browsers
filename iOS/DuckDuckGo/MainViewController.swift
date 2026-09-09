@@ -5881,7 +5881,7 @@ extension MainViewController: OmniBarDelegate {
     func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
 
         let selectQueryText = !(isSERPPresented && !skipSERPFlow)
-        skipSERPFlow = false
+        resetSERPFlowAfterOmnibarFocus()
         
         if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
@@ -5890,10 +5890,8 @@ extension MainViewController: OmniBarDelegate {
         return selectQueryText
     }
 
-    func shouldAutoSelectTextForSERPQuery() -> Bool {
-        let shouldSelect = isSERPPresented && skipSERPFlow
+    func resetSERPFlowAfterOmnibarFocus() {
         skipSERPFlow = false
-        return shouldSelect
     }
 
     func onRefreshPressed() {

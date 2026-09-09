@@ -30,6 +30,22 @@ protocol AIChatContextualAttachMoreTabsFeatureProviding {
     var state: AIChatContextualAttachMoreTabsState { get }
 }
 
+extension AIChatContextualAttachMoreTabsFeatureProviding {
+    func makeRequest(using provider: () -> MultiTabAttachmentRequest?) -> MultiTabAttachmentRequest? {
+        guard case .available = state, let request = provider() else { return nil }
+
+        return MultiTabAttachmentRequest(contexts: {
+            guard case .available = self.state else { return [] }
+            let contexts = await request.contexts()
+            guard case .available = self.state else { return [] }
+            return contexts
+        }, didConsume: {
+            guard case .available = self.state else { return }
+            request.didConsume()
+        })
+    }
+}
+
 struct AIChatContextualAttachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding {
     private let featureFlagger: any FeatureFlagger
     private let aiChatSettings: AIChatSettingsProvider

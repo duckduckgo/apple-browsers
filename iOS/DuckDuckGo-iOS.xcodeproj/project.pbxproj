@@ -1632,7 +1632,9 @@
 		AD5E1ED02B0000000000F002 /* AIChatTextSelectionFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F001 /* AIChatTextSelectionFeature.swift */; };
 		AD5E1ED02B0000000000F004 /* AIChatTextSelectionFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F003 /* AIChatTextSelectionFeatureTests.swift */; };
 		AD5E1ED02B0000000000F006 /* AIChatSelectionContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F005 /* AIChatSelectionContext.swift */; };
+		44DC32A293E04A0DA5DE321C /* MultiTabAttachmentRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AF56F728BD5433F94EE5CAA /* MultiTabAttachmentRequest.swift */; };
 		AD5E1ED02B0000000000F008 /* AIChatSelectionContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F007 /* AIChatSelectionContextTests.swift */; };
+		548EE230566447B89EF615BC /* AIChatUserScriptMultiTabTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B3909758A14A3195A9325F /* AIChatUserScriptMultiTabTests.swift */; };
 		AD5E1ED02B0000000000F00A /* AIChatTextSelectionAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F009 /* AIChatTextSelectionAction.swift */; };
 		AD5E1ED02B0000000000F00C /* AIChatTextSelectionActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F00B /* AIChatTextSelectionActionTests.swift */; };
 		AD5E1ED02B0000000000F10A /* SelectionFrameUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F109 /* SelectionFrameUserScript.swift */; };
@@ -4153,7 +4155,9 @@
 		AD5E1ED02B0000000000F001 /* AIChatTextSelectionFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTextSelectionFeature.swift; sourceTree = "<group>"; };
 		AD5E1ED02B0000000000F003 /* AIChatTextSelectionFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTextSelectionFeatureTests.swift; sourceTree = "<group>"; };
 		AD5E1ED02B0000000000F005 /* AIChatSelectionContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSelectionContext.swift; sourceTree = "<group>"; };
+		2AF56F728BD5433F94EE5CAA /* MultiTabAttachmentRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTabAttachmentRequest.swift; sourceTree = "<group>"; };
 		AD5E1ED02B0000000000F007 /* AIChatSelectionContextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSelectionContextTests.swift; sourceTree = "<group>"; };
+		42B3909758A14A3195A9325F /* AIChatUserScriptMultiTabTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptMultiTabTests.swift; sourceTree = "<group>"; };
 		AD5E1ED02B0000000000F009 /* AIChatTextSelectionAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTextSelectionAction.swift; sourceTree = "<group>"; };
 		AD5E1ED02B0000000000F00B /* AIChatTextSelectionActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTextSelectionActionTests.swift; sourceTree = "<group>"; };
 		AD5E1ED02B0000000000F109 /* SelectionFrameUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionFrameUserScript.swift; sourceTree = "<group>"; };
@@ -5731,6 +5735,7 @@
 				C11F41142F2CCBE900C126C3 /* AIChatContextualChatSessionStateTests.swift */,
 				AD5E1ED02B0000000000F003 /* AIChatTextSelectionFeatureTests.swift */,
 				AD5E1ED02B0000000000F007 /* AIChatSelectionContextTests.swift */,
+				42B3909758A14A3195A9325F /* AIChatUserScriptMultiTabTests.swift */,
 				AD5E1ED02B0000000000F00B /* AIChatTextSelectionActionTests.swift */,
 				FADE0001C0FFEE00A5311008 /* ContextualSuggestionsMatcherTests.swift */,
 				31F43E202F4734B8001BBCDA /* AIChatAddressBarExperienceTests.swift */,
@@ -8683,6 +8688,7 @@
 				C1AIREPO2F2E000000E35AD5 /* AIChatPageContextHandler.swift */,
 				AD5E1ED02B0000000000F001 /* AIChatTextSelectionFeature.swift */,
 				AD5E1ED02B0000000000F005 /* AIChatSelectionContext.swift */,
+				2AF56F728BD5433F94EE5CAA /* MultiTabAttachmentRequest.swift */,
 				AD5E1ED02B0000000000F009 /* AIChatTextSelectionAction.swift */,
 				CB6D179C2FA38CAF00ECD5AE /* Logger+ContextualUTI.swift */,
 				CB6D17A72FA39FC900ECD5AE /* AIChatContextualUTIHost.swift */,
@@ -12699,6 +12705,7 @@
 				C1AIREPO2F2E000100E35AD5 /* AIChatPageContextHandler.swift in Sources */,
 				AD5E1ED02B0000000000F002 /* AIChatTextSelectionFeature.swift in Sources */,
 				AD5E1ED02B0000000000F006 /* AIChatSelectionContext.swift in Sources */,
+				44DC32A293E04A0DA5DE321C /* MultiTabAttachmentRequest.swift in Sources */,
 				AD5E1ED02B0000000000F00A /* AIChatTextSelectionAction.swift in Sources */,
 				6F1422822D314A5300B6D3DE /* TabInteractionStateDiskSource.swift in Sources */,
 				9FBE2B922EAEEC8200658BAB /* EmbeddedWebViewController.swift in Sources */,
@@ -13262,6 +13269,7 @@
 				C11F41152F2CCBE900C126C3 /* AIChatContextualChatSessionStateTests.swift in Sources */,
 				AD5E1ED02B0000000000F004 /* AIChatTextSelectionFeatureTests.swift in Sources */,
 				AD5E1ED02B0000000000F008 /* AIChatSelectionContextTests.swift in Sources */,
+				548EE230566447B89EF615BC /* AIChatUserScriptMultiTabTests.swift in Sources */,
 				AD5E1ED02B0000000000F00C /* AIChatTextSelectionActionTests.swift in Sources */,
 				FADE0001C0FFEE00A5311007 /* ContextualSuggestionsMatcherTests.swift in Sources */,
 				9F06EB8C2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift in Sources */,

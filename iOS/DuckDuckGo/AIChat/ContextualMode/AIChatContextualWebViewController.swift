@@ -217,6 +217,7 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     deinit {
+        aiChatContentHandler.cancelPendingTabContextSubmission()
         urlObservation?.invalidate()
     }
 
@@ -280,6 +281,7 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     func startNewChat() {
+        aiChatContentHandler.cancelPendingTabContextSubmission()
         Task { @MainActor in
             await aiChatContentHandler.submitStartChatAction()
         }
@@ -309,6 +311,7 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     func reload() {
+        aiChatContentHandler.cancelPendingTabContextSubmission()
         isPageReady = false
         isContentHandlerReady = false
         frontendReadinessGate.reset()
@@ -324,6 +327,7 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     func loadChatURL(_ url: URL) {
+        aiChatContentHandler.cancelPendingTabContextSubmission()
         let urlToLoad = chatURLForLoading(url)
         Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(urlToLoad.shortDescription)")
         isPageReady = false

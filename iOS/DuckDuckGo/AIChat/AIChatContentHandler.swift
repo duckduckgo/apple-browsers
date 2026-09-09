@@ -50,6 +50,7 @@ protocol AIChatUserScriptProviding: AnyObject {
                       pageContext: AIChatPageContextData?,
                       reasoningEffort: AIChatReasoningEffort?)
     func submitStartChatAction()
+    func cancelPendingTabContextSubmission()
     func submitOpenSettingsAction()
     func submitPageContext(_ context: AIChatPageContextData?)
     func submitToggleSidebarAction()
@@ -123,6 +124,8 @@ protocol AIChatContentHandling: AnyObject {
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction() async
+
+    func cancelPendingTabContextSubmission()
 
     /// Submits an open settings action to open the AI Chat settings.
     func submitOpenSettingsAction()
@@ -221,6 +224,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     }
 
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
+        self.userScript?.cancelPendingTabContextSubmission()
         self.userScript = userScript
         self.userScript?.delegate = self
         self.userScript?.setDisplayMode(displayMode)
@@ -323,10 +327,15 @@ final class AIChatContentHandler: AIChatContentHandling {
     /// Submits a start chat action to initiate a new AI Chat conversation.
     /// Only pushes page context if auto-attach is enabled; manual attach goes through explicit pushPageContext calls.
     func submitStartChatAction() async {
+        cancelPendingTabContextSubmission()
         if aiChatSettings.isAutomaticContextAttachmentEnabled, let context = await getPageContext?(.other) {
             userScript?.submitPageContext(context)
         }
         userScript?.submitStartChatAction()
+    }
+
+    func cancelPendingTabContextSubmission() {
+        userScript?.cancelPendingTabContextSubmission()
     }
 
     /// Submits an open settings action to open the AI Chat settings.

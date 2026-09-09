@@ -46,7 +46,8 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
     private func makeSUT(
         initialAttachedContext: AIChatPageContext? = nil,
-        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered
+        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
+        attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding = AIChatContextualAttachMoreTabsFeature()
     ) {
         sut = AIChatContextualUTIHost(
             originatingURLPublisher: originatingURL.eraseToAnyPublisher(),
@@ -54,8 +55,44 @@ final class AIChatContextualUTIHostTests: XCTestCase {
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
             hasActiveChat: { [weak self] in self?.hasActiveChat ?? false },
             isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false },
-            isFireTab: false
+            isFireTab: false,
+            attachMoreTabsFeature: attachMoreTabsFeature
         )
+    }
+
+    func testMultiTabProviderIsNotInvokedWhileFeatureDisabled() {
+        makeSUT(attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeature(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []), aiChatSettings: MockAIChatSettingsProvider()))
+        sut.attachedTabContextsProvider = {
+            XCTFail("Disabled feature must not invoke the attachment provider")
+            return nil
+        }
+        let script = makeTestUserScript()
+        sut.bindToUserScript(script)
+
+        XCTAssertNil(script.attachedTabContextsProvider?())
+    }
+
+    func testMultiTabProviderObservesFeatureChangesAfterBinding() {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        makeSUT(attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeature(
+            featureFlagger: flagger, aiChatSettings: MockAIChatSettingsProvider()))
+        var requestCount = 0
+        sut.attachedTabContextsProvider = {
+            requestCount += 1
+            return MultiTabAttachmentRequest(contexts: { [] }, didConsume: {})
+        }
+        let script = makeTestUserScript()
+        sut.bindToUserScript(script)
+        XCTAssertNil(script.attachedTabContextsProvider?())
+
+        flagger.enabledFeatureFlags = [.aiChatContextualAttachMoreTabs]
+        XCTAssertNotNil(script.attachedTabContextsProvider?())
+        XCTAssertEqual(requestCount, 1)
+
+        flagger.enabledFeatureFlags = []
+        XCTAssertNil(script.attachedTabContextsProvider?())
+        XCTAssertEqual(requestCount, 1)
     }
 
     func test_chipAttachAction_firesAttachCallback() {

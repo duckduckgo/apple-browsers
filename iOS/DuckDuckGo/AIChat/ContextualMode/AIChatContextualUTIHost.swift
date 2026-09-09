@@ -29,6 +29,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private let coordinator: UnifiedToggleInputCoordinator
     let chipViewModel: UnifiedToggleInputPageContextChipViewModel
     private let hasActiveChat: () -> Bool
+    private let attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding
     private weak var contextualChatViewController: AIChatContextualWebViewController?
     private weak var currentUserScript: AIChatUserScript?
     private weak var pendingUserScriptToBind: AIChatUserScript?
@@ -55,6 +56,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onAIVoiceChatRequested: (() -> Void)?
     var onEditModeChange: ((Bool) -> Void)?
 
+    var attachedTabContextsProvider: (() -> MultiTabAttachmentRequest?)?
+
     /// Raised by the input's microphone, which dictates into the field rather than opening voice chat.
     var onVoiceSearchRequested: (() -> Void)?
 
@@ -73,11 +76,13 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
+        attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding = AIChatContextualAttachMoreTabsFeature(),
         start: ContextualInputStart = .expandedOnExistingChat,
         usageLimitsStore: DuckAiUsageLimitsStore? = nil
     ) {
         let isFloatingInputAvailable = floatingInputFeature.isAvailable
         self.hasActiveChat = hasActiveChat
+        self.attachMoreTabsFeature = attachMoreTabsFeature
         self.startsPreSubmit = start.isPreSubmit
         self.usesFloatingInput = isFloatingInputAvailable
         self.hasDeliveredFirstPrompt = !start.isPreSubmit
@@ -202,6 +207,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         currentUserScript = userScript
         userScript.attachedPageContextProvider = { [weak self] in
             self?.chipViewModel.pendingAttachedContextData
+        }
+        userScript.attachedTabContextsProvider = { [weak self] in
+            guard let self else { return nil }
+            return self.attachMoreTabsFeature.makeRequest { self.attachedTabContextsProvider?() }
         }
         userScript.onPromptSubmitted = { [weak self] in
             self?.handlePromptSubmittedFromUserScript()

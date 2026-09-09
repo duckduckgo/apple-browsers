@@ -120,6 +120,12 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// owns the attachment state (e.g. `AIChatContextualUTIHost`).
     var attachedPageContextProvider: (() -> AIChatPageContextData?)?
 
+    /// Captures attachment ownership synchronously before waiting for supplied contexts.
+    var attachedTabContextsProvider: (() -> MultiTabAttachmentRequest?)?
+    private var pendingTabContextSubmission: Task<Void, Never>?
+    private var tabContextSubmissionGeneration = 0
+    private var latestTabContextSubmissionID: UUID?
+
     /// Text selections to send on the prompt's `selections` key, alongside `pageContext` rather than in place of it.
     var attachedSelectionsProvider: (() -> [AIChatSelectionContextData])?
 
@@ -149,6 +155,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         handler.setSyncStatusChangedHandler { [weak self] status in
             self?.submitSyncStatusChanged(status)
         }
+    }
+
+    deinit {
+        pendingTabContextSubmission?.cancel()
     }
 
     private static func buildMessageOriginRules(debugSettings: AIChatDebugSettingsHandling) -> [HostnameMatchingRule] {
@@ -193,6 +203,13 @@ final class AIChatUserScript: NSObject, Subfeature {
             return nil
         }
         Logger.aiChat.debug("AIChatUserScript: handled message: \(methodName)")
+
+        switch message {
+        case .newChatStarted, .newImageGenerationChatStarted, .closeAIChat:
+            cancelPendingTabContextSubmission()
+        default:
+            break
+        }
 
         delegate?.aiChatUserScript(self, didReceiveMessage: message)
 
@@ -360,11 +377,11 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
-        // `AIChatNativePrompt.pageContext` accepts either a single `PageContext` or an array
-        // (omnibar's multi-tab case on macOS). iOS today always sends the single form, which
-        // matches the duck.ai sidebar's existing current-page semantics.
-        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext.map(AIChatPageContextPayload.single), selections: attachedSelectionsPayload, reasoningEffort: reasoningEffort)
-        pushPrompt(promptPayload)
+        let selections = attachedSelectionsPayload
+        submitWithTabContexts(currentPageContext: pageContext) { context in
+            AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId,
+                                           pageContext: context, selections: selections, reasoningEffort: reasoningEffort)
+        }
     }
 
     func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
@@ -378,21 +395,77 @@ final class AIChatUserScript: NSObject, Subfeature {
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData? = nil,
                       reasoningEffort: AIChatReasoningEffort? = nil) {
-        // `attachedPageContextProvider` returns the single current-page form on iOS; wrap it
-        // in the `.single` variant of the union the schema now accepts.
-        let promptPayload = AIChatNativePrompt.queryPrompt(
-            prompt,
-            autoSubmit: true,
-            toolChoice: tools?.map(\.rawValue),
-            images: images,
-            files: files,
-            modelId: modelId,
-            pageContext: (pageContext ?? attachedPageContextProvider?()).map(AIChatPageContextPayload.single),
-            selections: attachedSelectionsPayload,
-            reasoningEffort: reasoningEffort
-        )
-        pushPrompt(promptPayload)
-        onPromptSubmitted?()
+        let currentPageContext = pageContext ?? attachedPageContextProvider?()
+        let selections = attachedSelectionsPayload
+        submitWithTabContexts(currentPageContext: currentPageContext, didSubmit: onPromptSubmitted) { context in
+            AIChatNativePrompt.queryPrompt(
+                prompt,
+                autoSubmit: true,
+                toolChoice: tools?.map(\.rawValue),
+                images: images,
+                files: files,
+                modelId: modelId,
+                pageContext: context,
+                selections: selections,
+                reasoningEffort: reasoningEffort)
+        }
+    }
+
+    private func submitWithTabContexts(currentPageContext: AIChatPageContextData?,
+                                       didSubmit: (() -> Void)? = nil,
+                                       makePayload: @escaping (AIChatPageContextPayload?) -> AIChatNativePrompt) {
+        let request = attachedTabContextsProvider?()
+        guard request != nil || pendingTabContextSubmission != nil else {
+            pushPrompt(makePayload(currentPageContext.map(AIChatPageContextPayload.single)))
+            didSubmit?()
+            return
+        }
+
+        let previous = pendingTabContextSubmission
+        let generation = tabContextSubmissionGeneration
+        let submissionID = UUID()
+        latestTabContextSubmissionID = submissionID
+        let sourceWebView = webView
+        pendingTabContextSubmission = Task { @MainActor [weak self, weak sourceWebView] in
+            defer {
+                if self?.latestTabContextSubmissionID == submissionID {
+                    self?.pendingTabContextSubmission = nil
+                }
+            }
+            await withTaskCancellationHandler(operation: {
+                await previous?.value
+            }, onCancel: {
+                previous?.cancel()
+            })
+            guard !Task.isCancelled, self?.tabContextSubmissionGeneration == generation else { return }
+            let contexts = await request?.contexts() ?? []
+            guard !Task.isCancelled, let self, self.tabContextSubmissionGeneration == generation,
+                  self.webView === sourceWebView else { return }
+
+            let context = self.pageContextPayload(currentPageContext: currentPageContext, tabContexts: contexts)
+            guard self.pushPrompt(makePayload(context)) else { return }
+            request?.didConsume()
+            didSubmit?()
+        }
+    }
+
+    private func pageContextPayload(currentPageContext: AIChatPageContextData?,
+                                    tabContexts: [AIChatPageContextData]) -> AIChatPageContextPayload? {
+        guard !tabContexts.isEmpty else {
+            return currentPageContext.map(AIChatPageContextPayload.single)
+        }
+
+        if let currentPageContext {
+            return .multiple([currentPageContext.withTabId(nil)] + tabContexts.filter { $0.tabId != nil })
+        }
+        return .multiple(tabContexts)
+    }
+
+    func cancelPendingTabContextSubmission() {
+        tabContextSubmissionGeneration += 1
+        pendingTabContextSubmission?.cancel()
+        pendingTabContextSubmission = nil
+        latestTabContextSubmissionID = nil
     }
 
     /// Nil rather than empty when nothing is attached, so the key is omitted from the payload.
@@ -410,11 +483,13 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     /// Consumes the payload's selections only once it has been dispatched, so a dropped push does not
     /// destroy them. Dispatch is not acknowledgement — the frontend can still fail to receive it.
-    private func pushPrompt(_ payload: AIChatNativePrompt) {
-        guard push(.submitPrompt(payload)) else { return }
-        guard let selectionIDs = payload.selections?.map(\.id), !selectionIDs.isEmpty else { return }
-
-        onAttachedSelectionsConsumed?(selectionIDs)
+    @discardableResult
+    private func pushPrompt(_ payload: AIChatNativePrompt) -> Bool {
+        guard push(.submitPrompt(payload)) else { return false }
+        if let selectionIDs = payload.selections?.map(\.id), !selectionIDs.isEmpty {
+            onAttachedSelectionsConsumed?(selectionIDs)
+        }
+        return true
     }
 
     /// Submits a start chat action to the web content, initiating a new AI Chat conversation.
@@ -472,6 +547,12 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// - Returns: whether the message was dispatched. It is dropped when the web view or broker has gone.
     @discardableResult
     private func push(_ message: AIChatPushMessage) -> Bool {
+        switch message {
+        case .newChatAction, .fireButtonAction, .promptInterruption:
+            cancelPendingTabContextSubmission()
+        default:
+            break
+        }
         guard let webView = webView else {
             return false
         }

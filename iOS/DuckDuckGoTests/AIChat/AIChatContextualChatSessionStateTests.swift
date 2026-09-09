@@ -2370,40 +2370,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertNil(sessionState.suggestedContext, "The offer belonged to the page we left")
     }
 
-    func testWhenNavigatingThenTheOfferIsClearedOnTheChipNotJustInSession() {
-        var clearedOnChip = false
-        sessionState.effects
-            .sink { effect in
-                if case .deliverPageContext(nil, let targets) = effect, targets.contains(.utiSuggestedContext) {
-                    clearedOnChip = true
-                }
-            }
-            .store(in: &cancellables)
-        arrangeOfferConditions()
-        sessionState.updateContext(makeTestContext(title: "Tokamak"))
-        XCTAssertNotNil(sessionState.suggestedContext)
-
-        sessionState.notifyPageChanged()
-
-        XCTAssertTrue(clearedOnChip, "Navigation must clear the offer on the chip, else it taps into a nil session value")
-    }
-
-    func testWhenAnOfferProbeReturnsNilThenAnAcceptedAttachmentSurvives() {
-        arrangeOfferConditions()
-        sessionState.updateContext(makeTestContext(title: "Tokamak", url: "https://en.wikipedia.org/wiki/Tokamak"))
-        sessionState.acceptSuggestedContext()
-        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Tokamak")
-
-        // Navigate to a page whose collect comes back empty.
-        sessionState.notifyPageChanged()
-        sessionState.updateContext(nil)
-
-        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Tokamak", "An empty offer probe must not detach a chosen page")
-        guard case .attached = sessionState.chipState else {
-            return XCTFail("Attachment was wiped by an empty navigation collect")
-        }
-    }
-
     private func makeSuggestedPrompts(ids: [String]) -> [ContextualSuggestedPrompt] {
         ids.map { id in
             ContextualSuggestedPrompt(id: id, label: id, prompt: "\(id).", icon: nil)

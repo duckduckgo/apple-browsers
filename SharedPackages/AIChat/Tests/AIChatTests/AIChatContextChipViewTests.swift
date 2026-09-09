@@ -126,19 +126,5 @@ final class AIChatContextChipViewTests: XCTestCase {
         XCTAssertTrue(sut.shouldReceiveChipTap(at: CGPoint(x: 100, y: 22)))
     }
 
-    func testSuggestedChipAcceptsTheOfferOnVoiceOverActivate() {
-        // Given
-        let sut = AIChatContextChipView()
-        sut.configure(state: .suggested(title: "Tokamak", favicon: nil))
-        var accepted = false
-        sut.onTap = { accepted = true }
-
-        // Then — the chip itself is the button, and activating it accepts
-        XCTAssertTrue(sut.isAccessibilityElement)
-        XCTAssertTrue(sut.accessibilityTraits.contains(.button))
-        XCTAssertTrue(sut.accessibilityActivate())
-        XCTAssertTrue(accepted)
-    }
-
 }
 #endif

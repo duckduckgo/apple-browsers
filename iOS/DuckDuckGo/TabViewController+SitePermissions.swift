@@ -49,6 +49,15 @@ private final class SitePermissionsManagementPresentationDelegate: NSObject, UIA
 final class SitePermissionsState {
     fileprivate(set) var coordinator: SitePermissionsCoordinator?
     fileprivate var mediaCaptureUserScript: MediaCaptureUserScript?
+    fileprivate var geolocationProvider: GeolocationProvider?
+    fileprivate var geolocationUserScript: GeolocationUserScript?
+    fileprivate var isGeolocationActive = false
+    fileprivate var isGeolocationBackgrounded = false
+    fileprivate var geolocationActivitySubscription: AnyCancellable?
+    fileprivate var retiredGeolocationUserScripts = [GeolocationUserScript]()
+    fileprivate var shouldRetireGeolocationOnNavigation = false
+    fileprivate var isCommittedGeolocationPolicyBlocked = false
+    fileprivate var isProvisionalGeolocationPolicyBlocked = false
     fileprivate var dialogHostingController: UIViewController?
     fileprivate var recoveryHostingController: UIViewController?
     fileprivate var managementHostingController: UIHostingController<SitePermissionsSheetView>?
@@ -101,6 +110,12 @@ final class SitePermissionsState {
     fileprivate var uptimeProvider: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
 
     fileprivate var featureFlagSubscription: AnyCancellable?
+    var contentBlockingWaitTasks = [UUID: Task<Void, Never>]()
+
+    fileprivate func cancelContentBlockingWaits() {
+        contentBlockingWaitTasks.values.forEach { $0.cancel() }
+        contentBlockingWaitTasks.removeAll()
+    }
 
     fileprivate func dismissDialog() {
         guard let hostingController = dialogHostingController else { return }
@@ -176,12 +191,39 @@ final class SitePermissionsState {
         managementPresentationDelegate = nil
     }
 
+    fileprivate func retireGeolocation() {
+        geolocationProvider?.close()
+        geolocationUserScript?.cancelAllWatches()
+        geolocationUserScript?.delegate = nil
+        discardRetiredGeolocationUserScripts()
+        geolocationProvider = nil
+        geolocationUserScript = nil
+        shouldRetireGeolocationOnNavigation = false
+    }
+
+    fileprivate func discardRetiredGeolocationUserScripts() {
+        retiredGeolocationUserScripts.forEach {
+            $0.cancelAllWatches()
+            $0.delegate = nil
+        }
+        retiredGeolocationUserScripts.removeAll()
+    }
+
     fileprivate func resetRequests(for pageChange: SitePermissionPageChange) {
+        if pageChange == .webContentProcessReplacement {
+            cancelContentBlockingWaits()
+        }
         dismissDialog()
         denyPendingBridgeRequests()
         handledBridgeRequestIDs.removeAll()
         mediaCapturePreapprovals.removeAll()
         dismissManagement()
+        geolocationProvider?.cancelPageActivity()
+        geolocationUserScript?.cancelAllWatches()
+        discardRetiredGeolocationUserScripts()
+        if shouldRetireGeolocationOnNavigation {
+            retireGeolocation()
+        }
         coordinator?.pageDidChange(pageChange)
         dismissRecovery()
     }
@@ -205,13 +247,16 @@ final class SitePermissionsState {
     }
 
     func close() {
+        cancelContentBlockingWaits()
         featureFlagSubscription = nil
+        geolocationActivitySubscription = nil
         isClosed = true
         dismissDialog()
         denyPendingBridgeRequests()
         handledBridgeRequestIDs.removeAll()
         mediaCapturePreapprovals.removeAll()
         dismissManagement()
+        retireGeolocation()
         coordinator?.close()
         dismissRecovery()
         coordinator = nil
@@ -249,11 +294,48 @@ extension TabViewController {
             }
     }
 
+    static func shouldWaitForContentBlockingAssets(assetsInstalled: Bool,
+                                                   contentBlockingEnabled: Bool,
+                                                   sitePermissionsEnabled: Bool,
+                                                   geolocationScriptInstalled: Bool,
+                                                   isDuckDuckGoSearch: Bool) -> Bool {
+        sitePermissionsEnabled != geolocationScriptInstalled
+            || (!assetsInstalled && contentBlockingEnabled && !isDuckDuckGoSearch)
+    }
+
     func makeTabContentBlockingAssetsPublisher(
         mediaCaptureUserScript: MediaCaptureUserScript
     ) -> AnyPublisher<ContentBlockingUpdating.NewContent, Never> {
-        contentBlockingAssetsPublisher
-            .map { $0.includingSitePermissionsMediaCapture(mediaCaptureUserScript) }
+        // Content updates rebuild UserScripts, but geolocation owns frame registrations and watch callbacks.
+        let geolocationUserScript = sitePermissionsState.geolocationUserScript
+            ?? GeolocationUserScript(installImmediately: true)
+        geolocationUserScript.activationHandler = { [weak self] frame in
+            self?.shouldActivateSitePermissionsGeolocation(in: frame) ?? false
+        }
+
+        let isEnabled = featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .map { [weak self] in self?.featureFlagger.isFeatureOn(.sitePermissions) == true }
+            .prepend(featureFlagger.isFeatureOn(.sitePermissions))
+            .removeDuplicates()
+
+        return contentBlockingAssetsPublisher
+            .combineLatest(isEnabled)
+            .scan(nil as ContentBlockingUpdating.NewContent?) { previous, update in
+                var content = update.0
+                let isEnabled = update.1
+                if previous?.id == content.id {
+                    // A flag-only refresh must not replay a previous notification's page reload.
+                    content.rulesUpdate = .init(rules: content.rulesUpdate.rules, changes: [:], completionTokens: [])
+                }
+                return content
+                    .includingSitePermissionsMediaCapture(mediaCaptureUserScript)
+                    .includingSitePermissionsGeolocation(
+                        geolocationUserScript,
+                        enabled: isEnabled
+                    )
+            }
+            .compactMap { $0 }
             .eraseToAnyPublisher()
     }
 
@@ -276,8 +358,10 @@ extension TabViewController {
         sitePermissionsState.committedMainFrameURL = nil
         sitePermissionsState.committedMediaPolicyBlocks.removeAll()
         sitePermissionsState.provisionalMediaPolicyBlocks.removeAll()
+        sitePermissionsState.isCommittedGeolocationPolicyBlocked = false
         sitePermissionsState.isMainFrameNavigationProvisional = false
         sitePermissionsState.provisionalNavigation = nil
+        sitePermissionsState.isProvisionalGeolocationPolicyBlocked = false
         if replacingWebView {
             sitePermissionsState.resetRequests(for: .webContentProcessReplacement)
         }
@@ -288,8 +372,10 @@ extension TabViewController {
         if webView === self.webView, isCurrentSitePermissionsProvisionalNavigation(navigation) {
             sitePermissionsState.committedMainFrameURL = webView.url
             sitePermissionsState.committedMediaPolicyBlocks = sitePermissionsState.provisionalMediaPolicyBlocks
+            sitePermissionsState.isCommittedGeolocationPolicyBlocked = sitePermissionsState.isProvisionalGeolocationPolicyBlocked
             sitePermissionsState.isMainFrameNavigationProvisional = false
             sitePermissionsState.provisionalNavigation = nil
+            sitePermissionsState.isProvisionalGeolocationPolicyBlocked = false
         }
     }
 
@@ -299,6 +385,7 @@ extension TabViewController {
             sitePermissionsState.isMainFrameNavigationProvisional = true
             sitePermissionsState.provisionalNavigation = navigation
             sitePermissionsState.provisionalMediaPolicyBlocks.removeAll()
+            sitePermissionsState.isProvisionalGeolocationPolicyBlocked = false
             sitePermissionsState.resetRequests(for: .navigation)
         }
     }
@@ -308,6 +395,7 @@ extension TabViewController {
             sitePermissionsState.isMainFrameNavigationProvisional = false
             sitePermissionsState.provisionalNavigation = nil
             sitePermissionsState.provisionalMediaPolicyBlocks.removeAll()
+            sitePermissionsState.isProvisionalGeolocationPolicyBlocked = false
         }
     }
 
@@ -317,10 +405,23 @@ extension TabViewController {
             sitePermissionsState.committedMainFrameURL = nil
             sitePermissionsState.committedMediaPolicyBlocks.removeAll()
             sitePermissionsState.provisionalMediaPolicyBlocks.removeAll()
+            sitePermissionsState.isCommittedGeolocationPolicyBlocked = false
             sitePermissionsState.isMainFrameNavigationProvisional = false
             sitePermissionsState.provisionalNavigation = nil
+            sitePermissionsState.isProvisionalGeolocationPolicyBlocked = false
             sitePermissionsState.resetRequests(for: .webContentProcessReplacement)
         }
+    }
+
+    func prepareSitePermissionsForDataClearing() {
+        sitePermissionsState.cancelContentBlockingWaits()
+        sitePermissionsState.navigationGeneration &+= 1
+        sitePermissionsState.committedMainFrameURL = nil
+        sitePermissionsState.isCommittedGeolocationPolicyBlocked = false
+        sitePermissionsState.isMainFrameNavigationProvisional = true
+        sitePermissionsState.provisionalNavigation = nil
+        sitePermissionsState.isProvisionalGeolocationPolicyBlocked = false
+        sitePermissionsState.resetRequests(for: .navigation)
     }
 
     func closeSitePermissions() {
@@ -627,20 +728,273 @@ extension TabViewController {
         return coordinator
     }
 
-    private func currentSitePermissionContext(tabID: String, requestingFrameID: UInt64) -> SitePermissionRequestContext? {
-        let pendingRequest = sitePermissionsState.pendingBridgeRequests.values
-            .map { ($0.context, $0.frame) }
-            .first { $0.0.tabID == tabID && $0.0.requestingFrameID == requestingFrameID }
-        guard let pendingRequest else {
+    func configureSitePermissionsGeolocation(with userScript: GeolocationUserScript?, notificationCenter: NotificationCenter = .default) {
+        guard let userScript else {
+            // An already-loaded page keeps its injected shim until the next navigation. Retain its
+            // weakly-held message handler until then so outstanding page promises still resolve.
+            sitePermissionsState.shouldRetireGeolocationOnNavigation = sitePermissionsState.geolocationUserScript != nil
+            return
+        }
+        userScript.activationHandler = { [weak self] frame in
+            self?.shouldActivateSitePermissionsGeolocation(in: frame) ?? false
+        }
+        if sitePermissionsState.geolocationUserScript === userScript {
+            sitePermissionsState.shouldRetireGeolocationOnNavigation = false
+            if let provider = sitePermissionsState.geolocationProvider {
+                userScript.delegate = provider
+                return
+            }
+        } else {
+            if let currentScript = sitePermissionsState.geolocationUserScript {
+                sitePermissionsState.retiredGeolocationUserScripts.append(currentScript)
+            }
+            sitePermissionsState.geolocationUserScript = userScript
+            sitePermissionsState.shouldRetireGeolocationOnNavigation = false
+        }
+        if let provider = sitePermissionsState.geolocationProvider {
+            userScript.delegate = provider
+            return
+        }
+        guard featureFlagger.isFeatureOn(.sitePermissions),
+              let dependencies = sitePermissionsDependenciesProvider(),
+              makeSitePermissionsCoordinatorIfNeeded(dependencies: dependencies) != nil else {
+            return
+        }
+
+        let provider = GeolocationProvider(
+            systemPermissionClient: dependencies.systemPermissionClient,
+            contextProvider: { [weak self] frame in
+                self?.makeGeolocationSitePermissionContext(for: frame)
+            },
+            requestPermission: { [weak self] context, completion in
+                guard let self, let coordinator = sitePermissionsState.coordinator else {
+                    completion(.deny(systemBlocks: []))
+                    return
+                }
+                coordinator.request(
+                    SitePermissionRequest(context: context, permissionTypes: [.location]),
+                    promptHandler: sitePermissionsPromptHandler(),
+                    completion: completion
+                )
+            },
+            queryPermission: { [weak self] context in
+                self?.sitePermissionsState.coordinator?.queryState(for: .location, context: context) ?? .denied
+            }
+        )
+        sitePermissionsState.geolocationProvider = provider
+        sitePermissionsState.isGeolocationBackgrounded = UIApplication.shared.applicationState == .background
+        setSitePermissionsGeolocationActive(sitePermissionsState.isGeolocationActive)
+        sitePermissionsState.geolocationActivitySubscription = notificationCenter.publisher(for: UIApplication.didEnterBackgroundNotification)
+            .map { _ in true }
+            .merge(with: notificationCenter.publisher(for: UIApplication.didBecomeActiveNotification).map { _ in false })
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isBackgrounded in
+                guard let self else { return }
+                self.sitePermissionsState.isGeolocationBackgrounded = isBackgrounded
+                self.setSitePermissionsGeolocationActive(self.sitePermissionsState.isGeolocationActive)
+            }
+        userScript.delegate = provider
+    }
+
+    func setSitePermissionsGeolocationActive(_ isActive: Bool) {
+        sitePermissionsState.isGeolocationActive = isActive
+        sitePermissionsState.geolocationProvider?.setIsActive(isActive && !sitePermissionsState.isGeolocationBackgrounded)
+    }
+
+    private func shouldActivateSitePermissionsGeolocation(in frame: GeolocationFrame) -> Bool {
+        let host = frame.securityOrigin.host.lowercased()
+        return featureFlagger.isFeatureOn(.sitePermissions)
+            && !sitePermissionsState.isClosed
+            && !isLinkPreview
+            && !isError
+            && frame.isAssociated(with: webView)
+            && !host.isEmpty
+            && isSecureGeolocationOrigin(frame.securityOrigin)
+            && host != "duck.ai"
+            && !host.hasSuffix(".duck.ai")
+    }
+
+    func makeGeolocationSitePermissionContext(for frame: GeolocationFrame) -> SitePermissionRequestContext? {
+        guard featureFlagger.isFeatureOn(.sitePermissions),
+              !sitePermissionsState.isClosed,
+              frame.isAssociated(with: webView),
+              !isLinkPreview,
+              !isError,
+              !sitePermissionsState.isCommittedGeolocationPolicyBlocked,
+              let committedURL = sitePermissionsState.committedMainFrameURL,
+              let topLevelSite = currentSitePermissionKey(),
+              isSecureGeolocationOrigin(frame.securityOrigin),
+              Self.isSameOrigin(frame.securityOrigin, as: committedURL) else {
             return nil
         }
 
-        // WKFrameInfo exposes identity but no public liveness API. Holding the exact frame object,
-        // together with navigation and process generations, is the strongest public validation;
-        // same-document iframe removal cannot be observed here.
-        let context = pendingRequest.0
+        return SitePermissionRequestContext(
+            tabID: tabModel.uid,
+            topLevelSite: topLevelSite,
+            requestingFrameID: frame.requestingFrameID,
+            webContentProcessGeneration: sitePermissionsState.webContentProcessGeneration,
+            navigationGeneration: sitePermissionsState.navigationGeneration
+        )
+    }
+
+    private func isSecureGeolocationOrigin(_ origin: WKSecurityOrigin) -> Bool {
+        let scheme = origin.protocol.lowercased()
+        guard !origin.host.isEmpty,
+              scheme == "https" || scheme == "http" else { return false }
+        guard scheme == "http" else { return true }
+
+        let host = origin.host.lowercased()
+        let ipv4Octets = host.split(separator: ".", omittingEmptySubsequences: false)
+        let isIPv4Loopback = ipv4Octets.count == 4
+            && ipv4Octets.allSatisfy { UInt8($0) != nil }
+            && UInt8(ipv4Octets[0]) == 127
+        return host == "localhost"
+            || host.hasSuffix(".localhost")
+            || host == "::1"
+            || host == "[::1]"
+            || isIPv4Loopback
+    }
+
+    /// Cross-origin delegation is intentionally unsupported in v1 because the shim cannot reliably
+    /// evaluate subframe response headers and `allow="geolocation"`. Revisit only with breakage evidence
+    /// or an availability-gated OS-managed API; until then, native attribution denies every cross-origin frame.
+    private static func isSameOrigin(_ origin: WKSecurityOrigin, as url: URL) -> Bool {
+        let originScheme = origin.protocol.lowercased()
+        let urlScheme = url.scheme?.lowercased()
+        guard let urlScheme,
+              let urlHost = url.host,
+              !origin.host.isEmpty,
+              originScheme == urlScheme,
+              normalizedOriginHost(origin.host) == normalizedOriginHost(urlHost) else { return false }
+
+        let originPort = origin.port == 0 ? defaultPort(for: originScheme) : origin.port
+        let urlPort = url.port ?? defaultPort(for: urlScheme)
+        return originPort == urlPort
+    }
+
+    private static func normalizedOriginHost(_ host: String) -> String {
+        host.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+    }
+
+    private static func defaultPort(for scheme: String) -> Int? {
+        switch scheme {
+        case "http":
+            return 80
+        case "https":
+            return 443
+        default:
+            return nil
+        }
+    }
+
+    func captureSitePermissionsGeolocationPolicy(from response: URLResponse, isForMainFrame: Bool) {
+        guard isForMainFrame,
+              sitePermissionsState.isMainFrameNavigationProvisional else { return }
+
+        let header = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Permissions-Policy")
+        sitePermissionsState.isProvisionalGeolocationPolicyBlocked = Self.permissionsPolicyDisablesGeolocation(
+            header,
+            for: response.url
+        )
+    }
+
+    static func permissionsPolicyDisablesGeolocation(_ header: String?, for pageURL: URL?) -> Bool {
+        guard let header else { return false }
+        guard let directives = splitPermissionsPolicyField(header[...], on: ",") else { return true }
+
+        let geolocationAllowLists = directives.compactMap { directive -> Substring? in
+            let components = directive.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+            guard components.count == 2,
+                  components[0].trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "geolocation" else {
+                return nil
+            }
+            return components[1]
+        }
+
+        return geolocationAllowLists.contains { !geolocationAllowList($0, includes: pageURL) }
+    }
+
+    private static func geolocationAllowList(_ rawValue: Substring, includes pageURL: URL?) -> Bool {
+        let trimmedValue = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let components = splitPermissionsPolicyField(trimmedValue[...], on: ";"),
+              let value = components.first else { return false }
+        // RFC 8941 parameters do not change the allowlist. Validate them before discarding them.
+        let parameterValue = [
+            #""(?:[\x20-\x21\x23-\x5B\x5D-\x7E]|\\["\\])*""#,
+            #"[A-Za-z*][A-Za-z0-9!#$%&'*+.^_`|~:/-]*"#,
+            #"-?(?:[0-9]{1,15}|[0-9]{1,12}\.[0-9]{1,3})"#,
+            #":(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}={0,2}|[A-Za-z0-9+/]{3}=?)?:"#,
+            #"\?[01]"#
+        ].joined(separator: "|")
+        let parameter = #"^ *[a-z*][a-z0-9_.*-]*(?:=(?:"# + parameterValue + #"))?$"#
+        guard components.dropFirst().allSatisfy({ $0.range(of: parameter, options: .regularExpression) != nil }) else { return false }
+        if value == "*" { return true }
+        guard value.first == "(", value.last == ")" else { return false }
+
+        let allowList = value.dropFirst().dropLast().split(whereSeparator: { $0.isWhitespace })
+        return allowList.contains { rawToken in
+            let token = rawToken.trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+            if token.lowercased() == "self" || token == "*" { return true }
+            guard let pageURL, let allowedURL = URL(string: token) else { return false }
+            return sameOrigin(allowedURL, pageURL)
+        }
+    }
+
+    private static func splitPermissionsPolicyField(_ value: Substring, on separator: Character) -> [Substring]? {
+        var isQuoted = false
+        var isEscaped = false
+        var listDepth = 0
+        var isMalformed = false
+        let components = value.split(omittingEmptySubsequences: false) { character in
+            if isEscaped {
+                isEscaped = false
+            } else if isQuoted && character == "\\" {
+                isEscaped = true
+            } else if character == "\"" {
+                isQuoted.toggle()
+            } else if !isQuoted {
+                if character == "(" { listDepth += 1 }
+                if character == ")" { listDepth -= 1 }
+                isMalformed = isMalformed || listDepth < 0 || listDepth > 1
+                return character == separator && listDepth == 0
+            }
+            return false
+        }
+        guard !isQuoted, !isEscaped, listDepth == 0, !isMalformed else { return nil }
+        return components
+    }
+
+    private static func sameOrigin(_ lhs: URL, _ rhs: URL) -> Bool {
+        guard let lhsScheme = lhs.scheme?.lowercased(),
+              let rhsScheme = rhs.scheme?.lowercased(),
+              let lhsHost = lhs.host,
+              let rhsHost = rhs.host else { return false }
+        return lhsScheme == rhsScheme
+            && normalizedOriginHost(lhsHost) == normalizedOriginHost(rhsHost)
+            && (lhs.port ?? defaultPort(for: lhsScheme)) == (rhs.port ?? defaultPort(for: rhsScheme))
+    }
+
+    private func currentSitePermissionContext(tabID: String, requestingFrameID: UInt64) -> SitePermissionRequestContext? {
+        let context: SitePermissionRequestContext
+        if let pendingRequest = sitePermissionsState.pendingBridgeRequests.values
+            .map({ ($0.context, $0.frame) })
+            .first(where: { $0.0.tabID == tabID && $0.0.requestingFrameID == requestingFrameID }) {
+            // WKFrameInfo exposes identity but no public liveness API. Holding the exact frame object,
+            // together with navigation and process generations, is the strongest public validation;
+            // same-document iframe removal cannot be observed here.
+            guard pendingRequest.0.requestingFrameID
+                    == UInt64(UInt(bitPattern: ObjectIdentifier(pendingRequest.1))) else { return nil }
+            context = pendingRequest.0
+        } else if let geolocationContext = sitePermissionsState.geolocationProvider?.currentContext(
+            tabID: tabID,
+            requestingFrameID: requestingFrameID
+        ) {
+            context = geolocationContext
+        } else {
+            return nil
+        }
+
         guard tabID == tabModel.uid,
-              context.requestingFrameID == UInt64(UInt(bitPattern: ObjectIdentifier(pendingRequest.1))),
               context.webContentProcessGeneration == sitePermissionsState.webContentProcessGeneration,
               context.navigationGeneration == sitePermissionsState.navigationGeneration,
               context.topLevelSite == currentSitePermissionKey() else {
@@ -716,7 +1070,11 @@ extension TabViewController {
 
     private func presentSitePermissionDialog(_ prompt: SitePermissionPrompt,
                                              completion: @escaping (SitePermissionPromptDecision) -> Void) {
-        guard let viewModel = SitePermissionDialogViewModel(prompt: prompt),
+        guard let viewModel = SitePermissionDialogViewModel(
+                  prompt: prompt,
+                  isDuckDuckGoSERP: prompt.permissionTypes == [.location]
+                      && sitePermissionsState.committedMainFrameURL?.isDuckDuckGoSearch == true
+              ),
               let pixelPermissionType = SitePermissionsEvent.PermissionType(prompt.permissionTypes) else {
             completion(.denyOnce)
             return
@@ -820,6 +1178,18 @@ extension TabViewController {
     }
 
     private func fireSitePermissionsEvent(_ event: SitePermissionsEvent) {
+        // Phase 6 owns geolocation instrumentation. Keep the Phase 5 flow silent while reusing the
+        // coordinator paths that already emit camera and microphone events.
+        switch event {
+        case .permissionDialogImpression(type: .geolocation),
+             .permissionDialogClick(type: .geolocation, selection: _),
+             .permissionSystemPromptResult(type: .location, result: _),
+             .permissionReminderDialog(type: .geolocation, action: _),
+             .permissionSystemSettingsOpened(type: .geolocation):
+            return
+        default:
+            break
+        }
         sitePermissionsState.eventHandler(event)
     }
 

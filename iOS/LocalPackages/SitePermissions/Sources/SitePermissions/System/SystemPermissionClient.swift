@@ -38,7 +38,10 @@ public final class SystemPermissionClient: NSObject {
 
     public typealias LocationUpdate = Result<CLLocation, Error>
 
-    public var locationUpdateHandler: ((LocationUpdate) -> Void)?
+    private struct LocationUpdateSubscriber {
+        let highAccuracy: Bool
+        let handler: (LocationUpdate) -> Void
+    }
 
     private let locationManager: CLLocationManager
     private let locationServicesEnabled: () -> Bool
@@ -48,6 +51,7 @@ public final class SystemPermissionClient: NSObject {
 
     private var locationState: SystemPermissionAuthorizationState = .notDetermined
     private var locationAuthorizationContinuations = [CheckedContinuation<SystemPermissionAuthorizationState, Never>]()
+    private var locationUpdateSubscribers = [UUID: LocationUpdateSubscriber]()
 
     var pendingLocationAuthorizationRequestCount: Int {
         locationAuthorizationContinuations.count
@@ -117,6 +121,43 @@ public final class SystemPermissionClient: NSObject {
 
     public func stopUpdatingLocation() {
         locationManager.stopUpdatingLocation()
+    }
+
+    /// Shares the client's single location manager across independent tab providers.
+    @discardableResult
+    public func addLocationUpdateHandler(highAccuracy: Bool = false,
+                                         _ handler: @escaping (LocationUpdate) -> Void) -> UUID {
+        let identifier = UUID()
+        let shouldStartUpdating = locationUpdateSubscribers.isEmpty
+        locationUpdateSubscribers[identifier] = LocationUpdateSubscriber(highAccuracy: highAccuracy,
+                                                                          handler: handler)
+        updateDesiredLocationAccuracy()
+        if shouldStartUpdating {
+            startUpdatingLocation()
+        }
+        return identifier
+    }
+
+    public func updateLocationUpdateHandler(_ identifier: UUID, highAccuracy: Bool) {
+        guard let subscriber = locationUpdateSubscribers[identifier],
+              subscriber.highAccuracy != highAccuracy else { return }
+        locationUpdateSubscribers[identifier] = LocationUpdateSubscriber(highAccuracy: highAccuracy,
+                                                                          handler: subscriber.handler)
+        updateDesiredLocationAccuracy()
+    }
+
+    public func removeLocationUpdateHandler(_ identifier: UUID) {
+        guard locationUpdateSubscribers.removeValue(forKey: identifier) != nil else { return }
+        updateDesiredLocationAccuracy()
+        if locationUpdateSubscribers.isEmpty {
+            stopUpdatingLocation()
+        }
+    }
+
+    private func updateDesiredLocationAccuracy() {
+        locationManager.desiredAccuracy = locationUpdateSubscribers.values.contains(where: \.highAccuracy)
+            ? kCLLocationAccuracyBest
+            : kCLLocationAccuracyHundredMeters
     }
 
     private func refreshLocationAuthorizationState() {
@@ -207,10 +248,15 @@ extension SystemPermissionClient: @preconcurrency CLLocationManagerDelegate {
     }
 
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        locations.forEach { locationUpdateHandler?(.success($0)) }
+        guard let location = locations.last(where: {
+            $0.horizontalAccuracy >= 0 && CLLocationCoordinate2DIsValid($0.coordinate)
+        }) else { return }
+        let update = LocationUpdate.success(location)
+        Array(locationUpdateSubscribers.values).forEach { $0.handler(update) }
     }
 
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        locationUpdateHandler?(.failure(error))
+        let update = LocationUpdate.failure(error)
+        Array(locationUpdateSubscribers.values).forEach { $0.handler(update) }
     }
 }

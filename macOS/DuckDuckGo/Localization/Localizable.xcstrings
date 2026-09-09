@@ -4581,6 +4581,186 @@
         }
       }
     },
+    "aichat.createImage.modelSwitch.privacy.subtitle" : {
+      "comment" : "Subtitle shown after switching away from a Zero Provider Visibility model for image creation. Parameter is the previous model's short name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ kann keine Bilder erstellen. Keine Sichtbarkeit auf Anbieterseite gilt erst wieder, wenn du zurückwechselst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ can't create images. Zero Provider Visibility won't apply until you switch back."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ no puede crear imágenes. La visibilidad cero del proveedor no se aplicará hasta que vuelvas a cambiar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ne peut pas créer d’images. L’option Zéro visibilité du fournisseur ne s’appliquera pas tant que tu ne reviendras pas à ce modèle."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ non può creare immagini. La visibilità zero del fornitore non verrà applicata finché non tornerai indietro."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ kan geen afbeeldingen maken. Geen zichtbaarheid van de provider is pas van toepassing als je terugschakelt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ nie może tworzyć obrazów. Zerowa widoczność dostawcy nie będzie obowiązywać, dopóki nie przełączysz się z powrotem."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ não pode criar imagens. A funcionalidade Sem visibilidade do fornecedor não se aplicará até voltares a mudar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ не может создавать изображения. Защита Zero Provider Visibility не будет действовать, пока вы не переключитесь обратно."
+          }
+        }
+      }
+    },
+    "aichat.createImage.modelSwitch.subtitle" : {
+      "comment" : "Subtitle explaining why Duck.ai switched models. Parameter is the previous model's short name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ unterstützt keine Bilderstellung."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ doesn't support image creation."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ no admite la creación de imágenes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ne prend pas en charge la création d’images."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ non supporta la creazione di immagini."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ biedt geen ondersteuning voor het maken van afbeeldingen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ nie obsługuje tworzenia obrazów."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ não suporta a criação de imagens."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ не поддерживает создание изображений."
+          }
+        }
+      }
+    },
+    "aichat.createImage.modelSwitch.title" : {
+      "comment" : "Title of the Duck.ai input card shown after switching to an image-capable model. Parameter is the new model's short name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt wird %@ verwendet"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Now using %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora usas %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilise désormais %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ora usi %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ wordt nu gebruikt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teraz używasz %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora a utilizar %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сейчас используется %@"
+          }
+        }
+      }
+    },
     "aichat.customize-button.tooltip" : {
       "comment" : "Tooltip for the customize button in AI chat omnibar",
       "extractionState" : "stale",

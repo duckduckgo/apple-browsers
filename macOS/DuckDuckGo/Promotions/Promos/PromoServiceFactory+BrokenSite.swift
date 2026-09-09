@@ -1,6 +1,5 @@
 //
-//  PixelKitFiring.swift
-//  DuckDuckGo
+//  PromoServiceFactory+BrokenSite.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,10 +16,20 @@
 //  limitations under the License.
 //
 
-import PixelKit
+import Foundation
 
-/// PixelKit's `PixelFiring`, under a name that does not collide with `Core.PixelFiring`.
-///
-/// Any file importing both modules sees an ambiguous `PixelFiring`. Once `Core.PixelFiring` is
-/// deleted the ambiguity goes with it and this typealias can be renamed away.
-typealias PixelKitFiring = PixelFiring
+extension PromoServiceFactory {
+
+    static let brokenSitePromoID = "broken-site"
+
+    /// Builds the Broken Site Promo (the "Site not working?" popover on the privacy dashboard button).
+    static func brokenSite(coordinator: BrokenSitePromptPresentationCoordinator) -> ExternalPromo {
+        return ExternalPromo(
+            id: brokenSitePromoID,
+            initiated: .user,
+            promoType: PromoType(.semiModal),
+            context: .webPage,
+            delegate: coordinator
+        )
+    }
+}

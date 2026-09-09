@@ -196,7 +196,8 @@ extension PromoServiceFactoryTests {
                 ),
                 onboardingStateUpdater: MockOnboardingStateUpdater(),
                 autoconsentStats: MockAutoconsentStats()
-            )
+            ),
+            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator()
         )
     }
 }

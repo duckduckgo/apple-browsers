@@ -31,23 +31,18 @@ enum TunnelConfigurationUpdateOperation {
         var didStopMonitors = false
 
         do {
-            try Task.checkCancellation()
             let tunnelConfiguration = try await generateTunnelConfiguration()
 
-            try Task.checkCancellation()
             if reassert {
                 await stopMonitors()
                 didStopMonitors = true
             }
 
-            try Task.checkCancellation()
             try await updateAdapterConfiguration(tunnelConfiguration)
 
             if reassert {
                 try await handleAdapterStarted()
             }
-        } catch is CancellationError {
-            throw CancellationError()
         } catch {
             let didCancelTunnel = await handleFailure(error)
             if reassert, didStopMonitors, !didCancelTunnel {

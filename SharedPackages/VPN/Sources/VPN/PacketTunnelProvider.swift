@@ -964,7 +964,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     private func startTunnel(with tunnelConfiguration: TunnelConfiguration, onDemand: Bool) async throws {
-        try Task.checkCancellation()
 
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             adapter.start(tunnelConfiguration: tunnelConfiguration) { [weak self] error in
@@ -1130,18 +1129,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             providerEvents.fire(.reportConnectionAttempt(attempt: .connecting, source: attemptSource))
         }
 
-        var configurationGeneration = tunnelPathGeneration
         try await TunnelConfigurationUpdateOperation.run(
             reassert: reassert,
             generateTunnelConfiguration: {
                 switch updateMethod {
                 case .selectServer(let serverSelectionMethod):
-                    let configuration = try await generateTunnelConfiguration(
+                    return try await generateTunnelConfiguration(
                         serverSelectionMethod: serverSelectionMethod,
                         dnsSettings: settings.dnsSettings,
                         regenerateKey: regenerateKey)
-                    configurationGeneration = tunnelPathGeneration
-                    return configuration
 
                 case .useConfiguration(let newTunnelConfiguration):
                     return newTunnelConfiguration
@@ -1151,7 +1147,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 await self?.stopMonitorsForReconfiguration(preservingFailureRecovery: attemptSource.preservesFailureRecoveryDuringReassertUpdate)
             },
             updateAdapterConfiguration: { [weak self] tunnelConfiguration in
-                guard let self, configurationGeneration == self.tunnelPathGeneration else { throw CancellationError() }
+                guard let self else { throw CancellationError() }
                 try await self.updateAdapterConfiguration(tunnelConfiguration: tunnelConfiguration, reassert: reassert)
             },
             handleAdapterStarted: { [weak self] in

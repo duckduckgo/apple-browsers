@@ -72,6 +72,13 @@ struct TabInputState: Equatable {
             && lhs.isModelPickerForcedVisible == rhs.isModelPickerForcedVisible
     }
 
+    /// The in-progress composition: what the user is drafting, as opposed to restored/ambient state.
+    mutating func clearDraft() {
+        text = ""
+        attachments = []
+        selectedTool = nil
+    }
+
     /// Compact, privacy-aware description for debug logs. Reports text length and
     /// attachment count rather than the values themselves so user prompts and image
     /// data don't end up in `os_log` output.

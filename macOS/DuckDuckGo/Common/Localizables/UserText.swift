@@ -992,7 +992,7 @@ struct UserText {
     static let aiChatUsageWarningsDismissAccessibilityLabel = NSLocalizedString("aichat.usageWarnings.dismiss.accessibility", value: "Dismiss", comment: "Accessibility label for the close button on the Duck.ai usage card")
     static let aiChatUsageWarningsModelPickerAccessibilityLabel = NSLocalizedString("aichat.usageWarnings.model-picker.accessibility", value: "Choose a model", comment: "Accessibility label for the chevron on the Duck.ai usage card, which opens the model picker")
     static func aiChatCreateImageModelSwitchTitle(_ modelShortName: String) -> String {
-        let message = NotLocalizedString(
+        let message = NSLocalizedString(
             "aichat.createImage.modelSwitch.title",
             value: "Now using %@",
             comment: "Title of the Duck.ai input card shown after switching to an image-capable model. Parameter is the new model's short name."
@@ -1000,7 +1000,7 @@ struct UserText {
         return String(format: message, modelShortName)
     }
     static func aiChatCreateImageModelSwitchSubtitle(_ modelShortName: String) -> String {
-        let message = NotLocalizedString(
+        let message = NSLocalizedString(
             "aichat.createImage.modelSwitch.subtitle",
             value: "%@ doesn't support image creation.",
             comment: "Subtitle explaining why Duck.ai switched models. Parameter is the previous model's short name."
@@ -1008,10 +1008,10 @@ struct UserText {
         return String(format: message, modelShortName)
     }
     static func aiChatCreateImageModelSwitchPrivacySubtitle(_ modelShortName: String) -> String {
-        let message = NotLocalizedString(
+        let message = NSLocalizedString(
             "aichat.createImage.modelSwitch.privacy.subtitle",
-            value: "%@ can't create images. Its extra privacy protections won't apply until you switch back.",
-            comment: "Subtitle shown after switching away from an OSS model for image creation. Parameter is the previous model's short name."
+            value: "%@ can't create images. Zero Provider Visibility won't apply until you switch back.",
+            comment: "Subtitle shown after switching away from a Zero Provider Visibility model for image creation. Parameter is the previous model's short name."
         )
         return String(format: message, modelShortName)
     }

@@ -181,7 +181,6 @@ final class ReportingService {
             await subscriptionDataReporter.saveWidgetAdded()
         }
         reportFailedCompilationsPixelIfNeeded()
-        AppDependencyProvider.shared.persistentPixel.sendQueuedPixels { _ in }
     }
 
     // MARK: - Suspend

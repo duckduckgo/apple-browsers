@@ -618,12 +618,9 @@ final class AIChatContextualChatSessionState {
             Logger.aiChat.debug("[SessionState] Context collection returned nil/empty - clearing context and downgrading to placeholder")
             latestContext = nil
             lastCollectedContext = nil
-            // Auto-attach follows the page, so an empty page clears the chip; a page the user chose
-            // (auto-attach off) is sticky and survives an empty navigation probe.
-            if shouldAutoCollectContext || isManualAttachInProgress {
-                chipState = .placeholder
-                emit(.deliverPageContext(nil, targets: .utiChip))
-            }
+            chipState = .placeholder
+            // Clear the persistent UTI host chip
+            emit(.deliverPageContext(nil, targets: .utiChip))
             cleanupFlags()
             rebuildViewState()
             return

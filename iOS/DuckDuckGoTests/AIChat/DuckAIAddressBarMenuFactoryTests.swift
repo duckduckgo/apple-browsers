@@ -28,12 +28,14 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
     private func makeActions(featureFlagger: MockFeatureFlagger = MockFeatureFlagger(
                                 enabledFeatureFlags: [.aiChatNativeChatHistory, .aiChatAddressBarRecentChats]),
                              userInterfaceIdiom: UIUserInterfaceIdiom = .phone,
+                             isHomeTab: Bool = false,
                              onNewChat: @escaping () -> Void = {},
                              onAskAboutPage: @escaping () -> Void = {},
                              onRecentChats: @escaping () -> Void = {}) -> [UIMenuElement] {
         DuckAIAddressBarMenuFactory.makeActions(
             featureFlagger: featureFlagger,
             userInterfaceIdiom: userInterfaceIdiom,
+            isHomeTab: isHomeTab,
             onNewChat: onNewChat,
             onAskAboutPage: onAskAboutPage,
             onRecentChats: onRecentChats
@@ -61,6 +63,31 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
                        [UserText.duckAiAddressBarMenuNewChat, UserText.aiChatAttachmentOptionAskAboutPage])
         XCTAssertEqual(historyGroup.children.compactMap { ($0 as? UIAction)?.title },
                        [UserText.duckAiAddressBarMenuAllChats])
+    }
+
+    func testHomeTabOffersNewChatAndAllChatsWithoutAskAboutPage() throws {
+        let groups = makeActions(isHomeTab: true).compactMap { $0 as? UIMenu }
+        XCTAssertEqual(groups.count, 2)
+        XCTAssertTrue(groups.allSatisfy { $0.options.contains(.displayInline) })
+        XCTAssertEqual(try XCTUnwrap(groups.first).children.compactMap { ($0 as? UIAction)?.title },
+                       [UserText.duckAiAddressBarMenuNewChat])
+        XCTAssertEqual(try XCTUnwrap(groups.last).children.compactMap { ($0 as? UIAction)?.title },
+                       [UserText.duckAiAddressBarMenuAllChats])
+    }
+
+    func testHomeTabActionsInvokeOnlyNewChatAndHistoryHandlers() throws {
+        guard #available(iOS 16.0, *) else {
+            throw XCTSkip("UIAction.performWithSender requires iOS 16")
+        }
+        var selected: [String] = []
+        let actions = flattenedActions(makeActions(isHomeTab: true,
+                                                  onNewChat: { selected.append("new") },
+                                                  onAskAboutPage: { selected.append("page") },
+                                                  onRecentChats: { selected.append("history") }))
+        for action in actions {
+            action.performWithSender(nil, target: nil)
+        }
+        XCTAssertEqual(selected, ["new", "history"])
     }
 
     func testRecentChatsFollowsNewChatAndAskAboutPage() {
@@ -92,6 +119,9 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
         ]
 
         for testCase in cases {
+            XCTAssertEqual(DuckAIAddressBarMenuFactory.isChatHistoryAvailable(
+                featureFlagger: MockFeatureFlagger(enabledFeatureFlags: testCase.flags),
+                userInterfaceIdiom: testCase.idiom), testCase.showsRecentChats)
             let actions = flattenedActions(makeActions(
                 featureFlagger: MockFeatureFlagger(enabledFeatureFlags: testCase.flags),
                 userInterfaceIdiom: testCase.idiom))

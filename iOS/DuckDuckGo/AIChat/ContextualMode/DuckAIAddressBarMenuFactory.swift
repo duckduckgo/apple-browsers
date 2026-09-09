@@ -25,27 +25,33 @@ import UIKit
 /// Builds the address-bar Duck.ai menu for new chats, page questions, and chat history.
 enum DuckAIAddressBarMenuFactory {
 
-    /// Groups New Chat and Ask About Page above a separator, with All Chats below.
+    static func isChatHistoryAvailable(featureFlagger: FeatureFlagger, userInterfaceIdiom: UIUserInterfaceIdiom) -> Bool {
+        userInterfaceIdiom != .pad
+            && featureFlagger.isFeatureOn(.aiChatNativeChatHistory)
+            && featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats)
+    }
+
+    /// Groups New Chat and, on web tabs, Ask About Page above a separator, with All Chats below.
     static func makeActions(featureFlagger: FeatureFlagger,
                             userInterfaceIdiom: UIUserInterfaceIdiom,
+                            isHomeTab: Bool,
                             onNewChat: @escaping () -> Void,
                             onAskAboutPage: @escaping () -> Void,
                             onRecentChats: @escaping () -> Void) -> [UIMenuElement] {
-        var groups: [UIMenuElement] = [
-            UIMenu(title: "", options: .displayInline, children: [
-                UIAction(title: UserText.duckAiAddressBarMenuNewChat,
-                         image: DesignSystemImages.Glyphs.Size16.compose) { _ in
-                    onNewChat()
-                },
-                UIAction(title: UserText.aiChatAttachmentOptionAskAboutPage,
-                         image: DesignSystemImages.Glyphs.Size16.chevronCircleDown) { _ in
-                    onAskAboutPage()
-                }
-            ])
+        var chatActions: [UIMenuElement] = [
+            UIAction(title: UserText.duckAiAddressBarMenuNewChat,
+                     image: DesignSystemImages.Glyphs.Size16.compose) { _ in
+                onNewChat()
+            }
         ]
-        if userInterfaceIdiom != .pad,
-           featureFlagger.isFeatureOn(.aiChatNativeChatHistory),
-           featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats) {
+        if !isHomeTab {
+            chatActions.append(UIAction(title: UserText.aiChatAttachmentOptionAskAboutPage,
+                                        image: DesignSystemImages.Glyphs.Size16.chevronCircleDown) { _ in
+                onAskAboutPage()
+            })
+        }
+        var groups: [UIMenuElement] = [UIMenu(title: "", options: .displayInline, children: chatActions)]
+        if isChatHistoryAvailable(featureFlagger: featureFlagger, userInterfaceIdiom: userInterfaceIdiom) {
             groups.append(UIMenu(title: "", options: .displayInline, children: [
                 UIAction(title: UserText.duckAiAddressBarMenuAllChats,
                          image: DesignSystemImages.Glyphs.Size16.chats) { _ in

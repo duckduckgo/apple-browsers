@@ -41,14 +41,6 @@ struct MultiTabMentionToken: Equatable {
     }
 
     func filter(_ tabs: [MultiTabAttachmentCandidate]) -> [MultiTabAttachmentCandidate] {
-        guard !query.isEmpty else { return tabs }
-        let normalizedQuery = query.lowercased()
-        return tabs.enumerated().compactMap { index, tab -> (index: Int, tab: MultiTabAttachmentCandidate, score: Int)? in
-            let score = (tab.title.lowercased().contains(normalizedQuery) ? 2 : 0)
-                + (tab.url.absoluteString.lowercased().contains(normalizedQuery) ? 1 : 0)
-            return score > 0 ? (index, tab, score) : nil
-        }.sorted { lhs, rhs in
-            lhs.score == rhs.score ? lhs.index < rhs.index : lhs.score > rhs.score
-        }.map(\.tab)
+        MultiTabAttachmentCandidateFilter.filter(tabs, query: query)
     }
 }

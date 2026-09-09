@@ -401,7 +401,7 @@ final class UTIAttachmentController {
             attachableTabs: attachableTabs,
             attachedTabIds: Set(view.currentAttachments().compactMap { $0.tabAttachment?.tabId }),
             tabActionHandler: { [weak self] candidate in
-                self?.toggleTabAttachment(candidate)
+                self?.toggleTabAttachment(candidate) ?? false
             }
         )
     }
@@ -415,6 +415,8 @@ final class UTIAttachmentController {
         if let attached = view.currentAttachments().first(where: { $0.tabAttachment?.tabId == candidate.tabId }) {
             view.removeAttachment(attached.id)
         } else {
+            let attachedTabCount = view.currentAttachments().compactMap(\.tabAttachment).count
+            guard attachedTabCount < MultiTabAttachmentSelectionPolicy.attachmentLimit else { return false }
             view.addAttachment(.tab(UnifiedToggleInputTabAttachment(tabId: candidate.tabId,
                                                                     title: candidate.title,
                                                                     url: candidate.url)))

@@ -27,6 +27,25 @@ struct MultiTabAttachmentCandidate: Equatable {
     let url: URL
 }
 
+enum MultiTabAttachmentSelectionPolicy {
+    static let attachmentLimit = 3
+}
+
+enum MultiTabAttachmentCandidateFilter {
+
+    static func filter(_ tabs: [MultiTabAttachmentCandidate], query: String) -> [MultiTabAttachmentCandidate] {
+        guard !query.isEmpty else { return tabs }
+        let normalizedQuery = query.lowercased()
+        return tabs.enumerated().compactMap { index, tab -> (index: Int, tab: MultiTabAttachmentCandidate, score: Int)? in
+            let score = (tab.title.lowercased().contains(normalizedQuery) ? 2 : 0)
+                + (tab.url.absoluteString.lowercased().contains(normalizedQuery) ? 1 : 0)
+            return score > 0 ? (index, tab, score) : nil
+        }.sorted { lhs, rhs in
+            lhs.score == rhs.score ? lhs.index < rhs.index : lhs.score > rhs.score
+        }.map(\.tab)
+    }
+}
+
 /// A frozen attachment selection, collected before its prompt is dispatched.
 struct MultiTabAttachmentRequest {
     let collect: @MainActor () async -> [AIChatPageContextData]
@@ -92,17 +111,24 @@ final class MultiTabAttachmentContext {
         feature.isMultiTabAttachmentHackPhaseEnabled
     }
 
-    /// The tabs the user may attach, in the order of the tabs array.
-    ///
-    /// `Tab.lastViewedDate` orders this list in the final design, but that property is reserved for
-    /// one daily pixel and must not be read here.
+    /// The tabs the user may attach, ordered by most recent use.
     func attachableTabs(excluding excludedTabId: TabUID?) -> [MultiTabAttachmentCandidate] {
-        openTabsProvider().compactMap { tab in
-            guard tab.uid != excludedTabId else { return nil }
-            guard let link = tab.link else { return nil }
-            guard !AIChatTabMetadata.shouldExcludeFromTabPicker(link.url) else { return nil }
-            return MultiTabAttachmentCandidate(tabId: tab.uid, title: link.displayTitle, url: link.url)
-        }
+        // Hack phase only: `lastViewedDate` is otherwise reserved for TabSwitcherOpenDailyPixel.
+        // Revisit its ownership before this picker ships behind a production feature flag.
+        return openTabsProvider()
+            .enumerated()
+            .sorted { lhs, rhs in
+                let lhsDate = lhs.element.lastViewedDate ?? .distantPast
+                let rhsDate = rhs.element.lastViewedDate ?? .distantPast
+                if lhsDate != rhsDate { return lhsDate > rhsDate }
+                return lhs.offset < rhs.offset
+            }
+            .compactMap { _, tab in
+                guard tab.uid != excludedTabId else { return nil }
+                guard let link = tab.link else { return nil }
+                guard !AIChatTabMetadata.shouldExcludeFromTabPicker(link.url) else { return nil }
+                return MultiTabAttachmentCandidate(tabId: tab.uid, title: link.displayTitle, url: link.url)
+            }
     }
 
     func prepareContext(for attachment: UnifiedToggleInputTabAttachment,

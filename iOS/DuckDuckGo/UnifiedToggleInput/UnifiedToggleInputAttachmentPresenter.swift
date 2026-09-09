@@ -19,13 +19,24 @@
 
 import AIChat
 import Core
+import DesignResourcesKit
 import DesignResourcesKitIcons
+import FoundationExtensions
 import PhotosUI
+import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
 @MainActor
 final class UnifiedToggleInputAttachmentPresenter: NSObject {
+
+    /// Hack phase switch: set to false to restore the existing Add Tabs submenu.
+    private static let useTabPickerSheet = true
+    private static let isUsingCustomFaviconSize = true
+    private static let recentTabsMenuItemLimit = 3
+    private static let recentTabTitleCharacterLimit = 28
+    private static let recentTabFaviconSize: CGFloat = 16
+    private static let menuImageCanvasSize: CGFloat = 20
 
     struct FileMetadata: Sendable {
         let fileName: String
@@ -75,7 +86,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         pageContextActionHandler: (() -> Void)? = nil,
         attachableTabs: [MultiTabAttachmentCandidate] = [],
         attachedTabIds: Set<TabUID> = [],
-        tabActionHandler: ((MultiTabAttachmentCandidate) -> Void)? = nil
+        tabActionHandler: ((MultiTabAttachmentCandidate) -> Bool)? = nil
     ) -> UIMenu? {
         let canAttachPhoto = photoSelectionLimit > 0
         let canTakePhoto = canAttachPhoto && UIImagePickerController.isSourceTypeAvailable(.camera)
@@ -128,11 +139,24 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         }
 
         if showsTabAction, let tabActionHandler {
-            actions.append(
-                Self.makeTabSubmenu(attachableTabs: attachableTabs,
-                                    attachedTabIds: attachedTabIds,
-                                    tabActionHandler: tabActionHandler)
-            )
+            if Self.useTabPickerSheet {
+                actions.insert(Self.makeRecentTabsSection(attachableTabs: attachableTabs,
+                                                          attachedTabIds: attachedTabIds,
+                                                          tabActionHandler: tabActionHandler),
+                               at: 0)
+                actions.append(
+                    makeTabPickerAction(presenterProvider: presenterProvider,
+                                        attachableTabs: attachableTabs,
+                                        attachedTabIds: attachedTabIds,
+                                        tabActionHandler: tabActionHandler)
+                )
+            } else {
+                actions.append(
+                    Self.makeTabSubmenu(attachableTabs: attachableTabs,
+                                        attachedTabIds: attachedTabIds,
+                                        tabActionHandler: tabActionHandler)
+                )
+            }
         }
 
         return UIMenu(children: actions)
@@ -145,7 +169,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     /// stays open.
     private static func makeTabSubmenu(attachableTabs: [MultiTabAttachmentCandidate],
                                        attachedTabIds: Set<TabUID>,
-                                       tabActionHandler: @escaping (MultiTabAttachmentCandidate) -> Void) -> UIMenu {
+                                       tabActionHandler: @escaping (MultiTabAttachmentCandidate) -> Bool) -> UIMenu {
         let tabActions: [UIAction] = attachableTabs.map { candidate in
             let favicon = FaviconsHelper.loadFaviconSync(
                 forDomain: candidate.url.host,
@@ -154,8 +178,8 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
             let action = UIAction(title: candidate.title,
                                   image: favicon,
                                   state: attachedTabIds.contains(candidate.tabId) ? .on : .off) { action in
+                guard tabActionHandler(candidate) else { return }
                 action.state = action.state == .on ? .off : .on
-                tabActionHandler(candidate)
             }
             if #available(iOS 16.0, *) {
                 action.attributes.insert(.keepsMenuPresented)
@@ -168,9 +192,158 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                       children: tabActions)
     }
 
+    private static func makeRecentTabsSection(attachableTabs: [MultiTabAttachmentCandidate],
+                                              attachedTabIds: Set<TabUID>,
+                                              tabActionHandler: @escaping (MultiTabAttachmentCandidate) -> Bool) -> UIMenu {
+        let reachedAttachmentLimit = attachedTabIds.count >= MultiTabAttachmentSelectionPolicy.attachmentLimit
+        let tabActions: [UIAction] = attachableTabs.prefix(recentTabsMenuItemLimit).map { candidate in
+            let isAttached = attachedTabIds.contains(candidate.tabId)
+            let title = candidate.title
+                .replacingOccurrences(of: "\n", with: " ")
+                .truncated(to: recentTabTitleCharacterLimit, position: .tail)
+            let favicon = makeRecentTabMenuFavicon(for: candidate)
+            return UIAction(title: title,
+                            image: favicon,
+                            attributes: reachedAttachmentLimit && !isAttached ? .disabled : [],
+                            state: isAttached ? .on : .off) { action in
+                guard tabActionHandler(candidate) else { return }
+                action.state = action.state == .on ? .off : .on
+            }
+        }
+
+        let menu = UIMenu(title: UserText.aiChatAttachmentRecentTabsSectionTitle,
+                          options: .displayInline,
+                          children: tabActions)
+        if #available(iOS 16.0, *) {
+            menu.preferredElementSize = .large
+        }
+        if #available(iOS 17.4, *) {
+            let displayPreferences = UIMenuDisplayPreferences()
+            displayPreferences.maximumNumberOfTitleLines = 1
+            menu.displayPreferences = displayPreferences
+        }
+        return menu
+    }
+
+    private static func makeRecentTabMenuFavicon(for candidate: MultiTabAttachmentCandidate) -> UIImage? {
+        guard let favicon = FaviconsHelper.loadFaviconSync(
+            forDomain: candidate.url.host,
+            usingCache: .tabs,
+            useFakeFavicon: true).image else { return nil }
+        guard isUsingCustomFaviconSize else { return favicon.withRenderingMode(.alwaysOriginal) }
+
+        let canvasSize = CGSize(width: menuImageCanvasSize, height: menuImageCanvasSize)
+        let faviconOrigin = (menuImageCanvasSize - recentTabFaviconSize) / 2
+        let faviconRect = CGRect(x: faviconOrigin,
+                                 y: faviconOrigin,
+                                 width: recentTabFaviconSize,
+                                 height: recentTabFaviconSize)
+        return UIGraphicsImageRenderer(size: canvasSize).image { _ in
+            favicon.draw(in: faviconRect)
+        }.withRenderingMode(.alwaysOriginal)
+    }
+
+    private func makeTabPickerAction(presenterProvider: @escaping () -> UIViewController?,
+                                     attachableTabs: [MultiTabAttachmentCandidate],
+                                     attachedTabIds: Set<TabUID>,
+                                     tabActionHandler: @escaping (MultiTabAttachmentCandidate) -> Bool) -> UIAction {
+        UIAction(title: UserText.aiChatAttachmentOptionAddTabs,
+                 image: DesignSystemImages.Glyphs.Size16.tabContent) { [weak self] _ in
+            guard let presenter = presenterProvider() else { return }
+            self?.presentTabPicker(from: presenter,
+                                   attachableTabs: attachableTabs,
+                                   attachedTabIds: attachedTabIds,
+                                   tabActionHandler: tabActionHandler)
+        }
+    }
+
+    private func presentTabPicker(from presenter: UIViewController,
+                                  attachableTabs: [MultiTabAttachmentCandidate],
+                                  attachedTabIds: Set<TabUID>,
+                                  tabActionHandler: @escaping (MultiTabAttachmentCandidate) -> Bool) {
+        let viewModel = MultiTabAttachmentPickerViewModel(
+            candidates: attachableTabs,
+            selectedTabIds: attachedTabIds,
+            attachmentLimit: MultiTabAttachmentSelectionPolicy.attachmentLimit)
+        let picker = MultiTabAttachmentPickerView(viewModel: viewModel)
+        let hostingController = MultiTabAttachmentPickerHostingController(rootView: picker)
+        let navigationController = UINavigationController(rootViewController: hostingController)
+
+        let closeAction = UIAction { [weak navigationController] _ in
+            navigationController?.dismiss(animated: true)
+        }
+        let closeItem = UIBarButtonItem(title: nil,
+                                        image: DesignSystemImages.Glyphs.Size24.close,
+                                        primaryAction: closeAction,
+                                        menu: nil)
+        closeItem.tintColor = UIColor(designSystemColor: .textPrimary)
+        closeItem.accessibilityLabel = UserText.aiChatChooseTabsCloseAccessibilityLabel
+        hostingController.navigationItem.leftBarButtonItem = closeItem
+
+        let confirmAction = UIAction { [weak navigationController] _ in
+            Self.applyTabSelection(viewModel.selectedTabIds,
+                                   initialTabIds: attachedTabIds,
+                                   candidates: attachableTabs,
+                                   tabActionHandler: tabActionHandler)
+            navigationController?.dismiss(animated: true)
+        }
+        let confirmItem = UIBarButtonItem(title: nil,
+                                          image: DesignSystemImages.Glyphs.Size24.check,
+                                          primaryAction: confirmAction,
+                                          menu: nil)
+        confirmItem.style = .done
+        if #available(iOS 26.0, *) {
+            confirmItem.style = .prominent
+        }
+        confirmItem.tintColor = UIColor(designSystemColor: .accentPrimary)
+        confirmItem.accessibilityLabel = UserText.aiChatChooseTabsConfirmAccessibilityLabel
+        hostingController.navigationItem.rightBarButtonItem = confirmItem
+
+        navigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .formSheet : .pageSheet
+        navigationController.preferredContentSize = CGSize(width: 540, height: 720)
+        if let sheet = navigationController.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = false
+        }
+        presenter.present(navigationController, animated: true)
+    }
+
+    private static func applyTabSelection(_ selectedTabIds: Set<TabUID>,
+                                          initialTabIds: Set<TabUID>,
+                                          candidates: [MultiTabAttachmentCandidate],
+                                          tabActionHandler: (MultiTabAttachmentCandidate) -> Bool) {
+        let removedTabIds = initialTabIds.subtracting(selectedTabIds)
+        let addedTabIds = selectedTabIds.subtracting(initialTabIds)
+
+        for candidate in candidates where removedTabIds.contains(candidate.tabId) {
+            tabActionHandler(candidate)
+        }
+        for candidate in candidates where addedTabIds.contains(candidate.tabId) {
+            tabActionHandler(candidate)
+        }
+    }
+
     /// Opens the system file picker directly (bypassing the attachment menu) for the promo "add file" CTA.
     func presentFilePicker(from presenter: UIViewController, allowedFileTypes: [UTType]) {
         presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
+    }
+}
+
+/// Keeps picker navigation actions visible while SwiftUI search is active.
+private final class MultiTabAttachmentPickerHostingController: UIHostingController<MultiTabAttachmentPickerView> {
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        configureSearchPresentation()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        configureSearchPresentation()
+    }
+
+    private func configureSearchPresentation() {
+        navigationItem.searchController?.hidesNavigationBarDuringPresentation = false
     }
 }
 

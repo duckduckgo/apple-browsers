@@ -855,9 +855,7 @@ extension TabViewController {
             || isIPv4Loopback
     }
 
-    /// Cross-origin delegation is intentionally unsupported in v1 because the shim cannot reliably
-    /// evaluate subframe response headers and `allow="geolocation"`. Revisit only with breakage evidence
-    /// or an availability-gated OS-managed API; until then, native attribution denies every cross-origin frame.
+    /// Public WebKit APIs cannot reliably expose subframe policy, so cross-origin delegation is denied.
     private static func isSameOrigin(_ origin: WKSecurityOrigin, as url: URL) -> Bool {
         let originScheme = origin.protocol.lowercased()
         let urlScheme = url.scheme?.lowercased()
@@ -1178,8 +1176,7 @@ extension TabViewController {
     }
 
     private func fireSitePermissionsEvent(_ event: SitePermissionsEvent) {
-        // Phase 6 owns geolocation instrumentation. Keep the Phase 5 flow silent while reusing the
-        // coordinator paths that already emit camera and microphone events.
+        // Geolocation telemetry is deferred to the permission management layer.
         switch event {
         case .permissionDialogImpression(type: .geolocation),
              .permissionDialogClick(type: .geolocation, selection: _),

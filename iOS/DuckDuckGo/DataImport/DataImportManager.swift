@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import Core
 import Foundation
 import BrowserServicesKit
 import SecureStorage

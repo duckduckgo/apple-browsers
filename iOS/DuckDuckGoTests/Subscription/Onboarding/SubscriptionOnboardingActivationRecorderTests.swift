@@ -74,6 +74,24 @@ final class SubscriptionOnboardingActivationRecorderTests: XCTestCase {
         XCTAssertEqual(completedItems, [.vpn])
     }
 
+    func testWhenRecordingDuckAIActivatedIfNeededTwiceThenTheRealIsActivatedReadReflectsIt() {
+        XCTAssertFalse(sut.recordDuckAIActivatedIfNeeded())
+        XCTAssertTrue(sut.recordDuckAIActivatedIfNeeded())
+        XCTAssertEqual(completedItems, [.duckAI])
+    }
+
+    func testWhenRecordingPIRActivatedIfNeededTwiceThenTheRealIsActivatedReadReflectsIt() {
+        XCTAssertFalse(sut.recordPIRActivatedIfNeeded())
+        XCTAssertTrue(sut.recordPIRActivatedIfNeeded())
+        XCTAssertEqual(completedItems, [.pir])
+    }
+
+    func testWhenRecordingVPNActivatedIfNeededTwiceThenTheRealIsActivatedReadReflectsIt() {
+        XCTAssertFalse(sut.recordVPNActivatedIfNeeded())
+        XCTAssertTrue(sut.recordVPNActivatedIfNeeded())
+        XCTAssertEqual(completedItems, [.vpn])
+    }
+
     func testWhenRecordingDuckAIActivatedIfNeededTwiceThenTheUnderlyingRecordIsCalledOnlyOnce() {
         let mock = MockSubscriptionOnboardingActivationRecorder()
 

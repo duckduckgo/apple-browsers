@@ -323,6 +323,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     public let subscriptionUIHandler: SubscriptionUIHandling
 
     private(set) lazy var sessionRestorePromptCoordinator = SessionRestorePromptCoordinator(pixelFiring: PixelKit.shared)
+    let brokenSitePromptPresentationCoordinator = BrokenSitePromptPresentationCoordinator()
 
     // MARK: - Automation Server
     private var automationServer: AutomationServer?
@@ -1479,7 +1480,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 syncService: syncService,
                 syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
                 pinningManager: pinningManager,
-                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate
+                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate,
+                brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)

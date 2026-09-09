@@ -146,12 +146,12 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
     }
 
     public func handshakeCheckCompleted(_ result: NetworkProtectionTunnelFailureMonitor.Result) {
-        Logger.networkProtectionSessionHealth.debug("handshakeCheckCompleted: result=\(String(describing: result))")
+        Logger.networkProtectionSessionHealth.debug("handshakeCheckCompleted: result=\(String(describing: result), privacy: .public)")
         applyTransition { $0.applyingHandshakeCheckResult(result, at: $1) }
     }
 
     public func failureRecoveryStepChanged(_ step: FailureRecoveryStep) {
-        Logger.networkProtectionSessionHealth.debug("failureRecoveryStepChanged: step=\(String(describing: step))")
+        Logger.networkProtectionSessionHealth.debug("failureRecoveryStepChanged: step=\(String(describing: step), privacy: .public)")
         applyTransition { $0.applyingFailureRecoveryStep(step, at: $1) }
     }
 
@@ -271,7 +271,11 @@ private extension DefaultVPNSessionHealthInstrumentation {
     }
 
     func completeOrphanedEvents() {
-        for orphan in wideEvent.getAllFlowData(VPNSessionHealthWideEventData.self) {
+        let orphans = wideEvent.getAllFlowData(VPNSessionHealthWideEventData.self)
+        Logger.networkProtectionSessionHealth.log("Orphaned events: \(orphans.count, privacy: .public)")
+
+        for orphan in orphans {
+            Logger.networkProtectionSessionHealth.log("Recovering orphan: \(orphan.globalData.id, privacy: .public)")
             completeEventIfEnded(orphan.markingOrphanedSessionEnded(at: now()))
         }
     }
@@ -283,16 +287,27 @@ private extension DefaultVPNSessionHealthInstrumentation {
         }
 
         Logger.networkProtectionSessionHealth.log("Completing vpn_session_health pixel: status=\(status.description, privacy: .public)")
+        logPixelDetails(data)
 
         wideEvent.completeFlow(data, status: status) { success, error in
             if success {
                 Logger.networkProtectionSessionHealth.log("vpn_session_health pixel completion succeeded")
             } else {
-                Logger.networkProtectionSessionHealth.error("vpn_session_health pixel was not sent: \(String(describing: error))")
+                Logger.networkProtectionSessionHealth.error("vpn_session_health pixel was not sent: \(String(describing: error), privacy: .public)")
             }
         }
 
         return true
+    }
+
+    func logPixelDetails(_ data: VPNSessionHealthWideEventData) {
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: data.jsonParameters(), options: [.prettyPrinted, .sortedKeys]),
+              let details = String(data: jsonData, encoding: .utf8) else {
+            Logger.networkProtectionSessionHealth.error("Failed to serialize vpn_session_health pixel details")
+            return
+        }
+
+        Logger.networkProtectionSessionHealth.log("vpn_session_health pixel details:\n\(details, privacy: .public)")
     }
 }
 

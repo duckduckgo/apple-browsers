@@ -217,6 +217,14 @@ extension LaunchOptionsHandler {
             clearAllDefaults(groupIdPrefix: groupIdPrefix)
         }
 
+#if DEBUG
+        // Seed only UI-test setup. A separate argument avoids shadowing persisted records when Fire clears them.
+        if isUITesting,
+           let permissions = userDefaults.dictionary(forKey: "sitePermissionsTestSeed") as? [String: [String: String]] {
+            userDefaults.set(permissions, forKey: "site-permissions-per-site")
+        }
+#endif
+
         if arguments.contains("-backdateInstallDate") {
             backdateInstallDate(groupIdPrefix: groupIdPrefix)
         }

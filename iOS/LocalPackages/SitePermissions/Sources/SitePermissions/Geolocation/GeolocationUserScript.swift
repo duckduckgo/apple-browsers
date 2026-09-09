@@ -147,6 +147,7 @@ public protocol GeolocationUserScriptDelegate: AnyObject {
                                in frame: GeolocationFrame) async -> GeolocationPositionResult
 
     func geolocationUserScript(_ userScript: GeolocationUserScript,
+                               permissionStatusID: String,
                                constraints: GeolocationRequestConstraints,
                                permissionStateIn frame: GeolocationFrame) -> GeolocationPermissionState
 
@@ -158,6 +159,9 @@ public protocol GeolocationUserScriptDelegate: AnyObject {
 
     func geolocationUserScript(_ userScript: GeolocationUserScript,
                                didCancelWatchWithID requestID: String)
+
+    func geolocationUserScript(_ userScript: GeolocationUserScript,
+                               didCancelPermissionStatusWithID statusID: String)
 }
 
 public final class GeolocationUserScript: NSObject, UserScript {
@@ -205,6 +209,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
     @MainActor public var activationHandler: ((GeolocationFrame) -> Bool)?
 
     @MainActor private var watchRegistry = GeolocationWatchRegistry()
+    @MainActor private var permissionStatusRegistry = GeolocationWatchRegistry()
     @MainActor private var frameRegistrations = GeolocationFrameRegistrationStore()
 
     @MainActor
@@ -251,8 +256,14 @@ public final class GeolocationUserScript: NSObject, UserScript {
         }
 
         switch kind {
-        case .getCurrentPosition, .queryPermission:
+        case .getCurrentPosition:
             return (await handleOneShot(kind, body: body, frame: frame, constraints: registration.constraints), nil)
+        case .queryPermission:
+            return (handlePermissionQuery(body: body,
+                                          frame: frame,
+                                          nonce: nonce,
+                                          constraints: registration.constraints,
+                                          webView: webView), nil)
         case .startWatch:
             return (handleWatchStart(body: body,
                                      frame: frame,
@@ -266,13 +277,17 @@ public final class GeolocationUserScript: NSObject, UserScript {
         }
     }
 
-    /// Cancels all native watches. Call this on navigation and web-content-process replacement.
+    /// Cancels all page-scoped callbacks. Call this on navigation and web-content-process replacement.
     @MainActor
     public func cancelAllWatches() {
         let requestIDs = watchRegistry.removeAll()
+        let statusIDs = permissionStatusRegistry.removeAll()
         frameRegistrations.removeAll()
         for requestID in requestIDs {
             delegate?.geolocationUserScript(self, didCancelWatchWithID: requestID)
+        }
+        for statusID in statusIDs {
+            delegate?.geolocationUserScript(self, didCancelPermissionStatusWithID: statusID)
         }
     }
 
@@ -304,6 +319,20 @@ public final class GeolocationUserScript: NSObject, UserScript {
         return true
     }
 
+    /// Refreshes a previously queried `PermissionStatus` in its exact requesting frame.
+    @MainActor @discardableResult
+    public func send(_ state: GeolocationPermissionState, toPermissionStatusWithID statusID: String) -> Bool {
+        let encodedStatusID = Self.javaScriptString(statusID)
+        let encodedState = Self.javaScriptString(state.rawValue)
+        return permissionStatusRegistry.send(
+            "window.__ddgSitePermissionsGeolocation.receivePermissionState(\(encodedStatusID), \(encodedState))",
+            to: statusID
+        ) { [weak self] succeeded in
+            guard !succeeded, let self, self.permissionStatusRegistry.remove(statusID) else { return }
+            self.delegate?.geolocationUserScript(self, didCancelPermissionStatusWithID: statusID)
+        }
+    }
+
     @MainActor
     func handleOneShot(_ kind: MessageKind,
                        body: [String: Any],
@@ -326,13 +355,43 @@ public final class GeolocationUserScript: NSObject, UserScript {
                                                                in: frame)
             return Self.positionPayload(result)
         case .queryPermission:
-            let state = delegate.geolocationUserScript(self,
-                                                       constraints: constraints,
-                                                       permissionStateIn: frame)
-            return Self.permissionPayload(state)
+            return Self.permissionPayload(.denied)
         case .registerFrame, .startWatch, .clearWatch:
             return Self.errorPayload(.positionUnavailable, message: "Invalid one-shot request")
         }
+    }
+
+    @MainActor
+    private func handlePermissionQuery(body: [String: Any],
+                                       frame: GeolocationFrame,
+                                       nonce: String,
+                                       constraints: GeolocationRequestConstraints,
+                                       webView: WKWebView) -> [String: Any] {
+        guard let statusID = body["statusID"] as? String,
+              Self.isValidRequestID(statusID),
+              let delegate else {
+            return Self.permissionPayload(.denied)
+        }
+
+        let registered = permissionStatusRegistry.register(statusID,
+                                                           nonce: nonce) { [weak webView] script, completion in
+            guard let webView else {
+                completion(false)
+                return
+            }
+            frame.evaluateJavaScript(script, in: webView) { result in
+                completion((try? result.get()) != nil)
+            }
+        }
+        guard registered else {
+            return Self.errorPayload(.positionUnavailable, message: "Duplicate geolocation permission status")
+        }
+
+        let state = delegate.geolocationUserScript(self,
+                                                   permissionStatusID: statusID,
+                                                   constraints: constraints,
+                                                   permissionStateIn: frame)
+        return Self.permissionPayload(state)
     }
 
     @MainActor

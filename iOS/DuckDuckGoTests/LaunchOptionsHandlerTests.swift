@@ -19,7 +19,9 @@
 
 import XCTest
 @testable import Core
+import Persistence
 import PrivacyConfig
+import SitePermissions
 @testable import DuckDuckGo
 
 final class LaunchOptionsHandlerTests: XCTestCase {
@@ -246,6 +248,34 @@ final class LaunchOptionsHandlerTests: XCTestCase {
     }
 
     // MARK: - UI Test Overrides
+
+#if DEBUG
+    @MainActor
+    func testWhenSitePermissionsAreSeededForUITestsThenRecordsCanBeCleared() throws {
+        let argumentDomain = userDefaults.volatileDomain(forName: UserDefaults.argumentDomain)
+        userDefaults.setVolatileDomain(
+            ["sitePermissionsTestSeed": ["example.com": ["camera": "allow"]]],
+            forName: UserDefaults.argumentDomain)
+        defer { userDefaults.setVolatileDomain(argumentDomain, forName: UserDefaults.argumentDomain) }
+        let store = SitePermissionsStore(storage: userDefaults.keyedStoring())
+        let url = try XCTUnwrap(URL(string: "https://example.com"))
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: url))
+
+        let normalLaunch = LaunchOptionsHandler(
+            environment: [:], userDefaults: userDefaults, arguments: [], internalUserStore: MockInternalUserStore())
+        normalLaunch.applyUITestOverrides(featureFlagOverrideStore: userDefaults, configRolloutStore: userDefaults)
+        XCTAssertTrue(store.storedSites.isEmpty)
+
+        let testLaunch = LaunchOptionsHandler(
+            environment: ["UITEST_MODE": "1"], userDefaults: userDefaults, arguments: [], internalUserStore: MockInternalUserStore())
+        testLaunch.applyUITestOverrides(featureFlagOverrideStore: userDefaults, configRolloutStore: userDefaults)
+        XCTAssertEqual(store.decision(for: .camera, at: site), .allow)
+
+        store.clearSitePermissions()
+        XCTAssertTrue(store.storedSites.isEmpty)
+        XCTAssertNotNil(userDefaults.dictionary(forKey: "sitePermissionsTestSeed"))
+    }
+#endif
 
     func testWhenNoOverridesPassedThenInternalUserNotEnabled() {
         // GIVEN

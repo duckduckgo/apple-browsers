@@ -54,7 +54,6 @@ public struct SitePermissionsSheetView: View {
             }
         }
         .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
-        .accessibilityIdentifier("SitePermissions.Sheet")
     }
 
     private var sheetContent: some View {
@@ -90,6 +89,8 @@ public struct SitePermissionsSheetView: View {
         .padding(.horizontal, SheetMetrics.contentHorizontalPadding)
         .padding(.top, SheetMetrics.contentSpacing)
         .padding(.bottom, SheetMetrics.contentBottomPadding)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("SitePermissions.Sheet")
     }
 
     private var header: some View {
@@ -153,6 +154,7 @@ public struct SitePermissionsSheetView: View {
                             Text(UserText.PermissionManagement.title(for: option))
                         }
                     }
+                    .accessibilityIdentifier("SitePermissions.Sheet.\(row.permissionType.rawValue.capitalized).\(option.rawValue)")
                 }
             } label: {
                 HStack(spacing: 8) {
@@ -195,6 +197,9 @@ public struct SitePermissionsSheetView: View {
             items,
             dividerLeadingInset: 0,
             contentInset: .init(horizontal: Constants.rowHorizontalInset, vertical: Constants.rowVerticalInset),
+            accessibilityIdentifier: { index in
+                includesRemove && index == 0 ? "SitePermissions.Sheet.RemovePermissions" : "SitePermissions.Sheet.GoToSystemSettings"
+            },
             onSelect: { index in
                 guard items.indices.contains(index) else { return nil }
                 if includesRemove, index == 0 {
@@ -205,6 +210,7 @@ public struct SitePermissionsSheetView: View {
         )
         .background(Color(designSystemColor: .surfaceTertiary))
         .clipShape(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius, style: .continuous))
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("SitePermissions.Sheet.Actions")
     }
 
@@ -253,9 +259,12 @@ public struct SitePermissionsSheetView: View {
             image = DesignSystemImages.Glyphs.Size24.microphoneBlocked
         case (.microphone, .solid), (.microphone, .inUse):
             image = DesignSystemImages.Glyphs.Size24.microphoneSolid
-        case (.location, _):
-            assertionFailure("Location management lands in Phase 6")
+        case (.location, .outline):
             image = DesignSystemImages.Glyphs.Size24.location
+        case (.location, .blocked):
+            image = DesignSystemImages.Glyphs.Size24.locationBlocked
+        case (.location, .solid), (.location, .inUse):
+            image = DesignSystemImages.Glyphs.Size24.locationSolid
         }
         return Image(uiImage: image)
     }

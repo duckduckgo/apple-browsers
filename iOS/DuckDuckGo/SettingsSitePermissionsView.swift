@@ -40,7 +40,7 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
 
     typealias UndoToastPresenter = (_ message: String, _ undo: @escaping () -> Void) -> Void
 
-    static let supportedPermissionTypes: [SitePermissionType] = [.camera, .microphone]
+    static let supportedPermissionTypes: [SitePermissionType] = [.location, .camera, .microphone]
 
     @Published private(set) var storedSites = [SitePermissionKey]()
     @Published private var globalDefaults = [SitePermissionType: GlobalSitePermissionDecision]()
@@ -185,10 +185,12 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
     }
 
     private static func presentUndoToastDefault(message: String, undo: @escaping () -> Void) {
-        ActionMessageView.present(message: message,
-                                  actionTitle: UserText.actionGenericUndo,
-                                  presentationLocation: .withoutBottomBar,
-                                  onAction: undo)
+        let messageView = ActionMessageView.presentTracked(message: message,
+                                                           actionTitle: UserText.actionGenericUndo,
+                                                           presentationLocation: .withoutBottomBar,
+                                                           onAction: undo)
+        messageView?.accessibilityIdentifier = "SitePermissions.Toast"
+        messageView?.actionButton.accessibilityIdentifier = "SitePermissions.Toast.Undo"
     }
 }
 
@@ -215,6 +217,7 @@ struct SettingsSitePermissionsView: View {
                         Picker(permissionType.settingsTitle, selection: viewModel.globalDefaultBinding(for: permissionType)) {
                             ForEach(GlobalSitePermissionDecision.allCases, id: \.self) { decision in
                                 Text(decision.settingsTitle).tag(decision)
+                                    .accessibilityIdentifier("Settings.SitePermissions.Global.\(permissionType.rawValue).\(decision.rawValue)")
                             }
                         }
                         .pickerStyle(.inline)
@@ -314,6 +317,7 @@ private struct SettingsSitePermissionsSiteView: View {
                         Picker(permissionType.settingsTitle, selection: viewModel.siteDecisionBinding(for: permissionType, at: site)) {
                             ForEach(SitePermissionDecision.allCases, id: \.self) { decision in
                                 Text(decision.settingsTitle).tag(decision)
+                                    .accessibilityIdentifier("Settings.SitePermissions.Site.\(permissionType.rawValue).\(decision.rawValue)")
                             }
                         }
                         .pickerStyle(.inline)

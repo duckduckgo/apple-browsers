@@ -235,16 +235,16 @@ final class SubscriptionFlowViewModel: ObservableObject {
             .store(in: &cancellables)
         
         
-        subFeature.onBackToSettings = {
+        subFeature.onBackToSettings = { [weak self] in
             DispatchQueue.main.async {
-                self.state.shouldGoBackToSettings = true
+                self?.state.shouldGoBackToSettings = true
             }
         }
-        
-        subFeature.onActivateSubscription = {
+
+        subFeature.onActivateSubscription = { [weak self] in
             DispatchQueue.main.async {
-                self.state.shouldActivateSubscription = true
-                self.setTransactionStatus(.idle)
+                self?.state.shouldActivateSubscription = true
+                self?.setTransactionStatus(.idle)
             }
         }
 

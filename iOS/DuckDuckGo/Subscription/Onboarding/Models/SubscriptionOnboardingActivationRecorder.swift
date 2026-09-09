@@ -40,12 +40,15 @@ protocol SubscriptionOnboardingActivationRecording {
 }
 
 extension SubscriptionOnboardingActivationRecording {
-    /// Records the activation and reports whether it was already recorded beforehand, so a caller that also
-    /// fires a one-time experiment metric can guard it without risking the read/write ordering itself.
+    /// Records the activation only the first time, and reports whether it was already recorded beforehand,
+    /// so a caller that also fires a one-time experiment metric can guard it without risking the read/write
+    /// ordering itself.
     @discardableResult
     func recordDuckAIActivatedIfNeeded() -> Bool {
         let wasAlreadyActivated = isDuckAIActivated
-        recordDuckAIActivated()
+        if !wasAlreadyActivated {
+            recordDuckAIActivated()
+        }
         return wasAlreadyActivated
     }
 
@@ -53,7 +56,9 @@ extension SubscriptionOnboardingActivationRecording {
     @discardableResult
     func recordPIRActivatedIfNeeded() -> Bool {
         let wasAlreadyActivated = isPIRActivated
-        recordPIRActivated()
+        if !wasAlreadyActivated {
+            recordPIRActivated()
+        }
         return wasAlreadyActivated
     }
 
@@ -61,7 +66,9 @@ extension SubscriptionOnboardingActivationRecording {
     @discardableResult
     func recordVPNActivatedIfNeeded() -> Bool {
         let wasAlreadyActivated = isVPNActivated
-        recordVPNActivated()
+        if !wasAlreadyActivated {
+            recordVPNActivated()
+        }
         return wasAlreadyActivated
     }
 }

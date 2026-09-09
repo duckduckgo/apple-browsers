@@ -73,6 +73,42 @@ final class SubscriptionOnboardingActivationRecorderTests: XCTestCase {
 
         XCTAssertEqual(completedItems, [.vpn])
     }
+
+    func testWhenRecordingDuckAIActivatedIfNeededTwiceThenTheUnderlyingRecordIsCalledOnlyOnce() {
+        let mock = MockSubscriptionOnboardingActivationRecorder()
+
+        let wasAlreadyActivatedFirstCall = mock.recordDuckAIActivatedIfNeeded()
+        mock.isDuckAIActivated = true
+        let wasAlreadyActivatedSecondCall = mock.recordDuckAIActivatedIfNeeded()
+
+        XCTAssertFalse(wasAlreadyActivatedFirstCall)
+        XCTAssertTrue(wasAlreadyActivatedSecondCall)
+        XCTAssertEqual(mock.recordDuckAIActivatedCallCount, 1)
+    }
+
+    func testWhenRecordingPIRActivatedIfNeededTwiceThenTheUnderlyingRecordIsCalledOnlyOnce() {
+        let mock = MockSubscriptionOnboardingActivationRecorder()
+
+        let wasAlreadyActivatedFirstCall = mock.recordPIRActivatedIfNeeded()
+        mock.isPIRActivated = true
+        let wasAlreadyActivatedSecondCall = mock.recordPIRActivatedIfNeeded()
+
+        XCTAssertFalse(wasAlreadyActivatedFirstCall)
+        XCTAssertTrue(wasAlreadyActivatedSecondCall)
+        XCTAssertEqual(mock.recordPIRActivatedCallCount, 1)
+    }
+
+    func testWhenRecordingVPNActivatedIfNeededTwiceThenTheUnderlyingRecordIsCalledOnlyOnce() {
+        let mock = MockSubscriptionOnboardingActivationRecorder()
+
+        let wasAlreadyActivatedFirstCall = mock.recordVPNActivatedIfNeeded()
+        mock.isVPNActivated = true
+        let wasAlreadyActivatedSecondCall = mock.recordVPNActivatedIfNeeded()
+
+        XCTAssertFalse(wasAlreadyActivatedFirstCall)
+        XCTAssertTrue(wasAlreadyActivatedSecondCall)
+        XCTAssertEqual(mock.recordVPNActivatedCallCount, 1)
+    }
 }
 
 /// A local stub rather than `PersistenceTestingUtils`

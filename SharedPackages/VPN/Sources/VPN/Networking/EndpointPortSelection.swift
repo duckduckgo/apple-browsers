@@ -17,9 +17,53 @@
 //
 
 import Foundation
+import os.log
 
-/// Decides which advertised WireGuard port to use from the probe results.
-enum EndpointPortSelection {
+/// Probes advertised ports and prepares a configuration using the selected endpoint port.
+struct EndpointPortSelection {
+
+    struct Selection {
+        let configuration: TunnelConfiguration
+        let decision: Decision
+    }
+
+    private let prober: EndpointPortProbing
+
+    init(prober: EndpointPortProbing = EndpointPortProber()) {
+        self.prober = prober
+    }
+
+    /// Returns nil when the configuration or server has no usable endpoint.
+    func select(for serverInfo: NetworkProtectionServerInfo,
+                in configuration: TunnelConfiguration,
+                preferring rememberedPort: UInt16?) async throws -> Selection? {
+        try Task.checkCancellation()
+        guard let currentPort = configuration.peers.first?.endpoint?.port.rawValue else {
+            return nil
+        }
+
+        let candidates = serverInfo.endpointPortCandidates(preferring: rememberedPort)
+        let responding: Set<UInt16>
+        if candidates.count > 1 {
+            // Avoid depending on name resolution through a possibly dead tunnel.
+            guard let host = serverInfo.ips.first?.host ?? serverInfo.endpoint?.host else {
+                return nil
+            }
+            responding = try await prober.respondingPorts(host: host, ports: candidates)
+        } else {
+            responding = []
+        }
+        try Task.checkCancellation()
+
+        let decision = Self.decide(candidates: candidates,
+                                   currentPort: currentPort,
+                                   serverDefaultPort: serverInfo.port,
+                                   responding: responding)
+        Logger.networkProtection.log("🔵 Port probe: candidates \(candidates, privacy: .public), \(responding.sorted(), privacy: .public) answered, using port \(decision.port, privacy: .public)")
+
+        return Selection(configuration: decision.port == currentPort ? configuration : configuration.replacingEndpointPort(with: decision.port),
+                         decision: decision)
+    }
 
     struct Decision: Equatable {
         /// Port the tunnel configuration should use.

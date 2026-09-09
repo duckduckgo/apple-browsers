@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import Network
 @testable import VPN
 
 final class EndpointPortSelectionTests: XCTestCase {
@@ -116,6 +117,119 @@ final class EndpointPortSelectionTests: XCTestCase {
         XCTAssertEqual(decision.port, 443)
         XCTAssertNil(decision.automaticPort)
         XCTAssertNil(decision.rememberedPort)
+    }
+
+    func testSelect_ProbesAdvertisedPortsAndRewritesOnlyTheEndpointPort() async throws {
+        let selector = EndpointPortSelection(prober: StubProber { host, ports in
+            XCTAssertEqual(host, .ipv4(IPv4Address("192.0.2.1")!))
+            XCTAssertEqual(ports, [443, 51820])
+            return [51820]
+        })
+        let configuration = makeConfiguration(port: 443)
+
+        let result = try await selector.select(for: makeServer(ports: [443, 51820]), in: configuration, preferring: nil)
+        let selection = try XCTUnwrap(result)
+
+        XCTAssertEqual(selection.configuration.peers.first?.endpoint?.port.rawValue, 51820)
+        XCTAssertEqual(selection.configuration.peers.first?.endpoint?.host, configuration.peers.first?.endpoint?.host)
+        XCTAssertEqual(selection.configuration.interface, configuration.interface)
+        XCTAssertEqual(selection.decision.automaticPort, 51820)
+        XCTAssertEqual(selection.decision.rememberedPort, 51820)
+    }
+
+    func testSelect_RememberedAdvertisedPortWinsWhenBothAnswer() async throws {
+        let selector = EndpointPortSelection(prober: StubProber { _, ports in
+            XCTAssertEqual(ports, [51820, 443])
+            return [443, 51820]
+        })
+
+        let result = try await selector.select(for: makeServer(ports: [443, 51820]),
+                                               in: makeConfiguration(port: 443),
+                                               preferring: 51820)
+
+        XCTAssertEqual(result?.configuration.peers.first?.endpoint?.port.rawValue, 51820)
+    }
+
+    func testSelect_NoResponsePreservesAnAdvertisedCurrentPortWithoutRememberingIt() async throws {
+        let selector = EndpointPortSelection(prober: StubProber { _, _ in [] })
+
+        let result = try await selector.select(for: makeServer(ports: [443, 51820]),
+                                               in: makeConfiguration(port: 51820),
+                                               preferring: nil)
+
+        XCTAssertEqual(result?.configuration.peers.first?.endpoint?.port.rawValue, 51820)
+        XCTAssertEqual(result?.decision.automaticPort, 51820)
+        XCTAssertNil(result?.decision.rememberedPort)
+    }
+
+    func testSelect_SingleAdvertisedPortSkipsProbingAndDropsAnUnadvertisedCurrentPort() async throws {
+        let selector = EndpointPortSelection(prober: StubProber { _, _ in
+            XCTFail("A single advertised port must not be probed")
+            return []
+        })
+
+        let result = try await selector.select(for: makeServer(ports: nil),
+                                               in: makeConfiguration(port: 51820),
+                                               preferring: 51820)
+
+        XCTAssertEqual(result?.configuration.peers.first?.endpoint?.port.rawValue, 443)
+        XCTAssertNil(result?.decision.automaticPort)
+        XCTAssertNil(result?.decision.rememberedPort)
+    }
+
+    func testSelect_MissingPeerEndpointSkipsProbingAndReturnsNoSelection() async throws {
+        let selector = EndpointPortSelection(prober: StubProber { _, _ in
+            XCTFail("A configuration without an endpoint must not be probed")
+            return []
+        })
+
+        let result = try await selector.select(for: makeServer(ports: [443, 51820]),
+                                               in: .make(peers: []),
+                                               preferring: nil)
+
+        XCTAssertNil(result)
+    }
+
+    func testSelect_CancelledProbeCannotReturnASelectionEvenIfTheProberReturnsPorts() async {
+        let task = Task {
+            let selector = EndpointPortSelection(prober: StubProber { _, _ in
+                withUnsafeCurrentTask { $0?.cancel() }
+                return [51820]
+            })
+            return try await selector.select(for: makeServer(ports: [443, 51820]),
+                                             in: makeConfiguration(port: 443),
+                                             preferring: nil)
+        }
+
+        do {
+            _ = try await task.value
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {
+            // Expected.
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    private func makeServer(ports: [UInt16]?) -> NetworkProtectionServerInfo {
+        NetworkProtectionServerInfo(name: "server", publicKey: "", hostNames: [],
+                                    ips: [AnyIPAddress("192.0.2.1")!],
+                                    internalIP: AnyIPAddress("10.0.0.1")!, port: 443, ports: ports,
+                                    attributes: .init(city: "City", country: "Country", state: "State"))
+    }
+
+    private func makeConfiguration(port: UInt16) -> TunnelConfiguration {
+        var peer = PeerConfiguration.make(publicKey: PrivateKey().publicKey)
+        peer.endpoint = Endpoint(host: .ipv4(IPv4Address("192.0.2.1")!), port: NWEndpoint.Port(rawValue: port)!)
+        return .make(peers: [peer])
+    }
+
+    private struct StubProber: EndpointPortProbing {
+        let respond: (NWEndpoint.Host, [UInt16]) async throws -> Set<UInt16>
+
+        func respondingPorts(host: NWEndpoint.Host, ports: [UInt16]) async throws -> Set<UInt16> {
+            try await respond(host, ports)
+        }
     }
 
 }

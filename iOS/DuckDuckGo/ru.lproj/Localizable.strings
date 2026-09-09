@@ -2263,6 +2263,12 @@
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Кратко изложи содержимое книги.";
 
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Кратко изложи содержимое документа";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Кратко изложи содержимое документа.";
+
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Кратко изложи содержимое страницы";
 
@@ -5283,6 +5289,15 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Удалить устройство?";
+
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Серверные данные удалены";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "На всех устройствах, использующих Sync & Backup, синхронизация будет отключена, а ваши синхронизированные данные будут удалены с сервера.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Отключить Sync & Backup и удалить данные с сервера?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Добавлено новое устройство!";

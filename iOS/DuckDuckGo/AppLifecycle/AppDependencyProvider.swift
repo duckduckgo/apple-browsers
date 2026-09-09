@@ -31,6 +31,7 @@ import DataBrokerProtection_iOS
 import RemoteMessaging
 import PageRefreshMonitor
 import PixelKit
+import WideEvent
 import PixelExperimentKit
 import PrivacyConfig
 import Networking
@@ -127,7 +128,9 @@ final class AppDependencyProvider: DependencyProvider {
                        parameterProvider: IOSPixelKitParameterProvider()) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
             let url = URL.pixelUrl(forPixelNamed: pixelName)
-            let apiHeaders = APIRequestV2.HeadersV2(userAgent: PixelUserAgent.default, additionalHeaders: headers)
+            // `PixelKit.Options.userAgent` arrives under this key, and overrides the pixel one.
+            let apiHeaders = APIRequestV2.HeadersV2(userAgent: headers[PixelKit.Header.userAgent] ?? PixelUserAgent.default,
+                                                    additionalHeaders: headers)
             guard let request = APIRequestV2(url: url, method: .get, queryItems: parameters.toQueryItems(), headers: apiHeaders) else {
                 assertionFailure("Invalid Pixel request")
                 onComplete(false, nil)
@@ -219,9 +222,9 @@ final class AppDependencyProvider: DependencyProvider {
                               PixelParameters.subscriptionKeychainError: error.localizedDescription,
                               PixelParameters.source: KeychainErrorSource.browser.rawValue,
                               PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainAccessError,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                         withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.subscriptionKeychainAccessError,
+                          frequency: .legacyDailyAndCount,
+                          options: .parameters(parameters))
         }
 
         // Init V2 classes for migration

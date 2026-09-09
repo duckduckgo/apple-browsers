@@ -2263,6 +2263,12 @@
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Pateik šios knygos santrauką.";
 
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Pateik šio dokumento santrauką";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Pateik šio dokumento santrauką.";
+
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Pateik šio puslapio santrauką";
 
@@ -5283,6 +5289,15 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Pašalinti įrenginį?";
+
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Serverio duomenys ištrinti";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Visi įrenginiai, naudojantys „Sync & Backup“, bus atjungti, o tavo sinchronizuoti duomenys bus ištrinti iš serverio.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Išjungti „Sync & Backup“ ir ištrinti serverio duomenis?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Pridėtas naujas įrenginys!";

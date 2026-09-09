@@ -19,7 +19,7 @@
 
 import WebKit
 import WKAbstractions
-import PixelKit
+import WideEvent
 
 @testable import Core
 

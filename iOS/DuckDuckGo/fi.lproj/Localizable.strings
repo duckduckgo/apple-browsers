@@ -2263,6 +2263,12 @@
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Tee yhteenveto tästä kirjasta.";
 
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Tee yhteenveto tästä asiakirjasta";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Tee yhteenveto tästä asiakirjasta.";
+
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Tee yhteenveto tästä sivusta";
 
@@ -5283,6 +5289,15 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Poistetaanko laite?";
+
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Palvelimen tiedot poistettu";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Kaikkien Sync & Backup -toimintoa käyttävien laitteiden yhteys katkaistaan ja synkronoidut tietosi poistetaan palvelimelta.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Poistetaanko Sync & Backup -toiminto käytöstä ja poistetaanko palvelintiedot?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Uusi laite lisätty!";

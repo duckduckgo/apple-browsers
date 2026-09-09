@@ -2263,6 +2263,12 @@
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Sammanfatta denna bok.";
 
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Sammanfatta detta dokument";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Sammanfatta detta dokument.";
+
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Sammanfatta denna sida";
 
@@ -5283,6 +5289,15 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Vill du ta bort enheten?";
+
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Serverdata har raderats";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Alla enheter som använder Sync & Backup kommer att kopplas bort och dina synkroniserade data raderas från servern.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Vill du inaktivera Sync & Backup och radera serverdata?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Ny enhet tillagd!";

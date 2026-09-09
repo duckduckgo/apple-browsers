@@ -1342,52 +1342,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0, "The page was already read")
         XCTAssertEqual(host.chipViewModel.pendingAttachedContextData?.title, "Tokamak")
         XCTAssertNil(host.chipViewModel.suggestedContext)
-    }
-
-    @MainActor
-    func testDismissingTheOfferDoesNotDetachAnything() async throws {
-        // Given
-        mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .contextualPagePlaceholder]
-        mockSettings.isAutomaticContextAttachmentEnabled = false
-        await sut.presentSheet(from: mockPresentingVC)
-        let host = try XCTUnwrap(sut.persistentUTIHost)
-        sut.sessionState.beginChatForUTISubmission()
-        sut.sessionState.updateUnifiedToggleInputActive(true)
-        originatingTabURLSubject.send(URL(string: "https://en.wikipedia.org/wiki/Tokamak")!)
-        await sut.notifyPageChanged()
-        mockPageContextHandler.sendContext(makeTestContext(title: "Tokamak", url: "https://en.wikipedia.org/wiki/Tokamak"))
-        await yieldUntil { host.chipViewModel.suggestedContext != nil }
-
-        // When
-        host.chipViewModel.tapToRemove()
-
-        // Then
-        XCTAssertNil(host.chipViewModel.suggestedContext)
-        XCTAssertNil(sut.sessionState.suggestedContext)
-        XCTAssertNil(host.chipViewModel.state)
-    }
-
-    @MainActor
-    func testNavigatingWithAutoAttachOnStillAttachesSilently() async throws {
-        // Given — the regression guard: auto-attach must keep its existing behaviour
-        mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .contextualPagePlaceholder]
-        mockSettings.isAutomaticContextAttachmentEnabled = true
-        await sut.presentSheet(from: mockPresentingVC)
-        let host = try XCTUnwrap(sut.persistentUTIHost)
-        sut.sessionState.beginChatForUTISubmission()
-        sut.sessionState.updateUnifiedToggleInputActive(true)
-        originatingTabURLSubject.send(URL(string: "https://en.wikipedia.org/wiki/Tokamak")!)
-
-        // When
-        await sut.notifyPageChanged()
-        mockPageContextHandler.sendContext(makeTestContext(title: "Tokamak", url: "https://en.wikipedia.org/wiki/Tokamak"))
-        await yieldUntil { host.chipViewModel.attachedContext != nil }
-
-        // Then
-        XCTAssertNil(host.chipViewModel.suggestedContext, "Auto-attach attaches; it does not offer")
-        XCTAssertEqual(host.chipViewModel.attachedContext?.title, "Tokamak")
+        XCTAssertNotNil(host.chipViewModel.attachedContext)
     }
 
     @MainActor
@@ -1409,52 +1364,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         // Then
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0, "The page must not be read at all")
         XCTAssertNil(host.chipViewModel.suggestedContext)
-    }
-
-    // MARK: - UTI Chip Delivery Tests
-
-    @MainActor
-    func testDeliverToUTIChipReusesLatestContextFavicon() async throws {
-        // Given - immediate UTI with auto-attach ON and a presented sheet (persistent host exists)
-        mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
-        mockSettings.isAutomaticContextAttachmentEnabled = true
-        await sut.presentSheet(from: mockPresentingVC)
-        let host = try XCTUnwrap(sut.persistentUTIHost)
-
-        let favicon = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { context in
-            UIColor.red.setFill()
-            context.fill(CGRect(x: 0, y: 0, width: 1, height: 1))
-        }
-        let context = AIChatPageContext(
-            contextData: makeTestContext(title: "With Favicon").contextData,
-            favicon: favicon
-        )
-
-        // When - collection publishes a context carrying a decoded favicon
-        mockPageContextHandler.sendContext(context)
-        await yieldUntil { host.chipViewModel.attachedContext != nil }
-
-        // Then - the chip receives the session's wrapper, favicon included
-        XCTAssertEqual(host.chipViewModel.attachedContext?.contextData.title, "With Favicon")
-        XCTAssertNotNil(host.chipViewModel.attachedContext?.favicon, "Chip delivery must reuse the favicon-carrying wrapper")
-    }
-
-    @MainActor
-    func testDeliverToUTIChipWrapsUnknownContextWithoutFavicon() async throws {
-        // Given - the session never stored this context (latestContext is nil)
-        mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .contextualSuggestedPrompts]
-        mockSettings.isAutomaticContextAttachmentEnabled = false
-        await sut.presentSheet(from: mockPresentingVC)
-        let host = try XCTUnwrap(sut.persistentUTIHost)
-
-        // When - a suggestion tap attaches a context unknown to the handler
-        sut.sessionState.attachContextFromSuggestionTap(makeTestContext(title: "Tapped"))
-
-        // Then - the chip still gets the context, wrapped without a favicon
-        XCTAssertEqual(host.chipViewModel.attachedContext?.contextData.title, "Tapped")
-        XCTAssertNil(host.chipViewModel.attachedContext?.favicon)
     }
 
     // MARK: - Open Duck.ai

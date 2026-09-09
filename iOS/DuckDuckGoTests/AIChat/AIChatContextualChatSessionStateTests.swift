@@ -2293,7 +2293,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.beginChatForUTISubmission()
     }
 
-    func testWhenTheSettingIsOffThenACollectedPageIsOfferedRatherThanAttached() {
+    func testWhenTheAutoAttachIsOffThenACollectedPageIsSuggestedRatherThanAttached() {
         var deliveredTargets: PageContextDeliveryTargets?
         sessionState.effects
             .sink { effect in
@@ -2309,7 +2309,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.chipState, .placeholder, "An offer is not an attachment")
     }
 
-    func testWhenTheSettingIsOnThenTheSamePageIsAttachedNotOffered() {
+    func testWhenTheAutoAttachIsOnThenACollectedPageIsAttached() {
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateUnifiedToggleInputActive(true)
         sessionState.beginChatForUTISubmission()
@@ -2318,6 +2318,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         XCTAssertNil(sessionState.suggestedContext)
         XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Tokamak")
+        XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
     }
 
     func testWhenThereIsNoChatThenNothingIsOffered() {
@@ -2346,6 +2347,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Tokamak")
         XCTAssertNil(sessionState.suggestedContext)
+        XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
     }
 
     func testWhenAnOfferIsDismissedThenNothingIsAttachedOrDetached() {

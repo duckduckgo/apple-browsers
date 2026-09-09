@@ -147,8 +147,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         onAttachActionRequested?()
     }
 
-    /// Dismissing a suggestion is not a detach: nothing was attached, so it must not run the removal
-    /// path or fire its pixel.
     func tapToRemove() {
         if suggestedContext != nil {
             Logger.contextualUTI.info("PageContextChip suggestion dismissed")

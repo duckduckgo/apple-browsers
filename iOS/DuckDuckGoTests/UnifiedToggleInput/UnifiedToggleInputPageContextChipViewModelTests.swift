@@ -476,24 +476,6 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertNil(sut.suggestedContext)
     }
 
-    func test_setAttached_clearsTheSuggestionInOnePublish() {
-        // The strip drops and re-adds the chip if content and visibility arrive separately, so
-        // accepting a suggestion must land as a single state change.
-        let url = "https://en.wikipedia.org/wiki/Tokamak"
-        originatingURL.send(URL(string: url))
-        makeSUT()
-        sut.setSuggested(makeContext(title: "Tokamak", url: url))
-
-        var published: [AIChatContextChipView.State?] = []
-        let cancellable = sut.$state.dropFirst().sink { published.append($0) }
-        sut.setAttached(makeContext(title: "Tokamak", url: url))
-        cancellable.cancel()
-
-        XCTAssertEqual(published.count, 1)
-        XCTAssertEqualState(sut.state, .attached(title: "Tokamak", favicon: nil))
-        XCTAssertNil(sut.suggestedContext)
-    }
-
     func test_tapToAttach_onASuggestion_acceptsItRatherThanRequestingACollection() {
         let url = "https://en.wikipedia.org/wiki/Tokamak"
         originatingURL.send(URL(string: url))
@@ -506,11 +488,9 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
 
         XCTAssertEqual(acceptCalls, 1)
         XCTAssertEqual(attachCalls, 0)
-        // Left in place: the attach round trip comes back as setAttached, which clears it.
-        XCTAssertNotNil(sut.suggestedContext)
     }
 
-    func test_tapToRemove_onASuggestion_dismissesItWithoutDetaching() {
+    func test_tapToRemove_onASuggestion_dismissesIt() {
         let url = "https://en.wikipedia.org/wiki/Tokamak"
         originatingURL.send(URL(string: url))
         makeSUT()

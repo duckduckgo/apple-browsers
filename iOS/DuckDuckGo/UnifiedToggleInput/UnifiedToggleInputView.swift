@@ -563,8 +563,6 @@ final class UnifiedToggleInputView: UIView {
         pageContextChipCancellables.removeAll()
         attachmentsStrip.onPageContextRemove = { [weak viewModel] in viewModel?.tapToRemove() }
         attachmentsStrip.onPageContextTap = { [weak viewModel] in viewModel?.tapToAttach() }
-        // One sink, so content and visibility land together — across two the strip drops the chip and
-        // re-adds it mid-transition.
         viewModel.$state
             .sink { [weak self] state in
                 if let state {

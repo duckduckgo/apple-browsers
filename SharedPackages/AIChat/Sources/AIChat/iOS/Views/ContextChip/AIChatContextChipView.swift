@@ -38,8 +38,6 @@ public final class AIChatContextChipView: UIView {
         static let borderWidth: CGFloat = 1
         /// The offer reads as provisional, so its outline is heavier and broken rather than solid.
         static let suggestedBorderWidth: CGFloat = 1.5
-        /// The design asks for `--ds-accent-alt-primary` (#d6efff fill, the same blue at 16% for the
-        /// dashes). Neither has an iOS token, so the nearest ones are re-tinted to match.
         static let suggestedFillAlpha: CGFloat = 0.4
         static let suggestedBorderAlpha: CGFloat = 0.16
         static let suggestedDashPattern: [NSNumber] = [5, 7]
@@ -321,8 +319,6 @@ private extension AIChatContextChipView {
         titleTrailingToRemoveButtonConstraint.isActive = true
     }
 
-    /// Neutral states pass `lines`, not `decorationPrimary`: the design is black at 9%, which `lines`
-    /// matches and `decorationPrimary` does not — it is 30%.
     func applyDashedBorder(color: UIColor) {
         layer.borderWidth = 0
         dashedBorderLayer.isHidden = false

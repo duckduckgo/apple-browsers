@@ -159,6 +159,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
+    @MainActor
+    private(set) lazy var duckPlayerOverlayObserver: DuckPlayerOverlayObserver = {
+        DuckPlayerOverlayObserver(
+            duckPlayer: duckPlayer,
+            windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger
+        )
+    }()
+
     @MainActor private(set) lazy var quickFeedbackService: QuickFeedbackService = {
         let diagnosticsCollector = QuickFeedbackDiagnosticsCollector(
             tabAndWindowCountProvider: windowControllersManager,
@@ -1479,7 +1488,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 syncService: syncService,
                 syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
                 pinningManager: pinningManager,
-                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate
+                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate,
+                duckPlayerOverlayObserver: duckPlayerOverlayObserver
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)

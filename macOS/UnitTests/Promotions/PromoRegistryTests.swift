@@ -73,7 +73,19 @@ final class PromoRegistryTests: XCTestCase {
                 ),
                 onboardingStateUpdater: MockOnboardingStateUpdater(),
                 autoconsentStats: MockAutoconsentStats()
-            ))
+            ),
+            duckPlayerOverlayObserver: {
+                let featureFlagger = MockFeatureFlagger()
+                return DuckPlayerOverlayObserver(
+                    duckPlayer: DuckPlayer(
+                        preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
+                        privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                        internalUserDecider: featureFlagger.internalUserDecider
+                    ),
+                    windowControllersManager: windowControllersManager,
+                    featureFlagger: featureFlagger
+                )
+            }())
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)

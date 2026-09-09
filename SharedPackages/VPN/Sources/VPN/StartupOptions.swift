@@ -33,7 +33,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
     let excludeLocalNetworks: Bool
     let excludeCGNAT: Bool
     let enforceRoutes: Bool
-    let endpointPortOverride: UInt16?
 
     enum CodingKeys: String, CodingKey {
         case registrationKeyValidity
@@ -44,7 +43,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         case excludeLocalNetworks
         case excludeCGNAT
         case enforceRoutes
-        case endpointPortOverride
     }
 
     /// Create a snapshot of the current VPN settings
@@ -57,7 +55,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         self.excludeLocalNetworks = settings.excludeLocalNetworks
         self.excludeCGNAT = settings.excludeCGNAT
         self.enforceRoutes = settings.enforceRoutes
-        self.endpointPortOverride = settings.endpointPortOverride
     }
 
     /// Create a snapshot with explicit values
@@ -68,8 +65,7 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
                 dnsSettings: NetworkProtectionDNSSettings,
                 excludeLocalNetworks: Bool,
                 excludeCGNAT: Bool = UserDefaults.excludeCGNATDefaultValue,
-                enforceRoutes: Bool = UserDefaults.enforceRoutesDefaultValue,
-                endpointPortOverride: UInt16? = nil) {
+                enforceRoutes: Bool = UserDefaults.enforceRoutesDefaultValue) {
         self.registrationKeyValidity = registrationKeyValidity
         self.selectedEnvironment = selectedEnvironment
         self.selectedServer = selectedServer
@@ -78,7 +74,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         self.excludeLocalNetworks = excludeLocalNetworks
         self.excludeCGNAT = excludeCGNAT
         self.enforceRoutes = enforceRoutes
-        self.endpointPortOverride = endpointPortOverride
     }
 
     /// Custom decoding so snapshots persisted by older versions still decode, falling back to default
@@ -93,7 +88,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         excludeLocalNetworks = try container.decode(Bool.self, forKey: .excludeLocalNetworks)
         excludeCGNAT = try container.decodeIfPresent(Bool.self, forKey: .excludeCGNAT) ?? UserDefaults.excludeCGNATDefaultValue
         enforceRoutes = try container.decodeIfPresent(Bool.self, forKey: .enforceRoutes) ?? UserDefaults.enforceRoutesDefaultValue
-        endpointPortOverride = try container.decodeIfPresent(UInt16.self, forKey: .endpointPortOverride)
     }
 
     /// Apply these settings to a VPNSettings instance
@@ -106,7 +100,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         settings.excludeLocalNetworks = excludeLocalNetworks
         settings.excludeCGNAT = excludeCGNAT
         settings.enforceRoutes = enforceRoutes
-        settings.endpointPortOverride = endpointPortOverride
     }
 }
 

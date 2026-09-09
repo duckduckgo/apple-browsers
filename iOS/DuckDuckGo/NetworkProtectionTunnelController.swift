@@ -551,8 +551,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
                 .setSelectedLocation,
                 .setDNSSettings,
                 .setShowInMenuBar,
-                .setDisableRekeying,
-                .setEndpointPortOverride:
+                .setDisableRekeying:
             // Intentional no-op as this is handled by the extension or applied on the next connect
             break
         }

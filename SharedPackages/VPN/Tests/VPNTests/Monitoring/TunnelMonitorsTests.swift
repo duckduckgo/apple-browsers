@@ -84,7 +84,7 @@ final class TunnelMonitorsTests: XCTestCase {
             events: events,
             entitlementCheck: { tunablesBox.entitlementResult },
             isConnectionTesterEnabled: { tunablesBox.connectionTesterEnabled },
-            endpointPortProvider: { tunablesBox.endpointPortOverride },
+            endpointPortProvider: { tunablesBox.selectedEndpointPort },
             onReconfigureForMigration: {
                 hooksBox.reconfigureForMigrationCount += 1
                 if let error = hooksBox.reconfigureForMigrationError {
@@ -322,7 +322,7 @@ final class TunnelMonitorsTests: XCTestCase {
     }
 
     func testTunnelFailureCallback_failureDetected_invokesFailureRecovery() async throws {
-        tunables.endpointPortOverride = 51900
+        tunables.selectedEndpointPort = 51900
 
         try await monitors.start(testImmediately: false)
         await tunnelFailureMonitor.fire(.failureDetected)
@@ -330,18 +330,18 @@ final class TunnelMonitorsTests: XCTestCase {
 
         XCTAssertEqual(failureRecoveryHandler.attemptCount, 1)
         XCTAssertEqual(failureRecoveryHandler.lastExcludeLocalNetworks, false)
-        XCTAssertEqual(failureRecoveryHandler.lastEndpointPortOverride, 51900)
+        XCTAssertEqual(failureRecoveryHandler.lastSelectedEndpointPort, 51900)
     }
 
-    func testTunnelFailureCallback_failureDetected_whenPortProviderReturnsNil_passesNilEndpointPortOverride() async throws {
-        tunables.endpointPortOverride = nil
+    func testTunnelFailureCallback_failureDetected_whenPortProviderReturnsNil_passesNilSelectedEndpointPort() async throws {
+        tunables.selectedEndpointPort = nil
 
         try await monitors.start(testImmediately: false)
         await tunnelFailureMonitor.fire(.failureDetected)
         await waitForSpawnedTasks()
 
         XCTAssertEqual(failureRecoveryHandler.attemptCount, 1)
-        XCTAssertNil(failureRecoveryHandler.lastEndpointPortOverride)
+        XCTAssertNil(failureRecoveryHandler.lastSelectedEndpointPort)
     }
 
     func testTunnelFailureCallback_failureDetected_appliesRecoveryConfig() async throws {
@@ -512,7 +512,7 @@ private final class FiredEventsBox: @unchecked Sendable {
 private final class TunablesBox: @unchecked Sendable {
     var entitlementResult: Result<Bool, Error> = .success(true)
     var connectionTesterEnabled: Bool = true
-    var endpointPortOverride: UInt16?
+    var selectedEndpointPort: UInt16?
 }
 
 private final class HooksBox: @unchecked Sendable {
@@ -687,7 +687,7 @@ private final class MockFailureRecoveryHandler: FailureRecoveryHandling, @unchec
     var lastExcludeLocalNetworks: Bool?
     var lastExcludeCGNAT: Bool?
     var lastDNSSettings: NetworkProtectionDNSSettings?
-    var lastEndpointPortOverride: UInt16?
+    var lastSelectedEndpointPort: UInt16?
     var configResultToUpdate: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult?
     var afterSuccessfulConfigUpdate: (@MainActor () -> Void)?
 
@@ -696,7 +696,7 @@ private final class MockFailureRecoveryHandler: FailureRecoveryHandling, @unchec
         excludeLocalNetworks: Bool,
         excludeCGNAT: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
-        endpointPortOverride: UInt16?,
+        selectedEndpointPort: UInt16?,
         updateConfig: @escaping (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
     ) async {
         attemptCount += 1
@@ -704,7 +704,7 @@ private final class MockFailureRecoveryHandler: FailureRecoveryHandling, @unchec
         lastExcludeLocalNetworks = excludeLocalNetworks
         lastExcludeCGNAT = excludeCGNAT
         lastDNSSettings = dnsSettings
-        lastEndpointPortOverride = endpointPortOverride
+        lastSelectedEndpointPort = selectedEndpointPort
 
         if let configResultToUpdate {
             do {

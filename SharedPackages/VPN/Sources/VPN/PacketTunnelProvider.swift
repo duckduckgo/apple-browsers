@@ -337,18 +337,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     public let lastSelectedServerInfoPublisher = CurrentValueSubject<NetworkProtectionServerInfo?, Never>(nil)
 
     /// Port chosen by automatic fallback (set by the port-fallback logic; nil until it runs).
-    /// A manual `settings.endpointPortOverride` always takes precedence.
     @MainActor var automaticEndpointPort: UInt16?
 
     /// Port that the probe last found reachable. Tried first on the next connection when the server advertises it.
     @MainActor var rememberedEndpointPort: UInt16?
 
     private let endpointPortProber: EndpointPortProbing = EndpointPortProber()
-
-    /// The port to use for the WireGuard endpoint, or nil to use the server-provided port.
-    @MainActor var effectiveEndpointPort: UInt16? {
-        settings.endpointPortOverride ?? automaticEndpointPort
-    }
 
     // MARK: - User Notifications
 
@@ -615,7 +609,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 self?.isConnectionTesterEnabled ?? true
             },
             endpointPortProvider: { [weak self] in
-                self?.effectiveEndpointPort
+                self?.automaticEndpointPort
             },
             onReconfigureForMigration: { @MainActor [weak self] in
                 guard let self else { throw CancellationError() }
@@ -1239,7 +1233,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 excludeLocalNetworks: settings.excludeLocalNetworks,
                 excludeCGNAT: settings.excludeCGNAT,
                 dnsSettings: dnsSettings,
-                endpointPortOverride: effectiveEndpointPort,
+                selectedEndpointPort: automaticEndpointPort,
                 regenerateKey: regenerateKey
             )
         } catch {
@@ -1262,10 +1256,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - Endpoint Port Selection
 
     /// Probes the server's advertised ports and moves the endpoint to the first candidate that answers.
-    /// A manual port override or a single advertised port leaves the configuration untouched.
+    /// A single advertised port skips probing.
     @MainActor
     private func selectEndpointPort(for serverInfo: NetworkProtectionServerInfo, in configuration: TunnelConfiguration) async -> TunnelConfiguration {
-        guard settings.endpointPortOverride == nil else { return configuration }
         guard let currentPort = configuration.peers.first?.endpoint?.port.rawValue else { return configuration }
 
         let candidates = serverInfo.endpointPortCandidates(preferring: rememberedEndpointPort)
@@ -1346,10 +1339,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                     updateMethod: .selectServer(serverSelectionMethod),
                     reassert: true,
                     attemptSource: .locationChange)
-            }
-        case .setEndpointPortOverride:
-            if case .connected = connectionStatus {
-                try? await handleRestartAdapter()
             }
         case .setConnectOnLogin,
                 .setDNSSettings,

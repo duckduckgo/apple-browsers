@@ -30,7 +30,7 @@ public final class MockNetworkProtectionDeviceManagement: NetworkProtectionDevic
         public let excludeLocalNetworks: Bool
         public let excludeCGNAT: Bool
         public let dnsSettings: NetworkProtectionDNSSettings
-        public let endpointPortOverride: UInt16?
+        public let selectedEndpointPort: UInt16?
         public let regenerateKey: Bool
     }
 
@@ -50,14 +50,14 @@ public final class MockNetworkProtectionDeviceManagement: NetworkProtectionDevic
         excludeLocalNetworks: Bool,
         excludeCGNAT: Bool = false,
         dnsSettings: NetworkProtectionDNSSettings,
-        endpointPortOverride: UInt16? = nil,
+        selectedEndpointPort: UInt16? = nil,
         regenerateKey: Bool) async throws -> (tunnelConfiguration: VPN.TunnelConfiguration, server: VPN.NetworkProtectionServer) {
             spyGenerateTunnelConfiguration = GenerateTunnelConfigurationCall(
                 selectionMethod: resolvedSelectionMethod,
                 excludeLocalNetworks: excludeLocalNetworks,
                 excludeCGNAT: excludeCGNAT,
                 dnsSettings: dnsSettings,
-                endpointPortOverride: endpointPortOverride,
+                selectedEndpointPort: selectedEndpointPort,
                 regenerateKey: regenerateKey
             )
             if let stubGenerateTunnelConfiguration {

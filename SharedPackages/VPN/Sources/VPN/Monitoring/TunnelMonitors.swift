@@ -166,7 +166,7 @@ final class TunnelMonitors: TunnelMonitoring {
                 excludeLocalNetworks: excludeLocalNetworks,
                 excludeCGNAT: self.settings.excludeCGNAT,
                 dnsSettings: self.settings.dnsSettings,
-                endpointPortOverride: self.endpointPortProvider()) { [weak self] generateConfigResult in
+                selectedEndpointPort: self.endpointPortProvider()) { [weak self] generateConfigResult in
                 try await self?.onFailureRecoveryConfigUpdate(generateConfigResult)
             }
         }

@@ -225,7 +225,7 @@ final class NetworkProtectionDeviceManagerTests: XCTestCase {
         XCTAssertEqual(configuration.0.interface.dns.first?.address.rawValue, expectedIPAddress.rawValue)
     }
 
-    func testTunnelConfiguration_WithEndpointPortOverride_UsesOverridePortAndKeepsHost() async throws {
+    func testTunnelConfiguration_WithSelectedEndpointPort_UsesSelectedPortAndKeepsHost() async throws {
         // GIVEN
         let server = NetworkProtectionServer.mockRegisteredServer
         let serverEndpoint = try XCTUnwrap(server.serverInfo.endpoint)
@@ -238,7 +238,7 @@ final class NetworkProtectionDeviceManagerTests: XCTestCase {
             excludeLocalNetworks: false,
             excludeCGNAT: false,
             dnsSettings: .ddg(blockRiskyDomains: false),
-            endpointPortOverride: 51820
+            selectedEndpointPort: 51820
         )
 
         // THEN
@@ -247,7 +247,7 @@ final class NetworkProtectionDeviceManagerTests: XCTestCase {
         XCTAssertEqual(peerEndpoint.host, serverEndpoint.host)
     }
 
-    func testTunnelConfiguration_WithoutEndpointPortOverride_UsesServerPort() async throws {
+    func testTunnelConfiguration_WithoutSelectedEndpointPort_UsesServerPort() async throws {
         // GIVEN
         let server = NetworkProtectionServer.mockRegisteredServer
         let serverEndpoint = try XCTUnwrap(server.serverInfo.endpoint)
@@ -260,7 +260,7 @@ final class NetworkProtectionDeviceManagerTests: XCTestCase {
             excludeLocalNetworks: false,
             excludeCGNAT: false,
             dnsSettings: .ddg(blockRiskyDomains: false),
-            endpointPortOverride: nil
+            selectedEndpointPort: nil
         )
 
         // THEN
@@ -279,7 +279,7 @@ extension NetworkProtectionDeviceManager {
             excludeLocalNetworks: false,
             excludeCGNAT: false,
             dnsSettings: .ddg(blockRiskyDomains: protectionActive),
-            endpointPortOverride: nil,
+            selectedEndpointPort: nil,
             regenerateKey: regenerateKey
         )
     }

@@ -759,7 +759,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAutoAttachContextByDefault:
             Config(source: .remoteReleasable(AIChatSubfeature.autoAttachContextByDefault))
         case .aiChatPdfPageContext:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.pdfPageContext))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext))
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:

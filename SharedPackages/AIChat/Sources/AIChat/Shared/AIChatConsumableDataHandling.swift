@@ -68,6 +68,7 @@ public enum AIChatConversationSource: String, CaseIterable {
     case tabBarButton = "tab-bar-button"
     case askAboutPage = "ask-about-page"
     case tabBarSidebar = "tab-bar-sidebar"
+    case tabBarViewAllChats = "tab-bar-view-all-chats"
 
     case addressBar = "address-bar"
     case addressBarSuggestion = "address-bar-suggestion"
@@ -120,7 +121,7 @@ public enum AIChatConversationSource: String, CaseIterable {
     /// only for continuity with dashboards that predate it.
     public var isAskDuckAiButton: Bool {
         switch self {
-        case .tabBarButton, .askAboutPage, .tabBarSidebar:
+        case .tabBarButton, .askAboutPage, .tabBarSidebar, .tabBarViewAllChats:
             return true
         default:
             return false

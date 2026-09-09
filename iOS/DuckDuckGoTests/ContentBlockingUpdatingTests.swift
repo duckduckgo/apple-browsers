@@ -89,22 +89,103 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         }
     }
 
-    func testSitePermissionsWaitsForUserScriptsWhenContentBlockingIsDisabled() {
+    func testWhenGeolocationScriptsDoNotMatchFlagThenNavigationWaitsIncludingSERP() {
+        for isSERP in [false, true] {
+            for isEnabled in [false, true] {
+                XCTAssertTrue(TabViewController.shouldWaitForContentBlockingAssets(
+                    assetsInstalled: true,
+                    contentBlockingEnabled: false,
+                    sitePermissionsEnabled: isEnabled,
+                    geolocationScriptInstalled: !isEnabled,
+                    isDuckDuckGoSearch: isSERP
+                ))
+                XCTAssertFalse(TabViewController.shouldWaitForContentBlockingAssets(
+                    assetsInstalled: true,
+                    contentBlockingEnabled: true,
+                    sitePermissionsEnabled: isEnabled,
+                    geolocationScriptInstalled: isEnabled,
+                    isDuckDuckGoSearch: isSERP
+                ))
+            }
+        }
+        XCTAssertFalse(TabViewController.shouldWaitForContentBlockingAssets(
+            assetsInstalled: false,
+            contentBlockingEnabled: true,
+            sitePermissionsEnabled: false,
+            geolocationScriptInstalled: false,
+            isDuckDuckGoSearch: true
+        ))
         XCTAssertTrue(TabViewController.shouldWaitForContentBlockingAssets(
             assetsInstalled: false,
             contentBlockingEnabled: false,
-            sitePermissionsEnabled: true
+            sitePermissionsEnabled: true,
+            geolocationScriptInstalled: false,
+            isDuckDuckGoSearch: true
         ))
-        XCTAssertFalse(TabViewController.shouldWaitForContentBlockingAssets(
-            assetsInstalled: false,
-            contentBlockingEnabled: false,
-            sitePermissionsEnabled: false
-        ))
-        XCTAssertFalse(TabViewController.shouldWaitForContentBlockingAssets(
-            assetsInstalled: true,
-            contentBlockingEnabled: true,
-            sitePermissionsEnabled: true
-        ))
+    }
+
+    @MainActor
+    func testWhenFlagChangesWithoutContentUpdateThenNextDocumentUsesMatchingGeolocationAPI() async throws {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+        let tab = TabViewController.fake(featureFlagger: flagger,
+                                        contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
+        defer { tab.prepareForDataClearing() }
+        let controller = try XCTUnwrap(tab.webView.configuration.userContentController as? UserContentController)
+        let navigationDelegate = MockWKNavigationDelegate()
+        tab.webView.navigationDelegate = navigationDelegate
+
+        for isEnabled in [true, false, true] {
+            let installed = expectation(description: "Scripts installed with flag \(isEnabled)")
+            let subscription = controller.$contentBlockingAssets
+                .compactMap { $0?.userScripts as? UserScripts }
+                .filter { ($0.geolocationUserScript != nil) == isEnabled }
+                .first()
+                .sink { _ in installed.fulfill() }
+            flagger.enabledFeatureFlags = isEnabled ? [.sitePermissions] : []
+            flagger.triggerUpdate()
+            if controller.contentBlockingAssets == nil {
+                rulesManager.updatesSubject.send(Self.testUpdate())
+            }
+            await fulfillment(of: [installed], timeout: 10)
+            subscription.cancel()
+
+            let loaded = expectation(description: "New document loaded")
+            navigationDelegate.didFinishNavigation = { _, _ in loaded.fulfill() }
+            tab.webView.loadHTMLString("<html><body>Geolocation rollback</body></html>", baseURL: nil)
+            await fulfillment(of: [loaded], timeout: 10)
+            let hasShim: Bool? = try await tab.webView.evaluateJavaScript("typeof window.__ddgSitePermissionsGeolocation !== 'undefined'")
+            XCTAssertEqual(hasShim, isEnabled)
+        }
+    }
+
+    @MainActor
+    func testWhenFlagChangesThenPreviousReloadNotificationIsNotReplayed() async {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+        let tab = TabViewController.fake(featureFlagger: flagger,
+                                        contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
+        defer { tab.prepareForDataClearing() }
+        let initial = expectation(description: "Content update includes reload notification")
+        let refreshed = expectation(description: "Flag refresh omits old notification")
+        var updates = [ContentBlockerRulesManager.UpdateEvent]()
+        let subscription = tab.makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: MediaCaptureUserScript())
+            .sink { content in
+                updates.append(content.rulesUpdate)
+                if updates.count == 1 { initial.fulfill() }
+                if updates.count == 2 { refreshed.fulfill() }
+            }
+        let update = ContentBlockerRulesManager.UpdateEvent(rules: Self.testRules(),
+                                                           changes: ["test": .unprotectedSites],
+                                                           completionTokens: ["real-update"])
+        rulesManager.updatesSubject.send(update)
+        await fulfillment(of: [initial], timeout: 3)
+        flagger.enabledFeatureFlags = []
+        flagger.triggerUpdate()
+        await fulfillment(of: [refreshed], timeout: 3)
+        subscription.cancel()
+        XCTAssertEqual(updates[0].changes["test"], .unprotectedSites)
+        XCTAssertEqual(updates[0].completionTokens, ["real-update"])
+        XCTAssertTrue(updates[1].changes.isEmpty)
+        XCTAssertTrue(updates[1].completionTokens.isEmpty)
     }
 
     @MainActor

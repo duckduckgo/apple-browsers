@@ -107,6 +107,12 @@ final class SitePermissionsState {
     fileprivate var uptimeProvider: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
 
     fileprivate var featureFlagSubscription: AnyCancellable?
+    var contentBlockingWaitTasks = [UUID: Task<Void, Never>]()
+
+    fileprivate func cancelContentBlockingWaits() {
+        contentBlockingWaitTasks.values.forEach { $0.cancel() }
+        contentBlockingWaitTasks.removeAll()
+    }
 
     fileprivate func dismissDialog() {
         guard let hostingController = dialogHostingController else { return }
@@ -186,11 +192,7 @@ final class SitePermissionsState {
         geolocationProvider?.close()
         geolocationUserScript?.cancelAllWatches()
         geolocationUserScript?.delegate = nil
-        retiredGeolocationUserScripts.forEach {
-            $0.cancelAllWatches()
-            $0.delegate = nil
-        }
-        retiredGeolocationUserScripts.removeAll()
+        discardRetiredGeolocationUserScripts()
         geolocationProvider = nil
         geolocationUserScript = nil
         shouldRetireGeolocationOnNavigation = false
@@ -205,6 +207,9 @@ final class SitePermissionsState {
     }
 
     fileprivate func resetRequests(for pageChange: SitePermissionPageChange) {
+        if pageChange == .webContentProcessReplacement {
+            cancelContentBlockingWaits()
+        }
         dismissDialog()
         denyPendingBridgeRequests()
         handledBridgeRequestIDs.removeAll()
@@ -239,6 +244,7 @@ final class SitePermissionsState {
     }
 
     func close() {
+        cancelContentBlockingWaits()
         featureFlagSubscription = nil
         isClosed = true
         dismissDialog()
@@ -286,8 +292,11 @@ extension TabViewController {
 
     static func shouldWaitForContentBlockingAssets(assetsInstalled: Bool,
                                                    contentBlockingEnabled: Bool,
-                                                   sitePermissionsEnabled: Bool) -> Bool {
-        !assetsInstalled && (contentBlockingEnabled || sitePermissionsEnabled)
+                                                   sitePermissionsEnabled: Bool,
+                                                   geolocationScriptInstalled: Bool,
+                                                   isDuckDuckGoSearch: Bool) -> Bool {
+        sitePermissionsEnabled != geolocationScriptInstalled
+            || (!assetsInstalled && contentBlockingEnabled && !isDuckDuckGoSearch)
     }
 
     func makeTabContentBlockingAssetsPublisher(
@@ -300,15 +309,29 @@ extension TabViewController {
             self?.shouldActivateSitePermissionsGeolocation(in: frame) ?? false
         }
 
+        let isEnabled = featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .map { [weak self] in self?.featureFlagger.isFeatureOn(.sitePermissions) == true }
+            .prepend(featureFlagger.isFeatureOn(.sitePermissions))
+            .removeDuplicates()
+
         return contentBlockingAssetsPublisher
-            .map { [weak self] content in
-                content
+            .combineLatest(isEnabled)
+            .scan(nil as ContentBlockingUpdating.NewContent?) { previous, update in
+                var content = update.0
+                let isEnabled = update.1
+                if previous?.id == content.id {
+                    // A flag-only refresh must not replay a previous notification's page reload.
+                    content.rulesUpdate = .init(rules: content.rulesUpdate.rules, changes: [:], completionTokens: [])
+                }
+                return content
                     .includingSitePermissionsMediaCapture(mediaCaptureUserScript)
                     .includingSitePermissionsGeolocation(
                         geolocationUserScript,
-                        enabled: self?.featureFlagger.isFeatureOn(.sitePermissions) == true
+                        enabled: isEnabled
                     )
             }
+            .compactMap { $0 }
             .eraseToAnyPublisher()
     }
 
@@ -387,6 +410,7 @@ extension TabViewController {
     }
 
     func prepareSitePermissionsForDataClearing() {
+        sitePermissionsState.cancelContentBlockingWaits()
         sitePermissionsState.navigationGeneration &+= 1
         sitePermissionsState.committedMainFrameURL = nil
         sitePermissionsState.isCommittedGeolocationPolicyBlocked = false

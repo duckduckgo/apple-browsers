@@ -39,7 +39,8 @@ public final class ContentBlockingUpdating {
 
     private typealias Update = ContentBlockerRulesManager.UpdateEvent
     struct NewContent: UserContentControllerNewContent {
-        let rulesUpdate: ContentBlockerRulesManager.UpdateEvent
+        let id = UUID()
+        var rulesUpdate: ContentBlockerRulesManager.UpdateEvent
         let sourceProvider: ScriptSourceProviding
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
         var sitePermissionsMediaCaptureUserScript: MediaCaptureUserScript?

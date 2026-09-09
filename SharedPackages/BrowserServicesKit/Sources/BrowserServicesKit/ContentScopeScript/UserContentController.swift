@@ -128,6 +128,8 @@ final public class UserContentController: WKUserContentController {
     @MainActor
     private var assetsPublisherCancellables: Set<AnyCancellable>?
     @MainActor
+    private var contentBlockingAssetsTask: Task<Void, Never>?
+    @MainActor
     private let scriptMessageHandler = PermanentScriptMessageHandler()
 
     /// if earlyAccessHandlers (WKScriptMessageHandlers) are provided they are installed without waiting for contentBlockingAssets to be loaded if.
@@ -140,19 +142,18 @@ final public class UserContentController: WKUserContentController {
 
         // Install initial WKScriptMessageHandlers if any. Currently, no WKUserScript are provided at initialization.
         installUserScripts([], handlers: earlyAccessHandlers)
-        // 1. receive UserContentControllerNewContent from assetsPublisher
-        // 2. prepare ContentBlockingAssets(content: userContentControllerNewContent) asynchronously
-        // 3. receive the ContentBlockingAssets from contentBlockingAssetsPublisher and install
-        let contentBlockingAssetsPublisher = PassthroughSubject<ContentBlockingAssets, Never>()
+        // Build and install in source order, preserving each update's incremental changes.
         assetsPublisherCancellables = [
-            contentBlockingAssetsPublisher.receive(on: DispatchQueue.main).sink { [weak self] contentBlockingAssets in
-                self?.installContentBlockingAssets(contentBlockingAssets)
-            },
-            assetsPublisher.sink { [selfDescr=self.debugDescription] content in
-                Logger.contentBlocking.debug("\(selfDescr): 📚 received content blocking assets")
-                Task.detached {
+            assetsPublisher.receive(on: DispatchQueue.main).sink { [weak self] content in
+                guard let self else { return }
+                Logger.contentBlocking.debug("\(self.debugDescription): 📚 received content blocking assets")
+                let previousTask = self.contentBlockingAssetsTask
+                self.contentBlockingAssetsTask = Task { [weak self] in
+                    await previousTask?.value
+                    guard !Task.isCancelled, self?.assetsPublisherCancellables != nil else { return }
                     let contentBlockingAssets = await ContentBlockingAssets(content: content)
-                    contentBlockingAssetsPublisher.send(contentBlockingAssets)
+                    guard !Task.isCancelled else { return }
+                    self?.installContentBlockingAssets(contentBlockingAssets)
                 }
             }
         ]
@@ -289,6 +290,8 @@ final public class UserContentController: WKUserContentController {
 
         self.scriptMessageHandler.clear()
         self.assetsPublisherCancellables = nil
+        self.contentBlockingAssetsTask?.cancel()
+        self.contentBlockingAssetsTask = nil
 
         self.removeAllContentRuleLists()
     }

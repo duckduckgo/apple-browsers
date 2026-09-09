@@ -30,11 +30,13 @@ import XCTest
 final class UserContentControllerTests: XCTestCase {
 
     struct MockScriptSourceProvider {
+        var scriptProvider: MockScriptProvider?
     }
     class MockScriptProvider: UserScriptsProvider {
         var userScripts: [UserScript] { [] }
+        var loadScripts: (() async -> [WKUserScript])?
         func loadWKUserScripts() async -> [WKUserScript] {
-            []
+            await loadScripts?() ?? []
         }
     }
 
@@ -44,7 +46,7 @@ final class UserContentControllerTests: XCTestCase {
 
         var makeUserScripts: @MainActor (MockScriptSourceProvider) -> MockScriptProvider {
             { sourceProvider in
-                MockScriptProvider()
+                sourceProvider.scriptProvider ?? MockScriptProvider()
             }
         }
     }
@@ -72,6 +74,69 @@ final class UserContentControllerTests: XCTestCase {
     }
 
     // MARK: - Tests
+    @MainActor
+    func testWhenAssetsBuildIsPendingThenLaterBuildWaitsAndPreservesBothUpdates() async throws {
+        let olderScripts = MockScriptProvider()
+        let newerScripts = MockScriptProvider()
+        let olderBuildStarted = expectation(description: "older build started")
+        let prematureBuild = expectation(description: "newer build must wait for older installation")
+        prematureBuild.isInverted = true
+        var installedAssets = [Assets]()
+        var finishOlderBuild: CheckedContinuation<[WKUserScript], Never>?
+        olderScripts.loadScripts = {
+            await withCheckedContinuation {
+                finishOlderBuild = $0
+                olderBuildStarted.fulfill()
+            }
+        }
+        newerScripts.loadScripts = {
+            if installedAssets.isEmpty {
+                prematureBuild.fulfill()
+            }
+            return []
+        }
+        let bothAssetsInstalled = assetsInstalledExpectation { installedAssets.append($0) }
+        bothAssetsInstalled.expectedFulfillmentCount = 2
+        let olderUpdate = ContentBlockerRulesManager.UpdateEvent(rules: [], changes: ["test": .unprotectedSites], completionTokens: ["older"])
+        let newerUpdate = ContentBlockerRulesManager.UpdateEvent(rules: [], changes: ["test": .tdsEtag], completionTokens: ["newer"])
+        assetsSubject.send(NewContent(rulesUpdate: olderUpdate, sourceProvider: .init(scriptProvider: olderScripts)))
+        await fulfillment(of: [olderBuildStarted], timeout: 1)
+
+        assetsSubject.send(NewContent(rulesUpdate: newerUpdate, sourceProvider: .init(scriptProvider: newerScripts)))
+        await fulfillment(of: [prematureBuild], timeout: 0.1)
+        finishOlderBuild?.resume(returning: [])
+        await fulfillment(of: [bothAssetsInstalled], timeout: 1)
+        XCTAssertTrue(installedAssets.first?.userScripts === olderScripts)
+        XCTAssertTrue(ucc.contentBlockingAssets?.userScripts === newerScripts)
+        XCTAssertEqual(installedAssets.map(\.updateEvent.changes), [olderUpdate.changes, newerUpdate.changes])
+        XCTAssertEqual(installedAssets.map(\.updateEvent.completionTokens), [["older"], ["newer"]])
+    }
+
+    @MainActor
+    func testWhenClosedDuringAssetsBuildThenCompletedAssetsAreNotInstalled() async throws {
+        let scripts = MockScriptProvider()
+        let buildStarted = expectation(description: "build started")
+        var finishBuild: CheckedContinuation<[WKUserScript], Never>?
+        scripts.loadScripts = {
+            await withCheckedContinuation {
+                finishBuild = $0
+                buildStarted.fulfill()
+            }
+        }
+        let update = ContentBlockerRulesManager.UpdateEvent(rules: [], changes: [:], completionTokens: [])
+        assetsSubject.send(NewContent(rulesUpdate: update, sourceProvider: .init(scriptProvider: scripts)))
+        await fulfillment(of: [buildStarted], timeout: 1)
+
+        let assetsInstalled = expectation(description: "closed controller must not install assets")
+        assetsInstalled.isInverted = true
+        onAssetsInstalled = { _ in assetsInstalled.fulfill() }
+        ucc.cleanUpBeforeClosing()
+        finishBuild?.resume(returning: [])
+        await fulfillment(of: [assetsInstalled], timeout: 0.1)
+        XCTAssertNil(ucc.contentBlockingAssets)
+        XCTAssertTrue(ucc.userScripts.isEmpty)
+    }
+
     @MainActor
     func testWhenUserContentControllerInitialisedWithEarlyAccessScriptsThenHandlersAreRegistered() async throws {
         let script1 = MockUserScript(messageNames: ["message1"])

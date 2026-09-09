@@ -53,6 +53,37 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         await fulfillment(of: [didDeinit], timeout: 3)
     }
 
+    func testWhenTabTearsDownWhileWaitingForScriptsThenEveryNavigationIsCancelled() async {
+        for teardown in ["close", "dataClearing", "replacement", "processTermination", "deinit"] {
+            var tab: TabViewController? = makeSUT()
+            tab?.specialErrorPageNavigationHandler.delegate = nil
+            let cancelled = expectation(description: "Pending navigations cancelled on \(teardown)")
+            cancelled.expectedFulfillmentCount = 2
+            for url in [URL(string: "https://example.com")!, URL(string: "https://duckduckgo.com/?q=maps")!] {
+                XCTAssertEqual(tab?.shouldWaitUntilContentBlockingIsLoaded({ shouldContinue in
+                    XCTAssertFalse(shouldContinue)
+                    cancelled.fulfill()
+                }, for: url), true)
+            }
+            await Task.yield()
+            if let tab {
+                let pendingTasks = Array(tab.sitePermissionsState.contentBlockingWaitTasks.values)
+                tab.sitePermissionsDidStartProvisionalNavigation(tab.webView, navigation: nil)
+                XCTAssertEqual(pendingTasks.count, 2)
+                XCTAssertTrue(pendingTasks.allSatisfy { !$0.isCancelled }, "An ordinary navigation must not cancel other pending decisions")
+            }
+            switch teardown {
+            case "close": tab?.closeSitePermissions()
+            case "dataClearing": tab?.prepareSitePermissionsForDataClearing()
+            case "replacement": tab?.sitePermissionsDidAttachWebView(replacingWebView: true)
+            case "processTermination":
+                if let tab { tab.sitePermissionsWebContentProcessDidTerminate(tab.webView) }
+            default: tab = nil
+            }
+            await fulfillment(of: [cancelled], timeout: 3)
+        }
+    }
+
     func testWhenTabDeinitializesThenRecoveryToastIsDismissed() async throws {
         let originalWindow = UIApplication.shared.firstKeyWindow
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)

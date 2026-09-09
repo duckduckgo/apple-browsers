@@ -195,13 +195,13 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
         XCTAssertTrue(firedEvents.contains(where: { $0.parameters?["metric"] == "onboardingCompleted" }))
     }
 
-    func testContextualDismissalIncludesTheDialogWithoutEnrollingUsers() {
+    func testContextualDismissalRecordsBooleanMarkerWithoutEnrollingUsers() {
         let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
         configureExperimentKit(cohort: .treatment, featureFlagger: flags)
-        OnboardingNonBlockingExperiment(featureFlagger: flags).fireMetric(.contextualDismissed, value: "subscriptionUpsell")
+        OnboardingNonBlockingExperiment(featureFlagger: flags).fireMetric(.contextualDismissed)
         XCTAssertEqual(firedEvents.count, 1)
         XCTAssertEqual(firedEvents.first?.parameters?["metric"], "contextualDismissed")
-        XCTAssertEqual(firedEvents.first?.parameters?["value"], "subscriptionUpsell")
+        XCTAssertEqual(firedEvents.first?.parameters?["value"], "true")
         XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-7")
         XCTAssertFalse(flags.didCallResolveCohort)
     }

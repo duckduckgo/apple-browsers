@@ -892,7 +892,7 @@ final class BrowserTabViewController: NSViewController {
         if experiment.isNonBlocking {
             guard onboardingDialogTypeProvider.state != .onboardingCompleted else { return }
             onboardingPixelReporter.measureDialogDismissed(dialogType: displayedDialogType)
-            experiment.fireMetric(.contextualDismissed, value: displayedDialogType.stringRepresentation)
+            experiment.fireMetric(.contextualDismissed)
             onboardingDialogTypeProvider.turnOffFeature()
             return
         }

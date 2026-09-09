@@ -148,17 +148,33 @@ public struct SubscriptionEvent {
             return nil
         }
 
-        let warnStatement = debug ? "console.warn(\"missing '\(res.subscriptionName)'\", \(json))" : ""
+        // Subscription names are not always valid JS identifiers — MCP-style names such as
+        // `elicitation/create` are legal — so the handler is looked up by string key. Dot notation
+        // parses `a/b` as a division and throws at runtime, and `push` evaluates this without a
+        // completion handler, so that failure would be silent.
+        let name = jsStringLiteral(res.subscriptionName)
+        let warnStatement = debug ? "console.warn(\"missing \" + \(name), \(json))" : ""
 
         return """
            (() => {
-              if (!('\(res.subscriptionName)' in (navigator?.duckduckgo?.messageHandlers ?? {}))) {
+              if (!(\(name) in (navigator?.duckduckgo?.messageHandlers ?? {}))) {
                  \(warnStatement)
               } else {
-                  navigator?.duckduckgo?.messageHandlers?.\(res.subscriptionName)?.(\(json));
+                  navigator?.duckduckgo?.messageHandlers?.[\(name)]?.(\(json));
               }
            })();
            """
+    }
+
+    /// Renders `value` as a JS string literal, escaped so any character is safe to embed.
+    private static func jsStringLiteral(_ value: String) -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .withoutEscapingSlashes
+        guard let data = try? encoder.encode(value), let literal = String(data: data, encoding: .utf8) else {
+            assertionFailure("Could not encode subscription name as a JS string literal")
+            return "\"\""
+        }
+        return literal
     }
 }
 

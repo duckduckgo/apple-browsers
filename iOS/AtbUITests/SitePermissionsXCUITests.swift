@@ -306,7 +306,8 @@ final class SitePermissionsXCUITests: XCTestCase {
 
     private func scrollTo(_ element: XCUIElement) {
         for _ in 0..<6 {
-            if element.isHittable { return }
+            // A clipped row can be hittable even when its tap target is offscreen.
+            if element.isHittable && app.frame.contains(element.frame) { return }
             app.swipeUp()
         }
     }

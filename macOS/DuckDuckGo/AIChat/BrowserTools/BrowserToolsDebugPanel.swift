@@ -97,6 +97,10 @@ final class BrowserToolsDebugPanel: NSWindowController {
 
     @objc private func callTool() {
         let name = toolNameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.contains(where: \.isWhitespace), !name.contains("{") else {
+            appendToLog("→ '\(name)' is not a tool name — arguments JSON belongs in the arguments field\n")
+            return
+        }
         guard let argumentsData = argumentsField.stringValue.data(using: .utf8),
               let arguments = try? JSONSerialization.jsonObject(with: argumentsData) else {
             appendToLog("→ arguments are not valid JSON; nothing sent")
@@ -120,7 +124,8 @@ final class BrowserToolsDebugPanel: NSWindowController {
         let tabs = (collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs
         appendToLog("→ tabs in this window (panel only, not a tool)")
         for tab in tabs {
-            appendToLog("   \(tab.uuid)  \(tab.title ?? "")  \(tab.url?.absoluteString ?? "")")
+            appendToLog("   \(tab.title ?? tab.url?.absoluteString ?? "")")
+            appendToLog("      {\"tabId\": \"\(tab.uuid)\"}")
         }
         appendToLog("")
     }
@@ -211,17 +216,20 @@ final class BrowserToolsDebugPanel: NSWindowController {
         buttons.spacing = 8
 
         toolNameField.placeholderString = "tool name"
-        argumentsField.placeholderString = "arguments JSON"
+        argumentsField.placeholderString = "{\"tabId\": \"…\"}"
         let call = NSStackView(views: [
-            NSTextField(labelWithString: "tools/call"),
+            NSTextField(labelWithString: "tools/call  name:"),
             toolNameField,
+            NSTextField(labelWithString: "arguments:"),
             argumentsField,
             makeButton("Call", #selector(callTool))
         ])
         call.orientation = .horizontal
         call.spacing = 8
-        toolNameField.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        argumentsField.setContentHuggingPriority(.init(1), for: .horizontal)
+        NSLayoutConstraint.activate([
+            toolNameField.widthAnchor.constraint(equalToConstant: 130),
+            argumentsField.widthAnchor.constraint(greaterThanOrEqualToConstant: 280)
+        ])
 
         logView.isEditable = false
         logView.font = .monospacedSystemFont(ofSize: 11, weight: .regular)

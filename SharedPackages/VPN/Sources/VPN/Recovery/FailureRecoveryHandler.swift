@@ -39,7 +39,6 @@ public protocol FailureRecoveryHandling {
         excludeLocalNetworks: Bool,
         excludeCGNAT: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
-        selectedEndpointPort: UInt16?,
         updateConfig: @escaping (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
     ) async
 
@@ -90,7 +89,6 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
         excludeLocalNetworks: Bool,
         excludeCGNAT: Bool = false,
         dnsSettings: NetworkProtectionDNSSettings,
-        selectedEndpointPort: UInt16? = nil,
         updateConfig: @escaping (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
     ) async {
         reassertingControl?.startReasserting()
@@ -106,8 +104,7 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
                     to: lastConnectedServer,
                     excludeLocalNetworks: excludeLocalNetworks,
                     excludeCGNAT: excludeCGNAT,
-                    dnsSettings: dnsSettings,
-                    selectedEndpointPort: selectedEndpointPort)
+                    dnsSettings: dnsSettings)
                 try Task.checkCancellation()
                 switch result {
                 case .noRecoveryNecessary:
@@ -136,8 +133,7 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
         to lastConnectedServer: NetworkProtectionServer,
         excludeLocalNetworks: Bool,
         excludeCGNAT: Bool,
-        dnsSettings: NetworkProtectionDNSSettings,
-        selectedEndpointPort: UInt16?) async throws -> FailureRecoveryResult {
+        dnsSettings: NetworkProtectionDNSSettings) async throws -> FailureRecoveryResult {
 
         let serverSelectionMethod: NetworkProtectionServerSelectionMethod = .failureRecovery(serverName: lastConnectedServer.serverName)
         let configurationResult: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult
@@ -147,7 +143,6 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
             excludeLocalNetworks: excludeLocalNetworks,
             excludeCGNAT: excludeCGNAT,
             dnsSettings: dnsSettings,
-            selectedEndpointPort: selectedEndpointPort,
             regenerateKey: false
         )
         Logger.networkProtectionTunnelFailureMonitor.log("🟢 Failure recovery fetched new config.")

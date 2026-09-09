@@ -225,7 +225,7 @@ final class NetworkProtectionDeviceManagerTests: XCTestCase {
         XCTAssertEqual(configuration.0.interface.dns.first?.address.rawValue, expectedIPAddress.rawValue)
     }
 
-    func testTunnelConfiguration_WithSelectedEndpointPort_UsesSelectedPortAndKeepsHost() async throws {
+    func testTunnelConfiguration_UsesServerPort() async throws {
         // GIVEN
         let server = NetworkProtectionServer.mockRegisteredServer
         let serverEndpoint = try XCTUnwrap(server.serverInfo.endpoint)
@@ -237,30 +237,7 @@ final class NetworkProtectionDeviceManagerTests: XCTestCase {
             server: server,
             excludeLocalNetworks: false,
             excludeCGNAT: false,
-            dnsSettings: .ddg(blockRiskyDomains: false),
-            selectedEndpointPort: 51820
-        )
-
-        // THEN
-        let peerEndpoint = try XCTUnwrap(tunnelConfiguration.peers.first?.endpoint)
-        XCTAssertEqual(peerEndpoint.port, 51820)
-        XCTAssertEqual(peerEndpoint.host, serverEndpoint.host)
-    }
-
-    func testTunnelConfiguration_WithoutSelectedEndpointPort_UsesServerPort() async throws {
-        // GIVEN
-        let server = NetworkProtectionServer.mockRegisteredServer
-        let serverEndpoint = try XCTUnwrap(server.serverInfo.endpoint)
-        let privateKey = keyStore.newKeyPair().privateKey
-
-        // WHEN
-        let tunnelConfiguration = try await manager.tunnelConfiguration(
-            interfacePrivateKey: privateKey,
-            server: server,
-            excludeLocalNetworks: false,
-            excludeCGNAT: false,
-            dnsSettings: .ddg(blockRiskyDomains: false),
-            selectedEndpointPort: nil
+            dnsSettings: .ddg(blockRiskyDomains: false)
         )
 
         // THEN
@@ -279,7 +256,6 @@ extension NetworkProtectionDeviceManager {
             excludeLocalNetworks: false,
             excludeCGNAT: false,
             dnsSettings: .ddg(blockRiskyDomains: protectionActive),
-            selectedEndpointPort: nil,
             regenerateKey: regenerateKey
         )
     }

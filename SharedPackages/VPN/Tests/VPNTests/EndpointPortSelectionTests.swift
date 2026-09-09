@@ -127,7 +127,7 @@ final class EndpointPortSelectionTests: XCTestCase {
         })
         let configuration = makeConfiguration(port: 443)
 
-        let result = try await selector.select(for: makeServer(ports: [443, 51820]), in: configuration, preferring: nil)
+        let result = try await selector.select(for: makeServer(ports: [443, 51820]), in: configuration, previousPort: nil, preferring: nil)
         let selection = try XCTUnwrap(result)
 
         XCTAssertEqual(selection.configuration.peers.first?.endpoint?.port.rawValue, 51820)
@@ -145,6 +145,7 @@ final class EndpointPortSelectionTests: XCTestCase {
 
         let result = try await selector.select(for: makeServer(ports: [443, 51820]),
                                                in: makeConfiguration(port: 443),
+                                               previousPort: nil,
                                                preferring: 51820)
 
         XCTAssertEqual(result?.configuration.peers.first?.endpoint?.port.rawValue, 51820)
@@ -154,7 +155,8 @@ final class EndpointPortSelectionTests: XCTestCase {
         let selector = EndpointPortSelection(prober: StubProber { _, _ in [] })
 
         let result = try await selector.select(for: makeServer(ports: [443, 51820]),
-                                               in: makeConfiguration(port: 51820),
+                                               in: makeConfiguration(port: 443),
+                                               previousPort: 51820,
                                                preferring: nil)
 
         XCTAssertEqual(result?.configuration.peers.first?.endpoint?.port.rawValue, 51820)
@@ -170,6 +172,7 @@ final class EndpointPortSelectionTests: XCTestCase {
 
         let result = try await selector.select(for: makeServer(ports: nil),
                                                in: makeConfiguration(port: 51820),
+                                               previousPort: nil,
                                                preferring: 51820)
 
         XCTAssertEqual(result?.configuration.peers.first?.endpoint?.port.rawValue, 443)
@@ -185,6 +188,7 @@ final class EndpointPortSelectionTests: XCTestCase {
 
         let result = try await selector.select(for: makeServer(ports: [443, 51820]),
                                                in: .make(peers: []),
+                                               previousPort: nil,
                                                preferring: nil)
 
         XCTAssertNil(result)
@@ -198,6 +202,7 @@ final class EndpointPortSelectionTests: XCTestCase {
             })
             return try await selector.select(for: makeServer(ports: [443, 51820]),
                                              in: makeConfiguration(port: 443),
+                                             previousPort: nil,
                                              preferring: nil)
         }
 
@@ -209,6 +214,61 @@ final class EndpointPortSelectionTests: XCTestCase {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
+    }
+
+    func testSelect_RegeneratedDefaultConfigurationRetainsPreviousSelectionWhenNoProbesAnswer() async throws {
+        let server = makeServer(ports: [443, 51820])
+        let initialSelector = EndpointPortSelection(prober: StubProber { _, _ in [51820] })
+        let initialResult = try await initialSelector.select(for: server,
+                                                             in: makeConfiguration(port: 443),
+                                                             previousPort: nil,
+                                                             preferring: nil)
+        let initial = try XCTUnwrap(initialResult)
+        let nextSelector = EndpointPortSelection(prober: StubProber { _, ports in
+            XCTAssertEqual(ports, [51820, 443])
+            return []
+        })
+
+        // Configuration generation starts from the server default again; it does not carry port state.
+        let nextResult = try await nextSelector.select(for: server,
+                                                       in: makeConfiguration(port: 443),
+                                                       previousPort: initial.decision.automaticPort,
+                                                       preferring: initial.decision.rememberedPort)
+
+        XCTAssertEqual(nextResult?.configuration.peers.first?.endpoint?.port.rawValue, 51820)
+        XCTAssertEqual(nextResult?.decision.automaticPort, 51820)
+        XCTAssertNil(nextResult?.decision.rememberedPort)
+    }
+
+    func testSelect_PreviousPortNotAdvertisedFallsBackToNewServerDefault() async throws {
+        let selector = EndpointPortSelection(prober: StubProber { _, ports in
+            XCTAssertEqual(ports, [443, 4500])
+            return []
+        })
+
+        let result = try await selector.select(for: makeServer(ports: [443, 4500]),
+                                               in: makeConfiguration(port: 443),
+                                               previousPort: 51820,
+                                               preferring: 51820)
+
+        XCTAssertEqual(result?.configuration.peers.first?.endpoint?.port.rawValue, 443)
+        XCTAssertNil(result?.decision.automaticPort)
+        XCTAssertNil(result?.decision.rememberedPort)
+    }
+
+    func testSelect_NoResponseUsesPreviousPortRatherThanRememberedPriority() async throws {
+        let selector = EndpointPortSelection(prober: StubProber { _, ports in
+            XCTAssertEqual(ports, [4500, 443, 51820])
+            return []
+        })
+
+        let result = try await selector.select(for: makeServer(ports: [443, 51820, 4500]),
+                                               in: makeConfiguration(port: 443),
+                                               previousPort: 51820,
+                                               preferring: 4500)
+
+        XCTAssertEqual(result?.configuration.peers.first?.endpoint?.port.rawValue, 51820)
+        XCTAssertNil(result?.decision.rememberedPort)
     }
 
     private func makeServer(ports: [UInt16]?) -> NetworkProtectionServerInfo {

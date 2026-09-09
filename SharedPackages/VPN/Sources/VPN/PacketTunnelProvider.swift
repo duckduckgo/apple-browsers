@@ -608,9 +608,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             isConnectionTesterEnabled: { [weak self] in
                 self?.isConnectionTesterEnabled ?? true
             },
-            endpointPortProvider: { [weak self] in
-                self?.automaticEndpointPort
-            },
             onReconfigureForMigration: { @MainActor [weak self] in
                 guard let self else { throw CancellationError() }
                 try await self.updateTunnelConfiguration(
@@ -1237,7 +1234,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 excludeLocalNetworks: settings.excludeLocalNetworks,
                 excludeCGNAT: settings.excludeCGNAT,
                 dnsSettings: dnsSettings,
-                selectedEndpointPort: automaticEndpointPort,
                 regenerateKey: regenerateKey
             )
         } catch {
@@ -1267,6 +1263,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         let generation = tunnelPathGeneration
         let selection = try await endpointPortSelector.select(for: serverInfo,
                                                              in: configuration,
+                                                             previousPort: automaticEndpointPort,
                                                              preferring: rememberedEndpointPort)
         try Task.checkCancellation()
         guard generation == tunnelPathGeneration else { throw CancellationError() }

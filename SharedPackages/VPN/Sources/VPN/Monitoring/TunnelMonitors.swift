@@ -48,7 +48,6 @@ final class TunnelMonitors: TunnelMonitoring {
     private let events: EventMapping<PacketTunnelProvider.Event>
     private let entitlementCheck: (() async -> Result<Bool, Error>)?
     private let isConnectionTesterEnabled: @MainActor () -> Bool
-    private let endpointPortProvider: @MainActor () -> UInt16?
 
     private let onReconfigureForMigration: @MainActor () async throws -> Void
     private let onConnectionTestResult: @MainActor (ConnectionTestingResult) -> Void
@@ -68,7 +67,6 @@ final class TunnelMonitors: TunnelMonitoring {
         events: EventMapping<PacketTunnelProvider.Event>,
         entitlementCheck: (() async -> Result<Bool, Error>)?,
         isConnectionTesterEnabled: @escaping @MainActor () -> Bool,
-        endpointPortProvider: @escaping @MainActor () -> UInt16?,
         onReconfigureForMigration: @escaping @MainActor () async throws -> Void,
         onConnectionTestResult: @escaping @MainActor (ConnectionTestingResult) -> Void,
         onFailureRecoveryConfigUpdate: @escaping @MainActor (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void,
@@ -86,7 +84,6 @@ final class TunnelMonitors: TunnelMonitoring {
         self.events = events
         self.entitlementCheck = entitlementCheck
         self.isConnectionTesterEnabled = isConnectionTesterEnabled
-        self.endpointPortProvider = endpointPortProvider
         self.onReconfigureForMigration = onReconfigureForMigration
         self.onConnectionTestResult = onConnectionTestResult
         self.onFailureRecoveryConfigUpdate = onFailureRecoveryConfigUpdate
@@ -165,8 +162,7 @@ final class TunnelMonitors: TunnelMonitoring {
                 to: server,
                 excludeLocalNetworks: excludeLocalNetworks,
                 excludeCGNAT: self.settings.excludeCGNAT,
-                dnsSettings: self.settings.dnsSettings,
-                selectedEndpointPort: self.endpointPortProvider()) { [weak self] generateConfigResult in
+                dnsSettings: self.settings.dnsSettings) { [weak self] generateConfigResult in
                 try await self?.onFailureRecoveryConfigUpdate(generateConfigResult)
             }
         }

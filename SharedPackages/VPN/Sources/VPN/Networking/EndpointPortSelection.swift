@@ -36,9 +36,10 @@ struct EndpointPortSelection {
     /// Returns nil when the configuration or server has no usable endpoint.
     func select(for serverInfo: NetworkProtectionServerInfo,
                 in configuration: TunnelConfiguration,
+                previousPort: UInt16?,
                 preferring rememberedPort: UInt16?) async throws -> Selection? {
         try Task.checkCancellation()
-        guard let currentPort = configuration.peers.first?.endpoint?.port.rawValue else {
+        guard let configurationPort = configuration.peers.first?.endpoint?.port.rawValue else {
             return nil
         }
 
@@ -56,28 +57,27 @@ struct EndpointPortSelection {
         try Task.checkCancellation()
 
         let decision = Self.decide(candidates: candidates,
-                                   currentPort: currentPort,
+                                   currentPort: previousPort ?? configurationPort,
                                    serverDefaultPort: serverInfo.port,
                                    responding: responding)
         Logger.networkProtection.log("🔵 Port probe: candidates \(candidates, privacy: .public), \(responding.sorted(), privacy: .public) answered, using port \(decision.port, privacy: .public)")
 
-        return Selection(configuration: decision.port == currentPort ? configuration : configuration.replacingEndpointPort(with: decision.port),
+        return Selection(configuration: decision.port == configurationPort ? configuration : configuration.replacingEndpointPort(with: decision.port),
                          decision: decision)
     }
 
     struct Decision: Equatable {
         /// Port the tunnel configuration should use.
         let port: UInt16
-        /// Value for the provider's automatic port: nil when it matches the server default (so the plain,
-        /// override-free path is used), and set to `port` whenever it differs from the default — whether
-        /// that's because a candidate answered or because a non-default port was kept as a fallback.
+        /// Non-default port to retain for the next selection, including when no probe answered.
+        /// Nil means the next selection falls back to that server's default port.
         let automaticPort: UInt16?
         /// Port to remember for the next connection: only a port that actually answered.
         let rememberedPort: UInt16?
     }
 
-    /// `candidates` is the ordered list from `endpointPortCandidates(preferring:)`, `currentPort` the port already
-    /// in the generated configuration, `serverDefaultPort` the server's `port`, `responding` the probe result.
+    /// `candidates` is the ordered list from `endpointPortCandidates(preferring:)`. `currentPort` is the
+    /// previous selection, or the generated configuration's port when no previous selection is supplied.
     /// Rules: the first candidate that answered wins. If nothing answered, keep `currentPort` when it is a candidate,
     /// otherwise fall back to `serverDefaultPort` (a port carried over from another server must never be forced on
     /// one that does not advertise it).

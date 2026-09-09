@@ -19,7 +19,6 @@
 import Foundation
 import Common
 import FoundationExtensions
-import Network
 import NetworkExtension
 import os.log
 import Subscription
@@ -71,7 +70,6 @@ public protocol NetworkProtectionDeviceManagement {
                                      excludeLocalNetworks: Bool,
                                      excludeCGNAT: Bool,
                                      dnsSettings: NetworkProtectionDNSSettings,
-                                     selectedEndpointPort: UInt16?,
                                      regenerateKey: Bool) async throws -> GenerateTunnelConfigurationResult
 
 }
@@ -146,7 +144,6 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
                                             excludeLocalNetworks: Bool,
                                             excludeCGNAT: Bool,
                                             dnsSettings: NetworkProtectionDNSSettings,
-                                            selectedEndpointPort: UInt16?,
                                             regenerateKey: Bool) async throws -> GenerateTunnelConfigurationResult {
         Logger.networkProtection.debug("Generating tunnel configuration")
         var keyPair: KeyPair
@@ -187,8 +184,7 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
                                                         server: selectedServer,
                                                         excludeLocalNetworks: excludeLocalNetworks,
                                                         excludeCGNAT: excludeCGNAT,
-                                                        dnsSettings: dnsSettings,
-                                                        selectedEndpointPort: selectedEndpointPort)
+                                                        dnsSettings: dnsSettings)
             return (configuration, selectedServer)
         } catch let error as NetworkProtectionError {
             errorEvents?.fire(error)
@@ -312,8 +308,7 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
                              server: NetworkProtectionServer,
                              excludeLocalNetworks: Bool,
                              excludeCGNAT: Bool,
-                             dnsSettings: NetworkProtectionDNSSettings,
-                             selectedEndpointPort: UInt16? = nil) throws -> TunnelConfiguration {
+                             dnsSettings: NetworkProtectionDNSSettings) throws -> TunnelConfiguration {
 
         guard let allowedIPs = server.allowedIPs else {
             throw NetworkProtectionError.noServerRegistrationInfo
@@ -327,15 +322,7 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
             throw NetworkProtectionError.couldNotGetPeerHostName
         }
 
-        let effectiveEndpoint: Endpoint
-        if let selectedEndpointPort {
-            effectiveEndpoint = Endpoint(host: serverEndpoint.host, port: NWEndpoint.Port(integerLiteral: selectedEndpointPort))
-            Logger.networkProtection.log("Overriding endpoint port \(String(describing: serverEndpoint.port), privacy: .public) with \(selectedEndpointPort, privacy: .public)")
-        } else {
-            effectiveEndpoint = serverEndpoint
-        }
-
-        let peerConfiguration = peerConfiguration(serverPublicKey: serverPublicKey, serverEndpoint: effectiveEndpoint)
+        let peerConfiguration = peerConfiguration(serverPublicKey: serverPublicKey, serverEndpoint: serverEndpoint)
 
         guard let closestIP = allowedIPs.first, let interfaceAddressRange = IPAddressRange(from: closestIP) else {
             throw NetworkProtectionError.couldNotGetInterfaceAddressRange

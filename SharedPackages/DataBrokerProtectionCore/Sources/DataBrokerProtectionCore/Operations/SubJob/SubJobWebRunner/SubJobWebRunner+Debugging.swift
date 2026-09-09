@@ -54,7 +54,7 @@ public extension SubJobWebRunning {
             description = error.localizedDescription
         }
 
-        DebugHelper.prettyPrintedJSON(from: [
+        return DebugHelper.prettyPrintedJSON(from: [
             "type": String(describing: type(of: error)),
             "description": description
         ])

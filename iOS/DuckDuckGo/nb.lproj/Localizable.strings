@@ -577,9 +577,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Synkroniserings- og sikkerhetskopieringsfeil";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Synkroniser innstillinger";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Prøv igjen.";
 
@@ -2262,6 +2259,12 @@
 
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Oppsummer denne boken.";
+
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Oppsummer dette dokumentet";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Oppsummer dette dokumentet.";
 
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Oppsummer denne siden";
@@ -5194,17 +5197,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-varsel";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Gjenopprettingskoden er kopiert til utklippstavlen";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Slett serverdata";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Sikkerhetskopien din blir slettet fra serveren. Alle enheter blir koblet fra synkronisering, men ingenting blir slettet fra noen enhet.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Vil du slette serverdata?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Synkroniser nå";
@@ -5295,9 +5289,6 @@
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "En ny enhet er lagt til!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup er aktivert";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Gjenopprettingskoden er kopiert";

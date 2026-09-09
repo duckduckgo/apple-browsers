@@ -577,9 +577,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Synkronointi- ja varmuuskopiointivirhe";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Synkronointiasetukset";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Yritä uudelleen.";
 
@@ -2262,6 +2259,12 @@
 
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Tee yhteenveto tästä kirjasta.";
+
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Tee yhteenveto tästä asiakirjasta";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Tee yhteenveto tästä asiakirjasta.";
 
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Tee yhteenveto tästä sivusta";
@@ -5194,17 +5197,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-ilmoitus";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Palautuskoodi kopioitu leikepöydälle";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Poista palvelimen tiedot";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Varmuuskopiosi poistetaan palvelimelta. Kaikkien laitteiden synkronointi katkaistaan, mutta mitään ei poisteta mistään laitteesta.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Poista palvelimen tiedot?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Synkronoi nyt";
@@ -5295,9 +5289,6 @@
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Uusi laite lisätty!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Synkronointi ja varmuuskopiointi käytössä";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Palautuskoodi kopioitu";

@@ -26,6 +26,7 @@ import SwiftUIExtensions
 import SyncUI_macOS
 import PrivacyConfig
 import PixelKit
+import WideEvent
 import Subscription
 import SubscriptionUI
 import AIChat

@@ -244,12 +244,13 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         let timestamp = Date()
         let entries = [
             WebsitePermissionEntry(domain: "b.com", permissionType: .camera, decision: .allow, lastModified: timestamp),
+            WebsitePermissionEntry(domain: "a.com", permissionType: .microphone, decision: .allow, lastModified: timestamp),
             WebsitePermissionEntry(domain: "a.com", permissionType: .camera, decision: .allow, lastModified: timestamp),
         ]
 
         let model = makeRecentsModel(entries, permissionManager: PermissionManagerMock())
 
-        XCTAssertEqual(model.viewState.recents.map(\.domain), ["a.com", "b.com"])
+        XCTAssertEqual(model.viewState.recents.map(\.id), ["a.com|camera", "a.com|microphone", "b.com|camera"])
     }
 
     // MARK: - Table

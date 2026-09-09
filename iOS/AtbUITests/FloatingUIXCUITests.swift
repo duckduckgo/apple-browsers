@@ -245,6 +245,7 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
 
         moveAddressBar(to: barPosition)
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
         assertChromeButtonsAreUsable()
         // Relocating after a focus/dismiss cycle: the focus transition hides the omnibar's
         // collection view, and only re-hosting restores it.
@@ -570,18 +571,37 @@ class FloatingUIXCUITestCase: XCTestCase {
     }
 
     private func moveAddressBar(to position: FloatingUIBarPosition, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout), file: file, line: line)
         searchField.press(forDuration: 0.8)
         let moveAction = app.buttons[position.moveAction]
         XCTAssertTrue(moveAction.waitForHittable(timeout: timeout), file: file, line: line)
         moveAction.tap()
-        XCTAssertTrue(waitUntil(timeout: timeout) {
+        var didMove = waitUntil(timeout: 5) {
+            guard self.searchField.exists, self.searchField.isHittable else { return false }
             switch position {
             case .top:
                 return self.searchField.frame.midY < self.app.frame.midY
             case .bottom:
                 return self.searchField.frame.midY > self.app.frame.midY
             }
-        }, file: file, line: line)
+        }
+        if !didMove, position == .top {
+            // Reparenting can leave XCTest's accessibility snapshot stale.
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap()
+            let dismissButton = element(withIdentifier: AccessibilityID.utiDismiss)
+            if dismissButton.waitForHittable(timeout: timeout) {
+                dismissButton.tap()
+                _ = dismissButton.waitForNotHittable(timeout: timeout)
+                didMove = searchField.waitForHittable(timeout: timeout)
+                    && searchField.frame.midY < app.frame.midY
+            }
+        }
+        if !didMove {
+            let screenshot = XCTAttachment(screenshot: app.screenshot())
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+            XCTFail("Address bar did not move to \(position.rawValue). Search field: \(searchField.debugDescription)", file: file, line: line)
+        }
         assertBarPosition(position, file: file, line: line)
     }
 

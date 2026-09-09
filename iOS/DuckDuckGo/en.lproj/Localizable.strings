@@ -544,9 +544,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Sync & Backup Error";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Sync Settings";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Please try again.";
 
@@ -2169,6 +2166,12 @@
 
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Summarize this book.";
+
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Summarize this document";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Summarize this document.";
 
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Summarize this page";
@@ -4930,17 +4933,8 @@ Take back control of your personal information with the browser designed for dat
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "View All Plans";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Recovery code copied to clipboard";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Delete Server Data";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Delete server data?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Sync Now";
@@ -5031,9 +5025,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "New device added!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup enabled";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Recovery code copied";

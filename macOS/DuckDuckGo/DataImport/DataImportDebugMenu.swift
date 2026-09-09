@@ -40,13 +40,18 @@ extension KeyedStoring where Keys == DataImportDebugSettings {
 final class DataImportDebugMenu: NSMenu, NSMenuDelegate {
 
     private let settings: any KeyedStoring<DataImportDebugSettings> = UserDefaults.standard.keyedStoring()
-    private let menuItem = NSMenuItem(title: "Force macOS 27 Permissions Fix", action: #selector(toggleForceMacOS27PermissionsFix))
+    private let pinningManager: PinningManager
 
-    override init(title: String) {
+    private let forceMacOS27PermissionsFixMenuItem = NSMenuItem(title: "Force macOS 27 Permissions Fix", action: #selector(toggleForceMacOS27PermissionsFix))
+    private let keychainPermissionsMenuItem = NSMenuItem(title: "Show Keychain Permissions Prompt", action: #selector(showKeychainPermissionsPrompt))
+
+    init(title: String, pinningManager: PinningManager) {
+        self.pinningManager = pinningManager
         super.init(title: title)
         self.delegate = self
         buildItems {
-            menuItem.targetting(self)
+            forceMacOS27PermissionsFixMenuItem.targetting(self)
+            keychainPermissionsMenuItem.targetting(self)
         }
     }
 
@@ -55,11 +60,18 @@ final class DataImportDebugMenu: NSMenu, NSMenuDelegate {
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
-        menuItem.state = settings.isForcingMacOS27PermissionsFix ? .on : .off
+        forceMacOS27PermissionsFixMenuItem.state = settings.isForcingMacOS27PermissionsFix ? .on : .off
     }
 
     @objc
     private func toggleForceMacOS27PermissionsFix(_ sender: NSMenuItem) {
         settings.isForcingMacOS27PermissionsFix.toggle()
+    }
+
+    @MainActor
+    @objc
+    private func showKeychainPermissionsPrompt(_ sender: NSMenuItem) {
+        DataImportFlowLauncher(pinningManager: pinningManager)
+            .launchDataImport(at: .passwordEntryHelp)
     }
 }

@@ -60,8 +60,9 @@ final class WebsitePermissionsViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] entries in
                 guard let self else { return }
-                viewState.recents = makeRecentRows(from: entries)
-                viewState.rows = makeRows(from: entries)
+                viewState = WebsitePermissionsViewState(
+                    recents: makeRecentRows(from: entries),
+                    rows: makeRows(from: entries))
             }
     }
 
@@ -70,11 +71,19 @@ final class WebsitePermissionsViewModel: ObservableObject {
             .filter { entry in
                 entry.lastModified != nil && WebsitePermissionCategory.category(for: entry.permissionType) != nil
             }
-            .sorted {
-                ($0.lastModified ?? .distantPast) > ($1.lastModified ?? .distantPast)
-            }
+            .sorted(by: isOrderedBefore)
             .prefix(Constants.maximumRecentRows)
             .map(makeRecentRow)
+    }
+
+    private func isOrderedBefore(_ first: WebsitePermissionEntry, _ second: WebsitePermissionEntry) -> Bool {
+        if first.lastModified != second.lastModified {
+            return (first.lastModified ?? .distantPast) > (second.lastModified ?? .distantPast)
+        }
+        if first.domain != second.domain {
+            return first.domain < second.domain
+        }
+        return first.permissionType.rawValue < second.permissionType.rawValue
     }
 
     private func makeRecentRow(from entry: WebsitePermissionEntry) -> WebsitePermissionsViewState.RecentRow {

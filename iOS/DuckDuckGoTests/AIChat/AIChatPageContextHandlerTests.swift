@@ -20,6 +20,7 @@
 import AIChat
 import Combine
 import Core
+import DesignResourcesKitIcons
 import UserScript
 import WebKit
 import XCTest
@@ -677,7 +678,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertEqual(received?.contextData.data, "JVBERi0=", "Favicon enrichment must not drop document bytes")
         XCTAssertEqual(received?.contextData.mimeType, AIChatPageContextData.pdfMIMEType)
         XCTAssertEqual(received?.contextData.favicon, [.init(href: encodedFavicon, rel: "icon")])
-        XCTAssertNotNil(received?.favicon, "Encoded favicon should decode to a UIImage")
+        XCTAssertEqual(received?.favicon, DesignSystemImages.Color.Size24.filePDF, "A document chip shows the PDF icon, not the site's favicon")
         XCTAssertEqual(received?.title, "Spec")
         XCTAssertTrue(received?.contextData.hasAttachedPage ?? false)
         XCTAssertEqual(extractionPixels.calls.first?.outcome, .success)
@@ -1050,6 +1051,46 @@ private final class MockPageContextExtractionPixelFiring: PageContextExtractionP
               trigger: PageContextExtractionTrigger,
               latency: PageContextExtractionLatencyBucket?) {
         calls.append(Call(outcome: outcome, trigger: trigger, latency: latency))
+    }
+}
+
+// MARK: - Chip icon tests
+
+final class AIChatPageContextIconTests: XCTestCase {
+
+    private func context(mimeType: String) -> AIChatPageContextData {
+        AIChatPageContextData(
+            title: "Report",
+            favicon: [],
+            url: "https://example.com/report.pdf",
+            content: "",
+            truncated: false,
+            fullContentLength: 0,
+            mimeType: mimeType
+        )
+    }
+
+    func testWhenPageIsAPDFThenTheChipShowsTheDocumentIconInsteadOfTheFavicon() {
+        let siteFavicon = UIImage(systemName: "star")
+
+        let pageContext = AIChatPageContext(contextData: context(mimeType: AIChatPageContextData.pdfMIMEType), favicon: siteFavicon)
+
+        XCTAssertEqual(pageContext.favicon, DesignSystemImages.Color.Size24.filePDF)
+        XCTAssertNotEqual(pageContext.favicon, siteFavicon)
+    }
+
+    func testWhenPageIsAPDFWithoutAFaviconThenTheChipStillShowsTheDocumentIcon() {
+        let pageContext = AIChatPageContext(contextData: context(mimeType: AIChatPageContextData.pdfMIMEType), favicon: nil)
+
+        XCTAssertEqual(pageContext.favicon, DesignSystemImages.Color.Size24.filePDF)
+    }
+
+    func testWhenPageIsHTMLThenTheChipKeepsTheSiteFavicon() {
+        let siteFavicon = UIImage(systemName: "star")
+
+        let pageContext = AIChatPageContext(contextData: context(mimeType: AIChatPageContextData.htmlMIMEType), favicon: siteFavicon)
+
+        XCTAssertEqual(pageContext.favicon, siteFavicon)
     }
 }
 

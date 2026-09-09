@@ -46,10 +46,10 @@ struct EndpointPortSelection {
         }
         try Task.checkCancellation()
 
-        let decision = Self.decide(candidates: candidates,
-                                   currentPort: previousPort ?? serverInfo.port,
-                                   serverDefaultPort: serverInfo.port,
-                                   responding: responding)
+        let decision = decide(candidates: candidates,
+                              currentPort: previousPort ?? serverInfo.port,
+                              serverDefaultPort: serverInfo.port,
+                              responding: responding)
         Logger.networkProtection.log("Port probe: candidates \(candidates, privacy: .public), \(responding.sorted(), privacy: .public) answered, using port \(decision.port, privacy: .public)")
 
         return decision
@@ -70,20 +70,15 @@ struct EndpointPortSelection {
     /// Rules: the first candidate that answered wins. If nothing answered, keep `currentPort` when it is a candidate,
     /// otherwise fall back to `serverDefaultPort` (a port carried over from another server must never be forced on
     /// one that does not advertise it).
-    static func decide(candidates: [UInt16], currentPort: UInt16, serverDefaultPort: UInt16, responding: Set<UInt16>) -> Decision {
-        if let chosenPort = candidates.first(where: { responding.contains($0) }) {
-            return Decision(
-                port: chosenPort,
-                automaticPort: chosenPort == serverDefaultPort ? nil : chosenPort,
-                rememberedPort: chosenPort
-            )
-        }
-
+    func decide(candidates: [UInt16], currentPort: UInt16, serverDefaultPort: UInt16, responding: Set<UInt16>) -> Decision {
+        let respondingPort = candidates.first(where: { responding.contains($0) })
         let fallbackPort = candidates.contains(currentPort) ? currentPort : serverDefaultPort
+        let port = respondingPort ?? fallbackPort
+
         return Decision(
-            port: fallbackPort,
-            automaticPort: fallbackPort == serverDefaultPort ? nil : fallbackPort,
-            rememberedPort: nil
+            port: port,
+            automaticPort: port == serverDefaultPort ? nil : port,
+            rememberedPort: respondingPort
         )
     }
 

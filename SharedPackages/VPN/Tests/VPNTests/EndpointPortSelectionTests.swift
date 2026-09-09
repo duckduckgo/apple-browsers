@@ -23,7 +23,7 @@ import Network
 final class EndpointPortSelectionTests: XCTestCase {
 
     func testFirstRespondingCandidateWins_WhenItIsNotTheDefault() {
-        let decision = EndpointPortSelection.decide(
+        let decision = EndpointPortSelection().decide(
             candidates: [443, 51820, 8080],
             currentPort: 443,
             serverDefaultPort: 443,
@@ -36,7 +36,7 @@ final class EndpointPortSelectionTests: XCTestCase {
     }
 
     func testServerDefaultWins_WhenItRespondsFirst() {
-        let decision = EndpointPortSelection.decide(
+        let decision = EndpointPortSelection().decide(
             candidates: [443, 51820],
             currentPort: 51820,
             serverDefaultPort: 443,
@@ -51,7 +51,7 @@ final class EndpointPortSelectionTests: XCTestCase {
     func testNothingResponds_CurrentPortAdvertisedAndNotTheDefault_KeepsCurrentPortAsAutomaticPort() {
         // Nothing answered, but currentPort (51820) still advertised by the server, so the next
         // regeneration must keep using it rather than falling back to the server default.
-        let decision = EndpointPortSelection.decide(
+        let decision = EndpointPortSelection().decide(
             candidates: [443, 51820],
             currentPort: 51820,
             serverDefaultPort: 443,
@@ -64,7 +64,7 @@ final class EndpointPortSelectionTests: XCTestCase {
     }
 
     func testNothingResponds_CurrentPortIsTheDefault_AutomaticPortStaysNil() {
-        let decision = EndpointPortSelection.decide(
+        let decision = EndpointPortSelection().decide(
             candidates: [443, 51820],
             currentPort: 443,
             serverDefaultPort: 443,
@@ -79,7 +79,7 @@ final class EndpointPortSelectionTests: XCTestCase {
     func testNothingResponds_CurrentPortNotAdvertised_FallsBackToServerDefault() {
         // currentPort (12345) is stale, carried over from a different server; it must not be forced
         // on a server that never advertised it.
-        let decision = EndpointPortSelection.decide(
+        let decision = EndpointPortSelection().decide(
             candidates: [443, 51820],
             currentPort: 12345,
             serverDefaultPort: 443,
@@ -94,7 +94,7 @@ final class EndpointPortSelectionTests: XCTestCase {
     func testRememberedPortFirstInCandidates_WinsOverDefault() {
         // The remembered port (51820) is ordered first by endpointPortCandidates(preferring:), so it wins
         // even though the server default (443) also answered.
-        let decision = EndpointPortSelection.decide(
+        let decision = EndpointPortSelection().decide(
             candidates: [51820, 443],
             currentPort: 443,
             serverDefaultPort: 443,
@@ -107,7 +107,7 @@ final class EndpointPortSelectionTests: XCTestCase {
     }
 
     func testRespondingPortsOutsideCandidates_AreIgnored() {
-        let decision = EndpointPortSelection.decide(
+        let decision = EndpointPortSelection().decide(
             candidates: [443, 51820],
             currentPort: 443,
             serverDefaultPort: 443,

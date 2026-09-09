@@ -1250,7 +1250,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         Logger.networkProtection.log("⚪️ Generated tunnel configuration for server at location: \(newSelectedServer.serverInfo.serverLocation, privacy: .public) (preferred server is \(newSelectedServer.serverInfo.name, privacy: .public))")
 
-        let configuration = try await selectEndpointPort(for: newSelectedServer.serverInfo, in: configurationResult.tunnelConfiguration)
+        let configuration = try await applyingEndpointPortSelection(for: newSelectedServer.serverInfo, in: configurationResult.tunnelConfiguration)
         self.lastSelectedServer = newSelectedServer
         return configuration
     }
@@ -1260,7 +1260,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     /// Selects a port and applies it to the tunnel configuration.
     /// Updates port state only while this tunnel operation is current.
     @MainActor
-    private func selectEndpointPort(for serverInfo: NetworkProtectionServerInfo, in configuration: TunnelConfiguration) async throws -> TunnelConfiguration {
+    private func applyingEndpointPortSelection(for serverInfo: NetworkProtectionServerInfo, in configuration: TunnelConfiguration) async throws -> TunnelConfiguration {
         try Task.checkCancellation()
         let generation = tunnelPathGeneration
         guard let currentPort = configuration.peers.first?.endpoint?.port.rawValue else {
@@ -1488,7 +1488,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     private func handleFailureRecoveryConfigUpdate(result: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws {
-        let tunnelConfiguration = try await selectEndpointPort(for: result.server.serverInfo, in: result.tunnelConfiguration)
+        let tunnelConfiguration = try await applyingEndpointPortSelection(for: result.server.serverInfo, in: result.tunnelConfiguration)
         self.lastSelectedServer = result.server
         try await updateTunnelConfiguration(updateMethod: .useConfiguration(tunnelConfiguration), reassert: true, attemptSource: .failureRecovery)
     }

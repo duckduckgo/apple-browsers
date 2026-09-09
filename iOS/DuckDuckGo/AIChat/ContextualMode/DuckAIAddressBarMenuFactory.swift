@@ -31,7 +31,7 @@ enum DuckAIAddressBarMenuFactory {
             && featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats)
     }
 
-    /// Groups New Chat and, on web tabs, Ask About Page above a separator, with All Chats below.
+    /// Groups New Chat and, on web tabs, Ask About Page above a separator, with Chats below.
     static func makeActions(featureFlagger: FeatureFlagger,
                             userInterfaceIdiom: UIUserInterfaceIdiom,
                             isHomeTab: Bool,
@@ -53,7 +53,7 @@ enum DuckAIAddressBarMenuFactory {
         var groups: [UIMenuElement] = [UIMenu(title: "", options: .displayInline, children: chatActions)]
         if isChatHistoryAvailable(featureFlagger: featureFlagger, userInterfaceIdiom: userInterfaceIdiom) {
             groups.append(UIMenu(title: "", options: .displayInline, children: [
-                UIAction(title: UserText.duckAiAddressBarMenuAllChats,
+                UIAction(title: UserText.duckAiAddressBarMenuChats,
                          image: DesignSystemImages.Glyphs.Size16.chats) { _ in
                     onRecentChats()
                 }

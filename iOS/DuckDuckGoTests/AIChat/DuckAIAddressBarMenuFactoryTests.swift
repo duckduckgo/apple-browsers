@@ -62,17 +62,17 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
         XCTAssertEqual(newChatGroup.children.compactMap { ($0 as? UIAction)?.title },
                        [UserText.duckAiAddressBarMenuNewChat, UserText.aiChatAttachmentOptionAskAboutPage])
         XCTAssertEqual(historyGroup.children.compactMap { ($0 as? UIAction)?.title },
-                       [UserText.duckAiAddressBarMenuAllChats])
+                       [UserText.duckAiAddressBarMenuChats])
     }
 
-    func testHomeTabOffersNewChatAndAllChatsWithoutAskAboutPage() throws {
+    func testHomeTabOffersNewChatAndChatsWithoutAskAboutPage() throws {
         let groups = makeActions(isHomeTab: true).compactMap { $0 as? UIMenu }
         XCTAssertEqual(groups.count, 2)
         XCTAssertTrue(groups.allSatisfy { $0.options.contains(.displayInline) })
         XCTAssertEqual(try XCTUnwrap(groups.first).children.compactMap { ($0 as? UIAction)?.title },
                        [UserText.duckAiAddressBarMenuNewChat])
         XCTAssertEqual(try XCTUnwrap(groups.last).children.compactMap { ($0 as? UIAction)?.title },
-                       [UserText.duckAiAddressBarMenuAllChats])
+                       [UserText.duckAiAddressBarMenuChats])
     }
 
     func testHomeTabActionsInvokeOnlyNewChatAndHistoryHandlers() throws {
@@ -94,7 +94,7 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
         let titles = flattenedActions(makeActions()).map(\.title)
         XCTAssertEqual(titles, [UserText.duckAiAddressBarMenuNewChat,
                                UserText.aiChatAttachmentOptionAskAboutPage,
-                               UserText.duckAiAddressBarMenuAllChats])
+                               UserText.duckAiAddressBarMenuChats])
     }
 
     func testRecentChatsGroupIsOmittedWhenFlagIsDisabled() {
@@ -126,7 +126,7 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
                 featureFlagger: MockFeatureFlagger(enabledFeatureFlags: testCase.flags),
                 userInterfaceIdiom: testCase.idiom))
             let expectedTitles = [UserText.duckAiAddressBarMenuNewChat, UserText.aiChatAttachmentOptionAskAboutPage]
-                + (testCase.showsRecentChats ? [UserText.duckAiAddressBarMenuAllChats] : [])
+                + (testCase.showsRecentChats ? [UserText.duckAiAddressBarMenuChats] : [])
             XCTAssertEqual(actions.map(\.title), expectedTitles, "Flags: \(testCase.flags), device: \(testCase.idiom)")
         }
     }

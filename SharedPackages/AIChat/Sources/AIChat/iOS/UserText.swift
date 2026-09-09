@@ -43,7 +43,7 @@ public struct UserText {
     /// Not localised yet — translations to follow.
     public static func askAboutPage(title: String) -> String {
         guard !title.isEmpty else { return askAboutPage }
-        let format = NotLocalizedString("duckai.contextual.ask.about.page.title", bundle: Bundle.module, value: "Ask About %@", comment: "Title for the chip offering to attach the page the user just navigated to. %@ is the page title")
+        let format = NotLocalizedString("duckai.contextual.ask.about.page.title", value: "Ask About %@", comment: "Title for the chip offering to attach the page the user just navigated to. %@ is the page title")
         return String(format: format, title)
     }
 

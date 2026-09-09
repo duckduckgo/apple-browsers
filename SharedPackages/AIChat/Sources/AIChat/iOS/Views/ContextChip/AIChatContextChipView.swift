@@ -203,6 +203,13 @@ public final class AIChatContextChipView: UIView {
     func shouldReceiveChipTap(at point: CGPoint) -> Bool {
         !removeButton.convert(removeButton.bounds, to: self).contains(point)
     }
+
+    /// VoiceOver activation mirrors a tap, so the offer can be accepted without sighted pointing.
+    public override func accessibilityActivate() -> Bool {
+        guard case .suggested = currentState else { return false }
+        onTap?()
+        return true
+    }
 }
 
 // MARK: - Private Setup
@@ -237,6 +244,7 @@ private extension AIChatContextChipView {
         // chip is reused across states rather than rebuilt.
         removeButton.backgroundColor = .clear
         dashedBorderLayer.isHidden = true
+        accessibilityCustomActions = nil
 
         switch state {
         case .loading:
@@ -263,8 +271,8 @@ private extension AIChatContextChipView {
             titleLabel.accessibilityIdentifier = "AIChat.ContextChip.SuggestedTitle"
             titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
             titleLabel.font = UIFont.daxSubheadSemibold()
-            titleLabel.accessibilityLabel = offer
-            titleLabel.accessibilityTraits = .button
+            titleLabel.accessibilityLabel = nil
+            titleLabel.accessibilityTraits = .none
             applyPillLayout()
             removeButton.isHidden = false
             removeButton.tintColor = UIColor(designSystemColor: .icons)
@@ -276,10 +284,19 @@ private extension AIChatContextChipView {
             faviconView.layer.borderColor = nil
             backgroundColor = UIColor(designSystemColor: .accentAltGlowPrimary)
                 .withAlphaComponent(Constants.suggestedFillAlpha)
-            isAccessibilityElement = false
+            // The chip itself is the button, so VoiceOver activate accepts the offer (a UILabel marked
+            // as a button cannot be activated). Making the chip an element hides the X, so dismissal is
+            // offered as a custom action instead.
+            isAccessibilityElement = true
             accessibilityIdentifier = "AIChat.ContextChip.Suggested"
             accessibilityLabel = offer
-            accessibilityTraits = .none
+            accessibilityTraits = .button
+            accessibilityCustomActions = [
+                UIAccessibilityCustomAction(name: removeButton.accessibilityLabel ?? "Remove") { [weak self] _ in
+                    self?.onRemove?()
+                    return true
+                }
+            ]
             applyDashedBorder(color: UIColor(designSystemColor: .accentPrimary)
                 .withAlphaComponent(Constants.suggestedBorderAlpha))
             isUserInteractionEnabled = true

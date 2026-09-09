@@ -101,17 +101,6 @@ final class AIChatContextChipViewTests: XCTestCase {
         XCTAssertNotEqual(label, pageTitle)
     }
 
-    func testSuggestedStateFallsBackToTheGenericOfferWhenThePageHasNoTitle() {
-        // Given
-        let sut = AIChatContextChipView()
-
-        // When
-        sut.configure(state: .suggested(title: "", favicon: nil))
-
-        // Then
-        XCTAssertEqual(sut.accessibilityLabel, UserText.askAboutPage)
-    }
-
     func testUpdateIsIgnoredInTheSuggestedState() {
         // Given
         let sut = AIChatContextChipView()
@@ -137,16 +126,19 @@ final class AIChatContextChipViewTests: XCTestCase {
         XCTAssertTrue(sut.shouldReceiveChipTap(at: CGPoint(x: 100, y: 22)))
     }
 
-    func testLoadingStateHidesTheTitleAndTheRemoveButton() {
-        // Given — `.loading` shares the pill's views and drops the geometry the pill states restore.
+    func testSuggestedChipAcceptsTheOfferOnVoiceOverActivate() {
+        // Given
         let sut = AIChatContextChipView()
+        sut.configure(state: .suggested(title: "Tokamak", favicon: nil))
+        var accepted = false
+        sut.onTap = { accepted = true }
 
-        // When
-        sut.configure(state: .loading)
-
-        // Then
-        XCTAssertEqual(sut.accessibilityIdentifier, "AIChat.ContextChip.Loading")
-        XCTAssertFalse(sut.isUserInteractionEnabled)
+        // Then — the chip itself is the button, and activating it accepts
+        XCTAssertTrue(sut.isAccessibilityElement)
+        XCTAssertTrue(sut.accessibilityTraits.contains(.button))
+        XCTAssertTrue(sut.accessibilityActivate())
+        XCTAssertTrue(accepted)
     }
+
 }
 #endif

@@ -484,7 +484,12 @@ final class AIChatContextualChatSessionState {
         // A real navigation means any subsequent context update is fresh, even if it later
         // resolves to a URL that was already submitted (e.g. the user navigated away and back).
         deliveredContextURLWithNoNavigationSince = nil
-        suggestedContext = nil
+        // The offer belonged to the page we left, so clear it on the chip too — nil-ing it here alone
+        // leaves the view model showing a stale offer that then taps into nothing.
+        if suggestedContext != nil {
+            suggestedContext = nil
+            emit(.deliverPageContext(nil, targets: .utiSuggestedContext))
+        }
         if userDowngradedToPlaceholder {
             userDowngradedToPlaceholder = false
             Logger.aiChat.debug("[SessionState] Page navigation cleared temporary context removal")
@@ -845,7 +850,10 @@ private extension AIChatContextualChatSessionState {
     }
 
     var shouldProcessNilContextUpdate: Bool {
-        shouldAutoCollectContext || isManualAttachInProgress || isProcessingNavigation
+        // Deliberately not `isProcessingNavigation`: with auto-attach off a navigation now runs an offer
+        // probe, and an empty result there must not detach a page the user already chose. Auto-attach's
+        // own re-collect still clears via `shouldAutoCollectContext`.
+        shouldAutoCollectContext || isManualAttachInProgress
     }
 
     private var attachmentCount: Int {

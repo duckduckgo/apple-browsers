@@ -19,7 +19,7 @@
 import AppKit
 import Combine
 import Foundation
-@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities

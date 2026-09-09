@@ -20,6 +20,7 @@
 import Foundation
 import Persistence
 import SetDefaultBrowserUI
+import PixelKit
 import PrivacyConfig
 import enum Common.DevicePlatform
 import AIChat
@@ -67,7 +68,8 @@ enum PromoCoordinationFactory {
                 featureFlagger: dependency.featureFlagger,
                 privacyConfigurationManager: dependency.privacyConfigurationManager
             ),
-            store: AppRatingPromptSlotStore(keyValueStore: dependency.keyValueFileStoreService)
+            store: AppRatingPromptSlotStore(keyValueStore: dependency.keyValueFileStoreService),
+            firePixel: { PixelKit.fire($0) }
         )
 
         let providers = ModalPromptProviders(

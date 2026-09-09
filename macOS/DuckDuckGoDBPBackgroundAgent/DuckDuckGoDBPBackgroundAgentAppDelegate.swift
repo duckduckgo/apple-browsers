@@ -24,6 +24,7 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import BrowserServicesKit
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Networking
 import Subscription

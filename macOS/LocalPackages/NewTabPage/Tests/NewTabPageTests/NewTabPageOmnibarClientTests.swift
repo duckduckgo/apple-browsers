@@ -773,6 +773,87 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 1)
     }
 
+    func testWhenUpdatedCreateImageIsSubmittedThenResolvedImageGenerationModelIsUsed() async throws {
+        configProvider.isUpdatedCreateImageEnabled = true
+        configProvider.imageGenerationModelId = "preferred-image-model"
+        let expectation = expectation(description: "submitChatCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, modelId, _, mode, toolChoice, reasoningEffort, _, _ in
+            XCTAssertEqual(modelId, "preferred-image-model")
+            XCTAssertNil(mode)
+            XCTAssertEqual(toolChoice, [AIChatRAGTool.imageGeneration.rawValue])
+            XCTAssertNil(reasoningEffort)
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.SubmitChatAction(
+            chat: "Draw a duck",
+            target: .sameTab,
+            modelId: "unsupported-web-model",
+            images: nil,
+            mode: AIChatNativePrompt.imageGenerationMode,
+            toolChoice: nil,
+            reasoningEffort: "medium",
+            pageContext: nil,
+            files: nil
+        )
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    func testWhenUpdatedCreateImageHasNoResolvedModelThenSubmissionUsesLegacyModeWithoutWebModel() async throws {
+        configProvider.isUpdatedCreateImageEnabled = true
+        configProvider.imageGenerationModelId = nil
+        let expectation = expectation(description: "submitChatCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, modelId, _, mode, toolChoice, _, _, _ in
+            XCTAssertNil(modelId)
+            XCTAssertEqual(mode, AIChatNativePrompt.imageGenerationMode)
+            XCTAssertNil(toolChoice)
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.SubmitChatAction(
+            chat: "Draw a duck",
+            target: .sameTab,
+            modelId: "unsupported-web-model",
+            images: nil,
+            mode: AIChatNativePrompt.imageGenerationMode,
+            toolChoice: [AIChatRAGTool.imageGeneration.rawValue],
+            reasoningEffort: nil,
+            pageContext: nil,
+            files: nil
+        )
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    func testWhenImageGenerationIsActivatedThenNativeSwitchNoticeIsIncludedInConfig() async throws {
+        let notice = NewTabPageDataModel.OmnibarCreateImageModelSwitch(message: "Now using Luna", secondaryText: "Mistral can't create images.")
+        configProvider.isUpdatedCreateImageEnabled = true
+        configProvider.activateImageGenerationResult = notice
+
+        let request = NewTabPageDataModel.OmnibarSetImageGenerationActive(active: true)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setImageGenerationActive, parameters: request)
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(configProvider.activateImageGenerationCallCount, 1)
+        XCTAssertEqual(config.createImageModelSwitch, notice)
+    }
+
+    func testWhenCreateImageSwitchNoticeIsDismissedThenItIsRemovedFromConfig() async throws {
+        configProvider.isUpdatedCreateImageEnabled = true
+        configProvider.activateImageGenerationResult = NewTabPageDataModel.OmnibarCreateImageModelSwitch(
+            message: "Now using Luna",
+            secondaryText: "Mistral can't create images."
+        )
+        let request = NewTabPageDataModel.OmnibarSetImageGenerationActive(active: true)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setImageGenerationActive, parameters: request)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .dismissCreateImageModelSwitch)
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertNil(config.createImageModelSwitch)
+    }
+
     // MARK: - attach tabs (config)
 
     @MainActor

@@ -17,7 +17,7 @@
 //
 
 import XCTest
-@_spi(Testing) @testable import PixelKit
+@_spi(Testing) @testable import WideEvent
 
 final class WideEventRecorderTests: XCTestCase {
 

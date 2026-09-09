@@ -1069,8 +1069,7 @@ extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
-        coordinator.viewController.deactivateInput()
-        let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator.cachedOmnibarPlaceholderWindowX
+        let omnibarPlaceholderWindowX = omnibarPlaceholderWindowXForHandoff(coordinator)
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
@@ -1116,6 +1115,9 @@ extension MainViewController {
             },
             interruptCleanup: { [weak self] in
                 self?.restoreChromeAfterInterruptedOmnibarDismiss()
+            },
+            resigningInput: { [weak coordinator] in
+                coordinator?.viewController.deactivateInput()
             },
             completion: { [weak self] in
                 self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
@@ -1278,19 +1280,18 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         coordinator.updateInputMode(inputMode, animated: false)
         let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         coordinator.updateToggleEnabled(isToggleEnabled)
+        resetSERPFlowForQuery(currentText)
         coordinator.activateFromOmnibar(prefilledText: currentText,
-                                        shouldSelectAllText: shouldAutoSelectOmnibarText(currentText),
                                         inputMode: inputMode,
                                         cardPosition: position)
         return .intercept
     }
 
-    private func shouldAutoSelectOmnibarText(_ text: String?) -> Bool {
-        guard let text = text?.trimmingWhitespace(), !text.isEmpty else { return false }
-        if URL(trimmedAddressBarString: text, useUnifiedLogic: isUnifiedURLPredictionEnabled) != nil {
-            return true
-        }
-        return shouldAutoSelectTextForSERPQuery()
+    private func resetSERPFlowForQuery(_ text: String?) {
+        guard let text = text?.trimmingWhitespace(),
+              !text.isEmpty,
+              URL(trimmedAddressBarString: text, useUnifiedLogic: isUnifiedURLPredictionEnabled) == nil else { return }
+        resetSERPFlowAfterOmnibarFocus()
     }
 }
 

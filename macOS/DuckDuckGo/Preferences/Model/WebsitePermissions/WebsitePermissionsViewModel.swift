@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import PrivacyConfig
 
 @MainActor
 final class WebsitePermissionsViewModel: ObservableObject {
@@ -29,10 +30,12 @@ final class WebsitePermissionsViewModel: ObservableObject {
     private(set) var viewState = WebsitePermissionsViewState()
 
     private let permissionManager: PermissionManagerProtocol
+    private let featureFlagger: FeatureFlagger
     private var permissionsCancellable: AnyCancellable?
 
-    init(permissionManager: PermissionManagerProtocol) {
+    init(permissionManager: PermissionManagerProtocol, featureFlagger: FeatureFlagger) {
         self.permissionManager = permissionManager
+        self.featureFlagger = featureFlagger
     }
 
     // MARK: - Public
@@ -41,12 +44,14 @@ final class WebsitePermissionsViewModel: ObservableObject {
         switch action {
         case .onAppear:
             setupObserver()
-            
+
         case .changeRecentDecision(let row, let decision):
-            guard decision != row.decision else { return }
+            guard row.permissionType.isUserEditable(forDomain: row.domain, featureFlagger: featureFlagger),
+                  decision != row.decision else { return }
             permissionManager.setPermission(decision, forDomain: row.domain, permissionType: row.permissionType)
-            
+
         case .removeRecent(let row):
+            guard row.permissionType.isUserEditable(forDomain: row.domain, featureFlagger: featureFlagger) else { return }
             permissionManager.removePermission(forDomain: row.domain, permissionType: row.permissionType)
         }
     }
@@ -57,12 +62,16 @@ final class WebsitePermissionsViewModel: ObservableObject {
         guard permissionsCancellable == nil else { return }
 
         permissionsCancellable = permissionManager.persistedPermissionsPublisher
+            .combineLatest(featureFlagger.updatesPublisher.prepend(()))
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] entries in
+            .sink { [weak self] entries, _ in
                 guard let self else { return }
+                let editableEntries = entries.filter {
+                    $0.permissionType.isUserEditable(forDomain: $0.domain, featureFlagger: self.featureFlagger)
+                }
                 viewState = WebsitePermissionsViewState(
-                    recents: makeRecentRows(from: entries),
-                    rows: makeRows(from: entries))
+                    recents: makeRecentRows(from: editableEntries),
+                    rows: makeRows(from: editableEntries))
             }
     }
 
@@ -92,7 +101,8 @@ final class WebsitePermissionsViewModel: ObservableObject {
             permissionType: entry.permissionType,
             decision: entry.decision,
             permissionTitle: permissionTitle(for: entry.permissionType),
-            availableDecisions: availableDecisions(for: entry.permissionType, decision: entry.decision))
+            availableDecisions: availableDecisions(for: entry.permissionType, decision: entry.decision)
+        )
     }
 
     private func permissionTitle(for permissionType: PermissionType) -> String {
@@ -110,7 +120,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
             return [.ask, .allow]
         }
     }
-    
+
     private func makeRows(from entries: [WebsitePermissionEntry]) -> [WebsitePermissionsViewState.Row] {
         WebsitePermissionCategory.allCases.map { category in
             WebsitePermissionsViewState.Row(

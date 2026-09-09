@@ -184,11 +184,13 @@ struct PreferencesWebsitePermissionsView: View {
 }
 
 #if DEBUG
+import PrivacyConfig
+
 @MainActor
 private func previewModel(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {
     let permissionManager = PermissionManagerMock()
     permissionManager.setPersistedPermissions(entries)
-    return WebsitePermissionsViewModel(permissionManager: permissionManager)
+    return WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: MockFeatureFlagger())
 }
 
 private let previewEntries: [WebsitePermissionEntry] = [

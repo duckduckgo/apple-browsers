@@ -17,20 +17,25 @@
 //
 
 import Combine
+import FeatureFlags_macOS
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
 final class WebsitePermissionsViewModelTests: XCTestCase {
     private var permissionManager: PermissionManagerMock!
+    private var featureFlagger: MockFeatureFlagger!
 
     override func setUp() {
         super.setUp()
         permissionManager = PermissionManagerMock()
+        featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue: false])
     }
 
     override func tearDown() {
         permissionManager = nil
+        featureFlagger = nil
         super.tearDown()
     }
 
@@ -101,16 +106,10 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
     private func makeRecentsModel(_ entries: [WebsitePermissionEntry],
                                   permissionManager: PermissionManagerMock) -> WebsitePermissionsViewModel {
         permissionManager.setPersistedPermissions(entries)
-        let model = WebsitePermissionsViewModel(permissionManager: permissionManager)
-        let expectation = expectation(description: "Recents loaded")
-        let cancellable = model.$viewState
-            .map(\.recents)
-            .first { !$0.isEmpty }
-            .sink { _ in expectation.fulfill() }
-
-        model.send(action: .onAppear)
-        wait(for: [expectation], timeout: 1)
-        withExtendedLifetime(cancellable) {}
+        let model = WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: featureFlagger)
+        waitForViewStateUpdate(model) {
+            model.send(action: .onAppear)
+        }
         return model
     }
 
@@ -119,7 +118,7 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         permissionManager.setPersistedPermissions([
             WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .allow, lastModified: nil),
         ])
-        let model = WebsitePermissionsViewModel(permissionManager: permissionManager)
+        let model = WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: featureFlagger)
 
         model.send(action: .onAppear)
 
@@ -253,6 +252,38 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         XCTAssertEqual(model.viewState.recents.map(\.id), ["a.com|camera", "a.com|microphone", "b.com|camera"])
     }
 
+    // MARK: - Duck.ai Native Voice Permissions
+
+    func testWhenNativeVoiceFlowChangesThenDuckAiMicrophoneVisibilityUpdates() {
+        let timestamp = Date()
+        let entries = [
+            WebsitePermissionEntry(domain: "duck.ai", permissionType: .microphone, decision: .deny, lastModified: timestamp),
+        ]
+        let model = makeRecentsModel(entries, permissionManager: permissionManager)
+        let originalState = model.viewState
+        XCTAssertEqual(originalState.recents.first?.decision, .deny)
+        XCTAssertEqual(originalState.rows.first { $0.category == .microphone }?.count, 1)
+
+        featureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = true
+        waitForViewStateUpdate(model) {
+            featureFlagger.triggerUpdate()
+        }
+
+        XCTAssertFalse(model.viewState.hasRecents)
+        XCTAssertEqual(model.viewState.rows.first { $0.category == .microphone }?.count, 0)
+        XCTAssertEqual(permissionManager.persistedDecision(forDomain: "duck.ai", permissionType: .microphone), .deny)
+
+        featureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = false
+        waitForViewStateUpdate(model) {
+            featureFlagger.triggerUpdate()
+        }
+
+        XCTAssertEqual(model.viewState, originalState)
+        XCTAssertEqual(permissionManager.persistedDecision(forDomain: "duck.ai", permissionType: .microphone), .deny)
+        XCTAssertEqual(permissionManager.savedLastModified["duck.ai"]?[.microphone], timestamp)
+        XCTAssertTrue(permissionManager.setPermissionCalls.isEmpty)
+    }
+
     // MARK: - Table
 
     func testWhenPermissionSnapshotChangesThenRowsAreUpdated() {
@@ -279,6 +310,18 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         for entry in entries {
             permissionManager.setPermission(entry.decision, forDomain: entry.domain, permissionType: entry.permissionType)
         }
-        return WebsitePermissionsViewModel(permissionManager: permissionManager)
+        return WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: featureFlagger)
+    }
+
+    private func waitForViewStateUpdate(_ model: WebsitePermissionsViewModel, action: () -> Void) {
+        let expectation = expectation(description: "Permissions updated")
+        let cancellable = model.$viewState
+            .dropFirst()
+            .prefix(1)
+            .sink { _ in expectation.fulfill() }
+
+        action()
+        wait(for: [expectation], timeout: 1)
+        withExtendedLifetime(cancellable) {}
     }
 }

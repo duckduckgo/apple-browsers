@@ -52,7 +52,7 @@ public struct NetworkProtectionServerInfo: Codable, Equatable, Sendable {
          ips: [AnyIPAddress],
          internalIP: AnyIPAddress,
          port: UInt16,
-         ports: [UInt16]? = nil,
+         ports: [UInt16]?,
          attributes: ServerAttributes) {
         self.name = name
         self.publicKey = publicKey

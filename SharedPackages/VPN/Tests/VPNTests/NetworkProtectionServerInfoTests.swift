@@ -29,6 +29,7 @@ final class NetworkProtectionServerInfoTests: XCTestCase {
                                                      ips: [],
                                                      internalIP: AnyIPAddress("10.11.12.1")!,
                                                      port: 42,
+                                                     ports: nil,
                                                      attributes: .init(city: "Amsterdam", country: "nl", state: "na"))
 
         XCTAssertEqual(serverInfo.serverLocation, "Amsterdam, Netherlands")
@@ -41,6 +42,7 @@ final class NetworkProtectionServerInfoTests: XCTestCase {
                                                      ips: [],
                                                      internalIP: AnyIPAddress("10.11.12.1")!,
                                                      port: 42,
+                                                     ports: nil,
                                                      attributes: .init(city: "New York", country: "us", state: "ny"))
 
         XCTAssertEqual(serverInfo.serverLocation, "New York, United States")

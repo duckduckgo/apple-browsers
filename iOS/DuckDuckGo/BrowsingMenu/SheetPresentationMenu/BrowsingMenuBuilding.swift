@@ -50,6 +50,7 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
     func makeAutoFillEntry() -> BrowsingMenuEntry?
     func makeVPNEntry() -> BrowsingMenuEntry?
     func makeOpenBookmarksEntry() -> BrowsingMenuEntry
+    func makeSitePermissionsEntry() -> BrowsingMenuEntry?
     func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)?
     func makeFindInPageEntry() -> BrowsingMenuEntry?
     func makeZoomEntry() -> BrowsingMenuEntry?

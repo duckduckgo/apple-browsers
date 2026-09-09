@@ -5466,6 +5466,9 @@ extension MainViewController: OmniBarDelegate {
 
             case .fire:
                 browsingMenu.highlightFireButton()
+
+            case .openBookmarks:
+                break
             }
         }
 

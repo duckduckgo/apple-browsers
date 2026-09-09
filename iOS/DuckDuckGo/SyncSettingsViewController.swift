@@ -27,7 +27,6 @@ import FoundationExtensions
 import os.log
 import PrivacyConfig
 import AttributedMetric
-import Persistence
 import FeatureFlags_iOS
 import PixelKit
 
@@ -65,7 +64,6 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     let userSession = UserSession()
     let featureFlagger: FeatureFlagger
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
-    let syncSettingsStore: KeyValueStoring
     let pixelFiring: (any PixelKitFiring)?
 
     var isSyncEnabled: Bool {
@@ -130,7 +128,6 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         pairingInfo: PairingInfo? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
-        syncSettingsStore: KeyValueStoring = UserDefaults.standard,
         pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
         self.syncService = syncService
@@ -142,7 +139,6 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         self.pairingInfo = pairingInfo
         self.featureFlagger = featureFlagger
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
-        self.syncSettingsStore = syncSettingsStore
         self.pixelFiring = pixelFiring
 
         let viewModel = SyncSettingsViewModel(

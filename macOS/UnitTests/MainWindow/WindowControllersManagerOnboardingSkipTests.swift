@@ -27,8 +27,8 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 /// Covers how `WindowControllersManager` decides that onboarding was skipped. Every way of leaving
-/// onboarding is a skip except quitting, which records nothing so that onboarding shows again on the
-/// next launch, matching what the blocking flow does today. Quit cleanup detaches tracking first.
+/// onboarding is a skip, including burn on exit. Ordinary quit cleanup detaches tracking first
+/// so unfinished onboarding can appear again on the next launch.
 @MainActor
 final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
 
@@ -80,36 +80,6 @@ final class WindowControllersManagerOnboardingSkipTests: XCTestCase {
 
         XCTAssertEqual(skipInPlaceCount, 0)
         XCTAssertFalse(sut.hasOnboardingTab)
-    }
-
-    func testCancelingAutoClearLeavesWindowSkipTrackingActive() {
-        let (windowController, _) = startOnboarding()
-        let preferences = DataClearingPreferences(
-            persistor: MockFireButtonPreferencesPersistor(),
-            fireproofDomains: MockFireproofDomains(domains: []),
-            faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock(),
-            featureFlagger: featureFlagger,
-            aiChatHistoryCleaner: MockAIChatHistoryCleaner())
-        preferences.isAutoClearEnabled = true
-        preferences.isWarnBeforeClearingEnabled = true
-        let alert = MockAutoClearAlertPresenter()
-        alert.responseToReturn = .alertThirdButtonReturn
-        let handler = AutoClearHandler(
-            dataClearingPreferences: preferences,
-            startupPreferences: Application.appDelegate.startupPreferences,
-            fireViewModel: Application.appDelegate.fireCoordinator.fireViewModel,
-            stateRestorationManager: MockAppStateRestorationManager(),
-            aiChatSyncCleaner: nil, wideEvent: WideEventMock(), pixelFiring: nil,
-            alertPresenter: alert,
-            willPerformAutoClear: { [sut] in sut?.setOnboardingTab(nil) })
-
-        guard case .sync(.cancel) = handler.shouldTerminate(isAsync: false) else {
-            return XCTFail("Expected canceled quit")
-        }
-        sut.unregister(windowController)
-
-        XCTAssertEqual(skipInPlaceCount, 1)
     }
 
     func testClosingAWindowThatDoesNotHostOnboardingRecordsNothing() {

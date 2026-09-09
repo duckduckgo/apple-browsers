@@ -2412,10 +2412,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                 stateRestorationManager: self.stateRestorationManager,
                                                 aiChatSyncCleaner: aiChatSyncCleaner,
                                                 wideEvent: wideEvent,
-                                                pixelFiring: PixelKit.shared,
-                                                willPerformAutoClear: { [windowControllersManager] in
-                                                    windowControllersManager.setOnboardingTab(nil)
-                                                })
+                                                pixelFiring: PixelKit.shared)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()

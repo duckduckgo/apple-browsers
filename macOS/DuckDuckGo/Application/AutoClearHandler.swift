@@ -43,7 +43,6 @@ final class AutoClearHandler: ApplicationTerminationDecider {
     private let alertPresenter: AutoClearAlertPresenting
     private let dataClearingWideEventService: DataClearingWideEventService
     private let pixelFiring: PixelFiring?
-    private let willPerformAutoClear: @MainActor () -> Void
 
     init(dataClearingPreferences: DataClearingPreferences,
          startupPreferences: StartupPreferences,
@@ -52,8 +51,7 @@ final class AutoClearHandler: ApplicationTerminationDecider {
          aiChatSyncCleaner: AIChatSyncCleaning?,
          wideEvent: WideEventManaging,
          pixelFiring: PixelFiring?,
-         alertPresenter: AutoClearAlertPresenting = DefaultAutoClearAlertPresenter(),
-         willPerformAutoClear: @escaping @MainActor () -> Void = {}) {
+         alertPresenter: AutoClearAlertPresenting = DefaultAutoClearAlertPresenter()) {
         self.dataClearingPreferences = dataClearingPreferences
         self.startupPreferences = startupPreferences
         self.fireViewModel = fireViewModel
@@ -62,7 +60,6 @@ final class AutoClearHandler: ApplicationTerminationDecider {
         self.alertPresenter = alertPresenter
         self.dataClearingWideEventService = DataClearingWideEventService(wideEvent: wideEvent)
         self.pixelFiring = pixelFiring
-        self.willPerformAutoClear = willPerformAutoClear
     }
 
     @MainActor
@@ -139,7 +136,6 @@ final class AutoClearHandler: ApplicationTerminationDecider {
         }
         pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount)
         pixelFiring?.fire(FireDialogPixel.fireStartedOnExit, frequency: .dailyAndCount)
-        willPerformAutoClear()
         await fireViewModel.fire.burnAll(isBurnOnExit: true,
                                          includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled,
                                          isAutoClear: true,

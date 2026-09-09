@@ -54,7 +54,7 @@ final class MockAppStateRestorationManager: AppStateRestorationManaging {
 @MainActor
 class AutoClearHandlerTests: XCTestCase {
 
-    private var quitCleanupEvents: [String] = []
+    private var burnOnExitCalls: [Bool] = []
     var handler: AutoClearHandler!
     var dataClearingPreferences: DataClearingPreferences!
     var startupPreferences: StartupPreferences!
@@ -64,7 +64,7 @@ class AutoClearHandlerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        quitCleanupEvents = []
+        burnOnExitCalls = []
         let persistor = MockFireButtonPreferencesPersistor()
         dataClearingPreferences = DataClearingPreferences(
             persistor: persistor,
@@ -88,7 +88,7 @@ class AutoClearHandlerTests: XCTestCase {
         )
 
         let fire = AutoClearFireMock()
-        fire.onBurnAll = { [weak self] in self?.quitCleanupEvents.append("burn") }
+        fire.onBurnAll = { [weak self] isBurnOnExit in self?.burnOnExitCalls.append(isBurnOnExit) }
         fireViewModel = FireViewModel(fire: fire)
         mockStateRestoration = MockAppStateRestorationManager()
         mockAlertPresenter = MockAutoClearAlertPresenter()
@@ -99,8 +99,7 @@ class AutoClearHandlerTests: XCTestCase {
                                    aiChatSyncCleaner: nil,
                                    wideEvent: WideEventMock(),
                                    pixelFiring: nil,
-                                   alertPresenter: mockAlertPresenter,
-                                   willPerformAutoClear: { [weak self] in self?.quitCleanupEvents.append("detach") })
+                                   alertPresenter: mockAlertPresenter)
     }
 
     override func tearDown() {
@@ -122,7 +121,7 @@ class AutoClearHandlerTests: XCTestCase {
         switch query {
         case .async(let task):
             _ = await task.value
-            XCTAssertEqual(quitCleanupEvents, ["detach", "burn"])
+            XCTAssertEqual(burnOnExitCalls, [true])
         case .sync:
             XCTFail("Expected async query for auto-clear, got sync")
         }
@@ -155,7 +154,7 @@ class AutoClearHandlerTests: XCTestCase {
         switch query {
         case .async(let task):
             _ = await task.value
-            XCTAssertEqual(quitCleanupEvents, ["detach", "burn"])
+            XCTAssertEqual(burnOnExitCalls, [true])
         case .sync:
             XCTFail("Expected async query for clear and quit, got sync")
         }
@@ -171,7 +170,7 @@ class AutoClearHandlerTests: XCTestCase {
         XCTAssertTrue(mockAlertPresenter.confirmAutoClearCalled)
         switch query {
         case .sync(.next):
-            XCTAssertTrue(quitCleanupEvents.isEmpty)
+            XCTAssertTrue(burnOnExitCalls.isEmpty)
         case .sync(.cancel):
             XCTFail("Expected .sync(.next), got .sync(.cancel)")
         case .async:
@@ -189,7 +188,7 @@ class AutoClearHandlerTests: XCTestCase {
         XCTAssertTrue(mockAlertPresenter.confirmAutoClearCalled)
         switch query {
         case .sync(.cancel):
-            XCTAssertTrue(quitCleanupEvents.isEmpty)
+            XCTAssertTrue(burnOnExitCalls.isEmpty)
         case .sync(.next):
             XCTFail("Expected .sync(.cancel), got .sync(.next)")
         case .async:
@@ -202,7 +201,7 @@ class AutoClearHandlerTests: XCTestCase {
         handler.resetTheCorrectTerminationFlag()
 
         XCTAssertTrue(handler.burnOnStartIfNeeded())
-        XCTAssertEqual(quitCleanupEvents, ["burn"])
+        XCTAssertEqual(burnOnExitCalls, [false])
     }
 
     func testWhenBurningDisabledThenBurnOnStartNotTriggered() {
@@ -287,7 +286,7 @@ private final class AutoClearFireMock: FireProtocol {
     let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
     let visualizeFireAnimationDecider: VisualizeFireSettingsDecider = MockVisualizeFireAnimationDecider()
     var burningDataPublisher: AnyPublisher<Fire.BurningData?, Never> { Just(nil).eraseToAnyPublisher() }
-    var onBurnAll: (() -> Void)?
+    var onBurnAll: ((Bool) -> Void)?
 
     func fireAnimationDidStart() {}
     func fireAnimationDidFinish() {}
@@ -296,7 +295,7 @@ private final class AutoClearFireMock: FireProtocol {
     func burnAll(isBurnOnExit: Bool, opening url: URL, includeCookiesAndSiteData: Bool,
                  includeChatHistory: Bool, isAutoClear: Bool, dataClearingWideEventService: DataClearingWideEventService?,
                  completion: (@MainActor () -> Void)?) {
-        onBurnAll?()
+        onBurnAll?(isBurnOnExit)
         completion?()
     }
 

@@ -636,7 +636,6 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
-    /// Closes a tab with lifecycle notification; collection-only changes use `remove`.
     func close(at index: TabIndex, forceChange: Bool = false) {
         guard changesEnabled || (forceChange && index.isUnpinnedTab), let tab = tab(at: index) else { return }
         if case .loaded(let tab) = tab {

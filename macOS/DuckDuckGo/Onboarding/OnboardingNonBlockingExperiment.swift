@@ -31,8 +31,8 @@ struct OnboardingNonBlockingExperiment {
     enum Metric: String {
         case onboardingCompleted
         /// Onboarding ended without completing: the tab was closed, navigated away from, removed in
-        /// bulk, or its window was closed. Quitting is deliberately excluded — it records nothing,
-        /// so onboarding shows again on the next launch just as it does today.
+        /// bulk, or its window was closed, including burn on exit. Ordinary quit records nothing,
+        /// so unfinished onboarding shows again on the next launch.
         case onboardingSkipped
         case browsingBeforeCompletion
         case contextualDismissed

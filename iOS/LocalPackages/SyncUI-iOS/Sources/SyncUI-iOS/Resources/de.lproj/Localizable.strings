@@ -277,9 +277,6 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Verbinden ...";
 
-/* Instruction shown during sync setup flow. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Ende-zu-Ende-Verschlüsselung auf all deinen Geräten.";
-
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Kehre nach dem Einfügen des Codes zu diesem Gerät zurück.";
 

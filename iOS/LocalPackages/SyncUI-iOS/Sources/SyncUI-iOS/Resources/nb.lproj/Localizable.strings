@@ -277,9 +277,6 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Kobler til...";
 
-/* Instruction shown during sync setup flow. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Ende-til-ende-kryptering på alle enhetene.";
-
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Kom tilbake til denne enheten når du har limt inn koden.";
 

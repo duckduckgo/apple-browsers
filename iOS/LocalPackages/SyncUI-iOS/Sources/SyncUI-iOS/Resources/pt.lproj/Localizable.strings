@@ -277,9 +277,6 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "A ligar…";
 
-/* Instruction shown during sync setup flow. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Encriptado de ponta a ponta em todos os teus dispositivos.";
-
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Volta a este dispositivo depois de colares o código.";
 

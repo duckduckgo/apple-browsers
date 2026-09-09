@@ -277,9 +277,6 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Ansluter …";
 
-/* Instruction shown during sync setup flow. */
-"sync.simplified.scan-or-view-code.connecting.title" = "End-to-end-kryptering på alla dina enheter.";
-
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Kom tillbaka till den här enheten efter att du har klistrat in koden.";
 

@@ -277,9 +277,6 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Ühendamine...";
 
-/* Instruction shown during sync setup flow. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Otsast lõpuni krüptitud kõigis sinu seadmetes.";
-
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Pärast koodi kleepimist tule selle seadme juurde tagasi.";
 

@@ -1314,6 +1314,8 @@
 		AB1E70020000000000000002 /* AIChatMCPSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70020000000000000001 /* AIChatMCPSessionTests.swift */; };
 		AB1E70020000000000000003 /* AIChatMCPSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70020000000000000001 /* AIChatMCPSessionTests.swift */; };
 		AB1E70020000000000000005 /* BrowserToolCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70020000000000000004 /* BrowserToolCatalogTests.swift */; };
+		AB1E70040000000000000002 /* BrowserToolInvokerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70040000000000000001 /* BrowserToolInvokerTests.swift */; };
+		AB1E70040000000000000003 /* BrowserToolInvokerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70040000000000000001 /* BrowserToolInvokerTests.swift */; };
 		AB1E70020000000000000006 /* BrowserToolCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70020000000000000004 /* BrowserToolCatalogTests.swift */; };
 		AB1E70020000000000000008 /* BrowserToolsWireFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70020000000000000007 /* BrowserToolsWireFormatTests.swift */; };
 		AB1E70020000000000000009 /* BrowserToolsWireFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70020000000000000007 /* BrowserToolsWireFormatTests.swift */; };
@@ -4378,6 +4380,10 @@
 		D1A7B0010000000000000003 /* NewTabPageOmnibarTabsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A7B0010000000000000001 /* NewTabPageOmnibarTabsProvider.swift */; };
 		D1A7B0010000000000000012 /* AIChatTabPickerSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A7B0010000000000000011 /* AIChatTabPickerSource.swift */; };
 		AB1E70010000000000000003 /* AIChatBrowserToolsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70010000000000000002 /* AIChatBrowserToolsService.swift */; };
+		AB1E70030000000000000002 /* SwitchToTabBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */; };
+		AB1E70050000000000000002 /* BrowserToolsDebugPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70050000000000000001 /* BrowserToolsDebugPanel.swift */; };
+		AB1E70050000000000000003 /* BrowserToolsDebugPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70050000000000000001 /* BrowserToolsDebugPanel.swift */; };
+		AB1E70030000000000000003 /* SwitchToTabBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */; };
 		AB1E70010000000000000004 /* AIChatBrowserToolsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70010000000000000002 /* AIChatBrowserToolsService.swift */; };
 		D1A7B0010000000000000013 /* AIChatTabPickerSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A7B0010000000000000011 /* AIChatTabPickerSource.swift */; };
 		D1A7B0010000000000000022 /* AIChatTabPickerSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A7B0010000000000000021 /* AIChatTabPickerSourceTests.swift */; };
@@ -5537,6 +5543,7 @@
 		37AA017E2E2164A500844427 /* AIChatUserScriptHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptHandlerTests.swift; sourceTree = "<group>"; };
 		AB1E70020000000000000001 /* AIChatMCPSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMCPSessionTests.swift; sourceTree = "<group>"; };
 		AB1E70020000000000000004 /* BrowserToolCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolCatalogTests.swift; sourceTree = "<group>"; };
+		AB1E70040000000000000001 /* BrowserToolInvokerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolInvokerTests.swift; sourceTree = "<group>"; };
 		AB1E70020000000000000007 /* BrowserToolsWireFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolsWireFormatTests.swift; sourceTree = "<group>"; };
 		37ABFE7B2DED901000DE39F2 /* SettingsPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPixel.swift; sourceTree = "<group>"; };
 		37ADC3ED2DF031830001CA03 /* MoreOptionsMenuPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreOptionsMenuPixel.swift; sourceTree = "<group>"; };
@@ -7257,6 +7264,8 @@
 		D1A7B0010000000000000001 /* NewTabPageOmnibarTabsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarTabsProvider.swift; sourceTree = "<group>"; };
 		D1A7B0010000000000000011 /* AIChatTabPickerSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabPickerSource.swift; sourceTree = "<group>"; };
 		AB1E70010000000000000002 /* AIChatBrowserToolsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatBrowserToolsService.swift; sourceTree = "<group>"; };
+		AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchToTabBrowserTool.swift; sourceTree = "<group>"; };
+		AB1E70050000000000000001 /* BrowserToolsDebugPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolsDebugPanel.swift; sourceTree = "<group>"; };
 		D1A7B0010000000000000021 /* AIChatTabPickerSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabPickerSourceTests.swift; sourceTree = "<group>"; };
 		D1A7B0010000000000000041 /* AIChatSelectionActionPageContextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSelectionActionPageContextTests.swift; sourceTree = "<group>"; };
 		D1D1D1D100000000000000E0 /* MouseEventInterceptingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MouseEventInterceptingView.swift; sourceTree = "<group>"; };
@@ -8396,6 +8405,7 @@
 			children = (
 				AB1E70020000000000000001 /* AIChatMCPSessionTests.swift */,
 				AB1E70020000000000000004 /* BrowserToolCatalogTests.swift */,
+				AB1E70040000000000000001 /* BrowserToolInvokerTests.swift */,
 				AB1E70020000000000000007 /* BrowserToolsWireFormatTests.swift */,
 			);
 			path = BrowserTools;
@@ -8405,6 +8415,8 @@
 			isa = PBXGroup;
 			children = (
 				AB1E70010000000000000002 /* AIChatBrowserToolsService.swift */,
+				AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */,
+				AB1E70050000000000000001 /* BrowserToolsDebugPanel.swift */,
 			);
 			path = BrowserTools;
 			sourceTree = "<group>";
@@ -16231,6 +16243,8 @@
 				31FBF22F2CDD068000626C17 /* AIChatUserScriptHandling.swift in Sources */,
 				D1A7B0010000000000000012 /* AIChatTabPickerSource.swift in Sources */,
 				AB1E70010000000000000003 /* AIChatBrowserToolsService.swift in Sources */,
+				AB1E70030000000000000002 /* SwitchToTabBrowserTool.swift in Sources */,
+				AB1E70050000000000000002 /* BrowserToolsDebugPanel.swift in Sources */,
 				84CE00162DAE41F100852AA2 /* ResizablePreviewView.swift in Sources */,
 				96B6A494304EC0B5009BF9EC /* WebsitePermissionCategory.swift in Sources */,
 				1D1A334A2A6FEB170080ACED /* BurnerMode.swift in Sources */,
@@ -17398,6 +17412,7 @@
 				37AA01802E2164A700844427 /* AIChatUserScriptHandlerTests.swift in Sources */,
 				AB1E70020000000000000003 /* AIChatMCPSessionTests.swift in Sources */,
 				AB1E70020000000000000006 /* BrowserToolCatalogTests.swift in Sources */,
+				AB1E70040000000000000003 /* BrowserToolInvokerTests.swift in Sources */,
 				AB1E70020000000000000009 /* BrowserToolsWireFormatTests.swift in Sources */,
 				D1A7B0010000000000000022 /* AIChatTabPickerSourceTests.swift in Sources */,
 				D1A7B0010000000000000042 /* AIChatSelectionActionPageContextTests.swift in Sources */,
@@ -18260,6 +18275,8 @@
 				31FBF22E2CDD068000626C17 /* AIChatUserScriptHandling.swift in Sources */,
 				D1A7B0010000000000000013 /* AIChatTabPickerSource.swift in Sources */,
 				AB1E70010000000000000004 /* AIChatBrowserToolsService.swift in Sources */,
+				AB1E70030000000000000003 /* SwitchToTabBrowserTool.swift in Sources */,
+				AB1E70050000000000000003 /* BrowserToolsDebugPanel.swift in Sources */,
 				C1D3C5682E747BBE0086A2BD /* CreditCardsCleanupErrorHandling.swift in Sources */,
 				C1D3C5692E747BBE0086A2BD /* SyncCreditCardsAdapter.swift in Sources */,
 				4B9292A426670D2A00AD2C21 /* PasteboardWriting.swift in Sources */,
@@ -19799,6 +19816,7 @@
 				37AA017F2E2164A700844427 /* AIChatUserScriptHandlerTests.swift in Sources */,
 				AB1E70020000000000000002 /* AIChatMCPSessionTests.swift in Sources */,
 				AB1E70020000000000000005 /* BrowserToolCatalogTests.swift in Sources */,
+				AB1E70040000000000000002 /* BrowserToolInvokerTests.swift in Sources */,
 				AB1E70020000000000000008 /* BrowserToolsWireFormatTests.swift in Sources */,
 				D1A7B0010000000000000023 /* AIChatTabPickerSourceTests.swift in Sources */,
 				D1A7B0010000000000000043 /* AIChatSelectionActionPageContextTests.swift in Sources */,

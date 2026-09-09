@@ -677,7 +677,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         aiChatSessionStore = AIChatSessionStore(featureFlagger: featureFlagger)
-        aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger)
         aiChatMenuConfiguration = AIChatMenuConfiguration(
             storage: DefaultAIChatPreferencesStorage(),
             remoteSettings: AIChatRemoteSettings(
@@ -859,6 +858,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
+
+        aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
+                                                             windowControllersManager: windowControllersManager)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)

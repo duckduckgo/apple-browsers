@@ -166,10 +166,11 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertTrue(mockHandler.didCallMCPToolsList)
     }
 
-    /// `tools/call` lands in the next change; until then it must not resolve to a handler, so the
-    /// front end gets a method-not-found error rather than silence.
-    @MainActor func testWhenToolsCallIsReceivedThenNoHandlerResolvesYet() {
-        XCTAssertNil(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsCall.rawValue))
+    @MainActor func testWhenToolsCallIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsCall.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPToolsCall)
     }
 
     // MARK: - Open Settings handshake
@@ -409,6 +410,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didCallMCPInitialize = false
     var didCallMCPNotificationsInitialized = false
     var didCallMCPToolsList = false
+    var didCallMCPToolsCall = false
 
     func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
         didCallMCPInitialize = true
@@ -422,6 +424,11 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable? {
         didCallMCPToolsList = true
+        return nil
+    }
+
+    func mcpToolsCall(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didCallMCPToolsCall = true
         return nil
     }
 

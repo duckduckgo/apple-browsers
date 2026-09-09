@@ -54,6 +54,23 @@ enum AIChatTabPickerSource {
         }
     }
 
+    /// The tab collection that owns `tabID`, or nil when no open window holds it.
+    static func tabCollectionViewModel(containingTabWithID tabID: TabIdentifier,
+                                       in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
+        windowControllersManager.allTabCollectionViewModels
+            .first { $0.indexInAllTabs(where: { $0.uuid == tabID }) != nil }
+    }
+
+    /// True when the owner tab lives in a Fire Window. Browser tools refuse there entirely.
+    ///
+    /// A tab we cannot place is treated as non-burner, matching Windows: the tool it belongs to
+    /// will fail its own lookup a moment later anyway, and assuming burner would break ordinary
+    /// calls whenever a tab is briefly unresolvable.
+    static func isBurner(ownerTabID: TabIdentifier,
+                         in windowControllersManager: WindowControllersManagerProtocol) -> Bool {
+        tabCollectionViewModel(containingTabWithID: ownerTabID, in: windowControllersManager)?.isBurner ?? false
+    }
+
     /// The Duck.ai owner tab for `webView`.
     ///
     /// A sidebar or detached Duck.ai window belongs to the tab it was opened from; a Duck.ai

@@ -60,8 +60,33 @@ final class AIChatDebugMenu: NSMenu {
             NSMenuItem.separator()
 
             storageServerMenuItem
+
+#if DEBUG
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "Browser Tools Panel…", action: #selector(openBrowserToolsPanel))
+                .targetting(self)
+#endif
         }
     }
+
+#if DEBUG
+
+    // MARK: - Browser Tools
+
+    private var browserToolsPanel: BrowserToolsDebugPanel?
+
+    /// Stands in for the Duck.ai front end, which cannot drive the browser tools bridge yet.
+    @MainActor
+    @objc func openBrowserToolsPanel() {
+        let panel = browserToolsPanel
+            ?? BrowserToolsDebugPanel(windowControllersManager: NSApp.delegateTyped.windowControllersManager)
+        browserToolsPanel = panel
+        panel.showWindow(nil)
+        panel.window?.makeKeyAndOrderFront(nil)
+    }
+
+#endif
 
     // MARK: - Duck.ai Usage Warnings
 

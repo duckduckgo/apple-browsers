@@ -235,6 +235,18 @@ public struct MCPCallToolResult: Encodable, Equatable {
     }
 }
 
+public extension BrowserToolResult {
+
+    /// Maps an invocation outcome onto the MCP envelope the front end receives. A refusal is not a
+    /// transport error, so both cases produce a well-formed result.
+    var callToolResult: MCPCallToolResult {
+        switch self {
+        case .success(let structuredContent): .success(structuredContent)
+        case .failure(let failure): .failure(failure)
+        }
+    }
+}
+
 /// MCP text content block — the only block type browser tools emit.
 public struct MCPTextContentBlock: Encodable, Equatable {
     public let type: String

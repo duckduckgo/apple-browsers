@@ -130,6 +130,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func mcpToolsCall(params: Any, message: UserScriptMessage) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
@@ -1228,6 +1229,41 @@ extension AIChatUserScriptHandler {
         }
 
         return BrowserToolsListResponse(tools: browserTools.catalog.enabledTools.map { $0.descriptor() })
+    }
+
+    /// MCP `tools/call`.
+    ///
+    /// Every outcome is a well-formed reply carrying the request's `callId`. A tool that refused
+    /// reports it through `isError` inside the MCP result; the envelope's own status describes the
+    /// round trip only, and is always `ok`.
+    @MainActor
+    func mcpToolsCall(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let request: InvokeBrowserToolRequest = DecodableHelper.decode(from: params), !request.name.isEmpty else {
+            // Recover the call id even from a payload we could not read, so the front end can still
+            // match the failure to the call it made rather than being left guessing.
+            return InvokeBrowserToolResponse(callId: Self.callID(fromRawParams: params), result: .failure(.invalidRequest))
+        }
+
+        guard let ownerTabID = ownerTabID(for: message),
+              let session = browserTools.sessions.session(forOwnerTabID: ownerTabID),
+              session.isInitialized else {
+            return InvokeBrowserToolResponse(callId: request.callId, result: .failure(.notInitialized))
+        }
+
+        let context = BrowserToolCallContext(
+            ownerTabID: ownerTabID,
+            isBurner: AIChatTabPickerSource.isBurner(ownerTabID: ownerTabID, in: windowControllersManager),
+            supportsElicitationForm: session.supportsElicitationForm
+        )
+
+        let result = await browserTools.invoker.invoke(toolNamed: request.name,
+                                                       arguments: request.arguments,
+                                                       context: context)
+        return InvokeBrowserToolResponse(callId: request.callId, result: result.callToolResult)
+    }
+
+    private static func callID(fromRawParams params: Any) -> String {
+        (params as? [String: Any])?["callId"] as? String ?? ""
     }
 
     /// The Duck.ai owner tab this message belongs to — the host tab for a sidebar or detached

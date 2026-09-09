@@ -36,6 +36,7 @@ final class AIChatBrowserToolsService {
 
     let sessions = AIChatMCPSessionStore()
     let catalog: BrowserToolCatalog
+    let invoker: BrowserToolInvoker
 
     private let configuration: AIChatBrowserToolsConfiguration
 
@@ -43,10 +44,23 @@ final class AIChatBrowserToolsService {
     /// when this is false, which also protects against version skew.
     var isEnabled: Bool { configuration.isEnabled }
 
-    init(featureFlagger: FeatureFlagger, tools: [any BrowserTool] = []) {
+    /// - Parameter tools: overridable so tests can register their own catalog.
+    init(featureFlagger: FeatureFlagger,
+         windowControllersManager: WindowControllersManagerProtocol,
+         tools: [any BrowserTool]? = nil) {
         let configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger)
+        let catalog = BrowserToolCatalog(tools: tools ?? Self.defaultTools(windowControllersManager: windowControllersManager),
+                                         configuration: configuration)
         self.configuration = configuration
-        self.catalog = BrowserToolCatalog(tools: tools, configuration: configuration)
+        self.catalog = catalog
+        self.invoker = BrowserToolInvoker(catalog: catalog, configuration: configuration)
+    }
+
+    /// Registration order is the order the front end sees in `tools/list`.
+    private static func defaultTools(windowControllersManager: WindowControllersManagerProtocol) -> [any BrowserTool] {
+        [
+            SwitchToTabBrowserTool(windowControllersManager: windowControllersManager)
+        ]
     }
 }
 

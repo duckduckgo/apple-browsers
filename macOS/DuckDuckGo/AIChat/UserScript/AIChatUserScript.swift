@@ -211,6 +211,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.mcpNotificationsInitialized
         case .toolsList:
             return handler.mcpToolsList
+        case .toolsCall:
+            return handler.mcpToolsCall
 
         case .reportMetric:
             return handler.reportMetric

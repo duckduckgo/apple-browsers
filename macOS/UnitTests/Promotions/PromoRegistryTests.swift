@@ -85,7 +85,9 @@ final class PromoRegistryTests: XCTestCase {
                     windowControllersManager: windowControllersManager,
                     featureFlagger: featureFlagger
                 )
-            }())
+            }(),
+            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator()
+        )
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)

@@ -42,4 +42,5 @@ struct PromoDependencies {
     let pinningManager: PinningManager
     let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate
     let duckPlayerOverlayObserver: DuckPlayerOverlayObserver
+    let brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator
 }

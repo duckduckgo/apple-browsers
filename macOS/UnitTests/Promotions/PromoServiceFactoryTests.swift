@@ -208,7 +208,8 @@ extension PromoServiceFactoryTests {
                     windowControllersManager: windowControllersManager,
                     featureFlagger: featureFlagger
                 )
-            }()
+            }(),
+            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator()
         )
     }
 }

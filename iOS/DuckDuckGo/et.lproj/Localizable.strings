@@ -5836,3 +5836,12 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mida soovite importida?";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ ei saa pilte luua. Null teenusepakkuja nähtavus ei kehti enne, kui tagasi lülitud.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ ei toeta piltide loomist.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Nüüd on kasutusel %@";
+

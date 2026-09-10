@@ -5036,9 +5036,6 @@
 			);
 			target = 84E341911E2F7EFB00BDBA6F /* DuckDuckGo */;
 		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		FF204FAADFC540C083B7C6C3 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (

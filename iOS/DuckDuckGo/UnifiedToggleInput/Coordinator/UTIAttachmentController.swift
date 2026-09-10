@@ -63,6 +63,9 @@ final class UTIAttachmentController {
         let isPageContextAttachable: () -> Bool?
         let pageContextAttachHandler: () -> (() -> Void)?
         let presenterViewController: () -> UIViewController?
+        var tabAttachmentSource: () -> MultiTabAttachmentSource? = { nil }
+        var tabAttachmentFeatureState: () -> AIChatContextualAttachMoreTabsState = { .unavailable }
+        var pageContextRemoveHandler: () -> (() -> Void)? = { nil }
     }
 
     /// Coordinator-owned effects an attachment mutation triggers.
@@ -384,8 +387,23 @@ final class UTIAttachmentController {
     func makeAttachmentMenu() -> UIMenu? {
         // Disable "Ask about page" for non-attachable pages (blocklisted media / special page).
         let canAttachPageContext = environment.isContextualChatState() && (environment.isPageContextAttachable() ?? true)
-        let pageContextActionHandler = canAttachPageContext ? environment.pageContextAttachHandler() : nil
         let policy = environment.policy()
+        var pageContextActionHandler = canAttachPageContext ? environment.pageContextAttachHandler() : nil
+
+        if canUseTabAttachments {
+            let currentPageID = environment.tabAttachmentSource()?.currentTabID
+            let hasPageCapacity = currentPageID.map {
+                policy.selectedTabIDs.contains($0) || policy.canAttachTab(withID: $0)
+            } == true
+            if hasPageCapacity, pageContextActionHandler != nil {
+                pageContextActionHandler = { [weak self] in
+                    self?.attachCurrentPage()
+                }
+            } else {
+                pageContextActionHandler = nil
+            }
+        }
+
         return presenter.makeAttachmentMenu(
             presenterProvider: { [weak self] in
                 self?.environment.presenterViewController()
@@ -394,8 +412,81 @@ final class UTIAttachmentController {
             canAttachFile: canPresentFilePicker,
             allowedFileTypes: allowedFileUTTypes,
             showsPageContextAction: environment.isContextualChatState(),
-            pageContextActionHandler: pageContextActionHandler
+            pageContextActionHandler: pageContextActionHandler,
+            attachableTabs: tabAttachmentCandidates,
+            attachedTabIds: policy.selectedTabIDs,
+            tabAttachmentLimit: policy.maximumTabAttachmentCount ?? 0,
+            isTabSelectionAvailable: { [weak self] in
+                guard let self else { return false }
+                return self.canUseTabAttachments && !self.view.isGenerating()
+            },
+            tabActionHandler: { [weak self] candidate, isAttached in
+                self?.setTabAttachment(candidate, isAttached: isAttached) ?? false
+            }
         )
+    }
+
+    private var canUseTabAttachments: Bool {
+        guard environment.isContextualChatState(),
+              environment.tabAttachmentSource() != nil,
+              case .available = environment.tabAttachmentFeatureState() else { return false }
+        return true
+    }
+
+    private var tabAttachmentCandidates: [MultiTabAttachmentCandidate] {
+        guard canUseTabAttachments, let source = environment.tabAttachmentSource() else { return [] }
+        return source.candidates().filter {
+            $0.tabId != source.currentTabID || environment.isPageContextAttachable() != false
+        }
+    }
+
+    private func attachCurrentPage() {
+        guard !view.isGenerating(), environment.isPageContextAttachable() != false else { return }
+        if canUseTabAttachments, let id = environment.tabAttachmentSource()?.currentTabID {
+            let policy = environment.policy()
+            guard policy.selectedTabIDs.contains(id) || policy.canAttachTab(withID: id) else { return }
+        }
+        environment.pageContextAttachHandler()?()
+        updateAttachButtonPresentation()
+    }
+
+    @discardableResult
+    func toggleTabAttachment(_ candidate: MultiTabAttachmentCandidate) -> Bool {
+        setTabAttachment(candidate, isAttached: !environment.policy().selectedTabIDs.contains(candidate.tabId))
+    }
+
+    /// Explicit desired state makes staged picker confirmation safe if the draft changed while it was open.
+    @discardableResult
+    func setTabAttachment(_ candidate: MultiTabAttachmentCandidate, isAttached: Bool) -> Bool {
+        guard canUseTabAttachments, !view.isGenerating(),
+              let source = environment.tabAttachmentSource() else { return false }
+        let policy = environment.policy()
+        let wasAttached = policy.selectedTabIDs.contains(candidate.tabId)
+        guard wasAttached != isAttached else { return true }
+
+        if isAttached {
+            guard policy.canAttachTab(withID: candidate.tabId),
+                  let currentCandidate = tabAttachmentCandidates.first(where: { $0.tabId == candidate.tabId }) else { return false }
+            if candidate.tabId == source.currentTabID {
+                guard let attach = environment.pageContextAttachHandler() else { return false }
+                attach()
+            } else {
+                view.addAttachment(.tab(UnifiedToggleInputTabAttachment(tabId: currentCandidate.tabId,
+                                                                        title: currentCandidate.title,
+                                                                        url: currentCandidate.url)))
+            }
+        } else if candidate.tabId == source.currentTabID {
+            guard let remove = environment.pageContextRemoveHandler() else { return false }
+            remove()
+        } else {
+            for attachment in view.currentAttachments() where attachment.tabAttachment?.tabId == candidate.tabId {
+                view.removeAttachment(attachment.id)
+            }
+        }
+        callbacks.onDraftChanged()
+        callbacks.onExpandIfNeeded()
+        updateAttachButtonPresentation()
+        return true
     }
 
     /// Opens the system file picker directly for the promo "add file" CTA. No-ops when files can't be
@@ -409,8 +500,9 @@ final class UTIAttachmentController {
     func updateAttachButtonPresentation() {
         let policy = environment.policy()
         let supportsPageContextAttachment = environment.isContextualChatState() && environment.pageContextAttachHandler() != nil && (environment.isPageContextAttachable() ?? true)
-        let supportsAttachments = environment.supportsImageUpload() || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment
-        let hasAvailableAttachmentAction = policy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment
+        let supportsTabAttachment = !tabAttachmentCandidates.isEmpty
+        let supportsAttachments = environment.supportsImageUpload() || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment || supportsTabAttachment
+        let hasAvailableAttachmentAction = policy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment || supportsTabAttachment
         let canAttachMore = hasAvailableAttachmentAction && !view.isGenerating()
         let showsUnavailableAttachmentButton = environment.hasSelectedModel() && environment.keepsUnavailableAttachmentButtonVisible()
         view.setImageButtonHidden(!supportsAttachments && !showsUnavailableAttachmentButton)
@@ -429,7 +521,7 @@ final class UTIAttachmentController {
     var attachmentCount: Int {
         view.currentAttachments().filter {
             switch $0 {
-            case .image, .file: return true
+            case .image, .file, .tab: return true
             case .invalidFile: return false
             }
         }.count

@@ -171,6 +171,11 @@ final class AIChatContextualChatSessionState {
 
     /// Flag to track a manual attach flow in progress
     private var isManualAttachInProgress = false
+    private var isAutomaticAttachInProgress = false
+
+    var isPageContextAttachInProgress: Bool {
+        isManualAttachInProgress || isAutomaticAttachInProgress
+    }
     private var isManualAttachFromFrontend = false
 
     /// True while the loading chip is showing;
@@ -410,6 +415,7 @@ final class AIChatContextualChatSessionState {
         deliveredContextURLWithNoNavigationSince = nil
         declinedOfferURL = nil
         userDowngradedToPlaceholder = false
+        isAutomaticAttachInProgress = false
         isManualAttachInProgress = false
         isManualAttachFromFrontend = false
         isDocumentChipLoading = false
@@ -474,6 +480,26 @@ final class AIChatContextualChatSessionState {
     }
 
     // MARK: - Context Management
+
+    func beginAutomaticAttach() {
+        isAutomaticAttachInProgress = true
+    }
+
+    func cancelAutomaticAttach() {
+        isAutomaticAttachInProgress = false
+    }
+
+    /// A pending selection can be removed before collection has produced a visible page chip.
+    func removePendingPageAttachment() {
+        let wasPending = isPageContextAttachInProgress
+        cancelManualAttach()
+        cancelAutomaticAttach()
+        if wasPending {
+            userDowngradedToPlaceholder = true
+            suppressesAutoAttachForSelectionEntry = true
+        }
+        downgradeToPlaceholder()
+    }
 
     /// Begin a manual attach operation (user tapped "Attach Page")
     func beginManualAttach(fromFrontend: Bool = false) {
@@ -608,6 +634,7 @@ final class AIChatContextualChatSessionState {
 
     /// Updates the latest page context and determines attach behavior based on internal state.
     func updateContext(_ context: AIChatPageContext?) {
+        isAutomaticAttachInProgress = false
         resolveSuggestionsIfLoading(from: context)
 
         if pendingSignalsOnlyCollection {
@@ -679,6 +706,7 @@ final class AIChatContextualChatSessionState {
 
     /// Ends in-flight attach work when a sheet session ends.
     func handleSheetDismissed() {
+        isAutomaticAttachInProgress = false
         if isManualAttachInProgress {
             isManualAttachInProgress = false
             isManualAttachFromFrontend = false

@@ -190,7 +190,9 @@ struct Launching: LaunchingHandling {
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,
                                     contentBlocking: contentBlockingService.common,
-                                    freemiumPIRDebugSettings: freemiumPIRDebugSettings)
+                                    freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+                                    onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(
+                                        keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
         let launchTimeMetricsService = LaunchTimeMetricsService(featureFlagger: featureFlagger)
@@ -382,7 +384,10 @@ struct Launching: LaunchingHandling {
             inactivityStateStore: inactivityStateStore
         )
 
-        let vpnService = VPNService(mainCoordinator: mainCoordinator, notificationServiceManager: notificationServiceManager)
+        let vpnService = VPNService(mainCoordinator: mainCoordinator,
+                                    notificationServiceManager: notificationServiceManager,
+                                    onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(
+                                        keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
         let aiChatService = AIChatService(aiChatSettings: aiChatSettings)
         let applicationShortcutItemsService = ApplicationShortcutItemsService(shortcutItemProviders: [
             { aiChatService.shortcutItem() },

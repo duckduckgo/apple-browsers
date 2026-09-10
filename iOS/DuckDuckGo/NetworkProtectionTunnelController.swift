@@ -72,6 +72,12 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         configurationDeniedSubject.eraseToAnyPublisher()
     }
 
+    /// Signals that a VPN configuration was newly created and installed for the first time.
+    private let configurationInstalledSubject = PassthroughSubject<Void, Never>()
+    var configurationInstalledPublisher: AnyPublisher<Void, Never> {
+        configurationInstalledSubject.eraseToAnyPublisher()
+    }
+
     // Wide Event
     private let wideEvent: WideEventManaging
     private var connectionWideEventData: VPNConnectionWideEventData?
@@ -433,9 +439,10 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
             let tunnelManager = NETunnelProviderManager()
             try await setupAndSave(tunnelManager)
             internalManager = tunnelManager
+            configurationInstalledSubject.send()
             return tunnelManager
         }
-        
+
         connectionWideEventData?.isSetup = .no
         try await setupAndSave(tunnelManager)
         return tunnelManager

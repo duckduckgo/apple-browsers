@@ -73,6 +73,12 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         sections.append(BrowsingMenuModel.Section(items: items))
     }
 
+    private func appendInternalFeedbackSection(from entryBuilder: BrowsingMenuEntryBuilding,
+                                               to sections: inout [BrowsingMenuModel.Section]) {
+        let items = [BrowsingMenuModel.Entry(entryBuilder.makeSendInternalFeedbackEntry())].compactMap { $0 }
+        appendSection(items, to: &sections)
+    }
+
     // MARK: - New Tab Page
 
     private func buildNewTabPageMenu(mobileCustomization: MobileCustomization,
@@ -112,6 +118,8 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         sections.append(BrowsingMenuModel.Section(items: privacyItems))
 
+        appendInternalFeedbackSection(from: entryBuilder, to: &sections)
+
         return BrowsingMenuModel(
             headerItems: headerItems,
             sections: sections
@@ -139,6 +147,10 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         // MARK: YouTube Ad Block toggle
         if let youTubeAdBlockEntry = BrowsingMenuModel.Entry(entryBuilder.makeYouTubeAdBlockToggleEntry()) {
             sections.append(BrowsingMenuModel.Section(items: [youTubeAdBlockEntry]))
+        }
+
+        if let sitePermissionsEntry = BrowsingMenuModel.Entry(entryBuilder.makeSitePermissionsEntry()) {
+            sections.append(BrowsingMenuModel.Section(items: [sitePermissionsEntry]))
         }
 
         if options.mergeActionsAndBookmarks {
@@ -181,7 +193,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         // With Unified Toggle Input on, the Duck.ai "Chats" row moves into its own Duck.ai cluster below.
         let duckAIItems = entryBuilder.makeDuckAIMenuItems()
         let shortcutItems: [BrowsingMenuModel.Entry] = [
-            .init(entryBuilder.makeOpenBookmarksEntry()),
+            .init(entryBuilder.makeOpenBookmarksEntry(), tag: .openBookmarks),
             .init(entryBuilder.makeAutoFillEntry()),
             .init(entryBuilder.makeDownloadsEntry()),
             .init(duckAIItems.isEmpty ? entryBuilder.makeDuckAiChatsEntry() : nil)
@@ -217,10 +229,12 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
             sections.append(BrowsingMenuModel.Section(items: otherItems))
         }
 
-        // Show enough items to reveal "Open Bookmarks" (7th item in both layouts):
-        // Non-merged: 3 (Bookmark, Favorite, Share) + 3 (Find in Page, Zoom, Desktop Site) + 1 (Open Bookmarks)
-        // Merged: 6 (Bookmark, Favorite, Share, Find in Page, Zoom, Desktop Site) + 1 (Open Bookmarks)
-        let preferredDetentItemCount = 7
+        appendInternalFeedbackSection(from: entryBuilder, to: &sections)
+
+        // Size the initial menu sheet to keep Open Bookmarks visible without scrolling.
+        let preferredDetentItemCount = sections.flatMap(\.items)
+            .firstIndex { $0.tag == .openBookmarks }
+            .map { $0 + 1 }
 
         return BrowsingMenuModel(
             headerItems: headerItems,

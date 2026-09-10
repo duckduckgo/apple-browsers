@@ -321,6 +321,11 @@ extension TabViewController {
 
         var entries = [BrowsingMenuEntry]()
 
+        if let sitePermissionsEntry = buildSitePermissionsEntry() {
+            entries.append(sitePermissionsEntry)
+            entries.append(.separator)
+        }
+
         let bookmarkEntries = buildBookmarkEntries(for: link, with: bookmarksInterface)
         entries.append(bookmarkEntries.bookmark)
         entries.append(bookmarkEntries.favorite)
@@ -348,6 +353,18 @@ extension TabViewController {
         entries.append(buildFindInPageEntry(forLink: link))
                 
         return entries
+    }
+
+    private func buildSitePermissionsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
+        guard isSitePermissionsManagementAvailable else { return nil }
+
+        return .regular(
+            name: UserText.sitePermissions,
+            image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.options : DesignSystemImages.Glyphs.Size24.options,
+            action: { [weak self] in
+                self?.presentSitePermissionsManagement()
+            }
+        )
     }
     
     private func buildAITabLinkEntries(useSmallIcon: Bool = true, addPrint: Bool = true, useDetailTextForZoom: Bool) -> [BrowsingMenuEntry] {
@@ -570,8 +587,6 @@ extension TabViewController {
     }
 
     private func buildDuckAiChatsEntry(withSmallIcon smallIcon: Bool = true) -> BrowsingMenuEntry {
-        // Size24 `chats` forced to `.alwaysTemplate` so it tints in dark mode; Size16 falls back
-        // to `aiChatHistory` (no `chats` glyph at 16px).
         let image = smallIcon
             ? DesignSystemImages.Glyphs.Size16.aiChatHistory
             : DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
@@ -1143,6 +1158,10 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         guard let link = validLink else { return nil }
         return buildBookmarkEntries(for: link, with: bookmarksInterface, useSmallIcon: false)
     }
+
+    func makeSitePermissionsEntry() -> BrowsingMenuEntry? {
+        buildSitePermissionsEntry(useSmallIcon: false)
+    }
     
     func makeFindInPageEntry() -> BrowsingMenuEntry? {
         guard let link = validLink else { return nil }
@@ -1206,6 +1225,27 @@ extension TabViewController: BrowsingMenuEntryBuilding {
                 self.delegate?.tabDidRequestSetYouTubeAdBlockingEnabled(true, tab: self)
             }
         })
+    }
+
+    func makeSendInternalFeedbackEntry() -> BrowsingMenuEntry? {
+        guard featureFlagger.internalUserDecider.isInternalUser else { return nil }
+
+        return .regular(name: UserText.actionSendInternalFeedback,
+                        image: DesignSystemImages.Glyphs.Size24.feedback) { [weak self] in
+            guard let self else { return }
+            AppDependencyProvider.shared.internalFeedbackAttachmentsProvider.setScreenshotPNGData(captureVisibleBrowser()?.pngData())
+            delegate?.tab(self,
+                          didRequestNewTabForUrl: .internalFeedbackForm,
+                          openedByPage: false,
+                          inheritingAttribution: nil)
+        }
+    }
+
+    private func captureVisibleBrowser() -> UIImage? {
+        guard let window = view.window, !window.bounds.isEmpty else { return nil }
+        return UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
     }
 }
 

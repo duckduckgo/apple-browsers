@@ -1889,15 +1889,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         faviconManaging: faviconManager
                     )
 
-                    guard let promoService else {
+                    guard promoService != nil else {
                         await presenter.showSurvey()
                         return
                     }
 
-                    quitSurveyPromoObserver.reportVisible()
+                    await quitSurveyPromoObserver.reportVisible()
                     await presenter.showSurvey()
-                    quitSurveyPromoObserver.reportHidden()
-                    await QuitSurveyDismissalGate(historyProvider: promoService).wait()
+                    await quitSurveyPromoObserver.reportHidden()
                 }
             ),
 

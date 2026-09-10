@@ -20,6 +20,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import PreferencesUI_macOS
 import SwiftUI
+import SwiftUIExtensions
 
 struct PreferencesWebsitePermissionDetailView: View {
     private enum Constants {
@@ -27,8 +28,10 @@ struct PreferencesWebsitePermissionDetailView: View {
         static let searchWidth: CGFloat = 173
         static let searchHeight: CGFloat = 28
         static let searchCornerRadius: CGFloat = 7
-        static let emptyRowHeight: CGFloat = 56
+        static let loadingRowHeight: CGFloat = 56
         static let backButtonSize: CGFloat = 32
+        static let messageTopPadding: CGFloat = 4
+        static let messageBottomPadding: CGFloat = 8
     }
 
     @ObservedObject var model: WebsitePermissionDetailViewModel
@@ -71,19 +74,17 @@ struct PreferencesWebsitePermissionDetailView: View {
             HStack {
                 TextMenuItemHeader(UserText.websitePermissionsWebsites)
                 Spacer()
-                if !model.viewState.isEmpty {
-                    searchField
-                }
+                searchField
             }
 
-            PreferencesWebsitePermissionListContainer {
-                if model.viewState.isLoading {
-                    loadingState
-                } else if model.viewState.isEmpty {
-                    emptyState
-                } else if model.viewState.hasNoResults {
-                    noResultsState
-                } else {
+            if model.viewState.isLoading {
+                loadingState
+            } else if model.viewState.isEmpty {
+                emptyState
+            } else if model.viewState.hasNoResults {
+                noResultsState
+            } else {
+                PreferencesWebsitePermissionListContainer {
                     siteRows
                 }
             }
@@ -92,9 +93,11 @@ struct PreferencesWebsitePermissionDetailView: View {
     }
 
     private var loadingState: some View {
-        ProgressView()
-            .frame(maxWidth: .infinity, minHeight: Constants.emptyRowHeight)
-            .accessibilityIdentifier("WebsitePermissions.Detail.Loading")
+        PreferencesWebsitePermissionListContainer {
+            ProgressView()
+                .frame(maxWidth: .infinity, minHeight: Constants.loadingRowHeight)
+        }
+        .accessibilityIdentifier("WebsitePermissions.Detail.Loading")
     }
 
     private var searchField: some View {
@@ -164,29 +167,22 @@ struct PreferencesWebsitePermissionDetailView: View {
     }
 
     private var emptyState: some View {
-        emptyRow(UserText.websitePermissionsEmpty)
+        emptyMessage(UserText.websitePermissionsEmpty)
             .accessibilityIdentifier("WebsitePermissions.Detail.Empty")
     }
 
     private var noResultsState: some View {
-        emptyRow(String(format: UserText.websitePermissionsNoResults, model.viewState.trimmedSearchQuery))
+        emptyMessage(UserText.websitePermissionsNoResults)
             .accessibilityIdentifier("WebsitePermissions.Detail.NoResults")
     }
 
-    private func emptyRow(_ title: String) -> some View {
-        HStack(spacing: 10) {
-            Image(nsImage: model.viewState.category.icon)
-                .renderingMode(.template)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 16, height: 16)
-                .foregroundColor(Color(designSystemColor: .iconsSecondary))
-
-            Text(title)
-                .font(.system(size: 13))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-        }
-        .padding(.horizontal, 16)
-        .frame(height: Constants.emptyRowHeight)
+    private func emptyMessage(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 13))
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixMultilineScrollableText()
+            .padding(.top, Constants.messageTopPadding)
+            .padding(.bottom, Constants.messageBottomPadding)
     }
 }

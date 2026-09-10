@@ -43,10 +43,6 @@ struct WebsitePermissionDetailViewState: Equatable {
         !sites.isEmpty && visibleSites.isEmpty
     }
 
-    var trimmedSearchQuery: String {
-        searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
     mutating func setSearchQuery(_ query: String) {
         searchQuery = query
         visibleSites = filteredSites(from: sites, matching: query)

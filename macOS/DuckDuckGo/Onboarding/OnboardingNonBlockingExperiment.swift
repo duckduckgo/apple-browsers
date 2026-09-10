@@ -84,9 +84,11 @@ struct OnboardingNonBlockingExperiment {
     static let searchRetentionWindow: ClosedRange<Int> = 1...3
 
     /// Fires the D1-3 search retention metric and the segment matching the current onboarding state.
+    /// Blocking onboarding cannot be searched past, so control always counts as completed.
     /// The framework handles enrollment, window and once-per-window checks.
     func fireSearchRetention(persistor: NonBlockingOnboardingPersistor = NonBlockingOnboardingPersistor()) {
-        let segment: SearchRetentionSegment = persistor.outcome == .completed ? .onboardingCompleted : .onboardingNotCompleted
+        let isCompleted = !isNonBlocking || persistor.outcome == .completed
+        let segment: SearchRetentionSegment = isCompleted ? .onboardingCompleted : .onboardingNotCompleted
         for metric in [PixelKit.Constants.searchMetricValue, segment.rawValue] {
             PixelKit.fireExperimentPixelIfThresholdReached(
                 for: Self.subfeatureID,

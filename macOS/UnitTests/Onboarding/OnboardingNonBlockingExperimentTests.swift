@@ -72,7 +72,9 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
                 StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel(featureFlagger: featureFlagger,
                                                                                         persistor: persistor)
 
-                let expectedSegment = outcome == .completed ? "search_onboarding_completed" : "search_onboarding_not_completed"
+                // Control cannot search before finishing onboarding, so it always counts as completed.
+                let isCompleted = cohort == .control || outcome == .completed
+                let expectedSegment = isCompleted ? "search_onboarding_completed" : "search_onboarding_not_completed"
                 XCTAssertEqual(Set(firedEvents.compactMap { $0.parameters?["metric"] }), ["search", expectedSegment],
                                "\(cohort) \(String(describing: outcome))")
                 XCTAssertTrue(firedEvents.allSatisfy { $0.parameters?["conversionWindowDays"] == "1-3" && $0.parameters?["value"] == "1" })

@@ -25,10 +25,18 @@ import UIKit
 /// Builds the address-bar Duck.ai menu for new chats, page questions, and chat history.
 enum DuckAIAddressBarMenuFactory {
 
-    /// Groups New Chat and the page-context action above a separator, with All Chats below. The second
-    /// action's copy depends on `type`: Ask About Page / Ask About Document / Continue in Duck.ai.
+    static func isChatHistoryAvailable(featureFlagger: FeatureFlagger, userInterfaceIdiom: UIUserInterfaceIdiom) -> Bool {
+        userInterfaceIdiom != .pad
+            && featureFlagger.isFeatureOn(.aiChatNativeChatHistory)
+            && featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats)
+    }
+
+    /// Groups New Chat and, on non-home tabs, the page-context action above a separator, with Chats
+    /// below. The second action's copy depends on `type`: Ask About Page / Ask About Document /
+    /// Continue in Duck.ai.
     static func makeActions(featureFlagger: FeatureFlagger,
                             userInterfaceIdiom: UIUserInterfaceIdiom,
+                            isHomeTab: Bool,
                             type: DuckAIAddressBarMenuType,
                             onNewChat: @escaping () -> Void,
                             onContextAction: @escaping () -> Void,
@@ -43,23 +51,22 @@ enum DuckAIAddressBarMenuFactory {
                 UserText.aiChatAttachmentOptionAskAboutDocument
             }
         }()
-        var groups: [UIMenuElement] = [
-            UIMenu(title: "", options: .displayInline, children: [
-                UIAction(title: UserText.duckAiAddressBarMenuNewChat,
-                         image: DesignSystemImages.Glyphs.Size16.compose) { _ in
-                    onNewChat()
-                },
-                UIAction(title: contextActionTitle,
-                         image: DesignSystemImages.Glyphs.Size16.chevronCircleDown) { _ in
-                    onContextAction()
-                }
-            ])
+        var chatActions: [UIMenuElement] = [
+            UIAction(title: UserText.duckAiAddressBarMenuNewChat,
+                     image: DesignSystemImages.Glyphs.Size16.compose) { _ in
+                onNewChat()
+            }
         ]
-        if userInterfaceIdiom != .pad,
-           featureFlagger.isFeatureOn(.aiChatNativeChatHistory),
-           featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats) {
+        if !isHomeTab {
+            chatActions.append(UIAction(title: contextActionTitle,
+                                        image: DesignSystemImages.Glyphs.Size16.chevronCircleDown) { _ in
+                onContextAction()
+            })
+        }
+        var groups: [UIMenuElement] = [UIMenu(title: "", options: .displayInline, children: chatActions)]
+        if isChatHistoryAvailable(featureFlagger: featureFlagger, userInterfaceIdiom: userInterfaceIdiom) {
             groups.append(UIMenu(title: "", options: .displayInline, children: [
-                UIAction(title: UserText.duckAiAddressBarMenuAllChats,
+                UIAction(title: UserText.actionChats,
                          image: DesignSystemImages.Glyphs.Size16.chats) { _ in
                     onRecentChats()
                 }

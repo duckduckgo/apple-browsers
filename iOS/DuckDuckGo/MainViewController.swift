@@ -445,7 +445,8 @@ class MainViewController: UIViewController {
     private var pageBackgroundColorObservation: NSKeyValueObservation?
 
     private func observePageBackgroundColor(for tab: TabViewController) {
-        pageBackgroundColorObservation = tab.webView.observe(\.underPageBackgroundColor, options: [.initial, .new]) { [weak self] _, _ in
+        pageBackgroundColorObservation = tab.webView.observe(\.underPageBackgroundColor, options: [.initial, .new]) { [weak self, weak tab] _, _ in
+            tab?.pullToRefreshViewAdapter?.webViewUnderPageBackgroundDidChange()
             self?.refreshSettledFloatingGlassAppearance()
         }
     }

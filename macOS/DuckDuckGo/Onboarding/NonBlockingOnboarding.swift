@@ -30,8 +30,7 @@ struct NonBlockingOnboarding {
     }
 
     var isNonBlocking: Bool {
-        featureFlagger.isFeatureOn(.onboardingAsync)
-            || OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking
+        OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking
     }
 
     /// First-run onboarding can be resumed without restarting contextual onboarding.

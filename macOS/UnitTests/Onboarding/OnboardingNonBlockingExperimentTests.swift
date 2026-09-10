@@ -63,7 +63,7 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
         XCTAssertTrue(featureFlagger.didCallResolveCohort)
     }
 
-    func testInternalBuildsDoNotEnrollEvenWithTheLocalTreatmentEnabled() {
+    func testInternalBuildsDoNotEnrollEvenWithTheFunctionalFlagEnabled() {
         for keyPath in [\ApplicationBuildTypeMock.isDebugBuild, \.isReviewBuild, \.isAlphaBuild] {
             let buildType = ApplicationBuildTypeMock()
             buildType[keyPath: keyPath] = true
@@ -74,7 +74,7 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
             experiment.enroll(buildType: buildType)
 
             XCTAssertFalse(flags.didCallResolveCohort)
-            XCTAssertTrue(NonBlockingOnboarding(featureFlagger: flags).isNonBlocking)
+            XCTAssertFalse(NonBlockingOnboarding(featureFlagger: flags).isNonBlocking)
         }
     }
 
@@ -95,9 +95,11 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
         XCTAssertNil(experiment.cohort)
     }
 
-    func testIsNonBlockingDependsOnLocalFlagOrTreatment() {
+    func testIsNonBlockingDependsOnlyOnTreatment() {
         let cases: [(FeatureFlag.OnboardingNonBlockingCohort?, Bool, Bool)] = [
-            (nil, true, true), (.treatment, false, true), (.control, false, false)
+            (nil, false, false), (nil, true, false),
+            (.treatment, false, true), (.treatment, true, true),
+            (.control, false, false), (.control, true, false)
         ]
         for (cohort, localFlag, expected) in cases {
             let featureFlagger = cohort.map { MockFeatureFlagger(resolveCohortStub: $0) } ?? MockFeatureFlagger()

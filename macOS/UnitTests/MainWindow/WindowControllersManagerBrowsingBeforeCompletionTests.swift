@@ -31,7 +31,7 @@ final class WindowControllersManagerBrowsingBeforeCompletionTests: XCTestCase {
     private var firedEvents: [String] = []
     private var pixelDefaults: UserDefaults!
     private var featureFlagger: MockFeatureFlagger!
-    private var originalFeatures: [String: Bool] = [:]
+    private var originalCohort: (any FeatureFlagCohortDescribing)?
     private var originalOnboardingFinished = false
     private var onboardingTab: Tab!
     private var sut: WindowControllersManager!
@@ -39,9 +39,9 @@ final class WindowControllersManagerBrowsingBeforeCompletionTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         featureFlagger = try XCTUnwrap(Application.appDelegate.featureFlagger as? MockFeatureFlagger)
-        originalFeatures = featureFlagger.featuresStub
+        originalCohort = featureFlagger.resolveCohortStub
         originalOnboardingFinished = OnboardingActionsManager.isOnboardingFinished
-        featureFlagger.enabledFeatureFlags = [.onboardingAsync]
+        featureFlagger.resolveCohortStub = FeatureFlag.OnboardingNonBlockingCohort.treatment
         OnboardingActionsManager.isOnboardingFinished = false
         sut = Application.appDelegate.windowControllersManager
         onboardingTab = Tab(content: .onboarding)
@@ -61,7 +61,7 @@ final class WindowControllersManagerBrowsingBeforeCompletionTests: XCTestCase {
 
     override func tearDown() {
         sut?.setOnboardingTab(nil)
-        featureFlagger?.featuresStub = originalFeatures
+        featureFlagger?.resolveCohortStub = originalCohort
         OnboardingActionsManager.isOnboardingFinished = originalOnboardingFinished
         PixelKit.tearDown()
         pixelDefaults = nil

@@ -220,7 +220,7 @@ private extension VPNSessionHealthWideEventData {
 
     var unknownReason: UnknownReason {
         if !monitoringStarted {
-            // No successful monitoring start was recorded or inherited from rollover.
+            // No successful monitoring start was recorded.
             return .monitorsNeverStarted
         }
 
@@ -281,7 +281,6 @@ extension VPNSessionHealthWideEventData {
     public enum EventStartReason: String, Codable, CaseIterable {
         case physicalTunnelStartManual = "physical_tunnel_manual_start"
         case physicalTunnelStartOnDemand = "physical_tunnel_on_demand_start"
-        case rollover
     }
 
     /// Why an event ended. Exactly one applies.
@@ -296,7 +295,6 @@ extension VPNSessionHealthWideEventData {
 
         /// A physical start arrived while an event was still open, so its stop was never observed.
         case restartedWithoutStop = "restarted_without_stop"
-        case rolledOver = "rolled_over"
         case processDied = "process_died"
     }
 

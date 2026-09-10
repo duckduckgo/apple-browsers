@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "description": "Sent once per VPN runtime event: from the WireGuard adapter coming up until the provider stops, cancels, transitions unexpectedly, or the next rollover boundary closes it on the next instrumentation callback. Measures whether an already-running VPN stayed healthy. Separate from ios-vpn-connection, which measures startup.",
+    "description": "Sent once per VPN runtime event: from the WireGuard adapter coming up until the provider stops, cancels, or transitions unexpectedly. Measures whether an already-running VPN stayed healthy. Separate from ios-vpn-connection, which measures startup.",
     "$comment": "{\"owners\":[\"jleandroperez\"]}",
     "type": "object",
     "required": ["meta", "global", "feature", "app"],
@@ -62,8 +62,8 @@
                             "properties": {
                                 "start_reason": {
                                     "type": "string",
-                                    "description": "Why the event began. On the first callback after a rollover boundary, the existing event closes at its scheduled boundary and a successor opens at the start of the callback's current interval. Intermediate intervals are not backfilled; observations retain their actual timestamps.",
-                                    "enum": ["physical_tunnel_manual_start", "physical_tunnel_on_demand_start", "rollover"]
+                                    "description": "Why the event began.",
+                                    "enum": ["physical_tunnel_manual_start", "physical_tunnel_on_demand_start"]
                                 },
                                 "end_reason": {
                                     "type": "string",
@@ -75,7 +75,6 @@
                                         "stopped_without_network",
                                         "cancelled_with_error",
                                         "restarted_without_stop",
-                                        "rolled_over",
                                         "process_died"
                                     ]
                                 },

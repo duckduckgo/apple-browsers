@@ -529,8 +529,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let sessionHealth = DefaultVPNSessionHealthInstrumentation(
             wideEvent: wideEvent,
             extensionType: { Self.isAppex ? .app : .system }(),
-            isTelemetryEnabled: { settings.sessionHealthTelemetryEnabled },
-            isDebugRolloverEnabled: { settings.isSessionHealthDebugRolloverEnabled })
+            isTelemetryEnabled: { settings.sessionHealthTelemetryEnabled })
 
         // MARK: - Subscription configuration
 

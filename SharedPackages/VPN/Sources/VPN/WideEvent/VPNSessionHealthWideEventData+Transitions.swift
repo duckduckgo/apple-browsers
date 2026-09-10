@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import WideEvent
 
 /// # Session Health Transitions: `event + timestamp -> new event`.
 ///
@@ -166,35 +165,6 @@ extension VPNSessionHealthWideEventData {
 
     func markingCancelledWithError(at now: Date) -> Self {
         markingStopped(.cancelledWithError, at: now)
-    }
-
-    func markingStoppedForRollover(at now: Date) -> Self {
-        markingStopped(.rolledOver, at: now)
-    }
-
-    func makingNextEventAfterRollover(at now: Date, globalData: WideEventGlobalData) -> Self {
-        var next = Self(startReason: .rollover, startedAt: now, extensionType: extensionType, globalData: globalData)
-
-        next.connectionMonitorsActive = connectionMonitorsActive
-        next.isPaused = isPaused
-        next.connectionTestDidReport = connectionTestDidReport
-        next.monitoringStarted = monitoringStarted
-        next.monitoringInterrupted = monitoringInterrupted && !connectionMonitorsActive
-
-        next.activeOutageFailedCheckCount = activeOutageFailedCheckCount
-        next.connectionTestOutageCount = connectionTestFailureActive ? 1 : 0
-        next.extendedRoutingOutageDetected = activeOutageFailedCheckCount >= Self.extendedFailureThreshold
-
-        next.staleHandshakeActive = staleHandshakeActive
-        next.staleHandshakeDetected = staleHandshakeActive
-
-        // Ongoing errors are present from the start of the new event.
-        if connectionTestFailureActive || staleHandshakeActive {
-            next.timeToFirstError = 0
-        }
-
-        next.recordHealthMonitoringActivity(at: now)
-        return next
     }
 
     func markingOrphanedSessionEnded(at now: Date) -> Self {

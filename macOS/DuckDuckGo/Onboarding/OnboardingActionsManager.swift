@@ -133,7 +133,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     private weak var contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater?
     private var cancellables = Set<AnyCancellable>()
-    private var hasEnded = false
     private var hasInstalledHandlers = false
     private let experimentPersistor: OnboardingExperimentPersistor
 
@@ -142,7 +141,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         if nonBlockingExperiment.isNonBlocking {
             return !Self.isOnboardingFinished && experimentPersistor.outcome == nil
         }
-        return !hasEnded
+        return !Self.isOnboardingFinished
     }
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
@@ -554,7 +553,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     /// Accepts an outcome once, before callers replace tabs or perform other navigation.
     private func finishOnboarding(_ outcome: OnboardingExperimentPersistor.Outcome) -> Bool {
         guard canEndOnboarding else { return false }
-        hasEnded = true
         Self.isOnboardingFinished = true
         navigation.updatePreventUserInteraction(prevent: false)
         Self.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)

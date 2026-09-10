@@ -1050,6 +1050,34 @@ class OnboardingManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testControlRecordsFreshCompletionAfterResetAndRestartWithoutQuitting() {
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.control)
+        configureNonBlockingExperimentKit(cohort: .control, featureFlagger: flags)
+        let persistor = OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
+        let manager = makeNonBlockingExperimentManager(featureFlagger: flags, experimentPersistor: persistor)
+        manager.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
+        XCTAssertEqual(persistor.outcome, .completed)
+
+        persistor.reset()
+        OnboardingActionsManager.isOnboardingFinished = false
+        experimentFiredEvents = []
+        navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
+        let source = navigationDelegate.onboardingSourceTab!.webView
+        manager.onboardingStarted(from: source)
+        manager.goToAddressBar(from: source)
+
+        XCTAssertTrue(OnboardingActionsManager.isOnboardingFinished)
+        XCTAssertEqual(persistor.outcome, .completed)
+        XCTAssertEqual(navigationDelegate.preventUserInteraction, false)
+        let completionCount = experimentFiredEvents.filter { $0.parameters?["metric"] == "onboardingCompleted" }.count
+        XCTAssertEqual(completionCount, 3)
+
+        manager.onboardingStarted(from: source)
+        manager.goToAddressBar(from: source)
+        XCTAssertEqual(experimentFiredEvents.filter { $0.parameters?["metric"] == "onboardingCompleted" }.count, completionCount)
+    }
+
+    @MainActor
     func testSameManagerCanFinishNewOnboardingAfterResetWithoutQuitting() {
         let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
         let persistor = OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())

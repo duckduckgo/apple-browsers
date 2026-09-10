@@ -75,7 +75,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             attachmentLimits: modelStore.attachmentLimits,
             attachmentUsage: attachmentUsage,
             pendingAttachments: viewController.currentAttachments,
-            model: modelStore.selectedModel
+            model: modelStore.selectedModel,
+            maximumTabAttachmentCount: maximumTabAttachmentCount,
+            currentPageTabID: tabAttachmentSource?.currentTabID,
+            isCurrentPageAttached: isCurrentPageSelected?() ?? false
         )
     }
 
@@ -203,6 +206,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
     private var attachmentController: UTIAttachmentController!
+    private var tabAttachmentSource: MultiTabAttachmentSource?
+    private var tabAttachmentFeature: AIChatContextualAttachMoreTabsFeatureProviding?
+    var isCurrentPageSelected: (() -> Bool)?
+    var onPageContextRemoveRequested: (() -> Void)?
+
     private var isContentOverlaySuppressed = false
     /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared on prompt
     /// submit or session reset.
@@ -504,7 +512,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 currentTabUID: { [weak self] in self?.currentTabUID },
                 isPageContextAttachable: { [weak self] in self?.isPageContextAttachable?() },
                 pageContextAttachHandler: { [weak self] in self?.onPageContextAttachRequested },
-                presenterViewController: { [weak self] in self?.attachmentPresenterViewController }
+                presenterViewController: { [weak self] in self?.attachmentPresenterViewController },
+                tabAttachmentSource: { [weak self] in self?.tabAttachmentSource },
+                tabAttachmentFeatureState: { [weak self] in self?.tabAttachmentFeature?.state ?? .unavailable },
+                pageContextRemoveHandler: { [weak self] in self?.onPageContextRemoveRequested }
             ),
             callbacks: .init(
                 onDraftChanged: { [weak self] in
@@ -1671,6 +1682,18 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// Hosts that embed the UTI inside another presented stack (e.g. the contextual chat half-sheet)
     /// must set this so the picker presents from the correct level.
     weak var attachmentPresentingViewController: UIViewController?
+    private var maximumTabAttachmentCount: Int? {
+        guard isContextualChatState, tabAttachmentSource != nil,
+              case .available(let count) = tabAttachmentFeature?.state else { return nil }
+        return count
+    }
+
+    func configureTabAttachments(source: MultiTabAttachmentSource?, feature: AIChatContextualAttachMoreTabsFeatureProviding) {
+        tabAttachmentSource = source
+        tabAttachmentFeature = feature
+        updateImageButtonVisibility()
+    }
+
     var onPageContextAttachRequested: (() -> Void)?
     /// Whether the current page can be attached. When false, the "Ask about page" menu action is disabled. Host-injected; nil ⇒ attachable.
     var isPageContextAttachable: (() -> Bool)?

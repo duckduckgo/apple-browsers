@@ -78,7 +78,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
         attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding = AIChatContextualAttachMoreTabsFeature(),
         start: ContextualInputStart = .expandedOnExistingChat,
-        usageLimitsStore: DuckAiUsageLimitsStore? = nil
+        usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        tabAttachmentSource: MultiTabAttachmentSource? = nil,
+        isCurrentPageAttachInProgress: @escaping () -> Bool = { false }
     ) {
         let isFloatingInputAvailable = floatingInputFeature.isAvailable
         self.hasActiveChat = hasActiveChat
@@ -116,13 +118,20 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.hasPendingPageContextProvider = { [weak chipViewModel] in
             chipViewModel?.pendingAttachedContextData != nil
         }
-        coordinator.updateImageButtonVisibility()
+        coordinator.isCurrentPageSelected = { [weak chipViewModel] in
+            chipViewModel?.pendingAttachedContextData != nil || isCurrentPageAttachInProgress()
+        }
+        coordinator.onPageContextRemoveRequested = { [weak chipViewModel] in
+            chipViewModel?.tapToRemove()
+        }
+        coordinator.configureTabAttachments(source: tabAttachmentSource, feature: attachMoreTabsFeature)
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
         chipViewModel.onAttachActionRequested = { [weak self] in
             self?.onAttachRequested?()
         }
         chipViewModel.onRemoveActionRequested = { [weak self] in
             self?.onRemoveRequested?()
+            self?.refreshTabAttachmentMenuIfNeeded()
         }
 
         Logger.contextualUTI.debug("UTIHost init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
@@ -163,12 +172,19 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.updateImageButtonVisibility()
     }
 
+    func refreshTabAttachmentMenuIfNeeded() {
+        guard case .available = attachMoreTabsFeature.state else { return }
+        coordinator.updateImageButtonVisibility()
+    }
+
     func setAttachedContext(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
         chipViewModel.setAttached(context, deliveryState: deliveryState)
+        refreshTabAttachmentMenuIfNeeded()
     }
 
     func clearAttachedContext() {
         chipViewModel.clearAttached()
+        refreshTabAttachmentMenuIfNeeded()
     }
 
     /// One chip per attached selection, alongside the page-context chip. An empty list removes them all.
@@ -176,7 +192,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.viewController.setSelectionContextChips(items, onRemove: onRemove)
     }
 
-    /// Images and files currently in the input.
+    /// Uploads and explicit tab attachments currently in the input; the current-page chip is counted by the session.
     var attachmentCount: Int {
         coordinator.attachmentCount
     }

@@ -240,7 +240,192 @@ final class UTIAttachmentControllerTests: XCTestCase {
         XCTAssertNil(sut.submissionValidationMessage(for: "hello", mode: .search))
     }
 
+    // MARK: - Tab attachments
+
+    func test_tabSelection_togglesByIdentityAndKeepsSameAddressTabsDistinct() {
+        enableTabAttachments()
+        let controller = makeController()
+        let first = candidate(id: "first")
+        let second = candidate(id: "second")
+
+        XCTAssertTrue(controller.toggleTabAttachment(first))
+        XCTAssertTrue(controller.toggleTabAttachment(second))
+        XCTAssertEqual(view.attachments.compactMap { $0.tabAttachment?.tabId }, ["first", "second"])
+        XCTAssertTrue(controller.toggleTabAttachment(first))
+        XCTAssertEqual(view.attachments.compactMap { $0.tabAttachment?.tabId }, ["second"])
+    }
+
+    func test_tabSelection_currentPageReservesOneSlotAndCanBeRemovedAtCapacity() {
+        enableTabAttachments()
+        config.isCurrentPageAttached = true
+        let config = self.config!
+        config.pageContextRemoveHandler = { [unowned config] in config.isCurrentPageAttached = false }
+        let controller = makeController()
+
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "first")))
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "second")))
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "third")))
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "current")))
+        XCTAssertFalse(config.isCurrentPageAttached)
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "third")))
+        XCTAssertEqual(view.attachments.count, 3)
+    }
+
+    func test_tabSelection_currentPageUsesExistingHandlerWithoutCreatingTabChip() {
+        enableTabAttachments(limit: 1)
+        var attachCount = 0
+        let config = self.config!
+        config.pageContextAttachHandler = { [unowned config] in
+            attachCount += 1
+            config.isCurrentPageAttached = true
+        }
+        let controller = makeController()
+
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "current")))
+        XCTAssertEqual(attachCount, 1)
+        XCTAssertTrue(view.attachments.isEmpty)
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first")))
+        XCTAssertTrue(controller.setTabAttachment(candidate(id: "current"), isAttached: true))
+        XCTAssertEqual(attachCount, 1)
+    }
+
+    func test_tabSelection_disabledFeatureDoesNotReadCandidatesOrMutateDraft() {
+        enableTabAttachments()
+        config.tabFeatureState = .unavailable
+        let controller = makeController()
+
+        _ = controller.makeAttachmentMenu()
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first")))
+        XCTAssertEqual(config.candidateReadCount, 0)
+        XCTAssertTrue(view.attachments.isEmpty)
+        XCTAssertEqual(callbackSpy.onDraftChangedCount, 0)
+    }
+
+    func test_tabSelection_disabledAfterMenuCreationRejectsSelection() {
+        enableTabAttachments()
+        let controller = makeController()
+        _ = controller.makeAttachmentMenu()
+        config.tabFeatureState = .unavailable
+
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first")))
+        XCTAssertTrue(view.attachments.isEmpty)
+    }
+
+    func test_tabSelection_ignoresNonContextualSurfacesAndGeneratingState() {
+        enableTabAttachments()
+        let controller = makeController()
+        config.isContextualChatState = false
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first")))
+        config.isContextualChatState = true
+        view.isGenerating = true
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first")))
+        XCTAssertTrue(view.attachments.isEmpty)
+    }
+
+    func test_tabSelection_rejectsOtherModeAndClosedCandidates() {
+        enableTabAttachments()
+        config.tabs.append(Tab(uid: "fire", link: Link(title: "Fire", url: candidate(id: "fire").url), fireTab: true))
+        let controller = makeController()
+        _ = controller.makeAttachmentMenu()
+        config.tabs.removeAll { $0.uid == "first" }
+
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "fire")))
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first")))
+        XCTAssertTrue(view.attachments.isEmpty)
+    }
+
+    func test_tabSelection_fireSourceRejectsStandardTab() {
+        enableTabAttachments(mode: .fire)
+        config.tabs.append(Tab(uid: "standard", link: Link(title: "Standard", url: candidate(id: "standard").url), fireTab: false))
+        let controller = makeController()
+
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "standard")))
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "first")))
+    }
+
+    func test_tabSelection_usesFreshMetadataWhenCandidateNavigated() {
+        enableTabAttachments()
+        let controller = makeController()
+        let oldCandidate = candidate(id: "first")
+        let newURL = URL(string: "https://example.org/new")!
+        config.tabs.first { $0.uid == "first" }?.link = Link(title: "New page", url: newURL)
+
+        XCTAssertTrue(controller.toggleTabAttachment(oldCandidate))
+        XCTAssertEqual(view.attachments.first?.tabAttachment?.url, newURL)
+        XCTAssertEqual(view.attachments.first?.tabAttachment?.title, "New page")
+    }
+
+    func test_tabSelection_rejectsIneligibleCurrentPage() {
+        enableTabAttachments()
+        config.isCurrentPageAttachable = false
+        var didRequestPage = false
+        config.pageContextAttachHandler = { didRequestPage = true }
+        let controller = makeController()
+
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "current")))
+        XCTAssertFalse(didRequestPage)
+    }
+
+    func test_tabSelection_explicitStateDoesNotInvertExistingAttachment() {
+        enableTabAttachments()
+        let controller = makeController()
+        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: true))
+        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: true))
+        XCTAssertEqual(view.attachments.count, 1)
+        XCTAssertEqual(callbackSpy.onDraftChangedCount, 1)
+        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: false))
+        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: false))
+        XCTAssertTrue(view.attachments.isEmpty)
+    }
+
+    func test_tabChipRemovalReleasesCapacity() throws {
+        enableTabAttachments(limit: 1)
+        let controller = makeController()
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "first")))
+        controller.removeAttachment(id: try XCTUnwrap(view.attachments.first?.id))
+
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "second")))
+        XCTAssertEqual(view.attachments.compactMap { $0.tabAttachment?.tabId }, ["second"])
+    }
+
+    func test_tabMenuReflectsSharedLimitAndKeepsSelectedRowsEnabled() throws {
+        enableTabAttachments(limit: 2)
+        config.isCurrentPageAttached = true
+        config.pageContextAttachHandler = {}
+        let controller = makeController()
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "first")))
+        let menu = try XCTUnwrap(controller.makeAttachmentMenu())
+        let recent = try XCTUnwrap(menu.children.first as? UIMenu)
+        let actions = recent.children.compactMap { $0 as? UIAction }
+
+        XCTAssertEqual(actions.count, 3)
+        XCTAssertEqual(actions.map(\.state), [.on, .on, .off])
+        XCTAssertFalse(actions[0].attributes.contains(.disabled))
+        XCTAssertFalse(actions[1].attributes.contains(.disabled))
+        XCTAssertTrue(actions[2].attributes.contains(.disabled))
+        let askPage = try XCTUnwrap(menu.children.compactMap { $0 as? UIAction }
+            .first { $0.title == UserText.aiChatAttachmentOptionAskAboutPage })
+        XCTAssertFalse(askPage.attributes.contains(.disabled))
+    }
+
     // MARK: - Helpers
+
+    private func enableTabAttachments(limit: Int = 3, mode: BrowsingMode = .normal) {
+        let config = self.config!
+        config.isContextualChatState = true
+        config.tabFeatureState = .available(maximumTabAttachmentCount: limit)
+        config.tabs = ["current", "first", "second", "third"].map { id in
+            Tab(uid: id, link: Link(title: id, url: candidate(id: id).url), fireTab: mode == .fire)
+        }
+        config.tabSource = MultiTabAttachmentSource(currentTabID: "current", mode: mode, tabsProvider: { [weak config] in
+            config?.candidateReadCount += 1
+            return config?.tabs ?? []
+        })
+    }
+
+    private func candidate(id: String) -> MultiTabAttachmentCandidate {
+        MultiTabAttachmentCandidate(tabId: id, title: id, url: URL(string: "https://example.com/page")!)
+    }
 
     private func makeController() -> UTIAttachmentController {
         let view = self.view!
@@ -257,7 +442,10 @@ final class UTIAttachmentControllerTests: XCTestCase {
                         attachmentLimits: config.limits,
                         attachmentUsage: config.usage,
                         pendingAttachments: view.attachments,
-                        model: config.model
+                        model: config.model,
+                        maximumTabAttachmentCount: config.maximumTabAttachmentCount,
+                        currentPageTabID: config.tabSource?.currentTabID,
+                        isCurrentPageAttached: config.isCurrentPageAttached
                     )
                 },
                 inputMode: { config.inputMode },
@@ -269,9 +457,12 @@ final class UTIAttachmentControllerTests: XCTestCase {
                 keepsUnavailableAttachmentButtonVisible: { config.keepsUnavailableAttachmentButtonVisible },
                 attachmentLimits: { config.limits },
                 currentTabUID: { "tab-1" },
-                isPageContextAttachable: { nil },
-                pageContextAttachHandler: { nil },
-                presenterViewController: { nil }
+                isPageContextAttachable: { config.isCurrentPageAttachable },
+                pageContextAttachHandler: { config.pageContextAttachHandler },
+                presenterViewController: { nil },
+                tabAttachmentSource: { config.tabSource },
+                tabAttachmentFeatureState: { config.tabFeatureState },
+                pageContextRemoveHandler: { config.pageContextRemoveHandler }
             ),
             callbacks: callbackSpy.callbacks
         )
@@ -331,6 +522,19 @@ private final class FakeEnvironmentConfig {
     var inputMode: TextEntryMode = .aiChat
     var isContextualChatState = false
     var keepsUnavailableAttachmentButtonVisible = false
+    var tabSource: MultiTabAttachmentSource?
+    var tabs: [Tab] = []
+    var candidateReadCount = 0
+    var tabFeatureState: AIChatContextualAttachMoreTabsState = .unavailable
+    var isCurrentPageAttached = false
+    var isCurrentPageAttachable: Bool?
+    var pageContextAttachHandler: (() -> Void)?
+    var pageContextRemoveHandler: (() -> Void)?
+
+    var maximumTabAttachmentCount: Int? {
+        guard case .available(let count) = tabFeatureState else { return nil }
+        return count
+    }
 }
 
 @MainActor

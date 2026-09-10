@@ -97,6 +97,7 @@ final class AIChatContextualSheetCoordinator {
     private let debugSettings: AIChatDebugSettingsHandling
     private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
     private let isFireTab: Bool
+    private let tabAttachmentSource: MultiTabAttachmentSource?
     static let contextualContextCollectionTimeout: TimeInterval = 5
 
     /// Handler for page context - single source of truth.
@@ -247,7 +248,9 @@ final class AIChatContextualSheetCoordinator {
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
          selectionJourneyScopeID: String = UUID().uuidString,
-         selectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting? = nil) {
+         selectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting? = nil,
+         tabAttachmentSource: MultiTabAttachmentSource? = nil) {
+        self.tabAttachmentSource = tabAttachmentSource
         self.voiceSearchHelper = voiceSearchHelper
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -549,6 +552,7 @@ final class AIChatContextualSheetCoordinator {
         if !didTrigger {
             sessionState.cancelManualAttach()
         }
+        persistentUTIHost?.refreshTabAttachmentMenuIfNeeded()
     }
 
     private func collectContextForNewSession(skippingAutoAttach: Bool = false) {
@@ -570,7 +574,12 @@ final class AIChatContextualSheetCoordinator {
             if sessionState.showsSuggestionsStartSurface {
                 sessionState.beginLoadingSuggestions()
             }
-            pageContextHandler.triggerContextCollection(trigger: .auto)
+            sessionState.beginAutomaticAttach()
+            let didTrigger = pageContextHandler.triggerContextCollection(trigger: .auto)
+            if !didTrigger {
+                sessionState.cancelAutomaticAttach()
+            }
+            persistentUTIHost?.refreshTabAttachmentMenuIfNeeded()
         } else if currentPageURL != nil, shouldCollectSignalsOnly {
             sessionState.markPendingSignalsOnlyCollection()
             pageContextHandler.triggerContextCollection(trigger: .tabContent)
@@ -684,10 +693,13 @@ final class AIChatContextualSheetCoordinator {
             if sessionState.showsSuggestionsStartSurface {
                 sessionState.beginLoadingSuggestions()
             }
+            sessionState.beginAutomaticAttach()
             let didTrigger = pageContextHandler.triggerContextCollection(trigger: .navigation)
             if !didTrigger {
+                sessionState.cancelAutomaticAttach()
                 sessionState.clearProcessingNavigationFlag()
             }
+            persistentUTIHost?.refreshTabAttachmentMenuIfNeeded()
         } else if sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
             sessionState.notifyFrontendOfMultiContextNavigation()
             sessionState.clearProcessingNavigationFlag()
@@ -721,7 +733,12 @@ final class AIChatContextualSheetCoordinator {
     }
 
     private func removeAttachedContext() {
-        sessionState.downgradeToPlaceholder()
+        if sessionState.isPageContextAttachInProgress,
+           featureFlagger.isFeatureOn(.aiChatContextualAttachMoreTabs) {
+            sessionState.removePendingPageAttachment()
+        } else {
+            sessionState.downgradeToPlaceholder()
+        }
         guard currentPageURL != nil, shouldCollectSignalsOnly else {
             pageContextHandler.clear()
             return
@@ -822,8 +839,11 @@ private extension AIChatContextualSheetCoordinator {
             isFireTab: isFireTab,
             lastUsedModelProvider: duckAiLastUsedModelProvider,
             floatingInputFeature: floatingInputFeature,
+            attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeature(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings),
             start: start,
-            usageLimitsStore: duckAiUsageLimitsStore
+            usageLimitsStore: duckAiUsageLimitsStore,
+            tabAttachmentSource: tabAttachmentSource,
+            isCurrentPageAttachInProgress: { [weak self] in self?.sessionState.isPageContextAttachInProgress ?? false }
         )
         host.onAttachRequested = { [weak self] in
             self?.requestManualPageContextAttach()
@@ -901,6 +921,7 @@ private extension AIChatContextualSheetCoordinator {
 
     func handleContextDataUpdate(_ context: AIChatPageContext?) {
         sessionState.updateContext(context)
+        persistentUTIHost?.refreshTabAttachmentMenuIfNeeded()
     }
 
     func collectFreshContextAndWait(timeout: TimeInterval) async -> AIChatPageContextData? {
@@ -1209,6 +1230,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         if !didTrigger {
             sessionState.cancelManualAttach()
         }
+        persistentUTIHost?.refreshTabAttachmentMenuIfNeeded()
     }
 
     func aiChatContextualSheetViewControllerDidRequestRemoveChip(_ viewController: AIChatContextualSheetViewController) {

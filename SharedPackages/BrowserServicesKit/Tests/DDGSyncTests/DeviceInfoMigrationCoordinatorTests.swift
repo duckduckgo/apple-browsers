@@ -150,7 +150,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         accountManager.updateDeviceHandler = { _, _ in
             patchStarted.fulfill()
             await gate.wait()
-            return UpdateDevices.Result(devices: [], devicesV2: [])
+            return []
         }
         let migration = Task {
             await coordinator.migrateCurrentDeviceIfNeeded(for: .mock)

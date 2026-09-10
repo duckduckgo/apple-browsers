@@ -896,9 +896,13 @@ final class BrowserTabViewController: NSViewController {
             onboardingPixelReporter.measureDialogDismissed(dialogType: displayedDialogType)
             PixelKit.fire(GeneralPixel.onboardingContextualDismissed, frequency: .uniqueByName)
             onboardingDialogTypeProvider.turnOffFeature()
-            return
+        } else {
+            if displayedDialogType == .subscriptionUpsell,
+               onboardingDialogTypeProvider.lastDialog == displayedDialogType {
+                onboardingDialogTypeProvider.gotItPressed()
+            }
+            handleContextualOnboardingOnDismiss(dialogType: displayedDialogType)
         }
-        handleContextualOnboardingOnDismiss(dialogType: displayedDialogType)
     }
 
     private func handleContextualOnboardingOnGotItPressed(dialogType: ContextualDialogType) {

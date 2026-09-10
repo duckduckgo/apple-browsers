@@ -523,7 +523,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// and the warnings that will be built on top of it. Internal-only while the UI is in development.
     case aiChatUsageWarnings
 
-    /// Local-only: makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
+    /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
     case onboardingAsync
 
 }
@@ -878,7 +878,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatUsageWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
         case .onboardingAsync:
-            Config(source: .disabled)
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))
         }
     }
 

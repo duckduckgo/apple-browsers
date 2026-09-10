@@ -541,6 +541,20 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenNonBlockingIsDisabledThenDismissingUpsellClearsLastDialog() {
+        featureFlagger.featuresStub[FeatureFlag.onboardingAsync.rawValue] = false
+        presentDialog(.subscriptionUpsell)
+        let presentationsBefore = factory.makeViewCallCount
+
+        factory.performOnManualDismiss()
+
+        XCTAssertNil(dialogProvider.lastDialog)
+        XCTAssertEqual(factory.makeViewCallCount, presentationsBefore)
+        XCTAssertEqual(pixelReporter.manuallyDismissedDialog, .subscriptionUpsell)
+        XCTAssertEqual(pixelReporter.dismissedDialog, .subscriptionUpsell)
+    }
+
+    @MainActor
     func testWhenUpsellXCompletesFirstThenNonBlockingDismissalStillRuns() {
         featureFlagger.featuresStub[FeatureFlag.onboardingAsync.rawValue] = true
         dialogProvider.state = .ongoing

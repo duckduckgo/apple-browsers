@@ -211,6 +211,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Option to install Chrome extension during onboarding (DMG only)
     case onboardingChromeExtension
 
+    /// Allows browsing before completing onboarding.
+    case onboardingAsync
+
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
     /// trampoline if the SPI ever misbehaves.

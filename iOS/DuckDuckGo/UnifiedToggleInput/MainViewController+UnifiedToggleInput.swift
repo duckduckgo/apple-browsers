@@ -311,6 +311,7 @@ extension MainViewController {
             webView.backgroundColor = webViewBackgroundColor
             webView.scrollView.backgroundColor = webViewBackgroundColor
             webView.underPageBackgroundColor = webViewBackgroundColor
+            currentTab?.pullToRefreshViewAdapter?.webViewBackgroundDidChange()
         }
     }
 

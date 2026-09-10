@@ -973,7 +973,8 @@ class OnboardingManagerTests: XCTestCase {
 
                 XCTAssertTrue(navigationDelegate.replaceTabCalled, action)
                 XCTAssertEqual(navigationDelegate.preventUserInteraction, false, action)
-                XCTAssertEqual(persistor.outcome, .skipped)
+                // Only the experiment persists an outcome.
+                XCTAssertEqual(persistor.outcome, isNonBlocking ? .skipped : nil)
             }
         }
     }
@@ -1005,12 +1006,12 @@ class OnboardingManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testBlockingOnboardingRecordsFreshCompletionAfterResetAndRestartWithoutQuitting() {
+    func testBlockingOnboardingRestartsAfterResetWithoutQuittingAndPersistsNoOutcome() {
         let flags = MockFeatureFlagger()
         let persistor = NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
         let manager = makeNonBlockingManager(featureFlagger: flags, onboardingPersistor: persistor)
         manager.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
-        XCTAssertEqual(persistor.outcome, .completed)
+        XCTAssertNil(persistor.outcome)
 
         persistor.reset()
         OnboardingActionsManager.isOnboardingFinished = false
@@ -1020,7 +1021,7 @@ class OnboardingManagerTests: XCTestCase {
         manager.goToAddressBar(from: source)
 
         XCTAssertTrue(OnboardingActionsManager.isOnboardingFinished)
-        XCTAssertEqual(persistor.outcome, .completed)
+        XCTAssertNil(persistor.outcome)
         XCTAssertEqual(navigationDelegate.preventUserInteraction, false)
 
         manager.onboardingStarted(from: source)

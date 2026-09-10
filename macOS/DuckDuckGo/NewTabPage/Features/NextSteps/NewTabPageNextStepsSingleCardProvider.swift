@@ -223,7 +223,11 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         }
         NotificationCenter.default.publisher(for: NonBlockingOnboardingPersistor.outcomeDidChange)
             .receive(on: scheduler)
-            .sink { [weak self] _ in self?.refreshCardList() }
+            .sink { [weak self] _ in
+                // Only the non-blocking onboarding experiment records an outcome worth refreshing for.
+                guard let self, NonBlockingOnboarding(featureFlagger: self.featureFlagger).isNonBlocking else { return }
+                self.refreshCardList()
+            }
             .store(in: &cancellables)
         observeCardVisibilityChanges()
         observeKeyWindowChanges()

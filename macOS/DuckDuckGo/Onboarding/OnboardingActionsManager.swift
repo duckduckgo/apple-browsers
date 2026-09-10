@@ -561,7 +561,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     private func recordOnboardingOutcome(_ outcome: NonBlockingOnboardingPersistor.Outcome) {
         let isFirstOutcome = onboardingPersistor.outcome == nil
-        onboardingPersistor.record(outcome)
+        if nonBlockingOnboarding.isNonBlocking {
+            onboardingPersistor.record(outcome)
+        }
         switch outcome {
         case .completed:
             let userSawToggleOnboarding = wasToggleOnboardingStepShown()

@@ -112,6 +112,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
         didSet {
             guard oldValue != aiChatInputBoxVisibility else { return }
+            Logger.unifiedInputState.debug("aiChatInputBoxVisibility \(oldValue.rawValue, privacy: .public) → \(self.aiChatInputBoxVisibility.rawValue, privacy: .public) [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
             persistDraftToStore()
         }
     }
@@ -723,6 +724,32 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
     }
 
+    /// A committed navigation replaces the tab's FE document: FE-asserted visibility/voice state
+    /// resets (unless natively pre-asserted for it), and a chat change discards the draft.
+    func handleNavigationCommit(tabUID: TabUID, didChangeChat: Bool, startsWithHiddenInput: Bool = false) {
+        Logger.unifiedInputState.debug("handleNavigationCommit [\(tabUID, privacy: .public)] didChangeChat=\(didChangeChat, privacy: .public) startsHidden=\(startsWithHiddenInput, privacy: .public) — live tab [\(self.currentTabUID ?? "nil", privacy: .public)]")
+        let visibility: AIChatInputBoxVisibility = startsWithHiddenInput ? .hidden : .unknown
+        if tabUID == currentTabUID {
+            aiChatInputBoxVisibility = visibility
+            isVoiceSessionActive = false
+            if didChangeChat {
+                if !currentText.isEmpty { setText("") }
+                clearAttachments()
+                if toolsController.selectedTool != nil { resetToolsSelection() }
+            }
+        }
+        let current = stateStore.state(for: tabUID)
+        var updated = current
+        updated.aiChatInputBoxVisibility = visibility
+        updated.isVoiceSessionActive = false
+        if didChangeChat {
+            updated.clearDraft()
+        }
+        if updated != current {
+            stateStore.update(updated, for: tabUID)
+        }
+    }
+
     /// Persists per-tab-only state — text and attachments. These are drafts the user
     /// is actively building; they belong to the tab, not to the global last-used
     /// defaults, and must not write through to global preferences.
@@ -757,9 +784,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         textModel.resetToEmpty()
         guard let uid = currentTabUID else { return }
         var cleared = snapshotCurrentState()
-        cleared.text = ""
-        cleared.attachments = []
-        cleared.selectedTool = nil
+        cleared.clearDraft()
         stateStore.recordUserChoice(cleared, for: uid, isNewChatContext: false)
         Logger.unifiedInputState.debug("submission cleared store text + attachments + tool for tab [\(uid)]")
     }
@@ -1466,7 +1491,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Models
 
     let modelStore: UTIModelStore
-    private(set) var hasSubmittedPrompt = false
+    /// Last `syncChipVisibility` input, so it can act on transitions rather than one-shot upgrades.
+    private var lastSyncedHasExistingChat: Bool?
+    private(set) var hasSubmittedPrompt = false {
+        didSet {
+            guard oldValue != hasSubmittedPrompt else { return }
+            Logger.unifiedInputState.debug("hasSubmittedPrompt \(oldValue, privacy: .public) → \(self.hasSubmittedPrompt, privacy: .public) [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
+        }
+    }
 
     var models: [AIChatModel] { modelStore.models }
     var subscriptionState: SubscriptionState { modelStore.subscriptionState }
@@ -1488,9 +1520,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func startNewChat() {
+        Logger.unifiedInputState.debug("startNewChat [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
         attachmentController.resetPasteConversation()
         isNewChatPending = true
         hasSubmittedPrompt = false
+        // The context is a fresh chat now — a leftover `true` would read the settling
+        // chatID-less URL as a chat exit and reset a prompt submitted in the meantime.
+        lastSyncedHasExistingChat = false
         isModelPickerForcedVisible = false
         isSubmitBlockedByRecoveryCard = false
         resetToolsSelection()
@@ -2057,12 +2093,19 @@ private extension UnifiedToggleInputCoordinator {
             return
         }
         isNewChatPending = false
-        // Upgrade only — the chat URL gets its chatID after the page loads, so downgrading
-        // here would clobber a just-submitted prompt. Explicit resets cover the rest.
-        guard hasExistingChat, !hasSubmittedPrompt else { return }
-        hasSubmittedPrompt = true
-        modelSelector.updateModelChipVisibility()
-        syncHasSubmittedPromptToHandler()
+        defer { lastSyncedHasExistingChat = hasExistingChat }
+        if hasExistingChat, !hasSubmittedPrompt {
+            hasSubmittedPrompt = true
+            modelSelector.updateModelChipVisibility()
+            syncHasSubmittedPromptToHandler()
+        } else if !hasExistingChat, lastSyncedHasExistingChat == true, hasSubmittedPrompt {
+            // The page left a chat with an ID for a fresh chat without announcing it (e.g. the
+            // context-limit banner's Start New Chat). A just-submitted prompt can't hit this:
+            // its URL never had a chatID yet, so there is no true → false transition to see.
+            hasSubmittedPrompt = false
+            modelSelector.updateModelChipVisibility()
+            syncHasSubmittedPromptToHandler()
+        }
     }
 
     func syncHasSubmittedPromptToHandler() {
@@ -2098,6 +2141,7 @@ private extension UnifiedToggleInputCoordinator {
         aiChatStatus = .unknown
         attachmentUsage = nil
         hasSubmittedPrompt = false
+        lastSyncedHasExistingChat = nil
         // Do not clear the model-picker pin here. It is stored per tab in TabInputState and
         // restored by applyState during activateForTab. bindToTab calls resetSessionState
         // immediately after that restore when switching Duck.ai tabs, so resetting the pin

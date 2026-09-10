@@ -19,6 +19,7 @@
 
 import Foundation
 import BrowserServicesKit
+import InstallStatistics
 import PixelKit
 
 /// Supplies PixelKit with the iOS values it cannot derive itself.

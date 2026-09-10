@@ -67,6 +67,9 @@ protocol DependencyProvider {
     var subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
     var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging { get }
+    var internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProvider { get }
+    var internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider { get }
+    var subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging { get }
 }
 
 /// Provides dependencies for objects that are not directly instantiated
@@ -95,6 +98,7 @@ final class AppDependencyProvider: DependencyProvider {
     var subscriptionManager: any SubscriptionManager
     var tokenHandlerProvider: any SubscriptionTokenHandling
     let subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling
+    let subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging = SubscriptionOnboardingSessionState()
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
@@ -109,6 +113,8 @@ final class AppDependencyProvider: DependencyProvider {
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
+    let internalFeedbackAttachmentsProvider = InternalFeedbackAttachmentsProvider()
+    let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
 
     private init() {

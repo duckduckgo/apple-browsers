@@ -203,10 +203,11 @@ extension TabViewController {
         contextualOnboardingLogic: ContextualOnboardingLogic = ContextualOnboardingLogicMock(),
         contextualOnboardingPixelReporter: OnboardingCustomInteractionPixelReporting = OnboardingPixelReporterMock(),
         featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
-        link: Link = Link(title: nil, url: .ddg)
+        link: Link = Link(title: nil, url: .ddg),
+        fireTab: Bool = false
     ) -> TabViewController {
         let tab = TabViewController.loadFromStoryboard(
-            model: .init(link: link),
+            model: .init(link: link, fireTab: fireTab),
             privacyConfigurationManager: PrivacyConfigurationManagerMock(),
             appSettings: AppSettingsMock(),
             bookmarksDatabase: CoreDataDatabase.bookmarksMock,

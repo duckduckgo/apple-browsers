@@ -216,6 +216,8 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: TabViewController)
 
     func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
+
+    func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool)
 }
 
 extension TabDelegate {
@@ -231,6 +233,8 @@ extension TabDelegate {
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
 
     func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {}
+
+    func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool) {}
 
     func searchToken(for tab: TabViewController) -> String? { nil }
 

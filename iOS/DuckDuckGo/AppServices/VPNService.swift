@@ -21,6 +21,7 @@ import VPN
 import Subscription
 import UIKit
 import NotificationCenter
+import Combine
 import Core
 import PixelKit
 
@@ -32,27 +33,49 @@ final class VPNService: NSObject {
     private let vpnFeatureVisibility: DefaultNetworkProtectionVisibility = AppDependencyProvider.shared.vpnFeatureVisibility
     private let tipKitAppEventsHandler = TipKitAppEventHandler()
     private let notificationServiceManager: NotificationServiceManaging
+    private var cancellables = Set<AnyCancellable>()
 
     private let mainCoordinator: MainCoordinator
     private let subscriptionManager: any SubscriptionManager
     private let application: UIApplication
+    private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
     init(mainCoordinator: MainCoordinator,
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          application: UIApplication = UIApplication.shared,
          notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
          notificationServiceManager: NotificationServiceManaging,
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
     ) {
         self.mainCoordinator = mainCoordinator
         self.subscriptionManager = subscriptionManager
         self.application = application
         self.notificationServiceManager = notificationServiceManager
+        self.onboardingActivationRecorder = onboardingActivationRecorder
 
         notificationCenter.delegate = notificationServiceManager
-        
+
         super.init()
 
         widgetRefreshModel.beginObservingVPNStatus()
         tipKitAppEventsHandler.appDidFinishLaunching()
+        subscribeToVPNConfigurationChanges()
+    }
+
+    // MARK: - Subscription-onboarding experiment metric
+
+    private func subscribeToVPNConfigurationChanges() {
+        tunnelController.configurationInstalledPublisher
+            .sink { [weak self] in
+                Task { await self?.reportVPNActivatedExperimentMetricIfNeeded() }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func reportVPNActivatedExperimentMetricIfNeeded() async {
+        let wasAlreadyActivated = onboardingActivationRecorder.recordVPNActivatedIfNeeded()
+        SubscriptionOnboardingExperiment.fireVPNActivatedMetricIfNeeded(
+            isSubscriptionActive: await subscriptionManager.isActiveSubscription(),
+            isAlreadyActivated: wasAlreadyActivated)
     }
 
     // MARK: - Resume

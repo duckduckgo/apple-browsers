@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Core
 import UIKit
 
@@ -27,10 +28,22 @@ extension MainViewController {
         DuckAIAddressBarEntry.resolve(
             isContextualModeAvailable: aiChatContextualModeFeature.isAvailable,
             isFloatingInputAvailable: aiChatContextualFloatingInputFeature.isAvailable,
-            isHomeTab: currentTab?.tabModel.isHomeTab ?? true,
+            isIPadChromeMenuButtonAvailable: isChromeMenuButtonAvailable,
+            isHomeTab: tabManager.currentTabsModel.currentTab?.isHomeTab ?? true,
+            isChatHistoryAvailable: isDuckAIChatsMenuItemAvailable,
             hasChatToReopen: currentTab?.hasContextualChatToReopen ?? false,
             isContextualSurfacePresented: isContextualSurfacePresented
         )
+    }
+
+    var isChromeMenuButtonAvailable: Bool {
+        DuckAIChromeShortcutVisibility.isChromeMenuButtonAvailable(isIPad: isPad, featureFlagger: featureFlagger)
+    }
+
+    var isDuckAIChatsMenuItemAvailable: Bool {
+        DuckAIAddressBarMenuFactory.isChatHistoryAvailable(featureFlagger: featureFlagger,
+                                                           userInterfaceIdiom: UIDevice.current.userInterfaceIdiom)
+            || (isChromeMenuButtonAvailable && featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats))
     }
 
     /// A contextual surface — the sheet or the floating input — is on screen for this tab.
@@ -44,7 +57,7 @@ extension MainViewController {
     var hasContextualSession: Bool {
         DuckAIAddressBarEntry.showsContextualGlyph(
             isContextualModeAvailable: aiChatContextualModeFeature.isAvailable,
-            isHomeTab: currentTab?.tabModel.isHomeTab ?? true,
+            isHomeTab: tabManager.currentTabsModel.currentTab?.isHomeTab ?? true,
             hasChatToReopen: currentTab?.hasContextualChatToReopen ?? false,
             isContextualSurfacePresented: isContextualSurfacePresented
         )
@@ -52,32 +65,40 @@ extension MainViewController {
 
     /// Attaches the Duck.ai menu to the address-bar button, or detaches it so a tap acts directly.
     func refreshDuckAIAddressBarMenu() {
-        let button = omniBar.barView.aiChatButton
-        guard duckAIAddressBarEntry == .menu else {
-            button?.menu = nil
-            button?.showsMenuAsPrimaryAction = false
-            (button as? BrowserChromeButton)?.menuHighlightTarget = nil
-            duckAIMenuAnchor?.removeFromSuperview()
-            duckAIMenuAnchor = nil
-            return
-        }
-
-        // UIKit reparents the preview, so hand it a stand-in from outside the field's glass group.
-        if let button = button as? BrowserChromeButton {
+        let offersMenu = duckAIAddressBarEntry == .menu
+        let addressBarButton = omniBar.barView.aiChatButton
+        if offersMenu, let button = addressBarButton as? BrowserChromeButton {
+            // UIKit reparents the preview, so hand it a stand-in from outside the field's glass group.
             button.menuHighlightTarget = { [weak self, weak button] in
                 guard let button else { return nil }
                 return self?.duckAIMenuAnchorView(over: button)
             }
+        } else {
+            (addressBarButton as? BrowserChromeButton)?.menuHighlightTarget = nil
+            duckAIMenuAnchor?.removeFromSuperview()
+            duckAIMenuAnchor = nil
+        }
+        attachDuckAIMenu(to: addressBarButton, offersMenu: offersMenu, source: .addressBarIcon)
+        attachDuckAIMenu(to: tabsBarController?.aiChatMenuButton, offersMenu: offersMenu, source: .tabsBarButton)
+    }
+
+    private func attachDuckAIMenu(to button: UIButton?, offersMenu: Bool, source: AIChatEntryPointSource) {
+        guard let button else { return }
+        guard offersMenu else {
+            button.menu = nil
+            button.showsMenuAsPrimaryAction = false
+            return
         }
 
         // Deferred so the shown pixel records an actual display rather than the menu being attached.
-        button?.menu = UIMenu(title: UserText.duckAiFeatureName, children: [
+        button.menu = UIMenu(title: UserText.duckAiFeatureName, children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
+                self?.recordNewTabPageSessionAction { $0.tapDuckaiButton() }
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuShown()
-                completion(self?.duckAIAddressBarMenuChildren() ?? [])
+                completion(self?.duckAIAddressBarMenuChildren(source: source) ?? [])
             }
         ])
-        button?.showsMenuAsPrimaryAction = true
+        button.showsMenuAsPrimaryAction = true
     }
 
     /// Transparent stand-in over the button, outside the glass field, for the menu to reparent.
@@ -105,7 +126,11 @@ extension MainViewController {
         // The floating input is a contextual surface that bypasses `openAIChat` and the sheet, so
         // report the entry here; promoting it to the sheet later must not report a second one.
         fireAIChatEntryPointPixel(source: .contextualChat, opensNewTab: false, hasPrompt: false)
-        currentTab.presentContextualFloatingInput(from: self)
+        if aiChatContextualFloatingInputFeature.isAvailable {
+            currentTab.presentContextualFloatingInput(from: self)
+        } else {
+            currentTab.presentContextualAIChatSheet(from: self, attachingPage: true)
+        }
     }
 
     /// Tapping the address bar is one of the floating input's dismissal routes, and the page stays
@@ -125,23 +150,50 @@ extension MainViewController {
         }
     }
 
-    private func duckAIAddressBarMenuChildren() -> [UIMenuElement] {
+    private func duckAIAddressBarMenuChildren(source: AIChatEntryPointSource) -> [UIMenuElement] {
         DuckAIAddressBarMenuFactory.makeActions(
+            featureFlagger: featureFlagger,
+            userInterfaceIdiom: UIDevice.current.userInterfaceIdiom,
+            isHomeTab: tabManager.currentTabsModel.currentTab?.isHomeTab ?? true,
             onNewChat: { [weak self] in
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuNewChatSelected()
-                self?.openFreshDuckAIChatFromAddressBarMenu()
+                self?.openFreshDuckAIChatFromAddressBarMenu(source: source)
             },
             onAskAboutPage: { [weak self] in
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutPageSelected()
                 self?.askAboutCurrentPageFromAddressBar()
+            },
+            onRecentChats: { [weak self] in
+                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuRecentChatsSelected()
+                self?.openRecentChatsFromAddressBarMenu()
             }
         )
     }
 
+    private func openRecentChatsFromAddressBarMenu() {
+        omniBar.endEditing()
+        recordNewTabPageSessionDeparture()
+        if isPad {
+            openDuckAIChatsFromAddressBarMenu()
+        } else {
+            openAIChatHistory(source: .addressBar)
+        }
+    }
+
+    private func openDuckAIChatsFromAddressBarMenu() {
+        let url = AIChatURLParameters.sidebarOpenURL(from: aiChatSettings.aiChatURL)
+        if tabManager.currentTabsModel.currentTab?.link != nil {
+            loadUrlInNewTab(url, inheritedAttribution: nil)
+        } else {
+            loadUrl(url)
+        }
+    }
+
     /// `openAIChat()` rather than `openAIChatFromAddressBar`: the latter sends the omnibar's text as
     /// a prompt whenever the field is being edited, and New Chat must always open empty.
-    private func openFreshDuckAIChatFromAddressBarMenu() {
+    private func openFreshDuckAIChatFromAddressBarMenu(source: AIChatEntryPointSource) {
         omniBar.endEditing()
-        openAIChat(source: .addressBarIcon)
+        // iPad has no unified toggle input, so the boundary rule would load the chat over the page.
+        openAIChat(source: source, forcesNewTab: isPad)
     }
 }

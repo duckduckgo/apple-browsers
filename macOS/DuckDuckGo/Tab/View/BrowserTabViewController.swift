@@ -894,7 +894,6 @@ final class BrowserTabViewController: NSViewController {
         let onboarding = NonBlockingOnboarding(featureFlagger: featureFlagger)
         if onboarding.isNonBlocking {
             onboardingPixelReporter.measureDialogDismissed(dialogType: displayedDialogType)
-            PixelKit.fire(GeneralPixel.onboardingContextualDismissed, frequency: .uniqueByName)
             onboardingDialogTypeProvider.turnOffFeature()
         } else {
             if displayedDialogType == .subscriptionUpsell,

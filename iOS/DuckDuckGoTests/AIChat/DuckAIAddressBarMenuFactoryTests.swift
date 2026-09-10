@@ -253,6 +253,16 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
                        .webPage)
     }
 
+    func testResolveFallsBackToWebPageForSerpWithBlankQuery() {
+        for blank in ["", "   "] {
+            XCTAssertEqual(DuckAIAddressBarMenuType.resolve(isFeatureEnabled: true,
+                                                            isShowingDocument: false,
+                                                            tabType: .serp,
+                                                            searchQuery: blank),
+                           .webPage)
+        }
+    }
+
     func testResolveReturnsWebPageForWebAndAIChatTabs() {
         XCTAssertEqual(DuckAIAddressBarMenuType.resolve(isFeatureEnabled: true,
                                                         isShowingDocument: false,

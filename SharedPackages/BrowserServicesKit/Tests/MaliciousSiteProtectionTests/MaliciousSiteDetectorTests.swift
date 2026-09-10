@@ -72,9 +72,9 @@ class MaliciousSiteDetectorTests: XCTestCase {
 
     func testWhenThreatMarkerIsAtEndOfLargeQueryThenLocalAndAPIMatchesDetectIt() async throws {
         let hostHash = "255a8a793097aeea1f06a19c08cde28db0eb34c660c6e4e7480c9525d034b16d"
-        let regex = #"^https://malicious\.com/phishing\?q=a+&marker=threat$"#
+        let regex = #"^https://malicious\.com/phishing\?q=(?:a/)+&marker=threat$"#
         let filter = Filter(hash: hostHash, regex: regex)
-        let url = try XCTUnwrap(URL(string: "https://malicious.com/PHISHING?q=" + String(repeating: "A", count: 100_000) + "&MARKER=THREAT"))
+        let url = try XCTUnwrap(URL(string: "https://malicious.com/PHISHING?q=" + String(repeating: "A///", count: 100_000) + "&MARKER=THREAT"))
         try await mockDataManager.store(HashPrefixSet(revision: 0, items: ["255a8a79"]), for: .hashPrefixes(threatKind: .phishing))
 
         var apiCallCount = 0

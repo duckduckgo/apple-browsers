@@ -698,10 +698,18 @@ extension URL {
         }
 
         // Step 5: Remove all occurrences of more than one "/", but not in the protocol part
-        if let range = urlString.range(of: "://") {
-            let protocolPart = urlString[..<range.upperBound]
-            let restOfURL = urlString[range.upperBound...]
-            urlString = protocolPart + restOfURL.replacingOccurrences(of: "/+", with: "/", options: .regularExpression)
+        if let range = urlString.range(of: "://"), urlString.range(of: "//", options: .literal, range: range.upperBound..<urlString.endIndex) != nil {
+            // Avoid regex replacement allocations for large URLs, while preserving the complete query for threat matching.
+            var collapsedURL = String(urlString[..<range.upperBound])
+            collapsedURL.reserveCapacity(urlString.utf8.count)
+            var previousWasSlash = false
+            for scalar in urlString[range.upperBound...].unicodeScalars {
+                if scalar != "/" || !previousWasSlash {
+                    collapsedURL.unicodeScalars.append(scalar)
+                }
+                previousWasSlash = scalar == "/"
+            }
+            urlString = collapsedURL
         }
 
         // Step 6: Remove all occurrences of "/./" in the path

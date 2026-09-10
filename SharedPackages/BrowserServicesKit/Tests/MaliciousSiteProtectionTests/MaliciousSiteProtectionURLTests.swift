@@ -55,4 +55,30 @@ class MaliciousSiteProtectionURLTests: XCTestCase {
         XCTAssertEqual(url.canonicalURL()?.absoluteString, "http://example.com/phishing#section")
     }
 
+    func testWhenURLHasRepeatedSlashesThenCanonicalizationPreservesSchemeAndCollapsesSlashScalars() throws {
+        let cases = [
+            ("https://example.com/", "https://example.com/"),
+            ("https://example.com//A///B?q=HTTPS://OTHER.COM///C", "https://example.com/a/b?q=https:/other.com/c"),
+            ("https://example.com/%2F%2FA?q=%2F%2FB", "https://example.com/a?q=/b"),
+            ("https://example.com//\u{0301}A?q=//\u{0301}B", "https://example.com/%CC%81a?q=/%CC%81b")
+        ]
+
+        for (input, expected) in cases {
+            let url = try XCTUnwrap(URL(string: input))
+
+            XCTAssertEqual(url.canonicalURL()?.absoluteString, expected)
+        }
+    }
+
+    func testWhenURLHasLargeQueryThenCanonicalizationPreservesItsEndWithOrWithoutRepeatedSlashes() throws {
+        for segment in ["A", "A/", "A///"] {
+            let payload = String(repeating: segment, count: 1_000_000)
+            let url = try XCTUnwrap(URL(string: "https://example.com/PHISHING?q=\(payload)&MARKER=THREAT"))
+            let expectedSegment = segment == "A" ? "a" : "a/"
+            let expected = "https://example.com/phishing?q=" + String(repeating: expectedSegment, count: 1_000_000) + "&marker=threat"
+
+            XCTAssertEqual(url.canonicalURL()?.absoluteString, expected)
+        }
+    }
+
 }

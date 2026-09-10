@@ -1228,13 +1228,10 @@ extension AIChatUserScriptHandler {
             return BrowserToolsListResponse(failure: .notInitialized)
         }
 
-        // A Fire window advertises nothing, exactly as a disabled feature does. Listing the tools
-        // and then refusing every call would be a pair no other state produces, telling the front
-        // end it is in a Fire window.
-        let isBurner = AIChatTabPickerSource.originTabCollectionViewModel(for: message.messageWebView,
-                                                                          in: windowControllersManager)?.isBurner ?? true
-        guard !isBurner else { return BrowserToolsListResponse(tools: []) }
-
+        // Deliberately no Fire check here, mirroring Windows: a Fire window is advertised the full
+        // catalogue and refused on every call. That pair is detectable — a disabled feature returns
+        // an empty list — so it is a known cross-platform gap to close together rather than one
+        // platform diverging on its own.
         return BrowserToolsListResponse(tools: browserTools.catalog.enabledTools.map { $0.descriptor() })
     }
 

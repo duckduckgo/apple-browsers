@@ -42,9 +42,8 @@ public final class BrowserToolInvoker {
         // the capability is not available here, not which of the two it was.
         guard let tool = catalog.tool(named: name) else { return .failure(.unavailable) }
 
-        // Reported as plain `unavailable`, never a Fire-specific token, so the front end cannot
-        // infer the user is browsing privately. Checked before consent so a call that can never
-        // succeed here cannot persist a decision.
+        // Reported as plain `unavailable`, never a Fire-specific token. Checked before consent so a
+        // call that can never succeed here cannot persist a decision.
         guard !context.isBurner else { return .failure(.unavailable) }
 
         assert(tool.permissionMode == .auto, "Ask-mode tools need consent, which does not exist yet")

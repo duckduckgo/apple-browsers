@@ -520,8 +520,6 @@ class TabViewController: UIViewController {
         tabModel.type
     }
 
-    /// Whether the tab is currently showing a document (e.g. a PDF) that Duck.ai can attach as bytes.
-    /// Gated by the same feature flag and MIME/URL check the page-context handler uses.
     var isShowingDocument: Bool {
         guard featureFlagger.isFeatureOn(.aiChatPdfPageContext), let url else { return false }
         return DocumentPageContextProvider.isSupportedDocument(mimeType: lastMainFramePageContextMIMEType(for: url), url: url)

@@ -25,9 +25,7 @@ enum DuckAIAddressBarMenuType: Equatable {
     case search(query: String)
     case document
 
-    /// Resolves the menu variant for a tab. When the feature is off the menu always behaves as a
-    /// plain web page (today's behaviour); otherwise a document wins over a SERP, and a SERP without a
-    /// query falls back to `.webPage`.
+    /// Resolves the menu variant for a tab with webPage as default
     static func resolve(isFeatureEnabled: Bool,
                         isShowingDocument: Bool,
                         tabType: TabType,
@@ -163,7 +161,7 @@ extension MainViewController {
                     self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutPageSelected()
                     self?.askAboutCurrentPageFromAddressBar()
                 case .search(let query):
-                    // TODO: fire a dedicated "ask about search" pixel (handled in the project pixel task).
+                    // TODO: fire a dedicated "ask about search" pixel
                     self?.openFreshDuckAIChatFromAddressBarMenu(with: query)
                 }
             },

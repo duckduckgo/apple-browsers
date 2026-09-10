@@ -299,7 +299,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217856366373963?focus=true
     case aiChatPdfPageContext
 
-    /// TODO: replace with the Feature Flags Registry task link before merge
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218354738310249?focus=true
     case aiChatContextualAddressBarMenu
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true

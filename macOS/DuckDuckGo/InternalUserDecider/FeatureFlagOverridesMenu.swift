@@ -84,11 +84,7 @@ final class FeatureFlagOverridesMenu: NSMenu {
             .map { category in
                 let menuItem = NSMenuItem(title: category.rawValue)
                 menuItem.representedObject = category
-#if compiler(>=6.4)
-                if #available(macOS 27.0, *) {
-                    menuItem.preferredImageVisibility = .visible
-                }
-#endif
+                setImageVisibilityForDebugMenu(on: menuItem)
                 let submenu = NSMenu(title: category.rawValue)
                 menuItem.submenu = submenu
 
@@ -106,11 +102,7 @@ final class FeatureFlagOverridesMenu: NSMenu {
                             target: self,
                             representedObject: flag
                         )
-#if compiler(>=6.4)
-                        if #available(macOS 27.0, *) {
-                            item.preferredImageVisibility = .visible
-                        }
-#endif
+                        setImageVisibilityForDebugMenu(on: item)
                         return item
                     }
 
@@ -377,16 +369,24 @@ final class FeatureFlagOverridesMenu: NSMenu {
         return headerItem
     }
 
+    private func setImageVisibilityForDebugMenu(on menuItem: NSMenuItem) {
+#if compiler(>=6.4)
+        if #available(macOS 27.0, *) {
+            menuItem.preferredImageVisibility = .visible
+        }
+#else
+        if #available(macOS 27.0, *), menuItem.responds(to: NSSelectorFromString("setPreferredImageVisibility:")) {
+            menuItem.setValue(1, forKey: "preferredImageVisibility")
+        }
+#endif
+    }
+
     private func legend(title: String, icon: NSImage) -> NSMenuItem {
         let legendItem = NSMenuItem(title: title)
         legendItem.image = icon
         legendItem.isEnabled = false
         legendItem.indentationLevel = 1
-#if compiler(>=6.4)
-        if #available(macOS 27.0, *) {
-            legendItem.preferredImageVisibility = .visible
-        }
-#endif
+        setImageVisibilityForDebugMenu(on: legendItem)
         return legendItem
     }
 }

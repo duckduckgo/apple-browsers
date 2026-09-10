@@ -38,6 +38,7 @@ enum DuckAIAddressBarEntry: Equatable {
     ///   requiring the user to find it in Chats.
     static func resolve(isContextualModeAvailable: Bool,
                         isFloatingInputAvailable: Bool,
+                        isIPadChromeMenuButtonAvailable: Bool = false,
                         isHomeTab: Bool,
                         isChatHistoryAvailable: Bool,
                         hasChatToReopen: Bool,
@@ -47,7 +48,7 @@ enum DuckAIAddressBarEntry: Equatable {
         }
         guard isContextualModeAvailable else { return .legacyDuckAI }
         guard !isContextualSurfacePresented else { return .dismissContextualSurface }
-        guard isFloatingInputAvailable, !hasChatToReopen else { return .contextualSheet }
+        guard isFloatingInputAvailable || isIPadChromeMenuButtonAvailable, !hasChatToReopen else { return .contextualSheet }
         return .menu
     }
 

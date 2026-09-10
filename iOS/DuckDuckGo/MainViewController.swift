@@ -1271,13 +1271,13 @@ class MainViewController: UIViewController {
 
     private func refreshAIChatChromeChip() {
         let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
-        // iPhone-only: iPad's tabs-bar chip already indicates sheet state, so avoid a duplicate.
-        if UIDevice.current.userInterfaceIdiom == .phone {
+        if UIDevice.current.userInterfaceIdiom == .phone || isChromeMenuButtonAvailable {
             omniBar.barView.updateAIChatButtonForContextualChat(hasContextualSession: hasContextualSession)
         }
         refreshDuckAIAddressBarMenu(type: duckAIAddressBarMenuType(for: currentTab))
         guard let tabsBarController else { return }
         tabsBarController.updateAIChatChipState(isContextualSheetPresented: isSheetPresented)
+        tabsBarController.updateAIChatMenuButtonForContextualChat(hasContextualSession: hasContextualSession)
     }
 
     func startAddFavoriteFlow() {
@@ -4358,6 +4358,7 @@ class MainViewController: UIViewController {
                     images: [AIChatNativePrompt.NativePromptImage]? = nil,
                     files: [AIChatNativePrompt.NativePromptFile]? = nil,
                     reportsNewTab: Bool? = nil,
+                    forcesNewTab: Bool = false,
                     fromDeepLink: Bool = false) {
 
         // A query means the user asked something and a response is what they are waiting for;
@@ -4376,6 +4377,7 @@ class MainViewController: UIViewController {
             images: images,
             files: files,
             reportsNewTab: reportsNewTab,
+            forcesNewTab: forcesNewTab,
             fromDeepLink: fromDeepLink
         )
     }
@@ -4490,16 +4492,17 @@ class MainViewController: UIViewController {
                                  images: [AIChatNativePrompt.NativePromptImage]? = nil,
                                  files: [AIChatNativePrompt.NativePromptFile]? = nil,
                                  reportsNewTab: Bool? = nil,
+                                 forcesNewTab: Bool = false,
                                  fromDeepLink: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
             return
         }
 
-        // Deep links cross unconditionally; everything else defers to `AIBoundaryNavigationDecision` so the chat→chat-stays-in-place matrix lives in one place. NTP/empty stays in-place via `link != nil`.
+        // Deep links and callers that force it cross unconditionally; everything else defers to `AIBoundaryNavigationDecision` so the chat→chat-stays-in-place matrix lives in one place. NTP/empty stays in-place via `link != nil`.
         let shouldOpenInNewTab: Bool = {
             guard let currentTab, currentTab.tabModel.link != nil else { return false }
-            if fromDeepLink { return true }
+            if fromDeepLink || forcesNewTab { return true }
             return AIBoundaryNavigationDecision.forProgrammaticNavigation(
                 currentIsAI: currentTab.isAITab,
                 currentHasContent: true,

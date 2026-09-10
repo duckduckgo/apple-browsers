@@ -63,7 +63,9 @@ enum DuckAIAddressBarMenuFactory {
             })
         }
         var groups: [UIMenuElement] = [UIMenu(title: "", options: .displayInline, children: chatActions)]
-        if isChatHistoryAvailable(featureFlagger: featureFlagger, userInterfaceIdiom: userInterfaceIdiom) {
+        let showsRecentChats = featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats)
+            && (userInterfaceIdiom == .pad || featureFlagger.isFeatureOn(.aiChatNativeChatHistory))
+        if showsRecentChats {
             groups.append(UIMenu(title: "", options: .displayInline, children: [
                 UIAction(title: UserText.actionChats,
                          image: DesignSystemImages.Glyphs.Size16.chats) { _ in

@@ -36,7 +36,6 @@ protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidScroll(_ controller: any NewTabPage)
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction)
 
-    /// The customization sheet's link out to the rest of the New Tab Page options.
     func newTabPageDidRequestSettings(_ controller: any NewTabPage)
 }
 

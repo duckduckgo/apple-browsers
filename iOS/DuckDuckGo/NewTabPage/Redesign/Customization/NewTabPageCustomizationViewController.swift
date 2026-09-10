@@ -20,11 +20,8 @@
 import SwiftUI
 import UIKit
 
-/// Hosts the "Customize Your Start" sheet.
 final class NewTabPageCustomizationViewController: UIHostingController<NewTabPageCustomizationView> {
 
-    /// Asks the presenter to open the app's settings. Raised here rather than presented directly,
-    /// so settings replace this sheet instead of stacking on top of it.
     var onAllSettingsSelected: (() -> Void)?
 
     private let model: NewTabPageCustomizationModel
@@ -41,6 +38,7 @@ final class NewTabPageCustomizationViewController: UIHostingController<NewTabPag
 
         model.onAllSettingsSelected = { [weak self] in
             guard let self else { return }
+            // Dismiss first, so settings replace this sheet rather than stacking on top of it.
             dismiss(animated: true) {
                 self.onAllSettingsSelected?()
             }

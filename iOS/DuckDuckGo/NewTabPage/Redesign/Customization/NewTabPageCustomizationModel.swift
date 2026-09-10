@@ -20,8 +20,6 @@
 import Combine
 import Foundation
 
-/// Backs the "Customize Your Start" sheet: which sections the New Tab Page shows, plus the
-/// New Tab Page settings that are quick to reach from here rather than from Settings.
 final class NewTabPageCustomizationModel: ObservableObject {
 
     @Published var isFavoritesSectionVisible: Bool {
@@ -36,7 +34,6 @@ final class NewTabPageCustomizationModel: ObservableObject {
         didSet { keyboardSettings.onNewTab = isKeyboardShownOnNewTab }
     }
 
-    /// Opens the app's settings, where the rest of the New Tab Page options live.
     var onAllSettingsSelected: (() -> Void)?
 
     private var persistor: NewTabPageCustomizationPersisting

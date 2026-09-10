@@ -21,7 +21,6 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUI
 
-/// The "Customize Your Start" sheet: what the New Tab Page shows, and the settings closest to it.
 struct NewTabPageCustomizationView: View {
 
     private enum Metrics {

@@ -49,7 +49,6 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         return stackView
     }()
 
-    /// Opens the customization sheet. Sits above the scrolling content, so it stays reachable.
     private lazy var customizeButton: CircularButton = {
         let button = CircularButton()
         button.isShadowHidden = true

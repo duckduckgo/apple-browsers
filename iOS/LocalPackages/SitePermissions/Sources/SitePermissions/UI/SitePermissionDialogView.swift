@@ -29,15 +29,14 @@ public struct SitePermissionDialogView: View {
         static let cardWidth: CGFloat = 300
         static let contentHorizontalPadding: CGFloat = 8
         static let contentTopPadding: CGFloat = 8
+        static let contentBottomPadding: CGFloat = 24
         static let contentSpacing: CGFloat = 10
         static let iconSize: CGFloat = 24
         static let iconSpacing: CGFloat = 8
         static let iconContainerSize: CGFloat = 48
         static let iconContainerCornerRadius: CGFloat = 16
-        static let headerSpacing: CGFloat = 16
         static let bodySpacing: CGFloat = 8
-        static let actionsTopPadding: CGFloat = 24
-        static let buttonSpacing: CGFloat = 8
+        static let buttonSpacing: CGFloat = 10
         static let cardHorizontalPadding: CGFloat = 14
     }
 
@@ -56,28 +55,28 @@ public struct SitePermissionDialogView: View {
         PermissionDialogCard(width: Constants.cardWidth,
                              accessibilityIdentifier: "SitePermissions.Dialog",
                              onDismiss: { onAction(.dismissed) }) {
-            VStack(spacing: Constants.contentSpacing) {
-                VStack(alignment: .leading, spacing: Constants.headerSpacing) {
-                    HStack(spacing: Constants.iconSpacing) {
-                        ForEach(viewModel.icons, id: \.self) { icon in
-                            iconView(for: icon)
-                        }
+            VStack(alignment: .leading, spacing: Constants.contentSpacing) {
+                HStack(spacing: Constants.iconSpacing) {
+                    ForEach(viewModel.icons, id: \.self) { icon in
+                        iconView(for: icon)
                     }
-                    VStack(alignment: .leading, spacing: Constants.bodySpacing) {
-                        title
-                        if let body = viewModel.body {
-                            Text(body)
-                                .daxBodyRegular()
-                                .foregroundColor(Color(designSystemColor: .textPrimary))
-                                .multilineTextAlignment(.leading)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("SitePermissions.Dialog.Body")
-                        }
+                }
+
+                VStack(alignment: .leading, spacing: Constants.bodySpacing) {
+                    title
+                    if let body = viewModel.body {
+                        Text(body)
+                            .daxBodyRegular()
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("SitePermissions.Dialog.Body")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, Constants.contentHorizontalPadding)
                 .padding(.top, Constants.contentTopPadding)
+                .padding(.bottom, Constants.contentBottomPadding)
 
                 VStack(spacing: Constants.buttonSpacing) {
                     ForEach(viewModel.actions) { item in
@@ -88,7 +87,6 @@ public struct SitePermissionDialogView: View {
                         .accessibilityIdentifier(accessibilityIdentifier(for: item.action))
                     }
                 }
-                .padding(.top, Constants.actionsTopPadding)
             }
         }
     }

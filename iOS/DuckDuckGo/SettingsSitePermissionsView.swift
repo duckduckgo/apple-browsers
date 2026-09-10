@@ -433,7 +433,7 @@ private extension SitePermissionType {
     var settingsIcon: Image {
         switch self {
         case .camera:
-            return Image(systemName: "video")
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.video)
         case .microphone:
             return Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)
         case .location:

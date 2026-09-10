@@ -149,7 +149,7 @@ public struct SitePermissionDialogView: View {
     private func image(for icon: SitePermissionDialogViewModel.Icon) -> Image {
         switch icon {
         case .camera:
-            return Image(systemName: "video")
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.video)
         case .microphone:
             return Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)
         case .location:

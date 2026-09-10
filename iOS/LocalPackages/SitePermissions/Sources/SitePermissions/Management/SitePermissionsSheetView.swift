@@ -250,7 +250,7 @@ public struct SitePermissionsSheetView: View {
         let image: UIImage
         switch (row.permissionType, row.iconState) {
         case (.camera, .outline):
-            return Image(systemName: "video")
+            image = DesignSystemImages.Glyphs.Size24.video
         case (.camera, .blocked):
             image = DesignSystemImages.Glyphs.Size24.videoBlocked
         case (.camera, .solid), (.camera, .inUse):

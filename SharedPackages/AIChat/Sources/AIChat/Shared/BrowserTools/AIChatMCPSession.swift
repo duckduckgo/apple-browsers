@@ -68,10 +68,8 @@ public final class AIChatMCPSessionStore {
         sessions[ownerTabID] = session
     }
 
-    /// Creates the session if it is missing: a front end may confirm readiness after an
-    /// `initialize` that timed out on its side, and refusing here would strand it with no way
-    /// to list tools. Such a session simply has no elicitation capability, so Ask tools report
-    /// `elicitation_unsupported` rather than prompting into the void.
+    /// Creates the session if missing, so a front end whose `initialize` timed out on its side can
+    /// still recover. It just has no elicitation capability.
     public func markInitialized(forOwnerTabID ownerTabID: String) {
         var session = sessions[ownerTabID] ?? AIChatMCPSession()
         session.markInitialized()

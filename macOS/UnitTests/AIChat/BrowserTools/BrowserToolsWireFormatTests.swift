@@ -19,8 +19,8 @@
 import XCTest
 @testable import AIChat
 
-/// Pins the browser-tools wire format. These shapes are shared with the Windows browser and read
-/// by the Duck.ai front end, so a change here is a change to an agreed contract, not a refactor.
+/// Pins the browser-tools wire format: these shapes are shared with Windows and read by the Duck.ai
+/// front end, so changing one changes an agreed contract.
 final class BrowserToolsWireFormatTests: XCTestCase {
 
     // MARK: - initialize

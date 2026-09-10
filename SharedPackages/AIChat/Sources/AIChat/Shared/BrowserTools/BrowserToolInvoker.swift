@@ -42,15 +42,12 @@ public final class BrowserToolInvoker {
         // the capability is not available here, not which of the two it was.
         guard let tool = catalog.tool(named: name) else { return .failure(.unavailable) }
 
-        // The Fire boundary is checked before any consent evaluation, and reported as plain
-        // `unavailable` rather than a Fire-specific token — so the front end cannot infer that the
-        // user is browsing privately. Once consent exists (PR 2) this ordering also stops a call
-        // that can never succeed in this window from persisting an Always/Never decision.
+        // Reported as plain `unavailable`, never a Fire-specific token, so the front end cannot
+        // infer the user is browsing privately. Checked before consent so a call that can never
+        // succeed here cannot persist a decision.
         guard !context.isBurner else { return .failure(.unavailable) }
 
-        // Consent lands in PR 2. Until then every tool behaves as `auto`, which is why only `auto`
-        // tools are registered in the catalog so far.
-        assert(tool.permissionMode == .auto, "An ask-mode tool must not be registered before consent exists")
+        assert(tool.permissionMode == .auto, "Ask-mode tools need consent, which does not exist yet")
 
         return await tool.execute(arguments: arguments, context: context)
     }

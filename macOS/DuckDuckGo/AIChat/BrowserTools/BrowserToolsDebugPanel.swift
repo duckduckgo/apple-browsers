@@ -25,17 +25,10 @@ import WebKit
 
 /// DEBUG-only panel for exercising the Duck.ai browser tools bridge by hand.
 ///
-/// Duck.ai's own front end cannot drive this yet, and unlike Windows we cannot stand up a web
-/// harness to do it: WebView2 hands page scripts a raw native channel (`chrome.webview`), whereas
-/// on macOS the message handlers live in an isolated content world that page JavaScript cannot
-/// reach, and content-scope-scripts only grants the `aiChat` page-world bridge to
-/// duckduckgo.com / duck.co / duck.ai.
-///
-/// So this panel takes the front end's place from *inside* the app: it builds a real
-/// `AIChatUserScript`, resolves handlers through the same dispatch switch a page message would, and
-/// feeds them synthetic messages carrying a real web view. Everything below the JavaScript hop —
-/// dispatch, owner-tab resolution, session state, catalog gating, the invoker and the MCP
-/// envelopes — runs exactly as it does in production.
+/// A web page cannot do this on macOS: the message handlers live in an isolated content world page
+/// scripts cannot reach, and content-scope-scripts grants the `aiChat` page-world bridge only to
+/// duckduckgo.com / duck.co / duck.ai. So the panel stands in for the front end from inside the
+/// app, driving the same dispatch and handlers a page message would.
 @MainActor
 final class BrowserToolsDebugPanel: NSWindowController {
 
@@ -113,8 +106,8 @@ final class BrowserToolsDebugPanel: NSWindowController {
         ])
     }
 
-    /// `listOpenTabs` is not part of this change, so there is otherwise no way to discover a tabId
-    /// to hand to `switchToTab`. This reads the window directly rather than going through a tool.
+    /// Reads the window directly — there is no tool for discovering a tabId to hand to
+    /// `switchToTab`.
     @objc private func listWindowTabs() {
         guard let collection = windowControllersManager.lastKeyMainWindowController?
             .mainViewController.tabCollectionViewModel else {

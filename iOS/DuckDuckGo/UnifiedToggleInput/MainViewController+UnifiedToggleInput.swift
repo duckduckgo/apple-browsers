@@ -173,9 +173,19 @@ extension MainViewController {
         viewCoordinator.setAITabBottomChromeHidden(hidesInputBar)
     }
 
-    /// Hides the header chats/compose pill while a voice session is in progress. Idempotent.
+    /// Paints the header + status strip the voice colour while the voice chrome is active. Idempotent.
     func reconcileVoiceSessionChromeForCurrentTab() {
-        aiChatTabChatHeaderView?.setVoiceSessionActive(aiTabChromeDecision().voiceChromeActive)
+        let voiceChromeActive = aiTabChromeDecision().voiceChromeActive
+        let backgroundColor = voiceChromeActive ? voiceModeBackgroundColor : nil
+        aiChatTabChatHeaderView?.setVoiceSessionActive(voiceChromeActive, backgroundColor: backgroundColor)
+        viewCoordinator.setVoiceMode(backgroundColor: backgroundColor)
+        setNeedsStatusBarAppearanceUpdate()
+    }
+
+    /// The exact colour the FE sent via `voiceModeOpened`, falling back to the design-system token.
+    private var voiceModeBackgroundColor: UIColor {
+        let hex = unifiedToggleInputCoordinator?.voiceModeBackgroundColorHex
+        return hex.flatMap(UIColor.init(voiceModeHex:)) ?? UIColor(singleUseColor: .duckAIVoiceModeBackground)
     }
 
     /// Applies both AI-chrome reconciles together — call from every refresh path so adding a new
@@ -625,20 +635,21 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
-        // Per-tab so background voice tabs persist their state until re-activated.
-        NotificationCenter.default.publisher(for: .aiChatVoiceSessionStarted)
-            .compactMap { $0.object as? WKWebView }
+        // Voice chrome syncs off the FE's paint events (`voiceModeOpened`/`Closed`), not the mic events.
+        NotificationCenter.default.publisher(for: .aiChatVoiceModeOpened)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] webView in
-                self?.updateVoiceSessionActive(true, for: webView)
+            .sink { [weak self] notification in
+                guard let webView = notification.object as? WKWebView else { return }
+                let backgroundColorHex = notification.userInfo?[AIChatNotificationUserInfoKey.voiceModeBackgroundColor] as? String
+                self?.updateVoiceSessionActive(true, backgroundColorHex: backgroundColorHex, for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
 
-        NotificationCenter.default.publisher(for: .aiChatVoiceSessionEnded)
+        NotificationCenter.default.publisher(for: .aiChatVoiceModeClosed)
             .compactMap { $0.object as? WKWebView }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] webView in
-                self?.updateVoiceSessionActive(false, for: webView)
+                self?.updateVoiceSessionActive(false, backgroundColorHex: nil, for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
 
@@ -709,9 +720,10 @@ private extension MainViewController {
         }
     }
 
-    private func updateVoiceSessionActive(_ active: Bool, for webView: WKWebView) {
+    private func updateVoiceSessionActive(_ active: Bool, backgroundColorHex: String?, for webView: WKWebView) {
         guard let controller = tabManager.controller(forWebView: webView) else { return }
         if controller === currentTab, let coordinator = unifiedToggleInputCoordinator {
+            coordinator.voiceModeBackgroundColorHex = backgroundColorHex
             coordinator.isVoiceSessionActive = active
             return
         }
@@ -777,7 +789,8 @@ private extension MainViewController {
         // Assert input-hidden synchronously for voice-mode tabs so the bottom chrome doesn't
         // flash visible during the FE's "Connecting…" window. One-shot intent — consume the
         // flag here so later refreshes (e.g. AI→AI navigation taking the preserve-current
-        // path) don't re-hide the UTI after the FE has shown it.
+        // path) don't re-hide the UTI after the FE has shown it. The navy chrome itself is
+        // driven by the FE's `voiceModeOpened`/`Closed` events, which fire at the paint moment.
         if tab.isVoiceModeRequested, coordinator.aiChatInputBoxVisibility != .hidden {
             coordinator.aiChatInputBoxVisibility = .hidden
         }
@@ -1610,4 +1623,19 @@ extension MainViewController: UnifiedToggleInputFloatingReturnKeyDelegate {
         coordinator.insertNewlineFromFloatingReturnKey()
     }
 
+}
+
+private extension UIColor {
+    /// Parses an FE-provided `#RRGGBB` / `RRGGBB` (optionally `#RRGGBBAA`) hex string. Returns `nil` on
+    /// malformed input so callers can fall back to a design-system token.
+    convenience init?(voiceModeHex hex: String) {
+        var string = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if string.hasPrefix("#") { string.removeFirst() }
+        guard string.count == 6 || string.count == 8, var value = UInt64(string, radix: 16) else { return nil }
+        if string.count == 6 { value = (value << 8) | 0xFF }   // canonicalise to RRGGBBAA (opaque)
+        self.init(red: CGFloat((value >> 24) & 0xFF) / 255,
+                  green: CGFloat((value >> 16) & 0xFF) / 255,
+                  blue: CGFloat((value >> 8) & 0xFF) / 255,
+                  alpha: CGFloat(value & 0xFF) / 255)
+    }
 }

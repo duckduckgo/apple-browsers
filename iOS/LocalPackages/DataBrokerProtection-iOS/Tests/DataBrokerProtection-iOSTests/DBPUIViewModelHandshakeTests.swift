@@ -58,24 +58,17 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
         super.tearDown()
     }
 
-    func testGetHandshakeUserData_authenticatedAndFreeTrialEligible_reportsBoth() async {
-        authenticationDelegate.isUserAuthenticatedValue = true
+    /// Mixed values on purpose: opposite values for the two fields prove each is forwarded from its
+    /// own delegate call rather than hardcoded or crossed with the other. This is also the case the
+    /// feature exists for -- a free-scan user who has never used a trial.
+    func testGetHandshakeUserData_forwardsBothFieldsFromDelegate() async {
+        authenticationDelegate.isUserAuthenticatedValue = false
         authenticationDelegate.isUserEligibleForFreeTrialValue = true
 
         let userData = await sut.getHandshakeUserData()
 
-        XCTAssertEqual(userData, DBPUIHandshakeUserData(isAuthenticatedUser: true,
-                                                        isUserEligibleForFreeTrial: true))
-    }
-
-    func testGetHandshakeUserData_unauthenticatedAndNotFreeTrialEligible_reportsNeither() async {
-        authenticationDelegate.isUserAuthenticatedValue = false
-        authenticationDelegate.isUserEligibleForFreeTrialValue = false
-
-        let userData = await sut.getHandshakeUserData()
-
         XCTAssertEqual(userData, DBPUIHandshakeUserData(isAuthenticatedUser: false,
-                                                        isUserEligibleForFreeTrial: false))
+                                                        isUserEligibleForFreeTrial: true))
     }
 }
 

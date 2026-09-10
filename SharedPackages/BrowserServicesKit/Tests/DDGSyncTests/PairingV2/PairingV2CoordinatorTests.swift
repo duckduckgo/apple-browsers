@@ -259,6 +259,45 @@ final class PairingV2CoordinatorTests: XCTestCase {
         }
     }
 
+    func testWhenChannelCreationFailsWithAmbiguousNetworkErrorThenAttemptsCleanup() async throws {
+        for isPresenter in [true, false] {
+            for shouldAuthenticate in [true, false] {
+                let dependencies = MockSyncDependencies()
+                let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+                let messageExchanger = PairingV2MessageExchangingMock()
+                let keyPair = try makePeerKeyPair(channelID: "local-channel")
+                let coordinator = makeCoordinator(syncService: syncService,
+                                                  messageExchanger: messageExchanger,
+                                                  shouldAuthenticateExchangeEndpoints: shouldAuthenticate,
+                                                  makeKeyPair: { keyPair },
+                                                  makeChannelSecret: { "local-secret" })
+                messageExchanger.openChannelHandler = { _ in
+                    throw PairingV2RelayRequestError(kind: .networkError, underlyingError: URLError(.timedOut))
+                }
+
+                let failure = await pairingFailure {
+                    if isPresenter {
+                        _ = try await coordinator.startPresenting()
+                    } else {
+                        try await coordinator.startScanning(qrPayload: .init(channelId: "peer-channel", publicKey: keyPair.publicKey))
+                    }
+                }
+
+                let expectedStage: PairingV2FailureStage = isPresenter ? .presenterOpenOwnChannel : .scannerOpenOwnChannel
+                let expectedSecret: String? = shouldAuthenticate ? "local-secret" : nil
+
+                XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: expectedStage, kind: .networkError))
+                XCTAssertEqual(messageExchanger.openChannelCalls, ["local-channel"])
+                XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets, [expectedSecret])
+                XCTAssertEqual(messageExchanger.closeChannelCalls, ["local-channel"])
+                XCTAssertEqual(messageExchanger.closeChannelAuthorizationSecrets, [expectedSecret])
+
+                await coordinator.cancel()
+                XCTAssertEqual(messageExchanger.closeChannelCalls, ["local-channel"])
+            }
+        }
+    }
+
     func testWhenChannelClaimConflictsThenFailsWithoutRetrying() async throws {
         for isPresenter in [true, false] {
             let dependencies = MockSyncDependencies()

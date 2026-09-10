@@ -107,7 +107,8 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
         viewState = WebsitePermissionDetailViewState(
             category: category,
             searchQuery: viewState.searchQuery,
-            sites: sites
+            sites: sites,
+            isLoading: false
         )
     }
 

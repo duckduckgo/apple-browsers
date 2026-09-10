@@ -77,7 +77,9 @@ struct PreferencesWebsitePermissionDetailView: View {
             }
 
             PreferencesWebsitePermissionListContainer {
-                if model.viewState.isEmpty {
+                if model.viewState.isLoading {
+                    loadingState
+                } else if model.viewState.isEmpty {
                     emptyState
                 } else if model.viewState.hasNoResults {
                     noResultsState
@@ -87,6 +89,12 @@ struct PreferencesWebsitePermissionDetailView: View {
             }
         }
         .padding(.bottom, 16)
+    }
+
+    private var loadingState: some View {
+        ProgressView()
+            .frame(maxWidth: .infinity, minHeight: Constants.emptyRowHeight)
+            .accessibilityIdentifier("WebsitePermissions.Detail.Loading")
     }
 
     private var searchField: some View {

@@ -24,11 +24,13 @@ struct WebsitePermissionDetailViewState: Equatable {
     private(set) var searchQuery: String
     let sites: [SiteRow]
     private(set) var visibleSites: [SiteRow]
+    private(set) var isLoading: Bool
 
-    init(category: WebsitePermissionCategory, searchQuery: String = "", sites: [SiteRow] = []) {
+    init(category: WebsitePermissionCategory, searchQuery: String = "", sites: [SiteRow] = [], isLoading: Bool = true) {
         self.category = category
         self.searchQuery = searchQuery
         self.sites = sites
+        self.isLoading = isLoading
         self.visibleSites = []
         self.visibleSites = filteredSites(from: sites, matching: searchQuery)
     }

@@ -39,6 +39,22 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         super.tearDown()
     }
 
+    func testWhenDetailIsCreatedThenItRemainsLoadingUntilPermissionsArePublished() {
+        let model = WebsitePermissionDetailViewModel(
+            category: .camera,
+            permissionManager: permissionManager,
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertTrue(model.viewState.isLoading)
+
+        waitForDetailStateUpdate(model) {
+            model.send(action: .onAppear)
+        }
+
+        XCTAssertFalse(model.viewState.isLoading)
+    }
+
     func testWhenBuildingDetailSitesThenOnlyCategoryEntriesAreIncludedAndSorted() {
         let sut = makeSUT(
             category: .camera,
@@ -198,14 +214,14 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         }
         return model
     }
-    
+
     private func waitForDetailStateUpdate(_ model: WebsitePermissionDetailViewModel, action: () -> Void) {
         let expectation = expectation(description: "Detail permissions updated")
         let cancellable = model.$viewState
             .dropFirst()
             .prefix(1)
             .sink { _ in expectation.fulfill() }
-        
+
         action()
         wait(for: [expectation], timeout: 1)
         withExtendedLifetime(cancellable) {}

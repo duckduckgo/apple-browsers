@@ -131,6 +131,13 @@ extension StaticUserScript {
 
 }
 
-public enum UserScriptError: Error {
+public enum UserScriptError: LocalizedError {
     case failedToLoadJS(jsFile: String, error: Error)
+
+    public var errorDescription: String? {
+        switch self {
+        case let .failedToLoadJS(jsFile, error):
+            return "Failed to load \(jsFile).js: \(error as NSError)"
+        }
+    }
 }

@@ -37,7 +37,7 @@ enum JSFileCache {
         }
 
         do {
-            let content = try String(contentsOfFile: path)
+            let content = try String(contentsOfFile: path, encoding: .utf8)
             lock.lock()
             storage[cacheKey] = content
             lock.unlock()

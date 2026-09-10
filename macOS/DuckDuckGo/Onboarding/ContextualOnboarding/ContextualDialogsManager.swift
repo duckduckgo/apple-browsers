@@ -146,6 +146,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     func lastDialogForTab(_ tab: Tab) -> ContextualDialogType? {
         if isNonBlocking(), case .onboarding = tab.content { return nil }
         if isNonBlocking(), state == .onboardingCompleted { return nil }
+        if isNonBlocking(), lastDialog == .tryASearch, !canShowSearchPrompt(in: tab) { return nil }
         // If the provided tab is the same as the last tab we processed, return the stored last dialog.
         if tab == lastTab {
             return lastDialog
@@ -218,10 +219,6 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         if isNonBlocking(), case .onboarding = tab.content { return nil }
         // If onboarding is complete, return nil.
         guard state != .onboardingCompleted else { return nil }
-        // Non-blocking setup starts contextual guidance on the first browsing navigation.
-        if isNonBlocking(), state == .notStarted {
-            guard case .url = tab.content else { return nil }
-        }
         // If onboarding hasn't started, mark it as ongoing.
         if state == .notStarted { state = .ongoing }
         // The upsell shows once. The persisted marker also prevents it returning after relaunch.
@@ -248,13 +245,10 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         case .newtab:
             selectedDialog = dialogForNewTab()
         case .url(let url, _, _):
-            // Check if the URL is a DuckDuckGo search.
-            if url.isDuckDuckGoSearch {
-                if isNonBlocking(), !hasSeen(.tryASearch) {
-                    selectedDialog = .tryASearch
-                } else {
-                    selectedDialog = dialogForDuckDuckGoSearch()
-                }
+            if isNonBlocking(), !hasSeen(.tryASearch), canShowSearchPrompt(in: tab) {
+                selectedDialog = .tryASearch
+            } else if url.isDuckDuckGoSearch {
+                selectedDialog = dialogForDuckDuckGoSearch()
             } else {
                 // For website visit, decide dialog also based on the tracker type.
                 let trackerType = trackerMessageProvider.trackersType(privacyInfo: tab.privacyInfo)
@@ -277,6 +271,17 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     }
 
     // MARK: - Helpers
+
+    private func canShowSearchPrompt(in tab: Tab) -> Bool {
+        switch tab.content {
+        case .newtab:
+            return true
+        case .url(let url, _, _):
+            return url.host?.lowercased() == "duckduckgo.com" || url.host?.lowercased() == "www.duckduckgo.com"
+        default:
+            return false
+        }
+    }
 
     // Determines the dialog for a new tab.
     private func dialogForNewTab() -> ContextualDialogType? {
@@ -321,8 +326,8 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
 
     // Determines the dialog for a website visit based on tracker type and privacy info.
     private func dialogForRegularUrl(trackerType: OnboardingTrackersType?, privacyInfo: PrivacyInfo?) -> ContextualDialogType? {
-        // If "tryASearch" hasn't been seen, show it.
-        if !hasSeen(.tryASearch) { return .tryASearch }
+        // The blocking flow also introduces search on other websites.
+        if !isNonBlocking(), !hasSeen(.tryASearch) { return .tryASearch }
         // If a blocked tracker dialog (specific tracker dialog where trackers were blocked) was not shown
         if !stateStorage.blockedTrackerSeen {
             // If the tracker type is blocked, mark it and show a tracker dialog.

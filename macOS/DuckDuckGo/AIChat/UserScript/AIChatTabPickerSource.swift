@@ -54,11 +54,8 @@ enum AIChatTabPickerSource {
         }
     }
 
-    /// An opaque handle for the window a call is scoped to.
-    ///
-    /// A tab id is not enough: pinned tabs are shared, so the same id appears in every window and
-    /// "the window holding this tab" is ambiguous. The origin collection is resolved once from the
-    /// sending web view, then carried through the call as this token.
+    /// Opaque handle for the window a call is scoped to. A tab id is not enough — pinned tabs are
+    /// shared, so "the window holding this tab" is ambiguous; this is resolved from the web view.
     static func windowToken(forCollection collection: TabCollectionViewModel) -> String {
         String(UInt(bitPattern: ObjectIdentifier(collection).hashValue))
     }

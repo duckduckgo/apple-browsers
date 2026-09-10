@@ -45,10 +45,8 @@ public struct AIChatMCPSession: Equatable, Sendable {
     }
 }
 
-/// Sessions keyed by Duck.ai owner tab, so a sidebar and the tab it is docked to share one.
-///
-/// Ownership sits here rather than on the sidebar's view model so `initialize` can succeed even
-/// when it races the sidebar being presented.
+/// Sessions keyed by Duck.ai owner tab, so a sidebar and its host tab share one. Kept here rather
+/// than on the sidebar's view model so `initialize` can win a race with the sidebar appearing.
 @MainActor
 public final class AIChatMCPSessionStore {
 

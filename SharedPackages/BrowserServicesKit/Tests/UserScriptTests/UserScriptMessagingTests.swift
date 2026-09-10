@@ -307,10 +307,8 @@ struct TestDelegate: Subfeature {
     }
 }
 
-/// `SubscriptionEvent.toJS` has to cope with subscription names that are not valid JS
-/// identifiers — MCP uses names like `elicitation/create` and `notifications/tools/list_changed`.
-/// These tests execute the generated JS rather than asserting on its shape, because the failure
-/// mode being guarded against is a runtime `ReferenceError`, not a malformed string.
+/// Subscription names are not always valid JS identifiers. These execute the generated JS rather
+/// than asserting on its shape, because the failure guarded against is a runtime `ReferenceError`.
 final class SubscriptionEventToJSTests: XCTestCase {
 
     func testWhenSubscriptionNameIsAPlainIdentifierThenTheHandlerIsCalled() throws {

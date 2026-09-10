@@ -142,9 +142,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                                            currentCohorts: currentCohorts,
                                            themeVariant: themeVariant)
         do {
-            // Native-only: Duck.ai gates on the `supportsBrowserTools` config value and never reads
-            // this key. Windows found that injecting it broke content-scope-scripts' aiChat message
-            // bridge, and content-scope-scripts is shared, so keep it out here too.
+            // Native-only — Duck.ai gates on `supportsBrowserTools` and never reads this key.
+            // Windows found injecting it broke the aiChat message bridge, which is shared code.
             let nativeOnlyFeatures = [PrivacyFeature.aiChatBrowserTools.rawValue]
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
                 featureFlagger: sourceProvider.featureFlagger,

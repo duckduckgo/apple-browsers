@@ -45,9 +45,8 @@ final class AIChatMCPSessionTests: XCTestCase {
         XCTAssertEqual(store.session(forOwnerTabID: ownerTabID)?.isInitialized, true)
     }
 
-    /// A front end whose `initialize` timed out on its side can still confirm readiness. Refusing
-    /// would strand it with no way to list tools; instead it gets a session with no elicitation
-    /// capability, so Ask tools report `elicitation_unsupported` rather than prompting into the void.
+    /// A front end whose `initialize` timed out can still confirm readiness — refusing would
+    /// strand it with no way to list tools.
     func testWhenOnlyTheInitializedNotificationArrivesThenTheSessionIsReadyWithoutElicitation() {
         let store = AIChatMCPSessionStore()
 

@@ -19,10 +19,8 @@
 import AIChat
 import Foundation
 
-/// Switches to another tab in the window the chat belongs to.
-///
-/// `auto`, so it never prompts: it exposes nothing the user cannot already see, and only moves the
-/// selection they are looking at. `readOnlyHint` is still false because it does mutate UI state.
+/// Switches to another tab in the window the chat belongs to. Never prompts — it exposes nothing
+/// the user cannot already see — but `readOnlyHint` is false because it does mutate UI state.
 @MainActor
 final class SwitchToTabBrowserTool: BrowserTool {
 
@@ -69,10 +67,8 @@ final class SwitchToTabBrowserTool: BrowserTool {
             return .failure(.invalidArguments)
         }
 
-        // Scoped to the window the chat lives in: a tab elsewhere is reported missing rather than
-        // switched to, so a chat cannot pull the user to a window they were not working in.
-        // Selection happens inside that collection rather than by id, because a shared pinned tab
-        // resolves in every window and would otherwise raise the wrong one.
+        // Selection happens inside the chat's own window rather than by id: a shared pinned tab
+        // resolves in every window, so an id lookup could raise one the user was not working in.
         guard let token = context.ownerWindowToken,
               let collection = AIChatTabPickerSource.tabCollectionViewModel(forWindowToken: token,
                                                                            in: windowControllersManager),

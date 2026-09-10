@@ -263,9 +263,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
 
-    /// Owns the Duck.ai browser tools bridge — MCP sessions keyed by owner tab, plus the tool
-    /// catalog. App-wide because a sidebar and its host tab share one session, while each web
-    /// view gets its own `AIChatUserScript`.
+    /// App-wide because a sidebar and its host tab share one session, while each web view gets
+    /// its own `AIChatUserScript`.
     let aiChatBrowserToolsService: AIChatBrowserToolsService
     let aiChatPreferences: AIChatPreferences
     let promptBarPreferences: PromptBarPreferences

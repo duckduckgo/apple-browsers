@@ -21,12 +21,8 @@ import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
 
-/// App-wide owner of the Duck.ai browser tools bridge: the MCP sessions, the tool catalog, and
-/// the remote-config gating behind them.
-///
-/// One instance per app rather than per web view, because a session belongs to the Duck.ai *owner
-/// tab* — a sidebar and the tab it is docked to share one — while each web view gets its own
-/// `AIChatUserScript`.
+/// Owns the MCP sessions, the tool catalog and their gating. App-wide rather than per web view,
+/// because a session belongs to the owner tab while each web view gets its own user script.
 @MainActor
 final class AIChatBrowserToolsService {
 
@@ -64,10 +60,8 @@ final class AIChatBrowserToolsService {
     }
 }
 
-/// Maps the browser-tools remote-config sub-features onto macOS feature flags.
-///
-/// A tool's `name` is its sub-feature's raw value, so the two cannot drift apart: adding a
-/// sub-feature is a compile error here until it is mapped.
+/// Maps browser-tools sub-features onto macOS feature flags. A tool's `name` is its sub-feature's
+/// raw value, so adding a sub-feature is a compile error here until it is mapped.
 @MainActor
 final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
 

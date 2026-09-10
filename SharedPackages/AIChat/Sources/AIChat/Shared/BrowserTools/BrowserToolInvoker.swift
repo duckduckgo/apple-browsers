@@ -18,10 +18,8 @@
 
 import Foundation
 
-/// The single entry point for running a browser tool.
-///
-/// Everything that can refuse a call lives here and runs in a fixed order, so a tool's `execute`
-/// only has to worry about its own arguments.
+/// The single entry point for running a tool. Every reason a call can be refused lives here, in a
+/// fixed order, so a tool's `execute` only handles its own arguments.
 @MainActor
 public final class BrowserToolInvoker {
 

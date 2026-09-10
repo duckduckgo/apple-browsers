@@ -18,11 +18,8 @@
 
 import Foundation
 
-/// The MCP-shaped contract Duck.ai uses to discover and invoke browser capabilities.
-///
-/// The vocabulary and payloads are MCP; the framing is the existing Duck.ai ↔ native message
-/// bridge. There is no JSON-RPC endpoint and no MCP server. These shapes match the Windows
-/// browser byte for byte so the Duck.ai front end can treat the platforms uniformly.
+/// MCP vocabulary and payloads over the existing Duck.ai ↔ native bridge — no JSON-RPC endpoint,
+/// no MCP server. Shapes match the Windows browser so one front end drives both platforms.
 public enum MCPProtocol {
 
     /// Negotiated on `initialize`. Native always answers with its own version, never an echo.
@@ -35,11 +32,8 @@ public enum MCPProtocol {
 
 // MARK: - Session
 
-/// FE → native `initialize`.
-///
-/// Deliberately tolerant: a partial or malformed payload still yields a request so native can
-/// answer, because a silent drop would hang the front end's pending promise. Anything it could
-/// not understand simply reads as "capability not supported".
+/// Tolerant by design: a malformed payload still yields a request so native can answer, because
+/// the bridge has no timeout and silence would hang the caller. What it can't read means "no".
 public struct MCPInitializeRequest: Decodable, Equatable {
     public let protocolVersion: String?
     public let capabilities: MCPClientCapabilities?
@@ -80,7 +74,6 @@ public struct MCPElicitationClientCapability: Decodable, Equatable {
     }
 }
 
-/// native → FE `initialize` result.
 public struct MCPInitializeResult: Encodable, Equatable {
     public let protocolVersion: String
     public let capabilities: MCPServerCapabilities
@@ -111,7 +104,6 @@ public struct MCPImplementationInfo: Codable, Equatable {
     }
 }
 
-/// Reply body for messages whose MCP result is an empty object.
 public struct MCPEmptyResult: Encodable, Equatable {
     public init() {}
 }
@@ -168,10 +160,8 @@ public struct MCPToolAnnotations: Codable, Equatable, Sendable {
     }
 }
 
-/// Reply body for `tools/list`.
-///
-/// Note the asymmetry with `tools/call`: a listing failure is a top-level `error` token, whereas
-/// an invocation failure rides inside the MCP `CallToolResult`.
+/// Reply body for `tools/list`. Note the asymmetry with `tools/call`: a listing failure is a
+/// top-level `error` token, an invocation failure rides inside the MCP result.
 public struct BrowserToolsListResponse: Encodable, Equatable {
     public let tools: [BrowserToolDescriptor]
     public let error: String?
@@ -189,17 +179,14 @@ public struct BrowserToolsListResponse: Encodable, Equatable {
 
 // MARK: - Invocation
 
-/// FE → native `tools/call`.
 public struct InvokeBrowserToolRequest: Decodable, Equatable {
     public let name: String
     public let callId: String
     public let arguments: JSONValue?
 }
 
-/// native → FE reply to `tools/call`.
-///
-/// `status` reports the round trip only and is therefore always `ok` — a tool that refused or
-/// failed says so through `result.isError`, never through a transport error.
+/// `status` reports the round trip only, so it is always `ok` — a tool that refused says so
+/// through `result.isError`, never through a transport error.
 public struct InvokeBrowserToolResponse: Encodable, Equatable {
     public let callId: String
     public let status: String
@@ -212,7 +199,6 @@ public struct InvokeBrowserToolResponse: Encodable, Equatable {
     }
 }
 
-/// MCP CallToolResult.
 public struct MCPCallToolResult: Encodable, Equatable {
     public let content: [MCPTextContentBlock]
     public let isError: Bool
@@ -270,9 +256,7 @@ public enum BrowserToolFailure: String, Equatable, Sendable, CaseIterable {
     /// that names no open tab, or one in another window.
     case notFound = "not_found"
 
-    /// The capability is not available here: the feature or the tool's sub-feature is off, the
-    /// tool is unknown, or the call crosses the Fire boundary. Deliberately indistinguishable so
-    /// the front end learns nothing about Fire windows.
+    /// Feature or sub-feature off, tool unknown, or a Fire window — deliberately indistinguishable.
     case unavailable
 
     /// The user refused, now or by a stored decision.

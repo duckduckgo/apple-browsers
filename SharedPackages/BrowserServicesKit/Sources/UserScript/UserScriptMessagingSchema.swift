@@ -148,10 +148,8 @@ public struct SubscriptionEvent {
             return nil
         }
 
-        // Subscription names are not always valid JS identifiers — MCP-style names such as
-        // `elicitation/create` are legal — so the handler is looked up by string key. Dot notation
-        // parses `a/b` as a division and throws at runtime, and `push` evaluates this without a
-        // completion handler, so that failure would be silent.
+        // Looked up by string key because a name like `elicitation/create` is legal here: dot
+        // notation would parse `a/b` as division and throw, silently, since nothing checks it.
         let name = jsStringLiteral(res.subscriptionName)
         let warnStatement = debug ? "console.warn(\"missing \" + \(name), \(json))" : ""
 

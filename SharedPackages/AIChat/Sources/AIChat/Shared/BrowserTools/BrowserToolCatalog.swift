@@ -18,10 +18,8 @@
 
 import Foundation
 
-/// The browser tools Duck.ai may discover and invoke, after remote-config gating.
-///
-/// A tool whose sub-feature is off is absent from `tools/list` *and* unresolvable by name, so
-/// calling it anyway reports `unavailable` rather than running.
+/// Tools Duck.ai may discover and invoke, after remote-config gating. A disabled tool is absent
+/// from `tools/list` *and* unresolvable by name, so calling it anyway reports `unavailable`.
 @MainActor
 public final class BrowserToolCatalog {
 

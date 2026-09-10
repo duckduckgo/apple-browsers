@@ -18,18 +18,8 @@
 
 import Foundation
 
-/// A concrete JSON value, used where the MCP wire carries free-form JSON: tool input/output
-/// schemas, tool arguments, and structured tool results.
-///
-/// Tools declare their schemas with Swift literals rather than parsing JSON strings, so a
-/// malformed schema is a compile error instead of a runtime surprise:
-///
-/// ```swift
-/// static let inputSchema: JSONValue = [
-///     "type": "object",
-///     "properties": ["limit": ["type": "integer", "minimum": 1, "maximum": 50]]
-/// ]
-/// ```
+/// Free-form JSON on the MCP wire: schemas, tool arguments, structured results. Tools declare
+/// schemas as Swift literals, so a malformed one is a compile error rather than a runtime surprise.
 public enum JSONValue: Codable, Equatable, Sendable {
     case null
     case bool(Bool)
@@ -114,9 +104,8 @@ public extension JSONValue {
 
 // MARK: - Literals
 
-// Deliberately not `ExpressibleByNilLiteral`: it would make `nil` mean JSON null, so an
-// ordinary `optionalValue ?? nil` would quietly produce `.null` instead of staying absent.
-// Write `.null` where a JSON null is actually intended.
+// Deliberately not `ExpressibleByNilLiteral`: it would make `optionalValue ?? nil` quietly
+// produce `.null` instead of staying absent. Write `.null` where a JSON null is intended.
 
 extension JSONValue: ExpressibleByBooleanLiteral {
     public init(booleanLiteral value: Bool) { self = .bool(value) }
@@ -157,9 +146,8 @@ public extension JSONValue {
         case let value as String:
             self = .string(value)
         case let number as NSNumber:
-            // Bool, Int and Double all bridge to NSNumber, and only the CFTypeID separates a
-            // boolean from a numeric 0/1. JS has no integer type, so a whole double becomes an
-            // Int here — that is what lets a tool validate `limit: 50` as an integer argument.
+            // Only the CFTypeID separates a bool from a numeric 0/1. JS has no integer type, so a
+            // whole double becomes an Int — which is what lets a tool validate `limit: 50`.
             if CFGetTypeID(number) == CFBooleanGetTypeID() {
                 self = .bool(number.boolValue)
             } else if let int = Int(exactly: number.doubleValue) {

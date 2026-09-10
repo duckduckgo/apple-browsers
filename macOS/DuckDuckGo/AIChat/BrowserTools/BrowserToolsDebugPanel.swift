@@ -23,12 +23,8 @@ import AppKit
 import UserScript
 import WebKit
 
-/// DEBUG-only panel for exercising the Duck.ai browser tools bridge by hand.
-///
-/// A web page cannot do this on macOS: the message handlers live in an isolated content world page
-/// scripts cannot reach, and content-scope-scripts grants the `aiChat` page-world bridge only to
-/// duckduckgo.com / duck.co / duck.ai. So the panel stands in for the front end from inside the
-/// app, driving the same dispatch and handlers a page message would.
+/// DEBUG-only stand-in for the Duck.ai front end, driving the same dispatch and handlers a page
+/// message would. A page cannot do this yet — the `aiChat` bridge is granted only to duck.ai.
 @MainActor
 final class BrowserToolsDebugPanel: NSWindowController {
 
@@ -123,9 +119,8 @@ final class BrowserToolsDebugPanel: NSWindowController {
         appendToLog("")
     }
 
-    /// Sessions are keyed per owner tab, and the owner tab is re-read on every click — so selecting
-    /// a different tab between the handshake and a call silently moves you to a tab that has no
-    /// session. Showing the state makes that visible instead of surfacing it as `not_initialized`.
+    /// The owner tab is re-read on every click, so switching tabs mid-handshake lands you on one
+    /// with no session. Showing the state beats discovering it as `not_initialized` on a call.
     @objc private func refreshTarget() {
         guard let tab = selectedTab else {
             targetLabel.stringValue = "No tab selected — open a tab to act as the Duck.ai owner tab."
@@ -150,9 +145,8 @@ final class BrowserToolsDebugPanel: NSWindowController {
             return
         }
 
-        // Check the method really is wired into the production dispatch switch — the same lookup a
-        // page message performs. Its closure takes a concrete `WKScriptMessage`, which only WebKit
-        // can create, so the typed handler behind it is invoked directly below.
+        // Same lookup a page message performs. Its closure needs a concrete `WKScriptMessage`,
+        // which only WebKit can make, so the typed handler behind it is invoked directly below.
         guard userScript.handler(forMethodNamed: method) != nil else {
             appendToLog("→ \(method): not wired into the dispatch switch")
             return

@@ -522,11 +522,8 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case usageWarnings
 }
 
-/// Native browser capabilities Duck.ai can discover and invoke over the MCP-shaped contract.
-///
-/// The parent feature is the kill switch: with it off there are no tools at all. Each tool then
-/// has its own gate, so one can be withdrawn without touching the rest — a disabled tool is
-/// absent from `tools/list` and reports `unavailable` if called anyway.
+/// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool
+/// also has its own gate, so one can be withdrawn without touching the rest.
 public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature {
         .aiChatBrowserTools

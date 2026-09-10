@@ -1185,11 +1185,8 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
 
 extension AIChatUserScriptHandler {
 
-    /// MCP `initialize`.
-    ///
-    /// Always answers, even when the payload is unreadable: the bridge has no timeout, so a
-    /// silent drop would leave the front end's promise pending forever. An unreadable payload
-    /// simply yields a session with no elicitation capability.
+    /// Always answers, even on an unreadable payload: the bridge has no timeout, so silence would
+    /// leave the caller pending forever.
     @MainActor
     func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
         let request: MCPInitializeRequest? = DecodableHelper.decode(from: params)
@@ -1204,10 +1201,8 @@ extension AIChatUserScriptHandler {
                                    serverVersion: AppVersion.shared.versionAndBuildNumber)
     }
 
-    /// MCP `notifications/initialized`.
-    ///
-    /// The bridge decides whether this reply is delivered — a message carrying an envelope `id`
-    /// gets it, a plain notification discards it — so returning a result is correct either way.
+    /// The bridge decides whether this reply is delivered — a message with an envelope `id` gets
+    /// it, a plain notification discards it — so returning a result is correct either way.
     @MainActor
     func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable? {
         if let ownerTabID = ownerTabID(for: message) {
@@ -1216,8 +1211,6 @@ extension AIChatUserScriptHandler {
         return MCPEmptyResult()
     }
 
-    /// MCP `tools/list`.
-    ///
     /// A listing failure is a top-level `error` token, unlike `tools/call`, which carries failures
     /// inside the MCP result envelope.
     @MainActor
@@ -1228,18 +1221,13 @@ extension AIChatUserScriptHandler {
             return BrowserToolsListResponse(failure: .notInitialized)
         }
 
-        // Deliberately no Fire check here, mirroring Windows: a Fire window is advertised the full
-        // catalogue and refused on every call. That pair is detectable — a disabled feature returns
-        // an empty list — so it is a known cross-platform gap to close together rather than one
-        // platform diverging on its own.
+        // No Fire check, mirroring Windows: a Fire window is advertised the catalogue and refused
+        // on every call. Detectable, and a known cross-platform gap to close on both sides together.
         return BrowserToolsListResponse(tools: browserTools.catalog.enabledTools.map { $0.descriptor() })
     }
 
-    /// MCP `tools/call`.
-    ///
-    /// Every outcome is a well-formed reply carrying the request's `callId`. A tool that refused
-    /// reports it through `isError` inside the MCP result; the envelope's own status describes the
-    /// round trip only, and is always `ok`.
+    /// Every outcome is a well-formed reply carrying the request's `callId`. A refusal rides in
+    /// `isError`; the envelope status describes the round trip only, and is always `ok`.
     @MainActor
     func mcpToolsCall(params: Any, message: UserScriptMessage) async -> Encodable? {
         guard let request: InvokeBrowserToolRequest = DecodableHelper.decode(from: params), !request.name.isEmpty else {

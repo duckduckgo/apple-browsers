@@ -18,10 +18,8 @@
 
 import Foundation
 
-/// A discoverable, invokable browser capability exposed to Duck.ai over the MCP-shaped contract.
-///
-/// Adding a tool is: conform to this protocol, add its sub-feature gate, and register it. Nothing
-/// in the bridge, session or permission layers needs to change.
+/// A browser capability Duck.ai can discover and invoke. Adding one is: conform, add a
+/// sub-feature gate, register — the bridge, session and permission layers stay untouched.
 @MainActor
 public protocol BrowserTool: AnyObject {
 

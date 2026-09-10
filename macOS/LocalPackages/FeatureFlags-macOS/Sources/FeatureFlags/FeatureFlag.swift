@@ -519,9 +519,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// and the warnings that will be built on top of it. Internal-only while the UI is in development.
     case aiChatUsageWarnings
 
-    /// Gates the Duck.ai browser tools bridge: the MCP-shaped contract that lets Duck.ai discover
-    /// and invoke native browser capabilities with per-tool user consent. Parent kill switch — with
-    /// it off there are no tools at all. Internal-only while the front end is in development.
+    /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.
+    /// Internal-only while the front end is in development.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
     case aiChatBrowserTools
 

@@ -82,11 +82,13 @@ final class AccountManagerTests: XCTestCase {
         let protectedKey = makeAccountInfoProtectedKey()
         accountInfoKeyFactory.makeProtectedKeysStub = [protectedKey]
         let deviceInfoCodec = DeviceInfoCodingMock()
+        let events = UnifiedDeviceListEventMappingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),
                                             accountInfoKeyFactory: accountInfoKeyFactory,
                                             deviceInfoCodec: deviceInfoCodec,
+                                            unifiedDeviceListEvents: events,
                                             isScopedAccessCredentialsEnabled: { true },
                                             canWriteUnifiedDeviceList: { true })
         api.fakeRequests[endpoints.signup] = makeJSONRequest("""
@@ -96,7 +98,7 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
 
         let signupBody = try makeSignupBody(from: api)
         let keys = try XCTUnwrap(signupBody["keys"] as? [[String: Any]])
@@ -112,6 +114,11 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(deviceInfoCodec.encryptUsingProtectedKeyCalls.first?.deviceInfo,
                        DeviceInfo(name: "iPhone", type: "iOS"))
         XCTAssertEqual(deviceInfoCodec.encryptUsingProtectedKeyCalls.first?.protectedKey.kid, protectedKey.kid)
+        XCTAssertTrue(result.didPublishDeviceInfo)
+        XCTAssertEqual(events.events, [
+            .accountInfoKeyCreateSuccess,
+            .ownRowDeviceInfoFirstWriteSuccess
+        ])
     }
 
     func testWhenCreatingAccountWithUnifiedWriteDisabledThenSignupOmitsKeysAndDeviceInfo() async throws {
@@ -120,11 +127,13 @@ final class AccountManagerTests: XCTestCase {
         let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
         accountInfoKeyFactory.makeProtectedKeysStub = [makeAccountInfoProtectedKey()]
         let deviceInfoCodec = DeviceInfoCodingMock()
+        let events = UnifiedDeviceListEventMappingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),
                                             accountInfoKeyFactory: accountInfoKeyFactory,
                                             deviceInfoCodec: deviceInfoCodec,
+                                            unifiedDeviceListEvents: events,
                                             isScopedAccessCredentialsEnabled: { true },
                                             canWriteUnifiedDeviceList: { false })
         api.fakeRequests[endpoints.signup] = makeJSONRequest("""
@@ -134,7 +143,7 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
 
         let signupBody = try makeSignupBody(from: api)
         XCTAssertNil(signupBody["keys"])
@@ -143,6 +152,8 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
         XCTAssertTrue(accountInfoKeyFactory.makeProtectedKeysCalls.isEmpty)
         XCTAssertTrue(deviceInfoCodec.encryptUsingProtectedKeyCalls.isEmpty)
+        XCTAssertFalse(result.didPublishDeviceInfo)
+        XCTAssertTrue(events.events.isEmpty)
     }
 
     func testWhenDeviceInfoEncryptionFailsThenSignupFallsBackToLegacyFields() async throws {
@@ -152,11 +163,13 @@ final class AccountManagerTests: XCTestCase {
         accountInfoKeyFactory.makeProtectedKeysStub = [makeAccountInfoProtectedKey()]
         let deviceInfoCodec = DeviceInfoCodingMock()
         deviceInfoCodec.encryptUsingProtectedKeyError = DeviceInfoCodecError.invalidPayload
+        let events = UnifiedDeviceListEventMappingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),
                                             accountInfoKeyFactory: accountInfoKeyFactory,
                                             deviceInfoCodec: deviceInfoCodec,
+                                            unifiedDeviceListEvents: events,
                                             isScopedAccessCredentialsEnabled: { true },
                                             canWriteUnifiedDeviceList: { true })
         api.fakeRequests[endpoints.signup] = makeJSONRequest("""
@@ -166,7 +179,7 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
 
         let signupBody = try makeSignupBody(from: api)
         XCTAssertNil(signupBody["keys"])
@@ -174,6 +187,8 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(signupBody["device_name"] as? String, "encrypted_iPhone")
         XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
         XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.signup])
+        XCTAssertFalse(result.didPublishDeviceInfo)
+        XCTAssertEqual(events.events, [.ownRowDeviceInfoFirstWriteFailed(.encryptFailed)])
     }
 
     func testWhenAccountInfoKeyGenerationFailsThenSignupFallsBackToSingleLegacyRequest() async throws {
@@ -182,11 +197,13 @@ final class AccountManagerTests: XCTestCase {
         let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
         accountInfoKeyFactory.makeProtectedKeysError = AccountManagerTestError.accountInfoKeyGenerationFailed
         let deviceInfoCodec = DeviceInfoCodingMock()
+        let events = UnifiedDeviceListEventMappingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),
                                             accountInfoKeyFactory: accountInfoKeyFactory,
                                             deviceInfoCodec: deviceInfoCodec,
+                                            unifiedDeviceListEvents: events,
                                             isScopedAccessCredentialsEnabled: { true },
                                             canWriteUnifiedDeviceList: { true })
         api.fakeRequests[endpoints.signup] = makeJSONRequest("""
@@ -196,7 +213,7 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
 
         let signupBody = try makeSignupBody(from: api)
         XCTAssertNil(signupBody["keys"])
@@ -206,6 +223,8 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(accountInfoKeyFactory.makeProtectedKeysCalls.count, 1)
         XCTAssertTrue(deviceInfoCodec.encryptUsingProtectedKeyCalls.isEmpty)
         XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.signup])
+        XCTAssertFalse(result.didPublishDeviceInfo)
+        XCTAssertEqual(events.events, [.accountInfoKeyCreateFailed(.mintFailed)])
     }
 
     func testWhenEnrichedSignupRequestFailsThenErrorIsPropagatedWithoutLegacyRetry() async throws {
@@ -214,11 +233,13 @@ final class AccountManagerTests: XCTestCase {
         let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
         accountInfoKeyFactory.makeProtectedKeysStub = [makeAccountInfoProtectedKey()]
         let deviceInfoCodec = DeviceInfoCodingMock()
+        let events = UnifiedDeviceListEventMappingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),
                                             accountInfoKeyFactory: accountInfoKeyFactory,
                                             deviceInfoCodec: deviceInfoCodec,
+                                            unifiedDeviceListEvents: events,
                                             isScopedAccessCredentialsEnabled: { true },
                                             canWriteUnifiedDeviceList: { true })
         let signupRequest = HTTPRequestingMock()
@@ -237,6 +258,7 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(signupBody["device_info"] as? String, deviceInfoCodec.encryptUsingProtectedKeyStub)
         XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.signup])
         XCTAssertEqual(signupRequest.executeCallCount, 1)
+        XCTAssertEqual(events.events, [.accountInfoKeyCreateFailed(.requestFailed)])
     }
 
     func testWhenDeviceInfoExceedsServerLimitThenSignupFallsBackToLegacyFields() async throws {
@@ -247,11 +269,13 @@ final class AccountManagerTests: XCTestCase {
         let deviceInfoCodec = DeviceInfoCodingMock()
         deviceInfoCodec.encryptUsingProtectedKeyStub = String(repeating: "a",
                                                               count: DeviceInfo.maximumEncryptedLength + 1)
+        let events = UnifiedDeviceListEventMappingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),
                                             accountInfoKeyFactory: accountInfoKeyFactory,
                                             deviceInfoCodec: deviceInfoCodec,
+                                            unifiedDeviceListEvents: events,
                                             isScopedAccessCredentialsEnabled: { true },
                                             canWriteUnifiedDeviceList: { true })
         api.fakeRequests[endpoints.signup] = makeJSONRequest("""
@@ -261,13 +285,15 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
 
         let signupBody = try makeSignupBody(from: api)
         XCTAssertNil(signupBody["keys"])
         XCTAssertNil(signupBody["device_info"])
         XCTAssertEqual(signupBody["device_name"] as? String, "encrypted_iPhone")
         XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
+        XCTAssertFalse(result.didPublishDeviceInfo)
+        XCTAssertEqual(events.events, [.ownRowDeviceInfoFirstWriteFailed(.encryptFailed)])
     }
 
     func testWhenDecodingLoginResultWithoutScopedFieldsThenDecodingSucceeds() throws {

@@ -90,6 +90,7 @@ public class DDGSync: DDGSyncing {
     /// This is the constructor intended for use by app clients.
     public convenience init(dataProvidersSource: DataProvidersSource,
                             errorEvents: EventMapping<SyncError>,
+                            unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent>? = nil,
                             privacyConfigurationManager: PrivacyConfigurationManaging,
                             keyValueStore: ThrowingKeyValueStoring,
                             environment: ServerEnvironment = .production,
@@ -100,6 +101,7 @@ public class DDGSync: DDGSyncing {
             privacyConfigurationManager: privacyConfigurationManager,
             keyValueStore: keyValueStore,
             errorEvents: errorEvents,
+            unifiedDeviceListEvents: unifiedDeviceListEvents,
             syncFeatureFlags: syncFeatureFlags,
             shouldPreserveAccountWhenSyncDisabled: shouldPreserveAccountWhenSyncDisabled
         )
@@ -111,9 +113,13 @@ public class DDGSync: DDGSyncing {
             throw SyncError.accountAlreadyExists
         }
 
-        let account = try await dependencies.account.createAccount(deviceName: deviceName, deviceType: deviceType)
-        try updateAccount(account)
-        scheduleDeviceInfoMigration(for: account)
+        let result = try await dependencies.account.createAccount(deviceName: deviceName, deviceType: deviceType)
+        try updateAccount(result.account)
+        if result.didPublishDeviceInfo {
+            deviceInfoMigrationCoordinator.recordSuccessfulUnifiedWrite(for: result.account)
+        } else {
+            scheduleDeviceInfoMigration(for: result.account)
+        }
         scheduler.requestSyncImmediately()
     }
 
@@ -249,6 +255,7 @@ public class DDGSync: DDGSyncing {
         let wasDeviceInfoMigrationRunning = deviceInfoMigrationTask != nil
         do {
             let result = try await dependencies.account.fetchDevicesForAccount(account)
+            fireUnifiedReadObservations(result.unifiedReadObservations, for: account)
             if result.needsCurrentDeviceInfoRepair && !wasDeviceInfoMigrationRunning {
                 scheduleCurrentDeviceInfoRepair(for: account)
             }
@@ -739,6 +746,44 @@ public class DDGSync: DDGSyncing {
             await task.value
             self?.clearCompletedDeviceInfoMigrationTask(withID: taskID)
         }
+    }
+
+    private func fireUnifiedReadObservations(_ observations: [UnifiedDeviceListReadObservation],
+                                             for account: SyncAccount) {
+        let canReportOwnRowFallback = dependencies.syncFeatureFlags.canWriteUnifiedDeviceList()
+        var missingDeviceInfoReason: UnifiedDeviceListEvent.DeviceInfoFallbackReason?
+        for observation in observations {
+            switch observation {
+            case .event(let event):
+                if !canReportOwnRowFallback {
+                    switch event {
+                    case .ownRowResolvedLegacy, .ownRowResolvedPlaceholder:
+                        continue
+                    default:
+                        break
+                    }
+                }
+                dependencies.unifiedDeviceListEvents.fire(event)
+            case .ownRowMissingDeviceInfo(.legacy):
+                guard canReportOwnRowFallback else {
+                    continue
+                }
+                let reason = missingDeviceInfoReason ?? ownRowMissingDeviceInfoReason(for: account)
+                missingDeviceInfoReason = reason
+                dependencies.unifiedDeviceListEvents.fire(.ownRowResolvedLegacy(reason))
+            case .ownRowMissingDeviceInfo(.placeholder):
+                guard canReportOwnRowFallback else {
+                    continue
+                }
+                let reason = missingDeviceInfoReason ?? ownRowMissingDeviceInfoReason(for: account)
+                missingDeviceInfoReason = reason
+                dependencies.unifiedDeviceListEvents.fire(.ownRowResolvedPlaceholder(reason))
+            }
+        }
+    }
+
+    private func ownRowMissingDeviceInfoReason(for account: SyncAccount) -> UnifiedDeviceListEvent.DeviceInfoFallbackReason {
+        deviceInfoMigrationCoordinator.hasCompletedMigration(for: account) ? .blobAbsent : .notPublishedYet
     }
 
     private func scheduleCurrentDeviceInfoRepair(for account: SyncAccount) {

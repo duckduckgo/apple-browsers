@@ -68,13 +68,14 @@ extension LoginResult {
 
 class AccountManagingMock: AccountManaging {
     var createAccountCalls: [(deviceName: String, deviceType: String)] = []
+    var createAccountStub = AccountCreationResult(account: .mock, didPublishDeviceInfo: false)
     var createAccountError: Error?
-    func createAccount(deviceName: String, deviceType: String) async throws -> SyncAccount {
+    func createAccount(deviceName: String, deviceType: String) async throws -> AccountCreationResult {
         createAccountCalls.append((deviceName: deviceName, deviceType: deviceType))
         if let error = createAccountError {
             throw error
         }
-        return .mock
+        return createAccountStub
     }
 
     func deleteAccount(_ account: SyncAccount) async throws {}
@@ -208,6 +209,41 @@ class MockErrorHandler: EventMapping<SyncError> {
     }
 }
 
+final class UnifiedDeviceListEventMappingMock: EventMapping<UnifiedDeviceListEvent> {
+
+    private final class Storage {
+        private let lock = NSLock()
+        private var recordedEvents: [UnifiedDeviceListEvent] = []
+
+        var events: [UnifiedDeviceListEvent] {
+            lock.lock()
+            defer { lock.unlock() }
+            return recordedEvents
+        }
+
+        func append(_ event: UnifiedDeviceListEvent) {
+            lock.lock()
+            recordedEvents.append(event)
+            lock.unlock()
+        }
+    }
+
+    private let storage: Storage
+
+    var events: [UnifiedDeviceListEvent] {
+        storage.events
+    }
+
+    init() {
+        let storage = Storage()
+        self.storage = storage
+        super.init { event, _, _, onComplete in
+            storage.append(event)
+            onComplete(nil)
+        }
+    }
+}
+
 extension DefaultInternalUserDecider {
     convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
         self.init(store: mockedStore)
@@ -279,6 +315,9 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var scheduler: SchedulingInternal = SchedulerMock()
     var privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration())
     var errorEvents: EventMapping<SyncError> = MockErrorHandler()
+    var unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent> = EventMapping { _, _, _, onComplete in
+        onComplete(nil)
+    }
     var shouldPreserveAccountWhenSyncDisabled: () -> Bool = { false }
     var isScopedAccessCredentialsEnabled: () -> Bool = { true }
     var isPairingV2ScanningEnabled: () -> Bool = { true }
@@ -603,6 +642,7 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
     private var recordedCalls: [Call] = []
     private var recordedRepairCalls: [Call] = []
     private var recordedRenameCalls: [(name: String, account: SyncAccount, mode: DeviceInfoRenameMode)] = []
+    private var recordedSuccessfulUnifiedWriteCalls: [Call] = []
     private var recordedResetCallCount = 0
     var hasCompletedMigrationStub = false
     var calls: [Call] {
@@ -624,6 +664,11 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
         lock.lock()
         defer { lock.unlock() }
         return recordedRenameCalls
+    }
+    var successfulUnifiedWriteCalls: [Call] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedSuccessfulUnifiedWriteCalls
     }
     var migrateCurrentDeviceHandler: (() async -> Void)?
     var repairCurrentDeviceInfoHandler: (() async -> Void)?
@@ -665,6 +710,12 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
 
     func hasCompletedMigration(for account: SyncAccount) -> Bool {
         hasCompletedMigrationStub
+    }
+
+    func recordSuccessfulUnifiedWrite(for account: SyncAccount) {
+        lock.lock()
+        recordedSuccessfulUnifiedWriteCalls.append(Call(account: account))
+        lock.unlock()
     }
 
     func reset() {

@@ -92,23 +92,29 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertEqual(wideEvent.started.count, 1)
     }
 
-    func testDisablingDoesNotDropActiveSessionOrItsRollover() throws {
+    func testDisablingDoesNotDropActiveSession() throws {
         startMonitoredSession()
+        let original = try latestEvent()
         inputs.enabled = false
         inputs.date = hourStart.addingTimeInterval(3_610)
         instrumentation.connectionTestCompleted(.connected)
 
-        XCTAssertEqual(wideEvent.started.count, 2)
-        XCTAssertEqual(wideEvent.completions.count, 1)
+        XCTAssertEqual(wideEvent.started.count, 1)
+        XCTAssertTrue(wideEvent.completions.isEmpty)
+        XCTAssertEqual(try latestEvent().globalData.id, original.globalData.id)
 
         instrumentation.tunnelStopped(reason: .userInitiated)
 
-        XCTAssertEqual(wideEvent.completions.count, 2)
-        XCTAssertEqual(try completedEvent(at: 1).outcome, .success)
+        XCTAssertEqual(wideEvent.completions.count, 1)
+        let completed = try completedEvent()
+        XCTAssertEqual(completed.globalData.id, original.globalData.id)
+        XCTAssertEqual(completed.startedAt, original.startedAt)
+        XCTAssertEqual(completed.endedAt, inputs.date)
+        XCTAssertEqual(completed.outcome, .success)
 
         instrumentation.tunnelStarted(reason: .manual)
 
-        XCTAssertEqual(wideEvent.started.count, 2)
+        XCTAssertEqual(wideEvent.started.count, 1)
     }
 
     // MARK: - Monitoring and callbacks
@@ -214,87 +220,67 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertEqual(reconfigurationEvent.outcome, .failure(.routingOutageAtUserStop))
     }
 
-    // MARK: - Hourly rollover
+    // MARK: - Long sessions
 
-    func testRolloverSplitsOngoingOutageAtBoundaryWithoutDoubleCounting() throws {
+    func testOutageAcrossHourBoundaryRemainsInSameEvent() throws {
         startMonitoredSession()
+        let original = try latestEvent()
         inputs.date = hourStart.addingTimeInterval(3_570)
         instrumentation.connectionTestCompleted(.disconnected(failureCount: 1))
 
         inputs.date = hourStart.addingTimeInterval(3_630)
         instrumentation.connectionTestCompleted(.reconnected(failureCount: 1))
 
+        XCTAssertEqual(wideEvent.started.count, 1)
+        XCTAssertTrue(wideEvent.completions.isEmpty)
+        let current = try latestEvent()
+        XCTAssertEqual(current.globalData.id, original.globalData.id)
+        XCTAssertEqual(current.startedAt, original.startedAt)
+        XCTAssertEqual(current.totalOutageDuration, 60)
+        XCTAssertFalse(current.connectionTestFailureActive)
+        XCTAssertEqual(current.lastObservedAt, inputs.date)
+
+        instrumentation.tunnelStopped(reason: .userInitiated)
+
         XCTAssertEqual(wideEvent.completions.count, 1)
-
-        let previousHour = try completedEvent()
-        let currentHour = try latestEvent()
-        let boundary = hourStart.addingTimeInterval(3_600)
-
-        XCTAssertEqual(previousHour.endedAt, boundary)
-        XCTAssertEqual(previousHour.totalOutageDuration, 30)
-        XCTAssertEqual(currentHour.startedAt, boundary)
-        XCTAssertEqual(currentHour.totalOutageDuration, 30)
-        XCTAssertFalse(currentHour.connectionTestFailureActive)
-        XCTAssertEqual(currentHour.lastObservedAt, inputs.date)
+        XCTAssertEqual(try completedEvent().totalOutageDuration, 60)
     }
 
-    func testStopAtBoundaryCompletesOldAndNewSegmentsOnlyOnce() throws {
+    func testStopAtHourBoundaryCompletesFullSessionOnlyOnce() throws {
         startMonitoredSession()
+        let original = try latestEvent()
         inputs.date = hourStart.addingTimeInterval(3_600)
         instrumentation.tunnelStopped(reason: .userInitiated)
 
-        XCTAssertEqual(wideEvent.completions.count, 2)
-        XCTAssertEqual(try completedEvent().endReason, .rolledOver)
-        XCTAssertEqual(try completedEvent(at: 1).endReason, .stoppedByUser)
-        XCTAssertEqual(try completedEvent(at: 1).eventDuration(asOf: inputs.date), 0)
+        XCTAssertEqual(wideEvent.started.count, 1)
+        XCTAssertEqual(wideEvent.completions.count, 1)
+        let completed = try completedEvent()
+        XCTAssertEqual(completed.globalData.id, original.globalData.id)
+        XCTAssertEqual(completed.startedAt, original.startedAt)
+        XCTAssertEqual(completed.endedAt, inputs.date)
+        XCTAssertEqual(completed.endReason, .stoppedByUser)
+        XCTAssertEqual(completed.eventDuration(asOf: inputs.date), 3_000)
 
         instrumentation.tunnelStopped(reason: .userInitiated)
 
-        XCTAssertEqual(wideEvent.completions.count, 2)
+        XCTAssertEqual(wideEvent.completions.count, 1)
     }
 
-    func testSleepAcrossMultipleHoursDoesNotBackfillIntermediateSegments() throws {
+    func testSleepAcrossMultipleHoursResumesSameEventWithoutCountingSleepAsOutage() throws {
         startMonitoredSession()
+        let original = try latestEvent()
+        instrumentation.connectionTestCompleted(.disconnected(failureCount: 1))
         instrumentation.deviceWentToSleep()
         inputs.date = hourStart.addingTimeInterval(10_830)
         instrumentation.tunnelStarted(reason: .wake)
 
-        XCTAssertEqual(wideEvent.started.count, 2)
-        XCTAssertEqual(wideEvent.completions.count, 1)
-        XCTAssertEqual(try latestEvent().startedAt, hourStart.addingTimeInterval(10_800))
-        XCTAssertEqual(try latestEvent().totalOutageDuration, 0)
-        XCTAssertFalse(try latestEvent().isPaused)
-    }
-
-    func testWhenDebugSettingChangesThenRolloverScheduleIsCapturedAtEachPhysicalStart() throws {
-        // Startup settings may arrive after instrumentation construction.
-        inputs.debugRolloverEnabled = true
-        startMonitoredSession()
-        inputs.debugRolloverEnabled = false
-        inputs.date = hourStart.addingTimeInterval(720)
-        instrumentation.tunnelStarted(reason: .reconnected)
-
-#if DEBUG
-        XCTAssertEqual(wideEvent.started.count, 2)
-        XCTAssertEqual(try completedEvent().endedAt, inputs.date)
-        XCTAssertEqual(try latestEvent().startReason, .rollover)
-#else
         XCTAssertEqual(wideEvent.started.count, 1)
         XCTAssertTrue(wideEvent.completions.isEmpty)
-#endif
-
-        instrumentation.tunnelStopped(reason: .userInitiated)
-        startMonitoredSession()
-        let startedCount = wideEvent.started.count
-        inputs.debugRolloverEnabled = true
-        inputs.date = hourStart.addingTimeInterval(960)
-        instrumentation.connectionTestCompleted(.connected)
-        XCTAssertEqual(wideEvent.started.count, startedCount)
-
-        inputs.date = hourStart.addingTimeInterval(3_600)
-        instrumentation.connectionTestCompleted(.connected)
-        XCTAssertEqual(wideEvent.started.count, startedCount + 1)
-        XCTAssertEqual(try latestEvent().startedAt, inputs.date)
+        let resumed = try latestEvent()
+        XCTAssertEqual(resumed.globalData.id, original.globalData.id)
+        XCTAssertEqual(resumed.startedAt, original.startedAt)
+        XCTAssertEqual(resumed.totalOutageDuration, 0)
+        XCTAssertFalse(resumed.isPaused)
     }
 
     // MARK: - Stopping and orphan recovery
@@ -407,7 +393,6 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
             wideEvent: wideEvent,
             extensionType: .system,
             isTelemetryEnabled: { inputs.enabled },
-            isDebugRolloverEnabled: { inputs.debugRolloverEnabled },
             now: { inputs.date })
     }
 
@@ -433,7 +418,6 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
 private final class InstrumentationSettings: @unchecked Sendable {
     var date: Date
     var enabled = true
-    var debugRolloverEnabled = false
 
     init(date: Date) {
         self.date = date

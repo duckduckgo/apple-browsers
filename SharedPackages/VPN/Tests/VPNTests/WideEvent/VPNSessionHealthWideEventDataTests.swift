@@ -64,7 +64,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
     func testFailurePayloadIncludesReasonAndBucketedFirstErrorTime() {
         let data = makeMonitoredEvent()
             .applyingHandshakeCheckResult(.failureDetected, at: timestamp(after: 65))
-            .markingStoppedForRollover(at: timestamp(after: 90))
+            .markingStopped(.stoppedAdministratively, at: timestamp(after: 90))
 
         XCTAssertEqual(data.jsonParameters()["feature.data.ext.failure_reason"] as? String, "stale_handshake")
         XCTAssertEqual(data.jsonParameters()["feature.data.ext.time_to_first_error_seconds_bucketed"] as? String, "60")
@@ -76,7 +76,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
 
         let encoded = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(VPNSessionHealthWideEventData.self, from: encoded)
-        let ended = decoded.markingStoppedForRollover(at: timestamp(after: 150))
+        let ended = decoded.markingStopped(.stoppedAdministratively, at: timestamp(after: 150))
 
         XCTAssertEqual(decoded.globalData.id, original.globalData.id)
         XCTAssertEqual(ended.totalOutageDuration, 135)
@@ -133,10 +133,10 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
 
     func testExtendedThresholdUsesChecksInCurrentOutageRatherThanCumulativeTesterCount() {
         let belowThreshold = makeEventWithOutage(failedChecks: 7)
-            .markingStoppedForRollover(at: timestamp(after: 150))
+            .markingStopped(.stoppedAdministratively, at: timestamp(after: 150))
 
         let atThreshold = makeEventWithOutage(failedChecks: 8)
-            .markingStoppedForRollover(at: timestamp(after: 150))
+            .markingStopped(.stoppedAdministratively, at: timestamp(after: 150))
 
         XCTAssertEqual(belowThreshold.outcome, .success)
         XCTAssertEqual(atThreshold.outcome, .failure(.routingOutage))
@@ -146,7 +146,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         var data = makeEventWithOutage()
         data = data.applyingConnectionTestResult(.reconnected(failureCount: 101), at: timestamp(after: 45))
         data = data.applyingConnectionTestResult(.disconnected(failureCount: 1), at: timestamp(after: 60))
-        data = data.markingStoppedForRollover(at: timestamp(after: 90))
+        data = data.markingStopped(.stoppedAdministratively, at: timestamp(after: 90))
 
         XCTAssertEqual(data.connectionTestOutageCount, 2)
         XCTAssertEqual(data.totalOutageDuration, 60)
@@ -154,7 +154,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         XCTAssertEqual(data.outcome, .success)
     }
 
-    func testRecoveredExtendedOutageStillFailsSegment() {
+    func testRecoveredExtendedOutageStillFailsSession() {
         let data = makeEventWithOutage(failedChecks: 8)
             .applyingConnectionTestResult(.reconnected(failureCount: 8), at: timestamp(after: 135))
             .markingStopped(.stoppedByUser, at: timestamp(after: 150))
@@ -195,7 +195,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
     func testUnintentionalStopMarksPartialCoverageAndStopsAccrual() {
         let data = makeEventWithOutage()
             .markingMonitoringStopped(at: timestamp(after: 30), isIntentional: false)
-            .markingStoppedForRollover(at: timestamp(after: 300))
+            .markingStopped(.stoppedAdministratively, at: timestamp(after: 300))
 
         XCTAssertEqual(data.totalOutageDuration, 15)
         XCTAssertEqual(data.jsonParameters()["feature.data.ext.monitoring_coverage"] as? String, "partial")
@@ -226,23 +226,22 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
 
         let recovered = failed
             .applyingHandshakeCheckResult(.failureRecovered, at: timestamp(after: 90))
-            .markingStoppedForRollover(at: timestamp(after: 120))
+            .markingStopped(.stoppedAdministratively, at: timestamp(after: 120))
 
         XCTAssertEqual(recovered.outcome, .failure(.staleHandshake))
         XCTAssertEqual(recovered.jsonParameters()["feature.data.ext.stale_handshake_recovered"] as? Bool, true)
 
-        let next = failed
+        let stopped = failed
             .markingMonitoringStopped(at: timestamp(after: 90), isIntentional: true)
-            .makingNextEventAfterRollover(at: timestamp(after: 3_600), globalData: WideEventGlobalData())
 
-        XCTAssertFalse(next.staleHandshakeDetected)
-        XCTAssertFalse(next.staleHandshakeActive)
+        XCTAssertTrue(stopped.staleHandshakeDetected)
+        XCTAssertFalse(stopped.staleHandshakeActive)
     }
 
     func testNetworkPathChangeDoesNotIntroduceHandshakeFailure() {
         let data = makeMonitoredEvent()
             .applyingHandshakeCheckResult(.networkPathChanged("test"), at: sessionStart)
-            .markingStoppedForRollover(at: sessionStart)
+            .markingStopped(.stoppedAdministratively, at: sessionStart)
 
         XCTAssertEqual(data.outcome, .success)
         XCTAssertNil(data.timeToFirstError)
@@ -257,18 +256,18 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         XCTAssertNil(data.jsonParameters()["feature.data.ext.failure_recovery_succeeded"])
         for health in [FailureRecoveryStep.ServerHealth.healthy, .unhealthy] {
             let completed = data.applyingFailureRecoveryStep(.completed(health), at: sessionStart)
-                .markingStoppedForRollover(at: sessionStart)
+                .markingStopped(.stoppedAdministratively, at: sessionStart)
 
             XCTAssertEqual(completed.jsonParameters()["feature.data.ext.failure_recovery_succeeded"] as? Bool, true)
             XCTAssertEqual(completed.outcome, .success)
         }
     }
 
-    func testSuccessfulRetryPreservesEarlierRecoveryFailureInSegment() {
+    func testSuccessfulRetryPreservesEarlierRecoveryFailureInSession() {
         let data = makeMonitoredEvent()
             .applyingFailureRecoveryStep(.failed(NSError(domain: "test", code: 1)), at: sessionStart)
             .applyingFailureRecoveryStep(.completed(.unhealthy), at: timestamp(after: 30))
-            .markingStoppedForRollover(at: timestamp(after: 60))
+            .markingStopped(.stoppedAdministratively, at: timestamp(after: 60))
 
         XCTAssertEqual(data.outcome, .failure(.failureRecoveryFailed))
         XCTAssertEqual(data.jsonParameters()["feature.data.ext.failure_recovery_succeeded"] as? Bool, true)
@@ -278,67 +277,10 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         let data = makeMonitoredEvent()
             .markingLeakDetected()
             .markingLeakDetected()
-            .markingStoppedForRollover(at: sessionStart)
+            .markingStopped(.stoppedAdministratively, at: sessionStart)
 
         XCTAssertEqual(data.jsonParameters()["feature.data.ext.ip_leak_detected"] as? Bool, true)
         XCTAssertEqual(data.outcome, .success)
-    }
-
-    // MARK: - Hourly rollover
-
-    func testMonitoringInterruptionPersistsAcrossRolloverWhileMonitorsRemainStopped() {
-        let data = makeMonitoredEvent()
-            .markingMonitoringStopped(at: timestamp(after: 30), isIntentional: false)
-            .makingNextEventAfterRollover(at: timestamp(after: 3_600), globalData: WideEventGlobalData())
-
-        XCTAssertEqual(data.jsonParameters()["feature.data.ext.monitoring_coverage"] as? String, "partial")
-        XCTAssertFalse(data.healthMonitoringEverActivated)
-    }
-
-    func testRolloverCarriesActiveFailuresAndResetsSegmentDiagnostics() {
-        let previous = makeEventWithOutage(failedChecks: 8)
-            .applyingHandshakeCheckResult(.failureDetected, at: timestamp(after: 130))
-            .markingLeakDetected()
-            .applyingFailureRecoveryStep(.failed(NSError(domain: "test", code: 1)), at: timestamp(after: 140))
-        let next = previous.makingNextEventAfterRollover(at: timestamp(after: 3_600), globalData: WideEventGlobalData())
-
-        XCTAssertNotEqual(next.globalData.id, previous.globalData.id)
-        XCTAssertEqual(next.startReason, .rollover)
-        XCTAssertEqual(next.jsonParameters()["feature.data.ext.start_reason"] as? String, "rollover")
-        XCTAssertEqual(next.connectionTestOutageCount, 1)
-        XCTAssertTrue(next.extendedRoutingOutageDetected)
-        XCTAssertTrue(next.staleHandshakeDetected)
-        XCTAssertEqual(next.timeToFirstError, 0)
-        XCTAssertEqual(next.totalOutageDuration, 0)
-        XCTAssertFalse(next.leakDetected)
-        XCTAssertFalse(next.failureRecoveryAttempted)
-        XCTAssertFalse(next.failureRecoveryFailed)
-    }
-
-    func testRolloverDropsResolvedFailuresAndPastMonitoringInterruption() {
-        let previous = makeEventWithOutage(failedChecks: 8)
-            .applyingConnectionTestResult(.reconnected(failureCount: 8), at: timestamp(after: 130))
-            .markingMonitoringStopped(at: timestamp(after: 140), isIntentional: false)
-            .markingMonitoringStarted(at: timestamp(after: 150))
-            .applyingConnectionTestResult(.connected, at: timestamp(after: 160))
-        let next = previous.makingNextEventAfterRollover(at: timestamp(after: 3_600), globalData: WideEventGlobalData())
-
-        XCTAssertEqual(next.connectionTestOutageCount, 0)
-        XCTAssertFalse(next.extendedRoutingOutageDetected)
-        XCTAssertFalse(next.monitoringInterrupted)
-        XCTAssertNil(next.timeToFirstError)
-        XCTAssertEqual(next.markingStoppedForRollover(at: timestamp(after: 7_200)).outcome, .success)
-    }
-
-    func testPausedRolloverDoesNotInventMonitoringOrOutageTime() {
-        let previous = makeEventWithOutage()
-            .markingPaused(.reconfiguration, at: timestamp(after: 30))
-        let next = previous.makingNextEventAfterRollover(at: timestamp(after: 3_600), globalData: WideEventGlobalData())
-            .markingStoppedForRollover(at: timestamp(after: 7_200))
-
-        XCTAssertEqual(next.totalOutageDuration, 0)
-        XCTAssertEqual(next.outcome, .unknown(.connectionTesterNeverReported))
-        XCTAssertTrue(next.connectionTestFailureActive)
     }
 
     // MARK: - Orphan recovery
@@ -429,7 +371,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
 
     func testClockGoingBackwardsDoesNotProduceNegativeDurations() {
         let data = makeEventWithOutage()
-            .markingStoppedForRollover(at: timestamp(after: -60))
+            .markingStopped(.stoppedAdministratively, at: timestamp(after: -60))
 
         XCTAssertEqual(data.totalOutageDuration, 0)
         XCTAssertEqual(data.eventDuration(asOf: sessionStart), 0)

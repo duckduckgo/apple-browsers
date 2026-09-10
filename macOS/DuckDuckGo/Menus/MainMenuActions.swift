@@ -2024,7 +2024,9 @@ extension AppDelegate: NSMenuItemValidation {
             return isDisplayingOneOrMoreWindows
 
         case #selector(AppDelegate.newWindow(_:)):
-            return isUserInteractionAllowed || !isDisplayingOneOrMoreWindows
+            return isUserInteractionAllowed
+                || OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking
+                || !isDisplayingOneOrMoreWindows
 
         case #selector(AppDelegate.openFailureURLSchemeDemoDebugPage(_:)),
             #selector(AppDelegate.openFailureURLSchemeAlternatingFailuresDebugPage(_:)),

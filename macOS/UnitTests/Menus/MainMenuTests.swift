@@ -18,6 +18,7 @@
 
 import AIChat
 import Combine
+import FeatureFlags_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
@@ -55,6 +56,27 @@ class MainMenuTests: XCTestCase {
         lastSessionMenuItem = nil
         lastTabMenuItem = nil
         manager = nil
+    }
+
+    @MainActor
+    func testWhenOnboardingIsNonBlockingThenNewWindowMenuItemIsEnabled() throws {
+        let appDelegate = Application.appDelegate
+        let featureFlagger = try XCTUnwrap(appDelegate.featureFlagger as? MockFeatureFlagger)
+        let originalCohort = featureFlagger.resolveCohortStub
+        let originalOnboardingFinished = OnboardingActionsManager.isOnboardingFinished
+        defer {
+            featureFlagger.resolveCohortStub = originalCohort
+            OnboardingActionsManager.isOnboardingFinished = originalOnboardingFinished
+        }
+
+        XCTAssertFalse(appDelegate.windowControllersManager.mainWindowControllers.isEmpty)
+        featureFlagger.resolveCohortStub = FeatureFlag.OnboardingNonBlockingCohort.treatment
+        OnboardingActionsManager.isOnboardingFinished = false
+
+        let menuItem = NSMenuItem()
+        menuItem.action = #selector(AppDelegate.newWindow(_:))
+
+        XCTAssertTrue(appDelegate.validateMenuItem(menuItem))
     }
 
     func testWhenIsInInitialState_AndCanRestoreState_ThenLastSessionMenuItemHasShortcut() {

@@ -299,6 +299,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217856366373963?focus=true
     case aiChatPdfPageContext
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218354738310249?focus=true
+    case aiChatContextualAddressBarMenu
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
     case aiChatSync
 
@@ -495,6 +498,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215105704317047
     case aiChatChromeShortcutIPad
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218316798217456?focus=true
+    case aiChatChromeMenuButtonIPad
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216000794365770?focus=true
     case iPadDuckAIBarControls
 
@@ -519,6 +525,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064244?focus=true
     case syncCanWriteUnifiedDeviceList
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217684925915714?focus=true
+    case syncCanUsePatchEndpointForLegacyDeviceRename
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064256?focus=true
     case syncCanReadUnifiedDeviceList
@@ -795,6 +804,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.autoAttachContextByDefault))
         case .aiChatPdfPageContext:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext))
+        case .aiChatContextualAddressBarMenu:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.contextualAddressBarMenu), supportsLocalOverriding: true)
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:
@@ -921,6 +932,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
+        case .aiChatChromeMenuButtonIPad:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeMenuButton))
         case .floatingUIAugust2026:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIAugust2026))
         case .aiChatTabSwitcherRichCard:
@@ -933,6 +946,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
         case .syncCanWriteUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canWriteUnifiedDeviceList))
+        case .syncCanUsePatchEndpointForLegacyDeviceRename:
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canUsePatchEndpointForLegacyDeviceRename))
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
         case .iPadTabsBarInWindowControlsRow:

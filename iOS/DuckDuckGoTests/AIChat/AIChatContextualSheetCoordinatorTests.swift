@@ -477,6 +477,16 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testPresentSheetAttachingPageRequestsThePageEvenWithAutoAttachOff() async {
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+
+        await sut.presentSheet(from: mockPresentingVC, attachingPage: true)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        XCTAssertEqual(mockPageContextHandler.lastTriggerContextCollectionTrigger, .userRequest)
+    }
+
+    @MainActor
     func testURLChangeRefreshesQuickActionsForAttachability() async {
         // Covers back/forward navigation: the URL-change (originating) signal must refresh affordances,
         // not just `didFinish` (which cached back-navigations may not fire).

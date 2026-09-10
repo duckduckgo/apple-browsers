@@ -53,7 +53,7 @@ enum DuckAIAddressBarMenuFactory {
         var groups: [UIMenuElement] = [UIMenu(title: "", options: .displayInline, children: chatActions)]
         if isChatHistoryAvailable(featureFlagger: featureFlagger, userInterfaceIdiom: userInterfaceIdiom) {
             groups.append(UIMenu(title: "", options: .displayInline, children: [
-                UIAction(title: UserText.duckAiAddressBarMenuChats,
+                UIAction(title: UserText.actionChats,
                          image: DesignSystemImages.Glyphs.Size16.chats) { _ in
                     onRecentChats()
                 }

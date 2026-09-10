@@ -2431,6 +2431,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 canUseExchangeV2Point1: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanUseExchangeV2Point1)
                 },
+                canSendExchangeChannelSecret: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanSendExchangeChannelSecret)
+                },
                 canWriteUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanWriteUnifiedDeviceList)
                 },

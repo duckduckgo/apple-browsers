@@ -40,6 +40,7 @@ final class AIChatMenu: NSMenu {
         var openNewVoiceChat: @MainActor () -> Void
         var openNewImageChat: @MainActor () -> Void
         var openChat: @MainActor (AIChatSuggestion) -> Void
+        var openAISettings: @MainActor () -> Void
         var deleteAllChats: () async -> Void
     }
 
@@ -111,6 +112,15 @@ final class AIChatMenu: NSMenu {
         return item
     }()
 
+    private lazy var openAISettingsItem: NSMenuItem = {
+        let item = NSMenuItem(title: UserText.aiChatChromeOpenAISettings, action: #selector(openAISettingsTapped), keyEquivalent: "")
+        item.target = self
+        item.withImage(
+            TabBarViewController.contextMenuIcon(DesignSystemImages.Glyphs.Size24.settingsAiChat),
+            visibleOnMacOS27: origin == .moreOptionsMenu)
+        return item
+    }()
+
     // MARK: - Dynamic chat items
 
     private var chatItems: [NSMenuItem] = []
@@ -175,6 +185,8 @@ final class AIChatMenu: NSMenu {
         // Dynamic chat items are inserted after recentChatsLabel by insertChatItems(_:)
         addItem(.separator())
         addItem(deleteAllChatsItem)
+        addItem(.separator())
+        addItem(openAISettingsItem)
     }
 
     // MARK: - NSMenu update
@@ -299,6 +311,10 @@ final class AIChatMenu: NSMenu {
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
     }
 
+    @objc private func openAISettingsTapped() {
+        actions.openAISettings()
+    }
+
     @objc private func deleteAllChatsTapped() {
         var dialog = AIChatDeleteChatsDialog()
         let actions = self.actions
@@ -391,6 +407,9 @@ extension AIChatMenu.Actions {
             openChat: { suggestion in
                 aiChatConversationSourceHandler.setData(conversationSources.recentChat)
                 tabOpener.openAIChatTab(with: .existingChat(chatId: suggestion.chatId), behavior: .currentTab)
+            },
+            openAISettings: {
+                windowControllersManager.showTab(with: .settings(pane: .aiChat))
             },
             deleteAllChats: {
                 if case .failure(let error) = await historyCleaner.cleanAIChatHistory() {

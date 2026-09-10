@@ -25,10 +25,6 @@ struct NewTabPageCustomizationView: View {
 
     private enum Metrics {
         static let contentInset: CGFloat = 16
-        static let groupSpacing: CGFloat = 24
-        static let groupCornerRadius: CGFloat = 12
-        static let rowHeight: CGFloat = 52
-        static let rowSpacing: CGFloat = 12
         static let headerHeight: CGFloat = 68
         static let closeButtonIconPadding: CGFloat = 4
     }
@@ -41,17 +37,14 @@ struct NewTabPageCustomizationView: View {
         VStack(spacing: 0) {
             header
 
-            ScrollView {
-                VStack(spacing: Metrics.groupSpacing) {
-                    sectionsGroup
-                    keyboardGroup
-                    allSettingsGroup
-                }
-                .padding(.horizontal, Metrics.contentInset)
-                .padding(.bottom, Metrics.groupSpacing)
+            List {
+                sectionsSection
+                keyboardSection
+                allSettingsSection
             }
+            .applyInsetGroupedListStyle()
         }
-        .background(Color(designSystemColor: .backgroundSheets))
+        .background(Color(designSystemColor: .background))
     }
 
     private var header: some View {
@@ -74,80 +67,36 @@ struct NewTabPageCustomizationView: View {
         .frame(height: Metrics.headerHeight)
     }
 
-    private var sectionsGroup: some View {
-        group {
-            toggleRow(icon: DesignSystemImages.Glyphs.Size24.bookmarkFavorite,
-                      title: UserText.sectionTitleFavorites,
-                      isOn: $model.isFavoritesSectionVisible)
+    private var sectionsSection: some View {
+        Section {
+            SettingsCellView(label: UserText.sectionTitleFavorites,
+                             image: Image(uiImage: DesignSystemImages.Glyphs.Size24.bookmarkFavorite),
+                             accessory: .toggle(isOn: $model.isFavoritesSectionVisible))
 
-            Divider().padding(.leading, Metrics.contentInset)
-
-            toggleRow(icon: DesignSystemImages.Glyphs.Size24.chat,
-                      title: UserText.newTabPageCustomizationMessages,
-                      isOn: $model.isMessagesSectionVisible)
+            SettingsCellView(label: UserText.newTabPageCustomizationMessages,
+                             image: Image(uiImage: DesignSystemImages.Glyphs.Size24.chat),
+                             accessory: .toggle(isOn: $model.isMessagesSectionVisible))
         }
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
-    private var keyboardGroup: some View {
-        group {
-            toggleRow(icon: nil,
-                      title: UserText.newTabPageCustomizationAlwaysShowKeyboard,
-                      isOn: $model.isKeyboardShownOnNewTab)
+    private var keyboardSection: some View {
+        Section {
+            SettingsCellView(label: UserText.newTabPageCustomizationAlwaysShowKeyboard,
+                             accessory: .toggle(isOn: $model.isKeyboardShownOnNewTab))
         }
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
-    private var allSettingsGroup: some View {
-        group {
-            Button {
-                model.onAllSettingsSelected?()
-            } label: {
-                HStack(spacing: Metrics.rowSpacing) {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.settings)
-                        .foregroundColor(Color(designSystemColor: .icons))
-
-                    Text(UserText.newTabPageCustomizationAllSettings)
-                        .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .textPrimary))
-
-                    Spacer()
-
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.openIn)
-                        .foregroundColor(Color(designSystemColor: .iconsSecondary))
-                }
-                .padding(.horizontal, Metrics.contentInset)
-                .frame(height: Metrics.rowHeight)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
+    private var allSettingsSection: some View {
+        Section {
+            SettingsCellView(label: UserText.newTabPageCustomizationAllSettings,
+                             image: Image(uiImage: DesignSystemImages.Glyphs.Size24.settings),
+                             action: { model.onAllSettingsSelected?() },
+                             webLinkIndicator: true,
+                             isButton: true)
         }
-    }
-
-    private func toggleRow(icon: UIImage?, title: String, isOn: Binding<Bool>) -> some View {
-        HStack(spacing: Metrics.rowSpacing) {
-            if let icon {
-                Image(uiImage: icon)
-                    .foregroundColor(Color(designSystemColor: .icons))
-            }
-
-            Toggle(isOn: isOn) {
-                Text(title)
-                    .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-            }
-            .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accentPrimary)))
-        }
-        .padding(.horizontal, Metrics.contentInset)
-        .frame(height: Metrics.rowHeight)
-    }
-
-    private func group<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        VStack(spacing: 0) {
-            content()
-        }
-        .background(
-            RoundedRectangle(cornerRadius: Metrics.groupCornerRadius)
-                .fill(Color(designSystemColor: .surface))
-        )
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 }
 

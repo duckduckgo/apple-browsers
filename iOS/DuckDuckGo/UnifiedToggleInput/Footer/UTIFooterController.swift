@@ -43,6 +43,9 @@ final class UTIFooterController {
 
     weak var presenter: UTIFooterPresenting?
 
+    /// Reported when the spent-allowance state changes, so the input goes inert alongside the card.
+    var onInputBlockChanged: ((Bool) -> Void)?
+
     private let viewModel: DuckAiUsageWarningViewModel
     private let highUsageNotice: UTIFooterHighUsageNoticeSource?
     private let mapper: UTIFooterMessageMapper
@@ -57,6 +60,8 @@ final class UTIFooterController {
     private var currentExposure: DuckAiUsageWarningExposure?
 
     private var modelSwitchNotice: CreateImageModelSwitchNotice?
+
+    private var isInputBlocked = false
 
     private(set) var currentMessage: UTIFooterMessage?
 
@@ -90,6 +95,7 @@ final class UTIFooterController {
         highUsageNotice?.clear()
         currentMessage = nil
         currentExposure = nil
+        updateInputBlock()
         // Keeps the view's copy in lockstep — otherwise a later refresh that resolves to no
         // warning no-ops (nil == nil) and the view resurrects the stale card on the next expand.
         presenter?.clearPendingFooterMessage()
@@ -141,9 +147,12 @@ final class UTIFooterController {
         measurement.promptSubmitted()
     }
 
-    /// A switch the user made themselves; the card's own switch CTA reports its own tap.
-    func recordModelSwitched() {
+    /// A switch from the bar's picker: always reported, but it only retires the message when it is the
+    /// step down the message asked for. The card's own CTA reports and retires itself.
+    func userSwitchedModel(from previousModelId: String?, to modelId: String) {
         measurement.modelSwitched()
+        viewModel.userSwitchedModel(from: previousModelId, to: modelId)
+        applyCurrentState()
     }
 
     func performPrimaryAction() {
@@ -189,6 +198,7 @@ final class UTIFooterController {
     }
 
     private func applyCurrentState() {
+        updateInputBlock()
         let card = resolveCard()
         let message = card?.message
         guard message != currentMessage else {
@@ -203,6 +213,14 @@ final class UTIFooterController {
         animator { [weak self] in
             self?.presenter?.applyFooterMessage(message)
         }
+    }
+
+    private func updateInputBlock() {
+        let blocked = !isSuppressed && viewModel.warning?.blocksInput == true
+        guard blocked != isInputBlocked else { return }
+        isInputBlocked = blocked
+        Logger.duckAIUsageWarnings.debug("[UsageWarnings] input blocked=\(blocked, privacy: .public)")
+        onInputBlockChanged?(blocked)
     }
 
     private struct ResolvedCard {
@@ -235,9 +253,11 @@ final class UTIFooterController {
         return nil
     }
 
-    /// Releases as soon as the resolver produces a different message, so the next rung still shows.
+    /// Releases as soon as the resolver produces a different message, so the next rung still shows,
+    /// and once the acted-on record is gone, so clearing it is not undone by this copy.
     private func unlessActedOn(_ message: UTIFooterMessage) -> UTIFooterMessage? {
-        message == actedOnMessage ? nil : message
+        guard viewModel.hasActedOnCurrentNotice, message == actedOnMessage else { return message }
+        return nil
     }
 
     static let springAnimator: Animator = { changes in

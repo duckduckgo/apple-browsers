@@ -114,7 +114,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
     func test_message_upsellCopyFollowsTrialEligibility() {
         XCTAssertEqual(sut.message(for: warning(.freeReached, window: .daily,
                                                 action: .tryForFree(isTrialEligible: true))).primaryAction?.title,
-                       "Try for Free")
+                       "Try Subscription for Free")
         XCTAssertEqual(sut.message(for: warning(.freeReached, window: .daily,
                                                 action: .tryForFree(isTrialEligible: false))).primaryAction?.title,
                        "Subscribe")
@@ -195,7 +195,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
         XCTAssertEqual(message.title, "Now using 5.6 Luna")
         XCTAssertEqual(message.subtitle,
-                       "Gemma can't create images. Its extra privacy protections won't apply until you switch back.")
+                       "Gemma can't create images. Zero Provider Visibility won't apply until you switch back.")
     }
 
     func test_message_modelSwitchAwayFromANonOSSModelKeepsTheStandardSubtitle() {

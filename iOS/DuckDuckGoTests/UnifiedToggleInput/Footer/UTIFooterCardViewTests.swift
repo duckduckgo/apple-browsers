@@ -26,6 +26,10 @@ import XCTest
 final class UTIFooterCardViewTests: XCTestCase {
 
     private let phoneWidth: CGFloat = 390
+    /// The input card's two widths on a phone: expanded to the omnibar margins, and flanked by the
+    /// AI tab's fire and menu buttons — the footer card follows both.
+    private let expandedCardWidth: CGFloat = 361
+    private let flankedCardWidth: CGFloat = 249
     /// Longer than the room a titled card leaves beside its CTA and close button at phone width.
     private let wrappingTitle = "Advanced AI models limit reached for this billing period"
 
@@ -125,15 +129,19 @@ final class UTIFooterCardViewTests: XCTestCase {
         XCTAssertGreaterThan(needed, label.font.lineHeight * 1.5)
     }
 
-    /// The reset line beside a CTA has to stay on one line; a card with the pill gone can spend two.
-    func test_subtitle_allowsTwoLinesOnlyWithoutACTA() {
+    /// The reset line beside a CTA has to stay on one line; a card with the pill gone can spend two,
+    /// while the longer model-switch notice can spend three.
+    func test_subtitle_usesTheLineLimitForItsMessageLayout() {
         let sut = UTIFooterCardView()
 
         sut.configure(with: makeMessage(), animateIcon: false)
         XCTAssertEqual(subtitleLabel(in: sut)?.numberOfLines, 1)
 
-        sut.configure(with: makeSwitchNotice(), animateIcon: false)
+        sut.configure(with: makeMessage(primaryAction: nil), animateIcon: false)
         XCTAssertEqual(subtitleLabel(in: sut)?.numberOfLines, 2)
+
+        sut.configure(with: makeSwitchNotice(), animateIcon: false)
+        XCTAssertEqual(subtitleLabel(in: sut)?.numberOfLines, 3)
     }
 
     /// The switch notice's copy has to actually need the second line at phone width, or allowing it
@@ -236,6 +244,24 @@ final class UTIFooterCardViewTests: XCTestCase {
                                  sut.convert(dismiss.bounds, from: dismiss).minX)
     }
 
+    /// The footer's width follows the input card, so a message can be measured at the flanked
+    /// AI-tab width. A title left at its own intrinsic width keeps that measurement, which is what
+    /// draws it as a column of one or two characters a line.
+    func test_title_ownsItsRoomAtEveryCardWidth() {
+        let sut = UTIFooterCardView()
+        sut.configure(with: makeLimitReachedMessage(), animateIcon: false)
+
+        for width in [flankedCardWidth, expandedCardWidth] {
+            layOut(sut, atWidth: width)
+
+            guard let label = titleLabel(in: sut), let stack = textStack(in: sut) else {
+                return XCTFail("Expected the title to be part of the card")
+            }
+            XCTAssertEqual(label.bounds.width, stack.bounds.width, accuracy: 0.5,
+                           "The title has to own the room the CTA leaves it, at card width \(width)")
+        }
+    }
+
     // MARK: - Helpers
 
     /// Lays the card out at phone width for `isDismissible` and reports the trailing edge of the
@@ -253,6 +279,12 @@ final class UTIFooterCardViewTests: XCTestCase {
             return 0
         }
         return card.convert(subview.bounds, from: subview).maxX
+    }
+
+    private func layOut(_ card: UTIFooterCardView, atWidth width: CGFloat) {
+        card.frame = CGRect(x: 0, y: 0, width: width, height: 200)
+        card.setNeedsLayout()
+        card.layoutIfNeeded()
     }
 
     private func infoIcon(in card: UTIFooterCardView) -> UIImageView? {
@@ -298,18 +330,13 @@ final class UTIFooterCardViewTests: XCTestCase {
         textStack(in: card)?.arrangedSubviews.first as? UILabel
     }
 
+    /// The second arranged subview of the card's text stack.
     private func subtitleLabel(in card: UTIFooterCardView) -> UILabel? {
         textStack(in: card)?.arrangedSubviews.last as? UILabel
     }
 
     private func textStack(in card: UTIFooterCardView) -> UIStackView? {
         card.subviews.flatMap(\.subviews).compactMap { $0 as? UIStackView }.first
-    }
-
-    /// The second arranged subview of the card's text stack.
-    private func subtitleLabel(in card: UTIFooterCardView) -> UILabel? {
-        card.subviews.flatMap(\.subviews)
-            .compactMap { $0 as? UIStackView }.first?.arrangedSubviews.last as? UILabel
     }
 
     private func makeMessage(title: String = "90% of weekly limit",
@@ -334,7 +361,7 @@ final class UTIFooterCardViewTests: XCTestCase {
 
     /// The Create Image switch card: a headline over body copy, with no CTA to compete for width.
     private func makeSwitchNotice(
-        subtitle: String = "Mistral can't create images. Its extra privacy protections won't apply until you switch back."
+        subtitle: String = "Mistral can't create images. Zero Provider Visibility won't apply until you switch back."
     ) -> UTIFooterMessage {
         UTIFooterMessage(icon: .modelSwitch,
                          title: "Now using 5.6 Luna",
@@ -349,6 +376,16 @@ final class UTIFooterCardViewTests: XCTestCase {
                          subtitle: nil,
                          primaryAction: nil,
                          isDismissible: true)
+    }
+
+    /// The blocked card as shipped: a short title beside a CTA wide enough to compress it, and no
+    /// close button, so the pill reaches the trailing edge.
+    private func makeLimitReachedMessage() -> UTIFooterMessage {
+        UTIFooterMessage(icon: .alert,
+                         title: "Daily limit reached",
+                         subtitle: "Resets in 5 hours",
+                         primaryAction: .init(title: "Start Using Weekly Limit"),
+                         isDismissible: false)
     }
 
     private func makeIconlessMessage() -> UTIFooterMessage {

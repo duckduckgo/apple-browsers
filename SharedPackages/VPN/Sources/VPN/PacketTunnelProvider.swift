@@ -27,7 +27,7 @@ import FoundationExtensions
 import Network
 import NetworkExtension
 import os.log
-import PixelKit
+import WideEvent
 import UserNotifications
 
 open class PacketTunnelProvider: NEPacketTunnelProvider {
@@ -335,6 +335,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     public let lastSelectedServerInfoPublisher = CurrentValueSubject<NetworkProtectionServerInfo?, Never>(nil)
+
+    /// Selected non-default port to retain if later probes receive no replies.
+    /// Nil before selection or when the selected port is the server default.
+    @MainActor var automaticEndpointPort: UInt16?
+
+    /// Last port that answered a probe, preferred while the server still advertises it.
+    @MainActor var rememberedEndpointPort: UInt16?
+
+    private let endpointPortSelector = EndpointPortSelection()
 
     // MARK: - User Notifications
 
@@ -1234,11 +1243,38 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
 
         let newSelectedServer = configurationResult.server
-        self.lastSelectedServer = newSelectedServer
 
         Logger.networkProtection.log("⚪️ Generated tunnel configuration for server at location: \(newSelectedServer.serverInfo.serverLocation, privacy: .public) (preferred server is \(newSelectedServer.serverInfo.name, privacy: .public))")
 
-        return configurationResult.tunnelConfiguration
+        let configuration = try await applyingEndpointPortSelection(for: newSelectedServer.serverInfo, in: configurationResult.tunnelConfiguration)
+        self.lastSelectedServer = newSelectedServer
+        return configuration
+    }
+
+    // MARK: - Endpoint Port Selection
+
+    /// Selects a port and applies it to the tunnel configuration.
+    /// Updates port state only while this tunnel operation is current.
+    @MainActor
+    private func applyingEndpointPortSelection(for serverInfo: NetworkProtectionServerInfo, in configuration: TunnelConfiguration) async throws -> TunnelConfiguration {
+        try Task.checkCancellation()
+        let generation = tunnelPathGeneration
+        guard let currentPort = configuration.peers.first?.endpoint?.port.rawValue else {
+            return configuration
+        }
+        let decision = try await endpointPortSelector.select(for: serverInfo,
+                                                            previousPort: automaticEndpointPort ?? currentPort,
+                                                            preferring: rememberedEndpointPort)
+        try Task.checkCancellation()
+        guard generation == tunnelPathGeneration else { throw CancellationError() }
+        guard let decision else { return configuration }
+
+        automaticEndpointPort = decision.automaticPort
+        if let remembered = decision.rememberedPort {
+            rememberedEndpointPort = remembered
+        }
+
+        return decision.port == currentPort ? configuration : configuration.replacingEndpointPort(with: decision.port)
     }
 
     @available(iOS 17.0, *)
@@ -1448,8 +1484,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     private func handleFailureRecoveryConfigUpdate(result: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws {
+        let tunnelConfiguration = try await applyingEndpointPortSelection(for: result.server.serverInfo, in: result.tunnelConfiguration)
         self.lastSelectedServer = result.server
-        try await updateTunnelConfiguration(updateMethod: .useConfiguration(result.tunnelConfiguration), reassert: true, attemptSource: .failureRecovery)
+        try await updateTunnelConfiguration(updateMethod: .useConfiguration(tunnelConfiguration), reassert: true, attemptSource: .failureRecovery)
     }
 
     @MainActor

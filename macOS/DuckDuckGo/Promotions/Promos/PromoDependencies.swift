@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import BrowserServicesKit
 import DDGSync
 import Foundation
@@ -39,4 +40,9 @@ struct PromoDependencies {
     let windowControllersManager: WindowControllersManagerProtocol
     let syncService: DDGSyncing?
     let syncBookmarksAdapter: SyncBookmarksAdapter?
+    let pinningManager: PinningManager
+    let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate
+    let updateController: (any UpdateController)?
+    let updateNotificationBridge: UpdateNotificationPromoBridge?
+    let brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator
 }

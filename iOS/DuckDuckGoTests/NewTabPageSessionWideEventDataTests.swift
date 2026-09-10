@@ -19,7 +19,7 @@
 
 import Foundation
 import Testing
-import PixelKit
+import WideEvent
 @testable import DuckDuckGo
 
 @Suite("New Tab Page Session Wide Event Data")

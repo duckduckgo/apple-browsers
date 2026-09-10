@@ -147,6 +147,7 @@ class BrowserChromeButton: UIButton {
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
         if previousTraitCollection?.hasDifferentColorAppearance(comparedTo: traitCollection) == true {
             setNeedsDisplay()
         }

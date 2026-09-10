@@ -202,6 +202,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                     privacyConfigurationManager: MockPrivacyConfigurationManager(),
                     internalUserDecider: featureFlagger.internalUserDecider
                 ),
+                permissionManager: PermissionManagerMock(),
                 pinningManager: MockPinningManager()
             )
             _=viewController.view

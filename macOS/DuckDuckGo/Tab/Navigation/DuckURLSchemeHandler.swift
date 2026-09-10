@@ -30,6 +30,7 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
 
     let featureFlagger: FeatureFlagger
     let faviconManager: FaviconManagement
+    let permissionManager: PermissionManagerProtocol
     let isNTPSpecialPageSupported: Bool
     let userBackgroundImagesManager: UserBackgroundImagesManaging?
 
@@ -44,14 +45,19 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
     /// Debug-only Favicons inspector served at `duck://favicons` (Debug ▸ Inspect Favicons).
     private lazy var faviconsDebugInspector = FaviconsDebugInspector(faviconManager: faviconManager)
 
+    /// Debug-only Permissions inspector served at `duck://permissions` (Debug ▸ Permissions ▸ Inspect).
+    private lazy var permissionsDebugInspector = PermissionsDebugInspector(permissionManager: permissionManager)
+
     init(
         featureFlagger: FeatureFlagger,
         faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager,
+        permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager,
         isNTPSpecialPageSupported: Bool = false,
         userBackgroundImagesManager: UserBackgroundImagesManaging? = NSApp.delegateTyped.newTabPageCustomizationModel.customImagesManager
     ) {
         self.featureFlagger = featureFlagger
         self.faviconManager = faviconManager
+        self.permissionManager = permissionManager
         self.isNTPSpecialPageSupported = isNTPSpecialPageSupported
         self.userBackgroundImagesManager = userBackgroundImagesManager
     }
@@ -94,6 +100,10 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
             default:
                 handleSpecialPages(urlSchemeTask: urlSchemeTask)
             }
+        // Matched only for internal users; for everyone else no case matches and `duck://permissions`
+        // falls to `default:`, the same empty native UI page any unknown duck:// host gets.
+        case .permissions where featureFlagger.internalUserDecider.isInternalUser:
+            permissionsDebugInspector.handle(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
         case .favicons:
             guard featureFlagger.internalUserDecider.isInternalUser else {
                 fallthrough
@@ -546,6 +556,7 @@ private extension URL {
         case history
         case favicon
         case favicons
+        case permissions
         case customBackgroundImage
         case customBackgroundImageThumbnail
         case onboarding
@@ -575,6 +586,8 @@ private extension URL {
             return .favicon
         } else if self.isFavicons {
             return .favicons
+        } else if self.isPermissions {
+            return .permissions
         } else if self.isHistory {
             return .history
         } else {

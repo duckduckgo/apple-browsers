@@ -68,11 +68,11 @@ final class DefaultOmniBarSearchView: UIView {
     private let mainStackView = UIStackView()
     private var mainStackLeadingConstraint: NSLayoutConstraint?
 
-    init() {
+    init(centersContentVertically: Bool = false) {
         super.init(frame: .zero)
 
         setUpSubviews()
-        setUpConstraints()
+        setUpConstraints(centersContentVertically: centersContentVertically)
         setUpProperties()
     }
 
@@ -139,21 +139,18 @@ final class DefaultOmniBarSearchView: UIView {
         leftIconContainer.addSubview(dismissButtonView)
     }
 
-    private func setUpConstraints() {
+    private func setUpConstraints(centersContentVertically: Bool) {
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
         leftIconContainer.translatesAutoresizingMaskIntoConstraints = false
         modeToggleContainer.translatesAutoresizingMaskIntoConstraints = false
         modeToggleView.translatesAutoresizingMaskIntoConstraints = false
 
-        let leadingConstraint = mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor)
+        let leadingConstraint = mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.horizontalInset)
         mainStackLeadingConstraint = leadingConstraint
 
         NSLayoutConstraint.activate([
             leadingConstraint,
-            mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            mainStackView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            mainStackView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
-            mainStackView.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor),
+            mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.horizontalInset),
 
             notificationContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 4),
             notificationContainer.trailingAnchor.constraint(equalTo: textField.trailingAnchor),
@@ -176,6 +173,19 @@ final class DefaultOmniBarSearchView: UIView {
             modeToggleView.trailingAnchor.constraint(equalTo: modeToggleContainer.trailingAnchor, constant: -6),
             modeToggleView.centerYAnchor.constraint(equalTo: modeToggleContainer.centerYAnchor)
         ])
+
+        if centersContentVertically {
+            NSLayoutConstraint.activate([
+                mainStackView.centerYAnchor.constraint(equalTo: centerYAnchor),
+                mainStackView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
+                mainStackView.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor)
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                mainStackView.topAnchor.constraint(equalTo: topAnchor),
+                mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            ])
+        }
 
         DefaultOmniBarView.activateItemSizeConstraints(for: voiceSearchButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: reloadButton)
@@ -253,6 +263,15 @@ final class DefaultOmniBarSearchView: UIView {
 
     func setLeftIconAreaHidden(_ hidden: Bool) {
         leftIconContainerPlaceholder.isHidden = hidden
-        mainStackLeadingConstraint?.constant = hidden ? 16 : 0
+        mainStackLeadingConstraint?.constant = hidden ? Metrics.textOnlyLeadingInset : Metrics.horizontalInset
+    }
+
+    private enum Metrics {
+        /// Keeps the 44pt icon slots clear of the field's capsule ends. With the field at 48pt this
+        /// also lands the shield's centre on the centre of the leading arc, so the trackers-blocked
+        /// animation bursts symmetrically instead of being trimmed against the edge.
+        static let horizontalInset: CGFloat = 2
+        /// Text inset used when the leading icon slot is hidden.
+        static let textOnlyLeadingInset: CGFloat = 16
     }
 }

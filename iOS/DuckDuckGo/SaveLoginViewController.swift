@@ -22,6 +22,7 @@ import SwiftUI
 import BrowserServicesKit
 import Core
 import PrivacyConfig
+import PixelKit
 
 protocol SaveLoginViewControllerDelegate: AnyObject {
     func saveLoginViewController(_ viewController: SaveLoginViewController, didSaveCredentials credentials: SecureVaultModels.WebsiteCredentials)
@@ -79,15 +80,15 @@ class SaveLoginViewController: UIViewController {
 
         switch viewModel.layoutType {
         case .newUser:
-            Pixel.fire(pixel: .autofillLoginsSaveLoginOnboardingModalDismissed, withAdditionalParameters: backfilledParameter)
+            PixelKit.fire(Pixel.Event.autofillLoginsSaveLoginOnboardingModalDismissed, options: .parameters(backfilledParameter))
         case .saveLogin:
-            Pixel.fire(pixel: .autofillLoginsSaveLoginModalDismissed, withAdditionalParameters: backfilledParameter)
+            PixelKit.fire(Pixel.Event.autofillLoginsSaveLoginModalDismissed, options: .parameters(backfilledParameter))
         case .savePassword:
-            Pixel.fire(pixel: .autofillLoginsSavePasswordModalDismissed, withAdditionalParameters: backfilledParameter)
+            PixelKit.fire(Pixel.Event.autofillLoginsSavePasswordModalDismissed, options: .parameters(backfilledParameter))
         case .updateUsername:
-            Pixel.fire(pixel: .autofillLoginsUpdateUsernameModalDismissed, withAdditionalParameters: backfilledParameter)
+            PixelKit.fire(Pixel.Event.autofillLoginsUpdateUsernameModalDismissed, options: .parameters(backfilledParameter))
         case .updatePassword:
-            Pixel.fire(pixel: .autofillLoginsUpdatePasswordModalDismissed, withAdditionalParameters: backfilledParameter)
+            PixelKit.fire(Pixel.Event.autofillLoginsUpdatePasswordModalDismissed, options: .parameters(backfilledParameter))
         }
         
         viewModel.viewControllerDidDisappear()
@@ -109,15 +110,15 @@ class SaveLoginViewController: UIViewController {
 
         switch saveViewModel.layoutType {
         case .newUser:
-            Pixel.fire(pixel: .autofillLoginsSaveLoginOnboardingModalDisplayed, withAdditionalParameters: backfilledParameter)
+            PixelKit.fire(Pixel.Event.autofillLoginsSaveLoginOnboardingModalDisplayed, options: .parameters(backfilledParameter))
         case .saveLogin:
-            Pixel.fire(pixel: .autofillLoginsSaveLoginModalDisplayed, withAdditionalParameters: backfilledParameter)
+            PixelKit.fire(Pixel.Event.autofillLoginsSaveLoginModalDisplayed, options: .parameters(backfilledParameter))
         case .savePassword:
-            Pixel.fire(pixel: .autofillLoginsSavePasswordModalDisplayed, withAdditionalParameters: backfilledParameter)
+            PixelKit.fire(Pixel.Event.autofillLoginsSavePasswordModalDisplayed, options: .parameters(backfilledParameter))
         case .updateUsername:
-            Pixel.fire(pixel: .autofillLoginsUpdateUsernameModalDisplayed, withAdditionalParameters: backfilledParameter)
+            PixelKit.fire(Pixel.Event.autofillLoginsUpdateUsernameModalDisplayed, options: .parameters(backfilledParameter))
         case .updatePassword:
-            Pixel.fire(pixel: .autofillLoginsUpdatePasswordModalDisplayed, withAdditionalParameters: backfilledParameter)
+            PixelKit.fire(Pixel.Event.autofillLoginsUpdatePasswordModalDisplayed, options: .parameters(backfilledParameter))
         }
     }
 }
@@ -136,19 +137,19 @@ extension SaveLoginViewController: SaveLoginViewModelDelegate {
         switch viewModel.layoutType {
         case .saveLogin, .savePassword, .newUser:
             if case .newUser = viewModel.layoutType {
-                Pixel.fire(pixel: .autofillLoginsSaveLoginOnboardingModalConfirmed, withAdditionalParameters: backfilledParameter)
+                PixelKit.fire(Pixel.Event.autofillLoginsSaveLoginOnboardingModalConfirmed, options: .parameters(backfilledParameter))
             } else if case .savePassword = viewModel.layoutType {
-                Pixel.fire(pixel: .autofillLoginsSavePasswordModalConfirmed, withAdditionalParameters: backfilledParameter)
+                PixelKit.fire(Pixel.Event.autofillLoginsSavePasswordModalConfirmed, options: .parameters(backfilledParameter))
             } else {
-                Pixel.fire(pixel: .autofillLoginsSaveLoginModalConfirmed, withAdditionalParameters: backfilledParameter)
+                PixelKit.fire(Pixel.Event.autofillLoginsSaveLoginModalConfirmed, options: .parameters(backfilledParameter))
             }
 
             delegate?.saveLoginViewController(self, didSaveCredentials: credentialManager.credentials)
         case .updatePassword, .updateUsername:
             if viewModel.layoutType == .updatePassword {
-                Pixel.fire(pixel: .autofillLoginsUpdatePasswordModalConfirmed, withAdditionalParameters: backfilledParameter)
+                PixelKit.fire(Pixel.Event.autofillLoginsUpdatePasswordModalConfirmed, options: .parameters(backfilledParameter))
             } else {
-                Pixel.fire(pixel: .autofillLoginsUpdateUsernameModalConfirmed, withAdditionalParameters: backfilledParameter)
+                PixelKit.fire(Pixel.Event.autofillLoginsUpdateUsernameModalConfirmed, options: .parameters(backfilledParameter))
             }
             delegate?.saveLoginViewController(self, didUpdateCredentials: credentialManager.credentials)
         }
@@ -164,9 +165,9 @@ extension SaveLoginViewController: SaveLoginViewModelDelegate {
         dismiss(animated: true)
 
         if case .newUser = viewModel.layoutType {
-            Pixel.fire(pixel: .autofillLoginsSaveLoginOnboardingModalExcludeSiteConfirmed)
+            PixelKit.fire(Pixel.Event.autofillLoginsSaveLoginOnboardingModalExcludeSiteConfirmed)
         } else {
-            Pixel.fire(pixel: .autofillLoginsSaveLoginModalExcludeSiteConfirmed)
+            PixelKit.fire(Pixel.Event.autofillLoginsSaveLoginModalExcludeSiteConfirmed)
         }
         delegate?.saveLoginViewController(self, didRequestNeverPromptForWebsite: viewModel.accountDomain)
     }

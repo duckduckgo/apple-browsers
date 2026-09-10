@@ -123,6 +123,14 @@ public enum DuckAiUsageAction: Equatable {
         }
     }
 
+    /// The model the message is offering, for spotting the user picking it somewhere else.
+    var suggestedModelId: String? {
+        switch self {
+        case .switchToModel(let suggestion), .switchToFreeModel(let suggestion): return suggestion.modelId
+        case .tryForFree, .startUsingWeeklyLimit: return nil
+        }
+    }
+
     /// The web app's cta id this action came from, for the debug log.
     var ctaID: DuckAiUsageCta.ID {
         switch self {
@@ -146,6 +154,10 @@ public struct DuckAiUsageWarning: Equatable {
     public let action: DuckAiUsageAction?
     /// The `>` beside the primary action, opening the native model picker.
     public let offersModelPicker: Bool
+
+    /// The allowance is spent, so the next prompt can't be: the input goes inert and this message
+    /// is the only thing left to act on, as it is on the web app.
+    public var blocksInput: Bool { severity == .reached }
 
     public init(window: DuckAiUsageWindow,
                 message: DuckAiUsageMessage,

@@ -784,10 +784,10 @@ extension LegacyDataImportViewModel {
     }
 
     private mutating func dismiss(using dismiss: @escaping () -> Void) {
-        // send `bookmarkPromptShouldShow` notification after dismiss if at least one bookmark was imported
+        // send `bookmarksImported` notification after dismiss if at least one bookmark was imported
         if summary.reduce(into: 0, { $0 += $1.dataType == .bookmarks ? (try? $1.result.get().successful) ?? 0 : 0 }) > 0 {
             DispatchQueue.main.async {
-                NotificationCenter.default.post(name: .bookmarkPromptShouldShow, object: nil)
+                NotificationCenter.default.post(name: .bookmarksImported, object: nil)
             }
         }
 

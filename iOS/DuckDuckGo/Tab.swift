@@ -24,6 +24,7 @@ import AIChat
 enum TabType {
     case web
     case aiChat
+    case serp
 }
 
 protocol TabObserver: AnyObject {
@@ -60,6 +61,12 @@ public class Tab: NSObject, NSCoding {
     private var observersHolder = [WeaklyHeldTabObserver]()
     
     let uid: String
+    /// Set only for decoded tabs and cleared when their restoring main-frame navigation commits.
+    ///
+    /// Deliberately outlives the provisional load that starts it: a provisional load replaced before
+    /// it commits (link cleaning, HTTPS upgrade, a policy-driven reload) is still the same logical
+    /// restoration, and the replacement must be attributed to it too.
+    private(set) var hasPendingSessionRestoration = false
 
     /// The date last time this tab was displayed.
     ///
@@ -144,9 +151,12 @@ public class Tab: NSObject, NSCoding {
     var duckAIEntrySource: AIChatEntryPointSource?
 
     /// Type of tab: web or AI Chat, derived from the current URL
-    private var type: TabType {
-        if let link, link.url.isDuckAIURL(debugSettings: aichatDebugSettings) {
+    var type: TabType {
+        guard let link else { return .web }
+        if link.url.isDuckAIURL(debugSettings: aichatDebugSettings) {
             return .aiChat
+        } else if link.url.isDuckDuckGoSearch {
+            return .serp
         }
         return .web
     }
@@ -213,6 +223,12 @@ public class Tab: NSObject, NSCoding {
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
 
         self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, unifiedInputState: unifiedInputState, duckAIEntrySource: duckAIEntrySource)
+        hasPendingSessionRestoration = true
+    }
+
+    /// Ends session-restoration attribution for this tab, once a restoring navigation has committed.
+    func clearPendingSessionRestoration() {
+        hasPendingSessionRestoration = false
     }
 
     public func encode(with coder: NSCoder) {

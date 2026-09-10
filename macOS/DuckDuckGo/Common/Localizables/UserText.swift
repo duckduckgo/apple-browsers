@@ -959,38 +959,61 @@ struct UserText {
     )
     static let aiChatOmnibarPlaceholder = NSLocalizedString("aichat.omnibar.placeholder", value: "Ask anything privately", comment: "Placeholder text shown in the Duck.ai chat input field")
 
-    // Duck.ai usage-limit messages. Not localized while the copy is being finalised behind the
-    // internal-only `aiChatUsageWarnings` flag, matching what iOS does for the same messages.
+    // Duck.ai usage-limit messages.
     static func aiChatUsageWarningsDailyUsage(percent: Int) -> String {
-        let message = NotLocalizedString("aichat.usageWarnings.daily-usage", value: "%d%% of daily limit", comment: "Headline on the Duck.ai usage card as the user approaches their daily limit. Parameter is the percentage of the daily allowance already used.")
+        let message = NSLocalizedString("aichat.usageWarnings.daily-usage", value: "%d%% of daily limit", comment: "Headline on the Duck.ai usage card as the user approaches their daily limit. Parameter is the percentage of the daily allowance already used.")
         return String(format: message, percent)
     }
     static func aiChatUsageWarningsWeeklyUsage(percent: Int) -> String {
-        let message = NotLocalizedString("aichat.usageWarnings.weekly-usage", value: "%d%% of weekly limit", comment: "Headline on the Duck.ai usage card as the user approaches their weekly limit. Parameter is the percentage of the weekly allowance already used.")
+        let message = NSLocalizedString("aichat.usageWarnings.weekly-usage", value: "%d%% of weekly limit", comment: "Headline on the Duck.ai usage card as the user approaches their weekly limit. Parameter is the percentage of the weekly allowance already used.")
         return String(format: message, percent)
     }
-    static let aiChatUsageWarningsDailyLimitReached = NotLocalizedString("aichat.usageWarnings.daily-limit-reached", value: "Daily limit reached", comment: "Headline on the Duck.ai usage card when the user's daily allowance is fully spent")
-    static let aiChatUsageWarningsWeeklyLimitReached = NotLocalizedString("aichat.usageWarnings.weekly-limit-reached", value: "Weekly usage limit reached", comment: "Headline on the Duck.ai usage card when the user's weekly allowance is fully spent")
-    static let aiChatUsageWarningsAdvancedModelsLimitReached = NotLocalizedString("aichat.usageWarnings.advanced-models-limit-reached", value: "Advanced AI models limit reached", comment: "Headline on the Duck.ai usage card when the allowance for advanced AI models specifically is spent, while free models remain available")
+    static let aiChatUsageWarningsDailyLimitReached = NSLocalizedString("aichat.usageWarnings.daily-limit-reached", value: "Daily limit reached", comment: "Headline on the Duck.ai usage card when the user's daily allowance is fully spent")
+    static let aiChatUsageWarningsWeeklyLimitReached = NSLocalizedString("aichat.usageWarnings.weekly-limit-reached", value: "Weekly usage limit reached", comment: "Headline on the Duck.ai usage card when the user's weekly allowance is fully spent")
+    static let aiChatUsageWarningsAdvancedModelsLimitReached = NSLocalizedString("aichat.usageWarnings.advanced-models-limit-reached", value: "Advanced AI models limit reached", comment: "Headline on the Duck.ai usage card when the allowance for advanced AI models specifically is spent, while free models remain available")
     static func aiChatUsageWarningsHighUsageModel(_ modelShortName: String) -> String {
-        let message = NotLocalizedString("aichat.usageWarnings.high-usage-model", value: "%@ reaches usage limits 2-5x sooner than basic models.", comment: "Duck.ai usage card notice shown while a model that spends the allowance quickly is selected. Parameter is the model's short name, e.g. \"Opus 4.8\".")
+        let message = NSLocalizedString("aichat.usageWarnings.high-usage-model", value: "%@ reaches usage limits 2-5x sooner than basic models.", comment: "Duck.ai usage card notice shown while a model that spends the allowance quickly is selected. Parameter is the model's short name, e.g. \"Opus 4.8\".")
         return String(format: message, modelShortName)
     }
     static func aiChatUsageWarningsResetsIn(_ interval: String) -> String {
-        let message = NotLocalizedString("aichat.usageWarnings.resets-in", value: "Resets in %@", comment: "Trailing detail on the Duck.ai usage card saying when the limit resets. Parameter is a short interval such as \"7d\" or \"12h\".")
+        let message = NSLocalizedString("aichat.usageWarnings.resets-in", value: "Resets in %@", comment: "Trailing detail on the Duck.ai usage card saying when the limit resets. Parameter is a short interval such as \"7d\" or \"12h\".")
         return String(format: message, interval)
     }
     static func aiChatUsageWarningsSwitchToModel(_ modelShortName: String) -> String {
-        let message = NotLocalizedString("aichat.usageWarnings.switch-to-model", value: "Switch to %@", comment: "Button on the Duck.ai usage card offering a model that uses the allowance more slowly. Parameter is the model's short name, e.g. \"5.4 mini\".")
+        let message = NSLocalizedString("aichat.usageWarnings.switch-to-model", value: "Switch to %@", comment: "Button on the Duck.ai usage card offering a model that uses the allowance more slowly. Parameter is the model's short name, e.g. \"5.4 mini\".")
         return String(format: message, modelShortName)
     }
-    static let aiChatUsageWarningsSwitchModel = NotLocalizedString("aichat.usageWarnings.switch-model", value: "Switch Model", comment: "Button on the Duck.ai usage card offering a model that uses the allowance more slowly, used when the suggested model has no short name to show")
-    static let aiChatUsageWarningsSwitchToFreeModel = NotLocalizedString("aichat.usageWarnings.switch-to-free-model", value: "Switch to a Free Model", comment: "Button on the Duck.ai usage card offering a free-tier model, shown once the advanced-model allowance is spent")
-    static let aiChatUsageWarningsStartUsingWeeklyLimit = NotLocalizedString("aichat.usageWarnings.start-using-weekly-limit", value: "Start Using Weekly Limit", comment: "Button on the Duck.ai usage card letting a paid user keep chatting on their weekly allowance after the daily one is spent")
-    static let aiChatUsageWarningsTryForFree = NotLocalizedString("aichat.usageWarnings.try-for-free", value: "Try for Free", comment: "Button on the Duck.ai usage card taking a user who is still eligible for a free trial to the subscription flow")
-    static let aiChatUsageWarningsSubscribe = NotLocalizedString("aichat.usageWarnings.subscribe", value: "Subscribe", comment: "Button on the Duck.ai usage card taking a user who has already used their free trial to the subscription flow")
-    static let aiChatUsageWarningsDismissAccessibilityLabel = NotLocalizedString("aichat.usageWarnings.dismiss.accessibility", value: "Dismiss", comment: "Accessibility label for the close button on the Duck.ai usage card")
-    static let aiChatUsageWarningsModelPickerAccessibilityLabel = NotLocalizedString("aichat.usageWarnings.model-picker.accessibility", value: "Choose a model", comment: "Accessibility label for the chevron on the Duck.ai usage card, which opens the model picker")
+    static let aiChatUsageWarningsSwitchModel = NSLocalizedString("aichat.usageWarnings.switch-model", value: "Switch Model", comment: "Button on the Duck.ai usage card offering a model that uses the allowance more slowly, used when the suggested model has no short name to show")
+    static let aiChatUsageWarningsSwitchToFreeModel = NSLocalizedString("aichat.usageWarnings.switch-to-free-model", value: "Switch to a Free Model", comment: "Button on the Duck.ai usage card offering a free-tier model, shown once the advanced-model allowance is spent")
+    static let aiChatUsageWarningsStartUsingWeeklyLimit = NSLocalizedString("aichat.usageWarnings.start-using-weekly-limit", value: "Start Using Weekly Limit", comment: "Button on the Duck.ai usage card letting a paid user keep chatting on their weekly allowance after the daily one is spent")
+    static let aiChatUsageWarningsTryForFree = NSLocalizedString("aichat.usageWarnings.try-for-free", value: "Try Subscription for Free", comment: "Button on the Duck.ai usage card taking a user who is still eligible for a free trial to the subscription flow")
+    static let aiChatUsageWarningsSubscribe = NSLocalizedString("aichat.usageWarnings.subscribe", value: "Subscribe", comment: "Button on the Duck.ai usage card taking a user who has already used their free trial to the subscription flow")
+    static let aiChatUsageWarningsDismissAccessibilityLabel = NSLocalizedString("aichat.usageWarnings.dismiss.accessibility", value: "Dismiss", comment: "Accessibility label for the close button on the Duck.ai usage card")
+    static let aiChatUsageWarningsModelPickerAccessibilityLabel = NSLocalizedString("aichat.usageWarnings.model-picker.accessibility", value: "Choose a model", comment: "Accessibility label for the chevron on the Duck.ai usage card, which opens the model picker")
+    static func aiChatCreateImageModelSwitchTitle(_ modelShortName: String) -> String {
+        let message = NSLocalizedString(
+            "aichat.createImage.modelSwitch.title",
+            value: "Now using %@",
+            comment: "Title of the Duck.ai input card shown after switching to an image-capable model. Parameter is the new model's short name."
+        )
+        return String(format: message, modelShortName)
+    }
+    static func aiChatCreateImageModelSwitchSubtitle(_ modelShortName: String) -> String {
+        let message = NSLocalizedString(
+            "aichat.createImage.modelSwitch.subtitle",
+            value: "%@ doesn't support image creation.",
+            comment: "Subtitle explaining why Duck.ai switched models. Parameter is the previous model's short name."
+        )
+        return String(format: message, modelShortName)
+    }
+    static func aiChatCreateImageModelSwitchPrivacySubtitle(_ modelShortName: String) -> String {
+        let message = NSLocalizedString(
+            "aichat.createImage.modelSwitch.privacy.subtitle",
+            value: "%@ can't create images. Zero Provider Visibility won't apply until you switch back.",
+            comment: "Subtitle shown after switching away from a Zero Provider Visibility model for image creation. Parameter is the previous model's short name."
+        )
+        return String(format: message, modelShortName)
+    }
     static let moreSearchSettings = NSLocalizedString("settings.more-search-settings", value: "More Search Settings", comment: "The button name in preferences for More Search Settings")
     static let moreSearchSettingsDescription = NSLocalizedString("settings.more-search-settings.description", value: "Customize your language, region, and more.", comment: "Subtitle of the 'More Search Settings' button")
     static let moreSearchSettingsLink = NSLocalizedString("settings.more-search-settings.link", value: "Open DuckDuckGo Search Settings", comment: "Button to open Search Settings on duckduckgo.com")
@@ -1483,6 +1506,11 @@ struct UserText {
             comment: "Message for the dialog to confirm sync setup with another DuckDuckGo device")
         return String(format: message, peerName)
     }
+
+    // Confirmation shown when closing the Sync setup dialog while a device is still being connected (V2 — simplifiedSyncSetupV2).
+    static let syncCloseSetupConfirmationTitleV2 = NSLocalizedString("sync.close-setup-v2.confirmation.title", value: "Are you sure you want to close this window?", comment: "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
+    static let syncCloseSetupConfirmationMessageV2 = NSLocalizedString("sync.close-setup-v2.confirmation.message", value: "Closing this window will stop connecting Sync & Backup.", comment: "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
+    static let syncCloseSetupConfirmationActionV2 = NSLocalizedString("sync.close-setup-v2.confirmation.action", value: "Close", comment: "Button that confirms closing the Sync setup dialog before the devices finished connecting (V2)")
     static let syncBookmarkPausedAlertTitle = NSLocalizedString("alert.sync-bookmarks-paused-title", value: "Bookmark Sync is Paused", comment: "Title for alert shown when sync bookmarks paused for too many items")
     static let syncBookmarkPausedAlertDescription = NSLocalizedString("alert.sync-bookmarks-paused-description", value: "You've reached the maximum number of bookmarks. Please delete some bookmarks to resume sync.", comment: "Description for alert shown when sync bookmarks paused for too many items")
     static let syncCredentialsPausedAlertTitle = NSLocalizedString("alert.sync-credentials-paused-title", value: "Password Sync is Paused", comment: "Title for alert shown when sync credentials paused for too many items")
@@ -1526,6 +1554,7 @@ struct UserText {
     static let privateSearch = NSLocalizedString("preferences.private-search", value: "Private Search", comment: "Title of the option to show the Private Search preferences")
     static let appearance = NSLocalizedString("preferences.appearance", value: "Appearance", comment: "Title of the option to show the Appearance preferences")
     static let dataClearing = NSLocalizedString("preferences.data-clearing", value: "Data Clearing", comment: "Title of the option to show the Data Clearing preferences")
+    static let websitePermissions = NotLocalizedString("preferences.website-permissions", value: "Website Permissions", comment: "Title of the option to show Website Permissions")
     static let webTrackingProtection = NSLocalizedString("preferences.web-tracking-protection", value: "Web Tracking Protection", comment: "Title of the option to show the Web Tracking Protection preferences")
     static let threatProtection = NSLocalizedString("preferences.threat-protection", value: "Threat Protection", comment: "Title of the option to show the Threat Protection preferences")
     static let threatProtectionCaption = NSLocalizedString("preferences.threat-protection.caption", value: "DuckDuckGo's enhanced protections stop common threats while keeping your connection secure.", comment: "Caption of the option to show the Threat Protection preferences")

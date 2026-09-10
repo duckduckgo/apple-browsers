@@ -21,6 +21,7 @@ import Common
 import FoundationExtensions
 import UniformTypeIdentifiers
 import PixelKit
+import WideEvent
 import os.log
 import BrowserServicesKit
 import Persistence
@@ -847,12 +848,13 @@ extension DataImportViewModel {
         case sync
         case close
         case grantDirectoryAccess(source: Source)
+        case showSystemPasswordPrompt
 
         var isDisabled: Bool {
             switch self {
             case .initiateImport(disabled: let disabled):
                 return disabled
-            case .skip, .done, .cancel, .cancelImport, .back, .submit, .continue, .selectFile, .sync, .close, .grantDirectoryAccess:
+            case .skip, .done, .cancel, .cancelImport, .back, .submit, .continue, .selectFile, .sync, .close, .grantDirectoryAccess, .showSystemPasswordPrompt:
                 return false
             }
         }
@@ -880,7 +882,7 @@ extension DataImportViewModel {
         case .getFileReadPermission:
             return nil
         case .passwordEntryHelp:
-            return nil
+            return .showSystemPasswordPrompt
 
         case .archiveImport:
             return nil
@@ -1040,6 +1042,9 @@ extension DataImportViewModel {
             launchSync(using: dismiss)
         case .grantDirectoryAccess:
             grantAccessButtonPressed()
+
+        case .showSystemPasswordPrompt:
+            initiateImport()
         }
     }
 
@@ -1169,10 +1174,10 @@ extension DataImportViewModel {
     }
 
     private mutating func dismiss(using dismiss: @escaping () -> Void) {
-        // send `bookmarkPromptShouldShow` notification after dismiss if at least one bookmark was imported
+        // send `bookmarksImported` notification after dismiss if at least one bookmark was imported
         if summary.reduce(into: 0, { $0 += $1.dataType == .bookmarks ? (try? $1.result.get().successful) ?? 0 : 0 }) > 0 {
             DispatchQueue.main.async {
-                NotificationCenter.default.post(name: .bookmarkPromptShouldShow, object: nil)
+                NotificationCenter.default.post(name: .bookmarksImported, object: nil)
             }
         }
 

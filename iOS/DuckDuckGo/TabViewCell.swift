@@ -22,6 +22,7 @@ import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
+import PixelKit
 
 protocol TabViewCellDelegate: AnyObject {
 
@@ -413,9 +414,9 @@ class TabViewCell: UICollectionViewCell {
 
     private func startRemoveAnimation() {
         self.isDeleting = true
-        Pixel.fire(pixel: .tabSwitcherSwipeCloseTab, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.tabSwitcherSwipeCloseTab, options: .parameters([
             PixelParameters.browsingMode: isFireTab ? BrowsingMode.fire.pixelParamValue : BrowsingMode.normal.pixelParamValue
-        ])
+        ]))
         self.deleteTab()
         UIView.animate(withDuration: Constants.swipeAnimationDuration, animations: {
             self.transform = CGAffineTransform.identity.translatedBy(x: -self.frame.width, y: 0)
@@ -442,18 +443,18 @@ class TabViewCell: UICollectionViewCell {
     }
 
     @objc func deleteTab() {
-        Pixel.fire(pixel: .tabSwitcherClickCloseTab, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.tabSwitcherClickCloseTab, options: .parameters([
             PixelParameters.browsingMode: isFireTab ? BrowsingMode.fire.pixelParamValue : BrowsingMode.normal.pixelParamValue
-        ])
+        ]))
         closeTab()
     }
 
     private func fireTabCloseSegmentationPixel() {
         guard let tab else { return }
         if tab.isAITab {
-            DailyPixel.fireDailyAndCount(pixel: .tabManagerCloseAITab)
+            PixelKit.fire(Pixel.Event.tabManagerCloseAITab, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .tabManagerCloseWebTab)
+            PixelKit.fire(Pixel.Event.tabManagerCloseWebTab, frequency: .dailyAndCount)
         }
     }
 

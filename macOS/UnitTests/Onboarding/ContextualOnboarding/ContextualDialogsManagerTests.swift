@@ -41,7 +41,7 @@ class ContextualDialogsManagerTests {
         trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
     }
 
-    @Test("Non-blocking contextual onboarding starts on NTP or DuckDuckGo and stays dismissed",
+    @Test("Non-blocking contextual onboarding starts on NTP or DuckDuckGo and stays dismissed", .timeLimit(.minutes(1)),
           arguments: ["ntp", "https://duckduckgo.com", "https://www.duckduckgo.com", "https://duckduckgo.com/?q=test"])
     func testNonBlockingContextualLifecycle(url: String) async {
         let treatmentManager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
@@ -70,7 +70,7 @@ class ContextualDialogsManagerTests {
         #expect(restored.dialogTypeForTab(browsingTab) == nil)
     }
 
-    @Test("Other sites retain tracker tips without showing or consuming Try a search",
+    @Test("Other sites retain tracker tips without showing or consuming Try a search", .timeLimit(.minutes(1)),
           arguments: ["https://example.com", "https://duckduckgo.com.example.com", "https://example.com/?q=test"])
     func testTreatmentWebsiteDoesNotConsumeSearchPrompt(url: String) async {
         let treatmentManager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
@@ -88,7 +88,7 @@ class ContextualDialogsManagerTests {
         #expect(treatmentManager.dialogTypeForTab(newTab) == .tryASearch)
     }
 
-    @Test("A cached search prompt is not restored on another site in treatment", arguments: [false, true])
+    @Test("A cached search prompt is not restored on another site in treatment", .timeLimit(.minutes(1)), arguments: [false, true])
     func testCachedSearchPromptAfterLeavingNewTab(isNonBlocking: Bool) async {
         let manager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
                                               subscriptionUpsellExperiment: subscriptionUpsellExperiment,
@@ -104,7 +104,7 @@ class ContextualDialogsManagerTests {
         #expect(manager.lastDialogForTab(tab) == (isNonBlocking ? nil : .tryASearch))
     }
 
-    @Test("The onboarding page neither advances contextual onboarding nor restores a cached dialog")
+    @Test("The onboarding page neither advances contextual onboarding nor restores a cached dialog", .timeLimit(.minutes(1)))
     func testOnboardingTabCannotPresentTheSubscriptionFollowUp() async {
         subscriptionUpsellExperiment.cohortStub = .treatment
         let treatmentManager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,

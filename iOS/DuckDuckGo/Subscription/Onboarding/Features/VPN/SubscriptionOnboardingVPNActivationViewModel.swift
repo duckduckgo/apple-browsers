@@ -318,7 +318,7 @@ final class DefaultSubscriptionOnboardingVPNController: SubscriptionOnboardingVP
     }
 
     func start() async {
-        guard !(await tunnelController.isConnected) else { return }
+        guard !isConnected else { return }
         let status = await notificationsAuthorization.authorizationStatus
         let mightPrompt = status == .notDetermined || status == .provisional
         await tunnelController.start(suppressNotificationAuthorizationRequest: mightPrompt)

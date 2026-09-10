@@ -24,9 +24,9 @@
 //
 // **FLOW DIAGRAM:**
 //
-//   Window becomes key
+//   Promo Queue selects a default-browser-and-dock-* promo
 //         ↓
-//   MainViewController.showSetAsDefaultAndAddToDockIfNeeded()
+//   DefaultBrowserAndDockPromoDelegate.show(history:force:)
 //         ↓
 //   DefaultBrowserAndDockPromptPresenter.tryToShowPrompt()
 //         ↓

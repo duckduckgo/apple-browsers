@@ -594,6 +594,11 @@
                 "description": "The funnel that led to the restore flow",
                 "pattern": "^funnel_"
             },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Legacy context name carried over from flows started on older app versions, prior to the funnel_name migration. New flows use feature.data.ext.funnel_name."
+            },
             "channel"
         ]
     },

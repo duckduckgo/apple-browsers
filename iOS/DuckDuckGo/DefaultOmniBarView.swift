@@ -787,15 +787,16 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return view
     }
 
-    private var needsSimulatorContextMenuWorkaround: Bool {
+    private static var defaultSupportsButtonMenusInGlass: Bool {
 #if targetEnvironment(simulator)
         let version = ProcessInfo.processInfo.operatingSystemVersion
-        return version.majorVersion == 26 && version.minorVersion <= 5
+        return version.majorVersion != 26 || version.minorVersion > 5
 #else
-        return false
+        return true
 #endif
     }
 
+    private let supportsButtonMenusInGlass: Bool
     private var glassEffectConstraints: [NSLayoutConstraint] = []
     private var floatingHostToContainerConstraints: [NSLayoutConstraint] = []
     private var floatingHostToGlassContentConstraints: [NSLayoutConstraint] = []
@@ -831,8 +832,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         Self.init(isFloatingUIEnabled: false)
     }
 
-    init(isFloatingUIEnabled: Bool) {
+    convenience init(isFloatingUIEnabled: Bool) {
+        self.init(isFloatingUIEnabled: isFloatingUIEnabled,
+                  supportsButtonMenusInGlass: Self.defaultSupportsButtonMenusInGlass)
+    }
+
+    init(isFloatingUIEnabled: Bool, supportsButtonMenusInGlass: Bool) {
         self.isFloatingUIEnabled = isFloatingUIEnabled
+        self.supportsButtonMenusInGlass = supportsButtonMenusInGlass
         self.searchAreaView = DefaultOmniBarSearchView(centersContentVertically: isFloatingUIEnabled)
         if isFloatingUIEnabled {
             self.searchAreaContainerView = SearchAreaContainerView()
@@ -867,7 +874,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             return
         }
         // iOS 26.5 Simulator glass breaks button menus.
-        if needsSimulatorContextMenuWorkaround {
+        if !supportsButtonMenusInGlass {
             makeOpaque()
             return
         }

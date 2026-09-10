@@ -157,7 +157,7 @@ public struct SitePermissionDialogView: View {
         case .location:
             return Image(uiImage: DesignSystemImages.Glyphs.Size24.location)
         case .duckDuckGo:
-            return Image(uiImage: DesignSystemImages.Glyphs.Size24.duckDuckGoDaxColor)
+            return Image(uiImage: DesignSystemImages.Color.Size32.duckDuckGo)
         }
     }
 

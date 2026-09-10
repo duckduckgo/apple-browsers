@@ -562,6 +562,11 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         navigation.updatePreventUserInteraction(prevent: false)
         Self.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
 
+        recordOnboardingOutcome(outcome)
+        return true
+    }
+
+    private func recordOnboardingOutcome(_ outcome: OnboardingExperimentPersistor.Outcome) {
         let isFirstOutcome = experimentPersistor.outcome == nil
         experimentPersistor.record(outcome)
         switch outcome {
@@ -583,7 +588,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
                 nonBlockingExperiment.fireMetric(.onboardingSkipped)
             }
         }
-        return true
     }
 
     /// Applies the Duck Player default dictated by the ad-blocking defaults rollout for a

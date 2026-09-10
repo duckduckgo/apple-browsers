@@ -125,7 +125,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private let fireproofDomains: FireproofDomains
     private let featureFlagger: FeatureFlagger
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
-    private let nativeChatsObserver: DuckAiNativeChatsObserving?
+    private let nativeStorageHandler: DuckAiNativeStorageHandling?
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private var pinnedTabsDiscoveryPopover: NSPopover?
     private weak var crashPopoverViewController: PopoverMessageViewController?
@@ -230,7 +230,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         featureFlagger: FeatureFlagger,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
-        nativeChatsObserver: DuckAiNativeChatsObserving? = NSApp.delegateTyped.duckAiNativeStorageHandler as? DuckAiNativeChatsObserving,
+        nativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
         duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
         tabDragAndDropManager: TabDragAndDropManager,
         cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate? = nil
@@ -244,7 +244,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 activeRemoteMessageModel: activeRemoteMessageModel,
                 featureFlagger: featureFlagger,
                 aiChatMenuConfig: aiChatMenuConfig,
-                nativeChatsObserver: nativeChatsObserver,
+                nativeStorageHandler: nativeStorageHandler,
                 duckAIChromeButtonsVisibilityManager: duckAIChromeButtonsVisibilityManager,
                 tabDragAndDropManager: tabDragAndDropManager,
                 cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate
@@ -263,7 +263,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
           activeRemoteMessageModel: ActiveRemoteMessageModel,
           featureFlagger: FeatureFlagger,
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-          nativeChatsObserver: DuckAiNativeChatsObserving?,
+          nativeStorageHandler: DuckAiNativeStorageHandling?,
           duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging,
           themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
           tabDragAndDropManager: TabDragAndDropManager,
@@ -273,7 +273,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         self.fireproofDomains = fireproofDomains
         self.featureFlagger = featureFlagger
         self.aiChatMenuConfig = aiChatMenuConfig
-        self.nativeChatsObserver = nativeChatsObserver
+        self.nativeStorageHandler = nativeStorageHandler
         self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
         let tabBarActiveRemoteMessageModel = TabBarActiveRemoteMessage(activeRemoteMessageModel: activeRemoteMessageModel)
         self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(
@@ -1042,7 +1042,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private func subscribeToNativeChats() {
         guard !isFireWindow else { return }
-        nativeChatsObserver?.chatsPublisher()
+        (nativeStorageHandler as? DuckAiNativeChatsObserving)?.chatsPublisher()
             .map { !$0.isEmpty }
             .replaceError(with: true)
             .receive(on: DispatchQueue.main)
@@ -1083,17 +1083,33 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         sidebarItem.keyEquivalentModifierMask = [.command, .option]
         menu.addItem(sidebarItem)
 
-        if !isFireWindow, featureFlagger.isFeatureOn(.aiChatChromeMenuChats) {
+        if featureFlagger.isFeatureOn(.aiChatChromeMenuChats) {
             menu.addItem(.separator())
 
             let chatsItem = NSMenuItem(title: UserText.actionChats, action: #selector(duckAIMenuChatsAction), keyEquivalent: "")
             chatsItem.target = self
-            chatsItem.isEnabled = isChatsMenuItemEnabled
+            chatsItem.isEnabled = Self.chatsMenuItemIsEnabled(
+                inFireWindow: isFireWindow,
+                nativeStorageHandler: nativeStorageHandler,
+                observedRegularWindowValue: isChatsMenuItemEnabled
+            )
             chatsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.chats), visibleOnMacOS27: true)
             menu.addItem(chatsItem)
         }
 
         return menu
+    }
+
+    static func chatsMenuItemIsEnabled(
+        inFireWindow isFireWindow: Bool,
+        nativeStorageHandler: DuckAiNativeStorageHandling?,
+        observedRegularWindowValue: Bool
+    ) -> Bool {
+        guard isFireWindow else { return observedRegularWindowValue }
+        // Only a confirmed empty store disables Chats; unavailable storage must not block navigation.
+        guard let nativeStorageHandler,
+              let chats = try? nativeStorageHandler.getAllChats() else { return true }
+        return !chats.isEmpty
     }
 
     /// The two-part control's "open sidebar" icon, copied and sized for a menu item. Copying avoids

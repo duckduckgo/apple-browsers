@@ -28,14 +28,16 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
     private func makeActions(featureFlagger: MockFeatureFlagger = MockFeatureFlagger(
                                 enabledFeatureFlags: [.aiChatNativeChatHistory, .aiChatAddressBarRecentChats]),
                              userInterfaceIdiom: UIUserInterfaceIdiom = .phone,
+                             type: DuckAIAddressBarMenuType = .webPage,
                              onNewChat: @escaping () -> Void = {},
-                             onAskAboutPage: @escaping () -> Void = {},
+                             onContextAction: @escaping () -> Void = {},
                              onRecentChats: @escaping () -> Void = {}) -> [UIMenuElement] {
         DuckAIAddressBarMenuFactory.makeActions(
             featureFlagger: featureFlagger,
             userInterfaceIdiom: userInterfaceIdiom,
+            type: type,
             onNewChat: onNewChat,
-            onAskAboutPage: onAskAboutPage,
+            onContextAction: onContextAction,
             onRecentChats: onRecentChats
         )
     }
@@ -150,7 +152,7 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
         var askAboutPageCount = 0
         var recentChatsCount = 0
         let actions = flattenedActions(makeActions(onNewChat: { newChatCount += 1 },
-                                                  onAskAboutPage: { askAboutPageCount += 1 },
+                                                  onContextAction: { askAboutPageCount += 1 },
                                                   onRecentChats: { recentChatsCount += 1 }))
 
         actions[0].performWithSender(nil, target: nil)

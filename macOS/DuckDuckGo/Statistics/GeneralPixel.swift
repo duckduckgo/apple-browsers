@@ -348,6 +348,8 @@ enum GeneralPixel: PixelKit.Event {
     case onboardingStepCompleteCustomize
     case onboardingFinalStepComplete
     case onboardingSkipped
+    case onboardingBrowsingBeforeCompletion
+    case onboardingContextualDismissed
 
     // MARK: - Advanced Usage
 
@@ -1132,6 +1134,8 @@ enum GeneralPixel: PixelKit.Event {
         case .onboardingStepCompleteCustomize: return "m_mac_onboarding_step-complete-customize"
         case .onboardingFinalStepComplete: return "m_mac_onboarding_final-step-complete"
         case .onboardingSkipped: return "m_mac_onboarding_skipped"
+        case .onboardingBrowsingBeforeCompletion: return "onboarding_browsing-before-completion_u"
+        case .onboardingContextualDismissed: return "onboarding_contextual-dismissed_u"
 
         // "Advanced" usage
         case .windowFullscreen: return "m_mac_window_fullscreen"
@@ -1855,6 +1859,8 @@ enum GeneralPixel: PixelKit.Event {
                 .onboardingStepCompleteCustomize,
                 .onboardingFinalStepComplete,
                 .onboardingSkipped,
+                .onboardingBrowsingBeforeCompletion,
+                .onboardingContextualDismissed,
                 .windowFullscreen,
                 .windowSplitScreen,
                 .pictureInPictureVideoPlayback,

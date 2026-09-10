@@ -581,7 +581,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             }
             if isFirstOutcome {
                 PixelKit.fire(GeneralPixel.onboardingSkipped, frequency: .dailyAndCount)
-                nonBlockingExperiment.fireMetric(.onboardingSkipped)
             }
         }
     }

@@ -68,18 +68,6 @@
                     "description": "User completed the full onboarding flow",
                     "enum": ["true"]
                 },
-                "onboardingSkipped": {
-                    "description": "User left onboarding without completing it",
-                    "enum": ["true"]
-                },
-                "browsingBeforeCompletion": {
-                    "description": "User browsed before completing onboarding",
-                    "enum": ["true"]
-                },
-                "contextualDismissed": {
-                    "description": "User dismissed all remaining contextual onboarding highlights",
-                    "enum": ["true"]
-                },
                 "importRequested": {
                     "description": "User requested browser data import",
                     "enum": ["true"]

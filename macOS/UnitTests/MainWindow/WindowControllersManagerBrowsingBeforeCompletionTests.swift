@@ -18,8 +18,7 @@
 
 import FeatureFlags_macOS
 import Navigation
-import PixelExperimentKit
-import PixelKit
+@_spi(Testing) import PixelKit
 import SharedTestUtilities
 import XCTest
 
@@ -29,7 +28,8 @@ import XCTest
 @MainActor
 final class WindowControllersManagerBrowsingBeforeCompletionTests: XCTestCase {
 
-    private var firedEvents: [PixelKit.Event] = []
+    private var firedEvents: [String] = []
+    private var pixelDefaults: UserDefaults!
     private var featureFlagger: MockFeatureFlagger!
     private var originalCohort: (any FeatureFlagCohortDescribing)?
     private var originalOnboardingFinished = false
@@ -48,30 +48,24 @@ final class WindowControllersManagerBrowsingBeforeCompletionTests: XCTestCase {
         sut.setOnboardingTab(onboardingTab)
         sut.setOnboardingHandlers(onClose: { _ in }, onSkipInPlace: {})
 
-        let experimentFlags = MockFeatureFlagger(allActiveExperiments: [
-            MacOSBrowserConfigSubfeature.onboardingNonBlocking.rawValue: ExperimentData(
-                parentID: PrivacyFeature.macOSBrowserConfig.rawValue,
-                cohortID: FeatureFlag.OnboardingNonBlockingCohort.treatment.rawValue,
-                enrollmentDate: Date()
-            )
-        ])
-        PixelKit.configureExperimentKit(
-            featureFlagger: experimentFlags,
-            eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
-            fire: { [weak self] event, frequency, _ in
-                XCTAssertEqual(frequency, .uniqueByNameAndParameters)
-                self?.firedEvents.append(event)
+        pixelDefaults = UserDefaults(suiteName: UUID().uuidString)!
+        PixelKit.setUp(dryRun: false, appVersion: "1.0.0", session: "test", defaultHeaders: [:], defaults: pixelDefaults) {
+            [weak self] name, _, parameters, _, _, completion in
+            if name == "m_mac_onboarding_browsing-before-completion_u" {
+                XCTAssertNil(parameters["cohort"])
+                XCTAssertNil(parameters["enrollmentDate"])
+                self?.firedEvents.append(name)
             }
-        )
+            completion(true, nil)
+        }
     }
 
     override func tearDown() {
         sut?.setOnboardingTab(nil)
         featureFlagger?.resolveCohortStub = originalCohort
         OnboardingActionsManager.isOnboardingFinished = originalOnboardingFinished
-        PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(),
-                                        eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
-                                        fire: { _, _, _ in })
+        PixelKit.tearDown()
+        pixelDefaults = nil
         onboardingTab = nil
         sut = nil
         featureFlagger = nil
@@ -84,8 +78,7 @@ final class WindowControllersManagerBrowsingBeforeCompletionTests: XCTestCase {
         startNavigation(in: tab, to: URL(string: "https://example.com")!)
         startNavigation(in: tab, to: URL(string: "http://example.com/next")!)
 
-        XCTAssertEqual(firedEvents.count, 2)
-        XCTAssertTrue(firedEvents.allSatisfy { $0.parameters?["metric"] == "browsingBeforeCompletion" })
+        XCTAssertEqual(firedEvents, ["m_mac_onboarding_browsing-before-completion_u"])
     }
 
     func testInternalAndErrorPageLoadsDoNotCount() {

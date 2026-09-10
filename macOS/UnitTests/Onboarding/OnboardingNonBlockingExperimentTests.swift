@@ -184,28 +184,12 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
         XCTAssertTrue(firedEvents.contains(where: { $0.parameters?["metric"] == "onboardingCompleted" }))
     }
 
-    func testContextualDismissalRecordsBooleanMarkerWithoutEnrollingUsers() {
-        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-        configureExperimentKit(cohort: .treatment, featureFlagger: flags)
-        OnboardingNonBlockingExperiment(featureFlagger: flags).fireMetric(.contextualDismissed)
-        XCTAssertEqual(firedEvents.count, 1)
-        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "contextualDismissed")
-        XCTAssertEqual(firedEvents.first?.parameters?["value"], "true")
-        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-7")
-        XCTAssertFalse(flags.didCallResolveCohort)
-    }
-
     func testConversionWindowsForOneFiveSevenDayMetrics() {
         let expectedWindows: [ClosedRange<Int>] = [0...1, 0...5, 0...7]
 
         XCTAssertEqual(OnboardingNonBlockingExperiment.Metric.onboardingCompleted.conversionWindows, expectedWindows)
-        XCTAssertEqual(OnboardingNonBlockingExperiment.Metric.onboardingSkipped.conversionWindows, expectedWindows)
         XCTAssertEqual(OnboardingNonBlockingExperiment.Metric.importRequested.conversionWindows, expectedWindows)
         XCTAssertEqual(OnboardingNonBlockingExperiment.Metric.addToDockRequested.conversionWindows, expectedWindows)
-    }
-
-    func testConversionWindowsForBrowsingBeforeCompletion() {
-        XCTAssertEqual(OnboardingNonBlockingExperiment.Metric.browsingBeforeCompletion.conversionWindows, [0...7])
     }
 
     func testConversionWindowsForSetAsDefaultEnabled() {

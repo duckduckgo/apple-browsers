@@ -25,6 +25,7 @@ import ConcurrencyExtensions
 import FoundationExtensions
 import History
 import os.log
+import PixelKit
 import PrivacyConfig
 import WebKit
 
@@ -718,7 +719,7 @@ extension WindowControllersManager: OnboardingNavigating {
     @MainActor
     func recordBrowsingBeforeOnboardingCompletion() {
         guard onboardingSkipInPlaceHandler != nil, !OnboardingActionsManager.isOnboardingFinished else { return }
-        OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).fireMetric(.browsingBeforeCompletion)
+        PixelKit.fire(GeneralPixel.onboardingBrowsingBeforeCompletion, frequency: .uniqueByName)
     }
 
     /// Records leaving onboarding without completing it, for the paths that leave the tab alone.

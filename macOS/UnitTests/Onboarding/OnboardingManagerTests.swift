@@ -961,9 +961,10 @@ class OnboardingManagerTests: XCTestCase {
             XCTAssertEqual(navigationDelegate.preventUserInteraction, false)
             XCTAssertTrue(OnboardingActionsManager.isOnboardingFinished)
             XCTAssertNil(OnboardingExperimentPersistor(keyValueStore: store).outcome)
-            let metric = outcome == .completed ? "onboardingCompleted" : "onboardingSkipped"
+            let metric = "onboardingCompleted"
+            let expectedEventCount = outcome == .completed ? 3 : 0
             let outcomeEvents = experimentFiredEvents.filter { $0.parameters?["metric"] == metric }
-            XCTAssertEqual(outcomeEvents.count, 3)
+            XCTAssertEqual(outcomeEvents.count, expectedEventCount)
 
             // Make any repeated outcome write observable, independently of pixel deduplication.
             store.shouldThrowOnSet = false
@@ -983,9 +984,8 @@ class OnboardingManagerTests: XCTestCase {
                     XCTAssertNil(OnboardingExperimentPersistor(keyValueStore: store).outcome, action)
                 }
             }
-            XCTAssertEqual(experimentFiredEvents.filter { $0.parameters?["metric"] == metric }.count, 3)
-            let otherMetric = outcome == .completed ? "onboardingSkipped" : "onboardingCompleted"
-            XCTAssertFalse(experimentFiredEvents.contains { $0.parameters?["metric"] == otherMetric })
+            XCTAssertEqual(experimentFiredEvents.filter { $0.parameters?["metric"] == metric }.count, expectedEventCount)
+            XCTAssertFalse(experimentFiredEvents.contains { $0.parameters?["metric"] == "onboardingSkipped" })
         }
     }
 
@@ -1066,7 +1066,8 @@ class OnboardingManagerTests: XCTestCase {
         managerUnderTest.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
 
         XCTAssertEqual(contextualOnboardingState.state, .notStarted)
-        XCTAssertTrue(experimentFiredEvents.contains { $0.parameters?["metric"] == "onboardingSkipped" })
+        XCTAssertTrue(OnboardingActionsManager.isOnboardingFinished)
+        XCTAssertFalse(experimentFiredEvents.contains { $0.parameters?["metric"] == "onboardingSkipped" })
         XCTAssertFalse(experimentFiredEvents.contains { $0.parameters?["metric"] == "onboardingCompleted" })
     }
 

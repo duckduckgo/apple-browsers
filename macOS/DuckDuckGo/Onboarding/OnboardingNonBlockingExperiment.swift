@@ -30,12 +30,6 @@ struct OnboardingNonBlockingExperiment {
 
     enum Metric: String {
         case onboardingCompleted
-        /// Onboarding ended without completing: the tab was closed, navigated away from, removed in
-        /// bulk, or its window was closed, including burn on exit. Ordinary quit records nothing,
-        /// so unfinished onboarding shows again on the next launch.
-        case onboardingSkipped
-        case browsingBeforeCompletion
-        case contextualDismissed
         case importRequested
         case addToDockRequested
         case setAsDefaultEnabled
@@ -44,10 +38,8 @@ struct OnboardingNonBlockingExperiment {
 
         var conversionWindows: [ClosedRange<Int>] {
             switch self {
-            case .onboardingCompleted, .onboardingSkipped, .importRequested, .addToDockRequested:
+            case .onboardingCompleted, .importRequested, .addToDockRequested:
                 return [ConversionWindows.oneDay, ConversionWindows.fiveDays, ConversionWindows.sevenDays]
-            case .browsingBeforeCompletion, .contextualDismissed:
-                return [ConversionWindows.sevenDays]
             case .setAsDefaultEnabled:
                 return [ConversionWindows.fiveToSevenDays]
             case .quitSurveySubmitted, .quitSurveyOnboardingReasonSelected:

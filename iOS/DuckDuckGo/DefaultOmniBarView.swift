@@ -916,6 +916,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
             setFieldBackgroundColor(.clear)
             searchAreaContainerView.layoutIfNeeded()
+            // The new glassEffect has no corner radius yet; only layoutSubviews() sets it otherwise.
+            applyOmnibarCornerStyle()
         }
     }
 

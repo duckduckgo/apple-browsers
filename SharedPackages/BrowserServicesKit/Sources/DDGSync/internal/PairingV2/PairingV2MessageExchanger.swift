@@ -22,13 +22,14 @@ import Foundation
 /// so one connect flow addresses two channel IDs.
 protocol PairingV2MessageExchanging {
     /// Creates this device's own channel (its inbox) so the peer can write to it.
-    func openChannel(_ channelID: String) async throws
+    func openChannel(_ channelID: String, authorizationSecret: String?) async throws
     /// Sends encrypted messages to the peer's channel.
-    func send(_ messages: [PairingV2EncryptedMessage], to channelID: String) async throws
+    /// The authorization secret belongs to this device, not to the destination channel.
+    func send(_ messages: [PairingV2EncryptedMessage], to channelID: String, authorizationSecret: String?) async throws
     /// Fetches new messages from this device's own channel, after the given sequence number.
-    func fetchMessages(from channelID: String, after sequence: Int) async throws -> [PairingV2SequencedMessage]
+    func fetchMessages(from channelID: String, after sequence: Int, authorizationSecret: String?) async throws -> [PairingV2SequencedMessage]
     /// Deletes this device's own channel once it stops polling.
-    func closeChannel(_ channelID: String) async throws
+    func closeChannel(_ channelID: String, authorizationSecret: String?) async throws
 }
 
 final class PairingV2MessageExchanger: PairingV2MessageExchanging {
@@ -48,31 +49,31 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
         self.firstMessagePostChannelUnavailableRetryDelays = firstMessagePostChannelUnavailableRetryDelays
     }
 
-    func openChannel(_ channelID: String) async throws {
+    func openChannel(_ channelID: String, authorizationSecret: String?) async throws {
         let request = api.createRequest(url: channelURL(channelID),
                                         method: .put,
-                                        headers: [:],
+                                        headers: authorizationHeaders(secret: authorizationSecret),
                                         parameters: [:],
                                         body: nil,
                                         contentType: nil)
         _ = try await executeRelayRequest(request)
     }
 
-    func send(_ messages: [PairingV2EncryptedMessage], to channelID: String) async throws {
+    func send(_ messages: [PairingV2EncryptedMessage], to channelID: String, authorizationSecret: String?) async throws {
         let body = try JSONEncoder.snakeCaseKeys.encode(SendMessagesRequest(messages: messages))
         let request = api.createRequest(url: messagesURL(channelID),
                                         method: .post,
-                                        headers: [:],
+                                        headers: authorizationHeaders(secret: authorizationSecret),
                                         parameters: [:],
                                         body: body,
                                         contentType: "application/json")
         try await executeMessagePost(request, to: channelID)
     }
 
-    func fetchMessages(from channelID: String, after sequence: Int) async throws -> [PairingV2SequencedMessage] {
+    func fetchMessages(from channelID: String, after sequence: Int, authorizationSecret: String?) async throws -> [PairingV2SequencedMessage] {
         let request = api.createRequest(url: messagesURL(channelID),
                                         method: .get,
-                                        headers: [:],
+                                        headers: authorizationHeaders(secret: authorizationSecret),
                                         parameters: ["after": String(sequence)],
                                         body: nil,
                                         contentType: nil)
@@ -83,10 +84,10 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
         return try JSONDecoder.snakeCaseKeys.decode(FetchMessagesResponse.self, from: body).messages
     }
 
-    func closeChannel(_ channelID: String) async throws {
+    func closeChannel(_ channelID: String, authorizationSecret: String?) async throws {
         let request = api.createRequest(url: channelURL(channelID),
                                         method: .delete,
-                                        headers: [:],
+                                        headers: authorizationHeaders(secret: authorizationSecret),
                                         parameters: [:],
                                         body: nil,
                                         contentType: nil)
@@ -107,6 +108,13 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
 
     private func messagesURL(_ channelID: String) -> URL {
         channelURL(channelID).appendingPathComponent("messages")
+    }
+
+    private func authorizationHeaders(secret: String?) -> [String: String] {
+        guard let secret else {
+            return [:]
+        }
+        return ["Authorization": "Bearer \(secret)"]
     }
 
     private func executeRelayRequest(_ request: HTTPRequesting) async throws -> HTTPResult {

@@ -76,6 +76,15 @@ enum PairingV2KeyPairFactory {
     }
 }
 
+enum PairingV2ChannelSecretFactory {
+
+    private static let byteCount = 32
+
+    static func makeSecret() throws -> String {
+        Base64URL.encode(try JWEA256GCMCipher.randomBytes(count: byteCount))
+    }
+}
+
 /// Encrypts/decrypts Pairing V2 application messages as RSA-OAEP-256 compact JWEs, using `kid` to carry and verify the sender channel ID.
 final class PairingV2MessageCrypto {
 

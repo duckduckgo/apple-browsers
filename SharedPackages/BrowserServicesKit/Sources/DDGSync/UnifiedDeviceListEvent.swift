@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 
 /// Privacy-safe outcomes for the unified Sync device list. Associated values are deliberately
@@ -182,6 +183,15 @@ public enum UnifiedDeviceListEvent: Equatable {
              .ownRowDeviceInfoUpdateSuccess,
              .ownRowDeviceInfoRepairSuccess:
             return .standard
+        }
+    }
+}
+
+extension EventMapping where Event == UnifiedDeviceListEvent {
+
+    static var noOp: EventMapping<UnifiedDeviceListEvent> {
+        EventMapping { _, _, _, onComplete in
+            onComplete(nil)
         }
     }
 }

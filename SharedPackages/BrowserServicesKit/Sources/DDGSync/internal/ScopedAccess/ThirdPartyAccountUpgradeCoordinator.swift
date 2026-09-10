@@ -91,9 +91,7 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
         self.crypter = crypter
         self.scopedAccess = scopedAccess
         self.account = account
-        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? EventMapping { _, _, _, onComplete in
-            onComplete(nil)
-        }
+        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? .noOp
         self.finalNativeLoginRetryDelays = finalNativeLoginRetryDelays
         self.retrySleep = retrySleep
     }

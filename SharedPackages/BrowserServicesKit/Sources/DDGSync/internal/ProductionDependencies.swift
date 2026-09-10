@@ -82,9 +82,7 @@ struct ProductionDependencies: SyncDependencies {
         self.secureStore = secureStore
         self.privacyConfigurationManager = privacyConfigurationManager
         self.errorEvents = errorEvents
-        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? EventMapping { _, _, _, onComplete in
-            onComplete(nil)
-        }
+        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? .noOp
         self.shouldPreserveAccountWhenSyncDisabled = shouldPreserveAccountWhenSyncDisabled
         self.syncFeatureFlags = syncFeatureFlags
 

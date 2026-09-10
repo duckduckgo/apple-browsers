@@ -59,9 +59,7 @@ struct AccountManager: AccountManaging {
         self.accountInfoKeys = accountInfoKeys
         self.accountInfoKeyFactory = accountInfoKeyFactory ?? DefaultAccountInfoKeyFactory(crypter: crypter)
         self.deviceInfoCodec = deviceInfoCodec
-        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? EventMapping { _, _, _, onComplete in
-            onComplete(nil)
-        }
+        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? .noOp
         self.isScopedAccessCredentialsEnabled = isScopedAccessCredentialsEnabled
         self.canWriteUnifiedDeviceList = canWriteUnifiedDeviceList
         self.canReadUnifiedDeviceList = canReadUnifiedDeviceList

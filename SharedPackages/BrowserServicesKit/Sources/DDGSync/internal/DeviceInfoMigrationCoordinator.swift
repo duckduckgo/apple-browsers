@@ -101,9 +101,7 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
         self.updateBuilder = DeviceInfoUpdateBuilder(crypter: crypter, deviceInfoCodec: deviceInfoCodec)
         self.secureStore = secureStore
         self.keyValueStore = keyValueStore
-        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? EventMapping { _, _, _, onComplete in
-            onComplete(nil)
-        }
+        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? .noOp
         self.canWriteUnifiedDeviceList = canWriteUnifiedDeviceList
     }
 

@@ -49,9 +49,7 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         self.api = api
         self.crypter = crypter
         self.accountInfoKeyFactory = accountInfoKeyFactory
-        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? EventMapping { _, _, _, onComplete in
-            onComplete(nil)
-        }
+        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? .noOp
         self.canWriteUnifiedDeviceList = canWriteUnifiedDeviceList
     }
 

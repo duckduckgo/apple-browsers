@@ -22,59 +22,36 @@ import XCTest
 
 final class UnifiedDeviceListEventTests: XCTestCase {
 
-    func testDimensionsAreEncodedInPixelParameters() {
-        let fallback = UnifiedDeviceListEvent.ownRowResolvedLegacy(.notPublishedYet)
-        XCTAssertEqual(fallback.name, "sync_unified_devices_own_row_resolved_legacy")
-        XCTAssertEqual(fallback.parameters, ["reason": "not_published_yet"])
-
-        let keyUnavailable = UnifiedDeviceListEvent.accountInfoKeyUnavailable(.noWrapForOurCredential)
-        XCTAssertEqual(keyUnavailable.name, "sync_unified_devices_account_info_key_unavailable")
-        XCTAssertEqual(keyUnavailable.parameters, ["reason": "no_wrap_for_our_credential"])
-
-        let invalidKeyMaterial = UnifiedDeviceListEvent.accountInfoKeyUnavailable(.invalidKeyMaterial)
-        XCTAssertEqual(invalidKeyMaterial.parameters, ["reason": "invalid_key_material"])
-
-        let otherRow = UnifiedDeviceListEvent.otherRowDeviceInfoFailedDecryption(.thirdParty)
-        XCTAssertEqual(otherRow.parameters, ["credential": "3party"])
-
-        let writeFailure = UnifiedDeviceListEvent.ownRowDeviceInfoRepairFailed(.encryptFailed)
-        XCTAssertEqual(writeFailure.name, "sync_unified_devices_own_row_device_info_repair_failed")
-        XCTAssertEqual(writeFailure.parameters, ["reason": "encrypt_failed"])
-
-        let persistenceFailure = UnifiedDeviceListEvent.ownRowDeviceInfoUpdateFailed(.persistFailed)
-        XCTAssertEqual(persistenceFailure.parameters, ["reason": "persist_failed"])
-    }
-
-    func testReadEventsAreDaily() {
-        XCTAssertEqual(UnifiedDeviceListEvent.ownRowResolvedDeviceInfo.frequency, .daily)
-        XCTAssertEqual(UnifiedDeviceListEvent.ownRowResolvedPlaceholder(.blobDecryptFailed).frequency, .daily)
-    }
-
-    func testParameterizedEventsAreDailyByName() {
-        let events: [UnifiedDeviceListEvent] = [
-            .ownRowResolvedLegacy(.notPublishedYet),
-            .ownRowResolvedPlaceholder(.blobDecryptFailed),
-            .accountInfoKeyUnavailable(.noKeyOnServer),
-            .otherRowDeviceInfoFailedDecryption(.thirdParty),
-            .otherRowResolvedPlaceholder(.none),
-            .accountInfoKeyAdoptFailed(.keysFetchFailed),
-            .accountInfoKeyCreateFailed(.mintFailed),
-            .accountInfoKeyWrapFailed(.unwrapFailed),
-            .ownRowDeviceInfoFirstWriteFailed(.encryptFailed),
-            .ownRowDeviceInfoUpdateFailed(.requestFailed),
-            .ownRowDeviceInfoRepairFailed(.rateLimited)
+    func testEventsExposeExpectedPixelContract() {
+        let expectations: [(event: UnifiedDeviceListEvent,
+                            suffix: String,
+                            parameters: [String: String]?,
+                            frequency: UnifiedDeviceListEvent.Frequency)] = [
+            (.ownRowResolvedDeviceInfo, "own_row_resolved_device_info", nil, .daily),
+            (.ownRowResolvedLegacy(.notPublishedYet), "own_row_resolved_legacy", ["reason": "not_published_yet"], .daily),
+            (.ownRowResolvedPlaceholder(.blobDecryptFailed), "own_row_resolved_placeholder", ["reason": "blob_decrypt_failed"], .daily),
+            (.accountInfoKeyUnavailable(.invalidKeyMaterial), "account_info_key_unavailable", ["reason": "invalid_key_material"], .daily),
+            (.otherRowDeviceInfoFailedDecryption(.thirdParty), "other_row_device_info_failed_decryption", ["credential": "3party"], .daily),
+            (.otherRowResolvedPlaceholder(.none), "other_row_resolved_placeholder", ["credential": "none"], .daily),
+            (.accountInfoKeyAdoptFailed(.keysFetchFailed), "account_info_key_adopt_failed", ["reason": "keys_fetch_failed"], .daily),
+            (.accountInfoKeyCreateSuccess, "account_info_key_create_success", nil, .standard),
+            (.accountInfoKeyCreateFailed(.mintFailed), "account_info_key_create_failed", ["reason": "mint_failed"], .daily),
+            (.accountInfoKeyWrapSuccess, "account_info_key_wrap_success", nil, .standard),
+            (.accountInfoKeyWrapFailed(.unwrapFailed), "account_info_key_wrap_failed", ["reason": "unwrap_failed"], .daily),
+            (.accountInfoKeyAdoptSuccess, "account_info_key_adopt_success", nil, .standard),
+            (.ownRowDeviceInfoFirstWriteSuccess, "own_row_device_info_first_write_success", nil, .standard),
+            (.ownRowDeviceInfoFirstWriteFailed(.encryptFailed), "own_row_device_info_first_write_failed", ["reason": "encrypt_failed"], .daily),
+            (.ownRowDeviceInfoUpdateSuccess, "own_row_device_info_update_success", nil, .standard),
+            (.ownRowDeviceInfoUpdateFailed(.persistFailed), "own_row_device_info_update_failed", ["reason": "persist_failed"], .daily),
+            (.ownRowDeviceInfoRepairSuccess, "own_row_device_info_repair_success", nil, .standard),
+            (.ownRowDeviceInfoRepairFailed(.rateLimited), "own_row_device_info_repair_failed", ["reason": "rate_limited"], .daily)
         ]
 
-        for event in events {
-            XCTAssertEqual(event.frequency, .daily, event.name)
+        for expectation in expectations {
+            XCTAssertEqual(expectation.event.name, "sync_unified_devices_" + expectation.suffix)
+            XCTAssertEqual(expectation.event.parameters, expectation.parameters, expectation.suffix)
+            XCTAssertEqual(expectation.event.frequency, expectation.frequency, expectation.suffix)
         }
-    }
-
-    func testSuccessEventsAreStandardAndFailureEventsAreDaily() {
-        XCTAssertEqual(UnifiedDeviceListEvent.accountInfoKeyCreateSuccess.frequency, .standard)
-        XCTAssertEqual(UnifiedDeviceListEvent.ownRowDeviceInfoUpdateSuccess.frequency, .standard)
-        XCTAssertEqual(UnifiedDeviceListEvent.accountInfoKeyAdoptFailed(.rateLimited).frequency, .daily)
-        XCTAssertEqual(UnifiedDeviceListEvent.ownRowDeviceInfoFirstWriteFailed(.encryptFailed).frequency, .daily)
     }
 
     func testAccountInfoKeyUnavailableClassifiesFetchAndUnwrapFailuresSeparately() {

@@ -58,9 +58,6 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
         super.tearDown()
     }
 
-    /// Mixed values on purpose: opposite values for the two fields prove each is forwarded from its
-    /// own delegate call rather than hardcoded or crossed with the other. This is also the case the
-    /// feature exists for -- a free-scan user who has never used a trial.
     func testGetHandshakeUserData_forwardsBothFieldsFromDelegate() async {
         authenticationDelegate.isUserAuthenticatedValue = false
         authenticationDelegate.isUserEligibleForFreeTrialValue = true

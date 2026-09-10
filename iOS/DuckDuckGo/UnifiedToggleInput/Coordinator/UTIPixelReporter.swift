@@ -22,23 +22,20 @@ import Core
 import Foundation
 import PixelKit
 
-/// Injectable pixel-firing seam: bundles the legacy firers (`Core.PixelFiring` for one-off pixels,
-/// `DailyPixelFiring` for daily-and-count) and PixelKit behind one value so UTI pixel firing has a single
-/// injection point. `.live` fires for real; tests pass `PixelFiringMock`/`PixelKitMock`.
+/// Injectable pixel-firing seam: routes UTI pixel firing through a single PixelKit injection point.
+/// `.live` fires for real; tests pass a `PixelKitMock`.
 struct UTIPixelFiring {
-    var pixel: Core.PixelFiring.Type = Pixel.self
-    var daily: DailyPixelFiring.Type = DailyPixel.self
     /// Resolved at fire time so it picks up `PixelKit.setUp` regardless of when this value was created.
     var pixelKit: () -> (any PixelKitFiring)? = { PixelKit.shared }
 
     static let live = UTIPixelFiring()
 
     func fire(_ event: Pixel.Event, _ parameters: [String: String] = [:]) {
-        pixel.fire(event, withAdditionalParameters: parameters)
+        pixelKit()?.fire(event, options: .parameters(parameters))
     }
 
     func fireDailyAndCount(_ event: Pixel.Event, _ parameters: [String: String] = [:]) {
-        daily.fireDailyAndCount(event, error: nil, withAdditionalParameters: parameters)
+        pixelKit()?.fire(event, frequency: .dailyAndCount, options: .parameters(parameters))
     }
 
     func fire(_ event: PixelKit.Event, frequency: PixelKit.Frequency) {
@@ -156,6 +153,16 @@ final class UTIPixelReporter {
         withContext { firing.fireDailyAndCount(.unifiedToggleInputFileAttached, ["surface": $0.surface.rawValue, "source": source]) }
     }
 
+    func reportImageValidationFailed(reason: String, source: String) {
+        withContext {
+            firing.fireDailyAndCount(.unifiedToggleInputImageValidationFailed, [
+                "reason": reason,
+                "surface": $0.surface.rawValue,
+                "source": source
+            ])
+        }
+    }
+
     func reportImageAttached(source: String) {
         withContext { firing.fireDailyAndCount(.unifiedToggleInputImageAttached, ["surface": $0.surface.rawValue, "source": source]) }
     }
@@ -247,6 +254,11 @@ final class UTIPixelReporter {
                 firing: firing
             )
         }
+    }
+
+    func currentPromptOrigin() -> AIChatEntryPointSource? {
+        guard let context = context() else { return nil }
+        return Self.promptOrigin(for: context)
     }
 
     static func promptOrigin(for context: UTIPixelContext) -> AIChatEntryPointSource? {

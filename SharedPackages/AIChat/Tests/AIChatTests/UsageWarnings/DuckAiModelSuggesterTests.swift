@@ -19,166 +19,141 @@
 import XCTest
 @testable import AIChat
 
-/// Fixtures mirror the live `/models` payload, including the part that broke the previous name-matched
-/// ladder: `gpt-5.4-mini` is `usesLimitsFaster`, so stepping "down" to it would raise usage.
+/// Web picks the models now, so what is left to test is the two things web can't know: which model
+/// *this* picker is on, and what the draft on this surface already contains.
 final class DuckAiModelSuggesterTests: XCTestCase {
 
-    // MARK: - Suggesting
+    // MARK: - Resolving web's target
 
-    func testWhenCurrentModelBurnsLimitsThenAnEverydayUseModelIsSuggested() {
-        let outcome = makeSUT(models: [gptMini, luna, haiku], currentModelId: gptMini.id).cheaperModel()
+    func testPrefersTheTopLevelModelId() {
+        let outcome = makeSUT(models: [gptMini, luna, haiku], currentModelId: gptMini.id)
+            .resolve(cta(modelId: luna.id, modelIds: [luna.id, haiku.id]))
 
         XCTAssertEqual(outcome.suggestion?.modelId, luna.id)
         XCTAssertEqual(outcome.suggestion?.modelShortName, "5.6 Luna")
     }
 
-    /// The live payload's `usesLimitsFaster` models span providers, so the ladder has to be label-driven
-    /// rather than family-driven to reach the one everyday-use model at all.
-    func testSuggestionMayCrossProviderWhenNoSameProviderEverydayModelExists() {
-        let outcome = makeSUT(models: [haiku, luna], currentModelId: haiku.id).cheaperModel()
+    func testFallsBackToTheFirstUsableModelInTheList() {
+        let outcome = makeSUT(models: [gptMini, haiku], currentModelId: gptMini.id)
+            .resolve(cta(modelIds: ["not-in-the-picker", haiku.id]))
 
-        XCTAssertEqual(outcome.suggestion?.modelId, luna.id)
+        XCTAssertEqual(outcome.suggestion?.modelId, haiku.id)
     }
 
-    func testSameProviderIsPreferredWhenBothAreEverydayUse() {
-        let claudeEveryday = model(id: "claude-lite", name: "Claude Lite", provider: .anthropic, label: .everydayUse)
-        let outcome = makeSUT(models: [haiku, luna, claudeEveryday], currentModelId: haiku.id).cheaperModel()
+    /// This is what `byModelId` is for: web's model and the native picker's are not always the same.
+    func testRetargetsOnWhatTheNativePickerIsOn() {
+        let cta = DuckAiUsageCta(id: .switchToCheaper,
+                                 target: .init(modelId: luna.id, modelIds: [luna.id]),
+                                 byModelId: [haiku.id: .init(modelId: gptMini.id, modelIds: [gptMini.id])])
 
-        XCTAssertEqual(outcome.suggestion?.modelId, claudeEveryday.id)
+        XCTAssertEqual(makeSUT(models: [gptMini, luna, haiku], currentModelId: haiku.id)
+            .resolve(cta).suggestion?.modelId, gptMini.id)
     }
 
-    // MARK: - Rejections
+    /// The retarget-only payload: web is already on the cheapest model, this picker isn't covered.
+    func testWhenThereIsNoTargetForThisPickerThenNothingIsSuggested() {
+        let cta = DuckAiUsageCta(id: .switchToCheaper,
+                                 byModelId: [haiku.id: .init(modelId: gptMini.id, modelIds: [gptMini.id])])
 
-    /// An unlabelled model is not known to be costly, so nudging off it could raise usage instead.
-    func testWhenCurrentModelIsUnlabelledThenNothingIsSuggested() {
-        let outcome = makeSUT(models: [fullGPT, luna], currentModelId: fullGPT.id).cheaperModel()
-
-        XCTAssertEqual(outcome, .none(reason: .currentModelIsNotCostly))
+        XCTAssertEqual(makeSUT(models: [gptMini, luna, haiku], currentModelId: luna.id).resolve(cta),
+                       .none(reason: .noTargetForSelectedModel))
     }
 
-    func testWhenCurrentModelIsAlreadyEverydayUseThenNothingIsSuggested() {
-        let outcome = makeSUT(models: [luna, gptMini], currentModelId: luna.id).cheaperModel()
+    /// The top-level target is keyed to web's model, not ours, so it can name what we are already on.
+    func testTheCurrentModelIsNeverSuggested() {
+        let outcome = makeSUT(models: [gptMini, luna], currentModelId: luna.id)
+            .resolve(cta(modelId: luna.id, modelIds: [luna.id]))
 
-        XCTAssertEqual(outcome, .none(reason: .currentModelIsNotCostly))
+        XCTAssertEqual(outcome, .none(reason: .targetModelUnavailable))
     }
 
-    func testWhenNoModelIsSelectedThenNothingIsSuggested() {
-        let outcome = makeSUT(models: [gptMini, luna], currentModelId: nil).cheaperModel()
-
-        XCTAssertEqual(outcome, .none(reason: .unknownCurrentModel))
+    func testWhenTheTargetIsNotInTheModelListThenNothingIsSuggested() {
+        XCTAssertEqual(makeSUT(models: [gptMini, luna], currentModelId: gptMini.id)
+            .resolve(cta(modelId: "model-web-knows-about")),
+                       .none(reason: .targetModelUnavailable))
     }
 
-    func testWhenNoEverydayUseModelExistsThenNothingIsSuggested() {
-        let outcome = makeSUT(models: [gptMini, haiku, fullGPT], currentModelId: gptMini.id).cheaperModel()
+    /// Offering a model the user's tier can't select would be a dead end.
+    func testGatedModelsAreNotSuggested() {
+        let gatedLuna = model(id: "gpt-5.6-luna", name: "GPT-5.6 Luna", hasAccess: false)
 
-        XCTAssertEqual(outcome, .none(reason: .noEverydayUseModelAvailable))
+        XCTAssertEqual(makeSUT(models: [gptMini, gatedLuna], currentModelId: gptMini.id)
+            .resolve(cta(modelId: gatedLuna.id)),
+                       .none(reason: .targetModelUnavailable))
     }
 
-    /// Suggesting a model the user's tier can't select would be a dead end.
-    func testGatedEverydayUseModelsAreNotSuggested() {
-        let gatedLuna = model(id: "gpt-5.6-luna", name: "GPT-5.6 Luna", label: .everydayUse, hasAccess: false)
-        let outcome = makeSUT(models: [gptMini, gatedLuna], currentModelId: gptMini.id).cheaperModel()
-
-        XCTAssertEqual(outcome, .none(reason: .noEverydayUseModelAvailable))
+    func testWhenTheCtaCarriesNoModelsThenNothingIsSuggested() {
+        XCTAssertEqual(makeSUT(models: [gptMini, luna], currentModelId: gptMini.id)
+            .resolve(DuckAiUsageCta(id: .switchToCheaper)),
+                       .none(reason: .noTargetForSelectedModel))
     }
 
-    func testWhenTheUserHasJustSteppedDownThenNothingIsSuggested() {
-        let sut = makeSUT(models: [gptMini, luna], currentModelId: gptMini.id, didRecentlyStepDown: true)
+    // MARK: - What web can't see: the draft
 
-        XCTAssertEqual(sut.cheaperModel(), .none(reason: .recentlySteppedDown))
-    }
-
-    // MARK: - Capability cover
-
-    func testWhenTheEverydayModelCannotTakeAnImageThenNothingIsSuggested() {
-        let textOnlyLuna = model(id: "gpt-5.6-luna", name: "GPT-5.6 Luna", label: .everydayUse, supportsImageUpload: false)
-        let sut = makeSUT(models: [gptMini, textOnlyLuna],
+    func testSkipsATargetThatCannotTakeTheAttachedImage() {
+        let textOnly = model(id: "mistral-small", name: "Mistral Small", supportsImageUpload: false)
+        let sut = makeSUT(models: [gptMini, textOnly, luna],
                           currentModelId: gptMini.id,
                           requirements: DuckAiChatCapabilityRequirements(needsImageUpload: true))
 
-        XCTAssertEqual(sut.cheaperModel(), .none(reason: .everydayUseModelMissingCapability))
+        XCTAssertEqual(sut.resolve(cta(modelId: textOnly.id, modelIds: [textOnly.id, luna.id]))
+            .suggestion?.modelId, luna.id)
     }
 
-    func testWhenTheEverydayModelLacksARequiredMimeTypeThenNothingIsSuggested() {
-        let sut = makeSUT(models: [gptMini, luna],
+    func testWhenNoTargetCoversTheDraftThenNothingIsSuggested() {
+        let textOnly = model(id: "mistral-small", name: "Mistral Small", supportsImageUpload: false)
+        let sut = makeSUT(models: [gptMini, textOnly],
                           currentModelId: gptMini.id,
-                          requirements: DuckAiChatCapabilityRequirements(requiredMimeTypes: ["application/vnd.apple.keynote"]))
+                          requirements: DuckAiChatCapabilityRequirements(needsImageUpload: true))
 
-        XCTAssertEqual(sut.cheaperModel(), .none(reason: .everydayUseModelMissingCapability))
+        XCTAssertEqual(sut.resolve(cta(modelId: textOnly.id)), .none(reason: .targetModelMissingCapability))
     }
 
-    func testWhenTheEverydayModelLacksARequiredToolThenNothingIsSuggested() {
-        let sut = makeSUT(models: [gptMini, luna],
-                          currentModelId: gptMini.id,
-                          requirements: DuckAiChatCapabilityRequirements(requiredTools: [.imageGeneration]))
-
-        XCTAssertEqual(sut.cheaperModel(), .none(reason: .everydayUseModelMissingCapability))
-    }
-
-    /// `supportedFileTypes` carries MIME types, so requirements must too.
-    func testMimeTypeMatchingIgnoresCase() {
+    func testFileTypeRequirementsAreMatchedCaseInsensitively() {
         let sut = makeSUT(models: [gptMini, luna],
                           currentModelId: gptMini.id,
                           requirements: DuckAiChatCapabilityRequirements(requiredMimeTypes: ["APPLICATION/PDF"]))
 
-        XCTAssertEqual(sut.cheaperModel().suggestion?.modelId, luna.id)
+        XCTAssertEqual(sut.resolve(cta(modelId: luna.id)).suggestion?.modelId, luna.id)
     }
 
-    func testWhenTheEverydayModelCoversEveryRequirementThenItIsSuggested() {
-        let sut = makeSUT(models: [gptMini, luna],
+    func testToolRequirementsAreRespected() {
+        let noTools = model(id: "mistral-small", name: "Mistral Small", supportedTools: [])
+        let sut = makeSUT(models: [gptMini, noTools],
                           currentModelId: gptMini.id,
-                          requirements: DuckAiChatCapabilityRequirements(needsImageUpload: true,
-                                                                         requiredMimeTypes: ["application/pdf"],
-                                                                         requiredTools: [.webSearch]))
+                          requirements: DuckAiChatCapabilityRequirements(requiredTools: [.webSearch]))
 
-        XCTAssertEqual(sut.cheaperModel().suggestion?.modelId, luna.id)
+        XCTAssertEqual(sut.resolve(cta(modelId: noTools.id)), .none(reason: .targetModelMissingCapability))
     }
 
-    // MARK: - Free model fallback
+    // MARK: - Copy
 
-    func testFreeModelPicksAnAccessibleNonAdvancedModel() {
-        let freeModel = model(id: "mistral-small", name: "Mistral Small", shortName: "Small",
-                              accessTier: ["free", "plus", "pro", "internal"])
-        let outcome = makeSUT(models: [luna, freeModel], currentModelId: luna.id).freeModel()
+    /// The UI falls back to "Switch Model" rather than printing an empty name.
+    func testAModelWithNoShortNameSuggestsNoShortName() {
+        let unnamed = model(id: "gpt-5.6-luna", name: "GPT-5.6 Luna", shortName: "")
 
-        XCTAssertEqual(outcome.suggestion?.modelId, freeModel.id)
-    }
-
-    /// `isAdvanced` is `!accessTier.contains("free")`, so a paid-only model is never the free fallback.
-    func testFreeModelIgnoresAdvancedModels() {
-        let advanced = model(id: "claude-opus-4-8", name: "Claude Opus 4.8", accessTier: ["pro", "internal"])
-        let outcome = makeSUT(models: [luna, advanced], currentModelId: luna.id).freeModel()
-
-        XCTAssertEqual(outcome, .none(reason: .noFreeModelAvailable))
-    }
-
-    func testFreeModelRespectsCapabilityRequirements() {
-        let textOnly = model(id: "mistral-small", name: "Mistral Small",
-                             accessTier: ["free", "plus"], supportsImageUpload: false)
-        let sut = makeSUT(models: [luna, textOnly],
-                          currentModelId: luna.id,
-                          requirements: DuckAiChatCapabilityRequirements(needsImageUpload: true))
-
-        XCTAssertEqual(sut.freeModel(), .none(reason: .freeModelMissingCapability))
+        XCTAssertNil(makeSUT(models: [gptMini, unnamed], currentModelId: gptMini.id)
+            .resolve(cta(modelId: unnamed.id)).suggestion?.modelShortName)
     }
 
     // MARK: - Helpers
 
-    private lazy var fullGPT = model(id: "gpt-5.4", name: "GPT-5.4", shortName: "GPT-5.4", label: nil)
-    private lazy var luna = model(id: "gpt-5.6-luna", name: "GPT-5.6 Luna", shortName: "5.6 Luna", label: .everydayUse)
-    private lazy var gptMini = model(id: "gpt-5.4-mini", name: "GPT-5.4 mini", shortName: "5.4 mini", label: .usesLimitsFaster)
+    private lazy var luna = model(id: "gpt-5.6-luna", name: "GPT-5.6 Luna", shortName: "5.6 Luna")
+    private lazy var gptMini = model(id: "gpt-5.4-mini", name: "GPT-5.4 mini", shortName: "5.4 mini")
     private lazy var haiku = model(id: "claude-haiku-4-5", name: "Claude Haiku 4.5", shortName: "Haiku 4.5",
-                                   provider: .anthropic, label: .usesLimitsFaster)
+                                   provider: .anthropic)
+
+    private func cta(modelId: String? = nil, modelIds: [String] = []) -> DuckAiUsageCta {
+        DuckAiUsageCta(id: .switchToCheaper, target: .init(modelId: modelId, modelIds: modelIds))
+    }
 
     private func makeSUT(models: [AIChatModel],
                          currentModelId: String?,
-                         requirements: DuckAiChatCapabilityRequirements = .plainText,
-                         didRecentlyStepDown: Bool = false) -> DuckAiModelSuggester {
+                         requirements: DuckAiChatCapabilityRequirements = .plainText) -> DuckAiModelSuggester {
         DuckAiModelSuggester(
             modelsProvider: { models },
             currentModelIdProvider: { currentModelId },
-            requirementsProvider: { requirements },
-            didRecentlyStepDown: { didRecentlyStepDown }
+            requirementsProvider: { requirements }
         )
     }
 
@@ -186,10 +161,10 @@ final class DuckAiModelSuggesterTests: XCTestCase {
                        name: String,
                        shortName: String? = nil,
                        provider: AIChatModel.ModelProvider = .openAI,
-                       label: AIChatModelLabel? = nil,
                        hasAccess: Bool = true,
                        accessTier: [String] = ["free", "plus", "pro", "internal"],
-                       supportsImageUpload: Bool = true) -> AIChatModel {
+                       supportsImageUpload: Bool = true,
+                       supportedTools: [AIChatRAGTool] = [.webSearch]) -> AIChatModel {
         AIChatModel(
             id: id,
             name: name,
@@ -197,10 +172,10 @@ final class DuckAiModelSuggesterTests: XCTestCase {
             provider: provider,
             supportsImageUpload: supportsImageUpload,
             supportedFileTypes: ["application/pdf"],
-            supportedTools: [.webSearch],
+            supportedTools: supportedTools,
             entityHasAccess: hasAccess,
             accessTier: accessTier,
-            label: label
+            label: nil
         )
     }
 }

@@ -30,6 +30,7 @@ import SwiftUI
 import os.log
 import Persistence
 import Bookmarks
+import PixelKit
 
 protocol AutofillLoginListViewControllerDelegate: AnyObject {
     func autofillLoginListViewControllerDidFinish(_ controller: AutofillLoginListViewController)
@@ -53,11 +54,11 @@ final class AutofillLoginListViewController: UIViewController {
         let emptyView = AutofillItemsEmptyView(importButtonAction: { [weak self] in
             self?.segueToFileImport()
             if case .legacy = DataImportEntryPointHandler().destination(for: .passwords) {
-                Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped)
+                PixelKit.fire(Pixel.Event.autofillImportPasswordsImportButtonTapped)
             }
         }, importViaSyncButtonAction: { [weak self] in
             self?.segueToImportViaSync()
-            Pixel.fire(pixel: .autofillLoginsImportNoPasswords)
+            PixelKit.fire(Pixel.Event.autofillLoginsImportNoPasswords)
         })
 
         let hostingController = UIHostingController(rootView: emptyView)
@@ -222,18 +223,18 @@ final class AutofillLoginListViewController: UIViewController {
                     do {
                         detailsViewController.account = try secureVault?.websiteCredentialsFor(accountId: accountId)?.account
                     } catch {
-                        Pixel.fire(pixel: .secureVaultError, error: error)
+                        PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
                     }
                 }
             }
 
         Task {
             let hasCredentials = ((try? secureVault?.accountsCount()) ?? 0) > 0
-            Pixel.fire(pixel: .autofillManagementOpened,
-                       withAdditionalParameters: [
+            PixelKit.fire(Pixel.Event.autofillManagementOpened,
+                          options: .parameters([
                         "source": source.rawValue,
                         "has_credentials_saved": "\(hasCredentials ? 1 : 0)"
-                       ])
+                       ]))
         }
     }
 
@@ -430,7 +431,7 @@ final class AutofillLoginListViewController: UIViewController {
         return UIAction(title: UserText.autofillEmptyViewImportButtonTitle, image: DesignSystemImages.Glyphs.Size16.import) { [weak self] _ in
             self?.segueToFileImport()
             if case .legacy = DataImportEntryPointHandler().destination(for: .passwords) {
-                Pixel.fire(pixel: .autofillImportPasswordsOverflowMenuTapped)
+                PixelKit.fire(Pixel.Event.autofillImportPasswordsOverflowMenuTapped)
             }
         }
     }
@@ -438,7 +439,7 @@ final class AutofillLoginListViewController: UIViewController {
     private func importViaSyncAction() -> UIAction {
         return UIAction(title: UserText.autofillEmptyViewImportViaSyncButtonTitle, image: DesignSystemImages.Glyphs.Size16.sync) { [weak self] _ in
             self?.segueToImportViaSync()
-            Pixel.fire(pixel: .autofillLoginsImport)
+            PixelKit.fire(Pixel.Event.autofillLoginsImport)
         }
     }
 
@@ -469,7 +470,7 @@ final class AutofillLoginListViewController: UIViewController {
                                                                     onFinished: { [weak self] in
                                                                         self?.handleDataImportCompletion()
                                                                     })
-            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: source.importHubEntryPointParameters)
+            PixelKit.fire(Pixel.Event.importHubEntryTapped, options: .parameters(source.importHubEntryPointParameters))
         }
         navigationController?.pushViewController(destinationViewController, animated: true)
     }
@@ -548,7 +549,7 @@ final class AutofillLoginListViewController: UIViewController {
             NotificationCenter.default.post(name: FireproofFaviconUpdater.deleteFireproofFaviconNotification,
                                             object: nil,
                                             userInfo: [FireproofFaviconUpdater.UserInfoKeys.faviconDomain: domain])
-            Pixel.fire(pixel: .autofillManagementDeleteLogin)
+            PixelKit.fire(Pixel.Event.autofillManagementDeleteLogin)
         })
     }
 
@@ -621,7 +622,7 @@ final class AutofillLoginListViewController: UIViewController {
                     self.syncService.scheduler.notifyDataChanged()
                     self.viewModel.resetNeverPromptWebsites()
                     self.viewModel.updateData()
-                    Pixel.fire(pixel: .autofillManagementDeleteAllLogins)
+                    PixelKit.fire(Pixel.Event.autofillManagementDeleteAllLogins)
                 }
             } else {
                 self.viewModel.undoClearAllAccounts()
@@ -907,7 +908,7 @@ final class AutofillLoginListViewController: UIViewController {
 
             self.present(controller: alert, fromView: self.tableView)
 
-            Pixel.fire(pixel: .autofillLoginsReportConfirmationPromptDisplayed)
+            PixelKit.fire(Pixel.Event.autofillLoginsReportConfirmationPromptDisplayed)
         })
         cell.embed(in: self, withView: contentView)
         cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
@@ -1062,9 +1063,9 @@ extension AutofillLoginListViewController: AutofillLoginDetailsViewControllerDel
 
         if let account = account {
             showAccountDetails(account)
-            Pixel.fire(pixel: .autofillManagementSaveLogin)
+            PixelKit.fire(Pixel.Event.autofillManagementSaveLogin)
         } else {
-            Pixel.fire(pixel: .autofillManagementUpdateLogin)
+            PixelKit.fire(Pixel.Event.autofillManagementUpdateLogin)
             if viewModel.isSearching, let query = searchController.searchBar.text {
                 viewModel.filterData(with: query)
             }
@@ -1195,12 +1196,12 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
             viewModel.dismissSurvey(id: survey.id)
         case .syncPromo(let touchpoint):
             segueToSync(source: SyncSettingsViewController.SourceConstants.passwordsPromotion)
-            Pixel.fire(.syncPromoConfirmed, withAdditionalParameters: ["source": touchpoint.rawValue])
+            PixelKit.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": touchpoint.rawValue]))
         case .importPromo:
             segueToFileImport(source: DataImportViewModel.ImportScreen.promo)
         case .extensionPromo:
             segueToExtensionManagement()
-            Pixel.fire(pixel: .autofillExtensionPasswordsPromoConfirmed)
+            PixelKit.fire(Pixel.Event.autofillExtensionPasswordsPromoConfirmed)
         }
     }
 
@@ -1218,7 +1219,7 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
             viewModel.dismissImportPromo()
         case .extensionPromo:
             viewModel.dismissExtensionPromo()
-            Pixel.fire(pixel: .autofillExtensionPasswordsPromoDismissed)
+            PixelKit.fire(Pixel.Event.autofillExtensionPasswordsPromoDismissed)
         }
     }
 }

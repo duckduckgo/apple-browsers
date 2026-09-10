@@ -31,6 +31,7 @@ import DDGSync
 import Core
 import Persistence
 import FeatureFlags_iOS
+import PixelKit
 
 /// The current display mode of the AI Chat interface.
 enum AIChatDisplayMode {
@@ -122,28 +123,28 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
         static let failureReason = "failureReason"
     }
 
-    init(dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         super.init { event, _, _, _ in
             switch event {
             case .reportMetricDecodingFailed(let error, let failureReason):
-                dailyPixelFiring.fireDailyAndCount(
-                    .aiChatReportMetricDecodeError,
-                    error: error,
-                    withAdditionalParameters: [Parameters.failureReason: failureReason.rawValue]
+                pixelFiring?.fire(
+                    Pixel.Event.aiChatReportMetricDecodeError.withError(error),
+                    frequency: .dailyAndCount,
+                    options: .parameters([Parameters.failureReason: failureReason.rawValue])
                 )
             case .responseStateDecodingFailed(let error, let failureReason):
-                dailyPixelFiring.fireDailyAndCount(
-                    .aiChatResponseStateDecodeError,
-                    error: error,
-                    withAdditionalParameters: [Parameters.failureReason: failureReason.rawValue]
+                pixelFiring?.fire(
+                    Pixel.Event.aiChatResponseStateDecodeError.withError(error),
+                    frequency: .dailyAndCount,
+                    options: .parameters([Parameters.failureReason: failureReason.rawValue])
                 )
             }
         }
     }
 
-    @available(*, unavailable, message: "Use init(dailyPixelFiring:) instead")
+    @available(*, unavailable, message: "Use init(pixelFiring:) instead")
     override init(mapping: @escaping EventMapping<AIChatUserScriptErrorEvent>.Mapping) {
-        fatalError("Use init(dailyPixelFiring:) instead")
+        fatalError("Use init(pixelFiring:) instead")
     }
 }
 
@@ -285,11 +286,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             payload = paramsDict[AIChatKeys.aiChatPayload] as? AIChatPayload
         }
 
-        NotificationCenter.default.post(
-            name: .urlInterceptAIChat,
-            object: payload,
-            userInfo: [TabURLInterceptorParameter.aiChatRequestHost: message.messageHost]
-        )
+        var userInfo: [AnyHashable: Any] = [TabURLInterceptorParameter.aiChatRequestHost: message.messageHost]
+        if let pageURL = message.messageWebView?.url {
+            userInfo[TabURLInterceptorParameter.aiChatRequestURL] = pageURL
+        }
+        NotificationCenter.default.post(name: .urlInterceptAIChat, object: payload, userInfo: userInfo)
 
         return nil
     }
@@ -358,7 +359,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             let pixel: Pixel.Event = syncHandler.isSyncTurnedOn()
                 ? .aiChatTermsAcceptedDuplicateSyncOn
                 : .aiChatTermsAcceptedDuplicateSyncOff
-            DailyPixel.fireDailyAndCount(pixel: pixel)
+            PixelKit.fire(pixel, frequency: .dailyAndCount)
         }
 
         keyValueStore.set(true, forKey: Self.hasAcceptedTermsAndConditionsKey)
@@ -402,6 +403,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         let supportsSuggestions = supportsContextualMode && featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
         let supportsNativeUsageWarnings = featureFlagger.isFeatureOn(.utiDuckAIWarnings)
+            && devicePlatform.isIphone
             && supportsNativeChatInput
             && isNativeStorageBridgeAvailable
         let config = AIChatNativeConfigValues(
@@ -420,7 +422,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !fireMode,
-            supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts),
+            supportsMultipleContexts: supportsContextualMode,
             supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
             supportsNativePromptEditing: featureFlagger.isFeatureOn(.nativeAIPromptEditing) && supportsNativeChatInput,
             supportsPromoCards: featureFlagger.isFeatureOn(.nativePromoCards) && supportsNativeChatInput,
@@ -606,7 +608,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
         // `object` carries the source webView so listeners can route per-tab (matches macOS).
         NotificationCenter.default.post(name: .aiChatVoiceSessionStarted, object: message.messageWebView)
-        Pixel.fire(pixel: .voiceSessionStarted)
+        PixelKit.fire(Pixel.Event.voiceSessionStarted)
         return nil
     }
 
@@ -819,13 +821,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     private func fireSyncAiChatActiveDailyIfNeeded() {
-        DailyPixel.fire(pixel: .syncAiChatActiveDaily)
+        PixelKit.fire(Pixel.Event.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
     }
 
     @MainActor
     private func fireSyncDailyAndCountPixel(_ pixel: Pixel.Event,
                                             withAdditionalParameters params: [String: String]) {
-        DailyPixel.fireDailyAndCount(pixel: pixel, withAdditionalParameters: params)
+        PixelKit.fire(pixel, frequency: .dailyAndCount, options: .parameters(params))
     }
 }
 // swiftlint:enable inclusive_language

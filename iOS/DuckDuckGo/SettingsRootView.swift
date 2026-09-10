@@ -161,7 +161,10 @@ struct SettingsRootView: View {
                                                              internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                              dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
                                                              wideEvent: AppDependencyProvider.shared.wideEvent,
-                                                             featureFlagger: viewModel.featureFlagger)
+                                                             featureFlagger: viewModel.featureFlagger,
+                                                             onboardingKeyValueStore: viewModel.keyValueStore,
+                                                             meetsPIRLocaleRequirement: { viewModel.meetsLocaleRequirement },
+                                                             onRequestDuckAIChat: viewModel.onRequestOnboardingDuckAIChat)
     }
 
     @ViewBuilder func subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
@@ -271,7 +274,7 @@ struct SettingsRootView: View {
             CookiePopUpProtectionView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {
-                let model = SubscriptionSettingsViewModel(userScriptsDependencies: viewModel.userScriptsDependencies)
+                let model = SubscriptionSettingsViewModel(onboardingKeyValueStore: viewModel.keyValueStore, userScriptsDependencies: viewModel.userScriptsDependencies)
                 SubscriptionSettingsViewV2(configuration: configuration, viewModel: model, settingsViewModel: viewModel)
                     .environmentObject(subscriptionNavigationCoordinator)
             }

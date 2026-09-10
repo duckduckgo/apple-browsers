@@ -42,7 +42,7 @@ class PrivacyDashboardUITests: UITestCase {
     private var localization: SpecialErrorPageLocalization!
 
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
 

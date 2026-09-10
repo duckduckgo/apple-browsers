@@ -408,6 +408,40 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(deliveredPayload?.title, "Titled But Empty")
     }
 
+    func testWhenSignalsOnlyCollectionIsADocumentThenMimeTypeIsKeptAndBytesAreNotDelivered() {
+        var deliveredPayload: AIChatPageContextData?
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(let payload, let targets) = effect, targets.contains(.frontendBridge) {
+                    deliveredPayload = payload
+                }
+            }
+            .store(in: &cancellables)
+
+        sessionState.markPendingSignalsOnlyCollection()
+        sessionState.updateContext(makeDocumentContext(data: "JVBERi0="))
+
+        XCTAssertEqual(deliveredPayload?.mimeType, AIChatPageContextData.pdfMIMEType)
+        XCTAssertNil(deliveredPayload?.data)
+        XCTAssertEqual(deliveredPayload?.attached, false)
+        XCTAssertEqual(deliveredPayload?.title, "spec.pdf")
+        XCTAssertNil(sessionState.latestContext, "Signals-only must not land in the attach path")
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+    }
+
+    func testWhenUpdateContextHasDocumentBytesThenChipAttaches() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeDocumentContext(data: "JVBERi0="))
+
+        XCTAssertEqual(sessionState.latestContext?.title, "spec.pdf")
+        if case .attached(let attachedContext) = sessionState.chipState {
+            XCTAssertTrue(attachedContext.contextData.hasAttachedPage)
+            XCTAssertEqual(attachedContext.contextData.data, "JVBERi0=")
+        } else {
+            XCTFail("Expected document bytes to auto-attach")
+        }
+    }
+
     func testUpdateContextDoesNotAutoAttachWhenUserDowngraded() {
         // Given
         mockSettings.isAutomaticContextAttachmentEnabled = true
@@ -1094,9 +1128,8 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     // MARK: - Multiple Page Contexts Tests
 
-    func testAutoAttachPushesContextWhenMultipleContextsFlagEnabled() {
+    func testAutoAttachPushesContextOnNavigationWithinActiveChat() {
         // Given - start chat WITH initial context, then navigate
-        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext(title: "Page A"))
         sessionState.handlePromptSubmission("Hello")
@@ -1120,32 +1153,8 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(pushedContexts.first??.title, "Page B")
     }
 
-    func testAutoAttachDoesNotPushContextWhenMultipleContextsFlagDisabled() {
-        // Given - start chat WITH initial context, flag OFF (default)
-        mockSettings.isAutomaticContextAttachmentEnabled = true
-        sessionState.updateContext(makeTestContext(title: "Page A"))
-        sessionState.handlePromptSubmission("Hello")
-        XCTAssertEqual(sessionState.frontendState, .chatWithInitialContext)
-
-        var pushedToFrontend = false
-        sessionState.effects
-            .sink { effect in
-                if case .deliverPageContext = effect {
-                    pushedToFrontend = true
-                }
-            }
-            .store(in: &cancellables)
-
-        // When - navigate and update context
-        sessionState.notifyPageChanged()
-        sessionState.updateContext(makeTestContext(title: "Page B"))
-
-        // Then - no push (backward compatible)
-        XCTAssertFalse(pushedToFrontend)
-    }
-
-    func testAutoAttachDeliversContextForUTIChipWhenMultipleContextsFlagDisabled() {
-        // Given - start chat WITH initial context, flag OFF (default), UTI active
+    func testAutoAttachWithUTIActiveDeliversToChipNotFrontendBridge() {
+        // Given - start chat WITH initial context, UTI active.
         sessionState.updateUnifiedToggleInputActive(true)
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext(title: "Page A"))
@@ -1346,7 +1355,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         // Given - chat with initial context, flag ON
         // Note: auto-attach ON is only needed to reach .chatWithInitialContext state.
         // In production, notifyFrontendOfMultiContextNavigation() is called when auto-collect is OFF.
-        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext(title: "Page A"))
         sessionState.handlePromptSubmission("Hello")
@@ -1380,8 +1388,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     }
 
     func testNotifyFrontendOfNavigationEmitsUTIAttachAffordanceWhenUTIActive() {
-        // Given - chat with initial context, multi-context ON, UTI active
-        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
+        // Given - chat with initial context, UTI active
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateUnifiedToggleInputActive(true)
         sessionState.updateContext(makeTestContext(title: "Page A"))
@@ -1416,31 +1423,8 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         }
     }
 
-    func testNotifyFrontendOfNavigationDoesNothingWhenFlagDisabled() {
-        // Given - chat with initial context, flag OFF (default)
-        mockSettings.isAutomaticContextAttachmentEnabled = true
-        sessionState.updateContext(makeTestContext(title: "Page A"))
-        sessionState.handlePromptSubmission("Hello")
-
-        var pushedToFrontend = false
-        sessionState.effects
-            .sink { effect in
-                if case .deliverPageContext = effect {
-                    pushedToFrontend = true
-                }
-            }
-            .store(in: &cancellables)
-
-        // When
-        sessionState.notifyFrontendOfMultiContextNavigation()
-
-        // Then - nothing emitted
-        XCTAssertFalse(pushedToFrontend)
-    }
-
     func testNotifyFrontendOfNavigationDoesNothingInNoChat() {
-        // Given - no active chat, flag ON
-        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
+        // Given - no active chat
 
         var pushedToFrontend = false
         sessionState.effects
@@ -1759,6 +1743,60 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         wait(for: [loaded], timeout: 1.0)
         XCTAssertEqual(mockProvider.lastInput?.scope, .selection)
         XCTAssertEqual(sessionState.viewState.suggestionsScope, .selection)
+    }
+
+    func testDocumentContextReachesTheResolverSoSummarizeIsWordedForADocument() {
+        let expected = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize", prompt: "Summarize.", icon: "summary")]
+        let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            suggestedPromptsProvider: mockProvider
+        )
+        let loaded = expectation(description: "suggestions loaded")
+        sessionState.$viewState
+            .dropFirst()
+            .sink { state in
+                if state.suggestionsLoadState == .loaded, state.suggestions == expected {
+                    loaded.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        sessionState.markPendingSignalsOnlyCollection()
+        sessionState.updateContext(makeDocumentContext())
+
+        wait(for: [loaded], timeout: 1.0)
+        XCTAssertTrue(mockProvider.lastInput?.isDocument == true)
+    }
+
+    func testWebPageContextIsNotResolvedAsADocument() {
+        let expected = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize", prompt: "Summarize.", icon: "summary")]
+        let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            suggestedPromptsProvider: mockProvider
+        )
+        let loaded = expectation(description: "suggestions loaded")
+        sessionState.$viewState
+            .dropFirst()
+            .sink { state in
+                if state.suggestionsLoadState == .loaded, state.suggestions == expected {
+                    loaded.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        sessionState.markPendingSignalsOnlyCollection()
+        sessionState.updateContext(makeTestContext())
+
+        wait(for: [loaded], timeout: 1.0)
+        XCTAssertFalse(mockProvider.lastInput?.isDocument == true)
     }
 
     func testWhenAttachedChipIsRemovedThenAskAboutPageReplacesLastSuggestionUntilContextIsAttachedAgain() {
@@ -2269,6 +2307,20 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         return AIChatPageContext(contextData: contextData, favicon: nil)
     }
 
+    private func makeDocumentContext(title: String = "spec.pdf",
+                                     url: String = "https://example.com/spec.pdf",
+                                     data: String? = nil) -> AIChatPageContext {
+        let contextData = AIChatPageContextData.document(
+            title: title,
+            url: url,
+            mimeType: AIChatPageContextData.pdfMIMEType,
+            data: data,
+            attachable: true,
+            attached: false
+        )
+        return AIChatPageContext(contextData: contextData, favicon: nil)
+    }
+
     private func makeSelection(_ content: String = "selected text") -> AIChatSelectionContextData {
         AIChatSelectionContextBuilder.makeSelection(text: content, url: URL(string: "https://example.com/article"))
     }
@@ -2539,6 +2591,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireAddressBarMenuShown() {}
     func fireAddressBarMenuNewChatSelected() {}
     func fireAddressBarMenuAskAboutPageSelected() {}
+    func fireAddressBarMenuRecentChatsSelected() {}
     func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {}
     func fireFloatingInputPromotedToSheet() {}
     func firePageContextAutoAttached() { pageContextAutoAttachedFired = true }

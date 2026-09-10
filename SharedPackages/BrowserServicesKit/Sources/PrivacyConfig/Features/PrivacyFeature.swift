@@ -176,6 +176,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
 
+    /// Enables the Website Permissions entry point in Settings.
+    case websitePermissionsSettings
+
     /// Memory Pressure Reporter
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
     case memoryPressureReporting
@@ -278,6 +281,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case deferredSecureVaultInit
     case performanceMetrics
     case extractedProfileRefresh
+    case schedulerDeferralHandling
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -350,7 +354,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the default omnibar toggle position setting for AI Chat
     case omnibarDefaultPosition
 
+    /// Enables updated model picker with BE-driven sorting and sublines for models.
     case updatedModelPicker
+
+    /// Enables updated `Create image` tool behavior.
+    case updatedCreateImage
 
     /// Hides the Search↔Duck.ai toggle in the unified input when the user is on a Duck.ai tab,
     /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
@@ -363,6 +371,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the address-bar Duck.ai menu and the floating contextual input that replaces the
     /// pre-submit contextual sheet on iPhone.
     case contextualFloatingInput
+
+    /// Enables Recent Chats in the iOS address-bar Duck.ai menu.
+    case addressBarRecentChats
 
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
@@ -428,9 +439,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     case ntpSuggestionsDeletion
 
-    /// Enables voice chat shortcut in the focused address bar
-    case voiceShortcut
-
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
 
@@ -482,12 +490,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Group into the app's Application Support directory on iOS. Off keeps the
     /// legacy App Group path.
     case nativeStoragePathMigration
-
-    /// Once the native-storage path migration is complete (or not needed), opens
-    /// the store on locked / background launches instead of deferring on the
-    /// protected-data gate. Off keeps the legacy behavior where any locked launch
-    /// nils the handler — which makes the Duck.ai front-end re-prompt T&C.
-    case nativeStorageMigrationLockedLaunchFix
 
     /// Enables the rich Duck.ai tab grid card in the iOS tab switcher (rendered from
     /// native-storage chat data). When off, Duck.ai tabs fall back to the standard
@@ -584,6 +586,10 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Toggle for the Copy VPN Diagnostics button in VPN settings/status.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
     case showCopyDiagnosticsButton
+
+    /// VPN Session Health Telemetry
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218245909089002?focus=true
+    case sessionHealthTelemetry
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {
@@ -645,6 +651,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionExpirationReminderNotification
     case subscriptionPromoForExistingUsers
     case monthlyFreeTrialExperiment2
+    case subscriptionOnboardingFreeTrialsSep2026
+    case subscriptionOnboardingPaidSubsSep2026
     case onboardingSubscriptionUpsellExperiment
 }
 
@@ -826,6 +834,18 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
     case featureEnabled
+
+    /// Kill switch for the Bookmark Toolbar ("Show Bookmarks Bar?") promo.
+    case bookmarkToolbarPromo
+
+    /// Kill switch for the Sync Favicons ("Download Missing Icons?") promo.
+    case syncFaviconsPromo
+
+    /// Kill switch for the Autofill Toolbar Pinning ("Add passwords shortcut?") promo.
+    case autofillToolbarPinningPromo
+
+    /// Kill switch for the Cookie Pop-ups Blocked promo.
+    case cookiePopupsBlockedPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

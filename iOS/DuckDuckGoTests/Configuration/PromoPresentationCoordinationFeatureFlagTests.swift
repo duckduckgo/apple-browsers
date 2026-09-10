@@ -55,24 +55,6 @@ struct PromoPresentationCoordinationFeatureFlagTests {
         #expect(FeatureFlag.promoPresentationCoordination.supportsLocalOverriding)
     }
 
-    // MARK: - Embedded privacy configuration
-
-    @available(iOS 16, *)
-    @Test("Embedded privacy config ships no promo presentation coordination entry, so the flag default is what decides", .timeLimit(.minutes(1)))
-    func whenReadingEmbeddedPrivacyConfigThenPromoPresentationCoordinationIsMissing() throws {
-        let privacyConfig = try makeEmbeddedPrivacyConfiguration()
-
-        guard case .enabled = privacyConfig.stateFor(featureKey: .iOSBrowserConfig) else {
-            Issue.record("Expected the embedded privacy config to enable the iOS browser config parent feature")
-            return
-        }
-
-        guard case .disabled(.featureMissing) = privacyConfig.stateFor(iOSBrowserConfigSubfeature.promoPresentationCoordination) else {
-            Issue.record("Expected the embedded privacy config to omit the promo presentation coordination subfeature")
-            return
-        }
-    }
-
     // MARK: - Helpers
 
     /// The privacy configuration the app actually ships, so "disabled by default" is asserted against

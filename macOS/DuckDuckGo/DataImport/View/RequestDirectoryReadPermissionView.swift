@@ -42,6 +42,7 @@ struct RequestDirectoryReadPermissionView: View {
                 titleView
                 instructionsView
                 FilePickerExampleView()
+                    .padding(.bottom, Metrics.filePickerExampleBottomPadding)
             }
         }
         .padding(.leading, Metrics.leadingPadding)
@@ -64,14 +65,43 @@ struct RequestDirectoryReadPermissionView: View {
             .foregroundColor(Color(designSystemColor: .textPrimary))
     }
 
+    @ViewBuilder
     private var instructionsView: some View {
-        Text(instructionsAttributedText)
+        switch mode {
+        case .initialRequest, .retryAfterCancel:
+            instructionsText(markdownAttributedText(UserText.importBrowserDataRequestAccessDescription(for: source)))
+        case .retryAfterError:
+            errorInstructionStepsView
+        }
+    }
+
+    private var errorInstructionStepsView: some View {
+        VStack(alignment: .leading, spacing: Metrics.instructionStepSpacing) {
+            ForEach(Array(errorInstructionSteps.enumerated()), id: \.offset) { index, step in
+                HStack(alignment: .firstTextBaseline, spacing: Metrics.instructionNumberSpacing) {
+                    instructionsText(AttributedString("\(index + 1)."))
+                    instructionsText(markdownAttributedText(step))
+                }
+            }
+        }
+        .padding(.bottom, Metrics.instructionStepsBottomPadding)
+    }
+
+    private var errorInstructionSteps: [String] {
+        [
+            UserText.importBrowserDataRequestAccessErrorStepSelectData(for: source),
+            UserText.importBrowserDataRequestAccessErrorStepDoNotNavigate,
+            UserText.importBrowserDataRequestAccessErrorStepGrantAccess
+        ]
+    }
+
+    private func instructionsText(_ text: AttributedString) -> some View {
+        Text(text)
             .font(.body)
             .foregroundColor(Color(designSystemColor: .textPrimary))
     }
 
-    private var instructionsAttributedText: AttributedString {
-        let text = UserText.importBrowserDataRequestAccessDescription(for: source)
+    private func markdownAttributedText(_ text: String) -> AttributedString {
         let output = try? AttributedString(markdown: text)
 
         return output ?? AttributedString(text)
@@ -180,6 +210,12 @@ private extension RequestDirectoryReadPermissionView {
         static let iconTopOffset: CGFloat = 4
 
         static let contentSpacing: CGFloat = 16
+
+        static let instructionStepSpacing: CGFloat = 4
+        static let instructionNumberSpacing: CGFloat = 6
+        static let instructionStepsBottomPadding: CGFloat = 6
+
+        static let filePickerExampleBottomPadding: CGFloat = 10
     }
 }
 

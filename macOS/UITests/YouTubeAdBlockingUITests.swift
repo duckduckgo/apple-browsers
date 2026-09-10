@@ -22,10 +22,6 @@ final class YouTubeAdBlockingUITests: UITestCase {
 
     private let sidebarButtonIdentifier = "PreferencesSidebar.youTubeAdBlockingButton"
 
-    override func setUpWithError() throws {
-        continueAfterFailure = false
-    }
-
     // MARK: - Settings sidebar visibility
 
     func testSettingsEntryVisible_whenFullyEnabled() throws {

@@ -24,6 +24,7 @@ import UserNotifications
 @testable import DuckDuckGo
 import Subscription
 import SubscriptionTestingUtilities
+@_spi(Testing) import PixelKit
 
 final class SubscriptionExpirationReminderSchedulerTests: XCTestCase {
 
@@ -32,6 +33,7 @@ final class SubscriptionExpirationReminderSchedulerTests: XCTestCase {
     private var observerNotificationCenter: NotificationCenter!
     private var featureFlagEnabled: Bool = true
     private var sut: DefaultSubscriptionExpirationReminderScheduler!
+    private var pixelKitMock: PixelKitMock!
 
     private let identifier = DefaultSubscriptionExpirationReminderScheduler.notificationIdentifier
 
@@ -42,14 +44,13 @@ final class SubscriptionExpirationReminderSchedulerTests: XCTestCase {
         notificationCenter.authorizationStatus = .authorized
         observerNotificationCenter = NotificationCenter()
         featureFlagEnabled = true
-        PixelFiringMock.tearDown()
+        pixelKitMock = PixelKitMock()
         sut = DefaultSubscriptionExpirationReminderScheduler(
             subscriptionManager: subscriptionManager,
             isFeatureEnabled: { [weak self] in self?.featureFlagEnabled ?? false },
             notificationCenter: notificationCenter,
             notificationCenterObserver: observerNotificationCenter,
-            pixelFiring: PixelFiringMock.self,
-            dailyPixelFiring: PixelFiringMock.self
+            pixelFiring: pixelKitMock
         )
     }
 
@@ -58,7 +59,7 @@ final class SubscriptionExpirationReminderSchedulerTests: XCTestCase {
         subscriptionManager = nil
         notificationCenter = nil
         observerNotificationCenter = nil
-        PixelFiringMock.tearDown()
+        pixelKitMock = nil
         super.tearDown()
     }
 
@@ -346,8 +347,8 @@ final class SubscriptionExpirationReminderSchedulerTests: XCTestCase {
 
         await sut.scheduleReminder(timeBeforeCancel: days(7))
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.subscriptionExpirationReminderSchedulingError.name)
-        XCTAssertNotNil(PixelFiringMock.lastPixelInfo?.error)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.subscriptionExpirationReminderSchedulingError.name)
+        XCTAssertNotNil(pixelKitMock.actualFireCalls.last?.pixel.error)
     }
 
     func test_scheduleReminder_whenSucceeds_firesScheduledPixel() async {
@@ -355,7 +356,7 @@ final class SubscriptionExpirationReminderSchedulerTests: XCTestCase {
 
         await sut.scheduleReminder(timeBeforeCancel: days(7))
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.subscriptionExpirationReminderScheduled.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.subscriptionExpirationReminderScheduled.name)
     }
 
     // MARK: - Pixels: cancellation
@@ -368,7 +369,7 @@ final class SubscriptionExpirationReminderSchedulerTests: XCTestCase {
         observerNotificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
 
         await waitUntil("cancelled pixel fired after subscription became inactive") {
-            PixelFiringMock.lastDailyPixelInfo?.pixelName == Pixel.Event.subscriptionExpirationReminderCancelled.name
+            self.pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.subscriptionExpirationReminderCancelled.name }
         }
     }
 
@@ -380,7 +381,7 @@ final class SubscriptionExpirationReminderSchedulerTests: XCTestCase {
         observerNotificationCenter.post(name: .subscriptionDidChange, object: nil)
 
         await waitUntil("cancelled pixel fired after trial offer ended") {
-            PixelFiringMock.lastDailyPixelInfo?.pixelName == Pixel.Event.subscriptionExpirationReminderCancelled.name
+            self.pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.subscriptionExpirationReminderCancelled.name }
         }
     }
 
@@ -395,8 +396,8 @@ final class SubscriptionExpirationReminderSchedulerTests: XCTestCase {
         await waitUntil("reminder cancelled by feature-flag kill switch") {
             self.notificationCenter.removedIdentifiers.count > priorRemovalCount
         }
-        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo,
-                     "Kill-switch cancellation should not fire the subscription-state cancelled pixel")
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.subscriptionExpirationReminderCancelled.name },
+                      "Kill-switch cancellation should not fire the subscription-state cancelled pixel")
     }
 
     // MARK: - Async test helpers

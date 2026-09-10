@@ -85,6 +85,7 @@ public extension URL {
     static let atb = URL(string: "\(base)/atb.js\(devMode)")!
     static let exti = URL(string: "\(base)/exti/\(devMode)")!
     static let feedback = URL(string: "\(base)/feedback.js?type=app-feedback")!
+    static let internalFeedbackForm = URL(string: "https://internalapps.duckduckgo.com/internal-feedback/")!
 
     static let appStore = URL(string: "https://apps.apple.com/app/duckduckgo-privacy-browser/id663592361")!
 
@@ -159,7 +160,6 @@ public extension URL {
         static let partialHost = "pv1"
         static let searchHeader = "ko"
         static let kbg = "kbg"
-        // Search Token (Dindex) experiment param. Keep in sync with SerpSearchTokenInterceptor.tokenParam.
         static let searchToken = "dindextoken"
         static let email = "email"
         static let isTablet = "is_tablet"

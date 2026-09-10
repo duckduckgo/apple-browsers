@@ -1,0 +1,10 @@
+// New Tab Page favorites grid.
+{
+    "new-tab-page_favorites_reorder": {
+        "description": "Fires when the user finishes a drag gesture that reordered the favorites grid on the New Tab Page.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

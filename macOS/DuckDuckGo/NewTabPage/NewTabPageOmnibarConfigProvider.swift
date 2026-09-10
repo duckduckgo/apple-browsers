@@ -266,6 +266,58 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.aiChatNtpImageGeneration)
     }
 
+    var isUpdatedCreateImageEnabled: Bool {
+        isImageGenerationEnabled && featureFlagger.isFeatureOn(.updatedCreateImage)
+    }
+
+    @MainActor
+    var imageGenerationModelId: String? {
+        guard isUpdatedCreateImageEnabled else { return nil }
+        return imageGenerationModel(in: availableModelsProvider())?.id
+    }
+
+    @MainActor
+    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? {
+        guard isUpdatedCreateImageEnabled else { return nil }
+
+        let models = availableModelsProvider()
+        let previousModel = models.first(where: { $0.id == aiChatPreferencesPersistor.selectedModelId })
+        guard let imageModel = imageGenerationModel(in: models),
+              previousModel?.id != imageModel.id else {
+            return nil
+        }
+
+        aiChatPreferencesPersistor.selectedModelId = imageModel.id
+        aiChatPreferencesPersistor.selectedModelShortName = imageModel.shortName
+        clearReasoningEffortIfUnsupported(by: imageModel)
+
+        guard let previousModel else { return nil }
+        let notice = AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: imageModel)
+        return NewTabPageDataModel.OmnibarCreateImageModelSwitch(
+            message: notice.localizedTitle,
+            secondaryText: notice.localizedSubtitle
+        )
+    }
+
+    private func imageGenerationModel(in models: [AIChatModel]) -> AIChatModel? {
+        if let selectedModel = models.first(where: { $0.id == aiChatPreferencesPersistor.selectedModelId }),
+           selectedModel.entityHasAccess,
+           selectedModel.supportsTool(.imageGeneration) {
+            return selectedModel
+        }
+        return AIChatModel.preferredImageGenerationModel(in: models)
+    }
+
+    private func clearReasoningEffortIfUnsupported(by model: AIChatModel) {
+        guard let rawValue = aiChatPreferencesPersistor.selectedReasoningEffort else { return }
+        guard let effort = AIChatReasoningEffort(rawValue: rawValue) else {
+            aiChatPreferencesPersistor.selectedReasoningEffort = nil
+            return
+        }
+        guard !model.supportedReasoningEffort.contains(effort) else { return }
+        aiChatPreferencesPersistor.selectedReasoningEffort = nil
+    }
+
     var isWebSearchEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatNtpWebSearch)
     }
@@ -297,7 +349,6 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         let store = DuckAiUsageLimitsStore(storageHandler: duckAiStorageHandlerProvider(burnerMode),
                                            featureFlagger: featureFlagger)
         usageWarningViewModel = store.makeWarningViewModel(
-            tierProvider: userTierProvider,
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: availableModelsProvider,
                 currentModelIdProvider: { [aiChatPreferencesPersistor] in aiChatPreferencesPersistor.selectedModelId }
@@ -305,14 +356,17 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             isTrialEligible: isTrialEligibleProvider,
             isFireMode: { burnerMode.isBurner }
         )
-        usageWarningViewModel?.onAction = { [weak self] action in
+        usageWarningViewModel?.onAction = { [weak self, store] action in
             switch action {
             case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
                 // Both, or the picker label keeps showing the model we just switched away from.
                 self?.aiChatPreferencesPersistor.selectedModelId = suggestion.modelId
                 self?.aiChatPreferencesPersistor.selectedModelShortName = suggestion.modelShortName
-            case .tryForFree, .startUsingWeeklyLimit:
-                // Both need a UI to route from; logged by the view model meanwhile.
+            case .startUsingWeeklyLimit(let entries):
+                // The captured store carries this refresh's burner-aware handler.
+                store.write(entries)
+            case .tryForFree:
+                // The NTP omnibar is web-rendered, so there is no native card to route an upsell from.
                 break
             }
         }

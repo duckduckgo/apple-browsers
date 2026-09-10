@@ -22,6 +22,7 @@ import Common
 import Foundation
 import History
 @_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities

@@ -214,7 +214,7 @@ final class MockDuckPlayerHosting: UIViewController, DuckPlayerHosting {
     var delegate: (any DuckDuckGo.TabDelegate)?
     var webView: WKWebView!
     var contentBottomConstraint: NSLayoutConstraint?
-    var persistentBottomBarHeight: CGFloat = 0
+    var floatingBottomChromeObscuredHeight: CGFloat = 0
     var presentCalled = false
     private var _presentedVC: UIViewController?
 

@@ -25,7 +25,6 @@ final class OnboardingUITests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        continueAfterFailure = false
         try resetApplicationData()
 
         launchOnboarding()

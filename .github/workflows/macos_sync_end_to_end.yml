@@ -39,7 +39,7 @@ jobs:
           - xcode-version: "26.2"
             runner: macos-15-xlarge
             os-version: 15
-          - xcode-version: "26.4"
+          - xcode-version: "26.6"
             runner: macos-26-xlarge
             os-version: 26
 

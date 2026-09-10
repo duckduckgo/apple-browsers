@@ -22,6 +22,7 @@ import Core
 import Persistence
 import BrowserServicesKit
 import os.log
+import PixelKit
 
 enum DatabaseError {
 
@@ -87,7 +88,7 @@ final class PersistentStoresConfiguration {
             Logger.general.info("Shared SecureVault initialized at app startup")
         } catch {
             Logger.general.error("Failed to initialize shared SecureVault at startup: \(error.localizedDescription)")
-            Pixel.fire(pixel: .sharedSecureVaultInitFailed, error: error)
+            PixelKit.fire(Pixel.Event.sharedSecureVaultInitFailed.withError(error))
         }
     }
 

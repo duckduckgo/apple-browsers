@@ -43,6 +43,8 @@ extension PromoServiceFactory {
 /// Test promo delegate that shows an NSAlert with metadata, history, and result buttons.
 /// Used to exercise promo persistence across app restarts.
 final class TestPromoDelegate: InternalPromoDelegate {
+    private typealias Identifiers = AccessibilityIdentifiers.PromoQueue
+
     private let promo: Promo
     private var alert: NSAlert?
     private let isEligibleSubject = CurrentValueSubject<Bool, Never>(true)
@@ -96,14 +98,13 @@ final class TestPromoDelegate: InternalPromoDelegate {
         alert.informativeText = metadataBlock
         alert.alertStyle = .informational
 
-        _ = alert.addButton(withTitle: "Action")
-        _ = alert.addButton(withTitle: "Dismiss Permanently")
-        _ = alert.addButton(withTitle: "Dismiss (1 day cooldown)")
-        _ = alert.addButton(withTitle: "None")
-        _ = alert.addButton(withTitle: "Set Ineligible")
+        alert.addButton(withTitle: "Action").setAccessibilityIdentifier(Identifiers.actionButton)
+        alert.addButton(withTitle: "Dismiss Permanently").setAccessibilityIdentifier(Identifiers.dismissPermanentlyButton)
+        alert.addButton(withTitle: "Dismiss (1 day cooldown)").setAccessibilityIdentifier(Identifiers.dismissWithCooldownButton)
+        alert.addButton(withTitle: "None").setAccessibilityIdentifier(Identifiers.noneButton)
+        alert.addButton(withTitle: "Set Ineligible").setAccessibilityIdentifier(Identifiers.setIneligibleButton)
 
-        let alertId = AccessibilityIdentifiers.PromoQueue.testPromoAlert(promo.id)
-        alert.window.setAccessibilityIdentifier(alertId)
+        alert.window.setAccessibilityIdentifier(Identifiers.testPromoAlert(promo.id))
         self.alert = alert
 
         guard let window = NSApp.delegateTyped.windowControllersManager.mainWindowController?.window ?? NSApp.delegateTyped.windowControllersManager.openNewWindow() else { return .noChange }

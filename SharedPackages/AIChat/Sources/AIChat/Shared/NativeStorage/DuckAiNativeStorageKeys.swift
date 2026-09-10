@@ -32,10 +32,10 @@ public struct DuckAiNativeStorageSettings: StoringKeys {
 }
 
 /// Well-known entry keys that carry a contract with the Duck.ai web app. The direction differs per key.
-public enum DuckAiNativeStorageReservedEntryKeys: String {
+public enum DuckAiNativeStorageReservedEntryKeys: String, CaseIterable {
     /// Native-written, web-read: the web app reconciles deletions it did not itself initiate. Value: `[String]`.
     case locallyDeletedChatIds
 
-    /// Web-written, native-read. Value: JSON-encoded `String`; decode with `DuckAiUsageLimits.make`.
+    /// Web-written, native-read. JSON-encoded `String`; decode with `DuckAiUsageSnapshot.make`.
     case usageLimits
 }

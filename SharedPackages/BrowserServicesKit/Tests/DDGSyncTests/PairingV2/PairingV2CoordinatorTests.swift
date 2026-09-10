@@ -24,6 +24,7 @@ import XCTest
 private enum PairingV2CoordinatorTestError: Error {
     case expectedLocalHello
     case keyGenerationFailed
+    case secretGenerationFailed
 }
 
 private typealias NativeJoinerThirdPartyUpgradeSetup = (coordinator: PairingV2Coordinator, upgradeCoordinator: ThirdPartyAccountUpgradeCoordinatingMock)
@@ -162,6 +163,153 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterOpenOwnChannel, kind: .httpError))
         XCTAssertEqual(failure?.underlyingError as? SyncError, .unexpectedStatusCode(503))
+        XCTAssertEqual(messageExchanger.openChannelCalls.count, 1)
+    }
+
+    func testWhenExchangeAuthenticationIsEnabledThenUsesOwnSecretForEveryRelayRequest() async throws {
+        let dependencies = MockSyncDependencies()
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let peerKeyPair = try makePeerKeyPair()
+        let secret = "local-channel-secret"
+        let coordinator = makeCoordinator(syncService: syncService,
+                                          messageExchanger: messageExchanger,
+                                          shouldAuthenticateExchangeEndpoints: true,
+                                          makeChannelSecret: { secret })
+
+        try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
+        try await coordinator.pollOnce()
+        await coordinator.cancel()
+
+        XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets, [secret])
+        XCTAssertEqual(messageExchanger.sendAuthorizationSecrets, [secret, secret])
+        XCTAssertEqual(messageExchanger.fetchMessagesAuthorizationSecrets, [secret])
+        XCTAssertEqual(messageExchanger.closeChannelAuthorizationSecrets, [secret])
+    }
+
+    func testWhenExchangeAuthenticationIsDisabledThenDoesNotGenerateOrSendSecret() async throws {
+        let dependencies = MockSyncDependencies()
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let peerKeyPair = try makePeerKeyPair()
+        let coordinator = makeCoordinator(syncService: syncService,
+                                          messageExchanger: messageExchanger,
+                                          shouldAuthenticateExchangeEndpoints: false,
+                                          makeChannelSecret: { throw PairingV2CoordinatorTestError.secretGenerationFailed })
+
+        try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
+        try await coordinator.pollOnce()
+        await coordinator.cancel()
+
+        XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets, [nil])
+        XCTAssertEqual(messageExchanger.sendAuthorizationSecrets, [nil, nil])
+        XCTAssertEqual(messageExchanger.fetchMessagesAuthorizationSecrets, [nil])
+        XCTAssertEqual(messageExchanger.closeChannelAuthorizationSecrets, [nil])
+    }
+
+    func testWhenCancelledDuringChannelCreationThenClosesAcceptedChannelAndStopsStartup() async throws {
+        for isPresenter in [true, false] {
+            for shouldAuthenticate in [true, false] {
+                let dependencies = MockSyncDependencies()
+                let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+                let messageExchanger = PairingV2MessageExchangingMock()
+                let keyPair = try makePeerKeyPair(channelID: "local-channel")
+                let coordinator = makeCoordinator(syncService: syncService,
+                                                  messageExchanger: messageExchanger,
+                                                  shouldAuthenticateExchangeEndpoints: shouldAuthenticate,
+                                                  makeKeyPair: { keyPair },
+                                                  makeChannelSecret: { "local-secret" })
+                let openStarted = expectation(description: "Local channel creation started")
+                let openGate = PairingV2CoordinatorTestGate()
+                messageExchanger.openChannelHandler = { _ in
+                    openStarted.fulfill()
+                    await openGate.wait()
+                }
+
+                let startTask = Task {
+                    do {
+                        if isPresenter {
+                            _ = try await coordinator.startPresenting()
+                        } else {
+                            try await coordinator.startScanning(qrPayload: .init(channelId: "peer-channel", publicKey: keyPair.publicKey))
+                        }
+                        XCTFail("Expected cancelled startup")
+                    } catch {
+                        XCTAssertEqual(error as? PairingV2Error, .cancelled)
+                    }
+                }
+
+                await fulfillment(of: [openStarted], timeout: 2)
+                await coordinator.cancel()
+                XCTAssertTrue(messageExchanger.closeChannelCalls.isEmpty)
+
+                await openGate.open()
+                await startTask.value
+                await coordinator.cancel()
+
+                let expectedSecret: String? = shouldAuthenticate ? "local-secret" : nil
+                XCTAssertEqual(coordinator.state, .failed(.cancelled))
+                XCTAssertEqual(messageExchanger.openChannelCalls, ["local-channel"])
+                XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets, [expectedSecret])
+                XCTAssertEqual(messageExchanger.closeChannelCalls, ["local-channel"])
+                XCTAssertEqual(messageExchanger.closeChannelAuthorizationSecrets, [expectedSecret])
+                XCTAssertTrue(messageExchanger.sendCalls.isEmpty)
+                XCTAssertTrue(messageExchanger.fetchMessagesCalls.isEmpty)
+            }
+        }
+    }
+
+    func testWhenChannelClaimConflictsThenFailsWithoutRetrying() async throws {
+        for isPresenter in [true, false] {
+            let dependencies = MockSyncDependencies()
+            let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+            let messageExchanger = PairingV2MessageExchangingMock()
+            messageExchanger.openChannelHandler = { _ in
+                throw PairingV2RelayRequestError(kind: .httpError, underlyingError: SyncError.unexpectedStatusCode(409))
+            }
+            let keyPair = try makePeerKeyPair(channelID: "local-channel")
+            let coordinator = makeCoordinator(syncService: syncService,
+                                              messageExchanger: messageExchanger,
+                                              shouldAuthenticateExchangeEndpoints: true,
+                                              makeKeyPair: { keyPair },
+                                              makeChannelSecret: { "local-secret" })
+
+            let failure = await pairingFailure {
+                if isPresenter {
+                    _ = try await coordinator.startPresenting()
+                } else {
+                    try await coordinator.startScanning(qrPayload: .init(channelId: "peer-channel", publicKey: keyPair.publicKey))
+                }
+            }
+
+            let failureStage: PairingV2FailureStage = isPresenter ? .presenterOpenOwnChannel : .scannerOpenOwnChannel
+            XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: failureStage, kind: .httpError))
+            XCTAssertEqual(failure?.underlyingError as? SyncError, .unexpectedStatusCode(409))
+            XCTAssertEqual(messageExchanger.openChannelCalls, ["local-channel"])
+            XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets, ["local-secret"])
+            XCTAssertTrue(messageExchanger.sendCalls.isEmpty)
+
+            await coordinator.cancel()
+            XCTAssertTrue(messageExchanger.closeChannelCalls.isEmpty)
+        }
+    }
+
+    func testWhenChannelSecretGenerationFailsThenAttachesGenerateCodeStage() async throws {
+        let dependencies = MockSyncDependencies()
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let coordinator = makeCoordinator(syncService: syncService,
+                                          messageExchanger: messageExchanger,
+                                          shouldAuthenticateExchangeEndpoints: true,
+                                          makeChannelSecret: { throw PairingV2CoordinatorTestError.secretGenerationFailed })
+
+        let failure = await pairingFailure {
+            _ = try await coordinator.startPresenting()
+        }
+
+        XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterGenerateCode, kind: nil))
+        XCTAssertNotNil(failure?.underlyingError as? PairingV2CoordinatorTestError)
+        XCTAssertTrue(messageExchanger.openChannelCalls.isEmpty)
     }
 
     func testWhenPresenterReceivesHelloThenSendsRecoveryCodeStatusToPeerChannel() async throws {
@@ -866,6 +1014,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                                deviceName: "Mac",
                                                deviceType: "desktop",
                                                flags: PairingV2RolloutFlags(isV2ScanningEnabled: true, isV2CodeEnabled: true),
+                                               shouldAuthenticateExchangeEndpoints: false,
                                                confirmationDelegate: confirmationDelegate)
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
@@ -967,6 +1116,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                                deviceName: "Mac",
                                                deviceType: "desktop",
                                                flags: PairingV2RolloutFlags(isV2ScanningEnabled: true, isV2CodeEnabled: true),
+                                               shouldAuthenticateExchangeEndpoints: false,
                                                confirmationDelegate: confirmationDelegate)
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
@@ -1021,6 +1171,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                                deviceName: "Mac",
                                                deviceType: "desktop",
                                                flags: PairingV2RolloutFlags(isV2ScanningEnabled: true, isV2CodeEnabled: true),
+                                               shouldAuthenticateExchangeEndpoints: false,
                                                confirmationDelegate: confirmationDelegate)
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
@@ -1055,15 +1206,21 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                  messageExchanger: PairingV2MessageExchanging,
                                  messageCrypto: PairingV2MessageCrypto = PairingV2MessageCrypto(),
                                  confirmationDelegate: PairingV2ConfirmationDelegate? = nil,
-                                 makeKeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() }) -> PairingV2Coordinator {
+                                 shouldAuthenticateExchangeEndpoints: Bool = false,
+                                 makeKeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() },
+                                 makeChannelSecret: @escaping () throws -> String = {
+                                     try PairingV2ChannelSecretFactory.makeSecret()
+                                 }) -> PairingV2Coordinator {
         PairingV2Coordinator(syncService: syncService,
                              messageExchanger: messageExchanger,
                              messageCrypto: messageCrypto,
                              deviceName: "Mac",
                              deviceType: "desktop",
                              flags: PairingV2RolloutFlags(isV2ScanningEnabled: true, isV2CodeEnabled: true),
+                             shouldAuthenticateExchangeEndpoints: shouldAuthenticateExchangeEndpoints,
                              confirmationDelegate: confirmationDelegate,
-                             makeKeyPair: makeKeyPair)
+                             makeKeyPair: makeKeyPair,
+                             makeChannelSecret: makeChannelSecret)
     }
 
     private func pairingFailure(operation: () async throws -> Void) async -> PairingV2OperationFailure? {

@@ -32,8 +32,7 @@ enum DuckAIAddressBarMenuFactory {
     }
 
     /// Groups New Chat and, on non-home tabs, the page-context action above a separator, with Chats
-    /// below. The second action's copy depends on `type`: Ask About Page / Ask About Document /
-    /// Continue in Duck.ai.
+    /// below.
     static func makeActions(featureFlagger: FeatureFlagger,
                             userInterfaceIdiom: UIUserInterfaceIdiom,
                             isHomeTab: Bool,

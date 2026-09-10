@@ -277,9 +277,23 @@ final class PairingV2Coordinator {
         case .openV2Channel(let channelID):
             let channelID = try channelID ?? requiredLocalChannelID()
             let authorizationSecret = try generateChannelSecret()
-            try await performRelayOperation(at: relayFailureStage) {
-                try await messageExchanger.openChannel(channelID, authorizationSecret: authorizationSecret)
+
+            do {
+                try await performRelayOperation(at: relayFailureStage) {
+                    try await messageExchanger.openChannel(channelID, authorizationSecret: authorizationSecret)
+                }
+            } catch let operationFailure as PairingV2OperationFailure {
+                // The PUT may have succeeded before its response was lost. Now that the
+                // request has finished, make one cleanup attempt with the same credentials.
+                if operationFailure.context.kind == .networkError {
+                    try? await messageExchanger.closeChannel(
+                        channelID,
+                        authorizationSecret: authorizationSecret
+                    )
+                }
+                throw operationFailure
             }
+
             localChannelSecret = authorizationSecret
             hasOpenedLocalChannel = true
 

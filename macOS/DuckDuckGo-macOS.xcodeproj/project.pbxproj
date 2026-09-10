@@ -145,8 +145,10 @@
 		1D6D041C2D9437ED005BC23F /* FullscreenController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6D041B2D9437ED005BC23F /* FullscreenController.swift */; };
 		1D6D041D2D9437ED005BC23F /* FullscreenController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6D041B2D9437ED005BC23F /* FullscreenController.swift */; };
 		1D6D04202D953E20005BC23F /* FullscreenControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6D041F2D953E20005BC23F /* FullscreenControllerTests.swift */; };
+		C41E154F9417579CA88B9894 /* WindowControllersManagerBrowsingBeforeCompletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21B374B376FE40040C5415A /* WindowControllersManagerBrowsingBeforeCompletionTests.swift */; };
 		B9E42F5C73D91A6E02BB4487 /* WindowControllersManagerOnboardingSkipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D31E4B62C8095FD1AA3376 /* WindowControllersManagerOnboardingSkipTests.swift */; };
 		1D6D04212D953E20005BC23F /* FullscreenControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6D041F2D953E20005BC23F /* FullscreenControllerTests.swift */; };
+		BA42D806940B01EE1BCB561B /* WindowControllersManagerBrowsingBeforeCompletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21B374B376FE40040C5415A /* WindowControllersManagerBrowsingBeforeCompletionTests.swift */; };
 		C0F53A6D84EA2B7F13CC5598 /* WindowControllersManagerOnboardingSkipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D31E4B62C8095FD1AA3376 /* WindowControllersManagerOnboardingSkipTests.swift */; };
 		1D7693FF2BE3A1AA0016A22B /* DockCustomizerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7693FE2BE3A1AA0016A22B /* DockCustomizerMock.swift */; };
 		1D7694002BE3A1AA0016A22B /* DockCustomizerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7693FE2BE3A1AA0016A22B /* DockCustomizerMock.swift */; };
@@ -5193,6 +5195,7 @@
 		1D6A491F29CF7A490011DF74 /* NSPopoverExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPopoverExtension.swift; sourceTree = "<group>"; };
 		1D6D041B2D9437ED005BC23F /* FullscreenController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenController.swift; sourceTree = "<group>"; };
 		1D6D041F2D953E20005BC23F /* FullscreenControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenControllerTests.swift; sourceTree = "<group>"; };
+		C21B374B376FE40040C5415A /* WindowControllersManagerBrowsingBeforeCompletionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowControllersManagerBrowsingBeforeCompletionTests.swift; sourceTree = "<group>"; };
 		A7D31E4B62C8095FD1AA3376 /* WindowControllersManagerOnboardingSkipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowControllersManagerOnboardingSkipTests.swift; sourceTree = "<group>"; };
 		1D7693FE2BE3A1AA0016A22B /* DockCustomizerMock.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DockCustomizerMock.swift; sourceTree = "<group>"; };
 		1D77921728FDC54C00BE0210 /* FaviconReferenceCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconReferenceCacheTests.swift; sourceTree = "<group>"; };
@@ -8125,6 +8128,7 @@
 			isa = PBXGroup;
 			children = (
 				1D6D041F2D953E20005BC23F /* FullscreenControllerTests.swift */,
+				C21B374B376FE40040C5415A /* WindowControllersManagerBrowsingBeforeCompletionTests.swift */,
 				A7D31E4B62C8095FD1AA3376 /* WindowControllersManagerOnboardingSkipTests.swift */,
 				1D39F7272DCA2C9200F258F0 /* InitialWindowFrameProviderTests.swift */,
 				84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */,
@@ -17499,6 +17503,7 @@
 				3706FE62293F661700E42796 /* PasswordManagementListSectionTests.swift in Sources */,
 				37A756EE2DD610930003C8C9 /* NewTabPageCoordinatorTests.swift in Sources */,
 				1D6D04202D953E20005BC23F /* FullscreenControllerTests.swift in Sources */,
+				C41E154F9417579CA88B9894 /* WindowControllersManagerBrowsingBeforeCompletionTests.swift in Sources */,
 				B9E42F5C73D91A6E02BB4487 /* WindowControllersManagerOnboardingSkipTests.swift in Sources */,
 				4B3AD8682ED77577007CE825 /* BundleExtensionTests.swift in Sources */,
 				373E477C2D809EF5006F3FEC /* AddBookmarkPopoverViewModelTests.swift in Sources */,
@@ -19917,6 +19922,7 @@
 				37D046A42C7DAA8900AEAA50 /* ImageProcessorMock.swift in Sources */,
 				1DFAB5222A8983DE00A0F7F6 /* SetExtensionTests.swift in Sources */,
 				1D6D04212D953E20005BC23F /* FullscreenControllerTests.swift in Sources */,
+				BA42D806940B01EE1BCB561B /* WindowControllersManagerBrowsingBeforeCompletionTests.swift in Sources */,
 				C0F53A6D84EA2B7F13CC5598 /* WindowControllersManagerOnboardingSkipTests.swift in Sources */,
 				4BF6962028BEEE8B00D402D4 /* LocalPinningManagerTests.swift in Sources */,
 				56A0FE0B2DF79FFA00486632 /* SubscriptionFeatureAvailabilityMock.swift in Sources */,

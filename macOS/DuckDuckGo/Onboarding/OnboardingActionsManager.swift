@@ -579,6 +579,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             if !nonBlockingOnboarding.isNonBlocking {
                 contextualOnboardingStateUpdater?.state = .onboardingCompleted
             }
+            if isFirstOutcome {
+                PixelKit.fire(GeneralPixel.onboardingSkipped, frequency: .dailyAndCount)
+            }
         }
     }
 

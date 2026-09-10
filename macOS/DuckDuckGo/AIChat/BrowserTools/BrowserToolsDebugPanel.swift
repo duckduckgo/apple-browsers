@@ -130,13 +130,22 @@ final class BrowserToolsDebugPanel: NSWindowController {
         appendToLog("")
     }
 
+    /// Sessions are keyed per owner tab, and the owner tab is re-read on every click — so selecting
+    /// a different tab between the handshake and a call silently moves you to a tab that has no
+    /// session. Showing the state makes that visible instead of surfacing it as `not_initialized`.
     @objc private func refreshTarget() {
         guard let tab = selectedTab else {
             targetLabel.stringValue = "No tab selected — open a tab to act as the Duck.ai owner tab."
             return
         }
         let burner = tab.burnerMode.isBurner ? "  ·  Fire Window" : ""
-        targetLabel.stringValue = "Owner tab: \(tab.uuid)\(burner)"
+        let session = NSApp.delegateTyped.aiChatBrowserToolsService.sessions.session(forOwnerTabID: tab.uuid)
+        let state = switch session {
+        case .none: "no session — run initialize"
+        case .some(let session) where !session.isInitialized: "awaiting notifications/initialized"
+        case .some: "initialized"
+        }
+        targetLabel.stringValue = "Owner tab: \(tab.uuid)\(burner)  ·  \(state)"
     }
 
     // MARK: -
@@ -164,6 +173,7 @@ final class BrowserToolsDebugPanel: NSWindowController {
         Task { @MainActor in
             let response = await invoke(params, SyntheticUserScriptMessage(name: method, body: params, webView: webView))
             appendToLog("← \(response.map(prettyPrinted) ?? "(no reply)")\n")
+            refreshTarget()
         }
     }
 

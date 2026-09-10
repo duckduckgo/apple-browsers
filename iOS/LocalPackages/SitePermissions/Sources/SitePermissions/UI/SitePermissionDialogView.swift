@@ -66,7 +66,7 @@ public struct SitePermissionDialogView: View {
                     title
                     if let body = viewModel.body {
                         Text(body)
-                            .daxBodyRegular()
+                            .font(.body)
                             .foregroundColor(Color(designSystemColor: .textPrimary))
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
@@ -80,8 +80,11 @@ public struct SitePermissionDialogView: View {
 
                 VStack(spacing: Constants.buttonSpacing) {
                     ForEach(viewModel.actions) { item in
-                        Button(item.title) {
+                        Button {
                             onAction(item.action)
+                        } label: {
+                            Text(item.title)
+                                .font(.body.weight(.medium))
                         }
                         .buttonStyle(SecondaryFillButtonStyle())
                         .accessibilityIdentifier(accessibilityIdentifier(for: item.action))
@@ -93,7 +96,7 @@ public struct SitePermissionDialogView: View {
 
     private var title: some View {
         Text(viewModel.title(domain: truncatedDomain))
-            .daxBodyBold()
+            .font(.headline)
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
@@ -110,7 +113,7 @@ public struct SitePermissionDialogView: View {
         let availableWidth = Constants.cardWidth
             - 2 * Constants.cardHorizontalPadding
             - 2 * Constants.contentHorizontalPadding
-        let font = UIFont.daxBodyBold()
+        let font = UIFont.preferredFont(forTextStyle: .headline)
         let attributes: [NSAttributedString.Key: Any] = [.font: font]
 
         func fits(_ value: String) -> Bool {

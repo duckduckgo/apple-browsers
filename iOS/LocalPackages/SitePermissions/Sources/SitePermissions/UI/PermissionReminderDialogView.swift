@@ -30,7 +30,7 @@ public struct PermissionReminderDialogView: View {
         static let contentSpacing: CGFloat = 10
         static let copySpacing: CGFloat = 8
         static let actionsTopPadding: CGFloat = 24
-        static let buttonSpacing: CGFloat = 8
+        static let buttonSpacing: CGFloat = 10
     }
 
     private let viewModel: PermissionReminderDialogViewModel
@@ -51,7 +51,7 @@ public struct PermissionReminderDialogView: View {
             VStack(spacing: Constants.contentSpacing) {
                 VStack(alignment: .leading, spacing: Constants.copySpacing) {
                     Text(viewModel.title)
-                        .daxBodyBold()
+                        .font(.headline)
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
@@ -59,8 +59,8 @@ public struct PermissionReminderDialogView: View {
                         .accessibilityIdentifier("SitePermissions.Reminder.Title")
 
                     Text(viewModel.body)
-                        .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .font(.body)
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -84,14 +84,20 @@ public struct PermissionReminderDialogView: View {
     private func actionButton(for item: PermissionReminderDialogViewModel.ActionItem) -> some View {
         switch item.style {
         case .primary:
-            Button(item.title) {
+            Button {
                 onAction(item.action)
+            } label: {
+                Text(item.title)
+                    .font(.body.weight(.medium))
             }
             .buttonStyle(PrimaryButtonStyle())
             .accessibilityIdentifier(accessibilityIdentifier(for: item.action))
         case .secondary:
-            Button(item.title) {
+            Button {
                 onAction(item.action)
+            } label: {
+                Text(item.title)
+                    .font(.body.weight(.medium))
             }
             .buttonStyle(SecondaryFillButtonStyle())
             .accessibilityIdentifier(accessibilityIdentifier(for: item.action))

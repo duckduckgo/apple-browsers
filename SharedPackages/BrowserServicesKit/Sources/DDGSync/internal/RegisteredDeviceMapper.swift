@@ -211,5 +211,6 @@ struct RegisteredDeviceEntry: Decodable {
     let id: String
     let name: String?
     let type: String?
+    let info: String?
     let credentialId: String?
 }

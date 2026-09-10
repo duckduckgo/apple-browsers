@@ -20,12 +20,18 @@ import Foundation
 import XCTest
 @testable import FoundationExtensions
 
-final class LocaleExtensionsTests: XCTest {
+final class LocaleExtensionsTests: XCTestCase {
 
     func testThatJSONLocaleFormatIsReturned() {
         let locale = Locale(identifier: "en_US")
 
         XCTAssert(locale.localeIdentifierAsJsonFormat == "en-US", "The returned identifier should be in JSON format")
+    }
+
+    func testThatJSONLocaleFormatDropsKeywordSuffix() {
+        let locale = Locale(identifier: "en_GB@calendar=gregorian")
+
+        XCTAssertEqual(locale.localeIdentifierAsJsonFormat, "en-GB")
     }
 
     func testWhenCheckingEnglishLanguageThenMatchesPreferredLanguage() {

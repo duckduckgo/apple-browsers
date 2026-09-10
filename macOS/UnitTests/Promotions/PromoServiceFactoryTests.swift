@@ -198,7 +198,8 @@ extension PromoServiceFactoryTests {
                 autoconsentStats: MockAutoconsentStats()
             ),
             updateController: nil,
-            updateNotificationBridge: nil
+            updateNotificationBridge: nil,
+            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator()
         )
     }
 }

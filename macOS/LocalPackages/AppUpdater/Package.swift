@@ -13,6 +13,7 @@ let package = Package(
         .library(name: "AppUpdaterTestHelpers", targets: ["AppUpdaterTestHelpers"]),
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/WideEvent"),
         .package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.9.6"),
         .package(path: "../../../SharedPackages/DDGError"),
         .package(path: "../../../SharedPackages/Common"),
@@ -26,6 +27,7 @@ let package = Package(
         .target(
             name: "AppUpdaterShared",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
@@ -58,6 +60,7 @@ let package = Package(
         .target(
             name: "SparkleAppUpdater",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 "AppUpdaterShared",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
@@ -114,6 +117,7 @@ let package = Package(
         .testTarget(
             name: "SparkleAppUpdaterTests",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 "SparkleAppUpdater",
                 "AppUpdaterShared",
                 "AppUpdaterTestHelpers",

@@ -201,8 +201,13 @@ class MainViewCoordinator {
         navigationBarContainer.isHidden = false
         navigationBarContainer.alpha = 1
         navigationBarContainer.isUserInteractionEnabled = true
+
         let surfaceOwnedElsewhere = isNavigationChromeHidden || isUnifiedToggleInputVisible
         navigationBarCollectionView.alpha = surfaceOwnedElsewhere ? 0 : 1
+        navigationBarCollectionView.isUserInteractionEnabled = !surfaceOwnedElsewhere
+        if !surfaceOwnedElsewhere {
+            navigationBarContainer.bringSubviewToFront(navigationBarCollectionView)
+        }
     }
 
     func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {
@@ -344,9 +349,7 @@ class MainViewCoordinator {
         guard addressBarPosition.isBottom else { return }
 
         if isUnifiedToggleInputVisible {
-            navigationBarContainer.isHidden = false
-            navigationBarContainer.alpha = 1
-            navigationBarContainer.isUserInteractionEnabled = true
+            applyOmnibarHostedInNavigationContainerPose()
             setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
             return
         }

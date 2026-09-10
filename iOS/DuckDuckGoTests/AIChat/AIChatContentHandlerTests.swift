@@ -19,11 +19,15 @@
 
 import AIChat
 import BrowserServicesKitTestsUtils
+import PixelKit
+import PixelExperimentKit
+import PrivacyConfig
 import UIKit
 import UserScript
 import XCTest
 import WebKit
 import Subscription
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 @testable import Core
 
@@ -35,17 +39,26 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockMetricHandler: MockAIChatPixelMetricHandler!
     var mockProductSurfaceTelemetry: MockProductSurfaceTelemetry!
     var mockFreeTrialConversionService: MockFreeTrialConversionInstrumentationService!
+    var mockOnboardingActivationRecorder: MockSubscriptionOnboardingActivationRecorder!
     var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
     var mockIPadDuckAIControlsFeature: MockIPadDuckAIControlsFeatureProvider!
+    var mockSubscriptionManager: SubscriptionManagerMock!
 
     override func setUpWithError() throws {
+        PixelKit.configureExperimentKit(featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                         eventTracker: ExperimentEventTracker(),
+                                         fire: { _, _, _ in })
+
         mockSettings = MockAIChatSettingsProvider()
         mockPayloadHandler = AIChatPayloadHandler()
         mockMetricHandler = MockAIChatPixelMetricHandler()
         mockProductSurfaceTelemetry = MockProductSurfaceTelemetry()
         mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
+        mockOnboardingActivationRecorder = MockSubscriptionOnboardingActivationRecorder()
         mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
         mockIPadDuckAIControlsFeature = MockIPadDuckAIControlsFeatureProvider()
+        mockSubscriptionManager = SubscriptionManagerMock()
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, activeOffers: []))
 
         handler = AIChatContentHandler(
             aiChatSettings: mockSettings,
@@ -54,6 +67,8 @@ final class AIChatContentHandlerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
+            onboardingActivationRecorder: mockOnboardingActivationRecorder,
+            subscriptionManager: mockSubscriptionManager,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
             iPadDuckAIControlsFeature: mockIPadDuckAIControlsFeature
@@ -476,6 +491,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
+            onboardingActivationRecorder: mockOnboardingActivationRecorder,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in pageContext }
         )
@@ -504,6 +520,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
+            onboardingActivationRecorder: mockOnboardingActivationRecorder,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in nil }
         )
@@ -717,6 +734,7 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+        XCTAssertTrue(mockOnboardingActivationRecorder.recordDuckAIActivatedCalled)
     }
 
     func testWhenPlusModelTierFirstPromptSubmitted_ThenMarkDuckAIActivatedIsCalled() throws {
@@ -728,6 +746,7 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+        XCTAssertTrue(mockOnboardingActivationRecorder.recordDuckAIActivatedCalled)
     }
 
     func testWhenFreeModelTierPromptSubmitted_ThenMarkDuckAIActivatedIsNotCalled() throws {
@@ -739,6 +758,7 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertFalse(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+        XCTAssertFalse(mockOnboardingActivationRecorder.recordDuckAIActivatedCalled)
     }
 
     func testWhenNoModelTierPromptSubmitted_ThenMarkDuckAIActivatedIsNotCalled() throws {
@@ -750,6 +770,7 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertFalse(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+        XCTAssertFalse(mockOnboardingActivationRecorder.recordDuckAIActivatedCalled)
     }
 }
 

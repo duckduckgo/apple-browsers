@@ -44,4 +44,5 @@ struct PromoDependencies {
     let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate
     let updateController: (any UpdateController)?
     let updateNotificationBridge: UpdateNotificationPromoBridge?
+    let brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator
 }

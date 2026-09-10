@@ -23,6 +23,7 @@ import Common
 import SubscriptionTestingUtilities
 import NetworkingTestingUtils
 @_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 
 class SubscriptionManagerTests: XCTestCase {
 

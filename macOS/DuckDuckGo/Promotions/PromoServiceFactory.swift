@@ -67,6 +67,7 @@ struct PromoServiceFactory {
             nextSteps,
             cookiePopupsBlocked(delegate: dependencies.cookiePopupsBlockedPromoDelegate),
             autofillToolbarPinning(dependencies: dependencies),
+            brokenSite(coordinator: dependencies.brokenSitePromptPresentationCoordinator),
             subscriptionPromo(delegate: dependencies.subscriptionPromoDelegate),
             defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService),

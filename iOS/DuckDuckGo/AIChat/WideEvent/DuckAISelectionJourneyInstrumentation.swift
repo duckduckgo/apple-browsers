@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 @MainActor
 protocol DuckAISelectionJourneyInstrumenting: AnyObject {

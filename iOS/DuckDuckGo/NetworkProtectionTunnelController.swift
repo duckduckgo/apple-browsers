@@ -27,6 +27,7 @@ import NetworkExtension
 import VPN
 import Subscription
 import PixelKit
+import WideEvent
 import FeatureFlags_iOS
 
 enum VPNConfigurationRemovalReason: String {
@@ -47,7 +48,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
     private let snoozeTimingStore = NetworkProtectionSnoozeTimingStore(userDefaults: .networkProtectionGroupDefaults)
     private let notificationCenter: NotificationCenter = .default
     private var previousStatus: NEVPNStatus = .invalid
-    private let persistentPixel: PersistentPixelFiring
+    private let pixelFiring: (any PixelKitFiring)?
     private let settings: VPNSettings
     private lazy var startupMonitor = VPNStartupMonitor()
     private var cancellables = Set<AnyCancellable>()
@@ -69,6 +70,12 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
     private let configurationDeniedSubject = PassthroughSubject<Void, Never>()
     var configurationDeniedPublisher: AnyPublisher<Void, Never> {
         configurationDeniedSubject.eraseToAnyPublisher()
+    }
+
+    /// Signals that a VPN configuration was newly created and installed for the first time.
+    private let configurationInstalledSubject = PassthroughSubject<Void, Never>()
+    var configurationInstalledPublisher: AnyPublisher<Void, Never> {
+        configurationInstalledSubject.eraseToAnyPublisher()
     }
 
     // Wide Event
@@ -176,14 +183,14 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
 
     init(tokenHandler: any SubscriptionTokenHandling,
          featureFlagger: FeatureFlagger,
-         persistentPixel: PersistentPixelFiring,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          settings: VPNSettings,
          wideEvent: WideEventManaging,
          freeTrialConversionService: FreeTrialConversionInstrumentationService
     ) {
 
         self.featureFlagger = featureFlagger
-        self.persistentPixel = persistentPixel
+        self.pixelFiring = pixelFiring
         self.settings = settings
         self.tokenHandler = tokenHandler
         self.wideEvent = wideEvent
@@ -208,23 +215,13 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
     private func start(with entryContext: VPNConnectionWideEventData.EntryContext?) async {
         setupAndStartConnectionWideEvent(entryContext: entryContext)
         controllerErrorSubject.send(nil)
-        persistentPixel.fire(
-            pixel: .networkProtectionControllerStartAttempt,
-            error: nil,
-            includedParameters: [.appVersion],
-            withAdditionalParameters: [:],
-            onComplete: { _ in })
+        pixelFiring?.fire(Pixel.Event.networkProtectionControllerStartAttempt, options: .withRetry)
 
         do {
             try await startWithError()
             completeAndCleanupConnectionWideEvent()
 
-            persistentPixel.fire(
-                pixel: .networkProtectionControllerStartSuccess,
-                error: nil,
-                includedParameters: [.appVersion],
-                withAdditionalParameters: [:],
-                onComplete: { _ in })
+            pixelFiring?.fire(Pixel.Event.networkProtectionControllerStartSuccess, options: .withRetry)
         } catch {
             if let message = userFacingControllerErrorMessage(for: error) {
                 controllerErrorSubject.send(message)
@@ -236,12 +233,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
                 return
             }
 
-            persistentPixel.fire(
-                pixel: .networkProtectionControllerStartFailure,
-                error: error,
-                includedParameters: [.appVersion],
-                withAdditionalParameters: [:],
-                onComplete: { _ in })
+            pixelFiring?.fire(Pixel.Event.networkProtectionControllerStartFailure.withError(error), options: .withRetry)
 
             #if DEBUG
             errorStore.lastErrorMessage = error.localizedDescription
@@ -447,9 +439,10 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
             let tunnelManager = NETunnelProviderManager()
             try await setupAndSave(tunnelManager)
             internalManager = tunnelManager
+            configurationInstalledSubject.send()
             return tunnelManager
         }
-        
+
         connectionWideEventData?.isSetup = .no
         try await setupAndSave(tunnelManager)
         return tunnelManager

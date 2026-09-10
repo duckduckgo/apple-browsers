@@ -379,20 +379,6 @@ final class SubscriptionURLTests: XCTestCase {
 
     // MARK: - First paywall, performance-optimized
 
-    // With `performanceOptimizedPaywalls` on, the first paywall's three entry points become:
-    //
-    //     VPN      (no featurePage)      /subscriptions/new/mobile/vpn
-    //     Duck.ai  (featurePage=duckai)  /subscriptions/new/mobile/duckai
-    //     PIR      (featurePage=pir)     /subscriptions/new/mobile/pir
-    //
-    //     trial=true|false   always stated
-    //     pir=false          only when the offering excludes Personal Information Removal
-    //     origin             unchanged, along with every other query item
-    //
-    // Any other featurePage — `winback`, or one the frontend adds later — resolves to no entry point,
-    // so the rewrite returns nil and the caller keeps today's client-rendered URL. Intercepted `/pro`
-    // links are held back by the caller, in `SubscriptionContainerViewFactory`; desktop is untouched.
-
     func testFirstPaywallURLsWhenPerformanceOptimizedPaywallsIsOn() throws {
         // Given
         let vpn = SubscriptionURL.purchase.subscriptionURL(environment: .production)
@@ -403,9 +389,7 @@ final class SubscriptionURLTests: XCTestCase {
                                                                                               featurePage: "pir",
                                                                                               environment: .production)?.url)
 
-        // `pir` entry point with `pir=false` doesn't arise in practice — a user the offering excludes
-        // Personal Information Removal from never reaches the dashboard that hands us that URL — but the
-        // rule is stated uniformly across the three entry points rather than special-cased.
+        // Keep the matrix uniform even though the PIR entry point cannot produce `pir=false` in practice.
         let cases: [(url: URL, isTrialEligible: Bool, isPIRAvailable: Bool, expected: String)] = [
             (vpn, false, true, "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=false"),
             (vpn, true, true, "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=true"),
@@ -432,8 +416,6 @@ final class SubscriptionURLTests: XCTestCase {
         }
     }
 
-    /// `trial` and `pir` pick what the page reveals, not which page it is, so screen matching has to
-    /// ignore them.
     func testForComparisonIgnoresFirstPaywallStateParameters() throws {
         let page = URL(string: "https://duckduckgo.com/subscriptions/new/mobile/vpn")!
         let pageWithState = URL(string: "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=true&pir=false")!
@@ -536,9 +518,6 @@ final class SubscriptionURLTests: XCTestCase {
         XCTAssertNil(paths.purchaseRedirectComponents(from: unknown))
     }
 
-    /// `featurePage`, `trial` and `pir` are the only names the rewrite owns. Everything the URL arrived
-    /// with — attribution, environment, experiment cohorts, whatever the frontend attached — carries
-    /// over in its original order.
     func testFirstPaywallURLCarriesOverEveryOtherQueryItem() throws {
         // Given
         let purchaseURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/subscriptions"

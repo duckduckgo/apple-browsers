@@ -315,7 +315,12 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     @MainActor
     func goToAddressBar(from webView: WKWebView?) {
         guard let tab = leaveOnboarding(from: webView, content: .url(URL.duckDuckGo, source: .ui)) else { return }
-        focusAddressBarAfterNavigation(in: tab)
+        tab.navigationDidEndPublisher
+            .first()
+            .sink { [weak self] _ in
+                self?.navigation.focusOnAddressBar()
+            }
+            .store(in: &cancellables)
     }
 
     @MainActor
@@ -346,14 +351,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         let tab = Tab(content: content)
         navigation.replaceTabWith(tab)
         return tab
-    }
-
-    @MainActor
-    private func focusAddressBarAfterNavigation(in tab: Tab) {
-        tab.navigationDidEndPublisher
-            .first()
-            .sink { [weak self] _ in self?.navigation.focusOnAddressBar() }
-            .store(in: &cancellables)
     }
 
     /// Onboarding went away on its own — the tab was navigated away from, swept up in a bulk close,

@@ -347,6 +347,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
+    private func makeTabAttachmentSource(for tab: Tab) -> MultiTabAttachmentSource {
+        let mode = tab.mode
+        return MultiTabAttachmentSource(currentTabID: tab.uid, mode: mode, tabsProvider: { [weak self] in
+            self?.tabsModel(for: mode).tabs ?? []
+        })
+    }
+
+    @MainActor
     private func buildController(forTab tab: Tab, inheritedAttribution: AdClickAttributionLogic.State?, interactionState: Data?) -> TabViewController {
         let url = tab.link?.url
         return buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: interactionState)
@@ -417,6 +425,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               sitePermissionsDependenciesProvider: { [weak self] in
                                                                   self?.sitePermissionsDependencies
                                                               })
+        controller.tabAttachmentSource = makeTabAttachmentSource(for: tab)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -559,6 +568,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               sitePermissionsDependenciesProvider: { [weak self] in
                                                                   self?.sitePermissionsDependencies
                                                               })
+        controller.tabAttachmentSource = makeTabAttachmentSource(for: controller.tabModel)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,

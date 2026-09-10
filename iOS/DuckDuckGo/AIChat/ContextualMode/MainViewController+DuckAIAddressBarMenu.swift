@@ -152,6 +152,7 @@ extension MainViewController {
 
     private func openRecentChatsFromAddressBarMenu() {
         omniBar.endEditing()
+        recordNewTabPageSessionDeparture()
         openAIChatHistory(source: .addressBar)
     }
 

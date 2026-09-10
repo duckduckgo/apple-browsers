@@ -68,9 +68,11 @@ final class StatisticsLoader {
         fireSearchExperimentPixels: @escaping () -> Void = {
             PixelKit.fireSearchExperimentPixels()
             StatisticsLoader.fireLegacySearchRetentionExperimentPixels()
+            StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel()
         },
         fireDuckAISearchExperimentPixels: @escaping () -> Void = {
             StatisticsLoader.fireSearchExperimentPixelsForDuckAIEligibleExperiments()
+            StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel()
         },
         fireNewAIPromptExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIPromptExperimentPixels
     ) {
@@ -104,6 +106,16 @@ final class StatisticsLoader {
                 )
             }
         }
+    }
+
+    /// Uses the same search events (including Duck.ai) as the automatic 5...7 guardrail.
+    static func fireOnboardingNonBlockingSearchRetentionExperimentPixel() {
+        PixelKit.fireExperimentPixelIfThresholdReached(
+            for: MacOSBrowserConfigSubfeature.onboardingNonBlocking.rawValue,
+            metric: PixelKit.Constants.searchMetricValue,
+            conversionWindowDays: 1...3,
+            threshold: 1
+        )
     }
 
     /// Fires the search experiment metric for a Duck.ai prompt, but only for experiments that should count

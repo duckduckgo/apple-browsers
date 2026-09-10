@@ -60,6 +60,23 @@
                     "enum": ["true"]
                 }
             }
+        },
+        "onboardingNonBlocking": {
+            "cohorts": ["control", "treatment"],
+            "metrics": {
+                "importRequested": {
+                    "description": "User requested browser data import",
+                    "enum": ["true"]
+                },
+                "addToDockRequested": {
+                    "description": "User requested adding DuckDuckGo to the Dock",
+                    "enum": ["true"]
+                },
+                "setAsDefaultEnabled": {
+                    "description": "DuckDuckGo was set as the default browser",
+                    "enum": ["true"]
+                }
+            }
         }
     }
 }

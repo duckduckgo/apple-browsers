@@ -167,11 +167,21 @@ final class MainWindowController: NSWindowController {
         startOnboardingIfNeeded()
     }
 
+    private var isEligibleForNonBlockingExperiment: Bool {
+        let launchOptions = LaunchOptionsHandler()
+        guard !launchOptions.isAutomationSession,
+              case .notOverridden = launchOptions.onboardingStatus else { return false }
+
+        let reinstallDetector = DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore)
+        return !reinstallDetector.isReinstallingUser
+    }
+
     private func startOnboardingIfNeeded() {
         guard shouldShowOnboarding, let selectedTab = mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab else {
             return
         }
 
+        enrollInOnboardingExperiment()
         let isNonBlocking = featureFlagger.map { NonBlockingOnboarding(featureFlagger: $0).isNonBlocking } == true
         if isNonBlocking, windowControllersManager?.hasOnboardingTab == true {
             return
@@ -179,6 +189,13 @@ final class MainWindowController: NSWindowController {
 
         selectedTab.startOnboarding()
         configureOnboardingInteraction(for: selectedTab, isNonBlocking: isNonBlocking)
+    }
+
+    private func enrollInOnboardingExperiment() {
+        let experiment = featureFlagger.map(OnboardingNonBlockingExperiment.init)
+        if isEligibleForNonBlockingExperiment {
+            experiment?.enroll()
+        }
     }
 
     private func configureOnboardingInteraction(for tab: Tab, isNonBlocking: Bool) {

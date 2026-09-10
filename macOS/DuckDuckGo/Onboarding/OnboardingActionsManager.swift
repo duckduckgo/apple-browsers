@@ -129,6 +129,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let featureFlagger: FeatureFlagger
     private let chromeExtensionExperiment: OnboardingChromeExtensionExperiment
     private let nonBlockingOnboarding: NonBlockingOnboarding
+    private let nonBlockingExperiment: OnboardingNonBlockingExperiment
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     private weak var contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater?
@@ -281,6 +282,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.featureFlagger = featureFlagger
         self.chromeExtensionExperiment = OnboardingChromeExtensionExperiment(featureFlagger: featureFlagger)
         self.nonBlockingOnboarding = NonBlockingOnboarding(featureFlagger: featureFlagger)
+        self.nonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
         self.chromeExtensionInstaller = chromeExtensionInstaller
         self.contextualOnboardingStateUpdater = contextualOnboardingStateUpdater
@@ -361,11 +363,13 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     func addToDock() {
         dockCustomization.addToDock()
         onboardingSharedPixelHandler.fire(.addToDock(.clicked(.engage)))
+        nonBlockingExperiment.fireMetric(.addToDockRequested)
     }
 
     @MainActor
     func importData() async -> Bool {
         onboardingSharedPixelHandler.fire(.importData(.clicked(.engage)))
+        nonBlockingExperiment.fireMetric(.importRequested)
         return await withCheckedContinuation { continuation in
             dataImportProvider.showImportWindow(customTitle: UserText.importDataTitleOnboarding, completion: { [weak self] in
                 guard let self else {

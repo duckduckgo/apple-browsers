@@ -44,6 +44,10 @@ struct OnboardingNonBlockingExperiment {
         self.featureFlagger = featureFlagger
     }
 
+    var isNonBlocking: Bool {
+        cohort == .treatment
+    }
+
     /// Assigns a cohort via `resolveCohort`. Caller must only invoke for eligible new installs.
     func enroll(buildType: ApplicationBuildType = StandardApplicationBuildType()) {
         guard !buildType.isDebugBuild, !buildType.isReviewBuild, !buildType.isAlphaBuild else { return }

@@ -523,6 +523,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114767?focus=true
     case syncCanShowV2ConnectCode
 
+    /// TODO: Add feature flag Asana link.
+    case syncCanUseExchangeV2Point1
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064244?focus=true
     case syncCanWriteUnifiedDeviceList
 
@@ -944,6 +947,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow))
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
+        case .syncCanUseExchangeV2Point1:
+            Config(source: .remoteReleasable(SyncSubfeature.canUseExchangeV2Point1))
         case .syncCanWriteUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canWriteUnifiedDeviceList))
         case .syncCanUsePatchEndpointForLegacyDeviceRename:

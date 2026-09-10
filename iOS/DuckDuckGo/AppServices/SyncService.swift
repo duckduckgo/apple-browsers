@@ -98,6 +98,9 @@ final class SyncService {
                 isPairingV2CodeEnabled: {
                     featureFlagger.isFeatureOn(for: FeatureFlag.syncCanShowV2ConnectCode)
                 },
+                canUseExchangeV2Point1: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncCanUseExchangeV2Point1)
+                },
                 canWriteUnifiedDeviceList: {
                     featureFlagger.isFeatureOn(for: FeatureFlag.syncCanWriteUnifiedDeviceList)
                 },

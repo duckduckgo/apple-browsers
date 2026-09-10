@@ -990,6 +990,38 @@ class OnboardingManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testControlCanExitAfterAnOutcomeRecordedInEitherCohort() {
+        for cohort in [FeatureFlag.OnboardingNonBlockingCohort.control, .treatment] {
+            for action in ["browse", "settings"] {
+                OnboardingActionsManager.isOnboardingFinished = false
+                let flags = MockFeatureFlagger(resolveCohortStub: cohort)
+                configureNonBlockingExperimentKit(cohort: cohort, featureFlagger: flags)
+                let persistor = OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
+                let manager = makeNonBlockingExperimentManager(featureFlagger: flags, experimentPersistor: persistor)
+                navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
+                let source = navigationDelegate.onboardingSourceTab!.webView
+                manager.skipOnboarding(from: source)
+
+                flags.resolveCohortStub = FeatureFlag.OnboardingNonBlockingCohort.control
+                manager.onboardingStarted(from: source)
+                XCTAssertEqual(navigationDelegate.preventUserInteraction, true)
+                navigationDelegate.replaceTabCalled = false
+                experimentFiredEvents = []
+
+                switch action {
+                case "settings": manager.goToSettings(from: source)
+                default: manager.goToAddressBar(from: source)
+                }
+
+                XCTAssertTrue(navigationDelegate.replaceTabCalled, action)
+                XCTAssertEqual(navigationDelegate.preventUserInteraction, false, action)
+                XCTAssertEqual(persistor.outcome, .skipped)
+                XCTAssertTrue(experimentFiredEvents.isEmpty)
+            }
+        }
+    }
+
+    @MainActor
     func testLiveOnboardingCanExitWithAnAlreadyRecordedOutcome() {
         for outcome in [OnboardingExperimentPersistor.Outcome.skipped, .completed] {
             for action in ["browse", "settings"] {

@@ -346,7 +346,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             let tab = Tab(content: content)
             return navigation.replaceOnboardingTab(source, with: tab) ? tab : nil
         }
-        guard finishOnboarding(.completed) else { return nil }
+        _ = finishOnboarding(.completed)
+        navigation.updatePreventUserInteraction(prevent: false)
         let tab = Tab(content: content)
         navigation.replaceTabWith(tab)
         return tab

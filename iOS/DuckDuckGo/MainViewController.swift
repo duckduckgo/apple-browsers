@@ -6506,6 +6506,10 @@ extension MainViewController: EscapeHatchActionRouter {
 
 extension MainViewController: NewTabPageControllerDelegate {
 
+    func newTabPageDidRequestSettings(_ controller: any NewTabPage) {
+        segueToSettings()
+    }
+
     func newTabPageDidSelectFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         self.onSelectFavorite(favorite)
     }

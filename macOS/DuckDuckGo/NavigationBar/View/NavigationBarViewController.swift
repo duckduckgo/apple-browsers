@@ -199,8 +199,8 @@ final class NavigationBarViewController: NSViewController {
 
     private let networkProtectionButtonModel: NetworkProtectionNavBarButtonModel
 
-    private var isOnboardingFinished: Bool {
-        OnboardingActionsManager.isOnboardingFinished && Application.appDelegate.onboardingContextualDialogsManager.state == .onboardingCompleted
+    private var isOnboardingReadyForPrompts: Bool {
+        Application.appDelegate.isOnboardingReadyForPrompts
     }
 
     private let sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
@@ -1602,14 +1602,9 @@ final class NavigationBarViewController: NSViewController {
 
     @objc private func attemptToShowBrokenSitePrompt(_ sender: Notification) {
         guard brokenSitePromptLimiter.shouldShowToast(),
-              let tab = tabCollectionViewModel.selectedTabViewModel?.tab,
-              let url = tab.url, !url.isDuckDuckGo
+              let url = tabCollectionViewModel.selectedTabViewModel?.tab.url, !url.isDuckDuckGo,
+              isOnboardingReadyForPrompts
         else { return }
-        if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
-            guard tab.content != .onboarding else { return }
-        } else {
-            guard isOnboardingFinished else { return }
-        }
         showBrokenSitePrompt()
     }
 

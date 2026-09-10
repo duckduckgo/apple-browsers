@@ -227,7 +227,7 @@ struct SettingsSitePermissionsView: View {
                 }
             } header: {
                 Text(UserText.sitePermissions)
-                    .font(.body.weight(.semibold))
+                    .font(.headline)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .textCase(nil)
             } footer: {
@@ -238,6 +238,7 @@ struct SettingsSitePermissionsView: View {
                         return .handled
                     })
             }
+            .sitePermissionsRowInsets()
 
             if !viewModel.storedSites.isEmpty {
                 Section {
@@ -248,7 +249,7 @@ struct SettingsSitePermissionsView: View {
                                 FaviconView(viewModel: FaviconViewModel(domain: site.host))
                                     .frame(width: 24, height: 24)
                                 Text(site.host)
-                                    .daxBodyRegular()
+                                    .font(.body)
                                     .foregroundColor(Color(designSystemColor: .textPrimary))
                             }
                         }
@@ -265,11 +266,11 @@ struct SettingsSitePermissionsView: View {
                     }
                 } header: {
                     Text(UserText.settingsSitePermissionsManageSites)
-                        .font(.body.weight(.semibold))
+                        .font(.headline)
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                         .textCase(nil)
-                        .padding(.top, 12)
                 }
+                .sitePermissionsRowInsets()
 
                 Section {
                     Button(UserText.settingsSitePermissionsRemoveAll) {
@@ -279,9 +280,10 @@ struct SettingsSitePermissionsView: View {
                     .accessibilityIdentifier("Settings.SitePermissions.RemoveAll")
                     .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 }
+                .sitePermissionsRowInsets()
             }
         }
-        .sitePermissionsSectionSpacing()
+        .sitePermissionsListLayout()
         .animation(reduceMotion ? nil : .default, value: viewModel.storedSites)
         .applySettingsListModifiers(title: UserText.sitePermissions, displayMode: .inline, viewModel: settingsViewModel)
         .disabled(!settingsViewModel.state.sitePermissionsEnabled)
@@ -330,10 +332,11 @@ private struct SettingsSitePermissionsSiteView: View {
                 }
             } header: {
                 Text(String(format: UserText.settingsSitePermissionsSiteHeaderFormat, site.host))
-                    .font(.body.weight(.semibold))
+                    .font(.headline)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .textCase(nil)
             }
+            .sitePermissionsRowInsets()
 
             Section {
                 Button(UserText.settingsSitePermissionsRemoveSite) {
@@ -344,8 +347,9 @@ private struct SettingsSitePermissionsSiteView: View {
                 .accessibilityIdentifier("Settings.SitePermissions.RemoveSite")
                 .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
+            .sitePermissionsRowInsets()
         }
-        .sitePermissionsSectionSpacing()
+        .sitePermissionsListLayout()
         .applySettingsListModifiers(title: site.host, displayMode: .inline, viewModel: settingsViewModel)
         .disabled(!settingsViewModel.state.sitePermissionsEnabled)
     }
@@ -365,7 +369,7 @@ private struct SettingsSitePermissionRow<MenuContent: View>: View {
                 .frame(width: 24, height: 24)
                 .accessibilityHidden(true)
             Text(permissionType.settingsTitle)
-                .daxBodyRegular()
+                .font(.body)
                 .accessibilityHidden(true)
             Spacer(minLength: 16)
             Menu(content: menuContent) {
@@ -376,7 +380,7 @@ private struct SettingsSitePermissionRow<MenuContent: View>: View {
                         }
                         Text(selection)
                     }
-                    .daxBodyRegular()
+                    .font(.body)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.footnote.weight(.bold))
@@ -394,9 +398,21 @@ private struct SettingsSitePermissionRow<MenuContent: View>: View {
 
 private extension List {
     @ViewBuilder
-    func sitePermissionsSectionSpacing() -> some View {
+    func sitePermissionsListLayout() -> some View {
         if #available(iOS 17, *) {
             listSectionSpacing(24)
+                .contentMargins(.horizontal, 16, for: .scrollContent)
+        } else {
+            self
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func sitePermissionsRowInsets() -> some View {
+        if #available(iOS 26, *) {
+            listRowInsets(.horizontal, 16)
         } else {
             self
         }

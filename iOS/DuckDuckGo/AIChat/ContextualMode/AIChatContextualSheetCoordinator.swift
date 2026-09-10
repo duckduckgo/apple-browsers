@@ -318,7 +318,8 @@ final class AIChatContextualSheetCoordinator {
     ///   selection. The page is not attached on top of it; its signals are still collected.
     func presentSheet(from presentingViewController: UIViewController,
                       restoreURL: URL? = nil,
-                      skippingAutoAttach: Bool = false) async {
+                      skippingAutoAttach: Bool = false,
+                      attachingPage: Bool = false) async {
         let restoreURL = await vettedRestoreURL(restoreURL)
         await discardActiveChatIfDeleted()
         sessionState.refreshAutoAttachSetting()
@@ -326,7 +327,14 @@ final class AIChatContextualSheetCoordinator {
         clearStaleManualContextIfNeeded()
 
         startObservingContextUpdates()
-        collectContextForNewSession(skippingAutoAttach: skippingAutoAttach)
+        if attachingPage {
+            if sessionState.showsSuggestionsStartSurface {
+                sessionState.beginLoadingSuggestions()
+            }
+            requestManualPageContextAttach()
+        } else {
+            collectContextForNewSession(skippingAutoAttach: skippingAutoAttach)
+        }
 
         stopSessionTimer()
 

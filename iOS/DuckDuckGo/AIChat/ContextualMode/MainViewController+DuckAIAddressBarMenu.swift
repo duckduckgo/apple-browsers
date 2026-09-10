@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Core
 import UIKit
 
@@ -29,10 +30,7 @@ extension MainViewController {
             isFloatingInputAvailable: aiChatContextualFloatingInputFeature.isAvailable,
             isIPadChromeMenuButtonAvailable: isChromeMenuButtonAvailable,
             isHomeTab: tabManager.currentTabsModel.currentTab?.isHomeTab ?? true,
-            isChatHistoryAvailable: DuckAIAddressBarMenuFactory.isChatHistoryAvailable(
-                featureFlagger: featureFlagger,
-                userInterfaceIdiom: UIDevice.current.userInterfaceIdiom
-            ),
+            isChatHistoryAvailable: isDuckAIChatsMenuItemAvailable,
             hasChatToReopen: currentTab?.hasContextualChatToReopen ?? false,
             isContextualSurfacePresented: isContextualSurfacePresented
         )
@@ -40,6 +38,12 @@ extension MainViewController {
 
     var isChromeMenuButtonAvailable: Bool {
         DuckAIChromeShortcutVisibility.isChromeMenuButtonAvailable(isIPad: isPad, featureFlagger: featureFlagger)
+    }
+
+    var isDuckAIChatsMenuItemAvailable: Bool {
+        DuckAIAddressBarMenuFactory.isChatHistoryAvailable(featureFlagger: featureFlagger,
+                                                           userInterfaceIdiom: UIDevice.current.userInterfaceIdiom)
+            || (isChromeMenuButtonAvailable && featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats))
     }
 
     /// A contextual surface — the sheet or the floating input — is on screen for this tab.
@@ -125,7 +129,7 @@ extension MainViewController {
         if aiChatContextualFloatingInputFeature.isAvailable {
             currentTab.presentContextualFloatingInput(from: self)
         } else {
-            currentTab.presentContextualAIChatSheet(from: self)
+            currentTab.presentContextualAIChatSheet(from: self, attachingPage: true)
         }
     }
 
@@ -170,9 +174,18 @@ extension MainViewController {
         omniBar.endEditing()
         recordNewTabPageSessionDeparture()
         if isPad {
-            currentTab?.openChatListInNewTab()
+            openDuckAIChatsFromAddressBarMenu()
         } else {
             openAIChatHistory(source: .addressBar)
+        }
+    }
+
+    private func openDuckAIChatsFromAddressBarMenu() {
+        let url = AIChatURLParameters.sidebarOpenURL(from: aiChatSettings.aiChatURL)
+        if tabManager.currentTabsModel.currentTab?.link != nil {
+            loadUrlInNewTab(url, inheritedAttribution: nil)
+        } else {
+            loadUrl(url)
         }
     }
 

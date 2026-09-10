@@ -3403,18 +3403,6 @@ https://duckduckgo.com/mac";
 /* Title for the Strict Routing setting item. */
 "network.protection.vpn.strict.routing.setting.title" = "Enforce Strict Routing (Recommended)";
 
-/* Opens the app settings from the New Tab Page customization sheet */
-"new-tab-page.customization.all-settings" = "All Settings";
-
-/* Setting to always show the keyboard when a new tab is opened */
-"new-tab-page.customization.always-show-keyboard" = "Always Show Keyboard";
-
-/* Name of the New Tab Page section showing messages, in the customization sheet */
-"new-tab-page.customization.messages" = "Messages";
-
-/* Title of the sheet for customizing the New Tab Page */
-"new-tab-page.customization.title" = "Customize Your Start";
-
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirm";
 

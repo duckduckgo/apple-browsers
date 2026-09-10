@@ -56,12 +56,14 @@ struct UnifiedToggleInputTabAttachment: Identifiable, Equatable {
     let tabId: TabUID
     let title: String
     let url: URL
+    let favicon: UIImage?
 
-    init(id: UUID = UUID(), tabId: TabUID, title: String, url: URL) {
+    init(id: UUID = UUID(), tabId: TabUID, title: String, url: URL, favicon: UIImage? = nil) {
         self.id = id
         self.tabId = tabId
         self.title = title
         self.url = url
+        self.favicon = favicon
     }
 }
 

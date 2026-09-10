@@ -45,59 +45,7 @@ enum SubscriptionOnboardingLauncher {
             SubscriptionOnboardingFlowView(flow: flow,
                                            factory: SubscriptionOnboardingViewFactory(flow: flow,
                                                                                        forcedTrialLengthDays: forcedTrialLengthDays))
-                .graphicLottieRenderer(.app)
-                .interactiveDismissDisabled(true)
-                .onAppear { lockToPortrait() }
-                .onDisappear { unlockOrientation() })
-    }
-}
-
-// MARK: - Presentation
-
-extension View {
-    /// A plain sheet on iPhone; a full-screen cover on iPad, where a plain sheet would show as a
-    /// centered card instead of the full-screen onboarding experience.
-    @ViewBuilder
-    func subscriptionOnboardingSheet<Item: Identifiable, Content: View>(
-        item: Binding<Item?>,
-        onDismiss: (() -> Void)? = nil,
-        @ViewBuilder content: @escaping (Item) -> Content
-    ) -> some View {
-        if DevicePlatform.isIpad {
-            fullScreenCover(item: item, onDismiss: onDismiss, content: content)
-        } else {
-            sheet(item: item, onDismiss: onDismiss, content: content)
-        }
-    }
-}
-
-// MARK: - Orientation lock
-
-private extension SubscriptionOnboardingLauncher {
-
-    static func lockToPortrait() {
-        guard !DevicePlatform.isIpad else { return }
-        setOrientationLock(.portrait, snapTo: .portrait)
-    }
-
-    /// Re-triggers a query, or the relaxed mask goes unnoticed and the screen stays portrait-locked.
-    static func unlockOrientation() {
-        setOrientationLock(AppDelegate.defaultOrientationMask)
-    }
-
-    /// Forces an immediate snap — the mask alone only constrains future rotation attempts.
-    static func setOrientationLock(_ mask: UIInterfaceOrientationMask, snapTo orientation: UIInterfaceOrientation? = nil) {
-        AppDelegate.orientationLock = mask
-        guard let windowScene = UIApplication.shared.foregroundWindowScene else { return }
-        if #available(iOS 16.0, *) {
-            windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: mask))
-            windowScene.keyWindow?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
-        } else {
-            if let orientation {
-                UIDevice.current.setValue(orientation.rawValue, forKey: "orientation")
-            }
-            UIViewController.attemptRotationToDeviceOrientation()
-        }
+                .graphicLottieRenderer(.app))
     }
 }
 

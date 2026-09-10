@@ -224,13 +224,11 @@ extension SubscriptionDebugViewController {
     // MARK: - Standalone subflow screens
 
     private func showOrderConfirmationOnboarding() {
-        let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingOrderConfirmationView(
-                viewModel: SubscriptionOnboardingOrderConfirmationViewModel(
-                    onNext: { [weak self] in self?.dismiss(animated: true) }),
-                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }))
+        presentOnboarding(
+            SubscriptionOnboardingOrderConfirmationView(
+                viewModel: SubscriptionOnboardingOrderConfirmationViewModel(onNext: self.dismissOnboarding),
+                navigationButton: .close(self.dismissOnboarding))
                 .subscriptionOnboardingNavigationContainer())
-        presentOnboarding(hostingController)
     }
 
     private func showIDTROnboarding() {
@@ -245,69 +243,63 @@ extension SubscriptionDebugViewController {
     }
 
     private func showProtectionOverviewOnboarding(content: SubscriptionOnboardingInfoContent) {
-        let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingProtectionOverviewView(
+        presentOnboarding(
+            SubscriptionOnboardingProtectionOverviewView(
                 content: content,
-                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
-                onNext: { [weak self] in self?.dismiss(animated: true) })
+                navigationButton: .close(self.dismissOnboarding),
+                onNext: self.dismissOnboarding)
                 .subscriptionOnboardingNavigationContainer())
-        presentOnboarding(hostingController)
     }
 
     private func showProgressOnboarding(completedItems: Set<SubscriptionOnboardingChecklistItem>) {
-        let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingProgressView(
+        presentOnboarding(
+            SubscriptionOnboardingProgressView(
                 progress: SubscriptionOnboardingProgress(completedItems: completedItems),
-                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
+                navigationButton: .close(self.dismissOnboarding),
                 onSelectItem: { _ in },
-                onNext: { [weak self] in self?.dismiss(animated: true) })
+                onNext: self.dismissOnboarding)
                 .subscriptionOnboardingNavigationContainer()
                 .graphicLottieRenderer(.app))
-        presentOnboarding(hostingController)
     }
 
     private func showWelcomeOnboarding() {
-        let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingWelcomeView(
-                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
-                onNext: { [weak self] in self?.dismiss(animated: true) })
+        presentOnboarding(
+            SubscriptionOnboardingWelcomeView(
+                navigationButton: .close(self.dismissOnboarding),
+                onNext: self.dismissOnboarding)
                 .subscriptionOnboardingNavigationContainer())
-        presentOnboarding(hostingController)
     }
 
     private func showVPNOnboarding() {
-        let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingVPNActivationView(
+        presentOnboarding(
+            SubscriptionOnboardingVPNActivationView(
                 viewModel: SubscriptionOnboardingVPNActivationViewModel(
                     prefetcher: SubscriptionOnboardingPrefetcher(),
-                    onNext: { [weak self] in self?.dismiss(animated: true) }),
-                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }))
+                    onNext: self.dismissOnboarding),
+                navigationButton: .close(self.dismissOnboarding))
                 .subscriptionOnboardingNavigationContainer()
                 .graphicLottieRenderer(.app))
-        presentOnboarding(hostingController)
     }
 
     private func showVPNWidgetOnboarding() {
-        let hostingController = UIHostingController(
-            rootView: VPNWidgetAndTipsDebugFlow(onFinish: { [weak self] in self?.dismiss(animated: true) })
+        presentOnboarding(
+            VPNWidgetAndTipsDebugFlow(onFinish: self.dismissOnboarding)
                 .subscriptionOnboardingNavigationContainer())
-        presentOnboarding(hostingController)
     }
 
     private func showDuckAIOnboarding() {
-        let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingDuckAIView(
+        presentOnboarding(
+            SubscriptionOnboardingDuckAIView(
                 viewModel: SubscriptionOnboardingDuckAIViewModel(
                     prefetcher: SubscriptionOnboardingPrefetcher(),
-                    onNext: { [weak self] in self?.dismiss(animated: true) },
+                    onNext: self.dismissOnboarding,
                     onRequestChat: { modelID in
                         SubscriptionOnboardingDuckAIChatLauncher().launch(modelID: modelID)
                     }),
-                navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
+                navigationButton: .close(self.dismissOnboarding),
                 progress: SubscriptionOnboardingProgress(completedItems: [.vpn, .idtr]))
                 .subscriptionOnboardingNavigationContainer()
                 .graphicLottieRenderer(.app))
-        presentOnboarding(hostingController)
     }
 
     private func showTapAllowHintPlayground() {
@@ -342,15 +334,13 @@ extension SubscriptionDebugViewController {
             // No Data Broker Protection provider here, so PIR falls back to the move-to-desktop screen.
             pirScreen: { SubscriptionPIRMoveToDesktopView() })
         let root = SubscriptionOnboardingLauncher.launchForDebug(flow: flow, forcedTrialLengthDays: mockForcedTrialLengthDays)
-        presentOnboarding(UIHostingController(rootView: root))
+        presentOnboarding(root)
     }
 
-    /// Full-screen on iPad, where the default modal presentation would otherwise show as a centered card.
-    private func presentOnboarding(_ viewController: UIViewController) {
-        if isPad {
-            viewController.modalPresentationStyle = .overFullScreen
-        }
-        present(viewController, animated: true)
+    private var dismissOnboarding: () -> Void { { [weak self] in self?.dismiss(animated: true) } }
+
+    private func presentOnboarding<Content: View>(_ content: Content) {
+        SubscriptionOnboardingViewCoordinator().present(content, from: { self })
     }
 
     private func toggleMock(_ flag: ReferenceWritableKeyPath<SubscriptionDebugViewController, Bool>, at indexPath: IndexPath) {

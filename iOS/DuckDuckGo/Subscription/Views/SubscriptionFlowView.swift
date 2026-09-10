@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import UIKit
 import Foundation
 import DesignResourcesKit
 import Core
@@ -44,6 +45,7 @@ struct SubscriptionFlowView: View {
     // MARK: - Onboarding state
 
     @State private var onboardingFlow: SubscriptionOnboardingFlowViewModel?
+    @State private var onboardingViewCoordinator = SubscriptionOnboardingViewCoordinator()
 
     enum Constants {
         static let empty = ""
@@ -165,7 +167,7 @@ struct SubscriptionFlowView: View {
             await startOnboarding()
         }
 
-        .subscriptionOnboardingSheet(item: $onboardingFlow, onDismiss: { viewModel.onboardingFinished() }) { flow in
+        .subscriptionOnboardingCover(item: $onboardingFlow, viewCoordinator: onboardingViewCoordinator) { flow in
             SubscriptionOnboardingLauncher.launch(flow: flow)
                 .onFirstAppear { viewModel.didPresentOnboarding() }
         }
@@ -216,7 +218,15 @@ struct SubscriptionFlowView: View {
             persistor: persistor,
             isPIRAvailable: viewModel.isPIRAvailable,
             subscriptionManager: viewModel.subscriptionManager,
-            onFinish: { onboardingFlow = nil },
+            onFinish: {
+                onboardingFlow = nil
+                onboardingViewCoordinator.finish {
+                    guard viewModel.onboardingFinished() else { return }
+                    UIView.performWithoutAnimation {
+                        dismiss()
+                    }
+                }
+            },
             onRequestDuckAIChat: viewModel.onRequestDuckAIChat,
             pirScreen: { pirDestination }) else { return }
         onboardingFlow = flow

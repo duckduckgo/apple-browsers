@@ -24,18 +24,8 @@ import Common
 
     let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
 
-    static var defaultOrientationMask: UIInterfaceOrientationMask {
-        UIDevice.current.userInterfaceIdiom == .pad ? .all : .allButUpsideDown
-    }
-
-    static var orientationLock = defaultOrientationMask
-
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
         UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
-    }
-
-    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
-        Self.orientationLock
     }
 
     /// See: `Launching.swift`

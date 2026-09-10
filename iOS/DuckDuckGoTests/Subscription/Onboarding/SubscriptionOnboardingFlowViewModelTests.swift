@@ -61,7 +61,7 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
     func testWhenEntryIsSettingsThenSequenceResumesAtTheFirstUnfinishedSectionAndClosesOnTheSummary() {
         let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn])
 
-        XCTAssertEqual(sut.sequence, [.vpnWidget, .vpnTips, .idtr, .duckAI, .progress])
+        XCTAssertEqual(sut.sequence, [.idtr, .duckAI, .progress])
     }
 
     func testWhenEverythingIsCompleteThenSequenceIsTheSummaryAlone() {
@@ -159,7 +159,7 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
                                             paidAIChat: false)
         let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn], entitlement: entitlement)
 
-        XCTAssertEqual(sut.sequence, [.vpnWidget, .vpnTips, .idtr, .progress])
+        XCTAssertEqual(sut.sequence, [.idtr, .progress])
     }
 
     /// No fallback: an empty checklist just means no activation sections appear. The launcher (not the VM)
@@ -288,20 +288,20 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         XCTAssertNil(sut.title(for: .welcome))
         XCTAssertNil(sut.title(for: .progress))
         XCTAssertEqual(sut.title(for: .vpnActivation),
-                       String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 5))
-        XCTAssertEqual(sut.title(for: .vpnWidget),
-                       String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 2, 5))
-        // .vpnTips piggybacks on .vpnWidget's step number rather than being independently numbered.
-        XCTAssertEqual(sut.title(for: .vpnTips), sut.title(for: .vpnWidget))
+                       String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
+        // .vpnWidget and .vpnTips share .vpnActivation's checklist item, so they piggyback on its step
+        // number rather than being independently numbered.
+        XCTAssertEqual(sut.title(for: .vpnWidget), sut.title(for: .vpnActivation))
+        XCTAssertEqual(sut.title(for: .vpnTips), sut.title(for: .vpnActivation))
     }
 
-    func testWhenPIRIsUnavailableThenTheIndicatorCountsFourStepsNotFive() {
+    func testWhenPIRIsUnavailableThenTheIndicatorCountsThreeStepsNotFour() {
         let sut = makeSUT(entryPoint: .postCheckout, isPIRAvailable: false)
 
         XCTAssertEqual(sut.title(for: .vpnActivation),
-                       String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
+                       String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 3))
         XCTAssertEqual(sut.title(for: .duckAI),
-                       String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 4, 4))
+                       String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 3, 3))
     }
 
     // MARK: - Completion

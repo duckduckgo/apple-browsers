@@ -1866,8 +1866,7 @@ class TabViewController: UIViewController {
     }
     
     private func showError(message: String) {
-        webView.isHidden = true
-        error.isHidden = false
+        setNativeErrorPageVisible(true)
         setErrorInfoImage()
         errorHeader.text = defaultErrorHeaderText
         errorMessage.text = formattedErrorMessage(message)
@@ -1887,8 +1886,7 @@ class TabViewController: UIViewController {
     }
 
     private func hideErrorMessage() {
-        error.isHidden = true
-        webView.isHidden = false
+        setNativeErrorPageVisible(false)
         setErrorInfoImage()
         errorHeader.text = defaultErrorHeaderText
         errorActionButton.isHidden = true
@@ -1898,8 +1896,7 @@ class TabViewController: UIViewController {
 
     private func showSafariRedirectLoopError(for url: URL) {
         actionableErrorPage = .safariRedirectLoop(url)
-        webView.isHidden = true
-        error.isHidden = false
+        setNativeErrorPageVisible(true)
         setErrorInfoImage(resource: .shieldAlert96)
         errorHeader.text = UserText.generalPageProblemTitle
         errorMessage.text = UserText.generalPageProblemMessage
@@ -1913,8 +1910,7 @@ class TabViewController: UIViewController {
 
     func showTabTerminationErrorPage() {
         actionableErrorPage = .tabTermination
-        webView.isHidden = true
-        error.isHidden = false
+        setNativeErrorPageVisible(true)
         setErrorInfoImage(resource: .webAlert128, size: CGSize(width: 128, height: 96))
         errorHeader.text = UserText.tabTerminationErrorPageTitle
         errorMessage.text = UserText.tabTerminationErrorPageMessage
@@ -1926,6 +1922,12 @@ class TabViewController: UIViewController {
         hideProgressIndicator()
         webpageDidFailToLoad(preservePrivacyInfo: true)
         tabTerminationErrorPageInstrumentation.errorPageShown()
+    }
+
+    private func setNativeErrorPageVisible(_ isVisible: Bool) {
+        webView.isHidden = isVisible
+        error.isHidden = !isVisible
+        pullToRefreshViewAdapter?.setNativeErrorPageVisible(isVisible)
     }
 
     private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy,

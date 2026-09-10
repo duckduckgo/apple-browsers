@@ -186,6 +186,34 @@ final class FloatingUIPullToRefreshTests: XCTestCase {
         XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
     }
 
+    func testWhenNativeErrorPageVisibilityChangesThenBackdropUsesBrowserBackgroundAndRestoresPageColor() throws {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        webView.underPageBackgroundColor = .red
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+        let backdrop = try XCTUnwrap(hostView.subviews.first { $0 !== pullableView && !($0 is UIScrollView) })
+        let traits = UITraitCollection(userInterfaceStyle: .light)
+        let pageBackgroundComponents = UIColor.red.resolvedColor(with: traits).cgColor.components
+
+        adapter.setNativeErrorPageVisible(true)
+
+        let errorBackgroundComponents = UIColor(designSystemColor: .background).resolvedColor(with: traits).cgColor.components
+        XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: traits).cgColor.components, errorBackgroundComponents)
+        XCTAssertEqual(webView.underPageBackgroundColor?.resolvedColor(with: traits).cgColor.components, pageBackgroundComponents)
+
+        adapter.setNativeErrorPageVisible(false)
+
+        XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: traits).cgColor.components, pageBackgroundComponents)
+        XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components, pageBackgroundComponents)
+    }
+
     func testWhileFloatingRefreshIsRunningThenPageRestsBelowRefreshControl() {
         XCTAssertEqual(PullToRefreshViewAdapter.pullableViewRestingOffset(isRefreshing: true, isFloatingUIEnabled: true), 80)
         XCTAssertEqual(PullToRefreshViewAdapter.pullableViewRestingOffset(isRefreshing: false, isFloatingUIEnabled: true), 0)

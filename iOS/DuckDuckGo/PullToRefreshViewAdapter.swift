@@ -79,6 +79,7 @@ final class PullToRefreshViewAdapter: NSObject {
     private var pullableViewBackgroundColorBeforePull: UIColor?
     private var webViewBackgroundColorBeforePull: UIColor?
     private var refreshBackgroundColorDuringPull: UIColor?
+    private var isNativeErrorPageVisible = false
 
     private weak var scrollView: UIScrollView?
     private weak var pullableView: UIView?
@@ -94,6 +95,13 @@ final class PullToRefreshViewAdapter: NSObject {
 
     private var isFloatingRefreshBackgroundActive: Bool {
         isFloatingUIEnabled && pullableViewClipsToBoundsBeforePull != nil
+    }
+
+    private var pageBackgroundColor: UIColor? {
+        if isFloatingUIEnabled {
+            return isNativeErrorPageVisible ? nil : refreshBackgroundColorDuringPull ?? webView?.underPageBackgroundColor
+        }
+        return backgroundColor
     }
 
     static func refreshBackgroundColor(pageBackgroundColor: UIColor?) -> UIColor {
@@ -118,6 +126,12 @@ final class PullToRefreshViewAdapter: NSObject {
     }
 
     func webViewUnderPageBackgroundDidChange() {
+        applyBackgroundColor()
+    }
+
+    func setNativeErrorPageVisible(_ isVisible: Bool) {
+        guard isFloatingUIEnabled, isNativeErrorPageVisible != isVisible else { return }
+        isNativeErrorPageVisible = isVisible
         applyBackgroundColor()
     }
 
@@ -166,9 +180,6 @@ final class PullToRefreshViewAdapter: NSObject {
     }
 
     private func applyBackgroundColor() {
-        let pageBackgroundColor = isFloatingUIEnabled
-            ? refreshBackgroundColorDuringPull ?? webView?.underPageBackgroundColor
-            : backgroundColor
         let refreshBackgroundColor = Self.refreshBackgroundColor(pageBackgroundColor: pageBackgroundColor)
         backdropView.backgroundColor = refreshBackgroundColor
         fakeScrollView.backgroundColor = .clear
@@ -331,8 +342,7 @@ final class PullToRefreshViewAdapter: NSObject {
 
     private func applyFloatingRefreshBackground() {
         guard isFloatingUIEnabled else { return }
-        let refreshBackgroundColor = refreshBackgroundColorDuringPull
-            ?? Self.refreshBackgroundColor(pageBackgroundColor: webView?.underPageBackgroundColor)
+        let refreshBackgroundColor = Self.refreshBackgroundColor(pageBackgroundColor: pageBackgroundColor)
         backdropView.backgroundColor = refreshBackgroundColor
         refreshControl.backgroundColor = .clear
         refreshControl.tintColor = determineRefreshControlTintColor(for: refreshBackgroundColor)

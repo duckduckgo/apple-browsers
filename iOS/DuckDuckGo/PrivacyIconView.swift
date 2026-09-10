@@ -30,9 +30,8 @@ private extension PrivacyIconView {
     /// Scale factor for dynamic Dax Easter Egg logos to match PDF default logo visual size (24/47 ≈ 0.51)
     static let daxLogoScaleFactor: CGFloat = 0.51
 
-    /// The rebranded art draws the shield at 20 units inside its own canvas, so rendering an animation
-    /// at its canvas size lands the shield on the 20pt ink of a 24pt DesignResourcesKit icon. The legacy
-    /// art is drawn to different proportions and keeps its tuned sizes until it is removed.
+    /// The rebranded art draws the shield at 20 units inside its own canvas.
+    /// Using this size results in the shield matching the 24pt DesignResourcesKit icon.
     static let legacyShieldSize: CGFloat = 47
     static let legacyShieldDotSize: CGFloat = 44
 }

@@ -372,6 +372,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables Recent Chats in the iOS address-bar Duck.ai menu.
     case addressBarRecentChats
 
+    /// Makes the address-bar Duck.ai menu page-aware: SERP shows "Continue in Duck.ai" (forwarding the
+    /// current query) and documents (PDF) show "Ask About Document" in place of "Ask About Page".
+    case contextualAddressBarMenu
+
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
 

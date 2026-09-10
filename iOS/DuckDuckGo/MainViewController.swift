@@ -1344,17 +1344,12 @@ class MainViewController: UIViewController {
     
     private func duckAIAddressBarMenuType(for tab: TabViewController?) -> DuckAIAddressBarMenuType {
         guard let tab else { return .webPage }
-        switch tab.tabType {
-        case .web:
-            return .webPage
-        case .aiChat:
-            return .webPage
-        case .serp:
-            if let query = tab.url?.searchQuery {
-                return .search(query: query)
-            }
-            return .webPage
-        }
+        return DuckAIAddressBarMenuType.resolve(
+            isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatContextualAddressBarMenu),
+            isShowingDocument: tab.isShowingDocument,
+            tabType: tab.tabType,
+            searchQuery: tab.url?.searchQuery
+        )
     }
 
     var keyboardShowing = false

@@ -20,10 +20,27 @@
 import Core
 import UIKit
 
-enum DuckAIAddressBarMenuType {
+enum DuckAIAddressBarMenuType: Equatable {
     case webPage
     case search(query: String)
     case document
+
+    /// Resolves the menu variant for a tab. When the feature is off the menu always behaves as a
+    /// plain web page (today's behaviour); otherwise a document wins over a SERP, and a SERP without a
+    /// query falls back to `.webPage`.
+    static func resolve(isFeatureEnabled: Bool,
+                        isShowingDocument: Bool,
+                        tabType: TabType,
+                        searchQuery: String?) -> DuckAIAddressBarMenuType {
+        guard isFeatureEnabled else { return .webPage }
+        if isShowingDocument { return .document }
+        switch tabType {
+        case .web, .aiChat:
+            return .webPage
+        case .serp:
+            return searchQuery.map { .search(query: $0) } ?? .webPage
+        }
+    }
 }
 
 extension MainViewController {
@@ -168,5 +185,4 @@ extension MainViewController {
         omniBar.endEditing()
         openAIChat(source: .addressBarIcon, query, autoSend: true)
     }
-    
 }

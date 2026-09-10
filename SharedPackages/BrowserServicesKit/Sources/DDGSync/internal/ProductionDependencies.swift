@@ -88,7 +88,8 @@ struct ProductionDependencies: SyncDependencies {
         let scopedAccess = ScopedAccessCredentialManager(endpoints: endpoints,
                                                          api: api,
                                                          crypter: crypter,
-                                                         accountInfoKeyFactory: DefaultAccountInfoKeyFactory(crypter: crypter))
+                                                         accountInfoKeyFactory: DefaultAccountInfoKeyFactory(crypter: crypter),
+                                                         canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
         accountInfoKeys = AccountInfoKeyManager(secureStore: secureStore,
                                                 scopedAccess: scopedAccess,
                                                 crypter: crypter)

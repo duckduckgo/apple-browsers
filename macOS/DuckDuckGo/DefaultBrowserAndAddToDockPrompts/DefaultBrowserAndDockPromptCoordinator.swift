@@ -265,7 +265,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
 
     /// **MAIN DECISION POINT - Determines WHICH prompt to show and WHEN**
     ///
-    /// Called by `DefaultBrowserAndDockPromptPresenter.tryToShowPrompt()` every time a window becomes key.
+    /// Called by `DefaultBrowserAndDockPromptPresenter.tryToShowPrompt()` when the Promo Queue admits one of the `default-browser-and-dock-*` promos.
     /// Returns the type of prompt to display, or nil if no prompt should be shown.
     ///
     /// **Evaluation Order:**

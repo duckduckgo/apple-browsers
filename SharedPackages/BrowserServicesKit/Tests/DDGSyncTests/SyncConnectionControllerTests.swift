@@ -192,6 +192,48 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(pairingInfo.toURL(baseURL: URL(string: "https://example.com")!), url)
     }
 
+    func test_startExchangeMode_whenChannelSecretFlagEnabled_authenticatesExchangeChannel() async throws {
+        dependencies.isPairingV2CodeEnabled = { true }
+        dependencies.canSendExchangeChannelSecret = { true }
+        dependencies.canUseExchangeV2Point1 = { false }
+        let messageExchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+
+        _ = try await controller.startExchangeMode()
+
+        XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets.count, 1)
+        XCTAssertNotNil(messageExchanger.openChannelAuthorizationSecrets[0])
+        await controller.cancel()
+    }
+
+    func test_startExchangeMode_whenExchangeV21FlagEnabled_authenticatesExchangeChannel() async throws {
+        dependencies.isPairingV2CodeEnabled = { true }
+        dependencies.canSendExchangeChannelSecret = { false }
+        dependencies.canUseExchangeV2Point1 = { true }
+        let messageExchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+
+        _ = try await controller.startExchangeMode()
+
+        XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets.count, 1)
+        XCTAssertNotNil(messageExchanger.openChannelAuthorizationSecrets[0])
+        await controller.cancel()
+    }
+
+    func test_startExchangeMode_whenBothExchangeAuthenticationFlagsDisabled_doesNotAuthenticateExchangeChannel() async throws {
+        dependencies.isPairingV2CodeEnabled = { true }
+        dependencies.canSendExchangeChannelSecret = { false }
+        dependencies.canUseExchangeV2Point1 = { false }
+        let messageExchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+
+        _ = try await controller.startExchangeMode()
+
+        XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets.count, 1)
+        XCTAssertNil(messageExchanger.openChannelAuthorizationSecrets[0])
+        await controller.cancel()
+    }
+
     @MainActor
     func test_startExchangeMode_whenPairingV2KeyGenerationFails_throwsPresenterGenerateCodeFailure() async throws {
         resetControllerUnderTest(makePairingV2KeyPair: { throw TestError.nilValue })

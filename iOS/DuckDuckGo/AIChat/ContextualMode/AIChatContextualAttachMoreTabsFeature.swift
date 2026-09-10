@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Common
 import FeatureFlags_iOS
 import PrivacyConfig
 
@@ -49,15 +50,19 @@ extension AIChatContextualAttachMoreTabsFeatureProviding {
 struct AIChatContextualAttachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding {
     private let featureFlagger: any FeatureFlagger
     private let aiChatSettings: AIChatSettingsProvider
+    private let devicePlatform: DevicePlatformProviding.Type
 
     init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         aiChatSettings: AIChatSettingsProvider = AIChatSettings()) {
+         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
+        self.devicePlatform = devicePlatform
     }
 
     var state: AIChatContextualAttachMoreTabsState {
-        guard featureFlagger.isFeatureOn(.aiChatContextualAttachMoreTabs) else {
+        guard devicePlatform.isIphone,
+              featureFlagger.isFeatureOn(.aiChatContextualAttachMoreTabs) else {
             return .unavailable
         }
 

@@ -770,6 +770,8 @@ class TabViewController: UIViewController {
     /// Main-frame response (URL + MIME) for the page-context gate; keyed by URL to avoid stale-MIME leaks.
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
 
+    var tabAttachmentSource: MultiTabAttachmentSource?
+
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
         let pageContextHandler = AIChatPageContextHandler(
             webViewProvider: { [weak self] in self?.webView },
@@ -793,7 +795,8 @@ class TabViewController: UIViewController {
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
-            selectionJourneyScopeID: tabModel.uid
+            selectionJourneyScopeID: tabModel.uid,
+            tabAttachmentSource: tabAttachmentSource
         )
         coordinator.delegate = self
         return coordinator

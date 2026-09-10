@@ -2273,6 +2273,48 @@ public struct UserText {
     public static let aiChatAttachmentOptionAskAboutPage = NSLocalizedString("aichat.attachment.option.ask.about.page", value: "Ask About Page", comment: "Top-level attachment menu option to attach the current page content to an AI chat message")
     public static let aiChatAttachmentOptionAskAboutDocument = NotLocalizedString("aichat.attachment.option.ask.about.document", value: "Ask About Document", comment: "Top-level attachment menu option to attach the current document content to an AI chat message")
     public static let aiChatAttachmentOptionContinueInDuckAi = NotLocalizedString("aichat.attachment.option.continue.in.duckAI", value: "Continue in Duck.ai", comment: "Top-level attachment menu option to attach the continue with the prompt in duck.ai")
+    public static let aiChatAttachmentOptionAddTabs = NotLocalizedString(
+        "aichat.attachment.option.add.tabs",
+        value: "Add Tabs",
+        comment: "attachment-menu option that opens the Choose Tabs picker")
+    public static let aiChatAttachmentRecentTabsSectionTitle = NotLocalizedString(
+        "aichat.attachment.recent-tabs.section-title",
+        value: "Recent Tabs",
+        comment: "attachment-menu section title for recently viewed tabs")
+    public static let aiChatChooseTabsTitle = NotLocalizedString(
+        "aichat.choose-tabs.title",
+        value: "Add tabs",
+        comment: "title of the tab attachment picker")
+    public static func aiChatChooseTabsPrompt(attachmentLimit: Int) -> String {
+        let format = NotLocalizedString(
+            "aichat.choose-tabs.prompt",
+            value: "Pick up to %d tabs",
+            comment: "Instruction above the tab attachment list. Parameter is the configured maximum number of tabs.")
+        return String(format: format, attachmentLimit)
+    }
+    public static let aiChatChooseTabsSearchPlaceholder = NotLocalizedString(
+        "aichat.choose-tabs.search.placeholder",
+        value: "Search",
+        comment: "placeholder in the tab attachment search field")
+    public static let aiChatChooseTabsNoMatches = NotLocalizedString(
+        "aichat.choose-tabs.no-matches",
+        value: "No matching tabs",
+        comment: "empty state shown when no tabs match the search query")
+    public static func aiChatChooseTabsSelectionCount(_ selectedCount: Int, attachmentLimit: Int) -> String {
+        let format = NotLocalizedString(
+            "aichat.choose-tabs.selection-count",
+            value: "%1$d of %2$d",
+            comment: "tab attachment selection count. First parameter is selected count; second is attachment limit.")
+        return String(format: format, selectedCount, attachmentLimit)
+    }
+    public static let aiChatChooseTabsCloseAccessibilityLabel = NotLocalizedString(
+        "aichat.choose-tabs.close.accessibility-label",
+        value: "Close",
+        comment: "accessibility label for closing the tab attachment picker without applying changes")
+    public static let aiChatChooseTabsConfirmAccessibilityLabel = NotLocalizedString(
+        "aichat.choose-tabs.confirm.accessibility-label",
+        value: "Attach selected tabs",
+        comment: "accessibility label for applying the tab attachment selection")
     public static let duckAiAddressBarMenuNewChat = NSLocalizedString("duckai.address.bar.menu.new.chat", value: "New Chat", comment: "Address bar Duck.ai menu option that opens a fresh chat with no page context")
     public static func aiChatAttachmentFileTooLarge(maxFileSizeMB: Int) -> String {
         let message = NSLocalizedString("aichat.attachment.file.too.large", value: "This file is too large. The maximum file size is %d MB.", comment: "Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes.")

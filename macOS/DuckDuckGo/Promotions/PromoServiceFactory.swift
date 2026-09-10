@@ -31,6 +31,7 @@ struct PromoServiceFactory {
         let promos = makeAllPromos(dependencies: dependencies)
         let stateQueue = DispatchQueue(label: "com.duckduckgo.promoService.state")
         let historyStore = PromoHistoryStore(store: dependencies.keyValueStore, queue: stateQueue)
+        let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: dependencies.windowControllersManager)
 
         let dateProvider: () -> Date
         let resetDebugDate: (() -> Void)?
@@ -49,7 +50,12 @@ struct PromoServiceFactory {
             historyStore: historyStore,
             triggerPublisher: PromoTrigger.triggerPublisher,
             initialExternalActivation: dependencies.isExternallyActivated,
-            isOnboardingCompletedProvider: dependencies.isOnboardingCompletedProvider,
+            isOnboardingCompletedProvider: {
+                if NonBlockingOnboarding(featureFlagger: dependencies.featureFlagger).isNonBlocking {
+                    return !activeDomainPublisher.isActiveTabOnboarding
+                }
+                return dependencies.isOnboardingCompletedProvider()
+            },
             stateQueue: stateQueue,
             dateProvider: dateProvider,
             resetDebugDate: resetDebugDate

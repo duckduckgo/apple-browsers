@@ -352,9 +352,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         return tab
     }
 
-    /// Onboarding went away on its own — the tab was navigated away from, swept up in a bulk close,
-    /// or carried off by its window closing. Records the same skip as closing the tab, but leaves
-    /// the tab alone so whatever the user was doing goes through.
     @MainActor
     private func recordSkipInPlace() {
         guard !Self.isOnboardingFinished else { return }

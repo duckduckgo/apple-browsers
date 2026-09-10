@@ -41,6 +41,7 @@ protocol WindowControllersManagerProtocol: AnyObject {
 
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding { get }
 
+    var didChangeKeyWindowController: PassthroughSubject<MainWindowController?, Never> { get }
     var didRegisterWindowController: PassthroughSubject<(MainWindowController), Never> { get }
     var didUnregisterWindowController: PassthroughSubject<(MainWindowController), Never> { get }
 
@@ -677,9 +678,7 @@ extension WindowControllersManager: OnboardingNavigating {
     @MainActor
     var hasOnboardingTab: Bool { onboardingTab != nil }
 
-    /// Records the tab hosting onboarding. Called at window setup, where the tab is unambiguous —
-    /// `selectedTab` is not reliable later, because async onboarding lets the user switch tabs
-    /// before the onboarding page finishes loading.
+    /// Captures the onboarding tab before the user can switch tabs while it loads.
     @MainActor
     func setOnboardingTab(_ tab: Tab?) {
         onboardingTabCancellable = nil
@@ -688,9 +687,6 @@ extension WindowControllersManager: OnboardingNavigating {
         onboardingTab = tab
     }
 
-    /// Wires the onboarding tab so that leaving onboarding is always recorded as a skip:
-    /// `onClose` records any tab close before normal removal,
-    /// `onSkipInPlace` records navigation away or closure of the hosting window.
     @MainActor
     func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Void,
                                onSkipInPlace: @escaping @MainActor () -> Void) {
@@ -722,9 +718,6 @@ extension WindowControllersManager: OnboardingNavigating {
         PixelKit.fire(GeneralPixel.onboardingBrowsingBeforeCompletion, frequency: .uniqueByName)
     }
 
-    /// Records leaving onboarding without completing it, for the paths that leave the tab alone.
-    /// Clearing the handler first makes this idempotent: several of these paths can fire for the
-    /// same onboarding session, and only the first one is the outcome.
     @MainActor
     private func recordOnboardingSkipInPlace() {
         guard let handler = onboardingSkipInPlaceHandler else { return }

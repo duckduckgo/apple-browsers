@@ -26,7 +26,7 @@ import Foundation
 ///
 final class ActiveDomainPublisher {
 
-    private let windowControllersManager: WindowControllersManager
+    private let windowControllersManager: WindowControllersManagerProtocol
     private var activeWindowControllerCancellable: AnyCancellable?
     private var activeTabViewModelCancellable: AnyCancellable?
     private var activeTabContentCancellable: AnyCancellable?
@@ -53,9 +53,11 @@ final class ActiveDomainPublisher {
     }
 
     @MainActor
-    init(windowControllersManager: WindowControllersManager) {
+    init(windowControllersManager: WindowControllersManagerProtocol) {
 
-        activeDomain = windowControllersManager.activeDomain
+        if let tab = windowControllersManager.lastKeyMainWindowController?.activeTab {
+            activeDomain = WindowControllersManager.domain(from: tab.content)
+        }
         self.windowControllersManager = windowControllersManager
 
         subscribeToKeyWindowControllerChanges()

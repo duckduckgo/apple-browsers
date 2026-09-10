@@ -59,7 +59,7 @@ class MainMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenOnboardingIsNonBlockingThenNewWindowMenuItemIsEnabled() throws {
+    func testOnboardingMenuAvailabilityForControlAndTreatment() throws {
         let appDelegate = Application.appDelegate
         let featureFlagger = try XCTUnwrap(appDelegate.featureFlagger as? MockFeatureFlagger)
         let originalCohort = featureFlagger.resolveCohortStub
@@ -70,13 +70,27 @@ class MainMenuTests: XCTestCase {
         }
 
         XCTAssertFalse(appDelegate.windowControllersManager.mainWindowControllers.isEmpty)
-        featureFlagger.resolveCohortStub = FeatureFlag.OnboardingNonBlockingCohort.treatment
-        OnboardingActionsManager.isOnboardingFinished = false
-
-        let menuItem = NSMenuItem()
-        menuItem.action = #selector(AppDelegate.newWindow(_:))
-
-        XCTAssertTrue(appDelegate.validateMenuItem(menuItem))
+        let actions = [
+            #selector(AppDelegate.newWindow(_:)),
+            #selector(AppDelegate.newBurnerWindow(_:)),
+            #selector(AppDelegate.newAIChat(_:)),
+            #selector(AppDelegate.openFile(_:)),
+            #selector(AppDelegate.openLocation(_:)),
+            #selector(AppDelegate.openPreferences),
+            #selector(AppDelegate.showManageBookmarks(_:)),
+            #selector(AppDelegate.openImportBrowserDataWindow(_:))
+        ]
+        for cohort in [FeatureFlag.OnboardingNonBlockingCohort.control, .treatment] {
+            featureFlagger.resolveCohortStub = cohort
+            for finished in [false, true] {
+                OnboardingActionsManager.isOnboardingFinished = finished
+                for action in actions {
+                    let menuItem = NSMenuItem()
+                    menuItem.action = action
+                    XCTAssertEqual(appDelegate.validateMenuItem(menuItem), finished || cohort == .treatment, NSStringFromSelector(action))
+                }
+            }
+        }
     }
 
     func testWhenIsInInitialState_AndCanRestoreState_ThenLastSessionMenuItemHasShortcut() {

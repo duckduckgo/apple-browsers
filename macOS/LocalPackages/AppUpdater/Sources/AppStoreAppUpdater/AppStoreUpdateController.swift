@@ -217,9 +217,9 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
                     Logger.updates.log("App Store: no update available")
                     updateProgress = .updateCycleDone(.finishedWithNoUpdateFound)
                 }
-            }
 
-            showUpdateNotificationIfNeeded(isOnboardingFinished: isOnboardingFinished)
+                showUpdateNotificationIfNeeded(isOnboardingFinished: isOnboardingFinished)
+            }
 
             // Record check time for rate limiting
             await updateCheckState.recordCheckTime()

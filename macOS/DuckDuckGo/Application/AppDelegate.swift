@@ -1783,7 +1783,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 internalUserDecider: internalUserDecider,
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
-                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished }
+                isOnboardingFinished: { [featureFlagger, windowControllersManager] in
+                    if OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking {
+                        guard let tab = windowControllersManager.selectedTab else { return false }
+                        return tab.content != .onboarding
+                    }
+                    return OnboardingActionsManager.isOnboardingFinished
+                }
             )
         } else {
             assert(buildType.isSparkleBuild)
@@ -1813,7 +1819,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 },
                 wideEvent: wideEvent,
-                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished },
+                isOnboardingFinished: { [featureFlagger, windowControllersManager] in
+                    if OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking {
+                        guard let tab = windowControllersManager.selectedTab else { return false }
+                        return tab.content != .onboarding
+                    }
+                    return OnboardingActionsManager.isOnboardingFinished
+                },
                 openUpdatesPage: { [windowControllersManager] in
                     windowControllersManager.showTab(with: .releaseNotes)
                 }

@@ -2024,9 +2024,7 @@ extension AppDelegate: NSMenuItemValidation {
             return isDisplayingOneOrMoreWindows
 
         case #selector(AppDelegate.newWindow(_:)):
-            return isUserInteractionAllowed
-                || OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking
-                || !isDisplayingOneOrMoreWindows
+            return isUserInteractionAllowed || !isDisplayingOneOrMoreWindows
 
         case #selector(AppDelegate.openFailureURLSchemeDemoDebugPage(_:)),
             #selector(AppDelegate.openFailureURLSchemeAlternatingFailuresDebugPage(_:)),
@@ -2075,7 +2073,7 @@ extension AppDelegate: NSMenuItemValidation {
 
     @MainActor
     private var isUserInteractionAllowed: Bool {
-        OnboardingActionsManager.isOnboardingFinished
+        OnboardingActionsManager.isOnboardingFinished || OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking
     }
 
     private var areTherePasswords: Bool {

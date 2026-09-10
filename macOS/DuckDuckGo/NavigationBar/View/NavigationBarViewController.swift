@@ -1602,9 +1602,14 @@ final class NavigationBarViewController: NSViewController {
 
     @objc private func attemptToShowBrokenSitePrompt(_ sender: Notification) {
         guard brokenSitePromptLimiter.shouldShowToast(),
-              let url = tabCollectionViewModel.selectedTabViewModel?.tab.url, !url.isDuckDuckGo,
-              isOnboardingFinished
+              let tab = tabCollectionViewModel.selectedTabViewModel?.tab,
+              let url = tab.url, !url.isDuckDuckGo
         else { return }
+        if OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking {
+            guard tab.content != .onboarding else { return }
+        } else {
+            guard isOnboardingFinished else { return }
+        }
         showBrokenSitePrompt()
     }
 

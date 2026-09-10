@@ -85,10 +85,11 @@ struct ProductionDependencies: SyncDependencies {
         payloadCompressor = SyncGzipPayloadCompressor()
 
         crypter = Crypter(secureStore: secureStore)
+        let accountInfoKeyFactory = DefaultAccountInfoKeyFactory(crypter: crypter)
         let scopedAccess = ScopedAccessCredentialManager(endpoints: endpoints,
                                                          api: api,
                                                          crypter: crypter,
-                                                         accountInfoKeyFactory: DefaultAccountInfoKeyFactory(crypter: crypter),
+                                                         accountInfoKeyFactory: accountInfoKeyFactory,
                                                          canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
         accountInfoKeys = AccountInfoKeyManager(secureStore: secureStore,
                                                 scopedAccess: scopedAccess,
@@ -101,7 +102,9 @@ struct ProductionDependencies: SyncDependencies {
                                  api: api,
                                  crypter: crypter,
                                  registeredDeviceMapper: registeredDeviceMapper,
-                                 isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() })
+                                 accountInfoKeyFactory: accountInfoKeyFactory,
+                                 isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() },
+                                 canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
         self.scopedAccess = scopedAccess
         scheduler = SyncScheduler()
     }

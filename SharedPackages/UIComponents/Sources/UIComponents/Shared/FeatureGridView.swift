@@ -205,44 +205,27 @@ struct FeatureCardView: View {
 
     @ViewBuilder
     private var iconPlaceholder: some View {
-        Circle()
-#if os(iOS)
-            .fill(Color(designSystemColor: .surface))
-#else
-            .fill(Color(designSystemColor: .surfacePrimary))
-#endif
-            .frame(width: LayoutConstants.iconContainerSize, height: LayoutConstants.iconContainerSize)
-            .overlay(
-                Circle()
-                    .stroke(Color(designSystemColor: .lines), lineWidth: borderWidth)
-            )
-            .overlay(iconImage)
+        IconBadge(
+            icon: resolvedIcon,
+            diameter: LayoutConstants.iconContainerSize,
+            iconSize: LayoutConstants.iconSize,
+            borderWidth: borderWidth)
     }
 
-    @ViewBuilder
-    private var iconImage: some View {
+    private var resolvedIcon: Image? {
         #if os(iOS)
         if let iconImage = feature.iconImage {
-            iconImageStyled(Image(uiImage: iconImage))
-        } else if let iconName = feature.iconName {
-            iconImageStyled(Image(iconName))
+            return Image(uiImage: iconImage)
         }
         #elseif os(macOS)
         if let iconImage = feature.iconImage {
-            iconImageStyled(Image(nsImage: iconImage))
-        } else if let iconName = feature.iconName {
-            iconImageStyled(Image(iconName))
+            return Image(nsImage: iconImage)
         }
         #endif
-    }
-
-    private func iconImageStyled(_ image: Image) -> some View {
-        image
-            .resizable()
-            .renderingMode(.template)
-            .aspectRatio(contentMode: .fit)
-            .frame(width: LayoutConstants.iconSize, height: LayoutConstants.iconSize)
-            .foregroundColor(Color(designSystemColor: .textPrimary))
+        if let iconName = feature.iconName {
+            return Image(iconName)
+        }
+        return nil
     }
 }
 
@@ -303,3 +286,73 @@ struct FeatureFixedGrid: View {
         .frame(maxWidth: .infinity)
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+#if os(iOS)
+
+private extension FeatureGridItem {
+    /// Sample features with varied description lengths so the staggered layout shows its masonry effect.
+    static let previewSamples: [FeatureGridItem] = [
+        FeatureGridItem(
+            title: "Block trackers",
+            description: "Stop advertisers and data brokers from following you across the web, in and out of the browser.",
+            iconImage: UIImage(systemName: "hand.raised.fill")),
+        FeatureGridItem(
+            title: "Hide your location",
+            description: "Sites see the VPN's IP address instead of yours.",
+            iconImage: UIImage(systemName: "location.slash.fill")),
+        FeatureGridItem(
+            title: "Secure every connection",
+            description: "Your traffic is encrypted end to end, so no one on the network can see the sites you visit.",
+            iconImage: UIImage(systemName: "lock.fill")),
+        FeatureGridItem(
+            title: "No speed caps",
+            description: "Stream and download with as much data as you want.",
+            iconImage: UIImage(systemName: "bolt.fill"))
+    ]
+}
+
+private struct FeatureGridPreview: View {
+    let layoutStyle: FeatureGridLayoutStyle
+    var columns: Int = FeatureGridLayoutConstants.defaultColumns
+
+    var body: some View {
+        ScrollView {
+            FeatureGridView(
+                features: FeatureGridItem.previewSamples,
+                layoutStyle: layoutStyle,
+                columns: columns,
+                borderWidth: FeatureGridLayoutConstants.borderWidth)
+            .padding()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(designSystemColor: .surfaceTertiary))
+    }
+}
+
+#Preview("Staggered - Light") {
+    FeatureGridPreview(layoutStyle: .staggered)
+}
+
+#Preview("Staggered - Dark") {
+    FeatureGridPreview(layoutStyle: .staggered)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Fixed grid") {
+    FeatureGridPreview(layoutStyle: .fixed)
+}
+
+#Preview("Fixed - 3 columns") {
+    FeatureGridPreview(layoutStyle: .fixed, columns: 3)
+}
+
+#Preview("Large Text") {
+    FeatureGridPreview(layoutStyle: .staggered)
+        .dynamicTypeSize(.accessibility3)
+}
+
+#endif
+#endif

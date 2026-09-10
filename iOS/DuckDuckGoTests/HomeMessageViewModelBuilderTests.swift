@@ -26,6 +26,38 @@ import UIKit
 @Suite("RMF - Home Message View Model Builder")
 struct HomeMessageViewModelBuilderTests {
 
+    @available(iOS 16, *)
+    @Test("Renderability uses the same supported content conversion as build", .timeLimit(.minutes(1)))
+    func renderabilityMatchesBuilderSupport() {
+        let supportedMessage = makeRemoteMessage(
+            content: .small(titleText: "Title", descriptionText: "Description"),
+            isMetricsEnabled: false
+        )
+        let missingContentMessage = RemoteMessageModel(
+            id: "missing-content",
+            surfaces: .newTabPage,
+            content: nil,
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: false
+        )
+        let cardsListMessage = makeRemoteMessage(
+            content: .cardsList(
+                titleText: "Title",
+                placeholder: nil,
+                imageUrl: nil,
+                items: [],
+                primaryActionText: "Continue",
+                primaryAction: .dismiss
+            ),
+            isMetricsEnabled: false
+        )
+
+        #expect(HomeMessageViewModelBuilder.canBuild(for: supportedMessage))
+        #expect(!HomeMessageViewModelBuilder.canBuild(for: missingContentMessage))
+        #expect(!HomeMessageViewModelBuilder.canBuild(for: cardsListMessage))
+    }
+
     @Test("When message has no imageUrl then loadRemoteImage is nil")
     func whenMessageHasNoImageUrlThenLoadRemoteImageIsNil() throws {
         let message = makeRemoteMessage(

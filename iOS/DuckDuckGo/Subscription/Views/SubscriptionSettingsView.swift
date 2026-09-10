@@ -27,6 +27,8 @@ import Subscription
 import VPN
 import UIComponents
 import BrowserServicesKit
+import PixelKit
+import DataBrokerProtection_iOS
 
 enum SubscriptionSettingsViewConfiguration {
     case subscribed
@@ -62,10 +64,19 @@ struct SubscriptionSettingsViewV2: View {
     @State var isShowingCancelDowngradeError = false
     @State private var cancelDowngradeErrorMessageType: SubscriptionTransactionErrorAlert.MessageType = .general
 
+    // MARK: - Onboarding state
+
+    @State private var onboardingFlow: SubscriptionOnboardingFlowViewModel?
+    /// Guards against a double-tap starting a second entitlement fetch before the first resolves.
+    @State private var isStartingOnboarding = false
+
     var body: some View {
         optionsView
             .onFirstAppear {
-                Pixel.fire(pixel: .ddgSubscriptionSettings, debounce: 1)
+                PixelKit.fire(Pixel.Event.ddgSubscriptionSettings, frequency: .debounce(seconds: 1))
+            }
+            .task {
+                await viewModel.refreshOnboardingState(hasActiveSubscription: hasActiveSubscription, isPIRAvailable: isPIRAvailable)
             }
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: settingsViewModel.state.subscription.shouldDisplayRestoreSubscriptionError) { value in
@@ -117,7 +128,7 @@ struct SubscriptionSettingsViewV2: View {
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
             // Row 2: Upgrade button with chevron
             if let tierName = viewModel.firstAvailableUpgradeTier {
@@ -202,7 +213,7 @@ struct SubscriptionSettingsViewV2: View {
                         Task {
                             if active {
                                 viewModel.manageSubscription()
-                                Pixel.fire(pixel: .ddgSubscriptionManagementPlanBilling, debounce: 1)
+                                PixelKit.fire(Pixel.Event.ddgSubscriptionManagementPlanBilling, frequency: .debounce(seconds: 1))
                             } else if isEligibleForWinBackCampaign {
                                 takeWinBackOffer?()
                             } else {
@@ -262,7 +273,7 @@ struct SubscriptionSettingsViewV2: View {
                 message: Text(UserText.subscriptionRemoveFromDeviceConfirmText),
                 primaryButton: .cancel(Text(UserText.subscriptionRemoveCancel)) {},
                 secondaryButton: .destructive(Text(UserText.subscriptionRemove)) {
-                    Pixel.fire(pixel: .ddgSubscriptionManagementRemoval)
+                    PixelKit.fire(Pixel.Event.ddgSubscriptionManagementRemoval)
                     viewModel.removeSubscription()
                     dismiss()
                 }
@@ -451,7 +462,10 @@ struct SubscriptionSettingsViewV2: View {
                 .padding(.vertical, -10)
             if viewModel.state.cancelPendingDowngradeDetails != nil {
                 downgradeBanner
-                    .listRowBackground(Color(designSystemColor: .surface))
+                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+            }
+            if case .setup(let onboardingProgress) = viewModel.onboardingSetupState {
+                onboardingSetupSection(progress: onboardingProgress)
             }
             if viewModel.shouldShowUpgrade {
                 upgradeSection
@@ -466,6 +480,11 @@ struct SubscriptionSettingsViewV2: View {
         .padding(.top, -20)
         .navigationTitle(UserText.settingsPProManageSubscription)
         .applyInsetGroupedListStyle()
+        .sheet(item: $onboardingFlow, onDismiss: {
+            Task { await viewModel.refreshOnboardingState(hasActiveSubscription: hasActiveSubscription, isPIRAvailable: isPIRAvailable) }
+        }) { flow in
+            SubscriptionOnboardingLauncher.launch(flow: flow)
+        }
         .onChange(of: viewModel.state.shouldDismissView) { value in
             if value {
                 dismiss()
@@ -555,7 +574,7 @@ struct SubscriptionSettingsViewV2: View {
         .onChange(of: isShowingManageEmailView) { value in
             if value {
                 if let email = viewModel.state.subscriptionEmail, !email.isEmpty {
-                    Pixel.fire(pixel: .ddgSubscriptionManagementEmail, debounce: 1)
+                    PixelKit.fire(Pixel.Event.ddgSubscriptionManagementEmail, frequency: .debounce(seconds: 1))
                 }
             }
         }
@@ -604,14 +623,14 @@ struct SubscriptionSettingsViewV2: View {
             Section {
                 // Row 1: Icon + Description
                 HStack(alignment: .top, spacing: 12) {
-                    Image(uiImage: DesignSystemImages.Color.Size24.info)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.infoRecolorable)
                         .resizable()
                         .frame(width: 24, height: 24)
                     Text(details)
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
                 // Row 2: Cancel downgrade button
                 SettingsCustomCell(content: {
@@ -648,5 +667,58 @@ private var resubscribeWithWinBackOfferView: some View {
         Text(UserText.winBackCampaignSubscriptionSettingsPageResubscribeSubtitle)
             .daxFootnoteRegular()
             .foregroundColor(Color(designSystemColor: .textSecondary))
+    }
+}
+
+// MARK: - Onboarding
+
+extension SubscriptionSettingsViewV2 {
+
+    /// The "Continue Setup" re-entry card.
+    func onboardingSetupSection(progress: SubscriptionOnboardingProgress) -> some View {
+        Section {
+            SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
+                                            progress: progress,
+                                            session: settingsViewModel.subscriptionOnboardingSession,
+                                            isPresentingFlow: onboardingFlow != nil,
+                                            onContinue: { startOnboarding() })
+        }
+        .listRowBackground(Color.clear)
+        .listRowInsets(EdgeInsets())
+    }
+
+    func startOnboarding() {
+        guard !isStartingOnboarding else { return }
+        isStartingOnboarding = true
+        Task { @MainActor in
+            defer { isStartingOnboarding = false }
+            guard let flow = await SubscriptionOnboardingFlowViewModel.subscriptionSettings(
+                persistor: viewModel.onboardingPersistor,
+                isPIRAvailable: isPIRAvailable,
+                subscriptionManager: settingsViewModel.subscriptionManager,
+                onFinish: { onboardingFlow = nil },
+                onRequestDuckAIChat: settingsViewModel.onRequestOnboardingDuckAIChat,
+                pirScreen: { pirDestination }) else { return }
+            onboardingFlow = flow
+        }
+    }
+
+    /// An expired or still-activating subscription has nothing left to set up.
+    private var hasActiveSubscription: Bool {
+        configuration == .subscribed || configuration == .trial
+    }
+
+    /// Unavailable customers get a four-item checklist instead of a row they could never tick.
+    private var isPIRAvailable: Bool { settingsViewModel.isPIRAvailable }
+
+    /// Same destination Settings' own PIR row pushes.
+    @ViewBuilder
+    private var pirDestination: some View {
+        if let provider = settingsViewModel.dataBrokerProtectionViewControllerProvider {
+            DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: provider)
+                .edgesIgnoringSafeArea(.bottom)
+        } else {
+            SubscriptionPIRMoveToDesktopView()
+        }
     }
 }

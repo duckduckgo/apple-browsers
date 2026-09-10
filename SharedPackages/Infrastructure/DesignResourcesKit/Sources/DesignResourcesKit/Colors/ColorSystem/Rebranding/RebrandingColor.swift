@@ -70,13 +70,13 @@ public enum RebrandingColor {
         static let mandarin100 = Color(0x290E0A)
     }
 
-    enum Pondwater {
+    public enum Pondwater {
         static let pondwater0 = Color(0xF5FBFE)
         static let pondwater10 = Color(0xE6F6FF)
         static let pondwater20 = Color(0xCBEAFF)
         static let pondwater30 = Color(0xA1D0F7)
         static let pondwater40 = Color(0x75B6EB)
-        static let pondwater50 = Color(0x4397E0)
+        public static let pondwater50 = Color(0x4397E0)
         static let pondwater60 = Color(0x1074CC)
         static let pondwater70 = Color(0x045EB2)
         static let pondwater80 = Color(0x034180)

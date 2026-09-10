@@ -1,0 +1,92 @@
+//
+//  EventHubSettings.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import Combine
+import Common
+import os.log
+
+/// The EventHub view of remote config: feature enablement plus the telemetry settings JSON with any
+/// consent-gated entries already removed. EventHub consumes this instead of talking to remote config or
+/// consent directly, keeping the manager consent-agnostic.
+public protocol EventHubSettingsProviding {
+    var enabledPublisher: AnyPublisher<Bool, Never> { get }
+    /// The feature settings in the `[String: Any]` shape remote config already holds them in (BSK's
+    /// `settings(for:)` returns `FeatureSettings = [String: Any]`), so no JSON round trip is needed to
+    /// hand them over. `nil` means no settings are available and no telemetry may run.
+    var settingsPublisher: AnyPublisher<[String: Any]?, Never> { get }
+}
+
+/// Combines the raw feature settings with the live consent state of every `EventHubConsentRequirement`,
+/// removing the `telemetry` entries for any consent group that is not currently granted.
+public final class EventHubSettings: EventHubSettingsProviding {
+    public let enabledPublisher: AnyPublisher<Bool, Never>
+    public let settingsPublisher: AnyPublisher<[String: Any]?, Never>
+
+    public init(
+        featureEnabledPublisher: AnyPublisher<Bool, Never>,
+        featureSettingsPublisher: AnyPublisher<[String: Any]?, Never>,
+        consentRequirements: [EventHubConsentRequirement],
+        eventMapping: EventMapping<EventHubDebugEvent>? = nil
+    ) {
+        self.enabledPublisher = featureEnabledPublisher
+        self.settingsPublisher = Publishers.CombineLatest(featureSettingsPublisher, Self.suppressedNames(consentRequirements))
+            .map { settings, suppressed in Self.strip(settings, suppressed: suppressed, eventMapping: eventMapping) }
+            .eraseToAnyPublisher()
+    }
+
+    private static func suppressedNames(_ requirements: [EventHubConsentRequirement]) -> AnyPublisher<Set<String>, Never> {
+        guard !requirements.isEmpty else {
+            return Just(Set<String>()).eraseToAnyPublisher()
+        }
+        // Each requirement contributes its own names while consent is withheld, and nothing once granted;
+        // `combineLatest` then keeps the union current as any of them changes. Combine has no variadic
+        // form over an array, hence the reduce.
+        let perRequirement = requirements.map { requirement in
+            requirement.isGrantedPublisher
+                .map { $0 ? Set<String>() : requirement.configNames }
+                .eraseToAnyPublisher()
+        }
+        return perRequirement.dropFirst().reduce(perRequirement[0]) { accumulated, next in
+            accumulated.combineLatest(next).map { $0.union($1) }.eraseToAnyPublisher()
+        }
+    }
+
+    private static func strip(
+        _ settings: [String: Any]?,
+        suppressed: Set<String>,
+        eventMapping: EventMapping<EventHubDebugEvent>?
+    ) -> [String: Any]? {
+        guard !suppressed.isEmpty, var settings else { return settings }
+        let key = EventHubConfigParser.telemetryKey
+        // No telemetry configured is the normal pre-rollout state: there is nothing to strip, and nothing
+        // that could be collected without consent, so pass the settings through untouched. Blacking them
+        // out here would fail closed against a config that holds no gated data in the first place.
+        guard settings[key] != nil else { return settings }
+        // Fail closed: telemetry exists but we cannot reach into it to remove a gated entry, so expose no
+        // telemetry at all rather than risk collecting without consent.
+        guard var telemetry = settings[key] as? [String: Any] else {
+            Logger.eventHub.error("settings: consent stripping found no usable `\(key, privacy: .public)` object, failing closed")
+            eventMapping?.fire(.consentStripFailed)
+            return nil
+        }
+        for name in suppressed { telemetry.removeValue(forKey: name) }
+        settings[key] = telemetry
+        return settings
+    }
+}

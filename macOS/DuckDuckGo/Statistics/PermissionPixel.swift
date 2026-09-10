@@ -21,7 +21,7 @@ import PixelKit
 /**
  * This enum keeps pixels related to permissions management.
  */
-enum PermissionPixel: PixelKitEvent {
+enum PermissionPixel: PixelKit.Event {
 
     // MARK: - Authorization Flow
 
@@ -64,7 +64,7 @@ enum PermissionPixel: PixelKitEvent {
      */
     case systemPreferencesOpened(permissionType: PermissionType)
 
-    // MARK: - PixelKitEvent
+    // MARK: - PixelKit.Event
 
     var name: String {
         switch self {

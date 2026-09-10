@@ -272,6 +272,45 @@ final class HistoryCleanerTests: XCTestCase {
         XCTAssertTrue(mockHandler.deletedChatIDs.isEmpty)
         XCTAssertEqual(mockJSCleaner.clearJSDataCalls, ["some-chat"], "JS cleanup is the only path when native isn't applicable")
     }
+
+    // MARK: - PhasedAIChatHistoryCleaning (native storage and JS clear split into separate phases)
+
+    func testDeleteAIChatFromNativeStorageWhenEnabledAndMigratedDeletesChatAndFilesWithoutRunningJSCleaner() {
+        mockFlagProvider.isNativeDataStorageEnabledResult = true
+        mockHandler.stubbedIsMigrationDone = true
+        mockHandler.stubbedFiles = [DuckAiFileMetadata(uuid: "file-1", chatId: "target-chat", dataSize: 10)]
+        let sut = makeSUT(nativeStorageHandler: mockHandler, featureFlagProvider: mockFlagProvider)
+
+        let result = sut.deleteAIChatFromNativeStorage(chatID: "target-chat")
+
+        XCTAssertNotNil(try? result?.get())
+        XCTAssertEqual(mockHandler.deletedChatIDs, ["target-chat"])
+        XCTAssertEqual(mockHandler.deletedFileUUIDs, ["file-1"])
+        XCTAssertTrue(mockJSCleaner.clearJSDataCalls.isEmpty, "Native-storage phase must not trigger the JS clear")
+    }
+
+    func testDeleteAIChatFromNativeStorageWhenUnavailableReturnsNil() {
+        let sut = makeSUT(nativeStorageHandler: nil, featureFlagProvider: nil)
+
+        let result = sut.deleteAIChatFromNativeStorage(chatID: "target-chat")
+
+        XCTAssertNil(result)
+        XCTAssertTrue(mockHandler.deletedChatIDs.isEmpty)
+    }
+
+    func testClearJSDataForwardsToJSDataCleanerAndReturnsItsResult() async {
+        let sut = makeSUT()
+        let expectedError = NSError(domain: "js", code: 3)
+        mockJSCleaner.stubbedResult = .failure(expectedError)
+
+        let result = await sut.clearJSData(chatID: "target-chat")
+
+        XCTAssertEqual(mockJSCleaner.clearJSDataCalls, ["target-chat"])
+        guard case .failure(let error) = result else {
+            return XCTFail("Expected the JS cleaner's failure to be returned, got \(result)")
+        }
+        XCTAssertEqual(error as NSError, expectedError)
+    }
 }
 
 // MARK: - Mocks

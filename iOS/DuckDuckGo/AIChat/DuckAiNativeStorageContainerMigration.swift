@@ -22,6 +22,7 @@ import Foundation
 import Persistence
 import UIKit
 import os.log
+import PixelKit
 
 /// One-time move of a Duck.ai container from the shared App Group into the
 /// app's Application Support directory.
@@ -49,11 +50,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
     let isProtectedDataAvailable: () -> Bool
     let maxAttempts: Int
 
-    /// When true, the protected-data gate only guards the relocation; completed /
-    /// not-needed migrations proceed on locked launches. When false, the legacy
-    /// behavior applies (any locked launch defers). Phased-rollout / kill switch.
-    let lockedLaunchFixEnabled: Bool
-
     private let stateStore: MigrationStateStore
     private let protectionDispatcher: ProtectionDispatcher
 
@@ -66,7 +62,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
          pixelFiring: DuckAiNativeStorageContainerMigrationPixelFiring = NullDuckAiNativeStorageContainerMigrationPixelFiring(),
          isProtectedDataAvailable: @escaping () -> Bool = { DuckAiNativeStorageContainerMigration.defaultIsProtectedDataAvailable() },
          maxAttempts: Int = DuckAiNativeStorageContainerMigration.defaultMaxAttempts,
-         lockedLaunchFixEnabled: Bool = true,
          protectionDispatcher: @escaping ProtectionDispatcher = { work in
              DispatchQueue.global(qos: .utility).async(execute: work)
          }) {
@@ -78,7 +73,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
         self.isProtectedDataAvailable = isProtectedDataAvailable
         // 0 / negative would give up on the first failure.
         self.maxAttempts = max(1, maxAttempts)
-        self.lockedLaunchFixEnabled = lockedLaunchFixEnabled
         self.stateStore = MigrationStateStore(keyValueStore: keyValueStore, migrationKey: migrationKey)
         self.protectionDispatcher = protectionDispatcher
     }
@@ -87,10 +81,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
 
     @discardableResult
     func run() -> DuckAiNativeStorageContainerMigrationOutcome {
-        if !lockedLaunchFixEnabled, let deferred = deferIfProtectedDataUnavailable() {
-            return deferred
-        }
-
         do {
             return try performMigration()
         } catch let kvError as MigrationStateStore.ReadError {
@@ -128,7 +118,7 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
             return .proceed
         }
 
-        if lockedLaunchFixEnabled, let deferred = deferIfProtectedDataUnavailable() {
+        if let deferred = deferIfProtectedDataUnavailable() {
             return deferred
         }
 
@@ -330,23 +320,23 @@ struct DuckAiNativeStorageContainerMigrationPixelAdapter: DuckAiNativeStorageCon
     func fire(_ event: DuckAiNativeStorageContainerMigrationEvent) {
         switch event {
         case .notNeeded(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationNotNeeded(label: label.rawValue))
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationNotNeeded(label: label.rawValue))
         case .success(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationSuccess(label: label.rawValue))
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationSuccess(label: label.rawValue))
         case .attemptFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationAttemptFailed(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationAttemptFailed(label: label.rawValue).withError(error))
         case .gaveUp(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationGaveUp(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationGaveUp(label: label.rawValue).withError(error))
         case .protectionFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationProtectionFailed(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationProtectionFailed(label: label.rawValue).withError(error))
         case .destinationConflict(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationDestinationConflict(label: label.rawValue))
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationDestinationConflict(label: label.rawValue))
         case .excludeFromBackupFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(label: label.rawValue).withError(error))
         case .protectedDataUnavailable(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationProtectedDataUnavailable(label: label.rawValue))
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationProtectedDataUnavailable(label: label.rawValue))
         case .keyValueStoreReadFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationKeyValueStoreReadFailed(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationKeyValueStoreReadFailed(label: label.rawValue).withError(error))
         }
     }
 }

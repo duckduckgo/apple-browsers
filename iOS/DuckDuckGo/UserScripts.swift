@@ -19,18 +19,23 @@
 
 import AIChat
 import BrowserServicesKit
+import Common
 import Core
-import os.log
+import EventHub
 import Foundation
-import Persistence
+import FoundationExtensions
+import os.log
 import PrivacyConfig
 import SERPSettings
+import SitePermissions
 import SpecialErrorPages
 import Subscription
 import TrackerRadarKit
+import UIKit
 import UserScript
 import WebExtensions
 import WebKit
+import FeatureFlags_iOS
 
 final class UserScripts: UserScriptsProvider {
 
@@ -45,6 +50,7 @@ final class UserScripts: UserScriptsProvider {
     let serpSettingsUserScript: SERPSettingsUserScript
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let pageContextUserScript: PageContextUserScript
+    let internalFeedbackUserScript: InternalFeedbackUserScript
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -58,22 +64,28 @@ final class UserScripts: UserScriptsProvider {
 
     private(set) var faviconScript = FaviconUserScript()
     private(set) var findInPageScript = FindInPageUserScript()
+
+    private(set) var selectionFrameScript: SelectionFrameUserScript
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
+    private(set) var mediaCaptureUserScript: MediaCaptureUserScript?
     private(set) var printingSubfeature = PrintingSubfeature()
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
-    let webEventsSubfeature: WebEventsSubfeature
 
     private let isAutoconsentExtensionAvailable: Bool
 
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         keyValueStore: ThrowingKeyValueStoring,
+         mediaCaptureUserScript: MediaCaptureUserScript? = nil,
+         internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProviding = AppDependencyProvider.shared.internalFeedbackAttachmentsProvider,
+         internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider = AppDependencyProvider.shared.internalFeedbackTabCountProvider,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         adBlockingAvailability: AdBlockingAvailabilityProviding) {
+         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
+
+        selectionFrameScript = SelectionFrameUserScript()
+        self.mediaCaptureUserScript = mediaCaptureUserScript
 
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
@@ -141,6 +153,10 @@ final class UserScripts: UserScriptsProvider {
         }
 
         pageContextUserScript = PageContextUserScript()
+        internalFeedbackUserScript = InternalFeedbackUserScript(
+            deviceInfoProvider: IOSInternalFeedbackDeviceInfoProvider(tabCountProvider: internalFeedbackTabCountProvider),
+            attachmentsProvider: internalFeedbackAttachmentsProvider
+        )
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: featureFlagger)
@@ -150,26 +166,13 @@ final class UserScripts: UserScriptsProvider {
             featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: subscriptionNavigationHandler,
             debugHost: aiChatDebugSettings.messagePolicyHostname)
-        let youTubeAdBlockingStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
-        webEventsSubfeature = WebEventsSubfeature(
-            isUserOptedIn: {
-                let analyticsEnabled = (try? youTubeAdBlockingStorage.value(for: \.youTubeAnalyticsEnabled)) ?? false
-                return adBlockingAvailability.isEnabled && analyticsEnabled
-            },
-            onEvent: { type, loginState in
-                guard let pixel = Pixel.Event.adBlockingDetectedEvent(type: type) else { return }
-                DailyPixel.fire(
-                    pixel: pixel,
-                    withAdditionalParameters: ["loginState": loginState.rawValue]
-                )
-            }
-        )
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
-        contentScopeUserScriptIsolated.registerSubfeature(delegate: webEventsSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: selectionFrameScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
         }
@@ -187,10 +190,18 @@ final class UserScripts: UserScriptsProvider {
         specialErrorPageUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
     }
 
+    /// Registers a tab's EventHub `webEvents` handler. Unlike the subfeatures above this one cannot be
+    /// created here: it is per-tab, and `UserScripts` has no tab identity. `TabViewController` owns the
+    /// handler and calls this each time it is handed a new instance of us.
+    func registerEventHubSubfeature(_ handler: WebEventsHandler) {
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: handler)
+    }
+
     lazy var userScripts: [UserScript] = {
         var scripts: [UserScript?] = [
             findInPageScript,
             fullScreenVideoScript,
+            mediaCaptureUserScript,
             autofillUserScript,
             loginFormDetectionScript,
             contentScopeUserScript,
@@ -238,4 +249,103 @@ final class UserScripts: UserScriptsProvider {
         }
     }
 
+}
+
+/// Counts open tabs for the internal feedback report.
+@MainActor
+protocol InternalFeedbackTabCounting: AnyObject {
+    /// Tabs across both normal and fire mode, whether or not they are currently loaded.
+    var openTabCount: Int { get }
+    /// Tabs holding a live web view, which is the count that bears on memory pressure.
+    /// Matches the `activeTabCount` reported by `TabTerminationTelemetry`.
+    var activeTabCount: Int { get }
+}
+
+final class InternalFeedbackTabCountProvider {
+
+    @MainActor weak var counter: (any InternalFeedbackTabCounting)?
+}
+
+private final class IOSInternalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProviding {
+
+    private let appVersion: AppVersion
+    private let tabCountProvider: InternalFeedbackTabCountProvider
+
+    init(appVersion: AppVersion = .shared,
+         tabCountProvider: InternalFeedbackTabCountProvider) {
+        self.appVersion = appVersion
+        self.tabCountProvider = tabCountProvider
+    }
+
+    private static var distributionChannel: String {
+        #if DEBUG
+        return "Internal"
+        #elseif ALPHA || EXPERIMENTAL
+        return "TestFlight"
+        #else
+        guard let receiptURL = Bundle.main.appStoreReceiptURL,
+              FileManager.default.fileExists(atPath: receiptURL.path) else {
+            return "Internal"
+        }
+        return receiptURL.lastPathComponent == "sandboxReceipt" ? "TestFlight" : "App Store"
+        #endif
+    }
+
+    private static var hardwareModel: String? {
+        var systemInfo = utsname()
+        guard uname(&systemInfo) == 0 else { return nil }
+
+        let identifier = Mirror(reflecting: systemInfo.machine).children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+        return identifier.isEmpty ? nil : identifier
+    }
+
+    private static func string(fromByteCount byteCount: Int64, countStyle: ByteCountFormatter.CountStyle) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = countStyle
+        return formatter.string(fromByteCount: byteCount)
+    }
+
+    @MainActor
+    private var diagnostics: [String: String] {
+        var diagnostics = [String: String]()
+
+        if let counter = tabCountProvider.counter {
+            diagnostics["Tabs"] = String(counter.openTabCount)
+            diagnostics["Active Tabs"] = String(counter.activeTabCount)
+        }
+
+        if let memoryFootprint = DefaultTabTerminationTelemetry.currentMemoryFootprint() {
+            let used = Self.string(fromByteCount: Int64(memoryFootprint), countStyle: .memory)
+            let total = Self.string(fromByteCount: Int64(ProcessInfo.processInfo.physicalMemory), countStyle: .memory)
+            diagnostics["Memory"] = "\(used) used, \(total) total"
+        }
+
+        let homeURL = URL(fileURLWithPath: NSHomeDirectory())
+        if let values = try? homeURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
+           let freeBytes = values.volumeAvailableCapacityForImportantUsage {
+            diagnostics["Disk"] = "\(Self.string(fromByteCount: freeBytes, countStyle: .file)) free"
+        }
+
+        return diagnostics
+    }
+
+    @MainActor
+    func deviceInfo() -> InternalFeedbackDeviceInfo {
+        InternalFeedbackDeviceInfo(
+            platform: "ios",
+            appVersion: appVersion.versionNumber,
+            osName: UIDevice.current.systemName,
+            osVersion: appVersion.osVersionMajorMinorPatch,
+            appBuild: appVersion.buildNumber,
+            formFactor: UIDevice.current.userInterfaceIdiom == .pad ? "tablet" : "mobile",
+            locale: Locale.current.localeIdentifierAsJsonFormat,
+            channel: Self.distributionChannel,
+            deviceModel: Self.hardwareModel,
+            deviceManufacturer: "Apple",
+            diagnostics: diagnostics
+        )
+    }
 }

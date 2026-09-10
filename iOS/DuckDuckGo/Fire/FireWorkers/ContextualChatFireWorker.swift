@@ -18,7 +18,7 @@
 //
 
 import Core
-import PixelKit
+import WideEvent
 
 struct ContextualChatFireWorker: FireExecutorWorker {
 

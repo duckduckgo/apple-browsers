@@ -19,6 +19,7 @@
 import Foundation
 import SwiftUI
 import DesignResourcesKit
+import SwiftUIExtensions
 
 struct NewImportTypePickerView: View {
 
@@ -36,13 +37,16 @@ struct NewImportTypePickerView: View {
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .padding(.top, 20)
                 .padding(.bottom, 12)
+
             VStack(spacing: 0) {
                 ForEach(items.indices, id: \.self) { index in
                     let item = $items[index]
                     HStack(alignment: .center) {
                         Text(item.wrappedValue.dataType.displayName)
                         Spacer()
-                        Toggle(isOn: item.isSelected).toggleStyle(.switch)
+                        Toggle(isOn: item.isSelected)
+                            .toggleStyle(.switch)
+                            .rebrandedControlTint()
                     }
                     .padding(.top, 10)
                     .padding(.bottom, 10)
@@ -66,15 +70,22 @@ struct NewImportTypePickerView: View {
                 .opacity(0)
                 .frame(width: 0, height: 0)
                 .accessibilityHidden(true)
+
                 Button(UserText.done) {
                     doneAction()
                 }
                 .keyboardShortcut(.defaultAction)
                 .disabled(isDoneDisabled)
+                .buttonStyle(
+                    DefaultActionButtonStyle(enabled: !isDoneDisabled, stateColors: .themedActionButton)
+                )
             }
             .padding(.vertical, 16)
         }
         .padding(.horizontal, 20)
         .frame(maxWidth: 388, maxHeight: .infinity)
+        .background(
+            Color(designSystemColor: .surfaceSecondary)
+        )
     }
 }

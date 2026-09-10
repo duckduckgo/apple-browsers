@@ -78,6 +78,48 @@ final class ConnectionFailureLoopDetectorTests: XCTestCase {
         XCTAssertTrue(detector.connectionLoopDetected)
     }
 
+    func testFourthConsecutiveOnDemandAttempt_suppressesTelemetry() {
+        let detector = ConnectionFailureLoopDetector(store: defaults)
+
+        for _ in 0..<3 {
+            detector.connectionStarted(isOnDemand: true)
+            XCTAssertFalse(detector.shouldSuppressCurrentAttemptTelemetry)
+            _ = detector.connectionFailed(isOnDemand: true)
+        }
+
+        detector.connectionStarted(isOnDemand: true)
+
+        XCTAssertTrue(detector.shouldSuppressCurrentAttemptTelemetry)
+    }
+
+    func testManualAttemptAfterLoop_doesNotSuppressTelemetry() {
+        let detector = ConnectionFailureLoopDetector(store: defaults)
+
+        for _ in 0..<4 {
+            _ = detector.connectionFailed(isOnDemand: true)
+        }
+
+        detector.connectionStarted(isOnDemand: false)
+
+        XCTAssertFalse(detector.shouldSuppressCurrentAttemptTelemetry)
+    }
+
+    func testConnectionFinished_clearsCurrentAttemptSuppressionWithoutResettingFailureCount() {
+        let detector = ConnectionFailureLoopDetector(store: defaults)
+
+        for _ in 0..<3 {
+            _ = detector.connectionFailed(isOnDemand: true)
+        }
+        detector.connectionStarted(isOnDemand: true)
+        XCTAssertTrue(detector.shouldSuppressCurrentAttemptTelemetry)
+
+        detector.connectionFinished()
+        XCTAssertFalse(detector.shouldSuppressCurrentAttemptTelemetry)
+
+        detector.connectionStarted(isOnDemand: true)
+        XCTAssertTrue(detector.shouldSuppressCurrentAttemptTelemetry)
+    }
+
     // MARK: - Reset via Success
 
     func testConnectionSucceeded_resetsLoopState() {
@@ -93,6 +135,20 @@ final class ConnectionFailureLoopDetectorTests: XCTestCase {
 
         XCTAssertFalse(detector.connectionLoopDetected)
         XCTAssertFalse(detector.connectionFailed(isOnDemand: true))
+    }
+
+    func testConnectionSucceeded_resetsCurrentAttemptSuppression() {
+        let detector = ConnectionFailureLoopDetector(store: defaults)
+
+        for _ in 0..<3 {
+            _ = detector.connectionFailed(isOnDemand: true)
+        }
+        detector.connectionStarted(isOnDemand: true)
+        XCTAssertTrue(detector.shouldSuppressCurrentAttemptTelemetry)
+
+        detector.connectionSucceeded()
+
+        XCTAssertFalse(detector.shouldSuppressCurrentAttemptTelemetry)
     }
 
     // MARK: - Reset via Manual Disable

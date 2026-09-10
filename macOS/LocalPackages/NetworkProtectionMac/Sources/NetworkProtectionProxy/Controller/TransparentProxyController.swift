@@ -285,7 +285,7 @@ extension TransparentProxyController {
         case stopped
     }
 
-    public enum StartAttemptStep: PixelKitEvent {
+    public enum StartAttemptStep: PixelKit.Event {
         /// Abnormal attempt to start the proxy when it wasn't needed
         case prevented(_ error: Error)
 

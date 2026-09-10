@@ -31,6 +31,8 @@ protocol BookmarkListViewControllerDelegate: AnyObject {
 }
 
 final class BookmarkListViewController: NSViewController {
+    weak var hostWindow: NSWindow?
+    override var undoManager: UndoManager? { hostWindow?.undoManager ?? super.undoManager }
 
     fileprivate enum Constants {
         static let preferredContentSize = CGSize(width: 420, height: 500)
@@ -66,7 +68,7 @@ final class BookmarkListViewController: NSViewController {
             self?.onImportClicked()
         } onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }
         return emptyStateView.embeddedInHostingView()
@@ -107,13 +109,7 @@ final class BookmarkListViewController: NSViewController {
             bookmarkManager: bookmarkManager,
             treeController: treeController,
             dragDropManager: dragDropManager,
-            sortMode: sortBookmarksViewModel.selectedSortMode,
-            presentFaviconsFetcherOnboarding: { [weak self] in
-                guard let self, let window = self.view.window else {
-                    return
-                }
-                self.faviconsFetcherOnboarding?.presentOnboardingIfNeeded(in: window)
-            }
+            sortMode: sortBookmarksViewModel.selectedSortMode
         )
     }()
 
@@ -124,14 +120,6 @@ final class BookmarkListViewController: NSViewController {
         return [BookmarkNode]()
     }
     private var lastOutlineScrollPosition: NSRect?
-
-    private(set) lazy var faviconsFetcherOnboarding: FaviconsFetcherOnboarding? = {
-        guard let syncService = NSApp.delegateTyped.syncService, let syncBookmarksAdapter = NSApp.delegateTyped.syncDataProviders?.bookmarksAdapter else {
-            assertionFailure("SyncService and/or SyncBookmarksAdapter is nil")
-            return nil
-        }
-        return .init(syncService: syncService, syncBookmarksAdapter: syncBookmarksAdapter)
-    }()
 
     private var documentView = FlippedView()
 
@@ -488,12 +476,7 @@ final class BookmarkListViewController: NSViewController {
                 outlineView.reloadData()
             }
         } else {
-            let selectedNodes = self.selectedNodes
-
-            dataSource.reloadData(with: sortBookmarksViewModel.selectedSortMode)
-            outlineView.reloadData()
-
-            expandAndRestore(selectedNodes: selectedNodes)
+            reloadTreePreservingState(sortMode: sortBookmarksViewModel.selectedSortMode)
         }
 
         let isEmpty = (outlineView.numberOfRows == 0)
@@ -510,10 +493,21 @@ final class BookmarkListViewController: NSViewController {
         }
     }
 
+    /// Reloads the outline view keeping the current selection, folder expansion state and scroll position.
+    private func reloadTreePreservingState(sortMode: BookmarksSortMode) {
+        let selectedNodes = self.selectedNodes
+        let scrollPosition = outlineView.visibleRect.origin
+
+        dataSource.reloadData(with: sortMode)
+        outlineView.reloadData()
+
+        expandAndRestore(selectedNodes: selectedNodes)
+        outlineView.scroll(scrollPosition)
+    }
+
     private func setupSort(mode: BookmarksSortMode) {
         hideSearchBar()
-        dataSource.reloadData(with: mode)
-        outlineView.reloadData()
+        reloadTreePreservingState(sortMode: mode)
         sortBookmarksButton.image = (mode == .nameDescending) ? .bookmarkSortDesc : .bookmarkSortAsc
         sortBookmarksButton.backgroundColor = mode.shouldHighlightButton ? .buttonMouseDown : .clear
         sortBookmarksButton.mouseOverColor = mode.shouldHighlightButton ? .buttonMouseDown : .buttonMouseOver
@@ -593,7 +587,7 @@ final class BookmarkListViewController: NSViewController {
             self?.onImportClicked()
         } onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }
         emptyStateHostingView.rootView = emptyStateView
@@ -737,6 +731,8 @@ final class BookmarkListViewController: NSViewController {
 
     private func expandAndRestore(selectedNodes: [BookmarkNode]) {
         treeController.visitNodes { node in
+            guard outlineView.rowIfValid(forItem: node) != nil else { return }
+
             if let objectID = (node.representedObject as? BaseBookmarkEntity)?.id {
                 if dataSource.expandedNodesIDs.contains(objectID) {
                     outlineView.expandItem(node)

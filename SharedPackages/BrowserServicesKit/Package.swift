@@ -13,12 +13,9 @@ let package = Package(
     products: [
         // Exported libraries
         .library(name: "BrowserServicesKit", targets: ["BrowserServicesKit"]),
-        .library(name: "Common", targets: ["Common"]),
         .library(name: "DDGSync", targets: ["DDGSync"]),
         .library(name: "BrowserServicesKitTestsUtils", targets: ["BrowserServicesKitTestsUtils"]),
-        .library(name: "Persistence", targets: ["Persistence"]),
         .library(name: "DuckAiDataStore", targets: ["DuckAiDataStore"]),
-        .library(name: "PersistenceTestingUtils", targets: ["PersistenceTestingUtils"]),
         .library(name: "SecureStorageTestsUtils", targets: ["SecureStorageTestsUtils"]),
         .library(name: "Bookmarks", targets: ["Bookmarks"]),
         .library(name: "BloomFilterWrapper", targets: ["BloomFilterWrapper"]),
@@ -41,8 +38,6 @@ let package = Package(
         .library(name: "SubscriptionTestingUtilities", targets: ["SubscriptionTestingUtilities"]),
         .library(name: "History", targets: ["History"]),
         .library(name: "Suggestions", targets: ["Suggestions"]),
-        .library(name: "PixelKit", targets: ["PixelKit"]),
-        .library(name: "PixelKitTestingUtilities", targets: ["PixelKitTestingUtilities"]),
         .library(name: "SpecialErrorPages", targets: ["SpecialErrorPages"]),
         .library(name: "DuckPlayer", targets: ["DuckPlayer"]),
         .library(name: "MaliciousSiteProtection", targets: ["MaliciousSiteProtection"]),
@@ -55,17 +50,20 @@ let package = Package(
         .library(name: "WKAbstractions", targets: ["WKAbstractions"]),
     ],
     dependencies: [
+        .package(path: "../WideEvent"),
         .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "19.2.0"),
-        .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.1.0"),
+        .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "4.0.0"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
-        .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
-        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.10.1"),
+        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.10.2"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
-        .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "15.18.0"),
-        .package(path: "../URLPredictor"),
+        .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.1.0"),
+        .package(path: "../DDGError"),
+        .package(path: "../Common"),
+        .package(path: "../Persistence"),
+        .package(path: "../PixelKit"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
     ],
     targets: [
@@ -82,13 +80,14 @@ let package = Package(
         .target(
             name: "BrowserServicesKit",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "Autofill", package: "duckduckgo-autofill"),
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
-                "Persistence",
+                .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfig",
                 "TrackerRadarKit",
                 "BloomFilterWrapper",
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
@@ -96,7 +95,7 @@ let package = Package(
                 "ContentBlocking",
                 "SecureStorage",
                 "Subscription",
-                "PixelKit",
+                .product(name: "PixelKit", package: "PixelKit"),
                 "Navigation"
             ],
             resources: [
@@ -120,25 +119,13 @@ let package = Package(
             ]
         ),
         .target(
-            name: "Persistence",
-            dependencies: [
-                "Common",
-                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-            ],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
-        .target(
             name: "DuckAiDataStore",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                "Persistence",
+                .product(name: "Persistence", package: "Persistence"),
                 "SecureStorage",
                 "GRDB",
             ],
@@ -147,23 +134,14 @@ let package = Package(
             ]
         ),
         .target(
-            name: "PersistenceTestingUtils",
-            dependencies: [
-                "Persistence"
-            ],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
-        .target(
             name: "PrivacyConfig",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "ContentBlocking",
-                "Persistence",
+                .product(name: "Persistence", package: "Persistence"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -181,11 +159,11 @@ let package = Package(
         .target(
             name: "Bookmarks",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                "Persistence",
+                .product(name: "Persistence", package: "Persistence"),
             ],
             resources: [
                 .process("BookmarksModel.xcdatamodeld")
@@ -197,8 +175,8 @@ let package = Package(
         .target(
             name: "History",
             dependencies: [
-                "Persistence",
-                "Common",
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
@@ -213,7 +191,7 @@ let package = Package(
         .target(
             name: "Suggestions",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
@@ -226,7 +204,7 @@ let package = Package(
             name: "BookmarksTestDBBuilder",
             dependencies: [
                 "Bookmarks",
-                "Persistence",
+                .product(name: "Persistence", package: "Persistence"),
             ],
             path: "Sources/BookmarksTestDBBuilder"
         ),
@@ -234,7 +212,7 @@ let package = Package(
             name: "HistoryTestDBBuilder",
             dependencies: [
                 "History",
-                "Persistence",
+                .product(name: "Persistence", package: "Persistence"),
             ],
             path: "Sources/HistoryTestDBBuilder"
         ),
@@ -257,12 +235,12 @@ let package = Package(
         .target(
             name: "Crashes",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "CxxCrashHandler",
-                "Persistence"
+                .product(name: "Persistence", package: "Persistence")
             ]),
         .target(
             name: "CxxCrashHandler",
@@ -271,7 +249,7 @@ let package = Package(
         .target(
             name: "DDGSync",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
@@ -292,23 +270,9 @@ let package = Package(
             name: "SyncMetadataTestDBBuilder",
             dependencies: [
                 "DDGSync",
-                "Persistence",
+                .product(name: "Persistence", package: "Persistence"),
             ],
             path: "Sources/SyncMetadataTestDBBuilder"
-        ),
-        .target(
-            name: "Common",
-            dependencies: [
-                .product(name: "Punycode", package: "PunycodeSwift"),
-                .product(name: "URLPredictor", package: "URLPredictor"),
-                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-            ],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug)),
-                .define("_ORIGINAL_DATA_AS_STRING_ENABLED", .when(platforms: [.macOS])),
-            ]
         ),
         .target(
             name: "ContentBlocking",
@@ -322,7 +286,7 @@ let package = Package(
         .target(
             name: "Navigation",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
@@ -345,7 +309,7 @@ let package = Package(
         .target(
             name: "UserScript",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
@@ -357,14 +321,14 @@ let package = Package(
         .target(
             name: "PrivacyDashboard",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "TrackerRadarKit",
                 "UserScript",
                 "ContentBlocking",
-                "Persistence",
+                .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfig",
                 "MaliciousSiteProtection",
                 .product(name: "PrivacyDashboardResources", package: "privacy-dashboard"),
@@ -378,7 +342,7 @@ let package = Package(
         .target(
             name: "Configuration",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
@@ -392,8 +356,9 @@ let package = Package(
         .target(
             name: "Networking",
             dependencies: [
+                .product(name: "DDGError", package: "DDGError"),
                 .product(name: "JWTKit", package: "jwt-kit"),
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
@@ -412,13 +377,13 @@ let package = Package(
             name: "RemoteMessaging",
             dependencies: [
                 "BrowserServicesKit",
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Configuration",
                 "Networking",
-                "Persistence",
+                .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfig",
             ],
             resources: [
@@ -439,13 +404,13 @@ let package = Package(
             dependencies: [
                 "Bookmarks",
                 "BrowserServicesKit",
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "DDGSync",
                 "GRDB",
-                "Persistence",
+                .product(name: "Persistence", package: "Persistence"),
                 "SecureStorage",
             ],
             swiftSettings: [
@@ -455,11 +420,11 @@ let package = Package(
         .target(
             name: "SecureStorage",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                "PixelKit",
+                .product(name: "PixelKit", package: "PixelKit"),
                 "GRDB",
             ],
             swiftSettings: [
@@ -470,20 +435,22 @@ let package = Package(
             name: "SecureStorageTestsUtils",
             dependencies: [
                 "SecureStorage",
-                "PixelKit"
+                .product(name: "PixelKit", package: "PixelKit")
             ]
         ),
         .target(
             name: "Subscription",
             dependencies: [
-                "Common",
+                .product(name: "WideEvent", package: "WideEvent"),
+                .product(name: "DDGError", package: "DDGError"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Networking",
                 "UserScript",
-                "PixelKit",
-                "Persistence",
+                .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 "SecureStorage"
             ],
             swiftSettings: [
@@ -495,7 +462,7 @@ let package = Package(
             dependencies: [
                 "BrowserServicesKitTestsUtils",
                 "Subscription",
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
@@ -503,31 +470,9 @@ let package = Package(
             ]
         ),
         .target(
-            name: "PixelKit",
-            dependencies: [
-                "Common",
-                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                "Persistence"
-            ],
-            exclude: [
-                "README.md"
-            ],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
-        .target(
-            name: "PixelKitTestingUtilities",
-            dependencies: [
-                "PixelKit"
-            ]
-        ),
-        .target(
             name: "SpecialErrorPages",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
@@ -543,7 +488,7 @@ let package = Package(
         .target(
             name: "DuckPlayer",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
@@ -557,12 +502,12 @@ let package = Package(
         .target(
             name: "MaliciousSiteProtection",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Networking",
-                "PixelKit",
+                .product(name: "PixelKit", package: "PixelKit"),
                 "PrivacyConfig",
             ],
             swiftSettings: [
@@ -572,7 +517,7 @@ let package = Package(
         .target(
             name: "PixelExperimentKit",
             dependencies: [
-                "PixelKit",
+                .product(name: "PixelKit", package: "PixelKit"),
                 "PrivacyConfig",
                 "Configuration"
             ],
@@ -601,11 +546,11 @@ let package = Package(
         .target(
             name: "PrivacyStats",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                "Persistence",
+                .product(name: "Persistence", package: "Persistence"),
                 "TrackerRadarKit"
             ],
             resources: [
@@ -618,11 +563,11 @@ let package = Package(
         .target(
             name: "AutoconsentStats",
             dependencies: [
-                "Common",
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                "Persistence",
+                .product(name: "Persistence", package: "Persistence"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -695,12 +640,13 @@ let package = Package(
         .testTarget(
             name: "BrowserServicesKitTests",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 "SharedObjCTestsUtils",
                 "BrowserServicesKit",
                 "BrowserServicesKitTestsUtils",
                 "SecureStorageTestsUtils",
                 "Subscription",
-                "PersistenceTestingUtils",
+                .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfigTestsUtils",
                 "WKAbstractions",
             ],
@@ -717,7 +663,7 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "Crashes",
-                "PersistenceTestingUtils"
+                .product(name: "Persistence", package: "Persistence")
             ]
         ),
         .testTarget(
@@ -726,7 +672,7 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "BookmarksTestsUtils",
                 "DDGSync",
-                "PersistenceTestingUtils",
+                .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfigTestsUtils",
                 "NetworkingTestingUtils"
             ],
@@ -741,19 +687,6 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 .product(name: "DDGSyncCrypto", package: "sync_crypto"),
-            ]
-        ),
-        .testTarget(
-            name: "CommonTests",
-            dependencies: [
-                "SharedObjCTestsUtils",
-                "Common",
-                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-            ],
-            swiftSettings: [
-                .define("_ORIGINAL_DATA_AS_STRING_ENABLED", .when(platforms: [.macOS])),
             ]
         ),
         .testTarget(
@@ -806,25 +739,17 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "PersistenceTests",
-            dependencies: [
-                "SharedObjCTestsUtils",
-                "PersistenceTestingUtils",
-                "TrackerRadarKit",
-            ]
-        ),
-        .testTarget(
             name: "DuckAiDataStoreTests",
             dependencies: [
                 "DuckAiDataStore",
-                "PersistenceTestingUtils",
+                .product(name: "Persistence", package: "Persistence"),
                 "SecureStorage",
             ]
         ),
         .testTarget(
             name: "PrivacyConfigTests",
             dependencies: [
-                "PersistenceTestingUtils",
+                .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfig",
                 "PrivacyConfigTestsUtils"
             ],
@@ -839,7 +764,7 @@ let package = Package(
                 "BrowserServicesKitTestsUtils",
                 "RemoteMessaging",
                 "RemoteMessagingTestsUtils",
-                "PersistenceTestingUtils",
+                .product(name: "Persistence", package: "Persistence"),
             ],
             resources: [
                 .copy("Resources/remote-messaging-config-example.json"),
@@ -867,7 +792,7 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "Configuration",
                 "NetworkingTestingUtils",
-                "PersistenceTestingUtils",
+                .product(name: "Persistence", package: "Persistence"),
             ]
         ),
         .testTarget(
@@ -875,7 +800,7 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "BookmarksTestsUtils",
-                "PersistenceTestingUtils",
+                .product(name: "Persistence", package: "Persistence"),
                 "SecureStorageTestsUtils",
                 "SyncDataProviders",
             ]
@@ -886,7 +811,7 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "SecureStorage",
                 "SecureStorageTestsUtils",
-                "PixelKit"
+                .product(name: "PixelKit", package: "PixelKit")
             ]
         ),
         .testTarget(
@@ -894,7 +819,7 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "PrivacyDashboard",
-                "PersistenceTestingUtils",
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
                 "BrowserServicesKitTestsUtils",
             ]
@@ -902,22 +827,13 @@ let package = Package(
         .testTarget(
             name: "SubscriptionTests",
             dependencies: [
-                "PixelKit",
-                "PixelKitTestingUtilities",
+                .product(name: "WideEvent", package: "WideEvent"),
+                .product(name: "PixelKit", package: "PixelKit"),
                 "SharedObjCTestsUtils",
                 "Subscription",
                 "SubscriptionTestingUtilities",
                 "NetworkingTestingUtils",
-                "PersistenceTestingUtils",
-            ]
-        ),
-        .testTarget(
-            name: "PixelKitTests",
-            dependencies: [
-                "SharedObjCTestsUtils",
-                "PixelKit",
-                "PixelKitTestingUtilities",
-                "PersistenceTestingUtils",
+                .product(name: "Persistence", package: "Persistence"),
             ]
         ),
         .testTarget(
@@ -993,7 +909,7 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "AutoconsentStats",
-                "PersistenceTestingUtils",
+                .product(name: "Persistence", package: "Persistence"),
             ]
         ),
     ],

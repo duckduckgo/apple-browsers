@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import DesignResourcesKit
 import Combine
+import BrowserServicesKit
 import PrivacyConfig
 import Bookmarks
 import Persistence
@@ -30,6 +31,8 @@ import DDGSync
 import Suggestions
 import AIChat
 import RemoteMessaging
+import FeatureFlags_iOS
+import PixelKit
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)
@@ -91,8 +94,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let syncService: DDGSyncing?
     private let syncPromoManager: SyncPromoManaging?
-    private let aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting
     private let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
+    private let featureDiscovery: FeatureDiscovery
+    private let autocompletePixels = AutocompleteSuggestionsPixels()
 
     // MARK: - Manager Components
 
@@ -159,7 +163,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          syncService: DDGSyncing? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning? = nil,
          recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
-         aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter()) {
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
@@ -172,8 +176,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.syncPromoManager = syncService.map { SyncPromoManager(syncService: $0,
                                                                   featureFlagger: featureFlagger,
                                                                   privacyConfigurationManager: privacyConfigurationManager) }
-        self.aiChatSyncIntroSheetPresenter = aiChatSyncIntroSheetPresenter
         self.recentModalPromptStatusProvider = recentModalPromptStatusProvider
+        self.featureDiscovery = featureDiscovery
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -237,6 +241,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // The fire empty state is a SwiftUI host content state now — just flip the flag; no manager rebuild.
         unifiedSuggestionsHost?.setIsFireTab(fireMode)
         rebuildDuckAISuggestionsCoordinator()
+
+        guard isContentActive,
+              let homePageMessagesConfiguration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration,
+              homePageMessagesConfiguration.mode == .coordinated else {
+            return
+        }
+
+        guard !fireMode else { return }
+        homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil)
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool = true) {
@@ -256,6 +269,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         isContentActive = active
         markNeedsVisibleRefresh()
         if active {
+            if let homePageMessagesConfiguration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration,
+               homePageMessagesConfiguration.mode == .coordinated,
+               !switchBarHandler.isFireTab {
+                homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil)
+            }
             unifiedSuggestionsHost?.setIsFireTab(switchBarHandler.isFireTab)
             unifiedSuggestionsHost?.setLandscape(isLandscapeOrientation)
             unifiedSuggestionsHost?.prepareForActivation()
@@ -264,7 +282,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             activationResolveTrigger.send(())
             syncDuckAISurfaceWithSettings()
             duckAISurface?.refreshRecents()
+        } else {
+            fireSearchSuggestionsDisplayPixels()
         }
+    }
+
+    /// Fires the local-suggestion display pixels over the results shown this session. The `setActive`
+    /// guard dedups the repeated dismiss calls, so a normal editing session fires these once.
+    private func fireSearchSuggestionsDisplayPixels() {
+        autocompletePixels.fireDisplayPixels(for: searchLoader?.result.all ?? [])
     }
 
     /// Re-checks the Chat Suggestions gate on every focus: this VC is built once per browser session
@@ -571,7 +597,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             !dependencies.newTabPageDependencies.homePageMessagesConfiguration.homeMessages.isEmpty
         }
 
-        let searchStateChanged = dependencies.favoritesViewModel.localUpdates
+        var searchStateChanged = dependencies.favoritesViewModel.localUpdates
             .merge(with: dependencies.favoritesViewModel.externalUpdates)
             // Favorites changes fire on the Core Data context queue; marshal here so the merged
             // inputs (and the view model's `@Published content` mutation) stay on main.
@@ -580,6 +606,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             // so the re-resolve it drives stays synchronous, landing before the host becomes visible.
             .merge(with: activationResolveTrigger)
             .eraseToAnyPublisher()
+        let homePageMessagesConfiguration = dependencies.newTabPageDependencies.homePageMessagesConfiguration
+        if homePageMessagesConfiguration.mode == .coordinated {
+            searchStateChanged = searchStateChanged
+                .merge(with: homePageMessagesConfiguration.contentDidChangePublisher)
+                .eraseToAnyPublisher()
+        }
         let inputsPublisher = makeMergedInputsPublisher(hasFavorites: hasFavorites,
                                                         hasMessages: hasMessages,
                                                         searchStateChanged: searchStateChanged)
@@ -590,8 +622,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             isAddressBarAtBottom: !isUsingTopBarPosition,
             favoritesProvider: { [weak self] in self?.makeSearchFavoritesController() },
             onSelectRow: { [weak self] id in
-                guard let suggestion = source.suggestion(forRowID: id) else { return }
-                self?.delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
+                guard let self, let suggestion = source.suggestion(forRowID: id) else { return }
+                self.fireSearchSuggestionClickPixel(for: suggestion)
+                self.delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
             },
             onDeleteRow: { [weak self, weak loader] id in
                 guard let self,
@@ -810,6 +843,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func observeRemoteMessagesChanges() {
+        guard let configuration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration,
+              configuration.mode == .legacy else { return }
+
         notificationCancellable = NotificationCenter.default.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -1015,8 +1051,8 @@ extension UnifiedInputContentContainerViewController {
 
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion) {
         let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
-        DailyPixel.fireDailyAndCount(pixel: pixel)
-        Pixel.fire(pixel: .autocompleteDuckAIClickChatHistory)
+        PixelKit.fire(pixel, frequency: .dailyAndCount)
+        PixelKit.fire(Pixel.Event.autocompleteDuckAIClickChatHistory)
 
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
         delegate?.unifiedInputEditingStateDidSelectChatHistory(url: url)
@@ -1028,7 +1064,7 @@ extension UnifiedInputContentContainerViewController {
     }
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {
-        Pixel.fire(pixel: .autocompleteDuckAIClickSearchDuckDuckGo)
+        PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSearchDuckDuckGo)
         // Symmetric with Search-side "Ask privately" (which calls openAIChat with autoSend:true):
         // flip toggle to Search and submit the query in one step.
         switchBarHandler.setToggleState(.search)
@@ -1036,21 +1072,28 @@ extension UnifiedInputContentContainerViewController {
     }
 
     func duckAISuggestionsDidRequestSyncSetup() {
-        aiChatSyncIntroSheetPresenter.present(from: self) { [weak self] in
-            self?.delegate?.unifiedInputEditingStateDidRequestSyncSetup()
-        }
+        delegate?.unifiedInputEditingStateDidRequestSyncSetup()
+    }
+
+    /// Fires the click pixels for a tapped Search-surface suggestion. Shared with the iPad popover
+    /// (`SuggestionTrayViewController`) so both surfaces report the same set.
+    private func fireSearchSuggestionClickPixel(for suggestion: Suggestion) {
+        autocompletePixels.fireClickPixels(
+            for: suggestion,
+            isExperimentalAIChatExperience: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            aiChatDiscoveryParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
     }
 
     private func fireDuckAISuggestionClickPixel(for suggestion: Suggestion) {
         switch suggestion {
         case .website:
-            Pixel.fire(pixel: .autocompleteDuckAIClickWebsite)
+            PixelKit.fire(Pixel.Event.autocompleteDuckAIClickWebsite)
         case .bookmark(_, _, let isFavorite, _):
-            Pixel.fire(pixel: isFavorite ? .autocompleteDuckAIClickFavorite : .autocompleteDuckAIClickBookmark)
+            PixelKit.fire(isFavorite ? Pixel.Event.autocompleteDuckAIClickFavorite : .autocompleteDuckAIClickBookmark)
         case .historyEntry(_, let url, _):
-            Pixel.fire(pixel: url.isDuckDuckGoSearch ? .autocompleteDuckAIClickHistorySearch : .autocompleteDuckAIClickHistorySite)
+            PixelKit.fire(url.isDuckDuckGoSearch ? Pixel.Event.autocompleteDuckAIClickHistorySearch : .autocompleteDuckAIClickHistorySite)
         case .openTab:
-            Pixel.fire(pixel: .autocompleteDuckAIClickSwitchToTab)
+            PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSwitchToTab)
         case .phrase, .internalPage, .unknown, .askAIChat:
             break
         }
@@ -1063,23 +1106,23 @@ extension UnifiedInputContentContainerViewController {
 /// switch-tab exactly like the standalone NTP.
 extension UnifiedInputContentContainerViewController: NewTabPageControllerDelegate {
 
-    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+    func newTabPageDidSelectFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         delegate?.unifiedInputEditingStateDidSelectFavorite(favorite)
     }
 
-    func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+    func newTabPageDidEditFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         delegate?.unifiedInputEditingStateDidEditFavorite(favorite)
     }
 
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
+    func newTabPageDidRequestSwitchToTab(_ controller: any NewTabPage, tab: Tab) {
         delegate?.unifiedInputEditingStateDidRequestSwitchTab(tab)
     }
 
-    func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
+    func newTabPageDidRequestTabSwitcher(_ controller: any NewTabPage) {
         delegate?.unifiedInputEditingStateDidRequestTabSwitcher()
     }
 
-    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {}
+    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: any NewTabPage) {}
 
     func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {}
 }

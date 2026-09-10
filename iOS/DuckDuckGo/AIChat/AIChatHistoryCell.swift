@@ -62,11 +62,11 @@ final class AIChatHistoryCell: UITableViewCell {
         // Explicit `backgroundColor` keeps the `.insetGrouped` rounded-corner mask
         // attached through swipe gestures (without it the last row's bottom corner
         // flashes square mid-swipe). Bookmarks' cells do the same.
-        backgroundColor = UIColor(designSystemColor: .surface)
+        backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
         // Keep the surface background when selected (the multi-select checkmark indicates
         // selection) instead of the default grey highlight blending the row into the list.
         let selectedBackground = UIView()
-        selectedBackground.backgroundColor = UIColor(designSystemColor: .surface)
+        selectedBackground.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
         selectedBackgroundView = selectedBackground
 
         contentView.addSubview(iconImageView)

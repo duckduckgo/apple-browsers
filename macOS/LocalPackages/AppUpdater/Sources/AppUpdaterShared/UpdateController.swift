@@ -20,11 +20,12 @@ import BrowserServicesKit
 import Combine
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import Navigation
 import Persistence
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Subscription
 import UserScript

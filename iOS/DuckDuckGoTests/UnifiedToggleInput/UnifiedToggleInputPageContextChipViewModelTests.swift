@@ -53,6 +53,53 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         sut.onRemoveActionRequested = { [weak self] in self?.removeCalls += 1 }
     }
 
+    // MARK: - Removal
+
+    /// The attachment menu is the way back, so a removal leaves nothing behind.
+    func test_removingTheChip_leavesNothingVisible() {
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url),
+                initialAttachmentDeliveryState: .pendingSubmit)
+
+        sut.tapToRemove()
+
+        XCTAssertFalse(sut.isVisible)
+        XCTAssertEqualState(sut.state, .placeholder)
+        XCTAssertEqual(removeCalls, 1)
+    }
+
+    // MARK: - Loading
+
+    func test_beginLoading_showsLoadingChip() {
+        makeSUT()
+        sut.beginLoading()
+        XCTAssertTrue(sut.isVisible)
+        XCTAssertEqualState(sut.state, .loading)
+    }
+
+    func test_setAttached_replacesLoadingWithAttachedChip() {
+        let url = "https://example.com/spec.pdf"
+        originatingURL.send(URL(string: url))
+        makeSUT()
+        sut.beginLoading()
+
+        sut.setAttached(makeContext(title: "Spec", url: url), deliveryState: .pendingSubmit)
+
+        XCTAssertTrue(sut.isVisible)
+        XCTAssertEqualState(sut.state, .attached(title: "Spec", favicon: nil))
+    }
+
+    func test_endLoading_afterFailedRead_leavesNoLoadingChip() {
+        makeSUT()
+        sut.beginLoading()
+
+        sut.endLoading()
+
+        XCTAssertFalse(sut.isVisible)
+        XCTAssertEqualState(sut.state, .placeholder)
+    }
+
     // MARK: - State transitions
 
     func test_initial_attachedAndOriginatingMatches_isAttached() {
@@ -464,6 +511,8 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         case (.placeholder, .placeholder):
             return
         case (.attached(let lt, _), .attached(let rt, _)) where lt == rt:
+            return
+        case (.loading, .loading):
             return
         default:
             XCTFail("State mismatch: \(lhs) vs \(rhs)", file: file, line: line)

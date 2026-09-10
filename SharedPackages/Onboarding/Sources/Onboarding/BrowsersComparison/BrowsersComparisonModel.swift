@@ -156,6 +156,11 @@ extension BrowsersComparisonModel.PrivacyFeature {
                 public static let eraseBrowsingData = NSLocalizedString("onboarding.highlights.browsers.features.eraseBrowsingData.title", bundle: Bundle.module, value: "Delete browsing data with one button", comment: "Message to highlight browser capability of swiftly erase browsing data")
                 public static let privateAIChat = NSLocalizedString("onboarding.highlights.browsers.features.duckAI.title", bundle: Bundle.module, value: "Use ChatGPT privately with Duck.ai built in", comment: "Message to highlight browser capability of chatting with ChatGPT without sharing data with third parties")
                 public static let duckplayer = NSLocalizedString("onboarding.highlights.browsers.features.duckplayer.title", bundle: Bundle.module, value: "Play YouTube videos without ads", comment: "Message to highlight browser capability of watching YouTube videos without ads")
+
+                // Download Reason Experiment
+                public static let noAIAnswers = NotLocalizedString("onboarding.browsers.features.noAIAnswers", value: "No AI-assisted answers in search", comment: "One of the rows in the onboarding comparison chart for users who don't want AI. Highlights that search shows no AI-assisted answers.")
+                public static let hideAIImages = NotLocalizedString("onboarding.browsers.features.hideAIImages", value: "Hide AI-generated images in search", comment: "One of the rows in the onboarding comparison chart for users who don't want AI. Highlights that AI-generated images can be hidden in search results.")
+                public static let privateWebSearch = NotLocalizedString("onboarding.browsers.features.privateWebSearch", value: "Search the web privately with trackers blocked", comment: "One of the rows in the onboarding AI comparison chart. Highlights private web search with trackers blocked.")
             }
         }
     }

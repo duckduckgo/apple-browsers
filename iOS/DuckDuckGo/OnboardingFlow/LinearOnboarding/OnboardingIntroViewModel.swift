@@ -27,6 +27,7 @@ import Persistence
 import PrivacyConfig
 import SetDefaultBrowserCore
 import SystemSettingsPiPTutorial
+import PixelKit
 
 @MainActor
 final class OnboardingIntroViewModel: ObservableObject {
@@ -114,6 +115,12 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let tutorialSettings: TutorialSettings
     private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
     private let contentProvider: OnboardingIntroContentProviding
+    /// The facade for the personalization flow.  Exposed so the reason-tailored step views can be injected with the
+    /// slice they need.
+    let personalizationManager: OnboardingPersonalizationManaging
+    /// Fetches the AI models ahead of the model-picker step. Kicked off when the `.privateAIChat`
+    /// reason is chosen so the options are ready by the time that step appears.
+    private let aiModelsPrefetcher: OnboardingAIModelsPrefetching
 
     private var pendingOnboardingIntroActions: (() -> Void)?
 
@@ -122,6 +129,7 @@ final class OnboardingIntroViewModel: ObservableObject {
                      daxDialogsManager: ContextualDaxDialogDisabling,
                      restorePromptHandler: OnboardingRestorePromptHandling,
                      onboardingManager: OnboardingManaging,
+                     personalizationManager: OnboardingPersonalizationManaging,
                      onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil) {
         let defaultBrowserInfoStore = DefaultBrowserInfoStore()
         let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
@@ -144,8 +152,11 @@ final class OnboardingIntroViewModel: ObservableObject {
             tutorialSettings: tutorialSettings,
             contentProvider: OnboardingIntroContentProvider(
                 flowType: onboardingManager.currentOnboardingFlow,
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                downloadReasonProvider: { onboardingManager.currentDownloadReason }
             ),
+            personalizationManager: personalizationManager,
+            aiModelsPrefetcher: OnboardingAIModelsPrefetcher(),
             onboardingResumeStepStore: onboardingResumeStepStore
         )
     }
@@ -164,6 +175,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         restorePromptHandler: OnboardingRestorePromptHandling,
         tutorialSettings: TutorialSettings,
         contentProvider: OnboardingIntroContentProviding,
+        personalizationManager: OnboardingPersonalizationManaging,
+        aiModelsPrefetcher: OnboardingAIModelsPrefetching,
         onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil
     ) {
         self.defaultBrowserManager = defaultBrowserManager
@@ -178,6 +191,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.restorePromptHandler = restorePromptHandler
         self.tutorialSettings = tutorialSettings
         self.contentProvider = contentProvider
+        self.personalizationManager = personalizationManager
+        self.aiModelsPrefetcher = aiModelsPrefetcher
         self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
 
         introSteps = onboardingManager.onboardingSteps
@@ -274,37 +289,63 @@ final class OnboardingIntroViewModel: ObservableObject {
         // action — otherwise we'd advance a second time and skip a step.
         guard currentIntroStep == .downloadReasonSelection else { return }
 
-        // TODO: pixel for the selected download reason. https://app.asana.com/1/137249556945/task/1216200647629938
+        postDownloadSelectionPersonalizationSetup(for: reason)
+
+        pixelReporter.measureDownloadReasonSelection(reason)
         let remainingSteps = onboardingManager.selectDownloadReason(reason)
         if let currentStepIndex = introSteps.firstIndex(of: currentIntroStep) {
             introSteps.insert(contentsOf: remainingSteps, at: currentStepIndex + 1)
         }
+
         makeNextViewState()
     }
 
-    // NA Experiment: per-step actions for the reason-tailored screens. They only advance for now;
-    // the UI task adds each screen's real behaviour (persisting the setting, pixels, etc.).
+    // NA Experiment: per-step actions for the reason-tailored screens.
     func searchPrivacySettingsContinueAction() {
+        pixelReporter.measureSearchPrivacySettingsSelection(
+            recentlyVisitedSitesEnabled: personalizationManager.isRecentlyVisitedSitesEnabled,
+            safeSearchEnabled: personalizationManager.isSafeSearchEnabled
+        )
         makeNextViewState()
     }
 
     func aiSearchSettingsContinueAction() {
+        pixelReporter.measureAISearchSettingsSelection(
+            searchAssistEnabled: personalizationManager.isSearchAssistEnabled,
+            aiGeneratedImagesEnabled: !personalizationManager.areAIGeneratedImagesHidden
+        )
         makeNextViewState()
     }
 
     func aiModelContinueAction() {
+        // Report the model's provider (e.g. "openai") rather than the specific model id — coarser and
+        // more privacy-preserving.
+        let selectedModelID = personalizationManager.selectedAIChatModelID
+        let provider = aiModelsPrefetcher.resolvedModel.models.first { $0.id == selectedModelID }?.provider
+        pixelReporter.measureAIModelSelection(model: provider?.rawValue ?? "unknown")
         makeNextViewState()
     }
 
-    func toggleInputModeContinueAction() {
+    func toggleInputModeContinueAction(opensWithAIChat: Bool) {
+        personalizationManager.setNewTabOpensWithAIChat(opensWithAIChat)
+        pixelReporter.measureToggleInputModeSelection(openNewTabsWithAIChat: personalizationManager.doesNewTabOpenWithAIChat)
         makeNextViewState()
     }
 
-    func keepDuckAIContinueAction() {
+    func keepDuckAIContinueAction(shouldKeep: Bool) {
+        personalizationManager.setDuckAIEnabled(shouldKeep)
+        onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: shouldKeep)
+        pixelReporter.measureKeepDuckAISelection(shouldKeep: shouldKeep)
+
         makeNextViewState()
     }
 
-    func duckPlayerContinueAction() {
+    func adBlockingContinueAction() {
+        pixelReporter.measureAdBlockingSelection(
+            youTubeAdBlockingEnabled: personalizationManager.isYouTubeAdBlockingEnabled,
+            cookiePopUpProtectionEnabled: personalizationManager.isCookiePopUpProtectionEnabled,
+            popUpsWithoutOptOutsEnabled: personalizationManager.isPopUpsWithoutOptOutsEnabled
+        )
         makeNextViewState()
     }
 
@@ -323,6 +364,9 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func openAIChatFromOnboarding(prompt: String?, autoSend: Bool) {
+        // Record that the user took the AI route at the Search/Duck.ai junction, so the end-of-journey step
+        // shows the standard completion instead of the "Try Duck.ai" nudge (they already tried AI).
+        onboardingSearchExperienceProvider.storeDidStartAIChatDuringOnboarding(true)
         onOpenAIChatFromOnboarding?(prompt, autoSend)
     }
 
@@ -409,17 +453,53 @@ private extension OnboardingIntroViewModel {
                 )
             // NA Experiment: reason-tailored steps. View bodies/content are built in the UI task.
             case .searchPrivacySettingsSelection:
-                return .onboarding(.init(type: .searchPrivacySettingsDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .searchPrivacySettingsDialog(content: contentProvider.serpPersonalizationContent),
+                        step: stepInfo())
+                )
             case .aiSearchSettingsSelection:
-                return .onboarding(.init(type: .aiSearchSettingsDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .aiSearchSettingsDialog(content: contentProvider.aiSearchPersonalizationContent),
+                        step: stepInfo()
+                    )
+                )
             case .aiModelSelection:
-                return .onboarding(.init(type: .aiModelDialog, step: stepInfo()))
+                let resolved = aiModelsPrefetcher.resolvedModel
+                let persistedId = personalizationManager.selectedAIChatModelID
+                let selectedId = resolved.models.contains(where: { $0.id == persistedId }) ? persistedId : resolved.defaultModelId
+                return .onboarding(
+                    .init(
+                        type: .aiModelDialog(
+                            content: contentProvider.aiModelPersonalizationContent,
+                            options: resolved.models,
+                            selectedID: selectedId
+                        ),
+                        step: stepInfo()
+                    )
+                )
             case .toggleInputModeSelection:
-                return .onboarding(.init(type: .toggleInputModeDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .toggleInputModeDialog(content: contentProvider.addressBarToggleModePersonalizationContent),
+                        step: stepInfo()
+                    )
+                )
             case .keepDuckAISelection:
-                return .onboarding(.init(type: .keepDuckAIDialog, step: stepInfo()))
-            case .duckPlayerSelection:
-                return .onboarding(.init(type: .duckPlayerDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .keepDuckAIDialog(content: contentProvider.aiChatEnabledPersonalizationContent),
+                        step: stepInfo()
+                    )
+                )
+            case .adBlockingPersonalization:
+                return .onboarding(
+                    .init(
+                        type: .adBlockingDialog(content: contentProvider.adBlockingPersonalizationContent),
+                        step: stepInfo()
+                    )
+                )
             case .setDefaultBrowser:
                 return .onboarding(
                     .init(
@@ -463,14 +543,11 @@ private extension OnboardingIntroViewModel {
                     )
                 )
             case .duckAIQuerySelection:
-                let isDuckAiTailoredFlow = onboardingManager.currentOnboardingFlow == .duckAI
-                // Duck.ai Tailored flow pre-selects Duck.ai; the default flow always pre-selects Search.
-                let duckAIQueryMode: DuckAIQueryMode = isDuckAiTailoredFlow ? .duckAI : .search
-                // Duck.ai Tailored flow shows step counter; the default flow hides it.
-                let progressStep: OnboardingIntroViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
+                // Duck.ai Tailored flow shows the step counter; the default flow hides it.
+                let progressStep: OnboardingIntroViewState.Intro.StepInfo = onboardingManager.currentOnboardingFlow == .duckAI ? stepInfo() : .hidden
                 return .onboarding(
                     .init(
-                        type: .duckAIQueryDialog(content: contentProvider.duckAIQueryContent, defaultMode: duckAIQueryMode),
+                        type: .duckAIQueryDialog(content: contentProvider.duckAIQueryContent),
                         step: progressStep
                     )
                 )
@@ -560,8 +637,8 @@ private extension OnboardingIntroViewModel {
             currentIntroStep = .toggleInputModeSelection
         case .keepDuckAISelection where introSteps.contains(.keepDuckAISelection):
             currentIntroStep = .keepDuckAISelection
-        case .duckPlayerSelection where introSteps.contains(.duckPlayerSelection):
-            currentIntroStep = .duckPlayerSelection
+        case .adBlockingPersonalization where introSteps.contains(.adBlockingPersonalization):
+            currentIntroStep = .adBlockingPersonalization
         case .duckAIAnswerStep:
             break // handled separately by restorePendingDuckAIAnswerStepIfNeeded in MainViewController
         case .interludeDuckAI where introSteps.contains(.interlude(.duckAI)):
@@ -601,10 +678,19 @@ private extension OnboardingIntroViewModel {
         case .duckAIQueryDialog:
             pixelReporter.measureDuckAIQuerySelectionImpression()
         case .downloadReasonDialog:
-            break // TODO: Download Screen impression pixel. https://app.asana.com/1/137249556945/task/1216200647629938
-        case .searchPrivacySettingsDialog, .aiSearchSettingsDialog, .aiModelDialog,
-             .toggleInputModeDialog, .keepDuckAIDialog, .duckPlayerDialog:
-            break // TODO: impression pixels for the reason-tailored steps (UI task).
+            pixelReporter.measureDownloadReasonImpression()
+        case .searchPrivacySettingsDialog:
+            pixelReporter.measureSearchPrivacySettingsImpression()
+        case .aiSearchSettingsDialog:
+            pixelReporter.measureAISearchSettingsImpression()
+        case .aiModelDialog:
+            pixelReporter.measureAIModelImpression()
+        case .toggleInputModeDialog:
+            pixelReporter.measureToggleInputModeImpression()
+        case .keepDuckAIDialog:
+            pixelReporter.measureKeepDuckAIImpression()
+        case .adBlockingDialog:
+            pixelReporter.measureAdBlockingImpression()
         }
     }
 
@@ -626,7 +712,7 @@ private extension OnboardingIntroViewModel {
             // Fire a pixel to measure the volume of re‑installers who previously synced their device and would normally see the restore-data flow but instead experience the CPP onboarding (honouring the CPP install context).
             // Consider deleting this pixel ini the future if the information is no longer needed
             if restorePromptHandler.isEligibleForRestorePrompt() {
-                DailyPixel.fireDailyAndCount(pixel: .onboardingSyncAutoRestoreUserFromDuckAiFlow)
+                PixelKit.fire(Pixel.Event.onboardingSyncAutoRestoreUserFromDuckAiFlow, frequency: .dailyAndCount)
             }
             return .skipTutorial
         }
@@ -638,6 +724,19 @@ private extension OnboardingIntroViewModel {
             return
         }
         pixelReporter.measureAutoRestoreOnboardingPromptShown()
+    }
+
+    func postDownloadSelectionPersonalizationSetup(for reason: OnboardingDownloadReason) {
+        personalizationManager.applyDefaults(for: reason)
+
+        switch reason {
+        case .privateAIChat:
+            // Users who selected AI Chat reason will have the Toggle Search/AI enabled by default.
+            onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: true)
+            aiModelsPrefetcher.prefetch()
+        default:
+            break
+        }
     }
 
 }

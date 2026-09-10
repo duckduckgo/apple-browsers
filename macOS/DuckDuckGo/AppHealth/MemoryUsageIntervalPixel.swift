@@ -26,7 +26,7 @@ import Foundation
 /// Context parameters include bucketed memory usage, window count, standard/pinned tab counts,
 /// architecture, and allocation usage.
 ///
-enum MemoryUsageIntervalPixel: PixelKitEvent {
+enum MemoryUsageIntervalPixel: PixelKit.Event {
 
     case memoryUsage(trigger: Trigger, context: MemoryReportingContext)
 

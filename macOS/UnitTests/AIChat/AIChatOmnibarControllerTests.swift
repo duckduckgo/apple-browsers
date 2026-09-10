@@ -19,7 +19,7 @@
 import XCTest
 import Combine
 import AIChat
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
@@ -37,8 +37,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     private var mockModelsService: MockAIChatModelsProviding!
     private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockSubscriptionUpsellPresenter: MockAIChatOmnibarSubscriptionUpselling!
-    private var mockBadgeImpressionPersistor: MockFreeTrialBadgePersistor!
     private var tabCollectionViewModel: TabCollectionViewModel!
+    private var pixelHandler: CapturingDuckAIPromptPixelHandler!
 
     override func setUp() {
         super.setUp()
@@ -50,26 +50,30 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         mockDelegate = MockAIChatOmnibarControllerDelegate()
         mockTabOpener = MockAIChatTabOpener()
         featureFlagger = MockFeatureFlagger()
+        // The tab-attachment limit defaults on in production; reflect that baseline in the tests.
+        featureFlagger.enabledFeatureFlags = [.aiChatTabAttachmentLimit]
         searchPreferencesPersistor = AIChatMockSearchPreferencesPersistor()
         mockPreferences = MockAIChatPreferencesPersisting()
         mockModelsService = MockAIChatModelsProviding()
         mockSubscriptionManager = SubscriptionManagerMock()
         mockSubscriptionUpsellPresenter = MockAIChatOmnibarSubscriptionUpselling()
+        pixelHandler = CapturingDuckAIPromptPixelHandler()
         // Injected (rather than the real UserDefaults-backed default) so the impression cap is
         // controllable and no test leaks state into the shared standard defaults.
-        mockBadgeImpressionPersistor = MockFreeTrialBadgePersistor(initialCount: 0, cap: 4)
         tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
 
         controller = AIChatOmnibarController(
             aiChatTabOpener: mockTabOpener,
-            tabCollectionViewModel: tabCollectionViewModel,
+            surface: .addressBar,
+            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: pixelHandler,
             featureFlagger: featureFlagger,
             searchPreferencesPersistor: searchPreferencesPersistor,
             preferences: mockPreferences,
             modelsService: mockModelsService,
             subscriptionManager: mockSubscriptionManager,
-            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
-            badgeImpressionPersistor: mockBadgeImpressionPersistor
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter
         )
         controller.delegate = mockDelegate
     }
@@ -84,9 +88,27 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         mockModelsService = nil
         mockSubscriptionManager = nil
         mockSubscriptionUpsellPresenter = nil
-        mockBadgeImpressionPersistor = nil
         tabCollectionViewModel = nil
+        pixelHandler = nil
         super.tearDown()
+    }
+
+    // Builds a controller with the shared mocks and a chosen burner mode.
+    private func makeController(isBurner: Bool) -> AIChatOmnibarController {
+        AIChatOmnibarController(
+            aiChatTabOpener: mockTabOpener,
+            surface: .addressBar,
+            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: AddressBarPromptPixelHandler(),
+            featureFlagger: featureFlagger,
+            searchPreferencesPersistor: searchPreferencesPersistor,
+            isBurner: isBurner,
+            preferences: mockPreferences,
+            modelsService: mockModelsService,
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter
+        )
     }
 
     // MARK: - URL Navigation Tests
@@ -308,6 +330,26 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         // Then
         XCTAssertFalse(controller.isSuggestionsEnabled)
+    }
+
+    func testWhenBurnerWindow_ThenSuggestionsDisabled_EvenWithFeatureFlagAndAutocompleteEnabled() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = true
+        searchPreferencesPersistor.showAutocompleteSuggestions = true
+        let burnerController = makeController(isBurner: true)
+
+        // Then
+        XCTAssertFalse(burnerController.isSuggestionsEnabled)
+    }
+
+    func testWhenNonBurnerWindow_ThenSuggestionsEnabled_WithFeatureFlagAndAutocompleteEnabled() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = true
+        searchPreferencesPersistor.showAutocompleteSuggestions = true
+        let regularController = makeController(isBurner: false)
+
+        // Then
+        XCTAssertTrue(regularController.isSuggestionsEnabled)
     }
 
     // MARK: - Model Selection Tests
@@ -610,6 +652,160 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "Order matches the toggle-on order; the duck.ai web app preserves this on submit")
     }
 
+    func testWhenToggleTabAttachmentReachesDisplayCap_ThenOneOverIsAllowedButFurtherBlocked() {
+        // Cap is 3; one over (displayCap 4) is allowed for the cue, then further attaches no-op.
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-1"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-2"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-3"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-4"))
+
+        XCTAssertEqual(controller.activeTabAttachments.count, 4,
+                       "Attaching one over the cap (displayCap) is allowed to surface the over-limit cue")
+
+        // A fifth attach is a no-op — the list stays at the display cap.
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-5"))
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), ["tab-1", "tab-2", "tab-3", "tab-4"],
+                       "Attaching beyond the display cap is a no-op")
+    }
+
+    // MARK: - Attached tabs navigating
+
+    /// Selected tab A holds the prompt; tab B is attached to it and then navigates.
+    /// Pruning closed tabs is deferred one main-queue turn, so a move between the pinned and
+    /// unpinned collections isn't read mid-transaction.
+    private func waitForPendingMainQueueWork() {
+        let pending = expectation(description: "pending main queue work")
+        DispatchQueue.main.async { pending.fulfill() }
+        wait(for: [pending], timeout: 1)
+    }
+
+    /// Selected tab A holds the prompt; tab B is attached to it and then navigates.
+    private func makeControllerWithAttachedOtherTab() -> (AIChatOmnibarController, Tab) {
+        let promptTab = Tab(content: .url(URL(string: "https://prompt.example")!, credential: nil, source: .ui))
+        let attachedTab = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
+        _ = tabCollectionViewModel.append(tab: attachedTab, selected: false)
+        _ = tabCollectionViewModel.append(tab: promptTab, selected: true)
+
+        let controller = AIChatOmnibarController(
+            aiChatTabOpener: mockTabOpener,
+            surface: .addressBar,
+            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: AddressBarPromptPixelHandler(),
+            featureFlagger: featureFlagger,
+            searchPreferencesPersistor: searchPreferencesPersistor,
+            preferences: mockPreferences,
+            modelsService: mockModelsService,
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter
+        )
+        controller.toggleTabAttachment(AIChatTabAttachment(id: attachedTab.uuid,
+                                                           title: "Example",
+                                                           url: URL(string: "https://example.com")!,
+                                                           favicon: nil))
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), [attachedTab.uuid])
+        return (controller, attachedTab)
+    }
+
+    func testWhenAttachedTabNavigates_ThenTheAttachmentFollowsIt() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
+
+        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
+
+        XCTAssertEqual(controller.activeTabAttachments.map(\.url.absoluteString), ["https://apple.com"],
+                       "An omnibar prompt is about a new chat, so the card follows the tab it names")
+    }
+
+    /// Switching to the attached tab used to cancel its observer, losing that tab's navigation.
+    func testWhenAttachedTabNavigatesWhileItIsSelected_ThenThePromptTabsAttachmentUpdatesImmediately() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
+        let promptTabState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+
+        // User switches to the attached tab and navigates it there.
+        tabCollectionViewModel.select(tab: attachedTab)
+        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
+
+        XCTAssertEqual(promptTabState?.aiChatTabAttachments.map(\.url.absoluteString), ["https://apple.com"],
+                       "The prompt tab's attachment must refresh as the navigation happens, not on the next visit")
+        _ = controller
+    }
+
+    func testWhenAttachedTabIsClosed_ThenTheAttachmentIsDropped() throws {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
+        let attachedIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == attachedTab.uuid })
+
+        tabCollectionViewModel.remove(at: try XCTUnwrap(attachedIndex))
+        waitForPendingMainQueueWork()
+
+        XCTAssertTrue(controller.activeTabAttachments.isEmpty, "A closed tab has no page content left to send")
+    }
+
+    func testWhenAttachedTabIsDetached_ThenItsNavigationNoLongerTouchesTheAttachments() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab()
+        controller.removeTabAttachmentFromActiveTab(id: attachedTab.uuid)
+        controller.toggleTabAttachment(makeTabAttachment(id: "other-tab"))
+
+        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
+
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), ["other-tab"])
+    }
+
+    func testTabAttachmentFullAndExcessPredicates() {
+        XCTAssertFalse(controller.isActiveTabAttachmentsFull)
+        XCTAssertFalse(controller.hasExcessTabAttachments)
+
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-1"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-2"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-3"))
+
+        // At the cap (3): full, but not yet over.
+        XCTAssertTrue(controller.isActiveTabAttachmentsFull)
+        XCTAssertFalse(controller.hasExcessTabAttachments)
+
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-4"))
+
+        // One over (4): still full, and now in excess.
+        XCTAssertTrue(controller.isActiveTabAttachmentsFull)
+        XCTAssertTrue(controller.hasExcessTabAttachments)
+    }
+
+    func testWhenSubmitWithTabAttachmentsOverCap_ThenSubmitIsBlockedEvenWithPickerFlagOff() {
+        // Regression: the cap must hold with the picker flag OFF (left off here on purpose).
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-1"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-2"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-3"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-4"))
+        XCTAssertTrue(controller.hasExcessTabAttachments)
+        controller.updateText("summarize these")
+
+        // When
+        controller.submit()
+
+        // Then — submit returns early: no duck.ai tab opened, no prompt posted, attachments retained.
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled, "Submit is blocked while over the tab cap")
+        XCTAssertNil(AIChatPromptHandler.shared.consumeData(), "No prompt is posted while over the tab cap")
+        XCTAssertEqual(controller.activeTabAttachments.count, 4,
+                       "Over-cap attachments are retained so the user can remove one to unblock submit")
+    }
+
+    func testWhenSubmitWithTabAttachmentsAtCap_ThenSubmitProceeds() async {
+        // At exactly the cap (3, not over), submit must proceed even with the picker enabled.
+        featureFlagger.enabledFeatureFlags = [.aiChatPageContext, .aiChatOmnibarAttachMoreTabs, .aiChatTabAttachmentLimit]
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-1"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-2"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-3"))
+        XCTAssertTrue(controller.isActiveTabAttachmentsFull)
+        XCTAssertFalse(controller.hasExcessTabAttachments)
+        controller.updateText("summarize these")
+
+        // When — brief sleep lets the async page-context extraction settle (see sibling submit test).
+        controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Then
+        XCTAssertTrue(mockTabOpener.openAIChatTabCalled, "Submit proceeds when at (not over) the tab cap")
+    }
+
     func testWhenSubmitWithTabAttachments_ThenSharedStateClearsTabAttachments() async {
         // Given — a tab is attached and there's a prompt to submit
         let attachment = makeTabAttachment(id: "tab-1")
@@ -740,6 +936,94 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                       "File attachments are cleared from shared state after a successful submit")
     }
 
+    // MARK: - Submit-time file re-validation
+
+    func testWhenSubmitWithOversizedFile_ThenSubmitIsBlockedAndErrorSurfaces() async {
+        await loadPDFModel(limits: makeAttachmentLimits(maxFileSizeMB: 1))
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 1_048_577, pageCount: 1))
+        controller.updateText("summarise this PDF")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled, "An over-size file must not reach the backend")
+        XCTAssertNil(AIChatPromptHandler.shared.consumeData(), "No prompt is posted when submit is blocked")
+        XCTAssertEqual(reportedError, UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: 1))
+        XCTAssertEqual(controller.activeFileAttachments.count, 1, "A blocked submit leaves the attachment in place")
+    }
+
+    func testWhenSubmitWithFilesOverTotalSizeLimit_ThenSubmitIsBlocked() async {
+        // Each file is inside the per-file limit; only the cumulative pass catches the total.
+        await loadPDFModel(limits: makeAttachmentLimits(maxFileSizeMB: 1, maxTotalFileSizeBytes: 1_500_000))
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 800_000, pageCount: 1))
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 800_000, pageCount: 1))
+        controller.updateText("compare these")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled)
+        // The copy rounds the byte budget up to whole MB (1_500_000 bytes -> "2 MB").
+        XCTAssertEqual(reportedError, UserText.aiChatAttachmentFilesExceedTotalSizeLimit(maxTotalFileSizeMB: 2))
+    }
+
+    func testWhenSubmitWithFileOverPageLimit_ThenSubmitIsBlocked() async {
+        await loadPDFModel(limits: makeAttachmentLimits(maxPagesPerFile: 15))
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 1_000, pageCount: 16))
+        controller.updateText("summarise")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled)
+        XCTAssertEqual(reportedError, UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: 15))
+    }
+
+    func testWhenSubmitWithFileWithinLimits_ThenSubmitProceeds() async {
+        await loadPDFModel(limits: makeAttachmentLimits())
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 100_000, pageCount: 5))
+        controller.updateText("summarise")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertTrue(mockTabOpener.openAIChatTabCalled, "A valid file still submits")
+        XCTAssertNil(reportedError)
+        guard case let .query(query)? = AIChatPromptHandler.shared.consumeData()?.tool else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+            return
+        }
+        XCTAssertEqual(query.files?.count, 1)
+    }
+
+    func testWhenLimitsAreUnavailable_ThenOversizedFileStillSubmits() async {
+        // Deliberate: blocking here would make PDFs unsendable whenever the models endpoint is unreachable.
+        await loadPDFModel(limits: nil)
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 30_000_000, pageCount: nil))
+        controller.updateText("summarise")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertTrue(mockTabOpener.openAIChatTabCalled)
+        XCTAssertNil(reportedError)
+    }
+
     func testWhenSubmitWithoutTabAttachments_ThenPromptOmitsPageContext() async {
         // Given — only text, no attachments
         controller.updateText("just text")
@@ -757,8 +1041,11 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     func testWhenTabSwitchesToTabWithSavedTabAttachments_ThenPanelAttachmentsCallbackFires() {
-        // Given — tab 1 has a saved tab attachment; register the unified-panel callback.
-        let attachment = makeTabAttachment(id: "tab-A")
+        // Given — tab 1 has a saved attachment. It has to name an open tab sitting on the page the
+        // attachment records: a closed tab is pruned, and one on another page is a navigation.
+        let attachedTab = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
+        _ = tabCollectionViewModel.append(tab: attachedTab, selected: false)
+        let attachment = makeTabAttachment(id: attachedTab.uuid)
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setAIChatTabAttachments([attachment])
 
         var receivedLists: [[AIChatPanelAttachment]] = []
@@ -804,6 +1091,23 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(controller.currentSelectionRange, NSRange(location: 3, length: 2))
+    }
+
+    func testWhenTabSwitchesToTabWithSavedDraft_ThenControllerRestoresTextAndSelection() {
+        // Given — tab 1 holds a draft with a live selection, tab 2 is fresh
+        controller.updateText("hello world")
+        controller.updateSelection(NSRange(location: 6, length: 5))
+        tabCollectionViewModel.appendNewTab()
+        XCTAssertEqual(controller.currentText, "", "Tab 2 has no draft; controller should be empty after switch")
+
+        // When — switch back to tab 1
+        tabCollectionViewModel.select(at: .unpinned(0))
+
+        // Then
+        XCTAssertEqual(controller.currentText, "hello world",
+                       "Controller should restore tab 1's draft text on switch back")
+        XCTAssertEqual(controller.currentSelectionRange, NSRange(location: 6, length: 5),
+                       "Controller should restore tab 1's cursor position on switch back")
     }
 
     func testWhenOnOmnibarActivatedAfterCleanup_ThenRestoresTextAndToolModeFromSharedState() {
@@ -1020,6 +1324,152 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertFalse(controller.selectedModelSupportsImageGeneration)
     }
 
+    // MARK: - Updated Create Image Model Switching Tests
+
+    func testWhenUpdatedCreateImageIsEnabledAndSelectedModelIsUnsupported_ThenSuggestedModelIsSelectedAndNoticeIsReturned() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "mistral", modelShortName: "Mistral Small"),
+            makeRemoteModel(id: "first-capable", modelShortName: "GPT-5.4", supportedTools: ["GenerateImage"], label: .usesLimitsFaster),
+            makeRemoteModel(id: "suggested", modelShortName: "GPT-5.4 mini", supportedTools: ["GenerateImage"], label: .everydayUse)
+        ]
+        mockPreferences.selectedModelId = "mistral"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When
+        let notice = controller.toggleImageGenerationMode()
+
+        // Then
+        XCTAssertTrue(controller.isImageGenerationMode)
+        XCTAssertEqual(mockPreferences.selectedModelId, "suggested")
+        XCTAssertEqual(notice?.previousModelShortName, "Mistral Small")
+        XCTAssertEqual(notice?.newModelShortName, "GPT-5.4 mini")
+        XCTAssertEqual(notice?.previousModelHasExtraPrivacyProtections, false)
+        XCTAssertTrue(pixelHandler.events.contains(.createImageModelSwitched(
+            fromModelId: "mistral",
+            toModelId: "suggested",
+            fromModelPrivacyPreserving: false
+        )))
+    }
+
+    func testWhenUpdatedCreateImageSwitchesFromOSSModel_ThenNoticeMentionsExtraPrivacyProtections() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "gpt-oss-120b", modelShortName: "GPT-OSS", provider: "tinfoil"),
+            makeRemoteModel(id: "image-model", modelShortName: "GPT-5.4", supportedTools: ["GenerateImage"])
+        ]
+        mockPreferences.selectedModelId = "gpt-oss-120b"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When
+        let notice = controller.toggleImageGenerationMode()
+
+        // Then
+        XCTAssertEqual(mockPreferences.selectedModelId, "image-model")
+        XCTAssertEqual(notice?.previousModelShortName, "GPT-OSS")
+        XCTAssertEqual(notice?.newModelShortName, "GPT-5.4")
+        XCTAssertEqual(notice?.previousModelHasExtraPrivacyProtections, true)
+        XCTAssertTrue(pixelHandler.events.contains(.createImageModelSwitched(
+            fromModelId: "gpt-oss-120b",
+            toModelId: "image-model",
+            fromModelPrivacyPreserving: true
+        )))
+    }
+
+    func testWhenSelectedModelAlreadySupportsImageGeneration_ThenModelIsNotChangedAndNoticeIsNotReturned() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "selected", supportedTools: ["GenerateImage"]),
+            makeRemoteModel(id: "suggested", supportedTools: ["GenerateImage"], label: .everydayUse)
+        ]
+        mockPreferences.selectedModelId = "selected"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When
+        let notice = controller.toggleImageGenerationMode()
+
+        // Then
+        XCTAssertEqual(mockPreferences.selectedModelId, "selected")
+        XCTAssertNil(notice)
+        XCTAssertFalse(pixelHandler.events.contains { event in
+            if case .createImageModelSwitched = event { return true }
+            return false
+        })
+    }
+
+    func testWhenUpdatedCreateImageIsDisabled_ThenUnsupportedSelectedModelIsNotChanged() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = false
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "unsupported"),
+            makeRemoteModel(id: "image-model", supportedTools: ["GenerateImage"], label: .everydayUse)
+        ]
+        mockPreferences.selectedModelId = "unsupported"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When
+        let notice = controller.toggleImageGenerationMode()
+
+        // Then
+        XCTAssertTrue(controller.isImageGenerationMode)
+        XCTAssertEqual(mockPreferences.selectedModelId, "unsupported")
+        XCTAssertNil(notice)
+    }
+
+    func testWhenNoAccessibleModelSupportsImageGeneration_ThenSelectedModelIsNotChangedAndLegacyModeIsUsed() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "unsupported"),
+            makeRemoteModel(id: "inaccessible", entityHasAccess: false, supportedTools: ["GenerateImage"], label: .everydayUse)
+        ]
+        mockPreferences.selectedModelId = "unsupported"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When
+        let notice = controller.toggleImageGenerationMode()
+
+        // Then
+        XCTAssertEqual(mockPreferences.selectedModelId, "unsupported")
+        XCTAssertNil(notice)
+        XCTAssertNil(controller.effectiveModelId)
+        XCTAssertNil(controller.effectiveToolChoice)
+        XCTAssertEqual(controller.effectiveMode, AIChatNativePrompt.imageGenerationMode)
+        XCTAssertTrue(pixelHandler.events.contains(.createImageUnavailable))
+    }
+
+    func testWhenUpdatedCreateImageIsActivatedBeforeModelsLoad_ThenModelSwitchesAfterFetchAndModeStaysActive() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "unsupported", modelShortName: "Mistral Small"),
+            makeRemoteModel(id: "image-model", modelShortName: "GPT-5.4 mini", supportedTools: ["GenerateImage"], label: .everydayUse)
+        ]
+        mockPreferences.selectedModelId = "unsupported"
+        var receivedNotice: AIChatCreateImageModelSwitchNotice?
+        controller.onCreateImageModelSwitchNotice = { receivedNotice = $0 }
+        XCTAssertNil(controller.toggleImageGenerationMode())
+        XCTAssertTrue(controller.isImageGenerationMode)
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertTrue(controller.isImageGenerationMode)
+        XCTAssertEqual(mockPreferences.selectedModelId, "image-model")
+        XCTAssertEqual(receivedNotice?.previousModelShortName, "Mistral Small")
+        XCTAssertEqual(receivedNotice?.newModelShortName, "GPT-5.4 mini")
+    }
+
     func testWhenSwitchingToUnsupportedModel_ThenImageGenerationModeIsDeactivated() async {
         // Given
         mockModelsService.modelsToReturn = [
@@ -1061,6 +1511,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     func testWhenFetchModelsRevealsUnsupportedPersistedModel_ThenImageGenerationModeIsDeactivated() async {
         // Given — user toggled Create Image before models loaded (conservative default allowed it),
         // persisted model turns out not to support it
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = false
         mockModelsService.modelsToReturn = [
             makeRemoteModel(id: "no-img", supportedTools: [])
         ]
@@ -1169,6 +1620,65 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         }
         XCTAssertEqual(query.prompt, "a war potato")
         XCTAssertEqual(query.modelId, "img-model")
+        XCTAssertEqual(query.toolChoice, [AIChatRAGTool.imageGeneration.rawValue])
+        XCTAssertNil(query.mode)
+        XCTAssertFalse(pixelHandler.events.contains(.createImageSubmittedWithUnsupportedModel))
+    }
+
+    func testWhenImageGenerationIsSubmittedWithoutAccessibleImageModel_ThenErrorPixelFiresAndLegacyModeIsUsed() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "unsupported", supportedTools: [])
+        ]
+        mockPreferences.selectedModelId = "unsupported"
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.toggleImageGenerationMode()
+        controller.updateText("draw a lighthouse")
+
+        // When
+        controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Then
+        XCTAssertTrue(pixelHandler.events.contains(.createImageUnavailable))
+        XCTAssertTrue(pixelHandler.events.contains(.createImageSubmittedWithUnsupportedModel))
+        let prompt = AIChatPromptHandler.shared.consumeData()
+        guard case .query(let query) = prompt?.tool else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+            return
+        }
+        XCTAssertNil(query.modelId)
+        XCTAssertNil(query.toolChoice)
+        XCTAssertEqual(query.mode, AIChatNativePrompt.imageGenerationMode)
+    }
+
+    func testWhenImageGenerationSwitchesToFallbackBeforeSubmission_ThenErrorPixelDoesNotFire() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "unsupported", supportedTools: []),
+            makeRemoteModel(id: "fallback", supportedTools: ["GenerateImage"])
+        ]
+        mockPreferences.selectedModelId = "unsupported"
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.toggleImageGenerationMode()
+        controller.updateText("draw a lighthouse")
+
+        // When
+        controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Then
+        XCTAssertFalse(pixelHandler.events.contains(.createImageSubmittedWithUnsupportedModel))
+        let prompt = AIChatPromptHandler.shared.consumeData()
+        guard case .query(let query) = prompt?.tool else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+            return
+        }
+        XCTAssertEqual(query.modelId, "fallback")
         XCTAssertEqual(query.toolChoice, [AIChatRAGTool.imageGeneration.rawValue])
         XCTAssertNil(query.mode)
     }
@@ -1764,12 +2274,12 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         setUserTier(.plus)
 
         // When
-        controller.presentSubscriptionUpsell(requiredTier: .pro, origin: .addressBarReasoningPicker)
+        controller.presentSubscriptionUpsell(requiredTier: .pro, origin: .addressBarReasoningDropdown)
 
         // Then
         XCTAssertTrue(mockSubscriptionUpsellPresenter.routeGatedSelectionCalled)
         XCTAssertEqual(mockSubscriptionUpsellPresenter.lastRequiredTier, .pro)
-        XCTAssertEqual(mockSubscriptionUpsellPresenter.lastOrigin, .addressBarReasoningPicker)
+        XCTAssertEqual(mockSubscriptionUpsellPresenter.lastOrigin, .addressBarReasoningDropdown)
     }
 
     func testWhenRequiredTierForGatedModel_ThenReturnsModelsLowestPublicAccessTier() async {
@@ -1844,29 +2354,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertFalse(controller.shouldOfferFreeTrial, "An existing subscriber always sees Upgrade, never Try for Free")
     }
 
-    // MARK: - Badge Impression Cap Tests
-
-    func testWhenImpressionCapNotReached_ThenBadgeIsNotMuted() {
-        // Given — three views of a four-view cap
-        controller.recordBadgeImpression()
-        controller.recordBadgeImpression()
-        controller.recordBadgeImpression()
-
-        // Then — still shown in full color
-        XCTAssertFalse(controller.isBadgeMuted)
-    }
-
-    func testWhenImpressionCapReached_ThenBadgeIsMuted() {
-        // Given — four views reaches the cap
-        controller.recordBadgeImpression()
-        controller.recordBadgeImpression()
-        controller.recordBadgeImpression()
-        controller.recordBadgeImpression()
-
-        // Then — the badge stays but is muted from here on
-        XCTAssertTrue(controller.isBadgeMuted)
-    }
-
     // MARK: - Subscription Activation Tests
 
     func testWhenPresentSubscriptionActivationFlow_ThenPresenterActivationIsCalled() {
@@ -1879,7 +2366,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     // MARK: - Model Picker Content (modelPickerItems)
 
-    func testModelPickerItems_freeUserUpsellOn_accessibleThenSubscriberExclusiveGatedSection() async {
+    func testModelPickerItems_freeUserUpsellOn_accessibleThenTryFreeGatedSection() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([
             makeRemoteModel(id: "free-a", accessTier: ["free"]),
@@ -1892,22 +2379,81 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         let accessible = accessibleRows(items)
         XCTAssertEqual(accessible.map(\.id), ["free-a", "free-b"])
-        XCTAssertNil(accessible[0].badge, "Free-tier models carry no trailing badge")
 
-        XCTAssertTrue(hasSeparator(items))
-
-        let header = gatedHeader(in: items)
-        XCTAssertEqual(header?.title, UserText.aiChatModelPickerSubscriberExclusive)
-        XCTAssertEqual(header?.badge, UserText.aiChatModelPickerTryForFree, "Trial-eligible free user sees Try for free")
-        XCTAssertEqual(header?.representativeId, "gated-plus", "First gated model represents the header's routing tier")
+        XCTAssertEqual(sectionHeaderTitle(in: items), UserText.aiChatModelPickerTryFreeSectionHeader,
+                       "A trial-eligible user is offered the free trial")
 
         let gated = gatedRows(items)
         XCTAssertEqual(gated.map(\.id), ["gated-plus", "gated-pro"])
-        XCTAssertEqual(gated[0].badge, UserText.aiChatModelPickerTierBadgePlus)
-        XCTAssertEqual(gated[1].badge, UserText.aiChatModelPickerTierBadgePro)
+        XCTAssertTrue(gated.allSatisfy(\.routesToUpsell), "With the upsell on, a gated row opens the purchase dialog")
     }
 
-    func testModelPickerItems_plusUserUpsellOn_proExclusiveHeaderUpgradeBadgeAndPlusModelsBadged() async {
+    /// The usage card's "Switch to a Free Model" chevron. That message means the advanced allowance
+    /// is spent, so the menu behind it must not list the models it was spent on.
+    func testModelPickerItems_freeModelsOnly_listsOnlyModelsTheFreeTierGets() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        // A free-tier model lists every tier in the live payload — "free" marks what it costs, not
+        // who may select it, and a paid user must still be able to switch onto one.
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free", "plus", "pro"]),
+            makeRemoteModel(id: "basic", accessTier: ["free", "plus"]),
+            makeRemoteModel(id: "plus-only", accessTier: ["plus"]),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ], tier: .plus, trialEligible: true)
+
+        let items = controller.modelPickerItems(selectedModelId: nil, freeModelsOnly: true)
+
+        XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a", "basic"])
+        XCTAssertTrue(gatedRows(items).isEmpty, "A paid model is exactly what this menu exists to avoid")
+    }
+
+    /// A paid model the user *can* select is still the wrong offer here — their allowance for it is gone.
+    func testModelPickerItems_freeModelsOnly_dropsPaidModelsTheUserHasAccessTo() async {
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free", "plus", "pro"]),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ], tier: .pro, trialEligible: false)
+
+        let items = controller.modelPickerItems(selectedModelId: nil, freeModelsOnly: true)
+
+        XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a"])
+        XCTAssertEqual(separatorCount(items), 0, "Nothing to divide off — there is no second section")
+    }
+
+    /// The toolbar's own picker is unchanged: it still offers everything, gated section included.
+    func testModelPickerItems_withoutTheFreeOnlyFlag_stillOffersPaidModels() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free", "plus", "pro"]),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ], tier: nil, trialEligible: true)
+
+        let items = controller.modelPickerItems(selectedModelId: nil)
+
+        XCTAssertEqual(gatedRows(items).map(\.id), ["pro-only"])
+    }
+
+    /// The gated section is exactly `[separator, header, gated…]`, in that order, at the end.
+    func testModelPickerItems_gatedSectionOrdering() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free"]),
+            makeRemoteModel(id: "gated-pro", accessTier: ["pro"]),
+        ], tier: nil, trialEligible: true)
+
+        let items = controller.modelPickerItems(selectedModelId: nil)
+
+        let separatorIndex = firstIndex(in: items) { if case .separator = $0 { return true }; return false }
+        let headerIndex = firstIndex(in: items) { if case .sectionHeader = $0 { return true }; return false }
+        let gatedIndex = firstIndex(in: items) { if case .gatedModel = $0 { return true }; return false }
+
+        XCTAssertEqual(separatorCount(items), 1, "Only the gated section is divided off")
+        XCTAssertEqual(separatorIndex, 1, "The single accessible row comes first")
+        XCTAssertEqual(headerIndex, 2)
+        XCTAssertEqual(gatedIndex, 3)
+    }
+
+    func testModelPickerItems_plusUser_accessibleModelsFirstAndProSectionIsOffered() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([
             makeRemoteModel(id: "basic", accessTier: ["free", "plus"]),
@@ -1919,21 +2465,14 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         let accessible = accessibleRows(items)
         XCTAssertEqual(accessible.map(\.id), ["basic", "plus-only"])
-        XCTAssertNil(accessible[0].badge, "A free+plus model resolves to the free tier — no badge")
-        XCTAssertEqual(accessible[1].badge, UserText.aiChatModelPickerTierBadgePlus,
-                       "An already-accessible plus-only model is still badged PLUS")
 
-        let header = gatedHeader(in: items)
-        XCTAssertEqual(header?.title, UserText.aiChatModelPickerProExclusive,
-                       "A Plus user's remaining gated models are all Pro-only")
-        XCTAssertEqual(header?.badge, UserText.aiChatModelPickerUpgrade,
-                       "A subscriber always sees Upgrade, never Try for free, regardless of trial eligibility")
+        XCTAssertEqual(sectionHeaderTitle(in: items), UserText.aiChatModelPickerAvailableWithProSectionHeader,
+                       "A subscriber is never offered the trial, only the upgrade")
 
         XCTAssertEqual(gatedRows(items).map(\.id), ["pro-only"])
-        XCTAssertEqual(gatedRows(items).first?.badge, UserText.aiChatModelPickerTierBadgePro)
     }
 
-    func testModelPickerItems_freeUserTrialIneligible_usesUpgradeBadge() async {
+    func testModelPickerItems_freeUserTrialIneligible_usesAvailableWithPaidPlansHeader() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([
             makeRemoteModel(id: "gated-plus", accessTier: ["plus"]),
@@ -1941,8 +2480,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         let items = controller.modelPickerItems(selectedModelId: nil)
 
-        XCTAssertEqual(gatedHeader(in: items)?.badge, UserText.aiChatModelPickerUpgrade,
-                       "A free user who already used their trial sees Upgrade")
+        XCTAssertEqual(sectionHeaderTitle(in: items), UserText.aiChatModelPickerAvailableWithPaidPlansSectionHeader,
+                       "A non-subscriber past their trial is pointed at the paid plans, not at Pro specifically")
     }
 
     func testModelPickerItems_upsellOff_gatedRowsShownWithoutHeaderAndNoImpression() async {
@@ -1952,13 +2491,13 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             makeRemoteModel(id: "gated-pro", accessTier: ["pro"]),
         ], tier: nil)
 
-        let before = mockBadgeImpressionPersistor.viewCount
         let items = controller.modelPickerItems(selectedModelId: nil)
 
         XCTAssertTrue(hasSeparator(items), "Separator still divides accessible from gated when the flag is off")
-        XCTAssertNil(gatedHeader(in: items), "No upsell header when the flag is off")
-        XCTAssertEqual(gatedRows(items).map(\.id), ["gated-pro"], "Gated rows still render (dimmed) so they can't be selected")
-        XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, before, "No badge impression recorded when no header is shown")
+        XCTAssertNil(sectionHeaderTitle(in: items), "No upsell header when the flag is off")
+        XCTAssertEqual(gatedRows(items).map(\.id), ["gated-pro"], "Gated rows still render, so the tier is visible")
+        XCTAssertEqual(gatedRows(items).first?.routesToUpsell, false,
+                       "With the upsell off there is nothing to route to — the row must not open the purchase dialog")
     }
 
     func testModelPickerItems_noGatedModels_noSeparatorHeaderOrImpression() async {
@@ -1968,41 +2507,71 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             makeRemoteModel(id: "free-b", accessTier: ["free"]),
         ], tier: nil, trialEligible: true)
 
-        let before = mockBadgeImpressionPersistor.viewCount
         let items = controller.modelPickerItems(selectedModelId: nil)
 
         XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a", "free-b"])
         XCTAssertFalse(hasSeparator(items))
-        XCTAssertNil(gatedHeader(in: items))
+        XCTAssertNil(sectionHeaderTitle(in: items))
         XCTAssertTrue(gatedRows(items).isEmpty)
-        XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, before)
     }
 
-    func testModelPickerItems_recordsOneBadgeImpressionPerCallWhenHeaderShown() async {
+    // MARK: - Model Picker Recommendations (backend labels)
+
+    func testModelPickerItems_labelledModelsComeFirstWithNoDividerBetweenThem() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([
-            makeRemoteModel(id: "gated-pro", accessTier: ["pro"]),
-        ], tier: nil, trialEligible: true)
-
-        XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, 0)
-        _ = controller.modelPickerItems(selectedModelId: nil)
-        XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, 1, "One impression per menu open")
-        _ = controller.modelPickerItems(selectedModelId: nil)
-        XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, 2)
-    }
-
-    func testModelPickerItems_headerMutedWhenImpressionCapReached() async {
-        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
-        await loadModels([
-            makeRemoteModel(id: "gated-pro", accessTier: ["pro"]),
-        ], tier: nil, trialEligible: true)
-        // Reach the 4-view cap configured in setUp.
-        for _ in 0..<4 { controller.recordBadgeImpression() }
-        XCTAssertTrue(controller.isBadgeMuted)
+            makeRemoteModel(id: "plain-a", accessTier: ["free"]),
+            makeRemoteModel(id: "recommended", accessTier: ["free"], label: .everydayUse),
+            makeRemoteModel(id: "plain-b", accessTier: ["free"]),
+        ], tier: nil)
 
         let items = controller.modelPickerItems(selectedModelId: nil)
 
-        XCTAssertEqual(gatedHeader(in: items)?.isMuted, true)
+        XCTAssertEqual(accessibleRows(items).map(\.id), ["recommended", "plain-a", "plain-b"],
+                       "Labelled models lead; the rest keep API order")
+        XCTAssertEqual(separatorCount(items), 0, "Recommended and plain models are one uninterrupted list")
+    }
+
+    func testModelPickerItems_labelMapsToSubtitleCopy() async {
+        await loadModels([
+            makeRemoteModel(id: "everyday", accessTier: ["free"], label: .everydayUse),
+            makeRemoteModel(id: "hits-limits", accessTier: ["free"], label: .usesLimitsFaster),
+            makeRemoteModel(id: "plain", accessTier: ["free"]),
+        ], tier: nil)
+
+        let rows = accessibleRows(controller.modelPickerItems(selectedModelId: nil))
+
+        XCTAssertEqual(rows.first { $0.id == "everyday" }?.subtitle, UserText.aiChatModelPickerLabelEverydayUse)
+        XCTAssertEqual(rows.first { $0.id == "hits-limits" }?.subtitle, UserText.aiChatModelPickerLabelUsesLimitsFaster)
+        XCTAssertNil(rows.first { $0.id == "plain" }?.subtitle, "An unlabelled model has no subtitle")
+    }
+
+    /// A label this build doesn't know still marks the model as recommended (it sorts first), but
+    /// there's no copy to show for it — the row must not claim a subtitle it can't render.
+    func testModelPickerItems_unknownLabelSortsFirstWithoutSubtitle() async {
+        await loadModels([
+            makeRemoteModel(id: "plain", accessTier: ["free"]),
+            makeRemoteModel(id: "future", accessTier: ["free"], label: .unknown("FUTURE_LABEL")),
+        ], tier: nil)
+
+        let rows = accessibleRows(controller.modelPickerItems(selectedModelId: nil))
+
+        XCTAssertEqual(rows.map(\.id), ["future", "plain"])
+        XCTAssertNil(rows[0].subtitle)
+    }
+
+    func testModelPickerItems_labelledButGatedModelStaysInTheGatedSection() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free"]),
+            makeRemoteModel(id: "gated-labelled", accessTier: ["pro"], label: .everydayUse),
+        ], tier: nil, trialEligible: true)
+
+        let items = controller.modelPickerItems(selectedModelId: nil)
+
+        XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a"],
+                       "A labelled model the user can't access stays in the gated section")
+        XCTAssertEqual(gatedRows(items).map(\.id), ["gated-labelled"])
     }
 
     func testModelPickerItems_marksSelectedAccessibleRow() async {
@@ -2034,7 +2603,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         )
     }
 
-    func testReasoningPickerItems_freeUserUpsellOn_gatedEffortHasTryForFreeBadge() async {
+    func testReasoningPickerItems_freeUserTrialEligible_gatedEffortHeadsTheTrialSection() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         mockPreferences.selectedModelId = "reasoning-model"
@@ -2045,14 +2614,17 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         let open = items.first { $0.effort == .low }
 
         XCTAssertEqual(gated?.isGated, true)
-        XCTAssertEqual(gated?.upsellBadge, UserText.aiChatModelPickerTryForFree)
-        XCTAssertNil(gated?.trailingText, "Upsell badge replaces the plain PLUS/PRO label")
+        XCTAssertEqual(gated?.gatedSectionTitle, UserText.aiChatModelPickerTryFreeSectionHeader)
         XCTAssertEqual(gated?.isSelected, false)
+        XCTAssertEqual(gated?.routesToUpsell, true)
         XCTAssertEqual(open?.isGated, false)
-        XCTAssertNil(open?.upsellBadge)
+        XCTAssertNil(open?.gatedSectionTitle, "An effort the user can already use heads no section")
+        XCTAssertEqual(open?.routesToUpsell, false, "An accessible effort is a plain selection, not an upsell")
     }
 
-    func testReasoningPickerItems_freeUserTrialIneligible_gatedEffortHasUpgradeBadge() async {
+    /// Trial spent: a non-subscriber's gated efforts read as subscriber-only, not Pro-only — Plus
+    /// unlocks them too, so keying the heading off the effort's own tier was wrong.
+    func testReasoningPickerItems_freeUserTrialIneligible_headingNamesThePaidPlans() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         mockPreferences.selectedModelId = "reasoning-model"
@@ -2060,10 +2632,10 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         let gated = controller.reasoningPickerItems().first { $0.effort == .medium }
 
-        XCTAssertEqual(gated?.upsellBadge, UserText.aiChatModelPickerUpgrade)
+        XCTAssertEqual(gated?.gatedSectionTitle, UserText.aiChatModelPickerAvailableWithPaidPlansSectionHeader)
     }
 
-    func testReasoningPickerItems_upsellOff_gatedEffortShowsTierLabelNoBadge() async {
+    func testReasoningPickerItems_upsellOff_gatedEffortHasNoHeadingAndNoUpsell() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         // Upsell flag left off.
         mockPreferences.selectedModelId = "reasoning-model"
@@ -2072,29 +2644,9 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         let gated = controller.reasoningPickerItems().first { $0.effort == .medium }
 
         XCTAssertEqual(gated?.isGated, true)
-        XCTAssertNil(gated?.upsellBadge, "No badge when the upsell is off")
-        XCTAssertEqual(gated?.trailingText, UserText.aiChatModelPickerTierBadgePlus)
-    }
-
-    func testReasoningPickerItems_recordsOneImpressionWhenUpsellBadgeShown() async {
-        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
-        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
-        mockPreferences.selectedModelId = "reasoning-model"
-        await loadModels([gatedEffortModel()], tier: nil, trialEligible: true)
-
-        _ = controller.reasoningPickerItems()
-
-        XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, 1, "One impression per open, not one per gated row")
-    }
-
-    func testReasoningPickerItems_upsellOff_recordsNoImpression() async {
-        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
-        mockPreferences.selectedModelId = "reasoning-model"
-        await loadModels([gatedEffortModel()], tier: nil, trialEligible: true)
-
-        _ = controller.reasoningPickerItems()
-
-        XCTAssertEqual(mockBadgeImpressionPersistor.viewCount, 0)
+        XCTAssertNil(gated?.gatedSectionTitle, "No heading to show when there's no upsell behind it")
+        XCTAssertEqual(gated?.routesToUpsell, false,
+                       "With the upsell off the effort stays visible but must not open the purchase dialog")
     }
 
     func testReasoningPickerItems_marksCurrentAccessibleEffortSelected() async {
@@ -2122,26 +2674,30 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     /// submit body silently drops the file payload when that returns `false`.
     private func makeRemoteModel(
         id: String,
+        modelShortName: String? = nil,
+        provider: String = "openai",
         supportsImageUpload: Bool = false,
         supportedFileTypes: [String]? = nil,
         entityHasAccess: Bool = true,
         supportedTools: [String] = [],
         supportedReasoningEffort: [AIChatReasoningEffort] = [],
         accessTier: [String]? = nil,
-        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil,
+        label: AIChatModelLabel? = nil
     ) -> AIChatRemoteModel {
         AIChatRemoteModel(
             id: id,
             name: id,
-            modelShortName: nil,
-            provider: "openai",
+            modelShortName: modelShortName,
+            provider: provider,
             entityHasAccess: entityHasAccess,
             supportsImageUpload: supportsImageUpload,
             supportedFileTypes: supportedFileTypes,
             supportedTools: supportedTools,
             accessTier: accessTier ?? (entityHasAccess ? ["free"] : ["plus", "pro"]),
             supportedReasoningEffort: supportedReasoningEffort,
-            reasoningEffortAccess: reasoningEffortAccess
+            reasoningEffortAccess: reasoningEffortAccess,
+            label: label
         )
     }
 
@@ -2192,6 +2748,46 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         )
     }
 
+    /// Size is declared, not allocated, so a "30MB file" is free. `pageCount: nil` = unreadable PDF.
+    private func makePDFAttachment(byteCount: Int, pageCount: Int?) -> AIChatFileAttachment {
+        AIChatFileAttachment(
+            data: Data("%PDF-1.4 mock".utf8),
+            fileName: "spec.pdf",
+            mimeType: "application/pdf",
+            fileSizeBytes: byteCount,
+            pageCount: pageCount
+        )
+    }
+
+    /// Same limits on every tier, so a test doesn't have to pin the resolved tier to assert on them.
+    private func makeAttachmentLimits(
+        maxPerConversation: Int = 5,
+        maxFileSizeMB: Int = 5,
+        maxTotalFileSizeBytes: Int = 20_000_000,
+        maxPagesPerFile: Int = 15
+    ) -> AIChatAttachmentLimits {
+        let tier = AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(
+                maxPerConversation: maxPerConversation,
+                maxFileSizeMB: maxFileSizeMB,
+                maxTotalFileSizeBytes: maxTotalFileSizeBytes,
+                maxPagesPerFile: maxPagesPerFile
+            ),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 3, maxInputCharsWithAttachments: 10_000)
+        )
+        return AIChatAttachmentLimits(free: tier, plus: tier, pro: tier)
+    }
+
+    /// Loads a single PDF-capable model plus `limits`, as a real models fetch would.
+    private func loadPDFModel(limits: AIChatAttachmentLimits?) async {
+        mockModelsService.attachmentLimitsToReturn = limits
+        mockPreferences.selectedModelId = "pdf-model"
+        await loadModels(
+            [makeRemoteModel(id: "pdf-model", supportedFileTypes: ["application/pdf"], entityHasAccess: true)],
+            tier: nil
+        )
+    }
+
     /// Loads `models` and resolves the user's tier + trial eligibility, mirroring a real fetch.
     private func loadModels(_ models: [AIChatRemoteModel], tier: TierName?, trialEligible: Bool = false) async {
         setUserTier(tier)
@@ -2202,33 +2798,238 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     // Accessors that flatten `[AIChatModelPickerItem]` for assertions (the enum isn't Equatable).
-    private struct PickerRow { let id: String; let badge: String?; let isSelected: Bool }
-    private struct PickerHeader { let title: String; let badge: String; let isMuted: Bool; let representativeId: String? }
+    private struct PickerRow { let id: String; let subtitle: String?; let isSelected: Bool; var routesToUpsell = false }
 
     private func accessibleRows(_ items: [AIChatModelPickerItem]) -> [PickerRow] {
         items.compactMap { item -> PickerRow? in
-            guard case let .model(model, badge, isSelected) = item else { return nil }
-            return PickerRow(id: model.id, badge: badge, isSelected: isSelected)
+            guard case let .model(model, subtitle, isSelected) = item else { return nil }
+            return PickerRow(id: model.id, subtitle: subtitle, isSelected: isSelected)
         }
     }
 
     private func gatedRows(_ items: [AIChatModelPickerItem]) -> [PickerRow] {
         items.compactMap { item -> PickerRow? in
-            guard case let .gatedModel(model, badge) = item else { return nil }
-            return PickerRow(id: model.id, badge: badge, isSelected: false)
+            guard case let .gatedModel(model, routesToUpsell) = item else { return nil }
+            return PickerRow(id: model.id, subtitle: nil, isSelected: false, routesToUpsell: routesToUpsell)
         }
     }
 
-    private func gatedHeader(in items: [AIChatModelPickerItem]) -> PickerHeader? {
+    private func sectionHeaderTitle(in items: [AIChatModelPickerItem]) -> String? {
         for item in items {
-            guard case let .gatedHeader(title, badge, isMuted, representative) = item else { continue }
-            return PickerHeader(title: title, badge: badge, isMuted: isMuted, representativeId: representative?.id)
+            guard case let .sectionHeader(title) = item else { continue }
+            return title
         }
         return nil
     }
 
+    private func separatorCount(_ items: [AIChatModelPickerItem]) -> Int {
+        items.filter { if case .separator = $0 { return true }; return false }.count
+    }
+
     private func hasSeparator(_ items: [AIChatModelPickerItem]) -> Bool {
-        items.contains { if case .separator = $0 { return true }; return false }
+        separatorCount(items) > 0
+    }
+
+    /// Index of the first item matching `predicate`, for asserting on section ordering.
+    private func firstIndex(in items: [AIChatModelPickerItem], where predicate: (AIChatModelPickerItem) -> Bool) -> Int? {
+        items.firstIndex(where: predicate)
+    }
+
+    // MARK: - Prompt Bar surface
+
+    private func makePromptBarController(draftStore: EphemeralPromptDraftStore) -> AIChatOmnibarController {
+        AIChatOmnibarController(
+            aiChatTabOpener: mockTabOpener,
+            surface: .promptBar,
+            draftSource: StaticPromptDraftSource(store: draftStore),
+            origin: nil,
+            pixelHandler: PromptBarPixelHandler(),
+            featureFlagger: featureFlagger,
+            searchPreferencesPersistor: searchPreferencesPersistor,
+            preferences: mockPreferences,
+            modelsService: mockModelsService,
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter
+        )
+    }
+
+    func testWhenSurfaceIsPromptBarThenSuggestionsStayOffEvenWithTheFlagAndSettingOn() {
+        featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = true
+        searchPreferencesPersistor.showAutocompleteSuggestions = true
+        let promptBarController = makePromptBarController(draftStore: EphemeralPromptDraftStore())
+
+        XCTAssertFalse(promptBarController.isSuggestionsEnabled)
+        XCTAssertTrue(controller.isSuggestionsEnabled, "The address bar must be unaffected")
+    }
+
+    func testWhenSurfaceIsPromptBarThenTheTabPickerStaysOffEvenWithBothFlagsOn() {
+        featureFlagger.featuresStub[FeatureFlag.aiChatPageContext.rawValue] = true
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarAttachMoreTabs.rawValue] = true
+        let promptBarController = makePromptBarController(draftStore: EphemeralPromptDraftStore())
+
+        XCTAssertFalse(promptBarController.isOmnibarTabPickerEnabled)
+        XCTAssertTrue(controller.isOmnibarTabPickerEnabled, "The address bar must be unaffected")
+    }
+
+    func testWhenSurfaceIsPromptBarThenCustomizeResponsesStaysOffEvenWithTheFlagOn() {
+        featureFlagger.featuresStub[FeatureFlag.aiChatCustomizeResponses.rawValue] = true
+        let promptBarController = makePromptBarController(draftStore: EphemeralPromptDraftStore())
+
+        XCTAssertFalse(promptBarController.isCustomizeResponsesEnabled)
+        XCTAssertTrue(controller.isCustomizeResponsesEnabled, "The address bar must be unaffected")
+    }
+
+    func testWhenSurfaceIsPromptBarThenTheSubscriptionUpsellStaysOffEvenWithTheFlagOn() {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        let promptBarController = makePromptBarController(draftStore: EphemeralPromptDraftStore())
+
+        XCTAssertFalse(promptBarController.isSubscriptionUpsellEnabled)
+        XCTAssertTrue(controller.isSubscriptionUpsellEnabled, "The address bar must be unaffected")
+    }
+
+    func testWhenSurfaceIsPromptBarThenThereIsNoOriginTabToAttachOrDiscriminateAgainst() {
+        let promptBarController = makePromptBarController(draftStore: EphemeralPromptDraftStore())
+
+        XCTAssertTrue(promptBarController.openTabsForOmnibarPicker().isEmpty)
+        XCTAssertNil(promptBarController.currentTabUUID)
+    }
+
+    func testWhenSurfaceIsPromptBarThenSubmitIsHandedToTheHostRatherThanOpeningATab() async {
+        let promptBarController = makePromptBarController(draftStore: EphemeralPromptDraftStore())
+        let delegate = MockAIChatOmnibarControllerDelegate()
+        promptBarController.delegate = delegate
+        promptBarController.updateText("what is a duck")
+
+        promptBarController.submit()
+        await Task.yield()
+
+        XCTAssertTrue(delegate.requestsSubmissionCalled)
+        XCTAssertEqual(delegate.lastRequestedQuery, "what is a duck")
+        XCTAssertNotNil(delegate.lastRequestedPayload)
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled, "The host owns opening the tab for this surface")
+    }
+
+    func testWhenSurfaceIsPromptBarThenTheVoiceButtonIsHandedToTheHost() {
+        let promptBarController = makePromptBarController(draftStore: EphemeralPromptDraftStore())
+        let delegate = MockAIChatOmnibarControllerDelegate()
+        promptBarController.delegate = delegate
+
+        promptBarController.openNewVoiceChat()
+
+        XCTAssertTrue(delegate.requestsVoiceSessionCalled)
+        XCTAssertFalse(mockTabOpener.openVoiceSessionCalled, "The host resolves the window first for this surface")
+    }
+}
+
+@MainActor
+final class AIChatCreateImagePresentationPolicyTests: XCTestCase {
+
+    func testWhenUpdatedCreateImageIsEnabled_ThenItemIsVisibleForUnsupportedModel() {
+        let policy = makePolicy(
+            isUpdatedCreateImageEnabled: true,
+            selectedModelSupportsImageGeneration: false
+        )
+
+        XCTAssertTrue(policy.isImageGenerationItemVisible)
+    }
+
+    func testWhenUpdatedCreateImageIsDisabled_ThenItemVisibilityFollowsSelectedModelSupport() {
+        let unsupportedModelPolicy = makePolicy(
+            isUpdatedCreateImageEnabled: false,
+            selectedModelSupportsImageGeneration: false
+        )
+        let supportedModelPolicy = makePolicy(
+            isUpdatedCreateImageEnabled: false,
+            selectedModelSupportsImageGeneration: true
+        )
+
+        XCTAssertFalse(unsupportedModelPolicy.isImageGenerationItemVisible)
+        XCTAssertTrue(supportedModelPolicy.isImageGenerationItemVisible)
+    }
+
+    func testWhenUpdatedCreateImageModeIsActive_ThenModelPickerIsVisibleAndReadOnly() {
+        let policy = makePolicy(
+            isUpdatedCreateImageEnabled: true,
+            isImageGenerationMode: true
+        )
+
+        XCTAssertTrue(policy.shouldShowModelPicker)
+        XCTAssertTrue(policy.shouldMakeModelPickerReadOnly)
+    }
+
+    func testWhenImageGenerationModeIsInactive_ThenModelPickerIsVisibleAndInteractive() {
+        let policy = makePolicy(
+            isUpdatedCreateImageEnabled: true,
+            isImageGenerationMode: false
+        )
+
+        XCTAssertTrue(policy.shouldShowModelPicker)
+        XCTAssertFalse(policy.shouldMakeModelPickerReadOnly)
+    }
+
+    func testWhenUpdatedCreateImageIsDisabledAndImageGenerationModeIsActive_ThenModelPickerIsHidden() {
+        let policy = makePolicy(
+            isUpdatedCreateImageEnabled: false,
+            isImageGenerationMode: true
+        )
+
+        XCTAssertFalse(policy.shouldShowModelPicker)
+        XCTAssertFalse(policy.shouldMakeModelPickerReadOnly)
+    }
+
+    private func makePolicy(
+        isImageGenerationEnabled: Bool = true,
+        isUpdatedCreateImageEnabled: Bool,
+        selectedModelSupportsImageGeneration: Bool = true,
+        isOmnibarToolsEnabled: Bool = true,
+        hasModelPickerContent: Bool = true,
+        isImageGenerationMode: Bool = false
+    ) -> AIChatCreateImagePresentationPolicy {
+        AIChatCreateImagePresentationPolicy(
+            isImageGenerationEnabled: isImageGenerationEnabled,
+            isUpdatedCreateImageEnabled: isUpdatedCreateImageEnabled,
+            selectedModelSupportsImageGeneration: selectedModelSupportsImageGeneration,
+            isOmnibarToolsEnabled: isOmnibarToolsEnabled,
+            hasModelPickerContent: hasModelPickerContent,
+            isImageGenerationMode: isImageGenerationMode
+        )
+    }
+}
+
+@MainActor
+final class AIChatModelPickerButtonReadOnlyTests: XCTestCase {
+
+    func testWhenButtonIsReadOnly_ThenItCannotReceiveFocusOrMouseInteraction() {
+        let button = AIChatModelPickerButton(frame: NSRect(x: 0, y: 0, width: 120, height: 28))
+
+        button.isReadOnly = true
+
+        XCTAssertFalse(button.acceptsFirstResponder)
+        XCTAssertFalse(button.canBecomeKeyView)
+        XCTAssertNil(button.hitTest(NSPoint(x: 10, y: 10)))
+        XCTAssertEqual(button.accessibilityRole(), .staticText)
+    }
+
+    func testWhenButtonBecomesReadOnly_ThenMenuIndicatorSpaceIsRemoved() {
+        let button = AIChatModelPickerButton()
+        button.modelName = "GPT-5.4"
+        let interactiveWidth = button.intrinsicContentSize.width
+
+        button.isReadOnly = true
+
+        XCTAssertLessThan(button.intrinsicContentSize.width, interactiveWidth)
+    }
+
+    func testWhenButtonReturnsToInteractiveMode_ThenItCanReceiveInteractionAgain() {
+        let button = AIChatModelPickerButton(frame: NSRect(x: 0, y: 0, width: 120, height: 28))
+        button.isReadOnly = true
+
+        button.isReadOnly = false
+
+        XCTAssertTrue(button.acceptsFirstResponder)
+        XCTAssertTrue(button.canBecomeKeyView)
+        XCTAssertTrue(button.hitTest(NSPoint(x: 10, y: 10)) === button)
+        XCTAssertEqual(button.accessibilityRole(), .popUpButton)
     }
 }
 
@@ -2240,9 +3041,25 @@ private class MockAIChatOmnibarControllerDelegate: AIChatOmnibarControllerDelega
     var lastNavigationURL: URL?
     var didSelectSuggestionCalled = false
     var lastSelectedSuggestion: AIChatSuggestion?
+    var requestsSubmissionCalled = false
+    var lastRequestedQuery: String?
+    var lastRequestedPayload: AIChatNativePrompt?
+    var requestsVoiceSessionCalled = false
 
     func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController) {
         didSubmitCalled = true
+    }
+
+    func aiChatOmnibarController(_ controller: AIChatOmnibarController,
+                                 requestsSubmissionOf query: String,
+                                 payload: AIChatNativePrompt) {
+        requestsSubmissionCalled = true
+        lastRequestedQuery = query
+        lastRequestedPayload = payload
+    }
+
+    func aiChatOmnibarControllerRequestsVoiceSession(_ controller: AIChatOmnibarController) {
+        requestsVoiceSessionCalled = true
     }
 
     func aiChatOmnibarController(_ controller: AIChatOmnibarController, didRequestNavigationToURL url: URL) {
@@ -2262,6 +3079,14 @@ private class AIChatMockSearchPreferencesPersistor: SearchPreferencesPersistor {
     var showAutocompleteSuggestions: Bool = true
 }
 
+private final class CapturingDuckAIPromptPixelHandler: DuckAIPromptPixelFiring {
+    private(set) var events: [DuckAIPromptPixelEvent] = []
+
+    func fire(_ event: DuckAIPromptPixelEvent) {
+        events.append(event)
+    }
+}
+
 // MARK: - Mock AI Chat Preferences
 
 private class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
@@ -2279,13 +3104,14 @@ private class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
 @MainActor
 private class MockAIChatModelsProviding: AIChatModelsProviding {
     var modelsToReturn: [AIChatRemoteModel] = []
+    var attachmentLimitsToReturn: AIChatAttachmentLimits?
     var errorToThrow: Error?
 
     func fetchModels() async throws -> AIChatModelsResponse {
         if let error = errorToThrow {
             throw error
         }
-        return AIChatModelsResponse(models: modelsToReturn)
+        return AIChatModelsResponse(models: modelsToReturn, attachmentLimits: attachmentLimitsToReturn)
     }
 }
 
@@ -2310,21 +3136,5 @@ private class MockAIChatOmnibarSubscriptionUpselling: AIChatOmnibarSubscriptionU
 
     func presentSubscriptionActivation() {
         presentSubscriptionActivationCalled = true
-    }
-}
-
-private final class MockFreeTrialBadgePersistor: FreeTrialBadgePersisting {
-    private(set) var viewCount: Int
-    private let cap: Int
-
-    init(initialCount: Int, cap: Int) {
-        self.viewCount = initialCount
-        self.cap = cap
-    }
-
-    var hasReachedViewLimit: Bool { viewCount >= cap }
-
-    func incrementViewCount() {
-        if viewCount < cap { viewCount += 1 }
     }
 }

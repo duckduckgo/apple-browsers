@@ -209,7 +209,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
 
         // WHEN
-        view.dismissAction()
+        view.onAction(.completeAndActivateSearch)
 
         // THEN
         XCTAssertTrue(delegate.didCallDidTapDismissContextualOnboardingAction)
@@ -347,7 +347,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertFalse(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismiss)
 
         // WHEN
-        view.dismissAction()
+        view.onAction(.completeAndActivateSearch)
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismiss)
@@ -488,7 +488,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
 
         // WHEN
-        view.onManualDismiss!()
+        view.onAction(.manualDismiss)
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismissButtonTapped)

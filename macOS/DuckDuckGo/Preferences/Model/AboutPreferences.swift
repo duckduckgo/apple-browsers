@@ -20,7 +20,7 @@ import AppUpdaterShared
 import Combine
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import os.log
 import Persistence
 import PixelKit

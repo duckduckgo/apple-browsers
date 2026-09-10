@@ -24,11 +24,15 @@ public protocol HTTPSUpgradeStore {
     // MARK: - Bloom filter
 
     func loadBloomFilter() -> BloomFilter?
-    func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws
+    /// - Returns: `true` when the stored bloom filter changed.
+    @discardableResult
+    func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws -> Bool
 
     // MARK: - Excluded domains
 
     func hasExcludedDomain(_ domain: String) -> Bool
-    func persistExcludedDomains(_ domains: [String]) throws
+    /// - Returns: `true` when the stored excluded domains changed.
+    @discardableResult
+    func persistExcludedDomains(_ domains: [String]) throws -> Bool
 
 }

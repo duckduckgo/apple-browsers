@@ -28,7 +28,17 @@ public protocol HistoryCleaning {
     @MainActor func deleteAIChats(chatIDs: [String]) async -> Result<Void, Error>
 }
 
-public final class HistoryCleaner: HistoryCleaning {
+/// Splits `deleteAIChat`'s two phases so a caller can await the fast native delete without the slow JS clear.
+public protocol PhasedAIChatHistoryCleaning: HistoryCleaning {
+    /// Deletes the chat from native storage and writes the `locallyDeletedChatIds` tombstone;
+    /// `nil` means native storage was unavailable (not a failure).
+    @MainActor func deleteAIChatFromNativeStorage(chatID: String) -> Result<Void, Error>?
+
+    /// Clears the JS layer (localStorage + IndexedDB) via a headless WebView; `nil` clears all chats.
+    @MainActor func clearJSData(chatID: String?) async -> Result<Void, Error>
+}
+
+public final class HistoryCleaner: PhasedAIChatHistoryCleaning {
     private let nativeStorageHandler: DuckAiNativeStorageHandling?
     private let featureFlagProvider: AIChatFeatureFlagProviding?
     private let jsDataCleaner: AIChatJSDataCleaning
@@ -82,12 +92,22 @@ public final class HistoryCleaner: HistoryCleaning {
     @MainActor
     private func performClear(chatID: String?) async -> Result<Void, Error> {
         let nativeResult = clearLocalStorageIfAvailable(chatID: chatID)
-        let jsResult = await jsDataCleaner.clearJSData(chatID: chatID)
+        let jsResult = await clearJSData(chatID: chatID)
 
         if case .failure = nativeResult {
             return nativeResult ?? jsResult
         }
         return jsResult
+    }
+
+    @MainActor
+    public func deleteAIChatFromNativeStorage(chatID: String) -> Result<Void, Error>? {
+        clearLocalStorageIfAvailable(chatID: chatID)
+    }
+
+    @MainActor
+    public func clearJSData(chatID: String?) async -> Result<Void, Error> {
+        await jsDataCleaner.clearJSData(chatID: chatID)
     }
 
     private func clearLocalStorageIfAvailable(chatID: String?) -> Result<Void, Error>? {

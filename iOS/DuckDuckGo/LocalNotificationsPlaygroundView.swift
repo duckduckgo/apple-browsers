@@ -20,9 +20,14 @@
 import SwiftUI
 import Combine
 import UserNotifications
+import Persistence
 
 struct LocalNotificationsPlaygroundView: View {
-    @StateObject private var model = LocalNotificationsPlaygroundViewModel()
+    @StateObject private var model: LocalNotificationsPlaygroundViewModel
+
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        _model = StateObject(wrappedValue: LocalNotificationsPlaygroundViewModel(keyValueStore: keyValueStore))
+    }
 
     var body: some View {
         List {
@@ -61,26 +66,95 @@ struct LocalNotificationsPlaygroundView: View {
             }
 
             Section {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(verbatim: "Title")
-                        .font(.caption)
-                    TextField("Title", text: $model.notificationTitle)
-                }
-
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(verbatim: "Message")
-                        .font(.caption)
-                    TextField("Message", text: $model.notificationMessage)
+                if model.pendingNotifications.isEmpty {
+                    Text(verbatim: "No notifications scheduled")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(model.pendingNotifications) { notification in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(verbatim: notification.title.isEmpty ? notification.id : notification.title)
+                            Text(verbatim: notification.id)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            if let fireDate = notification.fireDate {
+                                Text(verbatim: "Fires: \(fireDate.formatted())")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
                 }
             } header: {
-                Text(verbatim: "Content:")
+                Text(verbatim: "Scheduled Notifications:")
             } footer: {
                 HStack {
-                    Button("Clear", action: model.clearAllContent)
+                    Text(verbatim: "Notifications currently pending in the system.")
+                        .font(.caption)
 
                     Spacer()
 
-                    Button("Default", action: model.fillDefaultContent)
+                    Button(action: { Task { await model.refreshPendingNotifications() } }) {
+                        Text(verbatim: "Refresh")
+                    }
+                }
+            }
+
+            Section {
+                Picker(
+                    selection: $model.contentMode,
+                    content: {
+                        ForEach(LocalNotificationsPlaygroundViewModel.ContentMode.allCases, id: \.rawValue) { mode in
+                            Text(verbatim: mode.description).tag(mode)
+                        }
+                    },
+                    label: {
+                        Text(verbatim: "Content:")
+                    }
+                )
+
+                switch model.contentMode {
+                case .custom:
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(verbatim: "Title")
+                            .font(.caption)
+                        TextField("Title", text: $model.notificationTitle)
+                    }
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(verbatim: "Message")
+                            .font(.caption)
+                        TextField("Message", text: $model.notificationMessage)
+                    }
+                case .inactivityNotification:
+                    HStack {
+                        Text(verbatim: "Interaction count")
+                        Spacer()
+                        Text(verbatim: "\(model.interactionCount)")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text(verbatim: "Schedule a notification:")
+            } footer: {
+                switch model.contentMode {
+                case .custom:
+                    HStack {
+                        Button("Clear", action: model.clearAllContent)
+
+                        Spacer()
+
+                        Button("Default", action: model.fillDefaultContent)
+                    }
+                case .inactivityNotification:
+                    HStack(alignment: .top) {
+                        Text(verbatim: "The inactivity notification stops being scheduled when interaction count reaches the maxInteractions limit from the privacy config. Reset the count to test scheduling again.")
+                            .font(.caption)
+                        Spacer()
+
+                        Button(role: .destructive, action: model.resetInteractionCount) {
+                            Text(verbatim: "Reset")
+                        }
+                    }
                 }
             }
 
@@ -96,6 +170,7 @@ struct LocalNotificationsPlaygroundView: View {
                         Text(verbatim: "Type:")
                     }
                 )
+                .disabled(model.contentMode == .inactivityNotification)
 
                 Picker(
                     selection: $model.notificationSchedulingTime,
@@ -108,8 +183,6 @@ struct LocalNotificationsPlaygroundView: View {
                         Text(verbatim: "Schedule in seconds:")
                     }
                 )
-            } header: {
-                Text(verbatim: "Type:")
             } footer: {
                 if model.notificationType == .provisional {
                     Text(verbatim: "Provisional notifications are not delivered when the app is in foreground. Put the app in background once the notification is scheduled.")
@@ -137,6 +210,14 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
     private static let defaultBody = "We stopped 5 trackers from following you."
 
     @Published private(set) var isSchedulingNotification = false
+    @Published var contentMode: ContentMode = .custom {
+        didSet {
+            // Inactivity notifications are always provisional; keep the type in sync when selected.
+            if contentMode == .inactivityNotification {
+                notificationType = .provisional
+            }
+        }
+    }
     @Published var notificationTitle: String = defaultTitle
     @Published var notificationMessage: String = defaultBody
     @Published var notificationAuthStatus: NotificationAuthStatus = .notDetermined
@@ -144,15 +225,50 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
     @Published var notificationType: NotificationType = .provisional
     @Published var notificationSchedulingTime: Int = 5
 
+    @Published private(set) var interactionCount: Int = 0
+
+    struct PendingNotification: Identifiable {
+        let id: String        // the request identifier (unique per pending request)
+        let title: String
+        let fireDate: Date?
+    }
+
+    @Published private(set) var pendingNotifications: [PendingNotification] = []
+
+    private let inactivityStateStore: InactivityNotificationStateStoring
+
     private var cancellable: AnyCancellable?
 
-    init() {
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        inactivityStateStore = InactivityNotificationStateStore(keyValueStore: keyValueStore)
         bind()
     }
 
     func onAppear() {
+        refreshInteractionCount()
         Task {
             await refreshAuthorizationSettings()
+            await refreshPendingNotifications()
+        }
+    }
+
+    func resetInteractionCount() {
+        inactivityStateStore.reset()
+        refreshInteractionCount()
+    }
+
+    func refreshInteractionCount() {
+        interactionCount = inactivityStateStore.interactionCount
+    }
+
+    func refreshPendingNotifications() async {
+        let requests = await center.pendingNotificationRequests()
+        pendingNotifications = requests.map { request in
+            PendingNotification(
+                id: request.identifier,
+                title: request.content.title,
+                fireDate: (request.trigger as? UNTimeIntervalNotificationTrigger)?.nextTriggerDate()
+            )
         }
     }
 
@@ -162,7 +278,15 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
             do {
                 guard try await center.requestAuthorization(options: options) else { return }
                 let trigger = UNTimeIntervalNotificationTrigger(timeInterval: Double(notificationSchedulingTime), repeats: false)
-                try await UNUserNotificationCenter.current().add(.make(identifier: Self.testNotificationIdentifier, title: notificationTitle, body: notificationMessage, trigger: trigger))
+                let request: UNNotificationRequest
+                switch contentMode {
+                case .inactivityNotification:
+                    request = .makeInactivityNotification(trigger: trigger)
+                case .custom:
+                    request = .make(identifier: Self.testNotificationIdentifier, title: notificationTitle, body: notificationMessage, trigger: trigger)
+                }
+                try await center.add(request)
+                await refreshPendingNotifications()
             } catch {
                 print("~~~FAILED TO SEND NOTIFICATION TYPE: \(notificationType.description)")
             }
@@ -181,10 +305,8 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
 
     private func bind() {
         cancellable = NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
-            .sink { _ in
-                Task { [weak self] in
-                    await self?.refreshAuthorizationSettings()
-                }
+            .sink { [weak self] _ in
+                self?.onAppear()
             }
     }
 
@@ -213,6 +335,20 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
 }
 
 extension LocalNotificationsPlaygroundViewModel {
+
+    enum ContentMode: Int, CaseIterable {
+        case inactivityNotification
+        case custom
+
+        var description: String {
+            switch self {
+            case .inactivityNotification:
+                return "Inactivity Notification"
+            case .custom:
+                return "Custom"
+            }
+        }
+    }
 
     enum NotificationType: Int, CaseIterable {
         case provisional
@@ -267,8 +403,20 @@ extension UNNotificationRequest {
         return UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
     }
 
+    static func makeInactivityNotification(trigger: UNNotificationTrigger) -> UNNotificationRequest {
+        let identifier = InactivityNotificationSchedulerService.Constants.notificationIdentifier
+        let content = InactivityNotificationSchedulerService.makeUNNotificationContent()
+        return UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+    }
+
+}
+
+private final class PreviewThrowingKeyValueStore: ThrowingKeyValueStoring {
+    func object(forKey defaultName: String) throws -> Any? { nil }
+    func set(_ value: Any?, forKey defaultName: String) throws {}
+    func removeObject(forKey defaultName: String) throws {}
 }
 
 #Preview {
-    LocalNotificationsPlaygroundView()
+    LocalNotificationsPlaygroundView(keyValueStore: PreviewThrowingKeyValueStore())
 }

@@ -64,14 +64,14 @@ struct AIChatOmnibarSubscriptionUpsellPresenterTests {
         let (presenter, mockTabShower, mockSubscriptionManager) = createPresenter()
         mockSubscriptionManager.resultURL = URL(string: "https://duckduckgo.com/pro/purchase")!
 
-        let routed = presenter.routeGatedSelection(requiredTier: .pro, userTier: .free, origin: .addressBarReasoningPicker)
+        let routed = presenter.routeGatedSelection(requiredTier: .pro, userTier: .free, origin: .addressBarReasoningDropdown)
 
         #expect(routed == true)
         guard case let .subscription(url) = mockTabShower.capturedContent else {
             Issue.record("Expected .subscription tab content")
             return
         }
-        #expect(url.absoluteString.contains("origin=funnel_addressbar_macos__reasoningpicker"))
+        #expect(url.absoluteString.contains("origin=funnel_addressbar_macos__reasoningdropdown"))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -108,7 +108,7 @@ struct AIChatOmnibarSubscriptionUpsellPresenterTests {
     func internalUserHasNoGatedFlow() async throws {
         let (presenter, mockTabShower, _) = createPresenter()
 
-        let routed = presenter.routeGatedSelection(requiredTier: .pro, userTier: .internal, origin: .addressBarReasoningPicker)
+        let routed = presenter.routeGatedSelection(requiredTier: .pro, userTier: .internal, origin: .addressBarReasoningDropdown)
 
         #expect(routed == false)
         #expect(mockTabShower.capturedContent == nil)

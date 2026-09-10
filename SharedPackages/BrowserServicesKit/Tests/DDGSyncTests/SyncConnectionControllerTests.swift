@@ -192,6 +192,51 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(pairingInfo.toURL(baseURL: URL(string: "https://example.com")!), url)
     }
 
+    @MainActor
+    func test_startExchangeMode_whenPairingV2KeyGenerationFails_throwsPresenterGenerateCodeFailure() async throws {
+        resetControllerUnderTest(makePairingV2KeyPair: { throw TestError.nilValue })
+        dependencies.isPairingV2CodeEnabled = { true }
+
+        let failure = await pairingFailure {
+            _ = try await controller.startExchangeMode()
+        }
+
+        XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterGenerateCode, kind: nil))
+        XCTAssertNotNil(failure?.underlyingError as? TestError)
+    }
+
+    func test_startExchangeMode_whenPairingV2ChannelOpenFails_throwsPresenterOpenFailure() async throws {
+        dependencies.isPairingV2CodeEnabled = { true }
+        let messageExchanger = PairingV2MessageExchangingMock()
+        messageExchanger.openChannelHandler = { _ in
+            throw PairingV2RelayRequestError(kind: .httpError, underlyingError: SyncError.unexpectedStatusCode(503))
+        }
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+
+        let failure = await pairingFailure {
+            _ = try await controller.startExchangeMode()
+        }
+
+        XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterOpenOwnChannel, kind: .httpError))
+        XCTAssertEqual(failure?.underlyingError as? SyncError, .unexpectedStatusCode(503))
+    }
+
+    @MainActor
+    func test_startExchangeMode_whenPairingV2QRCodeURLCreationFails_throwsPresenterGenerateCodeFailureAndClosesChannel() async throws {
+        resetControllerUnderTest(createPairingV2QRCodeURL: { _ in throw TestError.nilValue })
+        dependencies.isPairingV2CodeEnabled = { true }
+        let messageExchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+
+        let failure = await pairingFailure {
+            _ = try await controller.startExchangeMode()
+        }
+
+        XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterGenerateCode, kind: nil))
+        XCTAssertNotNil(failure?.underlyingError as? TestError)
+        XCTAssertEqual(messageExchanger.closeChannelCalls.count, 1)
+    }
+
     func test_startExchangeMode_whenPairingV2CodeEnabledAndPairingV2ScanningDisabled_returnsLegacyPairingInfo() async throws {
         dependencies.isPairingV2CodeEnabled = { true }
         dependencies.isPairingV2ScanningEnabled = { false }
@@ -1014,6 +1059,23 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
+    func test_syncCodeEntered_whenPairingV2KeyGenerationFails_notifiesScannerGenerateKeysFailure() async throws {
+        resetControllerUnderTest(makePairingV2KeyPair: { throw TestError.nilValue })
+        let peerKeyPair = try makePeerKeyPair()
+        let payload = PairingV2QRCodePayload(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
+        let url = try payload.toURL(baseURL: URL(string: "https://duckduckgo.com")!)
+
+        let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
+
+        XCTAssertFalse(result)
+        XCTAssertEqual(
+            delegate.didErrorErrors?.error,
+            .pairingV2OperationFailure(PairingV2FailureContext(stage: .scannerGenerateKeys, kind: nil))
+        )
+        XCTAssertNotNil(delegate.didErrorErrors?.underlyingError as? TestError)
+    }
+
+    @MainActor
     func test_syncCodeEntered_withV2UrlAndPairingV2Cancelled_returnsFailureWithoutError() async throws {
         try dependencies.secureStore.persistAccount(SyncAccount.mock)
         let messageExchanger = PairingV2MessageExchangingMock()
@@ -1030,7 +1092,7 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
-    func test_syncCodeEntered_withV2UrlAndRelayUnavailableOnSend_notifiesRelayChannelUnavailable() async throws {
+    func test_syncCodeEntered_withV2UrlAndRelayUnavailableOnSend_notifiesScannerHelloFailure() async throws {
         let messageExchanger = PairingV2MessageExchangingMock()
         messageExchanger.sendError = PairingV2Error.relayChannelUnavailable
         dependencies.createPairingV2MessageExchangerStub = messageExchanger
@@ -1041,12 +1103,15 @@ final class SyncConnectionControllerTests: XCTestCase {
         let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
         XCTAssertFalse(result)
-        XCTAssertEqual(delegate.didErrorErrors?.error, .relayChannelUnavailable)
-        XCTAssertNil(delegate.didErrorErrors?.underlyingError)
+        XCTAssertEqual(
+            delegate.didErrorErrors?.error,
+            .pairingV2OperationFailure(PairingV2FailureContext(stage: .scannerSendHello, kind: .unavailable))
+        )
+        XCTAssertEqual(delegate.didErrorErrors?.underlyingError as? PairingV2Error, .relayChannelUnavailable)
     }
 
     @MainActor
-    func test_syncCodeEntered_withV2UrlAndRelayExpired_notifiesFetchError() async throws {
+    func test_syncCodeEntered_withV2UrlAndRelayExpired_notifiesScannerPollFailure() async throws {
         let messageExchanger = PairingV2MessageExchangingMock()
         messageExchanger.fetchMessagesError = PairingV2Error.relayChannelExpired
         dependencies.createPairingV2MessageExchangerStub = messageExchanger
@@ -1057,8 +1122,11 @@ final class SyncConnectionControllerTests: XCTestCase {
         let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
         XCTAssertFalse(result)
-        XCTAssertEqual(delegate.didErrorErrors?.error, .relayChannelUnavailable)
-        XCTAssertNil(delegate.didErrorErrors?.underlyingError)
+        XCTAssertEqual(
+            delegate.didErrorErrors?.error,
+            .pairingV2OperationFailure(PairingV2FailureContext(stage: .scannerPollOwnChannel, kind: .expired))
+        )
+        XCTAssertEqual(delegate.didErrorErrors?.underlyingError as? PairingV2Error, .relayChannelExpired)
     }
 
     @MainActor
@@ -1086,8 +1154,16 @@ final class SyncConnectionControllerTests: XCTestCase {
             (.secondHello, .unexpectedSecondHello, "second hello"),
             (.unexpectedEvent(.helloAfterPeerStatus), .unexpectedEvent, "unexpected event"),
             (.pairingSessionNotReady(.peerPublicKey), .pairingSessionNotReady, "pairing session not ready"),
-            (.relayChannelUnavailable, .relayChannelUnavailable, "relay channel unavailable"),
-            (.relayChannelExpired, .relayChannelUnavailable, "relay channel expired")
+            (
+                .relayChannelUnavailable,
+                .pairingV2OperationFailure(PairingV2FailureContext(stage: .scannerPollOwnChannel, kind: .unavailable)),
+                "relay channel unavailable"
+            ),
+            (
+                .relayChannelExpired,
+                .pairingV2OperationFailure(PairingV2FailureContext(stage: .scannerPollOwnChannel, kind: .expired)),
+                "relay channel expired"
+            )
         ]
 
         for testCase in testCases {
@@ -1103,7 +1179,11 @@ final class SyncConnectionControllerTests: XCTestCase {
 
             XCTAssertFalse(result, testCase.description)
             XCTAssertEqual(delegate.didErrorErrors?.error, testCase.expectedError, testCase.description)
-            XCTAssertNil(delegate.didErrorErrors?.underlyingError, testCase.description)
+            if testCase.error == .relayChannelUnavailable || testCase.error == .relayChannelExpired {
+                XCTAssertEqual(delegate.didErrorErrors?.underlyingError as? PairingV2Error, testCase.error, testCase.description)
+            } else {
+                XCTAssertNil(delegate.didErrorErrors?.underlyingError, testCase.description)
+            }
         }
     }
 
@@ -1132,6 +1212,16 @@ final class SyncConnectionControllerTests: XCTestCase {
             (.unexpectedSecondHello, SyncSetupFailureReason.unexpectedSecondHello, "unexpected second hello"),
             (.unexpectedEvent, SyncSetupFailureReason.unexpectedEvent, "unexpected event"),
             (.pairingSessionNotReady, SyncSetupFailureReason.pairingSessionNotReady, "pairing session not ready"),
+            (
+                .pairingV2OperationFailure(PairingV2FailureContext(stage: .scannerPollOwnChannel, kind: .networkError)),
+                SyncSetupFailureReason.relayChannelFailure,
+                "Pairing V2 relay failure"
+            ),
+            (
+                .pairingV2OperationFailure(PairingV2FailureContext(stage: .scannerGenerateKeys, kind: nil)),
+                SyncSetupFailureReason.unexpectedFailure,
+                "Pairing V2 local generation failure"
+            ),
             (.relayChannelUnavailable, SyncSetupFailureReason.relayChannelUnavailable, "relay channel unavailable"),
             (.recoveryCodePreparationFailed, SyncSetupFailureReason.recoveryCodePreparationFailed, "recovery code preparation failure"),
             (.peerRecoveryCodeUnavailable, SyncSetupFailureReason.peerRecoveryCodeUnavailable, "peer recovery code unavailable"),
@@ -1833,8 +1923,26 @@ final class SyncConnectionControllerTests: XCTestCase {
         return try XCTUnwrap(delegate.didErrorErrors?.error, file: file, line: line)
     }
 
+    private func pairingFailure(operation: () async throws -> Void) async -> PairingV2OperationFailure? {
+        do {
+            try await operation()
+            XCTFail("Expected PairingV2OperationFailure")
+            return nil
+        } catch let operationFailure as PairingV2OperationFailure {
+            return operationFailure
+        } catch {
+            XCTFail("Expected PairingV2OperationFailure, got \(error)")
+            return nil
+        }
+    }
+
     @MainActor
-    private func resetControllerUnderTest() {
+    private func resetControllerUnderTest(
+        makePairingV2KeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() },
+        createPairingV2QRCodeURL: @escaping (PairingV2QRCodePayload) throws -> URL = {
+            try $0.toURL(baseURL: URL(string: "https://duckduckgo.com")!)
+        }
+    ) {
         dependencies = MockSyncDependencies()
         dependencies.isPairingV2CodeEnabled = { false }
         syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
@@ -1845,6 +1953,8 @@ final class SyncConnectionControllerTests: XCTestCase {
                                               syncService: syncService,
                                               dependencies: dependencies,
                                               pairingV2PollingTimeout: Self.pairingV2PollingTimeout,
-                                              pairingV2PollIntervalNanoseconds: Self.pairingV2PollIntervalNanoseconds)
+                                              pairingV2PollIntervalNanoseconds: Self.pairingV2PollIntervalNanoseconds,
+                                              makePairingV2KeyPair: makePairingV2KeyPair,
+                                              createPairingV2QRCodeURL: createPairingV2QRCodeURL)
     }
 }

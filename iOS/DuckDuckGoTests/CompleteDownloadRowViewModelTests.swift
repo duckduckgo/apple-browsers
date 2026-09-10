@@ -21,19 +21,12 @@ import BrowserServicesKit
 import Contacts
 import Core
 import Foundation
+@_spi(Testing) import PixelKit
 import Testing
 @testable import DuckDuckGo
 
 @Suite("CompleteDownloadRowViewModel", .serialized)
 final class CompleteDownloadRowViewModelTests {
-
-    init() {
-        PixelFiringMock.tearDown()
-    }
-
-    deinit {
-        PixelFiringMock.tearDown()
-    }
 
     @available(iOS 17, *)
     @Test("Returns a prepared event for a single-VEVENT .ics file", .timeLimit(.minutes(1)))
@@ -100,7 +93,7 @@ final class CompleteDownloadRowViewModelTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let viewModel = CompleteDownloadRowViewModel(fileURL: url,
-                                                     pixelFiring: PixelFiringMock.self)
+                                                     pixelFiring: PixelKitMock())
         let contact = viewModel.preparePreviewContact()
 
         // We present the first contact and ignore the rest.
@@ -115,7 +108,7 @@ final class CompleteDownloadRowViewModelTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let viewModel = CompleteDownloadRowViewModel(fileURL: url,
-                                                     pixelFiring: PixelFiringMock.self)
+                                                     pixelFiring: PixelKitMock())
         #expect(viewModel.preparePreviewContact() == nil)
     }
 
@@ -136,14 +129,15 @@ final class CompleteDownloadRowViewModelTests {
     func contactCardCoordinatorReportsSave() {
         var didSave = false
         var didDismiss = false
+        let pixelKitMock = PixelKitMock()
         let coordinator = ContactCardView.Coordinator(onSaved: { didSave = true },
                                                       onDismiss: { didDismiss = true },
-                                                      pixelFiring: PixelFiringMock.self)
+                                                      pixelFiring: pixelKitMock)
         coordinator.complete(saved: true)
 
         #expect(didSave)
         #expect(didDismiss)
-        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.vcardContactEditorSaved.name })
+        #expect(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.vcardContactEditorSaved.name })
     }
 
     @available(iOS 16, *)
@@ -151,14 +145,15 @@ final class CompleteDownloadRowViewModelTests {
     func contactCardCoordinatorReportsCancel() {
         var didSave = false
         var didDismiss = false
+        let pixelKitMock = PixelKitMock()
         let coordinator = ContactCardView.Coordinator(onSaved: { didSave = true },
                                                       onDismiss: { didDismiss = true },
-                                                      pixelFiring: PixelFiringMock.self)
+                                                      pixelFiring: pixelKitMock)
         coordinator.cancelButtonTapped()
 
         #expect(!didSave)
         #expect(didDismiss)
-        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.vcardContactEditorCancelled.name })
+        #expect(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.vcardContactEditorCancelled.name })
     }
 
     @available(iOS 16, *)
@@ -167,7 +162,7 @@ final class CompleteDownloadRowViewModelTests {
         var dismissCount = 0
         let coordinator = ContactCardView.Coordinator(onSaved: {},
                                                       onDismiss: { dismissCount += 1 },
-                                                      pixelFiring: PixelFiringMock.self)
+                                                      pixelFiring: PixelKitMock())
         coordinator.complete(saved: false)
         coordinator.complete(saved: true) // dismantle/swipe arriving after an explicit completion
 

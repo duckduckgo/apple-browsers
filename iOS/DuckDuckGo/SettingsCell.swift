@@ -136,7 +136,7 @@ struct SettingsCellView: View, Identifiable {
             }
         }
         .frame(maxWidth: .infinity)
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     private var cellContent: some View {
@@ -330,7 +330,7 @@ struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
             }
             .fixedSize()
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     private var pickerSelectionLabel: some View {
@@ -412,7 +412,7 @@ struct SettingsCustomCell<Content: View>: View {
                 cellContent
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     private var cellContent: some View {

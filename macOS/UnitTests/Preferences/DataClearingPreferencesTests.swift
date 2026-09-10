@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
-import FeatureFlags
-import PixelKit
-import PixelKitTestingUtilities
+import FeatureFlags_macOS
+@_spi(Testing) import PixelKit
 import PrivacyConfig
-import SharedTestUtilities
+@_spi(Testing) import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -167,4 +167,8 @@ class DataClearingPreferencesTests: XCTestCase {
     }
 }
 
-extension MockAIChatHistoryCleaner: AIChatHistoryCleaning {}
+extension MockAIChatHistoryCleaner: @retroactive AIChatHistoryCleaning {
+    public func allChats() -> [DuckAiChat] {
+        allChatsStub.map { DuckAiChat(chatId: $0.chatId, title: $0.title, model: "", lastEdit: "", pinned: false) }
+    }
+}

@@ -81,9 +81,9 @@ final class PasswordManagementViewController: NSViewController {
     @IBOutlet var lockScreenIconImageView: NSImageView! {
         didSet {
             if DeviceAuthenticator.deviceSupportsBiometrics {
-                lockScreenIconImageView.image = .loginsLockTouchID
+                lockScreenIconImageView.image = themeManager.isAppRebranded ? .lockTouchID128 : .loginsLockTouchIDLegacy
             } else {
-                lockScreenIconImageView.image = .loginsLockPassword
+                lockScreenIconImageView.image = themeManager.isAppRebranded ? .lockLocked128 : .loginsLockPasswordLegacy
             }
         }
     }
@@ -239,11 +239,11 @@ final class PasswordManagementViewController: NSViewController {
         subscribeToThemeChanges()
         applyThemeStyle()
 
-        lockMenuItem.image = DesignSystemImages.Glyphs.Size12.lock
-        importPasswordMenuItem.image = DesignSystemImages.Glyphs.Size12.import
-        exportLoginItem.image = DesignSystemImages.Glyphs.Size12.export
-        deleteAllPasswordsMenuItem.image = DesignSystemImages.Glyphs.Size12.trash
-        settingsMenuItem.image = DesignSystemImages.Glyphs.Size12.settings
+        lockMenuItem.withImage(DesignSystemImages.Glyphs.Size12.lock, visibleOnMacOS27: true)
+        importPasswordMenuItem.withImage(DesignSystemImages.Glyphs.Size12.import, visibleOnMacOS27: true)
+        exportLoginItem.withImage(DesignSystemImages.Glyphs.Size12.export, visibleOnMacOS27: true)
+        deleteAllPasswordsMenuItem.withImage(DesignSystemImages.Glyphs.Size12.trash, visibleOnMacOS27: true)
+        settingsMenuItem.withImage(DesignSystemImages.Glyphs.Size12.settings, visibleOnMacOS27: true)
     }
 
     private func setUpEmptyStateMessageView() {
@@ -447,7 +447,7 @@ final class PasswordManagementViewController: NSViewController {
     @IBAction func onSyncClicked(_ sender: Any) {
         self.dismiss()
         let source = SyncDeviceButtonTouchpoint.passwordsEmpty
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
         DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
     }
 
@@ -725,9 +725,13 @@ final class PasswordManagementViewController: NSViewController {
     private func doSaveCredentials(_ credentials: SecureVaultModels.WebsiteCredentials) {
         let isNew = credentials.account.id == nil
 
+        let isNoteWithoutDomain = (credentials.account.username?.isEmpty ?? true)
+            && (credentials.account.domain?.trimmingCharacters(in: .whitespaces).isEmpty ?? true)
+
         func showDuplicateAlert() {
             if let window = view.window {
-                NSAlert.passwordManagerDuplicateLogin().beginSheetModal(for: window)
+                let alert = isNoteWithoutDomain ? NSAlert.passwordManagerNoteRequiresDomain() : NSAlert.passwordManagerDuplicateLogin()
+                alert.beginSheetModal(for: window)
             }
         }
 
@@ -1088,9 +1092,9 @@ final class PasswordManagementViewController: NSViewController {
 
     private func createNewSecureVaultItemMenu() -> NSMenu {
         return NSMenu {
-            NSMenuItem(title: UserText.pmNewLogin, action: #selector(createNewLogin), target: self).withImage(.loginGlyph)
-            NSMenuItem(title: UserText.pmNewIdentity, action: #selector(createNewIdentity), target: self).withImage(.identityGlyph)
-            NSMenuItem(title: UserText.pmNewCard, action: #selector(createNewCreditCard), target: self).withImage(.creditCardGlyph)
+            NSMenuItem(title: UserText.pmNewLogin, action: #selector(createNewLogin), target: self).withImage(.loginGlyph, visibleOnMacOS27: true)
+            NSMenuItem(title: UserText.pmNewIdentity, action: #selector(createNewIdentity), target: self).withImage(.identityGlyph, visibleOnMacOS27: true)
+            NSMenuItem(title: UserText.pmNewCard, action: #selector(createNewCreditCard), target: self).withImage(.creditCardGlyph, visibleOnMacOS27: true)
         }
     }
 

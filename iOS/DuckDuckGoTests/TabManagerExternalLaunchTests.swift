@@ -21,7 +21,7 @@ import Testing
 import Combine
 @testable import DuckDuckGo
 @testable import Core
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import BrowserServicesKitTestsUtils
 
 @Suite("TabManager - External Launch Management")
@@ -253,7 +253,8 @@ final class TabManagerExternalLaunchTests {
             voiceSearchHelper: MockVoiceSearchHelper(),
             launchSourceManager: launchSourceManager,
             darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
-            adBlockingAvailability: StubAdBlockingAvailability()
+            adBlockingAvailability: StubAdBlockingAvailability(),
+            eventHub: StubEventHub()
         )
     }
 }

@@ -21,12 +21,13 @@ import BrowserServicesKit
 import Combine
 import Common
 import ConcurrencyExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import FoundationExtensions
 import os.log
 import Persistence
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Sparkle
 import Subscription

@@ -24,6 +24,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Common
 import FoundationExtensions
+import FeatureFlags_iOS
 
 struct SettingsOthersView: View {
 
@@ -52,7 +53,7 @@ struct SettingsOthersView: View {
 #endif
 
                 SettingsCellView(label: UserText.settingsAboutSection,
-                                 image: Image(.logoIcon),
+                                 image: Image(rebrandable: "duckduckgo-favicon-24x24"),
                                  accessory: .rightDetail(version))
             }
 

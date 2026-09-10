@@ -26,13 +26,14 @@ import Common
 import FoundationExtensions
 import Combine
 import DesignResourcesKitIcons
+import PixelKit
 
 extension TabViewController {
 
     func buildLinkPreviewMenu(for url: URL, withProvided providedElements: [UIMenuElement]) -> UIMenu {
         let isFireTab = tabModel.fireTab
         let browsingModeParam = [PixelParameters.browsingMode: tabModel.pixelParamValue]
-        Pixel.fire(pixel: .linkLongPressMenuShown, withAdditionalParameters: browsingModeParam)
+        PixelKit.fire(Pixel.Event.linkLongPressMenuShown, options: .parameters(browsingModeParam))
 
         var sections = [UIMenuElement]()
         var tabActions = [UIMenuElement]()
@@ -77,9 +78,6 @@ extension TabViewController {
     }
 
     private func onNewTabAction(url: URL) {
-        Pixel.fire(pixel: .linkLongPressNewTab, withAdditionalParameters: [
-            PixelParameters.browsingMode: tabModel.pixelParamValue
-        ])
         delegate?.tab(self,
                       didRequestNewTabForUrl: url,
                       openedByPage: false,
@@ -87,16 +85,12 @@ extension TabViewController {
     }
 
     private func onFireTabAction(url: URL) {
-        Pixel.fire(pixel: .linkLongPressFireTab)
         delegate?.tab(self,
                       didRequestNewFireTabForUrl: url,
                       inheritingAttribution: adClickAttributionLogic.state)
     }
 
     private func onBackgroundTabAction(url: URL) {
-        Pixel.fire(pixel: .linkLongPressBackgroundTab, withAdditionalParameters: [
-            PixelParameters.browsingMode: tabModel.pixelParamValue
-        ])
         delegate?.tab(self, didRequestNewBackgroundTabForUrl: url, inheritingAttribution: adClickAttributionLogic.state)
     }
     
@@ -170,7 +164,9 @@ extension TabViewController {
             voiceSearchHelper: voiceSearchHelper,
             darkReaderFeatureSettings: darkReaderFeatureSettings,
             autoplaySettings: autoplaySettings,
-            adBlockingAvailability: adBlockingAvailability)
+            adBlockingAvailability: adBlockingAvailability,
+            eventHub: eventHub,
+            webExtensionManagerProvider: webExtensionManagerProvider)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

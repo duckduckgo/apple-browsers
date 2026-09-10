@@ -27,7 +27,8 @@ public final class MockFeatureFlagger: FeatureFlagger {
                 localOverrides: (any FeatureFlagLocalOverriding)? = nil,
                 mockActiveExperiments: [String: ExperimentData] = [:],
                 featuresStub: [String: Bool] = [:],
-                resolveCohortStub: (any FeatureFlagCohortDescribing)? = nil) {
+                resolveCohortStub: (any FeatureFlagCohortDescribing)? = nil,
+                isAlreadyAssigned: Bool = true) {
         self.allActiveExperiments = allActiveExperiments
         self.didCallResolveCohort = didCallResolveCohort
         self.internalUserDecider = internalUserDecider
@@ -35,11 +36,16 @@ public final class MockFeatureFlagger: FeatureFlagger {
         self.mockActiveExperiments = mockActiveExperiments
         self._featuresStub = featuresStub
         self.resolveCohortStub = resolveCohortStub
+        self.isAlreadyAssigned = isAlreadyAssigned
     }
+
+    /// Whether `assignedCohort` should report `resolveCohortStub` as already assigned, or `nil` (not yet enrolled).
+    private let isAlreadyAssigned: Bool
 
     public var allActiveExperiments: Experiments = [:]
 
-    private(set) var didCallResolveCohort: Bool = false
+    public private(set) var didCallResolveCohort: Bool = false
+    public private(set) var didCallAssignedCohort: Bool = false
 
     public var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
     public var localOverrides: FeatureFlagLocalOverriding?
@@ -68,10 +74,12 @@ public final class MockFeatureFlagger: FeatureFlagger {
 
     var resolveCohortStub: (any FeatureFlagCohortDescribing)?
     public func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-        resolveCohortStub
+        didCallResolveCohort = true
+        return resolveCohortStub
     }
 
     public func assignedCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
-        resolveCohortStub
+        didCallAssignedCohort = true
+        return isAlreadyAssigned ? resolveCohortStub : nil
     }
 }

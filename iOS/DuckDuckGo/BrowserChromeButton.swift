@@ -18,11 +18,34 @@
 //
 
 import UIKit
+import os.log
 import ObjectiveC
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
 class BrowserChromeButton: UIButton {
+
+    /// UIKit reparents this into the menu platter, so callers inside a glass group pass a throwaway.
+    var menuHighlightTarget: (() -> UIView?)?
+
+    @available(iOS 16.0, *)
+    override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                         configuration: UIContextMenuConfiguration,
+                                         highlightPreviewForItemWithIdentifier identifier: any NSCopying) -> UITargetedPreview? {
+        targetedMenuPreview()
+    }
+
+    @available(iOS 16.0, *)
+    override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                         configuration: UIContextMenuConfiguration,
+                                         dismissalPreviewForItemWithIdentifier identifier: any NSCopying) -> UITargetedPreview? {
+        targetedMenuPreview()
+    }
+
+    private func targetedMenuPreview() -> UITargetedPreview? {
+        guard let target = menuHighlightTarget?() else { return nil }
+        return UITargetedPreview(view: target)
+    }
 
     enum ButtonType {
         case primary
@@ -124,6 +147,7 @@ class BrowserChromeButton: UIButton {
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
         if previousTraitCollection?.hasDifferentColorAppearance(comparedTo: traitCollection) == true {
             setNeedsDisplay()
         }
@@ -164,7 +188,7 @@ class BrowserChromeButton: UIButton {
         case .tabSwitcher:
             return .tabSwitcherDefault()
         case .toolbar:
-            return .omniBarDefault()
+            return .toolbarGlyph()
         }
     }
 }
@@ -223,6 +247,14 @@ private extension UIButton.Configuration {
         return config
     }
 
+    static func toolbarGlyph() -> UIButton.Configuration {
+        var config = UIButton.Configuration.plain()
+        config.cornerStyle = .capsule
+        config.buttonSize = .medium
+        config.titleAlignment = .center
+        return config
+    }
+
     static func tabSwitcherDefault() -> UIButton.Configuration {
         var config = UIButton.Configuration.gray()
         config.cornerStyle = .dynamic
@@ -239,7 +271,9 @@ private extension UIButton.Configuration {
 
 extension BrowserChromeButton {
 
-    static func createToolbarButton(title: String, image: UIImage?, fixedWidth: CGFloat? = 34, action: (() -> Void)? = nil) -> BrowserChromeButton {
+    static let toolbarButtonSize: CGFloat = 44
+
+    static func createToolbarButton(title: String, image: UIImage?, fixedWidth: CGFloat? = toolbarButtonSize, action: (() -> Void)? = nil) -> BrowserChromeButton {
         let button = BrowserChromeButton(.toolbar)
         if let image {
             button.setImage(image)
@@ -256,7 +290,7 @@ extension BrowserChromeButton {
 
         button.accessibilityLabel = title
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        button.heightAnchor.constraint(equalToConstant: toolbarButtonSize).isActive = true
         // Icon buttons use a fixed width; text buttons pass nil and size to their title (see applyTextConstraints).
         if let fixedWidth {
             button.widthAnchor.constraint(equalToConstant: fixedWidth).isActive = true
@@ -265,7 +299,7 @@ extension BrowserChromeButton {
         return button
     }
 
-    static func createToolbarButtonItem(title: String, image: UIImage?, fixedWidth: CGFloat? = 34, action: (() -> Void)? = nil) -> UIBarButtonItem {
+    static func createToolbarButtonItem(title: String, image: UIImage?, fixedWidth: CGFloat? = toolbarButtonSize, action: (() -> Void)? = nil) -> UIBarButtonItem {
         let button = createToolbarButton(title: title, image: image, fixedWidth: fixedWidth, action: action)
 
         let barItem = UIBarButtonItem(customView: button)

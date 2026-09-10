@@ -94,4 +94,159 @@ final class AIChatTabChatHeaderViewTests: XCTestCase {
         XCTAssertEqual(header.closeButtonPill.alpha, 1, accuracy: 0.001)
         XCTAssertEqual(header.chatListButtonPill.alpha, 1, accuracy: 0.001)
     }
+
+    // MARK: - Upgrade plate impressions
+
+    /// Fresh header with an unresolved subscription state and a hidden container — the state the view is
+    /// in right after construction, before either the coordinator or the feature check has said anything.
+    private func makeHeaderWithSpyDelegate() -> (AIChatTabChatHeaderView, SpyAIChatTabChatHeaderViewDelegate) {
+        let header = AIChatTabChatHeaderView(frame: CGRect(x: 0, y: 0, width: 390, height: 60))
+        let delegate = SpyAIChatTabChatHeaderViewDelegate()
+        header.delegate = delegate
+        return (header, delegate)
+    }
+
+    func testUpgradePlate_becomesVisible_notifiesDelegateOnce() {
+        let (header, delegate) = makeHeaderWithSpyDelegate()
+
+        header.setContainerVisible(true)
+        header.configure(isSubscriptionActive: false)
+
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 1)
+    }
+
+    func testUpgradePlate_repeatedStateRefreshes_doNotNotifyAgain() {
+        let (header, delegate) = makeHeaderWithSpyDelegate()
+        header.setContainerVisible(true)
+        header.configure(isSubscriptionActive: false)
+
+        // Stands in for what a session actually does: prompt submissions and navigations re-run the
+        // subscription refresh and the tab-icon refresh without changing effective visibility.
+        header.configure(isSubscriptionActive: false)
+        header.setContainerVisible(true)
+        header.setTabIconState(count: 4, hasUnread: true, isFireMode: false)
+        header.configure(isSubscriptionActive: false)
+
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 1,
+                       "Repeated writes that leave effective visibility unchanged must not re-fire the impression")
+    }
+
+    func testUpgradePlate_stateChurnWhileContainerHidden_thenShown_notifiesOnce() {
+        let (header, delegate) = makeHeaderWithSpyDelegate()
+
+        // Each of these changes the view state while the plate stays off screen, so none of them is an
+        // appearance. Only the container showing up is.
+        header.configure(isSubscriptionActive: false)
+        header.setVoiceSessionActive(true)
+        header.setVoiceSessionActive(false)
+        header.setOnboardingLocked(true)
+        header.setOnboardingLocked(false)
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 0)
+
+        header.setContainerVisible(true)
+
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 1)
+    }
+
+    func testUpgradePlate_containerHiddenThenShown_notifiesAgain() {
+        let (header, delegate) = makeHeaderWithSpyDelegate()
+        header.setContainerVisible(true)
+        header.configure(isSubscriptionActive: false)
+
+        header.setContainerVisible(false)
+        header.setContainerVisible(true)
+
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 2,
+                       "Leaving and re-entering the Duck.ai tab is a second appearance")
+    }
+
+    func testUpgradePlate_voiceSession_suppressesThenReNotifiesOnExit() {
+        let (header, delegate) = makeHeaderWithSpyDelegate()
+        header.setContainerVisible(true)
+        header.configure(isSubscriptionActive: false)
+
+        header.setVoiceSessionActive(true)
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 1, "Entering voice must not fire")
+
+        header.setVoiceSessionActive(false)
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 2, "Leaving voice re-shows the plate")
+    }
+
+    func testUpgradePlate_titleHolderHidden_neverNotifiesEvenWhenContainerVisible() {
+        let (header, delegate) = makeHeaderWithSpyDelegate()
+
+        header.setVoiceSessionActive(true)
+        header.setContainerVisible(true)
+        header.configure(isSubscriptionActive: false)
+
+        XCTAssertTrue(header.titleHolder.isHidden)
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 0,
+                       "The container flag alone must not fire while nothing is on screen")
+    }
+
+    func testUpgradePlate_unresolvedSubscriptionState_doesNotNotify_thenNotifiesOnceOnResolvingInactive() {
+        let (header, delegate) = makeHeaderWithSpyDelegate()
+
+        header.setContainerVisible(true)
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 0,
+                       "An unresolved subscription state renders a blank slot, not the plate")
+
+        header.configure(isSubscriptionActive: false)
+
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 1)
+    }
+
+    func testUpgradePlate_subscriptionResolvesActive_doesNotNotify() {
+        let (header, delegate) = makeHeaderWithSpyDelegate()
+
+        header.setContainerVisible(true)
+        header.configure(isSubscriptionActive: true)
+
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 0)
+    }
+
+    func testUpgradePlate_onboardingLocked_doesNotNotify_thenNotifiesOnceOnUnlock() {
+        let (header, delegate) = makeHeaderWithSpyDelegate()
+
+        header.setOnboardingLocked(true)
+        header.setContainerVisible(true)
+        header.configure(isSubscriptionActive: false)
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 0,
+                       "The fire onboarding step hides the plate, so there is nothing to count")
+
+        header.setOnboardingLocked(false)
+
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 1,
+                       "Finishing onboarding reveals the plate — that is its first appearance")
+    }
+
+    func testUpgradePlate_subscriptionResolvesBeforeContainerAppears_notifiesOnce() {
+        let (header, delegate) = makeHeaderWithSpyDelegate()
+
+        header.configure(isSubscriptionActive: false)
+        header.setContainerVisible(true)
+
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 1,
+                       "Which of the two arrives first must not change the count — the subscription check is async")
+    }
+}
+
+private final class SpyAIChatTabChatHeaderViewDelegate: AIChatTabChatHeaderViewDelegate {
+
+    private(set) var upgradePlateDidBecomeVisibleCount = 0
+
+    func aiChatTabChatHeaderUpgradePlateDidBecomeVisible() {
+        upgradePlateDidBecomeVisibleCount += 1
+    }
+
+    func aiChatTabChatHeaderDidTapChatList() {}
+    func aiChatTabChatHeaderDidTapUpgrade() {}
+    func aiChatTabChatHeaderDidTapClose() {}
+    func aiChatTabChatHeaderDidTapNewChat() {}
+    func aiChatTabChatHeaderDidTapNewVoiceChat() {}
+    func aiChatTabChatHeaderDidTapNewImage() {}
+    func aiChatTabChatHeaderDidTapNewTab() {}
+    func aiChatTabChatHeaderDidTapNewSearch() {}
+    func aiChatTabChatHeaderDidTapNewFireTab() {}
+    func aiChatTabChatHeaderDidTapTabSwitcher() {}
 }

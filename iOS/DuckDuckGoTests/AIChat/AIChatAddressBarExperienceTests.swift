@@ -35,28 +35,6 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenIPhoneAndSearchInputEnabledThenUsesExperimentalEditingState() {
-        MockUIDevice.mockUserInterfaceIdiom = .phone
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true,
-                                                        isAIChatSearchInputUserSettingsEnabled: true)
-        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
-                                                aiChatSettings: aiChatSettings)
-
-        XCTAssertTrue(testee.shouldUseExperimentalEditingState)
-    }
-
-    func testWhenIPadThenDoesNotUseExperimentalEditingState() {
-        MockUIDevice.mockUserInterfaceIdiom = .pad
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true,
-                                                        isAIChatSearchInputUserSettingsEnabled: true)
-        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
-                                                aiChatSettings: aiChatSettings)
-
-        XCTAssertFalse(testee.shouldUseExperimentalEditingState)
-    }
-
     func testWhenIPhoneThenDuckAIAddressBarButtonIsShown() {
         MockUIDevice.mockUserInterfaceIdiom = .phone
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])

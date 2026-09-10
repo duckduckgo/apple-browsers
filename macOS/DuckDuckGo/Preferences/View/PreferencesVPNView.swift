@@ -70,15 +70,13 @@ extension Preferences {
                         )
                     }
 
-                    if model.isExcludeCGNATAvailable {
-                        SpacedCheckbox {
-                            ToggleMenuItemWithDescription(
-                                UserText.vpnExcludeCGNATSettingTitle,
-                                UserText.vpnExcludeCGNATSettingDescription,
-                                isOn: $model.excludeCGNAT,
-                                spacing: 12
-                            )
-                        }
+                    SpacedCheckbox {
+                        ToggleMenuItemWithDescription(
+                            UserText.vpnExcludeCGNATSettingTitle,
+                            UserText.vpnExcludeCGNATSettingDescription,
+                            isOn: $model.excludeCGNAT,
+                            spacing: 12
+                        )
                     }
 
                     if model.isStrictRoutingAvailable {
@@ -173,7 +171,9 @@ extension Preferences {
                                     Text(UserText.vpnDnsServerPickerCustomTitle)
                                     Button(UserText.vpnDnsServerPickerCustomButtonTitle) {
                                         showsCustomDNSServerPageSheet.toggle()
-                                    }.disabled(!model.isCustomDNSSelected)
+                                    }
+                                    .tint(nil)
+                                    .disabled(!model.isCustomDNSSelected)
                                 }
                                 if let dnsServersText = model.customDNSServers {
                                     TextMenuItemCaption(dnsServersText)
@@ -182,6 +182,7 @@ extension Preferences {
                             }.tag(true)
                         }
                         .pickerStyle(.radioGroup)
+                        .rebrandedControlTint()
                         .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                         .onChange(of: model.isCustomDNSSelected) { isCustomDNSSelected in
                             if isCustomDNSSelected && (model.customDNSServers?.isEmpty ?? true) {
@@ -206,35 +207,28 @@ extension Preferences {
 
                 // SECTION: Troubleshooting
 
-                if model.showsCopyDiagnosticsButton || model.showUninstallVPN {
-                    PreferencePaneSection(UserText.vpnTroubleshootingTitle) {
-                        if model.showsCopyDiagnosticsButton {
-                            PreferencePaneSubSection {
-                                Button(copyDiagnosticsButtonTitle) {
-                                    Task { @MainActor in
-                                        await model.copySupportInfo()
-                                    }
-                                }
-                                .disabled(model.copySupportInfoState != .idle)
-
-                                TextMenuItemCaption(UserText.vpnSettingsCopyDiagnosticsCaption)
+                PreferencePaneSection(UserText.vpnTroubleshootingTitle) {
+                    PreferencePaneSubSection {
+                        Button(copyDiagnosticsButtonTitle) {
+                            Task { @MainActor in
+                                await model.copySupportInfo()
                             }
                         }
+                        .disabled(model.copySupportInfoState != .idle)
 
-                        if model.showUninstallVPN {
-                            PreferencePaneSubSection {
-                                Button(UserText.uninstallVPNButtonTitle) {
-                                    Task { @MainActor in
-                                        await model.uninstallVPN()
-                                    }
+                        TextMenuItemCaption(UserText.vpnSettingsCopyDiagnosticsCaption)
+                    }
+
+                    if model.showUninstallVPN {
+                        PreferencePaneSubSection {
+                            Button(UserText.uninstallVPNButtonTitle) {
+                                Task { @MainActor in
+                                    await model.uninstallVPN()
                                 }
                             }
                         }
                     }
                 }
-            }
-            .onAppear {
-                model.onViewAppeared()
             }
         }
 

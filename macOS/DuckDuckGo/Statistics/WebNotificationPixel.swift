@@ -25,7 +25,7 @@ import PixelKit
 /// - **Engagement** (`shown`, `clicked`, `error`): track what happens after a notification is posted.
 /// - **System authorization** (`systemAuthorizationRequested`, `systemAuthorizationGranted`): track the
 ///   macOS system prompt. The difference `requested − granted` gives the deny/dismiss rate.
-enum WebNotificationPixel: PixelKitEvent {
+enum WebNotificationPixel: PixelKit.Event {
 
     // MARK: Engagement
 

@@ -35,39 +35,43 @@ public struct RecoverSyncedDataView: View {
     }
 
     public var body: some View {
-        UnderflowContainer {
-            VStack(spacing: 0) {
-                HStack {
-                    Button(action: onCancel, label: {
-                        Text(UserText.cancelButton)
-                    })
-                    Spacer()
-                }
-                .frame(height: 56)
-                Image(rebrandable: "Sync-Recover-128")
-                    .padding(20)
+        NavigationView {
+            UnderflowContainer {
+                VStack(spacing: 0) {
+                    SyncUIImages.recover
+                        .padding(20)
 
-                Text(UserText.recoverSyncedDataTitle)
-                    .daxTitle1()
-                    .multilineTextAlignment(.center)
-                    .padding(.bottom, 24)
-
-                Text(UserText.recoverSyncedDataDescription)
+                    Text(UserText.recoverSyncedDataTitle)
+                        .daxTitle1()
                         .multilineTextAlignment(.center)
+                        .padding(.bottom, 24)
+
+                    Text(UserText.recoverSyncedDataDescription)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 20)
+                .foregroundStyle(Color(designSystemColor: .textPrimary))
+            } foregroundContent: {
+                Button {
+                    model.delegate?.fireSyncSetupPixel(event: .recoveryConfirmedTapped)
+                    model.continueRecoverFlow()
+                } label: {
+                    Text(UserText.recoverSyncedDataButton)
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .frame(maxWidth: 360)
+                .padding(.horizontal, 30)
+                .padding(.bottom, max(24 - bottomSafeArea, 0))
             }
-            .padding(.horizontal, 20)
-            .foregroundStyle(Color(designSystemColor: .textPrimary))
-        } foregroundContent: {
-            Button {
-                model.delegate?.fireSyncSetupPixel(event: .recoveryConfirmedTapped)
-                model.continueRecoverFlow()
-            } label: {
-                Text(UserText.recoverSyncedDataButton)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: onCancel) {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                    }
+                    .accessibilityLabel(UserText.simplifiedScanCloseButton)
+                }
             }
-            .buttonStyle(PrimaryButtonStyle())
-            .frame(maxWidth: 360)
-            .padding(.horizontal, 30)
-            .padding(.bottom, max(24 - bottomSafeArea, 0))
         }
         .onAppear {
             model.autoRestoreManualRecoveryShown()
@@ -81,3 +85,17 @@ public struct RecoverSyncedDataView: View {
         .background(Color(designSystemColor: .backgroundSheets))
     }
 }
+
+#if DEBUG
+#Preview {
+    let model = SyncSettingsViewModel(
+        isOnDevEnvironment: { false },
+        switchToProdEnvironment: {},
+        autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
+    )
+
+    return RebrandedPreview(isRebranded: true) {
+        RecoverSyncedDataView(model: model, onCancel: {})
+    }
+}
+#endif

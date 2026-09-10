@@ -133,6 +133,16 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertTrue(delegate.didRequestOpenNewChat)
     }
 
+    func testOpenChatProtection_notifiesDelegate() {
+        let sut = makeSUT(chats: [])
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.openChatProtection()
+
+        XCTAssertTrue(delegate.didRequestChatProtection)
+    }
+
     func testChatId_forValidIndexPath_returnsChatId() {
         let sut = makeSUT(chats: [
             chat(id: "p1", pinned: true),
@@ -168,7 +178,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
 
         XCTAssertEqual(fireExecutor.burnedChatIds, ["p1"])
         XCTAssertEqual(fireExecutor.burnedIsFireMode, [false],
-                       "chat-history sheet only ever deletes persistent chats; never fire-mode")
+                       "chat-history sheet deletes persistent chats when not in fire mode")
         XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 1,
                        "a successful delete must flush sync so the deletion isn't re-pulled")
     }
@@ -190,7 +200,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         wait(for: [done], timeout: 1)
 
         XCTAssertEqual(fireExecutor.burnedAllChatsIsFireMode, [false],
-                       "chat-history sheet only ever clears persistent chats; never fire-mode")
+                       "chat-history sheet clears persistent chats when not in fire mode")
         XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 1,
                        "a successful clear must flush sync so the deletion isn't re-pulled")
     }
@@ -215,7 +225,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(fireExecutor.burnedChatsBatches, [["p1", "r2"]],
                        "selected chats must be burned in a single batch call, not one per chat")
         XCTAssertEqual(fireExecutor.burnedIsFireMode, [false],
-                       "chat-history sheet only ever deletes persistent chats; never fire-mode")
+                       "chat-history sheet deletes persistent chats when not in fire mode")
         XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 1,
                        "sync must be flushed once for the whole batch, not per chat")
     }
@@ -230,6 +240,51 @@ final class AIChatHistoryViewModelTests: XCTestCase {
 
         XCTAssertTrue(fireExecutor.burnedChatsBatches.isEmpty)
         XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 0)
+    }
+
+    func testDeleteChat_inFireMode_passesIsFireModeTrueAndDoesNotScheduleSync() {
+        let fireExecutor = MockChatHistoryFireExecutor()
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: fireExecutor, isFireMode: true)
+
+        sut.deleteChat(chatId: "p1")
+        processMainQueue()
+
+        XCTAssertEqual(fireExecutor.burnedChatIds, ["p1"])
+        XCTAssertEqual(fireExecutor.burnedIsFireMode, [true],
+                       "fire-mode sheet must pass isFireMode true so the executor can target isolated storage")
+        XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 0,
+                       "fire-mode deletes must not enter the sync pipeline")
+    }
+
+    func testBurnAllChats_inFireMode_passesIsFireModeTrueAndDoesNotScheduleSync() {
+        let fireExecutor = MockChatHistoryFireExecutor()
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: fireExecutor, isFireMode: true)
+
+        let done = expectation(description: "burnAllChats")
+        Task { await sut.burnAllChats(); done.fulfill() }
+        wait(for: [done], timeout: 1)
+
+        XCTAssertEqual(fireExecutor.burnedAllChatsIsFireMode, [true],
+                       "fire-mode sheet must pass isFireMode true so the executor can target isolated storage")
+        XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 0,
+                       "fire-mode deletes must not enter the sync pipeline")
+    }
+
+    func testBurnSelectedChats_inFireMode_passesIsFireModeTrueAndDoesNotScheduleSync() {
+        let fireExecutor = MockChatHistoryFireExecutor()
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true), chat(id: "r1", pinned: false)],
+                          fireExecutor: fireExecutor,
+                          isFireMode: true)
+
+        let done = expectation(description: "burnSelectedChats")
+        Task { await sut.burnSelectedChats(chatIds: ["p1"]); done.fulfill() }
+        wait(for: [done], timeout: 1)
+
+        XCTAssertEqual(fireExecutor.burnedChatsBatches, [["p1"]])
+        XCTAssertEqual(fireExecutor.burnedIsFireMode, [true],
+                       "fire-mode sheet must pass isFireMode true so the executor can target isolated storage")
+        XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 0,
+                       "fire-mode deletes must not enter the sync pipeline")
     }
 
     func testTotalChatCount_reflectsAllChats_notTheSearchFilteredView() {
@@ -635,6 +690,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         downloader: ChatHistoryDownloading? = nil,
         pinner: ChatPinning? = nil,
         source: AIChatHistorySource = .browserMenu,
+        isFireMode: Bool = false,
         mutationQueue: DispatchQueue = .main,
         instrumentation: AIChatHistoryInstrumentation = MockAIChatHistoryInstrumentation()
     ) -> AIChatHistoryViewModel {
@@ -644,6 +700,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
             downloader: downloader,
             pinner: pinner,
             source: source,
+            isFireMode: isFireMode,
             mutationQueue: mutationQueue,
             instrumentation: instrumentation
         )
@@ -680,12 +737,14 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         private(set) var exportedFilenames: [String] = []
         private(set) var exportedChatCounts: [Int] = []
         private(set) var didFailExport = false
+        private(set) var didRequestChatProtection = false
 
         func viewModelDidRequestOpenNewChat() { didRequestOpenNewChat = true }
         func viewModelDidRequestOpenChat(chatId: String) { requestedChatId = chatId }
         func viewModelDidExportChat(filename: String) { exportedFilenames.append(filename) }
         func viewModelDidExportChats(count: Int) { exportedChatCounts.append(count) }
         func viewModelDidFailExport() { didFailExport = true }
+        func viewModelDidRequestChatProtection() { didRequestChatProtection = true }
     }
 
     private final class MockChatHistoryFireExecutor: FireExecuting {
@@ -759,6 +818,10 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         private(set) var pinAddedCount = 0
         private(set) var pinRemovedCount = 0
         private(set) var downloadStartedCount = 0
+        private(set) var downloadSucceededCount = 0
+        private(set) var selectionDeleteConfirmedCount = 0
+        private(set) var selectionDownloadStartedCount = 0
+        private(set) var chatProtectionTappedCount = 0
         private(set) var editModeEnteredCount = 0
         private(set) var newChatTappedCount = 0
         private(set) var loadFailedErrors: [Error] = []
@@ -775,6 +838,10 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func pinAdded() { pinAddedCount += 1 }
         func pinRemoved() { pinRemovedCount += 1 }
         func downloadStarted() { downloadStartedCount += 1 }
+        func downloadSucceeded() { downloadSucceededCount += 1 }
+        func selectionDeleteConfirmed() { selectionDeleteConfirmedCount += 1 }
+        func selectionDownloadStarted() { selectionDownloadStartedCount += 1 }
+        func chatProtectionTapped() { chatProtectionTappedCount += 1 }
         func editModeEntered() { editModeEnteredCount += 1 }
         func newChatTapped() { newChatTappedCount += 1 }
         func loadFailed(error: Error) { loadFailedErrors.append(error) }

@@ -69,21 +69,21 @@ struct SettingsRootView: View {
             if #available(iOS 18.2, *) {
                 if viewModel.shouldShowSetAsDefaultBrowser || viewModel.shouldShowImportPasswords {
                     SettingsCompleteSetupView()
-                        .listRowBackground(Color(designSystemColor: .surface))
+                        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 }
             }
             SettingsPrivacyProtectionsView()
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             SettingsSubscriptionView().environmentObject(subscriptionNavigationCoordinator)
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             SettingsMainSettingsView()
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             SettingsNextStepsView()
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             SettingsOthersView()
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             SettingsDebugView()
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
         }
         .navigationBarTitle(UserText.settingsTitle, displayMode: .inline)
         .navigationBarItems(trailing: Button(UserText.navigationTitleDone) {
@@ -161,7 +161,10 @@ struct SettingsRootView: View {
                                                              internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                              dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
                                                              wideEvent: AppDependencyProvider.shared.wideEvent,
-                                                             featureFlagger: viewModel.featureFlagger)
+                                                             featureFlagger: viewModel.featureFlagger,
+                                                             onboardingKeyValueStore: viewModel.keyValueStore,
+                                                             meetsPIRLocaleRequirement: { viewModel.meetsLocaleRequirement },
+                                                             onRequestDuckAIChat: viewModel.onRequestOnboardingDuckAIChat)
     }
 
     @ViewBuilder func subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
@@ -253,11 +256,11 @@ struct SettingsRootView: View {
             } else {
                 SettingsDuckPlayerView().environmentObject(viewModel)
             }
-        case .netP(let scrollToStrictRouting):
+        case let .netP(source, scrollToStrictRouting):
             if scrollToStrictRouting {
                 NetworkProtectionVPNSettingsView(scrollsToStrictRouting: true)
             } else {
-                NetworkProtectionRootView()
+                NetworkProtectionRootView(source: source)
             }
         case .aiChat:
             SettingsAIFeaturesView().environmentObject(viewModel)
@@ -267,9 +270,11 @@ struct SettingsRootView: View {
             SettingsAppearanceView().environmentObject(viewModel)
         case .general:
             SettingsGeneralView().environmentObject(viewModel)
+        case .cookiePopupProtection:
+            CookiePopUpProtectionView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {
-                let model = SubscriptionSettingsViewModel(userScriptsDependencies: viewModel.userScriptsDependencies)
+                let model = SubscriptionSettingsViewModel(onboardingKeyValueStore: viewModel.keyValueStore, userScriptsDependencies: viewModel.userScriptsDependencies)
                 SubscriptionSettingsViewV2(configuration: configuration, viewModel: model, settingsViewModel: viewModel)
                     .environmentObject(subscriptionNavigationCoordinator)
             }

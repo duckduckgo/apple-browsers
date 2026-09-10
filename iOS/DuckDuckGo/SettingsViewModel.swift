@@ -38,6 +38,9 @@ import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
 import SERPSettings
 import Networking
+import FeatureFlags_iOS
+import PixelKit
+import SitePermissions
 
 enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
@@ -46,6 +49,11 @@ enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockUnavailableNoticeShown = "com_duckduckgo_ios_youTubeAdBlockUnavailableNoticeShown"
 
     static let youTubeAdBlockingEnabledDidChangeNotification = Notification.Name("youTubeAdBlockingEnabledDidChange")
+
+    /// Posted whenever `youTubeAnalyticsEnabled` is written. The store backing these keys is the
+    /// file-based one, which deliberately exposes no change publisher, so consumers that need to react
+    /// to the opt-in — `YouTubeAdBlockingTelemetryConsentRequirement` — observe this instead.
+    static let youTubeAnalyticsEnabledDidChangeNotification = Notification.Name("youTubeAnalyticsEnabledDidChange")
 }
 
 struct YouTubeAdBlockingKeys: StoringKeys {
@@ -61,7 +69,6 @@ final class SettingsViewModel: ObservableObject {
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
     private(set) var privacyStore = PrivacyUserDefaults()
     lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
-    private lazy var animator: FireButtonAnimator = FireButtonAnimator(appSettings: AppUserDefaults())
     private var legacyViewProvider: SettingsLegacyViewProvider
     private lazy var versionProvider: AppVersion = AppVersion.shared
     private let voiceSearchHelper: VoiceSearchHelperProtocol
@@ -155,6 +162,7 @@ final class SettingsViewModel: ObservableObject {
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     let keyValueStore: ThrowingKeyValueStoring
+    lazy var subscriptionOnboardingSession = AppDependencyProvider.shared.subscriptionOnboardingSession
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
@@ -164,7 +172,19 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
     var onRequestOpenDuckAIChat: (() -> Void)?
+    /// `nil` unless a real `MainViewController` is available; the onboarding flow falls back to `SubscriptionOnboardingDuckAIChatLauncher` when unset.
+    var onRequestOnboardingDuckAIChat: ((String?) -> Bool)?
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
+    @MainActor private var sitePermissionsStore: SitePermissionsStore?
+    @MainActor private var sitePermissionsEventHandler: (SitePermissionsEvent) -> Void = { _ in }
+    @MainActor private var sitePermissionsRevocationHandler: (SitePermissionKey, Set<SitePermissionType>) -> Void = { _, _ in }
+
+    @MainActor
+    private(set) lazy var sitePermissionsSettingsViewModel = SettingsSitePermissionsViewModel(
+        store: sitePermissionsStore ?? SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
+        isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.sitePermissions) },
+        callbacks: makeSitePermissionsCallbacks()
+    )
 
     // View State
     @Published private(set) var state: SettingsState
@@ -199,6 +219,13 @@ final class SettingsViewModel: ObservableObject {
         runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
     }
 
+    /// Whether this customer can use PIR: the feature flag is on and the app exposes a PIR view controller.
+    var isPIRAvailable: Bool {
+        PIRAvailability.isAvailable(isPIREnabled: isPIREnabled,
+                                    meetsLocaleRequirement: meetsLocaleRequirement,
+                                    provider: dataBrokerProtectionViewControllerProvider)
+    }
+
     var canShowFreemiumPIRSettingsEntryPoint: Bool {
         freemiumPIREligibilityChecker.canShowEntryPoint()
             && dataBrokerProtectionViewControllerProvider != nil
@@ -220,10 +247,6 @@ final class SettingsViewModel: ObservableObject {
 
     var isDefaultOmnibarModeEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition)
-    }
-
-    var isAIFeaturesNativeControlsEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiFeaturesNativeControls)
     }
 
     var isTabSwitcherTrackerCountEnabled: Bool {
@@ -265,6 +288,13 @@ final class SettingsViewModel: ObservableObject {
 
     @Published var shouldShowSetAsDefaultBrowser: Bool = false
     @Published var shouldShowImportPasswords: Bool = false
+
+    @Published var shouldShowAddToDockNextStep: Bool = true
+    @Published var shouldShowAddWidgetNextStep: Bool = true
+    @Published var shouldShowSetAddressBarPositionNextStep: Bool = true
+    @Published var shouldShowEnableVoiceSearchNextStep: Bool = true
+    @Published var nextStepsSectionHidden: Bool = false
+    @Published var shouldShowNextStepsHideButton: Bool = false
 
     // MARK: - Deep linking
     // Used to automatically navigate to a specific section
@@ -308,7 +338,7 @@ final class SettingsViewModel: ObservableObject {
         Binding<ThemeStyle>(
             get: { self.state.appThemeStyle },
             set: {
-                Pixel.fire(pixel: .settingsThemeSelectorPressed)
+                PixelKit.fire(Pixel.Event.settingsThemeSelectorPressed)
                 self.state.appThemeStyle = $0
                 ThemeManager.shared.setThemeStyle($0)
                 self.state.forceWebsiteDarkMode = self.darkReaderFeatureSettings.isForceDarkModeEnabled
@@ -341,7 +371,7 @@ final class SettingsViewModel: ObservableObject {
                 self.state.addressBar.position
             },
             set: {
-                Pixel.fire(pixel: $0 == .top ? .settingsAddressBarTopSelected : .settingsAddressBarBottomSelected)
+                PixelKit.fire($0 == .top ? Pixel.Event.settingsAddressBarTopSelected : .settingsAddressBarBottomSelected)
                 self.appSettings.currentAddressBarPosition = $0
                 self.state.addressBar.position = $0
             }
@@ -354,7 +384,7 @@ final class SettingsViewModel: ObservableObject {
                 !self.appSettings.keepAddressBarVisibleOnIPad
             },
             set: { hideWhileScrolling in
-                Pixel.fire(pixel: hideWhileScrolling ? .settingsHideTabBarWhileScrollingOn : .settingsHideTabBarWhileScrollingOff)
+                PixelKit.fire(hideWhileScrolling ? Pixel.Event.settingsHideTabBarWhileScrollingOn : .settingsHideTabBarWhileScrollingOff)
                 let keepVisible = !hideWhileScrolling
                 self.appSettings.keepAddressBarVisibleOnIPad = keepVisible
             }
@@ -367,7 +397,7 @@ final class SettingsViewModel: ObservableObject {
                 self.state.refreshButtonPosition
             },
             set: {
-                Pixel.fire(pixel: $0 == .addressBar ? .settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
+                PixelKit.fire($0 == .addressBar ? Pixel.Event.settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
                 self.appSettings.currentRefreshButtonPosition = $0
                 self.state.refreshButtonPosition = $0
             }
@@ -382,8 +412,8 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.autoplaySettings.currentAutoplayBlockingMode = $0
                 self.state.autoplayBlockingMode = $0
-                Pixel.fire(pixel: .settingsAutoplayChanged,
-                          withAdditionalParameters: [PixelParameters.autoplayBlockingMode: $0.rawValue])
+                PixelKit.fire(Pixel.Event.settingsAutoplayChanged,
+                              options: .parameters([PixelParameters.autoplayBlockingMode: $0.rawValue]))
             }
         )
     }
@@ -392,7 +422,7 @@ final class SettingsViewModel: ObservableObject {
         Binding<Bool>(
             get: { self.state.showsFullURL },
             set: {
-                Pixel.fire(pixel: $0 ? .settingsShowFullURLOn : .settingsShowFullURLOff)
+                PixelKit.fire($0 ? Pixel.Event.settingsShowFullURLOn : .settingsShowFullURLOff)
                 self.state.showsFullURL = $0
                 self.appSettings.showFullSiteAddress = $0
             }
@@ -405,8 +435,8 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.state.showTrackersBlockedAnimation = $0
                 self.appSettings.showTrackersBlockedAnimation = $0
-                Pixel.fire(pixel: .settingsTrackerCountInAddressBarToggled,
-                          withAdditionalParameters: [PixelParameters.enabled: String($0)])
+                PixelKit.fire(Pixel.Event.settingsTrackerCountInAddressBarToggled,
+                              options: .parameters([PixelParameters.enabled: String($0)]))
             }
         )
     }
@@ -430,9 +460,7 @@ final class SettingsViewModel: ObservableObject {
             get: { self.lastTabShortcutAdapter.isEnabled },
             set: { newValue in
                 self.lastTabShortcutAdapter.setEnabled(newValue)
-                DailyPixel.fireDailyAndCount(
-                    pixel: newValue ? .ntpAfterIdleLastTabShortcutSettingEnabled : .ntpAfterIdleLastTabShortcutSettingDisabled
-                )
+                PixelKit.fire(newValue ? Pixel.Event.ntpAfterIdleLastTabShortcutSettingEnabled : .ntpAfterIdleLastTabShortcutSettingDisabled, frequency: .dailyAndCount)
             }
         )
     }
@@ -457,7 +485,7 @@ final class SettingsViewModel: ObservableObject {
                 let pixel: Pixel.Event = newValue == .newTab
                     ? .ntpAfterIdleSettingChangedToNewTab
                     : .ntpAfterIdleSettingChangedToLastUsedTab
-                DailyPixel.fireDailyAndCount(pixel: pixel)
+                PixelKit.fire(pixel, frequency: .dailyAndCount)
             }
         )
     }
@@ -468,10 +496,9 @@ final class SettingsViewModel: ObservableObject {
             set: { newValue in
                 self.afterInactivityIdleInterval = newValue
                 try? self.afterInactivityStorage.set(newValue.seconds, for: \AfterInactivitySettingKeys.idleReturnIntervalSeconds)
-                DailyPixel.fireDailyAndCount(
-                    pixel: .ntpAfterIdleSettingIdleIntervalChanged,
-                    withAdditionalParameters: ["idle_interval_seconds": String(newValue.seconds)]
-                )
+                PixelKit.fire(Pixel.Event.ntpAfterIdleSettingIdleIntervalChanged,
+                              frequency: .dailyAndCount,
+                              options: .parameters(["idle_interval_seconds": String(newValue.seconds)]))
             }
         )
     }
@@ -486,9 +513,9 @@ final class SettingsViewModel: ObservableObject {
                 self.updateRecentlyVisitedSitesVisibility()
                 
                 if $0 {
-                    Pixel.fire(pixel: .settingsGeneralAutocompleteOn)
+                    PixelKit.fire(Pixel.Event.settingsGeneralAutocompleteOn)
                 } else {
-                    Pixel.fire(pixel: .settingsGeneralAutocompleteOff)
+                    PixelKit.fire(Pixel.Event.settingsGeneralAutocompleteOff)
                 }
             }
         )
@@ -504,9 +531,9 @@ final class SettingsViewModel: ObservableObject {
                 self.updateRecentlyVisitedSitesVisibility()
 
                 if $0 {
-                    Pixel.fire(pixel: .settingsPrivateSearchAutocompleteOn)
+                    PixelKit.fire(Pixel.Event.settingsPrivateSearchAutocompleteOn)
                 } else {
-                    Pixel.fire(pixel: .settingsPrivateSearchAutocompleteOff)
+                    PixelKit.fire(Pixel.Event.settingsPrivateSearchAutocompleteOff)
                 }
             }
         )
@@ -519,9 +546,9 @@ final class SettingsViewModel: ObservableObject {
                 self.appSettings.recentlyVisitedSites = $0
                 self.state.recentlyVisitedSites = $0
                 if $0 {
-                    Pixel.fire(pixel: .settingsRecentlyVisitedOn)
+                    PixelKit.fire(Pixel.Event.settingsRecentlyVisitedOn)
                 } else {
-                    Pixel.fire(pixel: .settingsRecentlyVisitedOff)
+                    PixelKit.fire(Pixel.Event.settingsRecentlyVisitedOff)
                 }
                 self.clearHistoryIfNeeded()
             }
@@ -536,28 +563,9 @@ final class SettingsViewModel: ObservableObject {
                 self.state.sendDoNotSell = $0
                 NotificationCenter.default.post(name: AppUserDefaults.Notifications.doNotSellStatusChange, object: nil)
                 if $0 {
-                    Pixel.fire(pixel: .settingsGpcOn)
+                    PixelKit.fire(Pixel.Event.settingsGpcOn)
                 } else {
-                    Pixel.fire(pixel: .settingsGpcOff)
-                }
-            }
-        )
-    }
-
-    var isCookiePopupPreferenceSettingEnabled: Bool {
-        featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting)
-    }
-
-    var autoconsentBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.state.autoconsentEnabled },
-            set: {
-                self.appSettings.autoconsentEnabled = $0
-                self.state.autoconsentEnabled = $0
-                if $0 {
-                    Pixel.fire(pixel: .settingsAutoconsentOn)
-                } else {
-                    Pixel.fire(pixel: .settingsAutoconsentOff)
+                    PixelKit.fire(Pixel.Event.settingsGpcOff)
                 }
             }
         )
@@ -572,7 +580,7 @@ final class SettingsViewModel: ObservableObject {
                     autoManageEnabled: isEnabled,
                     popUpsWithoutOptOutsEnabled: popUpsWithoutOptOuts
                 ))
-                Pixel.fire(pixel: isEnabled ? .autoconsentSettingsOn : .autoconsentSettingsOff)
+                PixelKit.fire(isEnabled ? Pixel.Event.autoconsentSettingsOn : .autoconsentSettingsOff)
             }
         )
     }
@@ -585,7 +593,7 @@ final class SettingsViewModel: ObservableObject {
                     autoManageEnabled: true,
                     popUpsWithoutOptOutsEnabled: isEnabled
                 ))
-                Pixel.fire(pixel: isEnabled ? .autoconsentSettingsMax : .autoconsentSettingsDefault)
+                PixelKit.fire(isEnabled ? Pixel.Event.autoconsentSettingsMax : .autoconsentSettingsDefault)
             }
         )
     }
@@ -601,9 +609,9 @@ final class SettingsViewModel: ObservableObject {
             set: { newValue in
                 self.setVoiceSearchEnabled(to: newValue)
                 if newValue {
-                    Pixel.fire(pixel: .settingsVoiceSearchOn)
+                    PixelKit.fire(Pixel.Event.settingsVoiceSearchOn)
                 } else {
-                    Pixel.fire(pixel: .settingsVoiceSearchOff)
+                    PixelKit.fire(Pixel.Event.settingsVoiceSearchOff)
                 }
             }
         )
@@ -613,10 +621,10 @@ final class SettingsViewModel: ObservableObject {
         Binding<TextZoomLevel>(
             get: { self.state.textZoom.level },
             set: { newValue in
-                Pixel.fire(.settingsAccessiblityTextZoom, withAdditionalParameters: [
+                PixelKit.fire(Pixel.Event.settingsAccessiblityTextZoom, options: .parameters([
                     PixelParameters.textZoomInitial: String(self.appSettings.defaultTextZoomLevel.rawValue),
                     PixelParameters.textZoomUpdated: String(newValue.rawValue),
-                ])
+                ]))
                 self.appSettings.defaultTextZoomLevel = newValue
                 self.state.textZoom.level = newValue
             }
@@ -634,11 +642,11 @@ final class SettingsViewModel: ObservableObject {
 
                 switch self.state.duckPlayerMode {
                 case .alwaysAsk:
-                    Pixel.fire(pixel: Pixel.Event.duckPlayerSettingBackToDefault)
+                    PixelKit.fire(Pixel.Event.duckPlayerSettingBackToDefault)
                 case .disabled:
-                    Pixel.fire(pixel: Pixel.Event.duckPlayerSettingNeverSettings)
+                    PixelKit.fire(Pixel.Event.duckPlayerSettingNeverSettings)
                 case .enabled:
-                    Pixel.fire(pixel: Pixel.Event.duckPlayerSettingAlwaysSettings)
+                    PixelKit.fire(Pixel.Event.duckPlayerSettingAlwaysSettings)
                 default:
                     break
                 }
@@ -687,11 +695,11 @@ final class SettingsViewModel: ObservableObject {
                 if oldMode != self.state.duckPlayerMode {
                     switch self.state.duckPlayerMode {
                     case .enabled:
-                        Pixel.fire(pixel: .duckPlayerSettingAlwaysSettings)
+                        PixelKit.fire(Pixel.Event.duckPlayerSettingAlwaysSettings)
                     case .alwaysAsk:
-                        Pixel.fire(pixel: .duckPlayerSettingBackToDefault)
+                        PixelKit.fire(Pixel.Event.duckPlayerSettingBackToDefault)
                     case .disabled:
-                        Pixel.fire(pixel: .duckPlayerSettingNeverSettings)
+                        PixelKit.fire(Pixel.Event.duckPlayerSettingNeverSettings)
                     case .none:
                         break
                     }
@@ -715,11 +723,11 @@ final class SettingsViewModel: ObservableObject {
                 if oldMode != newMode {
                     switch newMode {
                     case .enabled:
-                        Pixel.fire(pixel: .duckPlayerSettingAlwaysSettings)
+                        PixelKit.fire(Pixel.Event.duckPlayerSettingAlwaysSettings)
                     case .alwaysAsk:
-                        Pixel.fire(pixel: .duckPlayerSettingBackToDefault)
+                        PixelKit.fire(Pixel.Event.duckPlayerSettingBackToDefault)
                     case .disabled:
-                        Pixel.fire(pixel: .duckPlayerSettingNeverSettings)
+                        PixelKit.fire(Pixel.Event.duckPlayerSettingNeverSettings)
                     }
                 }
             }
@@ -733,9 +741,9 @@ final class SettingsViewModel: ObservableObject {
                 self.appSettings.duckPlayerOpenInNewTab = $0
                 self.state.duckPlayerOpenInNewTab = $0
                 if self.state.duckPlayerOpenInNewTab {
-                    Pixel.fire(pixel: Pixel.Event.duckPlayerNewTabSettingOn)
+                    PixelKit.fire(Pixel.Event.duckPlayerNewTabSettingOn)
                 } else {
-                    Pixel.fire(pixel: Pixel.Event.duckPlayerNewTabSettingOff)
+                    PixelKit.fire(Pixel.Event.duckPlayerNewTabSettingOff)
                 }
             }
         )
@@ -788,10 +796,8 @@ final class SettingsViewModel: ObservableObject {
                 } else if disclosureVisibleAtToggle {
                     self.setYouTubeAnalyticsEnabled(true)
                 }
-                DailyPixel.fireDailyAndCount(
-                    pixel: $0 ? .webExtensionAdBlockingEnabled : .webExtensionAdBlockingDisabled,
-                    pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-                )
+                PixelKit.fire($0 ? Pixel.Event.webExtensionAdBlockingEnabled : .webExtensionAdBlockingDisabled,
+                              frequency: .dailyAndStandard)
                 NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
             }
         )
@@ -803,6 +809,7 @@ final class SettingsViewModel: ObservableObject {
 
     func setYouTubeAnalyticsEnabled(_ enabled: Bool) {
         try? youTubeAdBlockingStorage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+        NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabledDidChangeNotification, object: nil)
     }
 
     var isYouTubeAdBlockingDisclosureHidden: Bool {
@@ -939,10 +946,8 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.darkReaderFeatureSettings.setForceDarkModeEnabled($0)
                 self.state.forceWebsiteDarkMode = $0
-                DailyPixel.fireDailyAndCount(
-                    pixel: $0 ? .webExtensionDarkReaderEnabled : .webExtensionDarkReaderDisabled,
-                    pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-                )
+                PixelKit.fire($0 ? Pixel.Event.webExtensionDarkReaderEnabled : .webExtensionDarkReaderDisabled,
+                              frequency: .dailyAndStandard)
             }
         )
     }
@@ -1096,8 +1101,65 @@ final class SettingsViewModel: ObservableObject {
         self.adBlockingAvailability = adBlockingAvailability
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
+        refreshNextStepsVisibility(animated: false)
         startForwardingAdapterWillChangeEvents(afterInactivityOptionAdapter)
         startForwardingAdapterWillChangeEvents(lastTabShortcutAdapter)
+    }
+
+    @MainActor
+    func configureSitePermissions(store: SitePermissionsStore,
+                                  eventHandler: @escaping (SitePermissionsEvent) -> Void,
+                                  revocationHandler: @escaping (SitePermissionKey, Set<SitePermissionType>) -> Void) {
+        sitePermissionsStore = store
+        sitePermissionsEventHandler = eventHandler
+        sitePermissionsRevocationHandler = revocationHandler
+    }
+
+    @MainActor
+    private func makeSitePermissionsCallbacks() -> SettingsSitePermissionsViewModel.Callbacks {
+        Self.makeSitePermissionsCallbacks(
+            eventHandler: sitePermissionsEventHandler,
+            revocationHandler: sitePermissionsRevocationHandler
+        )
+    }
+
+    @MainActor
+    static func makeSitePermissionsCallbacks(
+        eventHandler: @escaping (SitePermissionsEvent) -> Void,
+        revocationHandler: @escaping (SitePermissionKey, Set<SitePermissionType>) -> Void
+    ) -> SettingsSitePermissionsViewModel.Callbacks {
+        var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+        callbacks.didOpen = {
+            eventHandler(.settingsSitePermissionsOpen)
+        }
+        callbacks.didChangeGlobalDefault = { permissionType, decision in
+            eventHandler(
+                .settingsSitePermissionsGlobalChanged(type: permissionType, to: decision)
+            )
+        }
+        callbacks.didChangeSiteDecision = { permissionType, from, to in
+            eventHandler(
+                .permissionCenterChanged(type: permissionType, from: from, to: to)
+            )
+        }
+        callbacks.didOpenSystemSettings = {
+            eventHandler(
+                .permissionSystemSettingsOpened(type: .cameraAndMicrophone)
+            )
+        }
+        callbacks.didRequestRevocation = { site, permissionTypes in
+            revocationHandler(site, permissionTypes)
+        }
+        callbacks.didRemoveSite = {
+            eventHandler(.permissionRemoveSite)
+        }
+        callbacks.didRemoveAll = {
+            eventHandler(.permissionRemoveAll)
+        }
+        callbacks.didUndoRemoval = {
+            eventHandler(.permissionRemoveUndo)
+        }
+        return callbacks
     }
 
     deinit {
@@ -1145,7 +1207,6 @@ extension SettingsViewModel {
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             showTrackersBlockedAnimation: appSettings.showTrackersBlockedAnimation,
-            isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
             forceWebsiteDarkMode: darkReaderFeatureSettings.isForceDarkModeEnabled,
@@ -1166,6 +1227,7 @@ extension SettingsViewModel {
             voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
             speechRecognitionAvailable: voiceSearchHelper.isSpeechRecognizerAvailable,
             loginsEnabled: featureFlagger.isFeatureOn(.autofillAccessCredentialManagement),
+            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
             networkProtectionConnected: false,
             subscription: SettingsState.defaults.subscription,
             sync: getSyncState(),
@@ -1215,6 +1277,7 @@ extension SettingsViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self else { return }
+                self.state.sitePermissionsEnabled = self.featureFlagger.isFeatureOn(.sitePermissions)
                 // Refresh the UI for every flag flip so the contingency notice
                 // (which reads `adBlockingAvailability.isRemotelyDisabled` live)
                 // re-renders even for users with explicit storage who skip the
@@ -1230,6 +1293,7 @@ extension SettingsViewModel {
             .store(in: &cancellables)
 
         updateRecentlyVisitedSitesVisibility()
+        refreshNextStepsVisibility(animated: false)
 
         if #available(iOS 18.2, *) {
             updateCompleteSetupSectionVisiblity()
@@ -1281,7 +1345,7 @@ extension SettingsViewModel {
 
     private func firePixel(_ event: Pixel.Event,
                            withAdditionalParameters params: [String: String] = [:]) {
-        Pixel.fire(pixel: event, withAdditionalParameters: params)
+        PixelKit.fire(event, options: .parameters(params))
     }
     
     private func enableVoiceSearch(completion: @escaping (Bool) -> Void) {
@@ -1412,6 +1476,16 @@ extension SettingsViewModel {
         static let didDismissSetAsDefaultBrowserKey = "com.duckduckgo.settings.setup.browser-default-dismissed"
         static let didDismissImportPasswordsKey = "com.duckduckgo.settings.setup.import-passwords-dismissed"
         static let shouldCheckIfDefaultBrowserKey = "com.duckduckgo.settings.setup.check-browser-default"
+
+        // Next Steps section: timestamp (Double, timeIntervalSinceReferenceDate) of the first tap on each item.
+        static let didTapAddToDockNextStepKey = "com.duckduckgo.settings.next-steps.add-to-dock-tapped-at"
+        static let didTapAddWidgetNextStepKey = "com.duckduckgo.settings.next-steps.add-widget-tapped-at"
+        // How long after tapping an instructional Next Steps item (Add to Dock / Add Widget) it stays visible.
+        static let nextStepTapDismissalInterval: TimeInterval = 24 * 60 * 60 // 1 day
+        // Whether the user has permanently hidden the entire Next Steps section.
+        static let nextStepsSectionHiddenKey = "com.duckduckgo.settings.next-steps.section-hidden"
+        // How long after install the "Hide" affordance for the Next Steps section becomes available.
+        static let nextStepsHideMinimumInstallAge: TimeInterval = 14 * 24 * 60 * 60 // 14 days
     }
 
     func onFirstAppear() {
@@ -1422,6 +1496,7 @@ extension SettingsViewModel {
     }
 
     func onSubsequentAppear() {
+        refreshNextStepsVisibility(animated: false)
         Task {
             await setupSubscriptionEnvironment()
         }
@@ -1433,7 +1508,7 @@ extension SettingsViewModel {
         if let source = source {
             parameters[PixelParameters.source] = source
         }
-        Pixel.fire(pixel: .settingsSetAsDefault, withAdditionalParameters: parameters)
+        PixelKit.fire(Pixel.Event.settingsSetAsDefault, options: .parameters(parameters))
         systemSettingsPiPTutorialManager.playPiPTutorialAndNavigateTo(destination: .defaultBrowser)
         if shouldShowSetAsDefaultBrowser {
             try? keyValueStore.set(true, forKey: Constants.shouldCheckIfDefaultBrowserKey)
@@ -1450,6 +1525,78 @@ extension SettingsViewModel {
     func dismissImportPasswords() {
         try? keyValueStore.set(true, forKey: Constants.didDismissImportPasswordsKey)
         updateCompleteSetupSectionVisiblity()
+    }
+
+    // MARK: Next Steps section
+
+    var shouldShowNextStepsSection: Bool {
+        !nextStepsSectionHidden && (
+            shouldShowAddToDockNextStep
+                || shouldShowAddWidgetNextStep
+                || shouldShowSetAddressBarPositionNextStep
+                || shouldShowEnableVoiceSearchNextStep
+        )
+    }
+
+    func refreshNextStepsVisibility(animated: Bool) {
+        let apply = {
+            self.nextStepsSectionHidden = (try? self.keyValueStore.object(forKey: Constants.nextStepsSectionHiddenKey) as? Bool) ?? false
+            self.shouldShowSetAddressBarPositionNextStep = !self.isPad && self.appSettings.currentAddressBarPosition == .top
+            self.shouldShowEnableVoiceSearchNextStep = self.voiceSearchHelper.isSpeechRecognizerAvailable
+                && !self.voiceSearchHelper.isVoiceSearchEnabled
+            self.shouldShowAddToDockNextStep = !Self.hasTapDismissalElapsed(
+                tappedAt: try? self.keyValueStore.object(forKey: Constants.didTapAddToDockNextStepKey) as? Double,
+                interval: Constants.nextStepTapDismissalInterval)
+            self.shouldShowAddWidgetNextStep = !Self.hasTapDismissalElapsed(
+                tappedAt: try? self.keyValueStore.object(forKey: Constants.didTapAddWidgetNextStepKey) as? Double,
+                interval: Constants.nextStepTapDismissalInterval)
+            self.shouldShowNextStepsHideButton = Self.hasInstallGracePeriodElapsed(
+                installDate: StatisticsUserDefaults().installDate,
+                requiredInterval: Constants.nextStepsHideMinimumInstallAge)
+        }
+        if animated {
+            withAnimation { apply() }
+        } else {
+            apply()
+        }
+    }
+
+    func hideNextStepsSection() {
+        try? keyValueStore.set(true, forKey: Constants.nextStepsSectionHiddenKey)
+        withAnimation { nextStepsSectionHidden = true }
+    }
+
+    func recordAddToDockNextStepTapped() {
+        recordNextStepTapIfNeeded(forKey: Constants.didTapAddToDockNextStepKey)
+    }
+
+    func recordAddWidgetNextStepTapped() {
+        recordNextStepTapIfNeeded(forKey: Constants.didTapAddWidgetNextStepKey)
+    }
+
+    private func recordNextStepTapIfNeeded(forKey key: String) {
+        Self.recordFirstTap(forKey: key, in: keyValueStore)
+    }
+
+    static func recordFirstTap(forKey key: String,
+                               in keyValueStore: ThrowingKeyValueStoring,
+                               now: TimeInterval = Date().timeIntervalSinceReferenceDate) {
+        guard (try? keyValueStore.object(forKey: key) as? Double) == nil else { return }
+        try? keyValueStore.set(now, forKey: key)
+    }
+
+    static func hasTapDismissalElapsed(tappedAt: Double?,
+                                       now: TimeInterval = Date().timeIntervalSinceReferenceDate,
+                                       interval: TimeInterval) -> Bool {
+        guard let tappedAt else { return false }
+        return now - tappedAt >= interval
+    }
+
+    static func hasInstallGracePeriodElapsed(installDate: Date?,
+                                             now: Date = Date(),
+                                             requiredInterval: TimeInterval) -> Bool {
+        guard let installDate else { return false }
+        return now.timeIntervalSince(installDate) >= requiredInterval
     }
 
     @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, showSettingsScreen: AutofillSettingsDestination? = nil, source: AutofillSettingsSource? = nil) {
@@ -1492,7 +1639,7 @@ extension SettingsViewModel {
     private func isFeatureAvailableForNewBadge(_ feature: NewBadgeFeature) -> Bool {
         switch feature {
         case .personalInformationRemoval:
-            return isPIREnabled && meetsLocaleRequirement && dataBrokerProtectionViewControllerProvider != nil
+            return isPIRAvailable
         }
     }
 
@@ -1501,14 +1648,14 @@ extension SettingsViewModel {
     }
 
     func openMoreSearchSettings() {
-        Pixel.fire(pixel: .settingsMoreSearchSettings)
+        PixelKit.fire(Pixel.Event.settingsMoreSearchSettings)
         let url = URL.searchSettings.appendingParameter(name: SERPSettingsConstants.returnParameterKey,
                                                         value: SERPSettingsConstants.privateSearch)
         urlOpener.open(url)
     }
 
     func openAssistSettings() {
-        Pixel.fire(pixel: .settingsOpenAssistSettings)
+        PixelKit.fire(Pixel.Event.settingsOpenAssistSettings)
         let url = URL.assistSettings.appendingParameter(name: SERPSettingsConstants.returnParameterKey,
                                                         value: SERPSettingsConstants.aiFeatures)
         urlOpener.open(url)
@@ -1536,14 +1683,10 @@ extension SettingsViewModel {
 
     func openDuckPlayerContingencyMessageSite() {
         guard let url = duckPlayerContingencyHandler.learnMoreURL else { return }
-        Pixel.fire(pixel: .duckPlayerContingencyLearnMoreClicked)
+        PixelKit.fire(Pixel.Event.duckPlayerContingencyLearnMoreClicked)
         urlOpener.open(url)
     }
 
-    @MainActor func openCookiePopupManagement() {
-        pushViewController(legacyViewProvider.autoConsent)
-    }
-    
     @MainActor func dismissSettings() {
         onRequestDismissSettings?()
     }
@@ -1590,8 +1733,6 @@ extension SettingsViewModel {
             firePixel(.settingsDoNotSellShown)
             pushViewController(legacyViewProvider.gpc)
         
-        case .autoconsent:
-            pushViewController(legacyViewProvider.autoConsent)
         case .passwordsImport:
             pushViewController(legacyViewProvider.importPasswords(importScreen: .completeSetup,
                                                                   delegate: self,
@@ -1649,7 +1790,8 @@ extension SettingsViewModel: DataImportViewControllerDelegate {
 extension SettingsViewModel {
 
     enum SettingsDeepLinkSection: Identifiable, Equatable {
-        case netP(scrollToStrictRouting: Bool = false)
+        case netP(source: VPNConnectionWideEventData.ScreenSource,
+                  scrollToStrictRouting: Bool = false)
         case dbp
         case itr
         case subscriptionFlow(redirectURLComponents: URLComponents? = nil)
@@ -1664,11 +1806,12 @@ extension SettingsViewModel {
         case customizeAddressBarButton
         case appearance
         case general
+        case cookiePopupProtection
         // Add other cases as needed
 
         var id: String {
             switch self {
-            case .netP: return "netP"
+            case let .netP(source, _): return "netP-\(source.rawValue)"
             case .dbp: return "dbp"
             case .itr: return "itr"
             case .subscriptionFlow: return "subscriptionFlow"
@@ -1683,6 +1826,7 @@ extension SettingsViewModel {
             case .customizeAddressBarButton: return "customizeAddressButton"
             case .appearance: return "appearance"
             case .general: return "general"
+            case .cookiePopupProtection: return "cookiePopupProtection"
             // Ensure all cases are covered
             }
         }
@@ -1691,7 +1835,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection:
                 return .navigationLink
             }
         }
@@ -1745,7 +1889,7 @@ extension SettingsViewModel {
                 // 3a. No subscription on backend — reset subscription fields and exit early
                 Logger.subscription.debug("No subscription data available")
                 applyNoSubscriptionState(&updatedSubscriptionState)
-                DailyPixel.fireDailyAndCount(pixel: .settingsSubscriptionAccountWithNoSubscriptionFound)
+                PixelKit.fire(Pixel.Event.settingsSubscriptionAccountWithNoSubscriptionFound, frequency: .dailyAndCount)
                 state.subscription = updatedSubscriptionState
                 subscriptionStateCache.set(state.subscription)
                 return
@@ -1817,6 +1961,8 @@ extension SettingsViewModel {
                                                                   object: nil,
                                                                   queue: .main, using: { [weak self] _ in
             guard let self = self else { return }
+            self.mobileCustomization.refreshAvailability()
+            self.state.mobileCustomization = self.mobileCustomization.state
             Task { @MainActor in
                 self.refreshAutoClearOptionsIfNeeded()
             }
@@ -1865,17 +2011,17 @@ extension SettingsViewModel {
 
             switch restoreFlowError {
             case .missingAccountOrTransactions:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorMissingAccountOrTransactions)
+                PixelKit.fire(Pixel.Event.subscriptionActivatingRestoreErrorMissingAccountOrTransactions, frequency: .dailyAndCount)
             case .pastTransactionAuthenticationError:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorPastTransactionAuthenticationError)
+                PixelKit.fire(Pixel.Event.subscriptionActivatingRestoreErrorPastTransactionAuthenticationError, frequency: .dailyAndCount)
             case .failedToObtainAccessToken:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToObtainAccessToken)
+                PixelKit.fire(Pixel.Event.subscriptionActivatingRestoreErrorFailedToObtainAccessToken, frequency: .dailyAndCount)
             case .failedToFetchAccountDetails:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchAccountDetails)
+                PixelKit.fire(Pixel.Event.subscriptionActivatingRestoreErrorFailedToFetchAccountDetails, frequency: .dailyAndCount)
             case .failedToFetchSubscriptionDetails:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchSubscriptionDetails)
+                PixelKit.fire(Pixel.Event.subscriptionActivatingRestoreErrorFailedToFetchSubscriptionDetails, frequency: .dailyAndCount)
             case .subscriptionExpired:
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorSubscriptionExpired)
+                PixelKit.fire(Pixel.Event.subscriptionActivatingRestoreErrorSubscriptionExpired, frequency: .dailyAndCount)
             }
         }
     }
@@ -1981,7 +2127,7 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatTabBarUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatTabBarUserSettings(enable: newValue)
-                DailyPixel.fireDailyAndCount(pixel: newValue ? .aiChatSettingsNavigationBarTurnedOn : .aiChatSettingsNavigationBarTurnedOff)
+                PixelKit.fire(newValue ? Pixel.Event.aiChatSettingsNavigationBarTurnedOn : .aiChatSettingsNavigationBarTurnedOff, frequency: .dailyAndCount)
             }
         )
     }
@@ -2016,7 +2162,7 @@ extension SettingsViewModel {
                 guard newValue != self.serpSettings.searchAssistFrequency else { return }
                 self.objectWillChange.send()
                 self.serpSettings.searchAssistFrequency = newValue
-                DailyPixel.fireDailyAndCount(pixel: Self.searchAssistPixel(for: newValue))
+                PixelKit.fire(Self.searchAssistPixel(for: newValue), frequency: .dailyAndCount)
             }
         )
     }
@@ -2028,7 +2174,7 @@ extension SettingsViewModel {
                 guard newValue.hidden != self.serpSettings.hideAIGeneratedImages else { return }
                 self.objectWillChange.send()
                 self.serpSettings.hideAIGeneratedImages = newValue.hidden
-                DailyPixel.fireDailyAndCount(pixel: newValue.hidden ? .aiFeaturesHideImagesOn : .aiFeaturesHideImagesOff)
+                PixelKit.fire(newValue.hidden ? Pixel.Event.aiFeaturesHideImagesOn : .aiFeaturesHideImagesOff, frequency: .dailyAndCount)
             }
         )
     }
@@ -2056,7 +2202,7 @@ extension SettingsViewModel {
         aiChatSettings.enableAIChat(enable: false)
         serpSettings.searchAssistFrequency = .never
         serpSettings.hideAIGeneratedImages = true
-        DailyPixel.fireDailyAndCount(pixel: .aiFeaturesDisabled)
+        PixelKit.fire(Pixel.Event.aiFeaturesDisabled, frequency: .dailyAndCount)
     }
 
     var isChatSuggestionsEnabled: Binding<Bool> {
@@ -2076,8 +2222,8 @@ extension SettingsViewModel {
             get: { self.tabSwitcherSettings.showTrackerCountInTabSwitcher },
             set: { newValue in
                 self.tabSwitcherSettings.showTrackerCountInTabSwitcher = newValue
-                Pixel.fire(pixel: .settingsTrackerCountInTabSwitcherToggled,
-                          withAdditionalParameters: [PixelParameters.enabled: String(newValue)])
+                PixelKit.fire(Pixel.Event.settingsTrackerCountInTabSwitcherToggled,
+                              options: .parameters([PixelParameters.enabled: String(newValue)]))
             }
         )
     }
@@ -2137,7 +2283,7 @@ extension SettingsViewModel {
             return
         }
 
-        Pixel.fire(pixel: .settingsWhatsNewOpen)
+        PixelKit.fire(Pixel.Event.settingsWhatsNewOpen)
         // Set Modal false to prevent caller to set fullScreen modal presentation style.
         // Coordinator already sets the appropriate presentation style for iPhone and iPad.
         presentViewController(viewController, modal: false)

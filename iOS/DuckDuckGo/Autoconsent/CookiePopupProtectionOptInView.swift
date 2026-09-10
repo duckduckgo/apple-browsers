@@ -21,6 +21,7 @@ import SwiftUI
 import DuckUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import MetricBuilder
 import UIComponents
 
 enum CookiePopupProtectionOptInVariant {
@@ -71,6 +72,7 @@ struct CookiePopupProtectionOptInView: View {
     private let onConfirm: (CookiePopupProtectionOptInOption) -> Void
     @StateObject private var optionsModel: RadioButtonViewModel
 
+    @MainActor
     init(variant: CookiePopupProtectionOptInVariant, onConfirm: @escaping (CookiePopupProtectionOptInOption) -> Void) {
         self.variant = variant
         self.onConfirm = onConfirm
@@ -86,7 +88,7 @@ struct CookiePopupProtectionOptInView: View {
                 selectedTextColor: Color(designSystemColor: .textPrimary),
                 unselectedTextColor: Color(designSystemColor: .textPrimary),
                 unselectedCheckboxColor: Color(designSystemColor: .iconsSecondary),
-                cornerRadius: 16,
+                cornerRadius: ContainerMetrics.cornerRadius,
                 horizontalPadding: 16,
                 verticalPadding: 16,
                 checkboxSize: 28,
@@ -195,11 +197,11 @@ struct CookiePopupProtectionOptInView: View {
         }
         .padding(.horizontal, 16)
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: 34)
                 .fill(Color(designSystemColor: .backgroundSheets))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: 34)
                 .stroke(Color(designSystemColor: .accentPrimary).opacity(0.3), lineWidth: 1)
         )
     }

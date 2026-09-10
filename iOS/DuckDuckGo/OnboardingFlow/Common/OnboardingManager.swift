@@ -23,6 +23,7 @@ import Core
 import Onboarding
 import Persistence
 import PrivacyConfig
+import FeatureFlags_iOS
 
 enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertible {
     case notSet
@@ -160,7 +161,7 @@ extension OnboardingIntroStep {
     static let aiModelSelection: Self = .renderable(.aiModelSelection)
     static let toggleInputModeSelection: Self = .renderable(.toggleInputModeSelection)
     static let keepDuckAISelection: Self = .renderable(.keepDuckAISelection)
-    static let duckPlayerSelection: Self = .renderable(.duckPlayerSelection)
+    static let adBlockingPersonalization: Self = .renderable(.adBlockingPersonalization)
     static let setDefaultBrowser: Self = .renderable(.setDefaultBrowser)
     static let aiIntro: Self = .renderable(.aiIntro)
     static let addToDockPromo: Self = .renderable(.addToDockPromo)
@@ -184,7 +185,7 @@ extension OnboardingIntroStep {
         case aiModelSelection // NA Experiment AI Model Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=426-77761&m=dev
         case toggleInputModeSelection // NA Experiment Omnibar Input Mode Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=426-76416&m=dev
         case keepDuckAISelection // NA Experiment Duck.ai Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=437-33810&m=dev
-        case duckPlayerSelection // NA Experiment Duck Player Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=426-83427&m=dev
+        case adBlockingPersonalization // NA Experiment Ad Blocking Personalisation (YouTube ad blocking + cookie pop-up protection)
         case setDefaultBrowser
         case aiIntro
         case appIconSelection
@@ -217,7 +218,7 @@ extension OnboardingIntroStep {
         case .renderable(.aiModelSelection): return .aiModelSelection
         case .renderable(.toggleInputModeSelection): return .toggleInputModeSelection
         case .renderable(.keepDuckAISelection): return .keepDuckAISelection
-        case .renderable(.duckPlayerSelection): return .duckPlayerSelection
+        case .renderable(.adBlockingPersonalization): return .adBlockingPersonalization
         case .renderable(.setDefaultBrowser): return .setDefaultBrowser
         case .renderable(.aiIntro): return .aiIntro
         case .renderable(.addToDockPromo): return .addToDockPromo
@@ -259,7 +260,7 @@ enum OnboardingResumeStep: String {
     case aiModelSelection // NA Experiment: reason-tailored step checkpoints.
     case toggleInputModeSelection // NA Experiment: reason-tailored step checkpoints.
     case keepDuckAISelection // NA Experiment: reason-tailored step checkpoints.
-    case duckPlayerSelection // NA Experiment: reason-tailored step checkpoints.
+    case adBlockingPersonalization // NA Experiment: reason-tailored step checkpoints.
     case setDefaultBrowser = "browserComparison"
     case aiIntro = "aiComparison"
     case addToDockPromo
@@ -281,6 +282,10 @@ protocol OnboardingStepsProvider: AnyObject {
 
 /// Handles the user's answer on the Download Screen for the `onboardingFlowByDownloadReasonExperiment` experiment.
 protocol OnboardingDownloadReasonHandling: AnyObject {
+    /// The reason the user selected on the Download Screen, or `nil` before they've answered
+    /// (and for flows outside the download-reason experiment). Used to tailor reason-specific content.
+    var currentDownloadReason: OnboardingDownloadReason? { get }
+
     /// Records the user's selected download reason and returns the steps that follow the Download Screen.
     ///
     /// Called by the view model when the user answers the Download Screen. The reason is persisted
@@ -297,6 +302,10 @@ extension OnboardingManager: OnboardingStepsProvider {
 }
 
 extension OnboardingManager: OnboardingDownloadReasonHandling {
+
+    var currentDownloadReason: OnboardingDownloadReason? {
+        tutorialSettings.onboardingDownloadReason
+    }
 
     func selectDownloadReason(_ reason: OnboardingDownloadReason) -> [OnboardingIntroStep] {
         tutorialSettings.onboardingDownloadReason = reason
@@ -404,16 +413,15 @@ private extension OnboardingManager {
     }
 
     var downloadReasonExperimentCohort: FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort? {
-        // The experiment targets new installers on iPhone. Locale/region targeting is handled remotely
-        // via the feature flag rollout, so it isn't gated here.
-        guard isIphone, isNewUser else { return nil }
-        return featureFlagger.resolveCohort(for: FeatureFlag.onboardingFlowByDownloadReasonExperiment) as? FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
+        featureFlagger.assignedCohort(for: FeatureFlag.onboardingFlowByDownloadReasonExperiment) as? FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
     }
 
     /// Enrolls default-flow users in the download-reason experiment.
     func enrollInDownloadReasonExperimentIfNeeded(resolvedFlow: OnboardingFlowType) {
-        guard resolvedFlow == .default else { return }
-        _ = downloadReasonExperimentCohort
+        // The experiment targets new installers on iPhone. Locale/region targeting is handled remotely
+        // via the feature flag rollout, so it isn't gated here.
+        guard resolvedFlow == .default, isIphone, isNewUser else { return }
+        _ = featureFlagger.resolveCohort(for: FeatureFlag.onboardingFlowByDownloadReasonExperiment) as? FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
     }
 
     /// Persist the flow and source for onboarding pixels based on the evaluated context.
@@ -481,7 +489,7 @@ private extension OnboardingManager {
         case .noAI:
             personalisationSteps = [.aiSearchSettingsSelection, .keepDuckAISelection]
         case .blockAds:
-            personalisationSteps = [.duckPlayerSelection, .searchExperienceSelection]
+            personalisationSteps = [.adBlockingPersonalization, .searchExperienceSelection]
         }
 
         return [.setDefaultBrowser] + personalisationSteps + commonSteps

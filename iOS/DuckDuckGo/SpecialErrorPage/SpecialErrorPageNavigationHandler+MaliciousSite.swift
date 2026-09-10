@@ -192,7 +192,7 @@ private extension MaliciousSiteProtectionNavigationHandler {
         // - custom app URL schemes
         // - early failing navigations
         // - navigations whose .request.cachePolicy == .returnCacheDataElseLoad and other cacheable requests including session restoration.
-        if navigationAction.isTargetingMainFrame() && url != lastMainFrameNavigationURL {
+        if navigationAction.isTargetingMainFrame && url != lastMainFrameNavigationURL {
             maliciousSiteDetectionTasks = [:]
         }
     }

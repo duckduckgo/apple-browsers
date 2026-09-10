@@ -26,9 +26,10 @@ final class UpdateNotificationPresenterTests: XCTestCase {
 
     // MARK: - Post-Update Notification (showUpdateNotification(for: AppUpdateStatus))
 
-    func testShowUpdateNotification_updated_callsShowNotificationPopover() {
+    func testShowUpdateNotification_updated_usesCompactLayout() {
         let expectation = expectation(description: "showNotificationPopover called")
-        let presenter = makePresenter(showNotificationPopover: { _ in
+        let presenter = makePresenter(showNotificationPopover: { viewController in
+            XCTAssertTrue(viewController.viewModel.configuration.usesCompactLayout)
             expectation.fulfill()
             return true
         })

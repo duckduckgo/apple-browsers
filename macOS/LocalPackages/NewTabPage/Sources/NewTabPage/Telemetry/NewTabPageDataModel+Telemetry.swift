@@ -23,6 +23,14 @@ public extension NewTabPageDataModel {
     enum TelemetryEvent: Equatable {
         case customizerOpened(themePopoverWasOpen: Bool)
         case customizerClosed
+        /// A duck.ai omnibar picker was shown. `tryForFree`/`upgrade` mean the gated section carried
+        /// that CTA; the plain cases mean the picker was shown without one.
+        case omnibarModelPickerShown
+        case omnibarModelPickerTryForFreeShown
+        case omnibarModelPickerUpgradeShown
+        case omnibarReasoningPickerShown
+        case omnibarReasoningPickerTryForFreeShown
+        case omnibarReasoningPickerUpgradeShown
     }
 }
 
@@ -32,11 +40,19 @@ extension NewTabPageDataModel.TelemetryEvent: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let payload = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .payload)
         let eventName = try payload.decode(EventName.self, forKey: .name)
-        let parameters = try payload.nestedContainer(keyedBy: CodingKeys.self, forKey: .parameters)
 
         switch eventName {
         case .customizer:
+            // Only the customizer event carries a `value`; the omnibar events are name-only, so
+            // decoding that container up front would make every one of them fail to decode.
+            let parameters = try payload.nestedContainer(keyedBy: CodingKeys.self, forKey: .parameters)
             self = try Self.decodeCustomizerEvent(from: parameters)
+        case .omnibarModelPickerShown: self = .omnibarModelPickerShown
+        case .omnibarModelPickerTryForFreeShown: self = .omnibarModelPickerTryForFreeShown
+        case .omnibarModelPickerUpgradeShown: self = .omnibarModelPickerUpgradeShown
+        case .omnibarReasoningPickerShown: self = .omnibarReasoningPickerShown
+        case .omnibarReasoningPickerTryForFreeShown: self = .omnibarReasoningPickerTryForFreeShown
+        case .omnibarReasoningPickerUpgradeShown: self = .omnibarReasoningPickerUpgradeShown
         }
     }
 }
@@ -53,6 +69,12 @@ private extension NewTabPageDataModel.TelemetryEvent {
 
     enum EventName: String, Decodable {
         case customizer = "customizer_drawer"
+        case omnibarModelPickerShown = "omnibar_model_picker_shown"
+        case omnibarModelPickerTryForFreeShown = "omnibar_model_picker_tryforfree_shown"
+        case omnibarModelPickerUpgradeShown = "omnibar_model_picker_upgrade_shown"
+        case omnibarReasoningPickerShown = "omnibar_reasoning_picker_shown"
+        case omnibarReasoningPickerTryForFreeShown = "omnibar_reasoning_picker_tryforfree_shown"
+        case omnibarReasoningPickerUpgradeShown = "omnibar_reasoning_picker_upgrade_shown"
     }
 
     enum CustomizerState: String, Decodable {

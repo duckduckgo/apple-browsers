@@ -18,9 +18,10 @@
 //
 
 import XCTest
+import FoundationExtensions
 
 @testable import DuckDuckGo
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import NetworkingTestingUtils
 
 final class AdAttributionFetcherTests: XCTestCase {

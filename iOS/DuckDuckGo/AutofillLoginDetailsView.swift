@@ -49,12 +49,12 @@ struct AutofillLoginDetailsView: View {
             switch viewModel.viewMode {
             case .edit:
                 editingContentView
-                    .listRowBackground(Color(designSystemColor: .surface))
+                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             case .view:
                 viewingContentView
             case .new:
                 editingContentView
-                    .listRowBackground(Color(designSystemColor: .surface))
+                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
         }
         .simultaneousGesture(
@@ -301,7 +301,7 @@ struct AutofillLoginDetailsView: View {
                     .frame(width: 80)
                     .toggleStyle(SwitchToggleStyle(tint: Color(ThemeManager.shared.currentTheme.buttonTintColor)))
             } else {
-                Image(uiImage: DesignSystemImages.Glyphs.Size16.alertRecolorable)
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.alertRecolorableDark)
                     .resizable()
                     .frame(width: 20, height: 20)
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))

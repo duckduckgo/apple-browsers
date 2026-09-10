@@ -44,6 +44,7 @@ import Subscription
         statusObserver = MockConnectionStatusObserver()
         serverInfoObserver = MockConnectionServerInfoObserver()
         viewModel = NetworkProtectionStatusViewModel(tunnelController: tunnelController,
+                                                     entryContextProvider: { .init(source: .toolbar, tokenState: .present) },
                                                      settings: VPNSettings(defaults: .networkProtectionGroupDefaults),
                                                      statusObserver: statusObserver,
                                                      serverInfoObserver: serverInfoObserver,
@@ -70,6 +71,35 @@ import Subscription
     func testDidToggleNetPToTrue_setsTunnelControllerStateToTrue() async {
         await viewModel.didToggleNetP(to: true)
         XCTAssertEqual(self.tunnelController.didCallStart, true)
+    }
+
+    func testWhenNetPIsEnabledThenPassesEntryContextToTunnelController() async {
+        let entryContext = VPNConnectionWideEventData.EntryContext(
+            source: .toolbar,
+            tokenState: .missing
+        )
+        let viewModel = makeViewModel(entryContextProvider: { entryContext })
+
+        await viewModel.didToggleNetP(to: true)
+
+        XCTAssertEqual(tunnelController.startEntryContexts, [entryContext])
+    }
+
+    func testWhenNetPIsEnabledThenEntryContextIsResolvedAtConnectTimeNotAtConstruction() async {
+        // The token state can change between opening the VPN screen and tapping connect. The wide event
+        // should record the state at connect time, so the provider must be evaluated lazily.
+        var tokenState: VPNConnectionWideEventData.TokenState = .missing
+        let viewModel = makeViewModel(entryContextProvider: {
+            VPNConnectionWideEventData.EntryContext(source: .toolbar, tokenState: tokenState)
+        })
+
+        // A token appears after construction but before the user connects.
+        tokenState = .present
+
+        await viewModel.didToggleNetP(to: true)
+
+        XCTAssertEqual(tunnelController.startEntryContexts,
+                       [VPNConnectionWideEventData.EntryContext(source: .toolbar, tokenState: .present)])
     }
 
     func testDidToggleNetPToFalse_setsTunnelControllerStateToFalse() async {
@@ -259,11 +289,28 @@ import Subscription
         XCTAssertEqual(viewModel.error?.message, UserText.vpnErrorAuthenticationFailed)
     }
 
+    func testWhenCreatingVPNEntryPointsThenScreenAndSubscriptionSourcesArePaired() {
+        let expectations: [(VPNEntryPoint, SubscriptionFunnelOrigin, VPNConnectionWideEventData.ScreenSource)] = [
+            (.toolbar, .toolbarVPN, .toolbar),
+            (.addressBar, .addressBarVPN, .addressBar),
+            (.widget, .widgetVPN, .widget),
+            (.shortcut, .shortcutVPN, .shortcut),
+            (.notification, .notificationVPN, .notification),
+        ]
+
+        for (entryPoint, expectedSubscriptionOrigin, expectedScreenSource) in expectations {
+            XCTAssertEqual(entryPoint.subscriptionFunnelOrigin, expectedSubscriptionOrigin)
+            XCTAssertEqual(entryPoint.screenSource, expectedScreenSource)
+        }
+    }
+
     // MARK: - Helpers
 
-    private func makeViewModel(controllerErrorPublisher: AnyPublisher<String?, Never>,
+    private func makeViewModel(controllerErrorPublisher: AnyPublisher<String?, Never> = Empty(completeImmediately: false).eraseToAnyPublisher(),
+                               entryContextProvider: @escaping () -> VPNConnectionWideEventData.EntryContext = { .init(source: .toolbar, tokenState: .present) },
                                errorObserver: ConnectionErrorObserver = MockConnectionErrorObserver()) -> NetworkProtectionStatusViewModel {
         NetworkProtectionStatusViewModel(tunnelController: tunnelController,
+                                         entryContextProvider: entryContextProvider,
                                          settings: VPNSettings(defaults: .networkProtectionGroupDefaults),
                                          statusObserver: statusObserver,
                                          serverInfoObserver: serverInfoObserver,
@@ -388,6 +435,7 @@ import Subscription
         }
 
         return NetworkProtectionStatusViewModel(tunnelController: MockTunnelController(),
+                                                entryContextProvider: { .init(source: .toolbar, tokenState: .present) },
                                                 settings: VPNSettings(defaults: defaults),
                                                 statusObserver: statusObserver,
                                                 serverInfoObserver: MockConnectionServerInfoObserver(),

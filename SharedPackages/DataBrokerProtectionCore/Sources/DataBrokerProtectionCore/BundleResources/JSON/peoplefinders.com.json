@@ -1,7 +1,7 @@
 {
   "name": "PeopleFinders",
   "url": "peoplefinders.com",
-  "version": "0.10.0",
+  "version": "0.12.0",
   "addedDatetime": 1677132000000,
   "optOutUrl": "https://www.peoplefinders.com/opt-out",
   "steps": [

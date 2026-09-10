@@ -25,6 +25,9 @@ import BrowserServicesKit
 import PrivacyConfig
 import DataBrokerProtection_iOS
 import PixelKit
+import WideEvent
+import FeatureFlags_iOS
+import Persistence
 
 enum SubscriptionContainerViewFactory {
 
@@ -63,7 +66,10 @@ enum SubscriptionContainerViewFactory {
                                     internalUserDecider: InternalUserDecider,
                                     dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
                                     wideEvent: WideEventManaging,
-                                    featureFlagger: FeatureFlagger) -> some View {
+                                    featureFlagger: FeatureFlagger,
+                                    onboardingKeyValueStore: ThrowingKeyValueStoring?,
+                                    meetsPIRLocaleRequirement: @escaping () -> Bool,
+                                    onRequestDuckAIChat: ((String?) -> Bool)? = nil) -> some View {
 
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
                                                                          pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
@@ -110,7 +116,10 @@ enum SubscriptionContainerViewFactory {
                                                                        requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
                                                                        expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
                                                                        isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
-            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
+            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+            onboardingKeyValueStore: onboardingKeyValueStore,
+            meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
+            onRequestDuckAIChat: onRequestDuckAIChat
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
@@ -128,7 +137,10 @@ enum SubscriptionContainerViewFactory {
                                    internalUserDecider: InternalUserDecider,
                                    dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
                                    wideEvent: WideEventManaging,
-                                   featureFlagger: FeatureFlagger) -> some View {
+                                   featureFlagger: FeatureFlagger,
+                                   onboardingKeyValueStore: ThrowingKeyValueStoring?,
+                                   meetsPIRLocaleRequirement: @escaping () -> Bool,
+                                   onRequestDuckAIChat: ((String?) -> Bool)? = nil) -> some View {
         if let redirectURLComponents,
            SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
             makePlansFlowV2(redirectURLComponents: redirectURLComponents,
@@ -151,7 +163,10 @@ enum SubscriptionContainerViewFactory {
                                 internalUserDecider: internalUserDecider,
                                 dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
                                 wideEvent: wideEvent,
-                                featureFlagger: featureFlagger)
+                                featureFlagger: featureFlagger,
+                                onboardingKeyValueStore: onboardingKeyValueStore,
+                                meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
+                                onRequestDuckAIChat: onRequestDuckAIChat)
         }
     }
 
@@ -197,7 +212,9 @@ enum SubscriptionContainerViewFactory {
                                                        userScript: SubscriptionPagesUserScript(),
                                                        userScriptsDependencies: userScriptsDependencies,
                                                        subFeature: subscriptionPagesUseSubscriptionFeature,
-                                                       dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)
+                                                       dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+                                                       onboardingKeyValueStore: nil,
+                                                       meetsPIRLocaleRequirement: { false })
         viewModel.email.setEmailFlowMode(.restoreFlow)
         return SubscriptionContainerView(currentView: .restore, viewModel: viewModel, featureFlagger: featureFlagger)
             .environmentObject(navigationCoordinator)
@@ -261,7 +278,9 @@ enum SubscriptionContainerViewFactory {
                                                                        requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
                                                                        expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
                                                                        isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
-            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
+            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+            onboardingKeyValueStore: nil,
+            meetsPIRLocaleRequirement: { false }
         )
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
             .environmentObject(navigationCoordinator)
@@ -309,7 +328,9 @@ enum SubscriptionContainerViewFactory {
                                                                        requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
                                                                        expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
                                                                        isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
-            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
+            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+            onboardingKeyValueStore: nil,
+            meetsPIRLocaleRequirement: { false }
         )
 
         viewModel.email.setEmailFlowMode(emailFlow)

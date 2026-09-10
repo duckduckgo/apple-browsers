@@ -21,6 +21,7 @@ import Combine
 import Foundation
 import AIChat
 import PixelKit
+import WideEvent
 
 protocol AutoClearAlertPresenting {
     func confirmAutoClear(clearChats: Bool) -> NSApplication.ModalResponse
@@ -134,8 +135,8 @@ final class AutoClearHandler: ApplicationTerminationDecider {
                 await aiChatSyncCleaner?.recordLocalClear(date: Date())
             }
         }
-        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true)
-        pixelFiring?.fire(FireDialogPixel.fireStartedOnExit, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount)
+        pixelFiring?.fire(FireDialogPixel.fireStartedOnExit, frequency: .dailyAndCount)
         await fireViewModel.fire.burnAll(isBurnOnExit: true,
                                          includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled,
                                          isAutoClear: true,
@@ -155,8 +156,8 @@ final class AutoClearHandler: ApplicationTerminationDecider {
         let shouldBurnOnStart = dataClearingPreferences.isAutoClearEnabled && !appTerminationHandledCorrectly
         guard shouldBurnOnStart else { return false }
 
-        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true)
-        pixelFiring?.fire(FireDialogPixel.fireStartedOnStartup, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount)
+        pixelFiring?.fire(FireDialogPixel.fireStartedOnStartup, frequency: .dailyAndCount)
         fireViewModel.fire.burnAll(includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled,
                                    isAutoClear: true,
                                    dataClearingWideEventService: dataClearingWideEventService)

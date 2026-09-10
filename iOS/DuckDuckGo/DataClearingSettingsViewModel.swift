@@ -21,6 +21,7 @@ import Foundation
 import SwiftUI
 import Core
 import AIChat
+import PixelKit
 
 @MainActor
 protocol DataClearingSettingsViewModelDelegate: AnyObject {
@@ -93,7 +94,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
         Binding<FireButtonAnimationType>(
             get: { self.fireButtonAnimation },
             set: {
-                Pixel.fire(pixel: .settingsFireButtonSelectorPressed, withAdditionalParameters: [PixelParameters.fireAnimation: $0.rawValue])
+                PixelKit.fire(Pixel.Event.settingsFireButtonSelectorPressed, options: .parameters([PixelParameters.fireAnimation: $0.rawValue]))
                 self.appSettings.currentFireButtonAnimation = $0
                 self.fireButtonAnimation = $0
                 NotificationCenter.default.post(name: AppUserDefaults.Notifications.currentFireButtonAnimationChange, object: self)
@@ -143,8 +144,8 @@ final class DataClearingSettingsViewModel: ObservableObject {
     }
     
     func presentFireConfirmation(from sourceRect: CGRect) {
-        DailyPixel.fireDailyAndCount(pixel: .forgetAllPressedSettings,
-                                     pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+        PixelKit.fire(Pixel.Event.forgetAllPressedSettings,
+                      frequency: .dailyAndStandard)
         delegate?.presentFireConfirmation(from: sourceRect)
     }
     

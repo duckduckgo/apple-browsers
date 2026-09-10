@@ -23,6 +23,7 @@ import DesignResourcesKitIcons
 import PhotosUI
 import UIKit
 import UniformTypeIdentifiers
+import PixelKit
 
 @MainActor
 final class UnifiedToggleInputAttachmentPresenter: NSObject {
@@ -44,6 +45,26 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
 
     nonisolated static func recoverFileAttachment(from metadata: FileMetadata, id: UUID = UUID()) -> AIChatFileAttachment? {
         fileAttachment(from: metadata, id: id)
+    }
+
+    /// Builds a file attachment from already-loaded bytes with PDF inspection; shared by the picker and paste flows.
+    nonisolated static func makeFileAttachment(
+        data: Data,
+        fileName: String,
+        mimeType: String,
+        fileSizeBytes: Int? = nil,
+        id: UUID = UUID()
+    ) -> AIChatFileAttachment {
+        let pdfInspection = AIChatPDFInspector.inspect(data: data, mimeType: mimeType)
+        return AIChatFileAttachment(
+            id: id,
+            data: data,
+            fileName: fileName,
+            mimeType: mimeType,
+            fileSizeBytes: fileSizeBytes ?? data.count,
+            pageCount: pdfInspection.pageCount,
+            isEncrypted: pdfInspection.isEncrypted
+        )
     }
 
     func makeAttachmentMenu(
@@ -104,6 +125,11 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         }
 
         return UIMenu(children: actions)
+    }
+
+    /// Opens the system file picker directly (bypassing the attachment menu) for the promo "add file" CTA.
+    func presentFilePicker(from presenter: UIViewController, allowedFileTypes: [UTType]) {
+        presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
     }
 }
 
@@ -169,16 +195,12 @@ private extension UnifiedToggleInputAttachmentPresenter {
             let data = try Data(contentsOf: metadata.url)
             guard !Task.isCancelled else { return nil }
 
-            let pdfInspection = AIChatPDFInspector.inspect(data: data, mimeType: metadata.mimeType)
-
-            return AIChatFileAttachment(
-                id: id,
+            return makeFileAttachment(
                 data: data,
                 fileName: metadata.fileName,
                 mimeType: metadata.mimeType,
-                fileSizeBytes: metadata.fileSizeBytes ?? data.count,
-                pageCount: pdfInspection.pageCount,
-                isEncrypted: pdfInspection.isEncrypted
+                fileSizeBytes: metadata.fileSizeBytes,
+                id: id
             )
         } catch {
             return nil
@@ -203,10 +225,9 @@ extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate 
 
                 Task { @MainActor in
                     let surface = self?.pixelSurfaceProvider?() ?? .addressBar
-                    DailyPixel.fireDailyAndCount(
-                        pixel: .unifiedToggleInputImageAttached,
-                        withAdditionalParameters: ["source": "photo_library", "surface": surface.rawValue]
-                    )
+                    PixelKit.fire(Pixel.Event.unifiedToggleInputImageAttached,
+                                  frequency: .dailyAndCount,
+                                  options: .parameters(["source": "photo_library", "surface": surface.rawValue]))
                     self?.onImagePicked?(image, suggestedName)
                 }
             }
@@ -220,10 +241,9 @@ extension UnifiedToggleInputAttachmentPresenter: UIImagePickerControllerDelegate
         picker.dismiss(animated: true)
         onExpandIfNeeded?()
         guard let image = info[.originalImage] as? UIImage else { return }
-        DailyPixel.fireDailyAndCount(
-            pixel: .unifiedToggleInputImageAttached,
-            withAdditionalParameters: ["source": "camera", "surface": (pixelSurfaceProvider?() ?? .addressBar).rawValue]
-        )
+        PixelKit.fire(Pixel.Event.unifiedToggleInputImageAttached,
+                      frequency: .dailyAndCount,
+                      options: .parameters(["source": "camera", "surface": (pixelSurfaceProvider?() ?? .addressBar).rawValue]))
         onImagePicked?(image, "photo")
     }
 

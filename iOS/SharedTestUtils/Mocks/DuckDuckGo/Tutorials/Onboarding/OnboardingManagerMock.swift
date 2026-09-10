@@ -33,6 +33,7 @@ final class OnboardingManagerMock: OnboardingStepsProvider, OnboardingDownloadRe
 
     private(set) var didCallSelectDownloadReason = false
     private(set) var capturedDownloadReason: OnboardingDownloadReason?
+    var currentDownloadReason: OnboardingDownloadReason?
     var stubbedRemainingSteps: [DuckDuckGo.OnboardingIntroStep] = []
 
     var userHasSeenAddToDockPromoDuringOnboarding: Bool = false
@@ -47,6 +48,7 @@ final class OnboardingManagerMock: OnboardingStepsProvider, OnboardingDownloadRe
     func selectDownloadReason(_ reason: OnboardingDownloadReason) -> [DuckDuckGo.OnboardingIntroStep] {
         didCallSelectDownloadReason = true
         capturedDownloadReason = reason
+        currentDownloadReason = reason
         return stubbedRemainingSteps
     }
 }

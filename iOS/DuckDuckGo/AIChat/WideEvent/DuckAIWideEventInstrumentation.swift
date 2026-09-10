@@ -19,7 +19,7 @@
 
 import Foundation
 import AIChat
-import PixelKit
+import WideEvent
 
 enum DuckAIWideEventFlowScope: Hashable {
     case tab(TabUID)
@@ -35,6 +35,7 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
                            userTier: AIChatUserTier,
                            reasoningEffort: AIChatReasoningEffort?,
                            entryPoint: DuckAIPromptWideEventData.EntryPoint,
+                           origin: AIChatEntryPointSource?,
                            inputMode: DuckAIPromptWideEventData.InputMode,
                            fireMode: Bool,
                            isFirstPrompt: Bool,
@@ -123,6 +124,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
                            userTier: AIChatUserTier,
                            reasoningEffort: AIChatReasoningEffort?,
                            entryPoint: DuckAIPromptWideEventData.EntryPoint,
+                           origin: AIChatEntryPointSource? = nil,
                            inputMode: DuckAIPromptWideEventData.InputMode,
                            fireMode: Bool,
                            isFirstPrompt: Bool,
@@ -137,6 +139,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             userTier: userTier.rawValue,
             reasoningEffort: reasoningEffort?.rawValue,
             entryPoint: entryPoint,
+            origin: origin?.rawValue,
             inputMode: inputMode,
             fireMode: fireMode,
             isFirstPrompt: isFirstPrompt,

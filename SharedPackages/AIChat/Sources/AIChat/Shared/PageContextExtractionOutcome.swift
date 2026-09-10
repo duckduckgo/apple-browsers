@@ -23,10 +23,13 @@ public enum PageContextExtractionOutcome: Equatable {
     public enum FailureReason: String, Equatable {
         case emptyContent = "empty_content"
         case deserializeFailed = "deserialize_failed"
+        case scriptError = "script_error"
         case timeout
         case noWebView = "no_webview"
         case postFailed = "post_failed"
         case tabEvicted = "tab_evicted"
+        /// A document tab (PDF) whose bytes couldn't be read out of the web view.
+        case documentUnavailable = "document_unavailable"
     }
 
     case success
@@ -36,6 +39,8 @@ public enum PageContextExtractionOutcome: Equatable {
 
 public extension PageContextExtractionOutcome {
     static let internalPageCategory = "internalPage"
+    /// A document over the size ceiling native will hand across the JS bridge.
+    static let documentTooLargeCategory = "documentTooLarge"
 }
 
 public enum PageContextExtractionTrigger: String, Equatable {

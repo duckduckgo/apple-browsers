@@ -21,7 +21,7 @@ import Common
 import FoundationExtensions
 import Combine
 import DDGSync
-import FeatureFlags
+import FeatureFlags_macOS
 import SwiftUI
 import Networking
 import Subscription
@@ -46,10 +46,14 @@ final class PreferencesSidebarModel: ObservableObject {
     let tabSwitcherTabs: [Tab.TabContent]
 
     @Published private(set) var sections: [PreferencesSection] = []
+
+    @Published private(set) var scrollTarget: PreferencesScrollAnchor?
+
     @Published var selectedTabIndex: Int = 0
     @Published private(set) var selectedPane: PreferencePaneIdentifier = .defaultBrowser {
         didSet {
             isInitialSelectedPanePixelFired = true
+
             switch selectedPane {
             case .aiChat:
                 pixelFiring?.fire(AIChatPixel.aiChatSettingsDisplayed, frequency: .dailyAndCount)
@@ -59,7 +63,7 @@ final class PreferencesSidebarModel: ObservableObject {
                 pixelFiring?.fire(
                     SettingsPixel.settingsPaneOpened(selectedPane),
                     frequency: .dailyAndStandard,
-                    withAdditionalParameters: ["subscribed": String(subscriptionManager.isUserAuthenticated)]
+                    options: .parameters(["subscribed": String(subscriptionManager.isUserAuthenticated)])
                 )
             default:
                 pixelFiring?.fire(SettingsPixel.settingsPaneOpened(selectedPane), frequency: .daily)
@@ -205,6 +209,7 @@ final class PreferencesSidebarModel: ObservableObject {
                 includingSync: syncService.featureFlags.contains(.userInterface),
                 includingAIChat: includeAIChat,
                 includingYouTubeAdBlocking: adBlockingAvailability.isFeatureSupported,
+                includingWebsitePermissions: featureFlagger.isFeatureOn(.websitePermissionsSettings),
                 subscriptionState: currentSubscriptionFeatures
             )
         }
@@ -533,6 +538,8 @@ final class PreferencesSidebarModel: ObservableObject {
 
     @MainActor
     func selectPane(_ identifier: PreferencePaneIdentifier) {
+        resetScrollRequest()
+
         // Open a new tab in case of special panes
         if identifier.rawValue.hasPrefix(URL.NavigationalScheme.https.rawValue),
            let url = URL(string: identifier.rawValue) {
@@ -556,6 +563,21 @@ final class PreferencesSidebarModel: ObservableObject {
         if visiblePanes.contains(resolvedIdentifier), resolvedIdentifier != selectedPane {
             selectedPane = resolvedIdentifier
         }
+    }
+
+    @MainActor
+    func navigate(to destination: PreferencesDestination) {
+        selectPane(destination.pane)
+        guard let anchor = destination.scrollAnchor, destination.pane == selectedPane else {
+            return
+        }
+
+        scrollTarget = anchor
+    }
+
+    @MainActor
+    func resetScrollRequest() {
+        scrollTarget = nil
     }
 
     /// Redirect navigations targeting panes that have been folded into a parent surface.

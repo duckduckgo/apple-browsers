@@ -258,9 +258,14 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
 
         guard didCloseUnexpectedly else { return }
 
-        pixelFiring?.fire(SessionRestorePromptPixel.unexpectedAppTerminationDetected(
-            reason: restartSourceResolver.resolve(updateStatus: updateStatus)
-        ))
+        // Don't send the pixel if the restart had an unknown cause and coincided with an App Store update.
+        // App Store updates create noise in the metric by force quitting the app, which prevents
+        // using it for app health monitoring. However, this is a legitimate force quit so we still
+        // show the restore prompt when needed.
+        let restartSource = restartSourceResolver.resolve(updateStatus: updateStatus)
+        if restartSource != .unknownWithAppUpdate {
+            pixelFiring?.fire(SessionRestorePromptPixel.unexpectedAppTerminationDetected(reason: restartSource))
+        }
 
         guard !shouldSuppressUncleanExitRestorePrompt else { return }
 

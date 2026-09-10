@@ -21,6 +21,7 @@ import UIKit
 import Core
 import Persistence
 import SERPSettings
+import PixelKit
 
 private extension BoolFileMarker.Name {
     static let hasSuccessfullyLaunchedBefore = BoolFileMarker.Name(rawValue: "app-launched-successfully")
@@ -46,6 +47,7 @@ struct Foreground: ForegroundHandling {
     private let launchActionHandler: LaunchActionHandler
     private let interactionManager: UIInteractionManager
     private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
+    private let appReturnInstrumentation: AppReturnInstrumentation
 
     init(stateContext: Connected.StateContext, actionToHandle: AppAction?,
          lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
@@ -89,6 +91,10 @@ struct Foreground: ForegroundHandling {
             isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
         )
         let idleReturnEvaluator = IdleReturnEvaluator(eligibilityManager: idleReturnEligibilityManager)
+        appReturnInstrumentation = DefaultAppReturnInstrumentation(
+            eligibilityManager: idleReturnEligibilityManager,
+            isToggleEnabled: { appDependencies.aiChatSettings.isAIChatSearchInputUserSettingsEnabled }
+        )
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
@@ -141,6 +147,9 @@ struct Foreground: ForegroundHandling {
                 // This helps distinguish database corruption from fresh installs/restores
                 BoolFileMarker(name: .hasSuccessfullyLaunchedBefore)?.mark()
 
+                // A launch action may replace a restored NTP, so prepare only after that action has settled.
+                appDependencies.mainCoordinator.prepareHomePageMessagesForForegroundIfNeeded()
+
                 // Present any eligible modal prompt
                 appDependencies.mainCoordinator.presentModalPromptIfNeeded()
             }
@@ -156,20 +165,24 @@ struct Foreground: ForegroundHandling {
         services.syncService.resume()
         services.remoteMessagingService.resume()
         services.statisticsService.resume()
+        services.launchTimeMetricsService.resume()
         services.defaultBrowserPromptService.resume()
         services.dbpService.resume()
         services.inactivityNotificationSchedulerService.resume()
         services.wideEventService.resume()
+        services.eventHubService.resume()
         appDependencies.launchSourceManager.handleAppAction(launchAction)
 
         appDependencies.mainCoordinator.onForeground(isFirstForeground: isFirstForeground)
 
         appDependencies.backgroundTaskManager.endBackgroundTask()
 
-        let switchBarRetentionMetrics = SwitchBarRetentionMetrics(aiChatSettings: appDependencies.aiChatSettings)
-        switchBarRetentionMetrics.checkDailyAndSendPixelIfApplicable()
-
         fireAIFeaturesStateDailyPixel()
+
+        appReturnInstrumentation.recordAppForeground(
+            lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
+            launchAction: launchAction
+        )
     }
 
     /// Once-daily snapshot of the three AI settings + the derived "no AI" state, across the active base.
@@ -183,12 +196,12 @@ struct Foreground: ForegroundHandling {
         let hideAIImages = serpSettings.hideAIGeneratedImages
         let noAI = !duckAIEnabled && searchAssist == .never && hideAIImages
 
-        DailyPixel.fire(pixel: .aiFeaturesStateDaily, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.aiFeaturesStateDaily, frequency: .legacyDailyNoSuffix, options: .parameters([
             "duck_ai": duckAIEnabled ? "true" : "false",
             "search_assist": searchAssist.rawValue,
             "hide_ai_images": hideAIImages ? "on" : "off",
             "no_ai": noAI ? "true" : "false"
-        ])
+        ]))
     }
 
     private func configureAppearance() {
@@ -226,6 +239,7 @@ extension Foreground {
     /// Use this method only to pause specific tasks, like video playback, when the app displays a system alert.
     func willLeave() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
+        services.applicationShortcutItemsService.suspend()
     }
 
     /// Called when the app resumes activity after being **paused** or when transitioning from launching or background.
@@ -234,6 +248,7 @@ extension Foreground {
     /// Use this method to revert any actions performed in `willLeave()` (if applicable).
     func didReturn() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
+        services.applicationShortcutItemsService.resume()
     }
 
 }

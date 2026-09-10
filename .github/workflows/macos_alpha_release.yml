@@ -22,7 +22,7 @@ jobs:
   calculate-alpha-build-number:
     name: Calculate Alpha Build Number
 
-    runs-on: macos-26
+    runs-on: bitrise:macos26-m4
 
     outputs:
       build-number: ${{ steps.update-build-number.outputs.build-number }}
@@ -32,6 +32,9 @@ jobs:
       uses: actions/checkout@v6
       with:
         submodules: recursive
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Assert main branch
       run: |
@@ -87,7 +90,6 @@ jobs:
     with:
       release-type: alpha
       create-dmg: true
-      include-x86-architecture: true
       build-number-override: ${{ needs.calculate-alpha-build-number.outputs.build-number }}
       skip-notify: true
     secrets: inherit
@@ -109,13 +111,16 @@ jobs:
 
     needs: dmg-release
 
-    runs-on: macos-26
+    runs-on: bitrise:macos26-m4
 
     defaults:
       run:
         working-directory: .
 
     steps:
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Download DMG URL artifact
         uses: actions/download-artifact@v7
         with:

@@ -21,7 +21,7 @@ import Combine
 import SwiftUI
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import NetworkExtension
 import VPN
@@ -29,6 +29,7 @@ import NetworkProtectionProxy
 import NetworkProtectionUI
 import Networking
 import PixelKit
+import WideEvent
 import os.log
 import Subscription
 import SystemExtensionManager
@@ -812,8 +813,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     @MainActor
     private func start(_ tunnelManager: NETunnelProviderManager) async throws {
-        settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle))
-
         let options = try await prepareStartupOptions()
 
         if Self.simulationOptions.isEnabled(.controllerFailure) {

@@ -17,8 +17,7 @@
 //
 
 import XCTest
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import WebExtensions
 
 @available(macOS 15.4, iOS 18.4, *)

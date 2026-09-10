@@ -42,11 +42,12 @@ struct RemoveDeviceView: View {
             Button(UserText.cancel) {
                 model.cancelPressed()
             }
-            .buttonStyle(DismissActionButtonStyle())
+            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
+
             Button(UserText.removeDeviceConfirmButton) {
                 model.delegate?.removeDevice(device)
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
 
         }
         .frame(width: 360, height: 250)

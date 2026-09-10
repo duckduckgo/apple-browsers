@@ -19,7 +19,7 @@
 import Foundation
 import PixelKit
 
-enum UserChurnPixel: PixelKitEvent {
+enum UserChurnPixel: PixelKit.Event {
 
     case unsetAsDefault(newDefaultBrowserBundleId: String?, atb: String?)
 

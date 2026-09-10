@@ -79,9 +79,9 @@ final class DuckPlayerPreferences: ObservableObject {
         didSet {
             persistor.duckPlayerAutoplay = duckPlayerAutoplay
             if duckPlayerAutoplay {
-                PixelKit.fire(GeneralPixel.duckPlayerAutoplaySettingsOn, doNotEnforcePrefix: true)
+                PixelKit.fire(GeneralPixel.duckPlayerAutoplaySettingsOn)
             } else {
-                PixelKit.fire(GeneralPixel.duckPlayerAutoplaySettingsOff, doNotEnforcePrefix: true)
+                PixelKit.fire(GeneralPixel.duckPlayerAutoplaySettingsOff)
             }
         }
     }
@@ -91,9 +91,9 @@ final class DuckPlayerPreferences: ObservableObject {
         didSet {
             persistor.duckPlayerOpenInNewTab = duckPlayerOpenInNewTab
             if duckPlayerOpenInNewTab {
-                PixelKit.fire(GeneralPixel.duckPlayerNewTabSettingsOn, doNotEnforcePrefix: true)
+                PixelKit.fire(GeneralPixel.duckPlayerNewTabSettingsOn)
             } else {
-                PixelKit.fire(GeneralPixel.duckPlayerNewTabSettingsOff, doNotEnforcePrefix: true)
+                PixelKit.fire(GeneralPixel.duckPlayerNewTabSettingsOff)
             }
         }
     }
@@ -137,7 +137,7 @@ final class DuckPlayerPreferences: ObservableObject {
     @MainActor
     func openLearnMoreContingencyURL() {
         guard let url = duckPlayerContingencyHandler.learnMoreURL else { return }
-        PixelKit.fire(GeneralPixel.duckPlayerContingencyLearnMoreClicked, doNotEnforcePrefix: true)
+        PixelKit.fire(GeneralPixel.duckPlayerContingencyLearnMoreClicked)
         Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 

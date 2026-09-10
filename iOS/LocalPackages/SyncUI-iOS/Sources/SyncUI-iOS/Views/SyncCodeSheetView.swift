@@ -38,6 +38,9 @@ struct SyncCodeSheetView: View {
             }
             .padding(Metrics.contentPadding)
             .background(SimplifiedSyncStyle.screenBackground)
+            .onAppear {
+                model.delegate?.barcodeScreenShown()
+            }
             .navigationTitle(UserText.simplifiedSyncCodeSheetTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -80,7 +83,7 @@ struct SyncCodeSheetView: View {
             QRCodeView(string: model.showQRCodeModel.qrCodeString, desiredSize: 320, backgroundColor: SimplifiedSyncStyle.qrCodeBackground, flexible: true)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            Text(model.showQRCodeModel.codeForDisplayOrPasting)
+            Text(model.showQRCodeModel.codeForDisplay)
                 .font(.system(size: 16, design: .monospaced))
                 .tracking(2)
                 .lineSpacing(8)
@@ -135,7 +138,7 @@ struct SyncCodeSheetView: View {
             arrowLength: Metrics.copyConfirmationArrowLength,
             arrowWidth: Metrics.copyConfirmationArrowWidth,
             arrowEdge: .bottom,
-            arrowOffset: 0.4,
+            arrowOffset: 0.5,
             cornerRadius: Metrics.copyConfirmationCornerRadius,
             fillColor: Color(designSystemColor: .surface),
             contentPadding: EdgeInsets(top: 16, leading: 20, bottom: 16, trailing: 20)
@@ -182,7 +185,7 @@ struct SyncCodeSheetView: View {
 
 #if DEBUG
 #Preview {
-    let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
+    let sampleCode = "https://duckduckgo.com/sync/pairing/#&code2=eyJ2ZXJzaW9uIjoiMiIsImNoYW5uZWxJZCI6IjY4MEQ0NUI1LTVFNkUtNDM0Ny05QzQ0LUI2RkJFODBGQzRBNyIsInB1YmxpY0tleSI6IkFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaIn0"
 
     return RebrandedPreview(isRebranded: true) {
         SyncCodeSheetView(

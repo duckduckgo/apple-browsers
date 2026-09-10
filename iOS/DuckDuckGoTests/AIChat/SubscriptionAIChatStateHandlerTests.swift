@@ -36,27 +36,11 @@ final class SubscriptionAIChatStateHandlerTests: XCTestCase {
 
     // MARK: - Initial State
 
-    func testInitialState_shouldForceAIChatRefreshIsFalse() {
-        XCTAssertFalse(sut.shouldForceAIChatRefresh)
-    }
-
     func testInitialState_onSubscriptionStateChangedIsNil() {
         XCTAssertNil(sut.onSubscriptionStateChanged)
     }
 
     // MARK: - Subscription Did Change
-
-    func testWhenSubscriptionDidChangeNotificationPosted_shouldForceAIChatRefreshBecomesTrue() {
-        let expectation = expectation(description: "flag set")
-        sut.onSubscriptionStateChanged = {
-            expectation.fulfill()
-        }
-
-        NotificationCenter.default.post(name: .subscriptionDidChange, object: nil)
-
-        waitForExpectations(timeout: 1.0)
-        XCTAssertTrue(sut.shouldForceAIChatRefresh)
-    }
 
     func testWhenSubscriptionDidChangeNotificationPosted_onSubscriptionStateChangedIsCalled() {
         let expectation = expectation(description: "onSubscriptionStateChanged called")
@@ -71,18 +55,6 @@ final class SubscriptionAIChatStateHandlerTests: XCTestCase {
 
     // MARK: - Account Did Sign In
 
-    func testWhenAccountDidSignInNotificationPosted_shouldForceAIChatRefreshBecomesTrue() {
-        let expectation = expectation(description: "flag set")
-        sut.onSubscriptionStateChanged = {
-            expectation.fulfill()
-        }
-
-        NotificationCenter.default.post(name: .accountDidSignIn, object: nil)
-
-        waitForExpectations(timeout: 1.0)
-        XCTAssertTrue(sut.shouldForceAIChatRefresh)
-    }
-
     func testWhenAccountDidSignInNotificationPosted_onSubscriptionStateChangedIsCalled() {
         let expectation = expectation(description: "onSubscriptionStateChanged called")
         sut.onSubscriptionStateChanged = {
@@ -96,18 +68,6 @@ final class SubscriptionAIChatStateHandlerTests: XCTestCase {
 
     // MARK: - Account Did Sign Out
 
-    func testWhenAccountDidSignOutNotificationPosted_shouldForceAIChatRefreshBecomesTrue() {
-        let expectation = expectation(description: "flag set")
-        sut.onSubscriptionStateChanged = {
-            expectation.fulfill()
-        }
-
-        NotificationCenter.default.post(name: .accountDidSignOut, object: nil)
-
-        waitForExpectations(timeout: 1.0)
-        XCTAssertTrue(sut.shouldForceAIChatRefresh)
-    }
-
     func testWhenAccountDidSignOutNotificationPosted_onSubscriptionStateChangedIsCalled() {
         let expectation = expectation(description: "onSubscriptionStateChanged called")
         sut.onSubscriptionStateChanged = {
@@ -117,23 +77,5 @@ final class SubscriptionAIChatStateHandlerTests: XCTestCase {
         NotificationCenter.default.post(name: .accountDidSignOut, object: nil)
 
         waitForExpectations(timeout: 1.0)
-    }
-
-    // MARK: - Reset
-
-    func testWhenResetCalled_shouldForceAIChatRefreshBecomesFalse() {
-        let expectation = expectation(description: "flag set")
-        sut.onSubscriptionStateChanged = {
-            expectation.fulfill()
-        }
-
-        NotificationCenter.default.post(name: .subscriptionDidChange, object: nil)
-
-        waitForExpectations(timeout: 1.0)
-        XCTAssertTrue(sut.shouldForceAIChatRefresh)
-
-        sut.reset()
-
-        XCTAssertFalse(sut.shouldForceAIChatRefresh)
     }
 }

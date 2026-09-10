@@ -20,6 +20,7 @@
 import SwiftUI
 import AppIntents
 import Core
+import PixelKit
 
 @available(iOS 17.0, *)
 struct SearchInAppIntent: AppIntent {
@@ -35,7 +36,7 @@ struct SearchInAppIntent: AppIntent {
     
     @MainActor
     func perform() async throws -> some IntentResult & OpensIntent {
-        Pixel.fire(pixel: .appIntentPerformed, withAdditionalParameters: ["type": "search"])
+        PixelKit.fire(Pixel.Event.appIntentPerformed, options: .parameters(["type": "search"]))
         await UIApplication.shared.open(AppDeepLinkSchemes.newSearch.url)
         return .result()
     }

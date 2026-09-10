@@ -26,6 +26,8 @@ import BrowserServicesKit
 import PixelKit
 import Networking
 import Subscription
+import os.log
+import FeatureFlags_iOS
 
 final class DBPService: NSObject {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
@@ -37,7 +39,8 @@ final class DBPService: NSObject {
 
     init(appDependencies: DependencyProvider,
          contentBlocking: ContentBlocking,
-         freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording) {
         let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             runTypeProvider: appDependencies.dbpSettings)
@@ -65,9 +68,20 @@ final class DBPService: NSObject {
                 authenticationManager: authManager,
                 pixelHandler: notificationPixelHandler
             )
+            let subscriptionManager = appDependencies.subscriptionManager
             let eventsHandler = BrokerProfileJobEventsHandler(
                 userNotificationService: notificationService,
-                freemiumUserStateManager: freemiumDBPUserStateManager
+                freemiumUserStateManager: freemiumDBPUserStateManager,
+                // Marks the onboarding checklist's PIR step and reports the PIR-activated experiment metric.
+                // Fires for freemium saves too, so subscription status is checked rather than assumed.
+                onProfileSaved: {
+                    let wasAlreadyActivated = onboardingActivationRecorder.recordPIRActivatedIfNeeded()
+                    Task {
+                        SubscriptionOnboardingExperiment.firePIRActivatedMetricIfNeeded(
+                            isSubscriptionActive: await subscriptionManager.isActiveSubscription(),
+                            isAlreadyActivated: wasAlreadyActivated)
+                    }
+                }
             )
 
             #if DEBUG
@@ -124,7 +138,8 @@ final class DBPService: NSObject {
                 profileStateManager: profileStateManager,
                 isWebViewInspectable: isWebViewInspectable,
                 freeTrialConversionService: appDependencies.freeTrialConversionService,
-                contentBlocking: dbpContentBlocking)
+                contentBlocking: dbpContentBlocking,
+                shouldDeferSecureVaultInitialization: appDependencies.featureFlagger.isFeatureOn(.dbpDeferredSecureVaultInit))
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil
@@ -139,6 +154,14 @@ final class DBPService: NSObject {
     func resume() {
         Task { @MainActor in
             await dbpIOSManager?.appDidBecomeActive()
+        }
+    }
+
+    func prepareSecureVaultResourcesAtLaunch() async {
+        do {
+            try await dbpIOSManager?.prepareSecureVaultResourcesAtLaunch()
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to initialize PIR Secure Vault resources: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
@@ -158,10 +181,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     private let appDependencies: DependencyProvider
     private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
 
-    var isRemoteBrokerDeliveryFeatureOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
-    }
-
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
     }
@@ -176,6 +195,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
 
     var isOptOutRetryErrorFrequencyExperimentOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
+    }
+
+    var isExtractedProfileRefreshOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
     }
 
     var isFreemiumPIREnabled: Bool {

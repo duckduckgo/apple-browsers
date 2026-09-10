@@ -33,7 +33,7 @@ enum AppStateRestorationTrigger {
     case appUpdate
 }
 
-enum GeneralPixel: PixelKitEvent {
+enum GeneralPixel: PixelKit.Event {
 
     case crash(appIdentifier: CrashPixelAppIdentifier?)
     case crashOnCrashHandlersSetUp
@@ -292,7 +292,6 @@ enum GeneralPixel: PixelKitEvent {
     case serpSettingsSerializationFailed
     case serpSettingsKeyValueStoreReadError
     case serpSettingsKeyValueStoreWriteError
-    case hideAIGeneratedImagesButtonClicked
     case openDuckAIButtonClick
 
     case duckAiNativeStorageMigrationDoneUnique(key: String)
@@ -605,6 +604,52 @@ enum GeneralPixel: PixelKitEvent {
     /// Fires every time a Fire Window is opened, sliced by how the open happened (manual vs.
     /// automatic). Used to measure per-trigger DAU and per-trigger counts.
     case fireWindowOpened(trigger: FireWindowOpenTrigger)
+
+    /// Which of these names already stand on their own.
+    ///
+    /// This used to be `doNotEnforcePrefix: true` repeated at every call site, and for `.jsPixel`
+    /// the call sites branched on `isEmailPixel` / `isCredentialsImportPromotionPixel` — the very
+    /// conditions `name` below already switches on. Keeping the decision next to the name means the
+    /// two cannot drift apart.
+    ///
+    /// `.jsPixel` is `.none` for all three of its shapes: the email and credentials-import names
+    /// deliberately avoid `m_mac_`, and the remaining one already starts with it, so the platform
+    /// correction was a no-op there anyway.
+    var namePrefix: PixelKitNamePrefix {
+        switch self {
+        case .autoplaySettingAllowAll,
+             .autoplaySettingBlockAll,
+             .autoplaySettingBlockAudio,
+             .dailyActiveUser,
+             .dailyAddedToDock,
+             .dailyAutoClearOnExitEnabled,
+             .dailyDefaultBrowser,
+             .dailyFireWindowConfigurationFireAnimationEnabled,
+             .dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled,
+             .dailyFireWindowConfigurationStartupFireWindowEnabled,
+             .dashboardProtectionAllowlistAdd,
+             .dashboardProtectionAllowlistRemove,
+             .duckPlayerAutoplaySettingsOff,
+             .duckPlayerAutoplaySettingsOn,
+             .duckPlayerContingencyLearnMoreClicked,
+             .duckPlayerContingencySettingsDisplayed,
+             .duckPlayerNewTabSettingsOff,
+             .duckPlayerNewTabSettingsOn,
+             .duckPlayerYouTubeAgeRestrictedErrorDaily,
+             .duckPlayerYouTubeAgeRestrictedErrorImpression,
+             .duckPlayerYouTubeNoEmbedErrorDaily,
+             .duckPlayerYouTubeNoEmbedErrorImpression,
+             .duckPlayerYouTubeSignInErrorDaily,
+             .duckPlayerYouTubeSignInErrorImpression,
+             .duckPlayerYouTubeUnknownErrorDaily,
+             .duckPlayerYouTubeUnknownErrorImpression,
+             .jsPixel,
+             .launch:
+            return .none
+        default:
+            return .platformDefault
+        }
+    }
 
     var name: String {
         switch self {
@@ -1035,7 +1080,6 @@ enum GeneralPixel: PixelKitEvent {
         case .serpSettingsSerializationFailed: return "m_mac_serp_settings_serialization_failed"
         case .serpSettingsKeyValueStoreReadError: return "m_mac_serp_settings_keyvalue_store_read_error"
         case .serpSettingsKeyValueStoreWriteError: return "m_mac_serp_settings_keyvalue_store_write_error"
-        case .hideAIGeneratedImagesButtonClicked: return "m_mac_aichat_hide_ai_generated_images_button_clicked"
         case .openDuckAIButtonClick: return "m_mac_serp_settings_open_duck_ai_button_click"
 
         case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_mac_duck-ai_native-storage_migration_done_\(key)_u"
@@ -1767,7 +1811,6 @@ enum GeneralPixel: PixelKitEvent {
                 .serpSettingsSerializationFailed,
                 .serpSettingsKeyValueStoreReadError,
                 .serpSettingsKeyValueStoreWriteError,
-                .hideAIGeneratedImagesButtonClicked,
                 .openDuckAIButtonClick,
                 .duckAiNativeStorageMigrationDoneUnique,
                 .duckAiNativeStorageMigrationDoneCount,
@@ -1967,7 +2010,6 @@ enum GeneralPixel: PixelKitEvent {
         public var description: String { rawValue }
 
         case tds = "tracker_data"
-        case clickToLoad = "click_to_load"
         case blockingAttribution = "blocking_attribution"
         case attributed = "attributed"
         case unknown = "unknown"

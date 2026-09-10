@@ -22,6 +22,7 @@ import Core
 import Persistence
 import ScreenTimeDataCleaner
 import WebKit
+import FeatureFlags_iOS
 
 /// Represents the state where the app is in the background and not visible to the user.
 /// - Usage:
@@ -54,6 +55,7 @@ struct Background: BackgroundHandling {
     func onTransition() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
+        services.applicationShortcutItemsService.suspend()
         try? lastBackgroundDateStorage.set(Date(), for: \.lastBackgroundDate)
         appDependencies.backgroundTaskManager.startBackgroundTask()
 
@@ -65,27 +67,19 @@ struct Background: BackgroundHandling {
         services.autofillService.suspend()
         services.syncService.suspend()
         services.reportingService.suspend()
+        services.eventHubService.suspend()
 
         appDependencies.mainCoordinator.onBackground()
 
-        updateApplicationShortcutItems()
         cleanScreenTimeDataOniOS26()
     }
 
     private func cleanScreenTimeDataOniOS26() {
         guard appDependencies.featureFlagger.isFeatureOn(.screenTimeCleaning) else { return }
         guard #available(iOS 26, *) else { return }
-        Task {
-            await ScreenTimeDataCleaner().removeScreenTimeData()
-        }
-    }
 
-    private func updateApplicationShortcutItems() {
-        Task { @MainActor in
-            UIApplication.shared.shortcutItems = [
-                services.aiChatService.shortcutItem(),
-                await services.vpnService.shortcutItem()
-            ].compactMap { $0 }
+        ScreenTimeDataCleaningBackgroundTask().start {
+            await ScreenTimeDataCleaner().removeScreenTimeData()
         }
     }
 
@@ -148,6 +142,44 @@ extension Background {
                   actionToHandle: actionToHandle,
                   window: window,
                   lastBackgroundDateStorage: lastBackgroundDateStorage)
+    }
+
+}
+
+// MARK: - Background tasks
+
+@available(iOS 26, *)
+@MainActor
+private final class ScreenTimeDataCleaningBackgroundTask {
+
+    private static let name = "Screen Time Data Cleaning"
+
+    private var identifier: UIBackgroundTaskIdentifier = .invalid
+    private var cleanupTask: Task<Void, Never>?
+
+    func start(cleanup: @escaping @MainActor @Sendable () async -> Void) {
+        identifier = UIApplication.shared.beginBackgroundTask(withName: Self.name) { [weak self] in
+            self?.cancel()
+        }
+        guard identifier != .invalid else { return }
+
+        cleanupTask = Task { @MainActor [self] in
+            await cleanup()
+            end()
+        }
+    }
+
+    private func cancel() {
+        cleanupTask?.cancel()
+        end()
+    }
+
+    private func end() {
+        cleanupTask = nil
+        guard identifier != .invalid else { return }
+
+        UIApplication.shared.endBackgroundTask(identifier)
+        identifier = .invalid
     }
 
 }

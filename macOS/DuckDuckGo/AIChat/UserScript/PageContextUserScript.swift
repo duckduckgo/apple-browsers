@@ -28,6 +28,8 @@ import WebKit
 
 struct PageContextCollectionPayload: Codable {
     let serializedPageData: String?
+    /// Set (with no `serializedPageData`) when collection threw in the page.
+    let error: String?
 }
 
 struct PageContextResponse: Codable {
@@ -39,7 +41,7 @@ struct SelectionContextResponse: Codable {
 }
 
 final class PageContextUserScript: NSObject, Subfeature {
-    public let collectionResultPublisher: AnyPublisher<AIChatPageContextData?, Never>
+    public let collectionResultPublisher: AnyPublisher<PageContextCollectionResult, Never>
     static public let featureName: String = "pageContext"
     public var featureName: String {
         Self.featureName
@@ -48,7 +50,7 @@ final class PageContextUserScript: NSObject, Subfeature {
     weak var webView: WKWebView?
     let messageOriginPolicy: MessageOriginPolicy = .all
 
-    private let collectionResultSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    private let collectionResultSubject = PassthroughSubject<PageContextCollectionResult, Never>()
     private var cancellables: Set<AnyCancellable> = []
 
     public func with(broker: UserScriptMessageBroker) {
@@ -98,7 +100,8 @@ final class PageContextUserScript: NSObject, Subfeature {
             cancellable = collectionResultSubject
                 .first()
                 .sink { result in
-                    continuation.yield(result)
+                    // A failed collection yields nil, same as the timeout branch below.
+                    continuation.yield(result.pageContext)
                     continuation.finish()
                     cancellable?.cancel()
                 }
@@ -133,16 +136,27 @@ final class PageContextUserScript: NSObject, Subfeature {
         }
     }
 
-    /// Receives collected page context
+    /// Receives collected page context. Every reply must publish a result, including failures —
+    /// otherwise the caller's pending collection is only cleared by its timeout.
     private func collectionResult(params: Any, message: UserScriptMessage) async -> Encodable? {
-        guard let payload: PageContextCollectionPayload = DecodableHelper.decode(from: params),
-              let jsonString = payload.serializedPageData,
-              let jsonData = jsonString.data(using: .utf8) else {
+        guard let payload: PageContextCollectionPayload = DecodableHelper.decode(from: params) else {
+            collectionResultSubject.send(.decodeFailed)
             return nil
         }
 
-        let pageContextData: AIChatPageContextData? = DecodableHelper.decode(jsonData: jsonData)
-        collectionResultSubject.send(pageContextData)
+        guard let jsonString = payload.serializedPageData,
+              let jsonData = jsonString.data(using: .utf8) else {
+            Logger.aiChat.debug("[PageContextUserScript] collectionResult - script error: \(payload.error ?? "unknown")")
+            collectionResultSubject.send(.scriptError)
+            return nil
+        }
+
+        guard let pageContextData: AIChatPageContextData = DecodableHelper.decode(jsonData: jsonData) else {
+            collectionResultSubject.send(.decodeFailed)
+            return nil
+        }
+
+        collectionResultSubject.send(.collected(pageContextData))
 
         return nil
     }

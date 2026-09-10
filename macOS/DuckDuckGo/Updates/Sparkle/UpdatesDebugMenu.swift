@@ -54,6 +54,8 @@ final class UpdatesDebugMenu: NSMenu {
             NSMenuItem.separator()
             NSMenuItem(title: "Show Browser Updated Popover", action: #selector(showBrowserUpdatedPopover))
                 .targetting(self)
+            NSMenuItem(title: "Show Critical Update Popover", action: #selector(showCriticalUpdatePopover))
+                .targetting(self)
             NSMenuItem.separator()
             NSMenuItem(title: "Test Update Pixels") {
                 NSMenuItem(title: "Success (Expected)", action: #selector(testUpdateSuccessOnNextLaunch))
@@ -104,6 +106,10 @@ final class UpdatesDebugMenu: NSMenu {
 
     @objc func showBrowserUpdatedPopover() {
         Application.appDelegate.updateController?.notificationPresenter.showUpdateNotification(for: .updated)
+    }
+
+    @objc func showCriticalUpdatePopover() {
+        Application.appDelegate.updateController?.notificationPresenter.showUpdateNotification(for: .critical, areAutomaticUpdatesEnabled: true)
     }
 
     // MARK: - Custom Feed URL

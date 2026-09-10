@@ -21,7 +21,6 @@ import Dispatch
 import Foundation
 import Swifter
 import XCTest
-@testable import Core
 
 class AtbIntegrationTests: XCTestCase {
 

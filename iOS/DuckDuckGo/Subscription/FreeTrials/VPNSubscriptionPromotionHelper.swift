@@ -20,7 +20,9 @@
 import PrivacyConfig
 import Core
 import Foundation
+import PixelKit
 import Subscription
+import FeatureFlags_iOS
 
 /// Protocol defining the interface for the VPN Subscription promotion helper.
 ///
@@ -71,7 +73,7 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
     private let freeTrialBadgePersistor: FreeTrialBadgePersisting
 
     /// The pixel firing service used to track user interactions with the promotion.
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
     /// Initializes a new instance of the VPNSubscriptionPromotionHelper.
     ///
@@ -79,11 +81,11 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
     ///   - featureFlagger: The feature flagging service. Defaults to the shared instance.
     ///   - subscriptionManager: The subscription manager. Defaults to the shared instance.
     ///   - freeTrialBadgePersistor: The persistor for tracking promotion views. Defaults to an instance using UserDefaults and a custom key prefix.
-    ///   - pixelFiring: The pixel firing service. Defaults to Pixel.self.
+    ///   - pixelFiring: The pixel firing service. Defaults to PixelKit.shared.
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "vpn-menu-item"),
-         pixelFiring: PixelFiring.Type = Pixel.self) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.featureFlagger = featureFlagger
         self.subscriptionManager = subscriptionManager
         self.freeTrialBadgePersistor = freeTrialBadgePersistor

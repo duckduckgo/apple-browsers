@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 
 /// Information about the current cooldown period state.
 struct PromptCooldownInfo {

@@ -41,7 +41,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
     private let isFreemiumPIREligible: Bool
     private let isFreemiumPIRActivated: Bool
     private let freemiumPIRFirstScanResult: String?
-    private let isCurrentPIRUser: Bool
+    private let isCurrentPIRUser: Bool?
     private let ntpAfterIdleState: String
 
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
@@ -75,7 +75,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 isFreemiumPIREligible: Bool = false,
                 isFreemiumPIRActivated: Bool = false,
                 freemiumPIRFirstScanResult: String? = nil,
-                isCurrentPIRUser: Bool = false,
+                isCurrentPIRUser: Bool? = false,
                 ntpAfterIdleState: String = ""
     ) {
         self.isWidgetInstalled = isWidgetInstalled

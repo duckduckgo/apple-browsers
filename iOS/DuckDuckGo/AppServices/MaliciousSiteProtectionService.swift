@@ -18,9 +18,11 @@
 //
 
 import Foundation
+import FoundationExtensions
 import PrivacyConfig
 import MaliciousSiteProtection
 import Core
+import FeatureFlags_iOS
 
 // Container for Malicious Site Protection Feature.
 final class MaliciousSiteProtectionService {

@@ -20,7 +20,7 @@
 import Foundation
 import Testing
 import struct Core.VariantIOS
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import SetDefaultBrowserCore
 @testable import DuckDuckGo
 

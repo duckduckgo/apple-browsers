@@ -224,6 +224,56 @@ final class AIChatPageContextDataTests: XCTestCase {
         XCTAssertEqual(stamped.attached, false)
     }
 
+    /// `withTabId` re-builds the struct through the memberwise initializer, so a field
+    /// added to `AIChatPageContextData` but forgotten there would be silently dropped. Comparing the
+    /// JSON representations (ignoring only `tabId`) catches that without needing an update — just
+    /// extend `makeFullyPopulatedContext` with a non-default value for the new field.
+    func testWithTabIdPreservesEveryFieldExceptTabId() throws {
+        let original = makeFullyPopulatedContext()
+
+        let restamped = original.withTabId("other-tab")
+
+        XCTAssertEqual(restamped.tabId, "other-tab")
+        XCTAssertEqual(
+            try jsonDictionary(of: original, ignoringKey: "tabId"),
+            try jsonDictionary(of: restamped, ignoringKey: "tabId")
+        )
+    }
+
+    func testWithTabIdCanStripTheTabIdWithoutTouchingOtherFields() throws {
+        let original = makeFullyPopulatedContext()
+
+        let stripped = original.withTabId(nil)
+
+        XCTAssertNil(stripped.tabId)
+        XCTAssertEqual(
+            try jsonDictionary(of: original, ignoringKey: "tabId"),
+            try jsonDictionary(of: stripped, ignoringKey: "tabId")
+        )
+    }
+
+    /// Every optional field carries a non-default value so field-preservation tests catch drops.
+    private func makeFullyPopulatedContext() -> AIChatPageContextData {
+        AIChatPageContextData(
+            title: "Test Page",
+            favicon: [AIChatPageContextData.PageContextFavicon(href: "https://example.com/favicon.ico", rel: "icon")],
+            url: "https://example.com/article",
+            content: "This is some page content for testing.",
+            truncated: true,
+            fullContentLength: 1234,
+            attachable: true,
+            tabId: "tab-1",
+            pageTypeSignals: recipeSignals,
+            attached: false
+        )
+    }
+
+    private func jsonDictionary(of context: AIChatPageContextData, ignoringKey key: String) throws -> NSDictionary {
+        var dictionary = try jsonObject(context)
+        dictionary.removeValue(forKey: key)
+        return NSDictionary(dictionary: dictionary)
+    }
+
     /// AIChatPageTypeSignals round-trips, including a nil ogType.
     func testPageTypeSignalsCodableRoundTrip() throws {
         for signals in [recipeSignals, AIChatPageTypeSignals(jsonLdType: [], ogType: nil, lang: "")] {

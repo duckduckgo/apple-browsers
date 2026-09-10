@@ -23,6 +23,7 @@ import Kingfisher
 import Common
 import FoundationExtensions
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct FaviconsHelper {
 
@@ -35,7 +36,7 @@ struct FaviconsHelper {
         static let duckPlayerDomain = "player"
         static let duckDuckGoDomain = "duckduckgo.com"
         static let duckPlayerImageName = "DuckPlayerURLIcon"
-        static let duckDuckGoImageName = "Logo"
+        static let duckDuckGoImageName = "duckduckgo-favicon-128x128"
     }
 
     private static let tld: TLD = AppDependencyProvider.shared.storageCache.tld
@@ -185,8 +186,8 @@ struct FaviconsHelper {
         ]
 
         guard let domain = domain, let imageName = customFavicons[domain] else { return nil }
-        
-        let image = UIImage(named: imageName)
+
+        let image = UIImage(rebrandable: imageName)
         image?.accessibilityIdentifier = imageName
         return image
     }

@@ -33,7 +33,7 @@ enum WebViewZoomEntryPoint: String {
     }
 }
 
-enum WebViewZoomPixel: PixelKitEvent {
+enum WebViewZoomPixel: PixelKit.Event {
 
     /// Fired on each page zoom action (zoom in, zoom out, or actual size).
     case zoomChanged(entryPoint: WebViewZoomEntryPoint)

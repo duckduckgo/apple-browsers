@@ -35,6 +35,32 @@ import BrowserServicesKit
 import PrivacyConfig
 import AIChat
 import UIComponents
+import PixelKit
+
+enum TabSwitcherGridLayoutGeometry {
+
+    static let spacing: CGFloat = 14
+    static let minimumColumnWidth: CGFloat = 150
+    static let maximumColumnCount = 4
+
+    static var sectionInset: UIEdgeInsets {
+        UIEdgeInsets(top: spacing, left: spacing, bottom: spacing, right: spacing)
+    }
+
+    static func columnWidth(for availableWidth: CGFloat) -> CGFloat {
+        let contentWidth = max(0, availableWidth - spacing)
+        let columnCount = min(maximumColumnCount, max(1, Int(contentWidth / minimumColumnWidth)))
+        return max(0, contentWidth / CGFloat(columnCount) - spacing)
+    }
+
+    static func previewWidth(for availableWidth: CGFloat) -> CGFloat {
+        max(0, floor(columnWidth(for: availableWidth)) - TabViewGridCell.Constants.previewHorizontalInset)
+    }
+
+    static func maximumPreviewWidth(for availableSize: CGSize) -> CGFloat {
+        max(previewWidth(for: availableSize.width), previewWidth(for: availableSize.height))
+    }
+}
 
 protocol TabSwitcherPageDelegate: AnyObject {
     func page(_ page: TabSwitcherPageViewController, didSelectTabAt index: Int)
@@ -67,12 +93,14 @@ class TabSwitcherPageViewController: UIViewController {
     private weak var previewsSource: TabPreviewsSource?
     private let tabSwitcherSettings: TabSwitcherSettings
     private var isFireModeEnabled: Bool
+    private let isFloatingTabSwitcherEnabled: Bool
     private var tabObserverCancellable: AnyCancellable?
     private var trackerCountViewModel: TabSwitcherTrackerCountViewModel?
     private var trackerCountCancellable: AnyCancellable?
     private var lastAppliedTrackerCountState: TabSwitcherTrackerCountViewModel.State?
     private var trackerInfoModel: InfoPanelView.Model?
     private var fireModeEmptyStateHostingController: UIHostingController<FireModeEmptyStateView>?
+    private var fireModeEmptyStateTopConstraint: NSLayoutConstraint?
     private let duckAIGridContentProvider: DuckAIGridContentProviding?
     private let duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?
     private var voiceSessionChangesCancellable: AnyCancellable?
@@ -89,6 +117,7 @@ class TabSwitcherPageViewController: UIViewController {
          tabSwitcherSettings: TabSwitcherSettings,
          trackerCountViewModel: TabSwitcherTrackerCountViewModel?,
          isFireModeEnabled: Bool,
+         isFloatingTabSwitcherEnabled: Bool = false,
          duckAIGridContentProvider: DuckAIGridContentProviding?,
          duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?) {
         self.browsingMode = browsingMode
@@ -97,6 +126,7 @@ class TabSwitcherPageViewController: UIViewController {
         self.tabSwitcherSettings = tabSwitcherSettings
         self.trackerCountViewModel = trackerCountViewModel
         self.isFireModeEnabled = isFireModeEnabled
+        self.isFloatingTabSwitcherEnabled = isFloatingTabSwitcherEnabled
         self.currentSelection = tabsModel.currentIndex
         self.duckAIGridContentProvider = duckAIGridContentProvider
         self.duckAIVoiceSessionTracker = duckAIVoiceSessionTracker
@@ -112,9 +142,9 @@ class TabSwitcherPageViewController: UIViewController {
         super.viewDidLoad()
 
         let layout = UICollectionViewFlowLayout()
-        layout.minimumLineSpacing = 14
-        layout.minimumInteritemSpacing = 14
-        layout.sectionInset = UIEdgeInsets(top: 14, left: 14, bottom: 14, right: 14)
+        layout.minimumLineSpacing = TabSwitcherGridLayoutGeometry.spacing
+        layout.minimumInteritemSpacing = TabSwitcherGridLayoutGeometry.spacing
+        layout.sectionInset = TabSwitcherGridLayoutGeometry.sectionInset
 
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -131,6 +161,9 @@ class TabSwitcherPageViewController: UIViewController {
         collectionView.allowsSelection = true
         collectionView.allowsMultipleSelection = true
         collectionView.allowsMultipleSelectionDuringEditing = true
+        if isFloatingTabSwitcherEnabled {
+            collectionView.contentInsetAdjustmentBehavior = .never
+        }
 
         collectionView.register(TabViewGridCell.self, forCellWithReuseIdentifier: TabViewGridCell.reuseIdentifier)
         collectionView.register(TabViewListCell.self, forCellWithReuseIdentifier: TabViewListCell.reuseIdentifier)
@@ -187,7 +220,7 @@ class TabSwitcherPageViewController: UIViewController {
     private func setupFireModeEmptyState() {
         guard browsingMode == .fire, isFireModeEnabled else { return }
         let emptyStateView = FireModeEmptyStateView(type: .tabSwitcher(onNewFireTab: { [weak self] in
-            Pixel.fire(pixel: .fireModeEmptyStateNewTab)
+            PixelKit.fire(Pixel.Event.fireModeEmptyStateNewTab)
             self?.onNewFireTab?()
         }))
         let hostingController = UIHostingController(rootView: emptyStateView)
@@ -198,14 +231,39 @@ class TabSwitcherPageViewController: UIViewController {
         view.addSubview(hostingController.view)
         hostingController.didMove(toParent: self)
 
+        let topConstraint: NSLayoutConstraint
+        if isFloatingTabSwitcherEnabled {
+            // Pin to the page top (same coordinate space as the collection view) so clearance
+            // matches the chrome inset: navbar bottom + 10pt. The empty state's own
+            // `mainTopPadding` then adds 24pt above the pictogram.
+            topConstraint = hostingController.view.topAnchor.constraint(
+                equalTo: view.topAnchor,
+                constant: FireModeEmptyStateMetrics.estimatedFloatingTopClearance)
+            fireModeEmptyStateTopConstraint = topConstraint
+        } else {
+            topConstraint = hostingController.view.topAnchor.constraint(equalTo: view.topAnchor)
+        }
+
         NSLayoutConstraint.activate([
-            hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            topConstraint,
             hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
 
         fireModeEmptyStateHostingController = hostingController
+    }
+
+    enum FireModeEmptyStateMetrics {
+        /// Gap between the top navbar buttons and the empty-state container.
+        static let spacingBelowNavbar: CGFloat = 10
+        /// Fallback until the chrome reports a laid-out nav bar: estimated nav (50) + floating inset (8) + 10.
+        static let estimatedFloatingTopClearance: CGFloat = 68
+    }
+
+    func applyFloatingTopClearance(_ topBarBottomOffset: CGFloat) {
+        guard isFloatingTabSwitcherEnabled else { return }
+        fireModeEmptyStateTopConstraint?.constant = topBarBottomOffset + FireModeEmptyStateMetrics.spacingBelowNavbar
     }
 
     func updateEmptyStateVisibility() {
@@ -263,7 +321,7 @@ class TabSwitcherPageViewController: UIViewController {
                                       preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: UserText.tabSwitcherTrackerCountKeepAction, style: .cancel))
         alert.addAction(UIAlertAction(title: UserText.tabSwitcherTrackerCountHideAction, style: .default) { [weak self] _ in
-            Pixel.fire(pixel: .tabSwitcherTrackerCountHidden)
+            PixelKit.fire(Pixel.Event.tabSwitcherTrackerCountHidden)
             self?.trackerCountViewModel?.hide()
         })
         present(alert, animated: true)
@@ -435,19 +493,19 @@ extension TabSwitcherPageViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if pageDelegate?.isEditing == true {
-            Pixel.fire(pixel: .tabSwitcherTabSelected)
+            PixelKit.fire(Pixel.Event.tabSwitcherTabSelected)
             (collectionView.cellForItem(at: indexPath) as? TabViewCell)?.refreshSelectionAppearance()
             pageDelegate?.page(self, didSelectTabAt: indexPath.row)
         } else {
             currentSelection = indexPath.row
-            Pixel.fire(pixel: .tabSwitcherSwitchTabs, withAdditionalParameters: [
+            PixelKit.fire(Pixel.Event.tabSwitcherSwitchTabs, options: .parameters([
                 PixelParameters.browsingMode: browsingMode.pixelParamValue
-            ])
+            ]))
             if let tab = tabsModel.get(tabAt: indexPath.row) {
                 if tab.isAITab {
-                    DailyPixel.fireDailyAndCount(pixel: .tabManagerSwitchToAITab)
+                    PixelKit.fire(Pixel.Event.tabManagerSwitchToAITab, frequency: .dailyAndCount)
                 } else {
-                    DailyPixel.fireDailyAndCount(pixel: .tabManagerSwitchToWebTab)
+                    PixelKit.fire(Pixel.Event.tabManagerSwitchToWebTab, frequency: .dailyAndCount)
                 }
             }
             pageDelegate?.pageDidRequestDismiss(self)
@@ -457,7 +515,7 @@ extension TabSwitcherPageViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
         (collectionView.cellForItem(at: indexPath) as? TabViewCell)?.refreshSelectionAppearance()
         pageDelegate?.page(self, didDeselectTab: ())
-        Pixel.fire(pixel: .tabSwitcherTabDeselected)
+        PixelKit.fire(Pixel.Event.tabSwitcherTabDeselected)
     }
 
     func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
@@ -479,8 +537,8 @@ extension TabSwitcherPageViewController: UICollectionViewDelegate {
         let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
             guard let self else { return nil }
             let modeParam = [PixelParameters.browsingMode: self.browsingMode.pixelParamValue]
-            Pixel.fire(pixel: .tabSwitcherLongPress, withAdditionalParameters: modeParam)
-            DailyPixel.fire(pixel: .tabSwitcherLongPressDaily, withAdditionalParameters: modeParam)
+            PixelKit.fire(Pixel.Event.tabSwitcherLongPress, options: .parameters(modeParam))
+            PixelKit.fire(Pixel.Event.tabSwitcherLongPressDaily, frequency: .legacyDailyNoSuffix, options: .parameters(modeParam))
             return self.pageDelegate?.page(self, contextMenuForTabsAt: indexPaths)
         }
         return configuration
@@ -490,14 +548,6 @@ extension TabSwitcherPageViewController: UICollectionViewDelegate {
 // MARK: - UICollectionViewDelegateFlowLayout
 
 extension TabSwitcherPageViewController: UICollectionViewDelegateFlowLayout {
-
-    private func calculateColumnWidth(minimumColumnWidth: CGFloat, maxColumns: Int) -> CGFloat {
-        let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
-        let spacing = layout?.sectionInset.left ?? 0.0
-        let contentWidth = collectionView.bounds.width - spacing
-        let numberOfColumns = min(maxColumns, Int(contentWidth / minimumColumnWidth))
-        return contentWidth / CGFloat(numberOfColumns) - spacing
-    }
 
     private func calculateRowHeight(columnWidth: CGFloat) -> CGFloat {
         let contentAspectRatio = collectionView.bounds.width / collectionView.bounds.height
@@ -512,7 +562,7 @@ extension TabSwitcherPageViewController: UICollectionViewDelegateFlowLayout {
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
         if tabSwitcherSettings.isGridViewEnabled {
-            let columnWidth = calculateColumnWidth(minimumColumnWidth: 150, maxColumns: 4)
+            let columnWidth = TabSwitcherGridLayoutGeometry.columnWidth(for: collectionView.bounds.width)
             let rowHeight = calculateRowHeight(columnWidth: columnWidth)
             return CGSize(width: floor(columnWidth), height: floor(rowHeight))
         } else {
@@ -563,7 +613,7 @@ extension TabSwitcherPageViewController: TabObserver {
             return
         }
         guard cell.tab?.uid == tab.uid else {
-            DailyPixel.fireDaily(.debugTabSwitcherDidChangeInvalidState)
+            PixelKit.fire(Pixel.Event.debugTabSwitcherDidChangeInvalidState, frequency: .legacyDailyNoSuffix)
             return
         }
         configure(cell, with: tab)

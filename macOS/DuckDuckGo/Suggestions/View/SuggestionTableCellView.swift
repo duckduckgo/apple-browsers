@@ -140,7 +140,8 @@ final class SuggestionTableCellView: NSTableCellView {
     override func awakeFromNib() {
         let colorsProvider = theme?.colorsProvider
 
-        suffixTextField.textColor = colorsProvider?.suggestionsSuffixColor
+        /// `isBurner` isn't known until `display(_:isBurner:)` runs; this is the initial value it then corrects.
+        suffixTextField.textColor = colorsProvider?.suggestionsSuffixColor(isBurner: isBurner)
         removeButton.toolTip = UserText.removeSuggestionTooltip
         switchToTabLabel.attributedStringValue = Self.switchToTabAttributedString
     }
@@ -251,7 +252,7 @@ final class SuggestionTableCellView: NSTableCellView {
 
         let colorsProvider = theme.colorsProvider
         let textColor = isSelected ? colorsProvider.suggestionsHighlightTextColor : colorsProvider.suggestionsTextColor
-        let suffixColor = isSelected ? colorsProvider.suggestionsHighlightSuffixColor : colorsProvider.suggestionsSuffixColor
+        let suffixColor = suggestionsSuffixColor(colorsProvider: colorsProvider)
 
         textField?.attributedStringValue = attributedString
         textField?.textColor = textColor
@@ -325,29 +326,17 @@ final class SuggestionTableCellView: NSTableCellView {
                 alwaysAnchorToTrailing = false
             }
 
-            if alwaysAnchorToTrailing {
+            let textWidth = calculateTextWidth()
+
+            if alwaysAnchorToTrailing || contentExceedsAvailableWidth(textWidth: textWidth, boxWidth: boxWidth, bounds: bounds) {
                 switchToTabBoxLeadingConstraint.isActive = false
                 switchToTabBoxTrailingConstraint.isActive = true
                 suffixTrailingConstraint.constant = boxWidth + Constants.trailingSpace + Constants.switchToTabSuffixPadding
             } else {
-                var textWidth = attributedString?.boundingRect(with: bounds.size).width ?? 0
-                if textWidth < bounds.width {
-                    textWidth += suffixTextField.attributedStringValue.boundingRect(with: bounds.size).width
-                }
-                if textField!.frame.minX
-                    + textWidth
-                    + Constants.switchToTabSuffixPadding
-                    + boxWidth
-                    + Constants.trailingSpace > bounds.width {
-
-                    switchToTabBoxLeadingConstraint.isActive = false
-                    switchToTabBoxTrailingConstraint.isActive = true
-                } else {
-                    switchToTabBoxTrailingConstraint.isActive = false
-                    switchToTabBoxLeadingConstraint.constant = textField!.frame.minX + textWidth + Constants.switchToTabSuffixPadding
-                    switchToTabBoxLeadingConstraint.isActive = true
-                    suffixTrailingConstraint.constant = Constants.trailingSpace
-                }
+                switchToTabBoxTrailingConstraint.isActive = false
+                switchToTabBoxLeadingConstraint.constant = textField!.frame.minX + textWidth + Constants.switchToTabSuffixPadding
+                switchToTabBoxLeadingConstraint.isActive = true
+                suffixTrailingConstraint.constant = Constants.trailingSpace
             }
         }
 
@@ -364,5 +353,31 @@ final class SuggestionTableCellView: NSTableCellView {
         searchSuggestionTextFieldLeadingConstraint.constant = styleProvider.suggestionTextFieldLeadingPadding
 
         super.layout()
+    }
+}
+
+private extension SuggestionTableCellView {
+
+    func contentExceedsAvailableWidth(textWidth: CGFloat, boxWidth: CGFloat, bounds: CGRect) -> Bool {
+        (textField?.frame.minX ?? 0)
+            + textWidth
+            + Constants.switchToTabSuffixPadding
+            + boxWidth
+            + Constants.trailingSpace > bounds.width
+    }
+
+    func calculateTextWidth() -> CGFloat {
+        var textWidth = attributedString?.boundingRect(with: bounds.size).width ?? 0
+        if textWidth < bounds.width {
+            textWidth += suffixTextField.attributedStringValue.boundingRect(with: bounds.size).width
+        }
+
+        return textWidth
+    }
+
+    func suggestionsSuffixColor(colorsProvider: ColorsProviding) -> NSColor {
+        isSelected
+            ? colorsProvider.suggestionsHighlightSuffixColor(isBurner: isBurner)
+            : colorsProvider.suggestionsSuffixColor(isBurner: isBurner)
     }
 }

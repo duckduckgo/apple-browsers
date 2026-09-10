@@ -214,6 +214,36 @@ final class ActionRequestEncodingTests: XCTestCase {
         XCTAssertNil(data["emailData"])
     }
 
+    func testWhenExtractedProfileHasExtras_thenTheyAreForwardedToFillForm() throws {
+        let action = FillFormAction(id: "fill-jane-smith", actionType: .fillForm, elements: [.init(type: "county")])
+        let extractedProfile = ExtractedProfile(name: "Jane Smith",
+                                                addresses: [AddressCityState(city: "Springfield", state: "IL", extras: ["zip": "62701"])],
+                                                extras: ["county": "Sangamon"])
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), extractedProfile, nil, [:])))
+
+        let state = try XCTUnwrap(try params.toDictionary()["state"] as? [String: Any])
+        let data = try XCTUnwrap(state["data"] as? [String: Any])
+        let encodedProfile = try XCTUnwrap(data["extractedProfile"] as? [String: Any])
+        let encodedAddress = try XCTUnwrap((encodedProfile["addresses"] as? [[String: Any]])?.first)
+
+        XCTAssertEqual(encodedProfile["extras"] as? [String: String], ["county": "Sangamon"])
+        XCTAssertEqual(encodedAddress["extras"] as? [String: String], ["zip": "62701"])
+    }
+
+    func testWhenExtractedProfileHasNoExtras_thenTheKeyIsOmittedFromTheFillFormPayload() throws {
+        let action = FillFormAction(id: "fill-jane-smith", actionType: .fillForm, elements: [.init(type: "city")])
+        let extractedProfile = ExtractedProfile(name: "Jane Smith", addresses: [AddressCityState(city: "Springfield", state: "IL")])
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), extractedProfile, nil, [:])))
+
+        let state = try XCTUnwrap(try params.toDictionary()["state"] as? [String: Any])
+        let data = try XCTUnwrap(state["data"] as? [String: Any])
+        let encodedProfile = try XCTUnwrap(data["extractedProfile"] as? [String: Any])
+        let encodedAddress = try XCTUnwrap((encodedProfile["addresses"] as? [[String: Any]])?.first)
+
+        XCTAssertNil(encodedProfile["extras"])
+        XCTAssertNil(encodedAddress["extras"])
+    }
+
     func testWhenActionElementsContainBooleans_thenTheyEncodeAsJSONBooleansNotNumbers() throws {
         // Regression: booleans decoded from JSON bridge to NSNumber. When the custom encoder
         // (CodableExtension) matched `Int` before `Bool`, `NSNumber(true) as? Int` succeeded and

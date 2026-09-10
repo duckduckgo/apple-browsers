@@ -123,7 +123,29 @@
                 "key": "feature.data.ext.is_setup",
                 "type": "string",
                 "description": "Is the current flow setup or reconnection",
-                "enum": ["yes", "no", "unknown", "true", "false"]
+                "enum": ["yes", "no", "unknown"]
+            },
+            {
+                "key": "feature.data.ext.vpn_screen_source",
+                "type": "string",
+                "description": "The app surface that opened the VPN screen before the connection attempt. Not populated on macOS (captured on iOS only).",
+                "enum": [
+                    "subscription_settings",
+                    "subscription_email",
+                    "subscription_flow",
+                    "browser_menu",
+                    "toolbar",
+                    "address_bar",
+                    "widget",
+                    "shortcut",
+                    "notification"
+                ]
+            },
+            {
+                "key": "feature.data.ext.vpn_screen_entry_token_state",
+                "type": "string",
+                "description": "Whether a local Privacy Pro token container was present at connect time. Not populated on macOS (captured on iOS only).",
+                "enum": ["present", "missing", "read_error"]
             },
             {
                 "key": "feature.data.ext.onboarding_status",

@@ -18,10 +18,9 @@
 
 import AIChat
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import XCTest
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PixelKit
 import PrivacyConfig
 import NewTabPage
@@ -272,7 +271,8 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         persistor: AIChatPreferencesPersisting,
         keyValueStore: ThrowingKeyValueStoring? = nil,
         featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
-        searchPreferences: SearchPreferences? = nil
+        searchPreferences: SearchPreferences? = nil,
+        availableModelsProvider: @escaping () -> [AIChatModel] = { [] }
     ) throws -> NewTabPageOmnibarConfigProvider {
         NewTabPageOmnibarConfigProvider(
             keyValueStore: try keyValueStore ?? makeStore(),
@@ -280,6 +280,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
             featureFlagger: featureFlagger,
             aiChatPreferencesPersistor: persistor,
             searchPreferences: searchPreferences ?? makeSearchPreferences(),
+            availableModelsProvider: availableModelsProvider,
             firePixel: { _ in }
         )
     }
@@ -291,6 +292,37 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         flagger.featuresStub[FeatureFlag.aiChatNtpChatTools.rawValue] = true
         flagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         return flagger
+    }
+
+    private func flaggerWithUpdatedCreateImageOn() -> MockFeatureFlagger {
+        let flagger = MockFeatureFlagger()
+        flagger.featuresStub[FeatureFlag.aiChatNtpImageGeneration.rawValue] = true
+        flagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        return flagger
+    }
+
+    private func makeModel(
+        id: String,
+        shortName: String? = nil,
+        provider: AIChatModel.ModelProvider = .openAI,
+        supportsImageGeneration: Bool = false,
+        entityHasAccess: Bool = true,
+        supportedReasoningEffort: [AIChatReasoningEffort] = [],
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil,
+        label: AIChatModelLabel? = nil
+    ) -> AIChatModel {
+        AIChatModel(
+            id: id,
+            name: id,
+            shortName: shortName,
+            provider: provider,
+            supportsImageUpload: false,
+            supportedTools: supportsImageGeneration ? [.imageGeneration] : [],
+            entityHasAccess: entityHasAccess,
+            supportedReasoningEffort: supportedReasoningEffort,
+            reasoningEffortAccess: reasoningEffortAccess,
+            label: label
+        )
     }
 
     func testSelectedModelId_readsFromInjectedPersistor() throws {
@@ -400,6 +432,143 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         // Second launch: legacy key is gone, so nothing is overwritten.
         _ = try makeProvider(persistor: persistor, keyValueStore: store)
         XCTAssertEqual(persistor.selectedModelId, "claude-4")
+    }
+
+    // MARK: - Create Image model resolution
+
+    func testImageGenerationModelId_usesSelectedAccessibleImageModel() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "selected-image-model"
+        let models = [
+            makeModel(id: "preferred-image-model", supportsImageGeneration: true, label: .everydayUse),
+            makeModel(id: "selected-image-model", supportsImageGeneration: true, label: .usesLimitsFaster)
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        XCTAssertEqual(provider.imageGenerationModelId, "selected-image-model")
+    }
+
+    func testImageGenerationModelId_usesPreferredModelWhenSelectionIsUnsupported() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "unsupported-model"
+        let models = [
+            makeModel(id: "unsupported-model"),
+            makeModel(id: "first-image-model", supportsImageGeneration: true, label: .usesLimitsFaster),
+            makeModel(id: "preferred-image-model", supportsImageGeneration: true, label: .everydayUse)
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        XCTAssertEqual(provider.imageGenerationModelId, "preferred-image-model")
+    }
+
+    func testActivateImageGeneration_withMissingSelectionPersistsPreferredModelWithoutNotice() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        let models = [makeModel(id: "preferred-image-model", shortName: "Luna", supportsImageGeneration: true, label: .everydayUse)]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        let notice = provider.activateImageGeneration()
+
+        XCTAssertEqual(persistor.selectedModelId, "preferred-image-model")
+        XCTAssertEqual(persistor.selectedModelShortName, "Luna")
+        XCTAssertNil(notice)
+    }
+
+    func testActivateImageGeneration_withKnownUnsupportedSelectionReturnsSharedLocalizedNotice() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "oss-model"
+        let previousModel = makeModel(id: "oss-model", shortName: "Open Model", provider: .oss)
+        let imageModel = makeModel(id: "image-model", shortName: "Luna", supportsImageGeneration: true, label: .everydayUse)
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { [previousModel, imageModel] }
+        )
+
+        let notice = provider.activateImageGeneration()
+
+        XCTAssertEqual(
+            notice,
+            NewTabPageDataModel.OmnibarCreateImageModelSwitch(
+                message: UserText.aiChatCreateImageModelSwitchTitle("Luna"),
+                secondaryText: UserText.aiChatCreateImageModelSwitchPrivacySubtitle("Open Model")
+            )
+        )
+    }
+
+    func testActivateImageGeneration_clearsInvalidReasoningEffort() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "unsupported-model"
+        persistor.selectedReasoningEffort = "invalid"
+        let models = [
+            makeModel(id: "unsupported-model"),
+            makeModel(id: "image-model", supportsImageGeneration: true, label: .everydayUse)
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        _ = provider.activateImageGeneration()
+
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testActivateImageGeneration_clearsUnsupportedReasoningEffort() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "unsupported-model"
+        persistor.selectedReasoningEffort = AIChatReasoningEffort.high.rawValue
+        let models = [
+            makeModel(id: "unsupported-model"),
+            makeModel(id: "image-model", supportsImageGeneration: true, supportedReasoningEffort: [.low], label: .everydayUse)
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        _ = provider.activateImageGeneration()
+
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testActivateImageGeneration_preservesSupportedGatedReasoningEffort() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "unsupported-model"
+        persistor.selectedReasoningEffort = AIChatReasoningEffort.medium.rawValue
+        let gatedEffort = AIChatReasoningEffortAccess(effort: .medium, accessTier: ["pro"], entityHasAccess: false)
+        let models = [
+            makeModel(id: "unsupported-model"),
+            makeModel(
+                id: "image-model",
+                supportsImageGeneration: true,
+                supportedReasoningEffort: [.medium],
+                reasoningEffortAccess: [gatedEffort],
+                label: .everydayUse
+            )
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        _ = provider.activateImageGeneration()
+
+        XCTAssertEqual(persistor.selectedReasoningEffort, AIChatReasoningEffort.medium.rawValue)
     }
 
     // MARK: - Reasoning effort
@@ -566,6 +735,68 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
         searchPreferences.showAutocompleteSuggestions = false
         searchPreferences.showAutocompleteSuggestions = true
+
+        cancellable.cancel()
+        XCTAssertEqual(events, [false, true])
+    }
+
+    // MARK: - chat/suggestion deletion
+
+    @MainActor
+    func testIsAIChatDeletionEnabled_reflectsFeatureFlag() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestionsDeletion": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
+
+        XCTAssertTrue(provider.isAIChatDeletionEnabled)
+
+        featureFlagger.featuresStub = ["aiChatNtpSuggestionsDeletion": false]
+        XCTAssertFalse(provider.isAIChatDeletionEnabled)
+    }
+
+    @MainActor
+    func testIsAIChatDeletionEnabledPublisher_emitsOnFlaggerUpdate() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestionsDeletion": false]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
+
+        var events: [Bool] = []
+        let cancellable = provider.isAIChatDeletionEnabledPublisher.sink { events.append($0) }
+
+        featureFlagger.featuresStub = ["aiChatNtpSuggestionsDeletion": true]
+        featureFlagger.triggerUpdate()
+
+        cancellable.cancel()
+        XCTAssertEqual(events, [false, true])
+    }
+
+    @MainActor
+    func testIsSearchSuggestionDeletionEnabled_reflectsFeatureFlag() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["ntpSearchSuggestionsDeletion": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
+
+        XCTAssertTrue(provider.isSearchSuggestionDeletionEnabled)
+
+        featureFlagger.featuresStub = ["ntpSearchSuggestionsDeletion": false]
+        XCTAssertFalse(provider.isSearchSuggestionDeletionEnabled)
+    }
+
+    @MainActor
+    func testIsSearchSuggestionDeletionEnabledPublisher_emitsOnFlaggerUpdate() throws {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["ntpSearchSuggestionsDeletion": false]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
+
+        var events: [Bool] = []
+        let cancellable = provider.isSearchSuggestionDeletionEnabledPublisher.sink { events.append($0) }
+
+        featureFlagger.featuresStub = ["ntpSearchSuggestionsDeletion": true]
+        featureFlagger.triggerUpdate()
 
         cancellable.cancel()
         XCTAssertEqual(events, [false, true])

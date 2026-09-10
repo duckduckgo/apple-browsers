@@ -84,6 +84,14 @@ public final class CustomToggleControl: NSControl {
         didSet { needsDisplay = true }
     }
 
+    public var borderColor: NSColor? {
+        didSet { needsDisplay = true }
+    }
+
+    public var borderWidth: CGFloat = 1.0 {
+        didSet { needsDisplay = true }
+    }
+
     public var focusedBackgroundColor: NSColor = NSColor(white: 0.85, alpha: 1.0) {
         didSet { needsDisplay = true }
     }
@@ -529,9 +537,22 @@ public final class CustomToggleControl: NSControl {
             drawSegmentContent(image: rightImg, label: rightLabel, in: rightRect, isSelected: isRightSelected)
         }
 
+        drawOuterBorderIfNeeded()
+
         // Focus ring is rendered by `focusInnerRingLayer` / `focusOuterRingLayer` sublayers
         // (see `setup()` / `layout()`). Drawing it here would be clipped to bounds on
         // macOS Monterey.
+    }
+
+    private func drawOuterBorderIfNeeded() {
+        guard let borderColor, borderWidth > 0 else { return }
+
+        let borderRect = bounds.insetBy(dx: borderWidth / 2, dy: borderWidth / 2)
+        let borderPath = NSBezierPath(roundedRect: borderRect, xRadius: borderRect.height / 2, yRadius: borderRect.height / 2)
+        borderPath.lineWidth = borderWidth
+        borderPath.lineJoinStyle = .round
+        borderColor.setStroke()
+        borderPath.stroke()
     }
 
     private func drawSegmentContent(image: NSImage, label: String?, in rect: NSRect, isSelected: Bool) {

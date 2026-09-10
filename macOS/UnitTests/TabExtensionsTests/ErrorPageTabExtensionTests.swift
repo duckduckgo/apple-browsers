@@ -55,7 +55,7 @@ final class ErrorPageTabExtensionTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger()
         credentialCreator = MockCredentialCreator()
         detector = MockMaliciousSiteDetector { _ in .phishing }
-        errorPageExtention = SpecialErrorPageTabExtension(webViewPublisher: mockWebViewPublisher, scriptsPublisher: scriptPublisher, closeTab: self.closeTab, urlCredentialCreator: credentialCreator, featureFlagger: featureFlagger, maliciousSiteDetector: detector)
+        errorPageExtention = makeErrorPageExtension(featureFlagger: featureFlagger)
     }
 
     override func tearDownWithError() throws {
@@ -68,6 +68,21 @@ final class ErrorPageTabExtensionTests: XCTestCase {
 
     private func closeTab() {
         onCloseTab()
+    }
+
+    private func makeErrorPageExtension(
+        featureFlagger: FeatureFlagger = MockFeatureFlagger(),
+        acceptsInsecureCertificates: Bool = false
+    ) -> SpecialErrorPageTabExtension {
+        SpecialErrorPageTabExtension(
+            webViewPublisher: mockWebViewPublisher,
+            scriptsPublisher: scriptPublisher,
+            closeTab: closeTab,
+            urlCredentialCreator: credentialCreator,
+            featureFlagger: featureFlagger,
+            maliciousSiteDetector: detector,
+            acceptsInsecureCertificates: acceptsInsecureCertificates
+        )
     }
 
     @MainActor func testWhenCertificateExpired_ThenTabExtenstionErrorIsExpectedError() {
@@ -357,6 +372,46 @@ final class ErrorPageTabExtensionTests: XCTestCase {
 
         // THEN
         XCTAssertNil(disposition)
+    }
+
+    @MainActor
+    func testWhenInsecureCertificatesAreAccepted_ServerTrustChallengeReturnsCredential() async {
+        errorPageExtention = makeErrorPageExtension(acceptsInsecureCertificates: true)
+        let challenge = serverTrustChallenge()
+
+        let disposition = await errorPageExtention.didReceive(challenge, for: nil)
+
+        guard case .credential(let credential) = disposition else {
+            return XCTFail("Expected a credential")
+        }
+        XCTAssertNotNil(credential)
+    }
+
+    @MainActor
+    func testWhenInsecureCertificatesAreNotAccepted_ServerTrustChallengeReturnsNil() async {
+        let challenge = serverTrustChallenge()
+
+        let disposition = await errorPageExtention.didReceive(challenge, for: nil)
+
+        XCTAssertNil(disposition)
+    }
+
+    private func serverTrustChallenge() -> URLAuthenticationChallenge {
+        let protectionSpace = URLProtectionSpace(
+            host: "",
+            port: 4,
+            protocol: nil,
+            realm: nil,
+            authenticationMethod: NSURLAuthenticationMethodServerTrust
+        )
+        return URLAuthenticationChallenge(
+            protectionSpace: protectionSpace,
+            proposedCredential: nil,
+            previousFailureCount: 0,
+            failureResponse: nil,
+            error: nil,
+            sender: ChallangeSender()
+        )
     }
 
     @MainActor

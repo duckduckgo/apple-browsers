@@ -22,6 +22,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import PixelKit
 
 struct SettingsYouTubeAdBlockingView: View {
 
@@ -34,7 +35,7 @@ struct SettingsYouTubeAdBlockingView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var description: SettingsDescription {
-        SettingsDescription(imageName: "SettingsDuckPlayerHero",
+        SettingsDescription(imageName: "SettingsAdBlockingHero",
                             title: UserText.youTubeAdBlockingTitle,
                             status: .alwaysOn,
                             explanation: UserText.adBlockingDescription)
@@ -51,7 +52,7 @@ struct SettingsYouTubeAdBlockingView: View {
                         viewModel.openDuckPlayerContingencyMessageSite()
                     }.onAppear {
                         if !hasFiredSettingsDisplayedPixel {
-                            Pixel.fire(pixel: .duckPlayerContingencySettingsDisplayed)
+                            PixelKit.fire(Pixel.Event.duckPlayerContingencySettingsDisplayed)
                             hasFiredSettingsDisplayedPixel = true
                         }
                     }
@@ -62,7 +63,7 @@ struct SettingsYouTubeAdBlockingView: View {
                 if viewModel.isYouTubeAdBlockingRemotelyDisabled {
                     Section(header: Text(UserText.adBlockingYouTubeSectionHeader)) {
                         remotelyDisabledRow
-                            .listRowBackground(Color(designSystemColor: .surface))
+                            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                     }
                 } else if viewModel.isYouTubeAdBlockingDisclosureHidden {
                     Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
@@ -84,7 +85,7 @@ struct SettingsYouTubeAdBlockingView: View {
                 ) {
                     SettingsCellView(label: UserText.duckPlayerFeatureName)
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
             }
         }
@@ -92,8 +93,8 @@ struct SettingsYouTubeAdBlockingView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onAppear {
-            DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingSettingsOpen,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+            PixelKit.fire(Pixel.Event.webExtensionAdBlockingSettingsOpen,
+                          frequency: .dailyAndStandard)
         }
         .onFirstAppear {
             if viewModel.deepLinkTarget == .duckPlayer,

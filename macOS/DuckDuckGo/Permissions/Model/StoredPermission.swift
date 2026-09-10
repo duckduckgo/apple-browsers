@@ -49,6 +49,7 @@ enum PersistedPermissionDecision {
 struct StoredPermission: Equatable {
     let id: NSManagedObjectID
     var decision: PersistedPermissionDecision
+    var lastModified: Date?
 }
 
 struct PermissionEntity: Equatable {
@@ -71,7 +72,11 @@ struct PermissionEntity: Equatable {
             return nil
         }
 
-        self.permission = StoredPermission(id: managedObject.objectID, decision: managedObject.decision)
+        self.permission = StoredPermission(
+            id: managedObject.objectID,
+            decision: managedObject.decision,
+            lastModified: managedObject.lastModified
+        )
         self.domain = domain
         self.type = permissionType
     }

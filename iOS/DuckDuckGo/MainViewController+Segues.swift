@@ -29,6 +29,47 @@ import Subscription
 import DDGSync
 import os.log
 import DataBrokerProtection_iOS
+import VPN
+import PixelKit
+
+struct VPNEntryPoint {
+    let screenSource: VPNConnectionWideEventData.ScreenSource
+    let subscriptionFunnelOrigin: SubscriptionFunnelOrigin
+    let subscriptionFunnelClickPixel: (_ isSubscriptionActive: Bool?) -> SubscriptionPixel
+
+    static let toolbar = VPNEntryPoint(
+        screenSource: .toolbar,
+        subscriptionFunnelOrigin: .toolbarVPN,
+        subscriptionFunnelClickPixel: { .subscriptionVPNToolbarClick(isSubscriptionActive: $0) })
+
+    static let addressBar = VPNEntryPoint(
+        screenSource: .addressBar,
+        subscriptionFunnelOrigin: .addressBarVPN,
+        subscriptionFunnelClickPixel: { .subscriptionVPNAddressBarClick(isSubscriptionActive: $0) })
+
+    static let widget = VPNEntryPoint(
+        screenSource: .widget,
+        subscriptionFunnelOrigin: .widgetVPN,
+        subscriptionFunnelClickPixel: { _ in .subscriptionVPNWidgetClick })
+
+    static let shortcut = VPNEntryPoint(
+        screenSource: .shortcut,
+        subscriptionFunnelOrigin: .shortcutVPN,
+        subscriptionFunnelClickPixel: { _ in .subscriptionVPNShortcutClick })
+
+    static let notification = VPNEntryPoint(
+        screenSource: .notification,
+        subscriptionFunnelOrigin: .notificationVPN,
+        subscriptionFunnelClickPixel: { _ in .subscriptionVPNNotificationClick })
+
+    private init(screenSource: VPNConnectionWideEventData.ScreenSource,
+                 subscriptionFunnelOrigin: SubscriptionFunnelOrigin,
+                 subscriptionFunnelClickPixel: @escaping (_ isSubscriptionActive: Bool?) -> SubscriptionPixel) {
+        self.screenSource = screenSource
+        self.subscriptionFunnelOrigin = subscriptionFunnelOrigin
+        self.subscriptionFunnelClickPixel = subscriptionFunnelClickPixel
+    }
+}
 
 extension MainViewController {
 
@@ -65,7 +106,9 @@ extension MainViewController {
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
             daxDialogsManager: daxDialogsManager,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            onboardingManager: onboardingManager
+            onboardingManager: onboardingManager,
+            keyValueStore: keyValueStore,
+            adBlockingAvailability: adBlockingAvailability
         )
         let controller = OnboardingIntroFactory.makeController(
             viewModel: viewModel,
@@ -287,12 +330,13 @@ extension MainViewController {
         }, deepLinkTarget: .subscriptionWelcome)
     }
 
-    func segueToVPN(scrollToStrictRouting: Bool = false) {
+    func segueToVPN(source: VPNConnectionWideEventData.ScreenSource,
+                    scrollToStrictRouting: Bool = false) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings(completion: {
-            $0.triggerDeepLinkNavigation(to: .netP(scrollToStrictRouting: scrollToStrictRouting))
-        }, deepLinkTarget: .netP(scrollToStrictRouting: scrollToStrictRouting))
+            $0.triggerDeepLinkNavigation(to: .netP(source: source, scrollToStrictRouting: scrollToStrictRouting))
+        }, deepLinkTarget: .netP(source: source, scrollToStrictRouting: scrollToStrictRouting))
     }
 
     func segueToDataBrokerProtection() {
@@ -332,9 +376,7 @@ extension MainViewController {
     func segueToSettingsCookiePopupManagement() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.openCookiePopupManagement()
-        }
+        launchSettings(deepLinkTarget: .cookiePopupProtection)
     }
 
     func segueToSettingsAutofillWith(account: SecureVaultModels.WebsiteAccount?,
@@ -458,7 +500,9 @@ extension MainViewController {
                                                             syncAutoRestoreHandler: syncAutoRestoreHandler,
                                                             freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                                             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
-                                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                            promoCoordinationDiagnosticsProvider: promoCoordinationService,
+                                                            promoCoordinationCooldownResetter: promoCoordinationService)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings)
@@ -507,13 +551,24 @@ extension MainViewController {
                                                   darkReaderFeatureSettings: darkReaderFeatureSettings,
                                                   adBlockingAvailability: adBlockingAvailability)
 
+        settingsViewModel.configureSitePermissions(
+            store: tabManager.sitePermissionsStore,
+            eventHandler: { [sitePermissionsPixelHandler = tabManager.sitePermissionsPixelHandler] event in
+                sitePermissionsPixelHandler.fire(event)
+            },
+            revocationHandler: { [weak self] site, permissionTypes in
+                self?.tabManager.revokeSitePermissions(permissionTypes, for: site)
+            }
+        )
+
         settingsViewModel.autoClearActionDelegate = self
         settingsViewModel.onRequestOpenDuckAIChat = { [weak self] in
             self?.dismiss(animated: true) {
                 self?.loadUrlInNewTab(.duckAiSettings, inheritedAttribution: nil)
             }
         }
-        Pixel.fire(pixel: .settingsPresented)
+        settingsViewModel.onRequestOnboardingDuckAIChat = { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
+        PixelKit.fire(Pixel.Event.settingsPresented)
 
         func doLaunch() {
             if let navigationController = self.presentedViewController as? UINavigationController,
@@ -550,13 +605,7 @@ extension MainViewController {
             }
         }
 
-        if let controller = self.presentedViewController as? OmniBarEditingStateViewController {
-            controller.dismissAnimated {
-                doLaunch()
-            }
-        } else {
-            doLaunch()
-        }
+        doLaunch()
     }
 
     private func launchDebugSettings(completion: ((DebugScreensViewController) -> Void)? = nil) {
@@ -582,7 +631,9 @@ extension MainViewController {
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
-            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler))
+            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
+            promoCoordinationDiagnosticsProvider: self.promoCoordinationService,
+            promoCoordinationCooldownResetter: self.promoCoordinationService))
 
         debug.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
 

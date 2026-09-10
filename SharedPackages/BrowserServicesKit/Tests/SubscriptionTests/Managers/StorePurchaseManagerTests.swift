@@ -36,7 +36,8 @@ final class StorePurchaseManagerTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         sut = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: mockCache,
                                           subscriptionFeatureFlagger: mockFeatureFlagger,
-                                          productFetcher: mockProductFetcher)
+                                          productFetcher: mockProductFetcher,
+                                          monthlyFreeTrialDecider: MockMonthlyFreeTrialDecider())
     }
 
     func testUpdateAvailableProductsSuccessfully() async {
@@ -65,6 +66,21 @@ final class StorePurchaseManagerTests: XCTestCase {
         // Then
         let products = sut.availableProducts
         XCTAssertTrue(products.isEmpty)
+    }
+
+    func testUpdateAvailableProductsWithNoProductsOverrideClearsProducts() async {
+        // Given
+        mockProductFetcher.mockProducts = [createMonthlyProduct(), createYearlyProduct()]
+        await sut.updateAvailableProducts()
+        XCTAssertFalse(sut.availableProducts.isEmpty)
+
+        // When
+        mockFeatureFlagger.enabledFeatures = [.useSubscriptionNoProductsOverride]
+        await sut.updateAvailableProducts()
+
+        // Then
+        XCTAssertTrue(sut.availableProducts.isEmpty)
+        XCTAssertEqual(mockProductFetcher.fetchCount, 2)
     }
 
     func testUpdateAvailableProductsWithDifferentRegions() async {
@@ -872,5 +888,13 @@ private class MockStoreSubscriptionConfiguration: StoreSubscriptionConfiguration
         default:
             return rowIdentifiers
         }
+    }
+}
+
+private struct MockMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
+    var shouldOffer: Bool = true
+
+    func shouldOfferMonthlyFreeTrial() -> Bool {
+        shouldOffer
     }
 }

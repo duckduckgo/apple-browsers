@@ -20,6 +20,8 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import FeatureFlags_iOS
+import PixelKit
 
 enum AfterInactivityOption: String, CaseIterable, CustomStringConvertible {
     case newTab
@@ -84,7 +86,7 @@ struct SettingsGeneralView: View {
                                                options: AfterInactivityIdleInterval.allCases,
                                                selectedOption: viewModel.afterInactivityIdleIntervalBinding)
 
-                        SettingsCellView(label: UserText.settingsLastTabShortcutLabel,
+                        SettingsCellView(label: UserText.settingsReturnToShortcutLabel,
                                          subtitle: UserText.settingsLastTabShortcutSubtitle,
                                          accessory: .toggle(isOn: viewModel.lastTabShortcutEnabledBinding))
                     }
@@ -153,7 +155,7 @@ struct SettingsGeneralView: View {
                     SettingsCellView(label: UserText.settingsAutoplayLabel,
                                      accessory: .rightDetail(viewModel.state.autoplayBlockingMode.description))
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
 
         }
@@ -161,7 +163,7 @@ struct SettingsGeneralView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onFirstAppear {
-            Pixel.fire(pixel: .settingsGeneralOpen)
+            PixelKit.fire(Pixel.Event.settingsGeneralOpen)
         }
     }
 

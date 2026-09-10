@@ -36,6 +36,11 @@ public protocol WebExtensionEventsListening {
     func didMoveTab(_ tab: WKWebExtensionTab, from oldIndex: Int, in oldWindow: WKWebExtensionWindow)
     func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab)
     func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab)
+
+    /// Runs `body` with `didOpenTab`/`didCloseTab` suppressed. Use when a tab moves between the
+    /// app's tab collections or windows: the move surfaces as a remove + insert of the same tab,
+    /// which would make WebKit drop and re-register it, losing its messaging.
+    func withTabLifecycleEventsSuppressed(_ body: () -> Void)
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -43,6 +48,8 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
 
     public weak var controller: WKWebExtensionController?
     public private(set) var droppedCallbacksCount = 0
+
+    private var isSuppressingTabLifecycleEvents = false
 
     public init() {}
 
@@ -59,10 +66,12 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
     }
 
     public func didOpenTab(_ tab: WKWebExtensionTab) {
+        guard !isSuppressingTabLifecycleEvents else { return }
         notifyController { $0.didOpenTab(tab) }
     }
 
     public func didCloseTab(_ tab: WKWebExtensionTab, windowIsClosing: Bool) {
+        guard !isSuppressingTabLifecycleEvents else { return }
         notifyController { $0.didCloseTab(tab, windowIsClosing: windowIsClosing) }
     }
 
@@ -88,6 +97,13 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
 
     public func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab) {
         notifyController { $0.didChangeTabProperties(properties, for: tab) }
+    }
+
+    public func withTabLifecycleEventsSuppressed(_ body: () -> Void) {
+        let previous = isSuppressingTabLifecycleEvents
+        isSuppressingTabLifecycleEvents = true
+        defer { isSuppressingTabLifecycleEvents = previous }
+        body()
     }
 
     private func notifyController(_ callback: (WKWebExtensionController) -> Void, caller: String = #function) {

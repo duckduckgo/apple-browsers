@@ -75,6 +75,7 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
                                                   profileQueryId: Int64,
                                                   extractedProfileId: Int64) throws
     func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) throws
+    func updateExtractedProfile(_ extractedProfile: ExtractedProfile, on extractedProfileId: Int64) throws
 
     func add(_ historyEvent: HistoryEvent) throws
     func fetchLastEvent(brokerId: Int64, profileQueryId: Int64) throws -> HistoryEvent?
@@ -393,6 +394,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
         }
     }
 
+    public func updateExtractedProfile(_ extractedProfile: ExtractedProfile, on extractedProfileId: Int64) throws {
+        do {
+            try vault.updateExtractedProfile(extractedProfile, for: extractedProfileId)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.updateExtractedProfile on extractedProfileId")
+            throw error
+        }
+    }
+
     public func add(_ historyEvent: HistoryEvent) throws {
         do {
 
@@ -697,6 +707,10 @@ extension DataBrokerProtectionDatabase {
         // The queries we need to create are the one that exist on the new ones but not in the database
         let profileQueriesToCreate = Set(newProfileQueries).subtracting(Set(databaseProfileQueries))
 
+        let profileQueriesToReactivate = Set(databaseProfileQueries.filter(\.deprecated))
+            .intersection(Set(newProfileQueries))
+            .map { $0.with(deprecated: false) }
+
         // Updated profile queries. This is only for use for deprecated matches.
         // We do not use it for updating a particular profile query. The reason is that
         // updates do not exist because the UI returns a complete profile, and does not
@@ -737,6 +751,14 @@ extension DataBrokerProtectionDatabase {
         // Update profileQueries
         if !profileQueriesToUpdate.isEmpty {
             try updateProfileQueries(Array(profileQueriesToUpdate),
+                                     profileID: profileID,
+                                     brokerIDs: brokerIDs,
+                                     vault: vault)
+        }
+
+        // Reactivate
+        if !profileQueriesToReactivate.isEmpty {
+            try updateProfileQueries(profileQueriesToReactivate,
                                      profileID: profileID,
                                      brokerIDs: brokerIDs,
                                      vault: vault)

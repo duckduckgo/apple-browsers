@@ -27,7 +27,9 @@ struct BookmarkImportSchemeValidationTests {
         "JavaScript:alert(1)",
         "  javascript:alert(1)",
         "data:text/html,<script>alert(1)</script>",
-        "DATA:text/html;base64,AAAA"
+        "DATA:text/html;base64,AAAA",
+        "vbscript:msgbox(1)",
+        "VBScript:msgbox(1)"
     ])
     func unsafeSchemesDetected(urlString: String) {
         #expect(urlString.hasUnsafeBookmarkImportScheme() == true)

@@ -23,7 +23,7 @@ import Combine
 import CombineExtensions
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import LoginItems
 import VPN

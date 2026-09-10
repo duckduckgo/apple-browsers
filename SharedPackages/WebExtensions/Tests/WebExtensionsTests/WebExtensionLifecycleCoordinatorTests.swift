@@ -309,6 +309,8 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     var eventsListener: WebExtensionEventsListening { RecordingEventsListener() }
     var extensionsDirectory: URL { URL(fileURLWithPath: "/tmp") }
     var extensionUpdates: AsyncStream<Void> { AsyncStream { _ in } }
+    var lifecycleEvents: AsyncStream<WebExtensionLifecycleEvent> { AsyncStream { _ in } }
+    var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring { NoOpCPMMessagingHealthMonitor() }
     func installExtension(from sourceURL: URL) async throws {}
     @MainActor func uninstallExtension(identifier: String) throws {}
     @MainActor @discardableResult func uninstallAllExtensions() -> [Result<Void, Error>] { [] }
@@ -343,4 +345,5 @@ private final class RecordingEventsListener: WebExtensionEventsListening {
     func didMoveTab(_ tab: WKWebExtensionTab, from oldIndex: Int, in oldWindow: WKWebExtensionWindow) {}
     func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab) {}
     func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab) {}
+    func withTabLifecycleEventsSuppressed(_ body: () -> Void) { body() }
 }

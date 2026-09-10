@@ -18,6 +18,7 @@
 //
 
 import DuckUI
+import Lottie
 import Onboarding
 import SwiftUI
 import UIComponents
@@ -106,6 +107,15 @@ extension OnboardingView {
 
 }
 
+/// Reports the tallest tile so every tile can be pinned to that height, keeping rows uniform
+/// regardless of how many lines each title wraps to (e.g. on narrow screens like iPhone SE).
+private struct DownloadReasonItemHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 private struct DownloadReasonGrid: View {
 
     private enum Metrics {
@@ -116,6 +126,8 @@ private struct DownloadReasonGrid: View {
     private let selectedItem: OnboardingDownloadReasonContent.Option?
     private let rowAndColumns: [[OnboardingDownloadReasonContent.Option]]
     private let onSelect: (OnboardingDownloadReasonContent.Option) -> Void
+
+    @State private var itemHeight: CGFloat?
 
     init(items: [OnboardingDownloadReasonContent.Option], selectedItem: OnboardingDownloadReasonContent.Option?, columns: Int = 2, onSelect: @escaping (OnboardingDownloadReasonContent.Option) -> Void) {
         self.items = items
@@ -129,7 +141,7 @@ private struct DownloadReasonGrid: View {
             ForEach(rowAndColumns, id: \.self) { row in
                 HStack(spacing: Metrics.itemSpacing) {
                     ForEach(row, id: \.self) { reason in
-                        DownloadReasonButton(icon: reason.icon, title: reason.title, isSelected: reason == selectedItem) {
+                        DownloadReasonButton(animation: reason.animation, title: reason.title, isSelected: reason == selectedItem, height: itemHeight) {
                             onSelect(reason)
                         }
                     }
@@ -137,6 +149,9 @@ private struct DownloadReasonGrid: View {
             }
         }
         .compositingGroup() // Flatten the whole grid so the container's fade can't bleed shadows through fills
+        .onPreferenceChange(DownloadReasonItemHeightPreferenceKey.self) { height in
+            itemHeight = height > 0 ? height : nil
+        }
     }
 
 }
@@ -146,11 +161,12 @@ private extension DownloadReasonGrid {
     struct DownloadReasonButton: View {
 
         private enum Metrics {
-            static let contentVerticalSpacing: CGFloat = 8
+            static let contentVerticalSpacing: CGFloat = 0
             static let contentHorizontalPadding: CGFloat = 16
-            static let contentVerticalPadding: CGFloat = 20
+            static let contentTopPadding: CGFloat = 12
+            static let contentBottomPadding: CGFloat = 20
             static let cornerRadius: CGFloat = 24
-            static let imageSize = CGSize(width: 44, height: 44)
+            static let imageSize = CGSize(width: 64, height: 64)
             // Shadow
             static let innerShadowColor: Color = .black.opacity(0.06)
             static let innerShadowRadius: CGFloat = 2
@@ -165,18 +181,28 @@ private extension DownloadReasonGrid {
 
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.colorScheme) private var colorScheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-        let icon: OnboardingImageResource
+        @State private var isPlaying = false
+
+        let animation: OnboardingDownloadReasonContent.Animation
         let title: String
         let isSelected: Bool
+        /// Uniform tile height supplied by the grid (the tallest tile). `nil` on the first pass, before measuring.
+        let height: CGFloat?
         let action: () -> Void
 
         var body: some View {
             VStack(alignment: .center, spacing: Metrics.contentVerticalSpacing) {
-                Image(icon)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: Metrics.imageSize.width, height: Metrics.imageSize.height)
+                // The pictogram rests on its last frame (a fully-drawn icon), then replays
+                // from the start each time the tile is tapped. Reduce Motion keeps it frozen.
+                Lottie.LottieView {
+                    try await DotLottieFile.asset(named: animation.rawValue)
+                }
+                .playbackMode(playbackMode)
+                .animationDidFinish { _ in isPlaying = false }
+                .resizable()
+                .frame(width: Metrics.imageSize.width, height: Metrics.imageSize.height)
 
                 Text(title)
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
@@ -185,16 +211,35 @@ private extension DownloadReasonGrid {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, Metrics.contentHorizontalPadding)
-            .padding(.vertical, Metrics.contentVerticalPadding)
+            .padding(.top, Metrics.contentTopPadding)
+            .padding(.bottom, Metrics.contentBottomPadding)
             .frame(maxWidth: .infinity, alignment: .top)
+            // Measure the tile's natural height. We set them all to the highest value to avoid tiles with different heights.
+            .background(
+                GeometryReader { proxy in
+                    Color.clear.preference(key: DownloadReasonItemHeightPreferenceKey.self, value: proxy.size.height)
+                }
+            )
+            .frame(height: height, alignment: .top)
             .background(isSelected ? OnboardingRebrandColor.accentAltPrimary : onboardingTheme.colorPalette.bubbleBackground)
             .cornerRadius(Metrics.cornerRadius)
             .shadow(color: Metrics.innerShadowColor, radius: Metrics.innerShadowRadius, x: Metrics.innerShadowOffset.x, y: Metrics.innerShadowOffset.y)
             .shadow(color: Metrics.outerShadowColor, radius: Metrics.outerShadowRadius, x: Metrics.outerShadowOffset.x, y: Metrics.outerShadowOffset.y)
             .overlay(overlay)
             .onTapGesture {
+                // Fires on touch-up inside; cancels if the touch becomes a scroll.
+                if !reduceMotion {
+                    isPlaying = true
+                }
                 action()
             }
+        }
+
+        private var playbackMode: LottiePlaybackMode {
+            guard !reduceMotion else { return .paused(at: .progress(1)) }
+            return isPlaying
+                ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
+                : .paused(at: .progress(1))
         }
 
         @ViewBuilder

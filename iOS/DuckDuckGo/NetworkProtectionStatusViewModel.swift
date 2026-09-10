@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import Combine
 import CombineExtensions
 import NetworkExtension
@@ -28,6 +29,8 @@ import Core
 import PrivacyConfig
 import Subscription
 import TipKit
+import FeatureFlags_iOS
+import PixelKit
 
 struct NetworkProtectionLocationStatusModel {
     enum LocationIcon {
@@ -94,7 +97,8 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     }()
 
     private let featureFlagger: FeatureFlagger
-    private let tunnelController: (TunnelController & TunnelSessionProvider)
+    private let tunnelController: (VPNConnectionContextProvidingTunnelController & TunnelSessionProvider)
+    private let entryContextProvider: () -> VPNConnectionWideEventData.EntryContext
     private let statusObserver: ConnectionStatusObserver
     private let serverInfoObserver: ConnectionServerInfoObserver
     private let errorObserver: ConnectionErrorObserver
@@ -212,7 +216,8 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     public let enablesUnifiedFeedbackForm: Bool
 
-    public init(tunnelController: (TunnelController & TunnelSessionProvider),
+    public init(tunnelController: (VPNConnectionContextProvidingTunnelController & TunnelSessionProvider),
+                entryContextProvider: @escaping () -> VPNConnectionWideEventData.EntryContext,
                 settings: VPNSettings,
                 statusObserver: ConnectionStatusObserver,
                 serverInfoObserver: ConnectionServerInfoObserver,
@@ -224,6 +229,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
                 featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.tunnelController = tunnelController
+        self.entryContextProvider = entryContextProvider
         self.settings = settings
         self.statusObserver = statusObserver
         self.serverInfoObserver = serverInfoObserver
@@ -632,7 +638,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     @MainActor
     private func enableNetP() async {
-        await tunnelController.start()
+        await tunnelController.start(entryContext: entryContextProvider())
     }
 
     @MainActor
@@ -653,7 +659,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         let defaultDuration: TimeInterval = .minutes(20)
         snoozeRequestPending = true
         try? await activeSession.sendProviderMessage(.startSnooze(defaultDuration))
-        DailyPixel.fire(pixel: .networkProtectionSnoozeEnabledFromStatusMenu)
+        PixelKit.fire(Pixel.Event.networkProtectionSnoozeEnabledFromStatusMenu, frequency: .legacyDailyNoSuffix)
 
         if #available(iOS 17.0, *) {
             await VPNSnoozeLiveActivityManager().start(endDate: Date().addingTimeInterval(defaultDuration))
@@ -668,7 +674,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
         snoozeRequestPending = true
         try? await activeSession.sendProviderMessage(.cancelSnooze)
-        DailyPixel.fire(pixel: .networkProtectionSnoozeDisabledFromStatusMenu)
+        PixelKit.fire(Pixel.Event.networkProtectionSnoozeDisabledFromStatusMenu, frequency: .legacyDailyNoSuffix)
 
         if #available(iOS 17.0, *) {
             await VPNSnoozeLiveActivityManager().endSnoozeActivity()

@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Core
 
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -32,6 +33,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         if let windowScene = scene as? UIWindowScene {
             let window = UIWindow(windowScene: windowScene)
             self.window = window
+            window.layer.speed = AppUserDefaults().slowAnimationsEnabled ? AppUserDefaults.slowAnimationsLayerSpeed : 1.0
             appStateMachine.handle(.willConnectToWindow(window: window))
         }
 
@@ -100,6 +102,12 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func windowScene(_ windowScene: UIWindowScene, performActionFor shortcutItem: UIApplicationShortcutItem) async -> Bool {
         appStateMachine.handle(.handleShortcutItem(shortcutItem))
         return true
+    }
+
+    /// Unified style exposes layout regions so browser chrome can share the window controls row.
+    @available(iOS 26.0, *)
+    func preferredWindowingControlStyle(for windowScene: UIWindowScene) -> UIWindowScene.WindowingControlStyle {
+        WindowControlsRowLayout.isEnabled(featureFlagger: AppDependencyProvider.shared.featureFlagger) ? .unified : .automatic
     }
 
 }

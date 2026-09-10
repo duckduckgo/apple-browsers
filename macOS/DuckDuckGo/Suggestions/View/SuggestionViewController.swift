@@ -18,7 +18,7 @@
 
 import Cocoa
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import History
 import Suggestions
@@ -53,7 +53,9 @@ final class SuggestionViewController: NSViewController {
     var themeUpdateCancellable: AnyCancellable?
 
     private let suggestionContainerViewModel: SuggestionContainerViewModel
-    private let isBurner: Bool
+    private var isBurner: Bool {
+        suggestionContainerViewModel.isBurner
+    }
 
     private lazy var sectionDividerRowHeight: CGFloat = {
         let rebrandedHeight: CGFloat = 14
@@ -73,12 +75,10 @@ final class SuggestionViewController: NSViewController {
 
     required init?(coder: NSCoder,
                    suggestionContainerViewModel: SuggestionContainerViewModel,
-                   isBurner: Bool,
                    themeManager: ThemeManaging,
                    aiChatPreferencesStorage: AIChatPreferencesStorage,
                    featureFlagger: FeatureFlagger) {
         self.suggestionContainerViewModel = suggestionContainerViewModel
-        self.isBurner = isBurner
         self.themeManager = themeManager
         self.aiChatPreferencesStorage = aiChatPreferencesStorage
         self.featureFlagger = featureFlagger
@@ -100,8 +100,6 @@ final class SuggestionViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        tableView.delegate = self
-        tableView.dataSource = self
         setupTableView()
         addTrackingArea()
         subscribeToSuggestionResult()
@@ -146,6 +144,8 @@ final class SuggestionViewController: NSViewController {
     }
 
     private func setupTableView() {
+        tableView.delegate = self
+        tableView.dataSource = self
         tableView.style = .plain
         tableView.enclosingScrollView?.contentInsets.bottom = scrollViewBottomInset
         tableView.setAccessibilityIdentifier("SuggestionViewController.tableView")
@@ -369,9 +369,9 @@ extension SuggestionViewController: ThemeUpdateListening {
         shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
         shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
-        NSAppearance.withAppAppearance {
+        NSAppearance.withAppearance(from: view) {
             shadowView.shadowColor = colorsProvider.addressBarShadowColor
-            backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor
+            backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor(isBurner: isBurner)
         }
 
         tableView.reloadData()

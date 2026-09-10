@@ -23,7 +23,7 @@ import Combine
 import Common
 import Configuration
 import DesignResourcesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import LoginItems
 import Networking
 import NetworkExtension
@@ -32,6 +32,7 @@ import NetworkProtectionProxy
 import NetworkProtectionUI
 import os.log
 import PixelKit
+import WideEvent
 import ServiceManagement
 import Subscription
 import SwiftUI
@@ -144,12 +145,6 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         self.tunnelSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
         self.configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: VPNAgentConfigurationURLProvider(), eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
         super.init()
-
-        configurationManager.onPrivacyConfigurationUpdated = { [weak self] in
-            Task { @MainActor in
-                self?.applyOrphanProxyFeatureFlags()
-            }
-        }
 
         let tokenFound = subscriptionManager.isUserAuthenticated
         if tokenFound {
@@ -492,20 +487,6 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
-    @MainActor
-    /// Resolves the orphan-proxy kill switches into the tunnel and proxy settings.
-    ///
-    /// Both flags are kill switches: enabling the remote subfeature *disables* the corresponding behavior,
-    /// so each setting is the negation of the flag. They default to enabled when the flags are off.
-    private func applyOrphanProxyFeatureFlags() {
-        let detectionEnabled = !featureFlagger.isFeatureOn(.vpnOrphanProxyDetectionKillSwitch)
-        let bypassEnabled = !featureFlagger.isFeatureOn(.vpnOrphanProxyBypassKillSwitch)
-
-        tunnelSettings.isOrphanProxyDetectionEnabled = detectionEnabled
-        proxySettings.isOrphanProxyDetectionEnabled = detectionEnabled
-        proxySettings.isOrphanProxyBypassEnabled = bypassEnabled
-    }
-
     private func setupAppRebrand() {
         let isAppRebranded = featureFlagger.isFeatureOn(.appRebranding)
         DesignSystemRebrand.isAppRebranded = { [isAppRebranded] in isAppRebranded }
@@ -529,10 +510,6 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         // It's important for this to be set-up after the privacy configuration is loaded
         // as it relies on it for the remote feature flag.
         TipKitAppEventHandler(featureFlagger: featureFlagger).appDidFinishLaunching()
-
-        // Resolve the orphan-proxy kill switches into settings so the tunnel and proxy pick them up
-        // on their next start. Must run after the privacy configuration is loaded above.
-        applyOrphanProxyFeatureFlags()
 
         setupMenuVisibility()
 

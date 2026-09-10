@@ -50,11 +50,11 @@ struct AIChatOmnibarSubscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpsell
     func routeGatedSelection(requiredTier: AIChatModelPublicAccessTier, userTier: AIChatUserTier, origin: SubscriptionFunnelOrigin) -> Bool {
         switch userTier.upgradeFlow(for: requiredTier) {
         case .purchase:
-            firePixel(currentTier: userTier, requiredTier: requiredTier, flowType: "purchase")
+            firePixel(currentTier: userTier, requiredTier: requiredTier, flowType: "purchase", origin: origin)
             coordinator.navigateToSubscriptionPurchase(origin: origin.rawValue, featurePage: Self.featurePage)
             return true
         case .upgrade:
-            firePixel(currentTier: userTier, requiredTier: requiredTier, flowType: "upgrade")
+            firePixel(currentTier: userTier, requiredTier: requiredTier, flowType: "upgrade", origin: origin)
             coordinator.navigateToSubscriptionPlans(origin: origin.rawValue, featurePage: Self.featurePage)
             return true
         case .none:
@@ -67,12 +67,16 @@ struct AIChatOmnibarSubscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpsell
         coordinator.navigateToSubscriptionActivation()
     }
 
-    private func firePixel(currentTier: AIChatUserTier, requiredTier: AIChatModelPublicAccessTier, flowType: String) {
+    private func firePixel(currentTier: AIChatUserTier,
+                           requiredTier: AIChatModelPublicAccessTier,
+                           flowType: String,
+                           origin: SubscriptionFunnelOrigin) {
         PixelKit.fire(
             AIChatPixel.aiChatAddressBarSubscriptionUpsellTriggered(
                 currentTier: currentTier.rawValue,
                 requiredTier: requiredTier.rawValue,
-                flowType: flowType
+                flowType: flowType,
+                origin: origin.rawValue
             ),
             frequency: .dailyAndCount,
             includeAppVersionParameter: true

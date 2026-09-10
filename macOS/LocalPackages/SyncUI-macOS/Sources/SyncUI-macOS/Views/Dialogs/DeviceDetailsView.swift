@@ -50,7 +50,7 @@ struct DeviceDetailsView: View {
                         Text(UserText.deviceDetailsLabel)
                             .font(.system(size: 13, weight: .semibold))
                         TextField(UserText.deviceDetailsPrompt, text: $deviceName, onCommit: submit)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .textFieldStyle(.themed)
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 14.5)
@@ -60,15 +60,18 @@ struct DeviceDetailsView: View {
                 Button(UserText.cancel) {
                     model.cancelPressed()
                 }
-                .buttonStyle(DismissActionButtonStyle())
+                .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
                 Button(UserText.ok) {
                     submit()
                     isLoading = true
                 }
                 .disabled(!canSave)
-                .buttonStyle(DefaultActionButtonStyle(enabled: canSave))
+                .buttonStyle(DefaultActionButtonStyle(enabled: canSave, stateColors: .themedActionButton))
             }
             .frame(width: 360, height: 178)
+            .background(
+                Color(designSystemColor: .surfaceSecondary)
+            )
             .onAppear {
                 deviceName = device.name
             }

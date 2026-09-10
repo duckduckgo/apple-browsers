@@ -28,6 +28,7 @@ public extension AccessibilityIdentifiers {
             "PromoDebugMenu.promoMenuItem.\(id)"
         }
         public static let forceShowPromo = "PromoDebugMenu.promoMenuItem.forceShow"
+        public static let undismissClearItem = "PromoDebugMenu.promoMenuItem.undismissClearItem"
         public static func testPromoAlert(_ id: String) -> String {
             "PromoQueue.testPromoAlert.\(id)"
         }

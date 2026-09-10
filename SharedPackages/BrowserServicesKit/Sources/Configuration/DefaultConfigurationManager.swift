@@ -146,8 +146,7 @@ open class DefaultConfigurationManager: NSObject {
     /// **Note:** You must call `start()` on your `ConfigurationManager` instance for this to take effect. It relies on the internal refresh loop of the
     /// `DefaultConfigurationManager` class
     public func tryAgainSoon() {
-        // Set the last update time to in the past so it triggers again sooner
-        lastUpdateTime = Date(timeIntervalSinceNow: Constants.refreshPeriodSeconds - Constants.retryDelaySeconds)
+        lastUpdateTime = Date(timeIntervalSinceNow: Constants.retryDelaySeconds - Constants.refreshPeriodSeconds)
     }
 }
 

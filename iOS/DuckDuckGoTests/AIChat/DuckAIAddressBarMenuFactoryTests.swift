@@ -29,15 +29,17 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
                                 enabledFeatureFlags: [.aiChatNativeChatHistory, .aiChatAddressBarRecentChats]),
                              userInterfaceIdiom: UIUserInterfaceIdiom = .phone,
                              isHomeTab: Bool = false,
+                             type: DuckAIAddressBarMenuType = .webPage,
                              onNewChat: @escaping () -> Void = {},
-                             onAskAboutPage: @escaping () -> Void = {},
+                             onContextAction: @escaping () -> Void = {},
                              onRecentChats: @escaping () -> Void = {}) -> [UIMenuElement] {
         DuckAIAddressBarMenuFactory.makeActions(
             featureFlagger: featureFlagger,
             userInterfaceIdiom: userInterfaceIdiom,
             isHomeTab: isHomeTab,
+            type: type,
             onNewChat: onNewChat,
-            onAskAboutPage: onAskAboutPage,
+            onContextAction: onContextAction,
             onRecentChats: onRecentChats
         )
     }
@@ -82,7 +84,7 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
         var selected: [String] = []
         let actions = flattenedActions(makeActions(isHomeTab: true,
                                                   onNewChat: { selected.append("new") },
-                                                  onAskAboutPage: { selected.append("page") },
+                                                  onContextAction: { selected.append("page") },
                                                   onRecentChats: { selected.append("history") }))
         for action in actions {
             action.performWithSender(nil, target: nil)
@@ -180,7 +182,7 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
         var askAboutPageCount = 0
         var recentChatsCount = 0
         let actions = flattenedActions(makeActions(onNewChat: { newChatCount += 1 },
-                                                  onAskAboutPage: { askAboutPageCount += 1 },
+                                                  onContextAction: { askAboutPageCount += 1 },
                                                   onRecentChats: { recentChatsCount += 1 }))
 
         actions[0].performWithSender(nil, target: nil)
@@ -197,5 +199,70 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
         XCTAssertEqual(newChatCount, 1)
         XCTAssertEqual(askAboutPageCount, 1)
         XCTAssertEqual(recentChatsCount, 1)
+    }
+
+    // MARK: - Context action copy
+
+    func testContextActionTitleForWebPageIsAskAboutPage() {
+        let title = flattenedActions(makeActions(type: .webPage))[1].title
+        XCTAssertEqual(title, UserText.aiChatAttachmentOptionAskAboutPage)
+    }
+
+    func testContextActionTitleForDocumentIsAskAboutDocument() {
+        let title = flattenedActions(makeActions(type: .document))[1].title
+        XCTAssertEqual(title, UserText.aiChatAttachmentOptionAskAboutDocument)
+    }
+
+    func testContextActionTitleForSearchIsContinueInDuckAi() {
+        let title = flattenedActions(makeActions(type: .search(query: "cats")))[1].title
+        XCTAssertEqual(title, UserText.aiChatAttachmentOptionContinueInDuckAi)
+    }
+
+    // MARK: - Menu type resolution
+
+    func testResolveReturnsWebPageWhenFeatureDisabled() {
+        // Even a document or SERP tab falls back to today's plain web-page menu when the flag is off.
+        XCTAssertEqual(DuckAIAddressBarMenuType.resolve(isFeatureEnabled: false,
+                                                        isShowingDocument: true,
+                                                        tabType: .serp,
+                                                        searchQuery: "cats"),
+                       .webPage)
+    }
+
+    func testResolveReturnsDocumentAndTakesPrecedenceOverSerp() {
+        XCTAssertEqual(DuckAIAddressBarMenuType.resolve(isFeatureEnabled: true,
+                                                        isShowingDocument: true,
+                                                        tabType: .serp,
+                                                        searchQuery: "cats"),
+                       .document)
+    }
+
+    func testResolveReturnsSearchForSerpWithQuery() {
+        XCTAssertEqual(DuckAIAddressBarMenuType.resolve(isFeatureEnabled: true,
+                                                        isShowingDocument: false,
+                                                        tabType: .serp,
+                                                        searchQuery: "cats"),
+                       .search(query: "cats"))
+    }
+
+    func testResolveFallsBackToWebPageForSerpWithoutQuery() {
+        XCTAssertEqual(DuckAIAddressBarMenuType.resolve(isFeatureEnabled: true,
+                                                        isShowingDocument: false,
+                                                        tabType: .serp,
+                                                        searchQuery: nil),
+                       .webPage)
+    }
+
+    func testResolveReturnsWebPageForWebAndAIChatTabs() {
+        XCTAssertEqual(DuckAIAddressBarMenuType.resolve(isFeatureEnabled: true,
+                                                        isShowingDocument: false,
+                                                        tabType: .web,
+                                                        searchQuery: nil),
+                       .webPage)
+        XCTAssertEqual(DuckAIAddressBarMenuType.resolve(isFeatureEnabled: true,
+                                                        isShowingDocument: false,
+                                                        tabType: .aiChat,
+                                                        searchQuery: nil),
+                       .webPage)
     }
 }

@@ -298,11 +298,11 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     func onboardingStarted(from webView: WKWebView?) {
-        if nonBlockingExperiment.isNonBlocking {
-            guard navigation.onboardingTab(for: webView) != nil, canEndOnboarding else { return }
-            // Native handlers are installed by the tab before page initialization. The shared
-            // script manager must not replace another tab's handlers when a page initializes.
-        } else {
+        let isNonBlocking = nonBlockingExperiment.isNonBlocking
+        let messageCameFromOnboardingTab = navigation.onboardingTab(for: webView) != nil
+        guard !isNonBlocking || (canEndOnboarding && messageCameFromOnboardingTab) else { return }
+
+        if !isNonBlocking {
             navigation.updatePreventUserInteraction(prevent: true)
         }
 

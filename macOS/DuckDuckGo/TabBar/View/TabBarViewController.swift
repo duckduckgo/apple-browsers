@@ -934,6 +934,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             canToggleSidebar = true
         } else if aiChatMenuConfig.shouldOpenAIChatInSidebar, case .url = tab.content {
             canToggleSidebar = true
+        } else if aiChatMenuConfig.shouldOpenAIChatInSidebar, case .onboarding = tab.content,
+                  OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking {
+            canToggleSidebar = true
         }
 
         return canToggleSidebar

@@ -413,10 +413,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213734484627619
     case autoplayPolicy
 
-    /// Enables the promo service to coordinate promos/calls to action
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
-    case promoQueue
-
     /// Enables the Bookmark Toolbar ("Show Bookmarks Bar?") promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218028792667616?focus=true
     case promoQueueBookmarkToolbarPromo
@@ -831,8 +827,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.chromeMenuButton), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
-        case .promoQueue:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.featureEnabled))
         case .promoQueueBookmarkToolbarPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkToolbarPromo))
         case .promoQueueSyncFaviconsPromo:

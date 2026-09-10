@@ -145,8 +145,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712841283
     case privacyProOnboardingPromotion
 
-    /// Gates the server-rendered first paywall: `/subscriptions/new/mobile/<emphasis>` in place of
-    /// `/subscriptions` with a `featurePage` query item.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218354517064977
     case performanceOptimizedPaywalls
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213569392605475

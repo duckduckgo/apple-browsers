@@ -356,7 +356,7 @@
             "pixelSource",
             "channel",
             {
-                "key": "sync_prompt_option",
+                "key": "option",
                 "type": "string",
                 "description": "Which option the user tapped on the device-selection prompt.",
                 "enum": ["this_device_only", "sync_another_device"]
@@ -365,6 +365,118 @@
     },
     "m_mac_settings_sync_authentication_cancelled_prompt_shown": {
         "description": "Fired when the prompt asking the user to authenticate is shown after they cancel the device authentication prompt while setting up Sync in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_authentication_cancelled_prompt_retry_tapped": {
+        "description": "Fired when the user taps 'Try Again' on the authentication-cancelled prompt, asking to be shown the device authentication prompt once more.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_authentication_cancelled_prompt_dismissed": {
+        "description": "Fired when the user closes the authentication-cancelled prompt without a retry being offered, ending the Sync setup flow.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_authentication_cancelled_prompt_retry_succeeded": {
+        "description": "Fired when the user authenticates successfully after retrying from the authentication-cancelled prompt, and the Sync setup flow continues.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_authentication_cancelled_prompt_retry_failed": {
+        "description": "Fired when the user fails or cancels device authentication again after retrying from the authentication-cancelled prompt, ending the Sync setup flow.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_open": {
+        "description": "Fired when the Sync & Back Up settings pane is shown.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "is_enabled",
+                "type": "string",
+                "description": "Whether Sync is enabled when the pane is shown.",
+                "enum": ["0", "1"]
+            }
+        ]
+    },
+    "m_mac_settings_sync_back_up_this_device_tapped": {
+        "description": "Fired when the user turns on the 'Sync and Back Up This Device' toggle on the Sync settings pane.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_recover_synced_data_tapped": {
+        "description": "Fired when the user taps the entry point to the Recover Synced Data flow on the Sync settings pane.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_recovery_confirmed_tapped": {
+        "description": "Fired when the user taps the primary button on the Recover Synced Data dialog, confirming intent to begin recovery.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_success_screen_shown": {
+        "description": "Fired when the Sync setup success screen, which shows the recovery code, is displayed in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_success_screen_copy_code_tapped": {
+        "description": "Fired when the user taps 'Copy Code' on the Sync setup success screen in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_success_screen_download_recovery_pdf_tapped": {
+        "description": "Fired when the user taps the button to download the recovery PDF on the Sync setup success screen in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_success_screen_done_tapped": {
+        "description": "Fired when the user taps 'Done' on the Sync setup success screen in the simplified V2 setup, completing the flow.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_this_device_details_screen_shown": {
+        "description": "Fired when the device details screen is shown for the current device in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_this_device_details_name_updated": {
+        "description": "Fired when the name of the current device is successfully updated from its device details screen.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_this_device_details_turn_off_sync_tapped": {
+        "description": "Fired when the user taps 'Turn Off Sync & Backup' on the details screen of the current device, opening the confirmation dialog.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_other_device_details_screen_shown": {
+        "description": "Fired when the device details screen is shown for another synced device in the simplified V2 setup.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_sync_other_device_details_remove_device_tapped": {
+        "description": "Fired when the user taps 'Remove Device' on the details screen of another synced device, opening the confirmation dialog.",
         "owners": ["pballart"],
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]

@@ -62,10 +62,13 @@ struct SyncSuccessViewV2: View {
         } buttons: {
             Spacer()
             Button(UserText.done) {
-                model.endFlow()
+                model.delegate?.syncSuccessDonePressed()
             }
             .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
             .accessibilityIdentifier("SyncSuccessDoneButton")
+        }
+        .onAppear {
+            model.delegate?.syncSuccessViewDidAppear()
         }
     }
 
@@ -92,7 +95,7 @@ struct SyncSuccessViewV2: View {
 
                 HStack(spacing: 8) {
                     Button {
-                        model.delegate?.copyCode(code)
+                        model.delegate?.syncSuccessCopyCodePressed(code)
                         showCopyConfirmation = true
                     } label: {
                         HStack(spacing: 6) {
@@ -110,7 +113,7 @@ struct SyncSuccessViewV2: View {
                     .accessibilityIdentifier("SyncSuccessCopyCodeButton")
 
                     Button {
-                        model.delegate?.saveRecoveryPDF(requiresAuthentication: false)
+                        model.delegate?.syncSuccessSaveRecoveryPDFPressed()
                     } label: {
                         Text(UserText.syncSuccessDownloadPDFButtonV2)
                             .frame(maxWidth: .infinity)

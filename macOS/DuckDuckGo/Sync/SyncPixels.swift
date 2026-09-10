@@ -55,7 +55,8 @@ enum SyncFeatureUsagePixels: PixelKit.Event {
 enum SyncSettingsPixelKitEvent: PixelKit.Event {
 
     enum ParameterKey {
-        static let syncPromptOption = "sync_prompt_option"
+        static let syncPromptOption = "option"
+        static let isEnabled = "is_enabled"
     }
 
     enum AnotherDevicePromptOption: String {
@@ -63,36 +64,65 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
         case syncAnotherDevice = "sync_another_device"
     }
 
+    case settingsScreenShown(isSyncEnabled: Bool)
+    case backUpThisDeviceTapped
+    case recoverSyncedDataTapped
+    case recoveryConfirmedTapped
     case anotherDevicePromptShown
     case anotherDevicePromptOptionTapped(option: AnotherDevicePromptOption)
     case authenticationCancelledPromptShown
+    case authenticationCancelledPromptRetryTapped
+    case authenticationCancelledPromptDismissed
+    case authenticationCancelledPromptRetrySucceeded
+    case authenticationCancelledPromptRetryFailed
+    case successScreenShown
+    case successScreenCopyCodeTapped
+    case successScreenDownloadRecoveryPDFTapped
+    case successScreenDoneTapped
+    case thisDeviceDetailsScreenShown
+    case thisDeviceDetailsNameUpdated
+    case thisDeviceDetailsTurnOffSyncTapped
+    case otherDeviceDetailsScreenShown
+    case otherDeviceDetailsRemoveDeviceTapped
 
     var name: String {
         switch self {
+        case .settingsScreenShown: return "settings_sync_open"
+        case .backUpThisDeviceTapped: return "settings_sync_back_up_this_device_tapped"
+        case .recoverSyncedDataTapped: return "settings_sync_recover_synced_data_tapped"
+        case .recoveryConfirmedTapped: return "settings_sync_recovery_confirmed_tapped"
         case .anotherDevicePromptShown: return "settings_sync_another_device_prompt_shown"
         case .anotherDevicePromptOptionTapped: return "settings_sync_another_device_prompt_option_tapped"
         case .authenticationCancelledPromptShown: return "settings_sync_authentication_cancelled_prompt_shown"
+        case .authenticationCancelledPromptRetryTapped: return "settings_sync_authentication_cancelled_prompt_retry_tapped"
+        case .authenticationCancelledPromptDismissed: return "settings_sync_authentication_cancelled_prompt_dismissed"
+        case .authenticationCancelledPromptRetrySucceeded: return "settings_sync_authentication_cancelled_prompt_retry_succeeded"
+        case .authenticationCancelledPromptRetryFailed: return "settings_sync_authentication_cancelled_prompt_retry_failed"
+        case .successScreenShown: return "settings_sync_success_screen_shown"
+        case .successScreenCopyCodeTapped: return "settings_sync_success_screen_copy_code_tapped"
+        case .successScreenDownloadRecoveryPDFTapped: return "settings_sync_success_screen_download_recovery_pdf_tapped"
+        case .successScreenDoneTapped: return "settings_sync_success_screen_done_tapped"
+        case .thisDeviceDetailsScreenShown: return "settings_sync_this_device_details_screen_shown"
+        case .thisDeviceDetailsNameUpdated: return "settings_sync_this_device_details_name_updated"
+        case .thisDeviceDetailsTurnOffSyncTapped: return "settings_sync_this_device_details_turn_off_sync_tapped"
+        case .otherDeviceDetailsScreenShown: return "settings_sync_other_device_details_screen_shown"
+        case .otherDeviceDetailsRemoveDeviceTapped: return "settings_sync_other_device_details_remove_device_tapped"
         }
     }
 
     var parameters: [String: String]? {
         switch self {
-        case .anotherDevicePromptShown:
-            return nil
+        case .settingsScreenShown(let isSyncEnabled):
+            return [ParameterKey.isEnabled: isSyncEnabled ? "1" : "0"]
         case .anotherDevicePromptOptionTapped(let option):
             return [ParameterKey.syncPromptOption: option.rawValue]
-        case .authenticationCancelledPromptShown:
+        default:
             return nil
         }
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
-        switch self {
-        case .anotherDevicePromptShown,
-                .anotherDevicePromptOptionTapped,
-                .authenticationCancelledPromptShown:
-            return [.pixelSource]
-        }
+        [.pixelSource]
     }
 }
 

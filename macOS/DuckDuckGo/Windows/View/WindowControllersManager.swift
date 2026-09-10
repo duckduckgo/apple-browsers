@@ -672,8 +672,6 @@ extension WindowControllersManager: OnboardingNavigating {
         DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false)
     }
 
-    /// Whether a tab is already hosting async onboarding. The reference is weak, so this goes back to
-    /// `false` on its own once that tab is gone.
     @MainActor
     var hasOnboardingTab: Bool { onboardingTab != nil }
 
@@ -718,10 +716,7 @@ extension WindowControllersManager: OnboardingNavigating {
         handler()
     }
 
-    /// Releases the onboarding tab without recording anything. Deliberately leaves
-    /// `onboardingTabCancellable` alone: the content subscription is `.first()` and retires itself,
-    /// and cancelling it from inside its own sink would release the cancellable while the content
-    /// subject is still delivering.
+    // Let `.first()` finish the content subscription instead of cancelling it during delivery.
     @MainActor
     private func clearOnboardingTracking() {
         onboardingSkipInPlaceHandler = nil

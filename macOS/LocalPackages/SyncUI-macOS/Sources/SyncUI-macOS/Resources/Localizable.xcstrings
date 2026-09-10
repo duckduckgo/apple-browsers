@@ -4632,7 +4632,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Sync & Backup is end-to-end encrypted. macOS will ask for an authentication method."
+            "value" : "You need to authenticate to turn on Sync & Backup. macOS will ask for an authentication method."
           }
         },
         "es" : {
@@ -4692,7 +4692,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Authenticate to enable Sync & Backup"
+            "value" : "Please give it another try!"
           }
         },
         "es" : {

@@ -190,6 +190,8 @@ class FloatingUIXCUITestCase: XCTestCase {
     func verifyAddressBarButtonMenus() {
         app.terminate()
         launchApp(additionalArguments: [
+            "-ff.contextualDuckAIMode", "true",
+            "-ff.pageContextFeature", "true",
             "-ff.aiChatContextualFloatingInput", "true",
             "-ff.aiChatNativeChatHistory", "true",
             "-ff.aiChatAddressBarRecentChats", "true",

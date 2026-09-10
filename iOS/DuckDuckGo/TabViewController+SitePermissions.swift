@@ -71,6 +71,7 @@ final class SitePermissionsState {
     fileprivate var recoveryToken: UInt?
     fileprivate var nextRecoveryToken: UInt = 0
     fileprivate var eventHandler: (SitePermissionsEvent) -> Void = { _ in }
+    fileprivate var cancelGrantAnimation: () -> Void = {}
     fileprivate struct PendingBridgeRequest {
         let context: SitePermissionRequestContext
         let frame: WKFrameInfo
@@ -216,6 +217,7 @@ final class SitePermissionsState {
     }
 
     fileprivate func resetRequests(for pageChange: SitePermissionPageChange) {
+        cancelGrantAnimation()
         if pageChange == .webContentProcessReplacement {
             cancelContentBlockingWaits()
         }
@@ -254,6 +256,7 @@ final class SitePermissionsState {
     }
 
     func close() {
+        cancelGrantAnimation()
         cancelContentBlockingWaits()
         featureFlagSubscription = nil
         geolocationActivitySubscription = nil
@@ -290,6 +293,10 @@ extension TabViewController {
     }
 
     func subscribeToSitePermissionsChanges() {
+        sitePermissionsState.cancelGrantAnimation = { [weak self] in
+            guard let self else { return }
+            self.delegate?.tabDidCancelSitePermissionAnimation(self)
+        }
         sitePermissionsState.featureFlagSubscription = featureFlagger.updatesPublisher
             .receive(on: DispatchQueue.main)
             .map { [weak self] in self?.isMediaCapturePermissionHandlingEnabled == true }
@@ -484,7 +491,13 @@ extension TabViewController {
             decisionHandler(.deny)
             return
         }
+        showSitePermissionGrantAnimation(for: permissionTypes)
         decisionHandler(.grant)
+    }
+
+    private func showSitePermissionGrantAnimation(for permissionTypes: Set<SitePermissionType>) {
+        guard featureFlagger.isFeatureOn(.sitePermissions) else { return }
+        delegate?.tab(self, didGrantSitePermissions: permissionTypes)
     }
 
     var isSitePermissionsManagementAvailable: Bool {
@@ -820,8 +833,13 @@ extension TabViewController {
                 self?.sitePermissionsState.coordinator?.queryState(for: .location, context: context) ?? .denied
             }
         )
-        provider.locationActivityHandler = { [weak coordinator = sitePermissionsState.coordinator] state in
-            coordinator?.updateGeolocationCaptureState(state)
+        provider.locationActivityHandler = { [weak self, weak coordinator = sitePermissionsState.coordinator] state in
+            guard let coordinator else { return }
+            let previousState = coordinator.captureStates[.location]
+            coordinator.updateGeolocationCaptureState(state)
+            if state == .active, previousState == nil || previousState == .inactive {
+                self?.showSitePermissionGrantAnimation(for: [.location])
+            }
         }
         sitePermissionsState.storeChangeCancellable = dependencies.store.changesPublisher
             .sink { [weak provider] _ in
@@ -851,7 +869,11 @@ extension TabViewController {
 
     func setSitePermissionsGeolocationActive(_ isActive: Bool) {
         sitePermissionsState.isGeolocationActive = isActive
-        sitePermissionsState.geolocationProvider?.setIsActive(isActive && !sitePermissionsState.isGeolocationBackgrounded)
+        let isForeground = isActive && !sitePermissionsState.isGeolocationBackgrounded
+        if !isForeground {
+            sitePermissionsState.cancelGrantAnimation()
+        }
+        sitePermissionsState.geolocationProvider?.setIsActive(isForeground)
     }
 
     private func shouldActivateSitePermissionsGeolocation(in frame: GeolocationFrame) -> Bool {
@@ -1253,6 +1275,7 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
 
     func configureSitePermissionsMediaCapture(with userScript: MediaCaptureUserScript?) {
         guard let userScript else {
+            sitePermissionsState.cancelGrantAnimation()
             // Existing geolocation documents remain managed until navigation commits.
             sitePermissionsState.bypassPendingBridgeRequests()
             sitePermissionsState.discardPreapprovals()

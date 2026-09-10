@@ -44,6 +44,7 @@ import PixelKit
 import PrivacyConfig
 import PrivacyDashboard
 import RemoteMessaging
+import SitePermissions
 import Subscription
 import Suggestions
 import SwiftUI
@@ -194,6 +195,7 @@ class MainViewController: UIViewController {
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
     private var isDownloadMenuAlertVisible: Bool?
+    private weak var sitePermissionAnimationTab: TabViewController?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
     }
@@ -7190,6 +7192,27 @@ extension MainViewController: TabDelegate {
     func tabDidRequestPresentingYouTubeAdBlockAnimation(tab: TabViewController) {
         guard currentTab === tab else { return }
         viewCoordinator.omniBar?.showYouTubeAdBlockNotification()
+    }
+
+    func tab(_ tab: TabViewController, didGrantSitePermissions permissionTypes: Set<SitePermissionType>) {
+        guard currentTab === tab, featureFlagger.isFeatureOn(.sitePermissions) else { return }
+        let images = SitePermissionType.allCases.filter(permissionTypes.contains).map { permissionType in
+            switch permissionType {
+            case .camera: return DesignSystemImages.Glyphs.Size16.permissionCameraSolid
+            case .microphone: return DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid
+            case .location: return DesignSystemImages.Glyphs.Size16.locationSolid
+            }
+        }
+        sitePermissionAnimationTab = tab
+        viewCoordinator.menuToolbarButton.animateSitePermissionGranted(images)
+        viewCoordinator.omniBar.barView.menuButton.animateSitePermissionGranted(images)
+    }
+
+    func tabDidCancelSitePermissionAnimation(_ tab: TabViewController) {
+        guard sitePermissionAnimationTab === tab else { return }
+        viewCoordinator.menuToolbarButton.cancelSitePermissionAnimation()
+        viewCoordinator.omniBar.barView.menuButton.cancelSitePermissionAnimation()
+        sitePermissionAnimationTab = nil
     }
 
     func tabDidRequestShowingMenuHighlighter(tab: TabViewController) {

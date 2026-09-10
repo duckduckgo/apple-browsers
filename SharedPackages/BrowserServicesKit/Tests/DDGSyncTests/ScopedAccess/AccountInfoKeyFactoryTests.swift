@@ -27,7 +27,7 @@ final class AccountInfoKeyFactoryTests: XCTestCase {
 
     func testWhenThirdPartyMainKeyIsUnavailableThenCreatesRSA3072DefaultCredentialWrapper() throws {
         let crypter = CryptingMock()
-        let factory = AccountInfoKeyFactory(crypter: crypter)
+        let factory = DefaultAccountInfoKeyFactory(crypter: crypter)
 
         let protectedKeys = try factory.makeProtectedKeys(accountSecretKey: accountSecretKey)
 
@@ -41,7 +41,7 @@ final class AccountInfoKeyFactoryTests: XCTestCase {
 
     func testWhenThirdPartyMainKeyIsAvailableThenWrapsSameRSA3072PrivateKeyForBothCredentials() throws {
         let crypter = CryptingMock()
-        let factory = AccountInfoKeyFactory(crypter: crypter)
+        let factory = DefaultAccountInfoKeyFactory(crypter: crypter)
 
         let protectedKeys = try factory.makeProtectedKeys(accountSecretKey: accountSecretKey,
                                                           thirdPartyMainKey: thirdPartyMainKey)

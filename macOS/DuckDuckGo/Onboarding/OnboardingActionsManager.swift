@@ -298,11 +298,10 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     func onboardingStarted(from webView: WKWebView?) {
-        let isNonBlocking = nonBlockingExperiment.isNonBlocking
-        let messageCameFromOnboardingTab = navigation.onboardingTab(for: webView) != nil
-        guard !isNonBlocking || (canEndOnboarding && messageCameFromOnboardingTab) else { return }
-
-        if !isNonBlocking {
+        if nonBlockingExperiment.isNonBlocking {
+            guard canEndOnboarding,
+                  navigation.onboardingTab(for: webView) != nil else { return }
+        } else {
             navigation.updatePreventUserInteraction(prevent: true)
         }
 

@@ -512,6 +512,30 @@ final class SubscriptionURLTests: XCTestCase {
         XCTAssertEqual(pirURL?.absoluteString, "https://duckduckgo.com/subscriptions/v2/pir?trial=false")
     }
 
+    func testPerformanceOptimizedPaywallPathsMakePurchaseRedirectComponents() throws {
+        let paths = SubscriptionURL.PerformanceOptimizedPaywallPaths(vpn: "/subscriptions/v2/vpn",
+                                                                    duckai: "/subscriptions/v2/duckai",
+                                                                    pir: "/subscriptions/v2/pir")
+        let testCases = [
+            (path: "/subscriptions/v2/vpn", featurePage: "vpn"),
+            (path: "/subscriptions/v2/duckai", featurePage: "duckai"),
+            (path: "/subscriptions/v2/pir", featurePage: "pir")
+        ]
+
+        for testCase in testCases {
+            let source = try XCTUnwrap(URLComponents(
+                string: "https://duckduckgo.com\(testCase.path)?origin=test&featurePage=stale"))
+
+            let redirect = paths.purchaseRedirectComponents(from: source)
+
+            XCTAssertEqual(redirect?.url?.absoluteString,
+                           "https://duckduckgo.com/subscriptions?origin=test&featurePage=\(testCase.featurePage)")
+        }
+
+        let unknown = try XCTUnwrap(URLComponents(string: "https://duckduckgo.com/subscriptions/v2/unknown"))
+        XCTAssertNil(paths.purchaseRedirectComponents(from: unknown))
+    }
+
     /// `featurePage`, `trial` and `pir` are the only names the rewrite owns. Everything the URL arrived
     /// with — attribution, environment, experiment cohorts, whatever the frontend attached — carries
     /// over in its original order.

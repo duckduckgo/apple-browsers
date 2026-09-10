@@ -69,6 +69,24 @@ extension SubscriptionURL {
             case .pir: pir
             }
         }
+
+        /// Converts a pre-rendered paywall URL into the canonical redirect understood by the native purchase flow.
+        public func purchaseRedirectComponents(from components: URLComponents) -> URLComponents? {
+            guard let entryPoint = entryPoint(for: components.path) else { return nil }
+
+            var redirectComponents = components
+            redirectComponents.path = SubscriptionPurchaseFlowPath.purchase.rawValue
+
+            var queryItems = redirectComponents.percentEncodedQueryItems ?? []
+            queryItems.removeAll { $0.name == QueryParameter.featurePage }
+            queryItems.append(URLQueryItem(name: QueryParameter.featurePage, value: entryPoint.rawValue))
+            redirectComponents.percentEncodedQueryItems = queryItems
+            return redirectComponents
+        }
+
+        private func entryPoint(for path: String) -> PerformanceOptimizedPaywallEntryPoint? {
+            PerformanceOptimizedPaywallEntryPoint.allCases.first { self.path(for: $0) == path }
+        }
     }
 
     /// Rewrites a first-paywall URL onto its pre-rendered page.

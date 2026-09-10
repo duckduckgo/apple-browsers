@@ -24,8 +24,7 @@ import WideEvent
 
 /// # Session Health Telemetry
 ///
-/// One event is open at a time, from a WireGuard tunnel coming up until the provider stops, cancels, or the next configured UTC rollover boundary.
-/// Rollover boundaries are detected on the next instrumentation callback.
+/// One event is open at a time, from a WireGuard tunnel coming up until the provider stops or cancels.
 /// It answers one question: did an already-running VPN stay healthy, including while nominally connected but not routing.
 public protocol VPNSessionHealthInstrumentation: AnyObject, Sendable {
 
@@ -86,19 +85,15 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
 
     private let lock = NSLock()
     private var currentEvent: VPNSessionHealthWideEventData?
-    private let isDebugRolloverEnabled: @Sendable () -> Bool
-    private var rolloverSchedule = VPNSessionHealthRolloverSchedule()
 
     public init(wideEvent: WideEventManaging,
                 extensionType: VPNConnectionWideEventData.ExtensionType,
                 isTelemetryEnabled: @escaping @Sendable () -> Bool,
-                isDebugRolloverEnabled: @escaping @Sendable () -> Bool = { false },
                 now: @escaping @Sendable () -> Date = { Date() }) {
         self.wideEvent = wideEvent
         self.extensionType = extensionType
         self.isTelemetryEnabled = isTelemetryEnabled
         self.now = now
-        self.isDebugRolloverEnabled = isDebugRolloverEnabled
         Logger.networkProtectionSessionHealth.debug("Initialized session health instrumentation")
     }
 
@@ -203,8 +198,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
         }
 
         let timestamp = now()
-        let event = rolloverEventIfNeededInLock(previous, at: timestamp)
-        var next = transition(event, timestamp)
+        var next = transition(previous, timestamp)
         next.lastObservedAt = timestamp
 
         if completeEventIfEnded(next) {
@@ -228,10 +222,6 @@ private extension DefaultVPNSessionHealthInstrumentation {
             return
         }
 
-        // Startup settings arrive after instrumentation is constructed. Capture them once per physical start.
-        rolloverSchedule = VPNSessionHealthRolloverSchedule(isDebugRolloverEnabled: isDebugRolloverEnabled())
-        Logger.networkProtectionSessionHealth.log("Session health rollover interval: \(self.rolloverSchedule.interval, privacy: .public) seconds")
-
         let nextEvent = VPNSessionHealthWideEventData(startReason: reason, startedAt: now(), extensionType: extensionType, globalData: WideEventGlobalData())
         beginEventInLock(nextEvent)
     }
@@ -240,20 +230,6 @@ private extension DefaultVPNSessionHealthInstrumentation {
 // MARK: - Private: Non-locking Methods
 
 private extension DefaultVPNSessionHealthInstrumentation {
-
-    /// Closes at the configured UTC rollover boundary when the next callback arrives.
-    func rolloverEventIfNeededInLock(_ event: VPNSessionHealthWideEventData, at timestamp: Date) -> VPNSessionHealthWideEventData {
-        guard let rollover = rolloverSchedule.rolloverDates(from: event.startedAt, to: timestamp) else {
-            return event
-        }
-
-        completeEventIfEnded(event.markingStoppedForRollover(at: rollover.endedAt))
-
-        let nextEvent = event.makingNextEventAfterRollover(at: rollover.startedAt, globalData: WideEventGlobalData())
-        beginEventInLock(nextEvent)
-
-        return nextEvent
-    }
 
     func beginEventInLock(_ fresh: VPNSessionHealthWideEventData) {
         currentEvent = fresh

@@ -320,8 +320,8 @@
             {
                 "key": "feature.data.ext.start_reason",
                 "type": "string",
-                "description": "Why the event began. On the first callback after a rollover boundary, the existing event closes at its scheduled boundary and a successor opens at the start of the callback's current interval. Intermediate intervals are not backfilled; observations retain their actual timestamps.",
-                "enum": ["physical_tunnel_manual_start", "physical_tunnel_on_demand_start", "rollover"]
+                "description": "Why the event began.",
+                "enum": ["physical_tunnel_manual_start", "physical_tunnel_on_demand_start"]
             },
             {
                 "key": "feature.data.ext.end_reason",
@@ -334,7 +334,6 @@
                     "stopped_without_network",
                     "cancelled_with_error",
                     "restarted_without_stop",
-                    "rolled_over",
                     "process_died"
                 ]
             },

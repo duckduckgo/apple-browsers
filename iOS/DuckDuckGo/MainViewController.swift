@@ -7196,16 +7196,10 @@ extension MainViewController: TabDelegate {
 
     func tab(_ tab: TabViewController, didGrantSitePermissions permissionTypes: Set<SitePermissionType>) {
         guard currentTab === tab, featureFlagger.isFeatureOn(.sitePermissions) else { return }
-        let images = SitePermissionType.allCases.filter(permissionTypes.contains).map { permissionType in
-            switch permissionType {
-            case .camera: return DesignSystemImages.Glyphs.Size16.permissionCameraSolid
-            case .microphone: return DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid
-            case .location: return DesignSystemImages.Glyphs.Size16.locationSolid
-            }
-        }
+        let orderedPermissionTypes = SitePermissionType.allCases.filter(permissionTypes.contains)
         sitePermissionAnimationTab = tab
-        viewCoordinator.menuToolbarButton.animateSitePermissionGranted(images)
-        viewCoordinator.omniBar.barView.menuButton.animateSitePermissionGranted(images)
+        viewCoordinator.menuToolbarButton.animateSitePermissionGranted(orderedPermissionTypes)
+        viewCoordinator.omniBar.barView.menuButton.animateSitePermissionGranted(orderedPermissionTypes)
     }
 
     func tabDidCancelSitePermissionAnimation(_ tab: TabViewController) {

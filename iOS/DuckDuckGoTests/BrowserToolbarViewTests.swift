@@ -18,6 +18,7 @@
 //
 
 import DesignResourcesKitIcons
+import SitePermissions
 import XCTest
 @testable import DuckDuckGo
 
@@ -522,6 +523,40 @@ final class BrowserToolbarViewTests: XCTestCase {
 @MainActor
 final class SitePermissionMenuAnimationTests: XCTestCase {
 
+    func testWhenBadgesAreShownThenVisibleSizesAreComparableAndClearTheMenuDuringTheSpring() throws {
+        // Visible bounds of the paths in the shared 16 pt SVG assets, excluding transparent padding.
+        let glyphs: [(SitePermissionType, CGRect)] = [
+            (.location, CGRect(x: 0, y: 0, width: 16, height: 16)),
+            (.camera, CGRect(x: 1, y: 3, width: 13.75, height: 10)),
+            (.microphone, CGRect(x: 2, y: 0, width: 12, height: 16))
+        ]
+        let button = BrowserChromeButton(.toolbar)
+        button.frame = CGRect(x: 0, y: 0, width: 44, height: 44)
+        button.setMenuAlertVisible(false, animated: false)
+        button.layoutIfNeeded()
+        let originalSubviews = button.subviews
+        var referenceArea: CGFloat?
+
+        for (permissionType, visibleBounds) in glyphs {
+            button.animateSitePermissionGranted([permissionType], reduceMotion: true)
+            defer { button.cancelSitePermissionAnimation() }
+            let badge = try XCTUnwrap(button.subviews.first { !originalSubviews.contains($0) } as? UIImageView)
+            let menuImageView = try XCTUnwrap(button.imageView)
+            let scale = badge.bounds.width / 16
+            let visibleArea = visibleBounds.width * visibleBounds.height * scale * scale
+            if let referenceArea {
+                XCTAssertEqual(visibleArea / referenceArea, 1, accuracy: 0.1)
+            } else {
+                referenceArea = visibleArea
+            }
+
+            let center = button.convert(badge.center, to: menuImageView)
+            let leftEdgeAtSpringPeak = center.x + (visibleBounds.minX - 8) * scale * 1.31
+            XCTAssertGreaterThan(leftEdgeAtSpringPeak, 11, "The badge must clear the shortened menu bars even at the spring peak")
+            XCTAssertEqual(badge.bounds.width, badge.bounds.height, "Preserve each square asset's aspect ratio")
+        }
+    }
+
     func testWhenCancelledThenDownloadIndicatorAndMenuAccessibilityAreRestored() throws {
         let button = UIButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
         button.accessibilityLabel = "Menu"
@@ -529,9 +564,7 @@ final class SitePermissionMenuAnimationTests: XCTestCase {
         let originalImage = try XCTUnwrap(button.image(for: .normal))
         let originalSubviews = button.subviews
         let downloadIndicator = try XCTUnwrap(originalSubviews.first { $0 is UIImageView && $0 !== button.imageView })
-        let badgeImage = DesignSystemImages.Glyphs.Size16.locationSolid
-
-        button.animateSitePermissionGranted([badgeImage], reduceMotion: false)
+        button.animateSitePermissionGranted([.location], reduceMotion: false)
 
         XCTAssertTrue(downloadIndicator.isHidden)
         XCTAssertNotNil(button.imageView?.layer.mask)
@@ -559,9 +592,7 @@ final class SitePermissionMenuAnimationTests: XCTestCase {
         }
         button.setMenuAlertVisible(false, animated: false)
         let originalSubviews = button.subviews
-        let badgeImage = DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid
-
-        button.animateSitePermissionGranted([badgeImage], reduceMotion: true)
+        button.animateSitePermissionGranted([.microphone], reduceMotion: true)
         CATransaction.flush()
 
         let badge = try XCTUnwrap(button.subviews.first { !originalSubviews.contains($0) })
@@ -587,15 +618,14 @@ final class SitePermissionMenuAnimationTests: XCTestCase {
         }
         let originalImages = buttons.map { $0.configuration?.image ?? $0.image(for: .normal) }
         let originalSubviews = buttons.map(\.subviews)
-        let badgeImage = DesignSystemImages.Glyphs.Size16.permissionCameraSolid
         let secondBadgeImage = DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid
-        buttons[0].animateSitePermissionGranted([badgeImage, secondBadgeImage], reduceMotion: false)
-        buttons[1].animateSitePermissionGranted([badgeImage], reduceMotion: false)
-        buttons[2].animateSitePermissionGranted([badgeImage, secondBadgeImage], reduceMotion: false)
+        buttons[0].animateSitePermissionGranted([.camera, .microphone], reduceMotion: false)
+        buttons[1].animateSitePermissionGranted([.camera], reduceMotion: false)
+        buttons[2].animateSitePermissionGranted([.camera, .microphone], reduceMotion: false)
         buttons[2].cancelSitePermissionAnimation()
 
         let secondBadgeAppeared = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            buttons[0].subviews.contains { ($0 as? UIImageView)?.image === secondBadgeImage }
+            buttons[0].subviews.contains { ($0 as? UIImageView)?.image == secondBadgeImage }
         }, object: nil)
         await fulfillment(of: [secondBadgeAppeared], timeout: 5)
 

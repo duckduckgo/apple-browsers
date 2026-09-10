@@ -22,6 +22,7 @@ import os.log
 import ObjectiveC
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import SitePermissions
 
 class BrowserChromeButton: UIButton {
 
@@ -362,9 +363,15 @@ extension UIButton {
         shrinkAnimator.startAnimation()
     }
 
-    func animateSitePermissionGranted(_ images: [UIImage], reduceMotion: Bool = UIAccessibility.isReduceMotionEnabled) {
+    func animateSitePermissionGranted(_ permissionTypes: [SitePermissionType], reduceMotion: Bool = UIAccessibility.isReduceMotionEnabled) {
         cancelSitePermissionAnimation()
-        guard let image = images.first else { return }
+        guard let permissionType = permissionTypes.first else { return }
+        // Account for each glyph's padding and proportions, using location as the visual size reference.
+        let (image, badgeSize, horizontalOffset): (UIImage, CGFloat, CGFloat) = switch permissionType {
+        case .camera: (DesignSystemImages.Glyphs.Size16.permissionCameraSolid, 15, 8)
+        case .microphone: (DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid, 13, 6.5)
+        case .location: (DesignSystemImages.Glyphs.Size16.locationSolid, 11, 6.5)
+        }
 
         let state = menuAlertState
         state.cancelAnimation()
@@ -381,10 +388,10 @@ extension UIButton {
         badge.tintColor = UIColor(designSystemColor: .buttonsDeleteGhostText)
         addSubview(badge)
         NSLayoutConstraint.activate([
-            badge.centerXAnchor.constraint(equalTo: menuImageView.centerXAnchor, constant: 6.5),
+            badge.centerXAnchor.constraint(equalTo: menuImageView.centerXAnchor, constant: horizontalOffset),
             badge.centerYAnchor.constraint(equalTo: menuImageView.centerYAnchor, constant: 4),
-            badge.widthAnchor.constraint(equalToConstant: 11),
-            badge.heightAnchor.constraint(equalToConstant: 11),
+            badge.widthAnchor.constraint(equalToConstant: badgeSize),
+            badge.heightAnchor.constraint(equalToConstant: badgeSize),
         ])
         layoutIfNeeded()
         state.permissionBadge = badge
@@ -413,8 +420,8 @@ extension UIButton {
             exit.addCompletion { [weak self] position in
                 guard let self, position == .end else { return }
                 self.cancelSitePermissionAnimation()
-                if images.count > 1 {
-                    self.animateSitePermissionGranted(Array(images.dropFirst()), reduceMotion: reduceMotion)
+                if permissionTypes.count > 1 {
+                    self.animateSitePermissionGranted(Array(permissionTypes.dropFirst()), reduceMotion: reduceMotion)
                 }
             }
             self.menuAlertState.permissionAnimator = exit

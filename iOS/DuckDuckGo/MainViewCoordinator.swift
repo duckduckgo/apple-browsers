@@ -707,6 +707,11 @@ class MainViewCoordinator {
         applyResolvedStatusBackgroundColor()
     }
 
+    /// True while the navy voice strip is painted behind the status bar, so the VC can light its icons.
+    var isVoiceModeStatusBackgroundActive: Bool {
+        voiceModeBackgroundColor != nil
+    }
+
     @MainActor
     func showUnifiedInputContent() {
         unifiedInputContentContainer.isHidden = false

@@ -112,6 +112,9 @@ class MainViewController: UIViewController {
     private static let shakeIgnoreIntervalAfterForeground: TimeInterval = 1.0
 
     override var preferredStatusBarStyle: UIStatusBarStyle {
+        if viewCoordinator?.isVoiceModeStatusBackgroundActive == true {
+            return .lightContent
+        }
         return ThemeManager.shared.currentTheme.statusBarStyle
     }
 

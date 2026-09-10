@@ -179,6 +179,7 @@ extension MainViewController {
         let backgroundColor = voiceChromeActive ? voiceModeBackgroundColor : nil
         aiChatTabChatHeaderView?.setVoiceSessionActive(voiceChromeActive, backgroundColor: backgroundColor)
         viewCoordinator.setVoiceMode(backgroundColor: backgroundColor)
+        setNeedsStatusBarAppearanceUpdate()
     }
 
     /// The exact colour the FE sent via `voiceModeOpened`, falling back to the design-system token.

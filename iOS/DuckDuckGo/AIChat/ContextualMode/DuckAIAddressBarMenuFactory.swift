@@ -25,14 +25,15 @@ import UIKit
 /// Builds the address-bar Duck.ai menu for new chats, page questions, and chat history.
 enum DuckAIAddressBarMenuFactory {
 
-    /// Groups New Chat and Ask About Page above a separator, with All Chats below.
+    /// Groups New Chat and the page-context action above a separator, with All Chats below. The second
+    /// action's copy depends on `type`: Ask About Page / Ask About Document / Continue in Duck.ai.
     static func makeActions(featureFlagger: FeatureFlagger,
                             userInterfaceIdiom: UIUserInterfaceIdiom,
                             type: DuckAIAddressBarMenuType,
                             onNewChat: @escaping () -> Void,
-                            onAskAboutPage: @escaping () -> Void,
+                            onContextAction: @escaping () -> Void,
                             onRecentChats: @escaping () -> Void) -> [UIMenuElement] {
-        let askAboutTitle: String = {
+        let contextActionTitle: String = {
             switch type {
             case .webPage:
                 UserText.aiChatAttachmentOptionAskAboutPage
@@ -48,9 +49,9 @@ enum DuckAIAddressBarMenuFactory {
                          image: DesignSystemImages.Glyphs.Size16.compose) { _ in
                     onNewChat()
                 },
-                UIAction(title: askAboutTitle,
+                UIAction(title: contextActionTitle,
                          image: DesignSystemImages.Glyphs.Size16.chevronCircleDown) { _ in
-                    onAskAboutPage()
+                    onContextAction()
                 }
             ])
         ]
@@ -67,5 +68,3 @@ enum DuckAIAddressBarMenuFactory {
         return groups
     }
 }
-
-

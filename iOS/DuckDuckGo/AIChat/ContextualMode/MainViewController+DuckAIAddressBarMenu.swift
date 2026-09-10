@@ -157,13 +157,13 @@ extension MainViewController {
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuNewChatSelected()
                 self?.openFreshDuckAIChatFromAddressBarMenu()
             },
-            onAskAboutPage: { [weak self] in
+            onContextAction: { [weak self] in
                 switch type {
                 case .webPage, .document:
                     self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutPageSelected()
                     self?.askAboutCurrentPageFromAddressBar()
                 case .search(let query):
-                    self?.duckAIAddressBarPixelHandler.fireAddressBarMenuNewChatSelected()
+                    // TODO: fire a dedicated "ask about search" pixel (handled in the project pixel task).
                     self?.openFreshDuckAIChatFromAddressBarMenu(with: query)
                 }
             },
@@ -180,9 +180,10 @@ extension MainViewController {
     }
 
     /// `openAIChat()` rather than `openAIChatFromAddressBar`: the latter sends the omnibar's text as
-    /// a prompt whenever the field is being edited, and New Chat must always open empty.
+    /// a prompt whenever the field is being edited. New Chat opens empty (`query == nil`); the SERP
+    /// "Continue in Duck.ai" action passes the search query and auto-sends it.
     private func openFreshDuckAIChatFromAddressBarMenu(with query: String? = nil) {
         omniBar.endEditing()
-        openAIChat(source: .addressBarIcon, query, autoSend: true)
+        openAIChat(source: .addressBarIcon, query, autoSend: query != nil)
     }
 }

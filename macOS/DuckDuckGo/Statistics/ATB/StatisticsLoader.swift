@@ -109,13 +109,11 @@ final class StatisticsLoader {
     }
 
     /// Uses the same search events (including Duck.ai) as the automatic 5...7 guardrail.
-    static func fireOnboardingNonBlockingSearchRetentionExperimentPixel() {
-        PixelKit.fireExperimentPixelIfThresholdReached(
-            for: MacOSBrowserConfigSubfeature.onboardingNonBlocking.rawValue,
-            metric: PixelKit.Constants.searchMetricValue,
-            conversionWindowDays: 1...3,
-            threshold: 1
-        )
+    static func fireOnboardingNonBlockingSearchRetentionExperimentPixel(
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+        persistor: NonBlockingOnboardingPersistor = NonBlockingOnboardingPersistor()
+    ) {
+        OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).fireSearchRetention(persistor: persistor)
     }
 
     /// Fires the search experiment metric for a Duck.ai prompt, but only for experiments that should count

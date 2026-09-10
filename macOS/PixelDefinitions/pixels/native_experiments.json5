@@ -75,6 +75,14 @@
                 "setAsDefaultEnabled": {
                     "description": "DuckDuckGo was set as the default browser",
                     "enum": ["true"]
+                },
+                "search_onboarding_completed": {
+                    "description": "A search in D1-3 happened after onboarding was completed",
+                    "enum": ["1"]
+                },
+                "search_onboarding_not_completed": {
+                    "description": "A search in D1-3 happened before onboarding was completed; expected in the treatment cohort only",
+                    "enum": ["1"]
                 }
             }
         }

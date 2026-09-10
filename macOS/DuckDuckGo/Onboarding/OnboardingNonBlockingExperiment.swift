@@ -70,4 +70,30 @@ struct OnboardingNonBlockingExperiment {
             )
         }
     }
+
+    // MARK: - Search retention segmentation
+
+    /// Splits D1-3 search retention by whether onboarding had been completed at the time of the search.
+    /// Each segment fires at most once per window, so a user who completes onboarding between two
+    /// searches in the window can appear in both.
+    enum SearchRetentionSegment: String {
+        case onboardingCompleted = "search_onboarding_completed"
+        case onboardingNotCompleted = "search_onboarding_not_completed"
+    }
+
+    static let searchRetentionWindow: ClosedRange<Int> = 1...3
+
+    /// Fires the D1-3 search retention metric and the segment matching the current onboarding state.
+    /// The framework handles enrollment, window and once-per-window checks.
+    func fireSearchRetention(persistor: NonBlockingOnboardingPersistor = NonBlockingOnboardingPersistor()) {
+        let segment: SearchRetentionSegment = persistor.outcome == .completed ? .onboardingCompleted : .onboardingNotCompleted
+        for metric in [PixelKit.Constants.searchMetricValue, segment.rawValue] {
+            PixelKit.fireExperimentPixelIfThresholdReached(
+                for: Self.subfeatureID,
+                metric: metric,
+                conversionWindowDays: Self.searchRetentionWindow,
+                threshold: 1
+            )
+        }
+    }
 }

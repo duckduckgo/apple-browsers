@@ -17,6 +17,7 @@
 //
 
 import FeatureFlags_macOS
+@_spi(Testing) import Persistence
 import PixelExperimentKit
 import PixelKit
 import PrivacyConfig
@@ -27,9 +28,11 @@ import XCTest
 final class OnboardingNonBlockingExperimentTests: XCTestCase {
 
     private var firedEvents: [PixelKit.Event]!
+    private var firedFrequencies: [PixelKit.Frequency]!
 
     override func setUp() {
         firedEvents = []
+        firedFrequencies = []
     }
 
     override func tearDown() {
@@ -37,6 +40,7 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
                                         eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
                                         fire: { _, _, _ in })
         firedEvents = nil
+        firedFrequencies = nil
     }
 
     func testSearchUnionWindowIncludesOnlyDaysOneThroughThree() {
@@ -46,10 +50,62 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
             let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
             configureExperimentKit(cohort: cohort, featureFlagger: featureFlagger,
                                    enrollmentDate: Calendar.current.date(byAdding: .day, value: -day, to: Date())!)
-            StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel()
+            StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel(featureFlagger: featureFlagger,
+                                                                                    persistor: makePersistor())
             let searchEvents = firedEvents.filter { $0.parameters?["metric"] == "search" }
             XCTAssertEqual(searchEvents.count, (1...3).contains(day) ? 1 : 0, "Day \(day)")
+            let segmentEvents = firedEvents.filter { $0.parameters?["metric"]?.hasPrefix("search_onboarding_") == true }
+            XCTAssertEqual(segmentEvents.count, (1...3).contains(day) ? 1 : 0, "Day \(day)")
         }
+    }
+
+    func testSearchRetentionSegmentFollowsOnboardingOutcomeForBothCohorts() {
+        for cohort in [FeatureFlag.OnboardingNonBlockingCohort.control, .treatment] {
+            for outcome in [NonBlockingOnboardingPersistor.Outcome?.none, .skipped, .completed] {
+                firedEvents = []
+                let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
+                configureExperimentKit(cohort: cohort, featureFlagger: featureFlagger,
+                                       enrollmentDate: Calendar.current.date(byAdding: .day, value: -1, to: Date())!)
+                let persistor = makePersistor()
+                if let outcome { persistor.record(outcome) }
+
+                StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel(featureFlagger: featureFlagger,
+                                                                                        persistor: persistor)
+
+                let expectedSegment = outcome == .completed ? "search_onboarding_completed" : "search_onboarding_not_completed"
+                XCTAssertEqual(Set(firedEvents.compactMap { $0.parameters?["metric"] }), ["search", expectedSegment],
+                               "\(cohort) \(String(describing: outcome))")
+                XCTAssertTrue(firedEvents.allSatisfy { $0.parameters?["conversionWindowDays"] == "1-3" && $0.parameters?["value"] == "1" })
+            }
+        }
+    }
+
+    /// Once-per-window is enforced by PixelKit's frequency, not by the caller, so both segments can
+    /// reach PixelKit for a user who completes onboarding between two searches in the window.
+    func testSearchRetentionSegmentsFollowTheCurrentOutcomeAndAreUniqueByParameters() {
+        let cohort = FeatureFlag.OnboardingNonBlockingCohort.treatment
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
+        configureExperimentKit(cohort: cohort, featureFlagger: featureFlagger,
+                               enrollmentDate: Calendar.current.date(byAdding: .day, value: -2, to: Date())!)
+        let persistor = makePersistor()
+
+        StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel(featureFlagger: featureFlagger, persistor: persistor)
+        persistor.record(.completed)
+        StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel(featureFlagger: featureFlagger, persistor: persistor)
+
+        let metrics = firedEvents.compactMap { $0.parameters?["metric"] }
+        XCTAssertEqual(metrics, ["search", "search_onboarding_not_completed", "search", "search_onboarding_completed"])
+        XCTAssertTrue(firedFrequencies.allSatisfy { $0 == .uniqueByNameAndParameters })
+    }
+
+    func testSearchRetentionSegmentsDoNotFireWhenNotEnrolled() {
+        let featureFlagger = MockFeatureFlagger()
+        configureExperimentKit(cohort: nil, featureFlagger: featureFlagger)
+
+        StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel(featureFlagger: featureFlagger,
+                                                                                persistor: makePersistor())
+
+        XCTAssertTrue(firedEvents.isEmpty)
     }
 
     func testEnrollCallsResolveCohort() {
@@ -153,6 +209,10 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
 }
 
 private extension OnboardingNonBlockingExperimentTests {
+    func makePersistor() -> NonBlockingOnboardingPersistor {
+        NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
+    }
+
     func configureExperimentKit(cohort: FeatureFlag.OnboardingNonBlockingCohort?,
                                 featureFlagger: MockFeatureFlagger,
                                 enrollmentDate: Date = Date()) {
@@ -171,7 +231,10 @@ private extension OnboardingNonBlockingExperimentTests {
         PixelKit.configureExperimentKit(
             featureFlagger: featureFlagger,
             eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
-            fire: { [weak self] event, _, _ in self?.firedEvents?.append(event) }
+            fire: { [weak self] event, frequency, _ in
+                self?.firedEvents?.append(event)
+                self?.firedFrequencies?.append(frequency)
+            }
         )
     }
 }

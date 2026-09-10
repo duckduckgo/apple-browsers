@@ -244,7 +244,7 @@ final class PullToRefreshViewAdapter: NSObject {
             }
         case .changed:
             let translation = gesture.translation(in: pullableView)
-            handleVerticalChange(translationY: translation.y)
+            handleVerticalChange(translation: translation)
         case .ended, .cancelled:
             let shouldKeepRefreshVisible = refreshControl.isRefreshing && !didEndRefreshing
             resetPullState()
@@ -254,16 +254,18 @@ final class PullToRefreshViewAdapter: NSObject {
         }
     }
 
-    private func handleVerticalChange(translationY: CGFloat) {
+    private func handleVerticalChange(translation: CGPoint) {
         guard let scrollView else { return }
+        guard isRefreshControlEnabled, !isPullSuspended else { return }
+        guard isPulling || translation.y > abs(translation.x) else { return }
 
         let wasNotPulling = !isPulling
         startPullingIfAtTop(of: scrollView)
         if isPulling {
             if wasNotPulling {
-                initialTranslationY = didBeginGestureAtTop ? 0 : translationY
+                initialTranslationY = didBeginGestureAtTop ? 0 : translation.y
             }
-            let pullDistance = calculatePullDistance(translationY: translationY)
+            let pullDistance = calculatePullDistance(translationY: translation.y)
             handlePullEffect(pullDistance: pullDistance)
             triggerRefreshIfNeeded(pullDistance: pullDistance)
         }

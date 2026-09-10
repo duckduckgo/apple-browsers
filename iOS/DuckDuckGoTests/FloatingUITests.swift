@@ -194,7 +194,7 @@ final class FloatingUIPullToRefreshTests: XCTestCase {
 
     func testApplyingRefreshBackgroundUpdatesEveryVisibleWebViewLayer() {
         let webView = WKWebView()
-        let refreshBackgroundColor = UIColor(designSystemColor: .background)
+        let refreshBackgroundColor = UIColor.red
         let traits = UITraitCollection(userInterfaceStyle: .light)
         let expectedComponents = refreshBackgroundColor.resolvedColor(with: traits).cgColor.components
 
@@ -236,6 +236,55 @@ final class FloatingUIPullToRefreshTests: XCTestCase {
         XCTAssertEqual(webView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
         XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
         XCTAssertEqual(webView.underPageBackgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+    }
+
+    func testWhenGestureMovesUpFromTopThenFloatingPullDoesNotStart() {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+        let gesture = TestPanGestureRecognizer(state: .began, translationY: 0)
+        let selector = NSSelectorFromString("handlePanGesture:")
+        adapter.perform(selector, with: gesture)
+        gesture.stubbedState = .changed
+        gesture.translationY = -20
+
+        adapter.perform(selector, with: gesture)
+
+        XCTAssertTrue(webView.scrollView.bounces)
+        XCTAssertEqual(pullableView.transform, .identity)
+    }
+
+    func testWhenRefreshIsDisabledThenFloatingPullDoesNotStartOrRefresh() {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        var refreshCount = 0
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: { refreshCount += 1 })
+        adapter.setRefreshControlEnabled(false)
+        let gesture = TestPanGestureRecognizer(state: .began, translationY: 0)
+        let selector = NSSelectorFromString("handlePanGesture:")
+        adapter.perform(selector, with: gesture)
+        gesture.stubbedState = .changed
+        gesture.translationY = 200
+
+        adapter.perform(selector, with: gesture)
+
+        XCTAssertEqual(refreshCount, 0)
+        XCTAssertTrue(webView.scrollView.bounces)
+        XCTAssertEqual(pullableView.transform, .identity)
     }
 
     func testWhenFloatingPullEndsThenWebKitResumesManagingUnderPageBackgroundColor() {

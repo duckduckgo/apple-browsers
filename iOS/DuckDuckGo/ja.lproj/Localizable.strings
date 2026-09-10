@@ -319,6 +319,15 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "このファイル形式はサポートされていません。%@を添付してください。";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from is one of the models with extra privacy protections. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@は画像を作成できません。切り替えを元に戻すまで、「プロバイダーの可視性がゼロ」は適用されません。";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@は画像生成に対応していません。";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "%@を使用中";
+
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "編集すると、既存の回答が新しい回答に置き換えられます。";
 
@@ -477,6 +486,9 @@
 
 /* Title for the image generation tool in the unified input tools menu */
 "aichat.toolbar.tools.imagegeneration.title" = "画像を作成";
+
+/* Subtitle for the image generation tool in the unified input tools menu, shown when the chat is already under way on a model that cannot generate images */
+"aichat.toolbar.tools.imagegeneration.unavailable.subtitle" = "選択したモデルでは利用できません";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "ウェブから回答を収集";

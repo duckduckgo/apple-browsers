@@ -319,6 +319,15 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Denne filtype understøttes ikke. Vedhæft en %@-fil.";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from is one of the models with extra privacy protections. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ kan ikke oprette billeder. Nul udbydersynlighed gælder ikke, før du skifter tilbage.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ understøtter ikke oprettelse af billeder.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Bruger nu %@";
+
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Redigering vil erstatte svaret med et nyt.";
 
@@ -477,6 +486,9 @@
 
 /* Title for the image generation tool in the unified input tools menu */
 "aichat.toolbar.tools.imagegeneration.title" = "Opret billede";
+
+/* Subtitle for the image generation tool in the unified input tools menu, shown when the chat is already under way on a model that cannot generate images */
+"aichat.toolbar.tools.imagegeneration.unavailable.subtitle" = "Ikke tilgængelig for den valgte model";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Hent svar fra nettet";

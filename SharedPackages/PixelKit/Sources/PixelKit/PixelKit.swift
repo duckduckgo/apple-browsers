@@ -64,6 +64,16 @@ public final class PixelKit {
         /// [Legacy] Used in Pixel.fire(...) as .daily but without the `_d` automatically added to the name
         case legacyDailyNoSuffix
 
+        /// [Legacy] As `.legacyDailyNoSuffix`, but throttled once per day *per distinct error* rather than
+        /// once per day per name. Reproduces legacy `DailyPixel.fire(pixel:error:)`, which appended the
+        /// event's error parameter values to its throttling key so that a second, different failure of the
+        /// same pixel still reported that day. Without an error attached this behaves exactly like
+        /// `.legacyDailyNoSuffix`.
+        ///
+        /// Only for error pixels migrated off `DailyPixel.fire(pixel:error:)`. New pixels should use
+        /// `.daily`, which keys on the name alone.
+        case legacyDailyByError
+
         /// [Legacy] Sent once per day. The last timestamp for this pixel is stored and compared to the current date. Pixels of this type will have `_d` appended to their name.
         case legacyDaily
 
@@ -105,10 +115,24 @@ public final class PixelKit {
                 "Legacy Daily and Count"
             case .legacyDailyNoSuffix:
                 "Legacy Daily No Suffix"
+            case .legacyDailyByError:
+                "Legacy Daily By Error"
             case .sample(let percentage):
                 "Sample (\(percentage)%)"
             case .debounce(let seconds):
                 "Debounce (\(seconds)s)"
+            }
+        }
+
+        /// How many requests this frequency fires, and so how many times `fire` calls its
+        /// completion. Every leg completes exactly once, whether it sent or was suppressed, so
+        /// `fireAsync` can wait for all of them. See `PixelFiring.fireAsync(_:frequency:options:)`.
+        var legCount: Int {
+            switch self {
+            case .dailyAndCount, .dailyAndStandard, .legacyDailyAndCount:
+                return 2
+            default:
+                return 1
             }
         }
 
@@ -123,8 +147,14 @@ public final class PixelKit {
             case .monthly: return "monthly"
             case .dailyAndCount: return "dailyAndCount"
             case .dailyAndStandard: return "dailyAndStandard"
-            case .legacyInitial: return "legacyInitial"
+            // Shares `uniqueByName`'s map: both fire once ever, and `LegacyPixelStateMigration`
+            // seeds this slot from the legacy `UniquePixel` store so a migrated user is not
+            // re-fired.
+            case .legacyInitial: return "uniqueByName"
             case .legacyDailyNoSuffix: return "legacyDailyNoSuffix"
+            // Shares `daily`'s map: it is a daily throttle, only with the error folded into the pixel-name
+            // half of the key rather than the frequency half.
+            case .legacyDailyByError: return "daily"
             case .legacyDaily: return "legacyDaily"
             case .legacyDailyAndCount: return "legacyDailyAndCount"
             case .sample(let percentage): return "sample(\(percentage))"
@@ -363,6 +393,8 @@ public final class PixelKit {
              platformSuffix: resolvedName.trailingPlatformSuffix,
              frequency: frequency,
              withHeaders: options.headers,
+             userAgent: options.userAgent,
+             allowsDotInName: event.allowsDotInName,
              withAdditionalParameters: newParams,
              withError: event.error,
              allowedQueryReservedCharacters: options.allowedQueryReservedCharacters,
@@ -446,6 +478,8 @@ public final class PixelKit {
                       platformSuffix: String,
                       frequency: Frequency,
                       withHeaders headers: [String: String]?,
+                      userAgent: String?,
+                      allowsDotInName: Bool,
                       withAdditionalParameters params: [String: String]?,
                       withError error: NSError?,
                       allowedQueryReservedCharacters: CharacterSet?,
@@ -477,6 +511,9 @@ public final class PixelKit {
 
         var headers = headers ?? defaultHeaders
         headers[Header.moreInfo] = "See " + Self.duckDuckGoMorePrivacyInfo.absoluteString
+        // The host's `FireRequest` closure reads this in preference to its own pixel user agent.
+        // See `Options.userAgent`.
+        if let userAgent { headers[Header.userAgent] = userAgent }
         // Needs to be updated/generalised when fully adopted by iOS
         if let source {
             switch source {
@@ -492,7 +529,9 @@ public final class PixelKit {
         }
 
         // The event name can't contain `.`
-        reportErrorIf(pixel: pixelName, contains: ".")
+        if !allowsDotInName {
+            reportErrorIf(pixel: pixelName, contains: ".")
+        }
 
         switch frequency {
         case .standard:
@@ -517,6 +556,8 @@ public final class PixelKit {
             handleLegacyDailyAndCount(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
         case .legacyDailyNoSuffix:
             handleLegacyDailyNoSuffix(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
+        case .legacyDailyByError:
+            handleLegacyDailyByError(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, error, onComplete)
         case .sample(let percentage):
             handleSample(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, percentage, onComplete)
         case .debounce(let seconds):
@@ -549,7 +590,7 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_d")
         if !pixelHasBeenFiredEver(pixelName) {
             do {
-                try updatePixelLastFireDate(pixelName: pixelName, frequency: .uniqueByName)
+                try updatePixelLastFireDate(pixelName: pixelName, frequency: .legacyInitial)
                 fireRequestWrapper(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .legacyInitial, retryOnFailure, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
@@ -708,6 +749,51 @@ public final class PixelKit {
         }
     }
 
+    private func handleLegacyDailyByError(_ pixelName: String,
+                                          _ platformSuffix: String,
+                                          _ headers: [String: String],
+                                          _ newParams: [String: String],
+                                          _ allowedQueryReservedCharacters: CharacterSet?,
+                                          _ retryOnFailure: Bool,
+                                          _ error: NSError?,
+                                          _ onComplete: @escaping CompletionBlock) {
+        reportErrorIf(pixel: pixelName, endsWith: "_u")
+        // Only the throttling key carries the error; the pixel is sent under its own name, as with
+        // `.legacyDailyNoSuffix`.
+        let throttleKey = pixelName + Self.dailyThrottleKeyErrorSuffix(for: error)
+        if !pixelHasBeenFiredDailyToday(throttleKey) {
+            do {
+                try updatePixelLastFireDate(pixelName: throttleKey, frequency: .daily)
+                fireRequestWrapper(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyByError, retryOnFailure, onComplete)
+            } catch {
+                fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
+                printDebugInfo(pixelName: pixelName, frequency: .legacyDailyByError, parameters: newParams, skipped: true)
+                onComplete(false, nil)
+            }
+        } else {
+            printDebugInfo(pixelName: pixelName, frequency: .legacyDailyByError, parameters: newParams, skipped: true)
+            onComplete(false, nil)
+        }
+    }
+
+    /// The error half of a `.legacyDailyByError` throttling key, or `""` when there is no error.
+    ///
+    /// Byte-for-byte the format legacy `DailyPixel.fire(pixel:error:)` used - `":"` followed by the error
+    /// parameter *values*, ordered by their parameter names and joined with `";"`, truncated to 50
+    /// characters - so the keys `LegacyPixelStateMigration` copied out of the legacy daily store still
+    /// match. (PixelKit's error parameters add the two SQLite codes legacy didn't have, so a key for an
+    /// error carrying those differs from the legacy one; the cost is at most one extra fire on the day an
+    /// install migrates.)
+    private static func dailyThrottleKeyErrorSuffix(for error: NSError?) -> String {
+        guard let error else { return "" }
+
+        var errorParams: [String: String] = [:]
+        errorParams.appendErrorPixelParams(error: error)
+
+        let values = errorParams.keys.sorted().compactMap { errorParams[$0] }.joined(separator: ";")
+        return ":" + String(values.prefix(50))
+    }
+
     /// Handles sampling frequency pixels - only N% of calls result in actual pixel firing
     /// - Parameters:
     ///   - pixelName: The name of the pixel to potentially fire
@@ -783,9 +869,11 @@ public final class PixelKit {
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDailyAndCount, parameters: newParams, skipped: true)
+                onComplete(false, nil)
             }
         } else {
             printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDailyAndCount, parameters: newParams, skipped: true)
+            onComplete(false, nil)
         }
 
         fireRequestWrapper(pixelName + "_c", platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyAndCount, retryOnFailure, onComplete)
@@ -808,9 +896,11 @@ public final class PixelKit {
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
+                onComplete(false, nil)
             }
         } else {
             printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
+            onComplete(false, nil)
         }
 
         fireRequestWrapper(pixelName + "_count", platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, retryOnFailure, onComplete)
@@ -832,9 +922,11 @@ public final class PixelKit {
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
+                onComplete(false, nil)
             }
         } else {
             printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
+            onComplete(false, nil)
         }
 
         fireRequestWrapper(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, retryOnFailure, onComplete)
@@ -859,8 +951,9 @@ public final class PixelKit {
     private func printDebugInfo(pixelName: String, frequency: Frequency, parameters: [String: String], skipped: Bool = false) {
         // Wide-event pixels (`m_mac_wide_*` / `m_ios_wide_*`) also log their parameters via the
         // POST endpoint payload in `DefaultWideEventSender`; skip the params here to avoid the noise.
+        let firedLogString = dryRun ? "Fired(dryRun)" : "Fired"
         guard !pixelName.contains("_wide_") else {
-            logger.debug("👾[\(frequency.description, privacy: .public)-\(skipped ? "Skipped" : "Fired", privacy: .public)] \(pixelName, privacy: .public)")
+            logger.debug("👾[\(frequency.description, privacy: .public)-\(skipped ? "Skipped" : firedLogString, privacy: .public)] \(pixelName, privacy: .public)")
             return
         }
 
@@ -870,7 +963,7 @@ public final class PixelKit {
 
         // Sort the params before logging them in debug mode to make it easier to compare multiple subsequent calls
         let sortedParamsString = params.map { "\"\($0.key)\": \"\($0.value)\"" }.joined(separator: ", ")
-        logger.debug("👾[\(frequency.description, privacy: .public)-\(skipped ? "Skipped" : "Fired", privacy: .public)] \(pixelName, privacy: .public) [\(sortedParamsString, privacy: .public)]")
+        logger.debug("👾[\(frequency.description, privacy: .public)-\(skipped ? "Skipped" : firedLogString, privacy: .public)] \(pixelName, privacy: .public) [\(sortedParamsString, privacy: .public)]")
     }
 
     /// The single place a pixel name reaches the network, and therefore the only place the platform
@@ -1198,13 +1291,7 @@ internal extension Dictionary where Key == String, Value == String {
             return first
         }
 
-        if let sqlErrorCode = error.userInfo["SQLiteResultCode"] as? NSNumber {
-            params[PixelKit.Parameters.underlyingErrorSQLiteCode] = "\(sqlErrorCode.intValue)"
-        }
-
-        if let sqlExtendedErrorCode = error.userInfo["SQLiteExtendedResultCode"] as? NSNumber {
-            params[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode] = "\(sqlExtendedErrorCode.intValue)"
-        }
+        params.merge(error.sqliteResultCodeParameters) { _, new in new }
 
         // Merge the collected parameters into self
         self.merge(params) { _, new in new }

@@ -39,7 +39,8 @@ final class DBPService: NSObject {
 
     init(appDependencies: DependencyProvider,
          contentBlocking: ContentBlocking,
-         freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording) {
         let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             runTypeProvider: appDependencies.dbpSettings)
@@ -53,17 +54,6 @@ final class DBPService: NSObject {
         )
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         let profileStateManager = DefaultDBPProfileStateManager(keyValueStore: UserDefaults.dbp)
-
-#if DEBUG
-        let launchOptionsHandler = LaunchOptionsHandler()
-        // Seed cached profile state so UI tests can verify deferred Secure Vault initialization skip paths.
-        if let profileStateRawValue = launchOptionsHandler.pirProfileStateOverride,
-           let profileState = DBPProfileState(rawValue: profileStateRawValue) {
-            profileStateManager.setProfileStateForTesting(profileState)
-        }
-        let shouldAutostartPIRDebugServer = launchOptionsHandler.shouldAutostartPIRDebugServer
-#endif
-
         self.profileStateManager = profileStateManager
 
         guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
@@ -78,9 +68,20 @@ final class DBPService: NSObject {
                 authenticationManager: authManager,
                 pixelHandler: notificationPixelHandler
             )
+            let subscriptionManager = appDependencies.subscriptionManager
             let eventsHandler = BrokerProfileJobEventsHandler(
                 userNotificationService: notificationService,
-                freemiumUserStateManager: freemiumDBPUserStateManager
+                freemiumUserStateManager: freemiumDBPUserStateManager,
+                // Marks the onboarding checklist's PIR step and reports the PIR-activated experiment metric.
+                // Fires for freemium saves too, so subscription status is checked rather than assumed.
+                onProfileSaved: {
+                    let wasAlreadyActivated = onboardingActivationRecorder.recordPIRActivatedIfNeeded()
+                    Task {
+                        SubscriptionOnboardingExperiment.firePIRActivatedMetricIfNeeded(
+                            isSubscriptionActive: await subscriptionManager.isActiveSubscription(),
+                            isAlreadyActivated: wasAlreadyActivated)
+                    }
+                }
             )
 
             #if DEBUG
@@ -144,14 +145,6 @@ final class DBPService: NSObject {
             self.dbpIOSManager = nil
         }
         super.init()
-
-#if DEBUG
-        if shouldAutostartPIRDebugServer {
-            Task { [weak self] in
-                await self?.dbpIOSManager?.startDebugServer()
-            }
-        }
-#endif
     }
 
     func onBackground() {

@@ -22,7 +22,7 @@ import Common
 import FoundationExtensions
 import os.log
 import Networking
-import PixelKit
+import WideEvent
 
 public enum AuthVersion: String {
     // case v1 // removed
@@ -161,6 +161,16 @@ extension SubscriptionManager {
         try await getSubscription(forceRefresh: false)
     }
 
+    /// Whether the current subscription has an active free-trial offer. `false` on any fetch failure.
+    public func isOnFreeTrial() async -> Bool {
+        (try? await getSubscription())?.hasActiveTrialOffer ?? false
+    }
+
+    /// Whether the current subscription is active. `false` on any fetch failure.
+    public func isActiveSubscription() async -> Bool {
+        (try? await getSubscription())?.isActive ?? false
+    }
+
     public func signOut(notifyUI: Bool) async {
         await signOut(notifyUI: notifyUI, userInitiated: false)
     }
@@ -222,6 +232,8 @@ actor SubscriptionRequestCoalescer {
 /// Single entry point for everything related to Subscription. This manager is disposable, every time something related to the environment changes this need to be recreated.
 public final class DefaultSubscriptionManager: SubscriptionManager {
 
+    static let hasAppStoreProductsAvailableKey = "com.duckduckgo.subscription.hasAppStoreProductsAvailable"
+
     var oAuthClient: any OAuthClient
     private let _storePurchaseManager: StorePurchaseManager?
     private let subscriptionEndpointService: SubscriptionEndpointService
@@ -282,7 +294,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     public var hasAppStoreProductsAvailable: Bool {
         guard let storePurchaseManager = _storePurchaseManager else { return false }
-        return storePurchaseManager.areProductsAvailable
+        return storePurchaseManager.areProductsAvailable || (userDefaults.cachedHasAppStoreProductsAvailable ?? false)
     }
 
     /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
@@ -325,8 +337,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             }
             .store(in: &cancellables)
 
-        Task {
+        Task { [weak self] in
+            guard let self else { return }
             await storePurchaseManager().updateAvailableProducts()
+            userDefaults.cachedHasAppStoreProductsAvailable = storePurchaseManager().areProductsAvailable
         }
     }
 
@@ -874,6 +888,11 @@ extension DefaultSubscriptionManager: SubscriptionTokenProvider {
 }
 
 fileprivate extension UserDefaults {
+
+    var cachedHasAppStoreProductsAvailable: Bool? {
+        get { object(forKey: DefaultSubscriptionManager.hasAppStoreProductsAvailableKey) as? Bool }
+        set { set(newValue, forKey: DefaultSubscriptionManager.hasAppStoreProductsAvailableKey) }
+    }
 
     private static let isUserAuthenticatedKey = "com.duckduckgo.subscription.isUserAuthenticated"
     var isUserAuthenticated: Bool {

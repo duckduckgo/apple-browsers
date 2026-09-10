@@ -20,7 +20,7 @@
 import Foundation
 import Common
 import FoundationExtensions
-import PixelKit
+import WideEvent
 
 /// Wide-event payload for the return session pixel (`m_ios_wide_return_session`),
 /// covering every return: an after-idle treatment (NTP or LUT) or an ordinary return.

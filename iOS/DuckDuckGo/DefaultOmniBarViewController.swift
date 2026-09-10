@@ -23,6 +23,7 @@ import PrivacyDashboard
 import AIChat
 import Core
 import FeatureFlags_iOS
+import PixelKit
 
 final class DefaultOmniBarViewController: OmniBarViewController {
 
@@ -130,7 +131,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         highlightDismissTap.delegate = self
         omniBarView.aiChatTextView.addGestureRecognizer(highlightDismissTap)
 
-        omniBarView.isAIVoiceChatEnabled = DuckAIVoiceShortcutFeature(featureFlagger: dependencies.featureFlagger).isAvailable
         setUpModelPickerIfNeeded()
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
             guard let self else { return }
@@ -152,7 +152,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         let text = omniBarView.aiChatTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let hasAttachments = attachmentController?.hasAttachments ?? false
         // Voice only stands in for an empty prompt; pending attachments are a submittable input.
-        if text.isEmpty && !hasAttachments && omniBarView.isAIVoiceChatEnabled {
+        if text.isEmpty && !hasAttachments {
             omniDelegate?.onDuckAIVoiceModeRequested()
             return
         }
@@ -406,13 +406,13 @@ extension DefaultOmniBarViewController {
             omniBarView.updateAIChatSendButton(hasText: false)
 
             if URL.isValidAddressBarURLInput(query) {
-                DailyPixel.fireDailyAndCount(pixel: .aiChatIPadToggleURLSubmitted)
+                PixelKit.fire(Pixel.Event.aiChatIPadToggleURLSubmitted, frequency: .dailyAndCount)
                 dismissIPadDuckAIMode()
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
                 let isFirstPromptNewInstall = featureDiscovery.isFirstDuckAIPromptNewInstall
                 let firstPromptParameters: [String: String] = isFirstPromptNewInstall ? [PixelParameters.aiChatFirstPromptNewInstall: "true"] : [:]
-                DailyPixel.fireDailyAndCount(pixel: .aiChatIPadTogglePromptSubmitted, withAdditionalParameters: firstPromptParameters)
+                PixelKit.fire(Pixel.Event.aiChatIPadTogglePromptSubmitted, frequency: .dailyAndCount, options: .parameters(firstPromptParameters))
                 fireIPadUnifiedPromptSubmittedPixels(hasText: !query.isEmpty, isFirstPromptNewInstall: isFirstPromptNewInstall)
                 featureDiscovery.markDuckAIPromptSubmitted()
                 /// Collapse and resign instantly so a quick re-tap doesn't race the post-submit

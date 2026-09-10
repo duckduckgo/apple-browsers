@@ -174,6 +174,7 @@ extension URL {
     static let permissions = URL(string: "duck://permissions")!
     // base url for Error Page Alternate HTML loaded into Web View
     static let error = URL(string: "duck://error")!
+    static let errorPageReportBrokenSite = URL(string: "duck://error/report-broken-site")!
 
     static let dataBrokerProtection = URL(string: "duck://personal-information-removal")!
 
@@ -563,6 +564,8 @@ extension URL {
         return debugSettings.effectiveHelpBaseURL
     }
 
+    static let internalFeedbackFormHost = "internalapps.duckduckgo.com"
+
     // MARK: - DuckDuckGo
 
     static var onboarding: URL {
@@ -591,7 +594,13 @@ extension URL {
     }
 
     static var internalFeedbackForm: URL {
-        return URL(string: "https://go.duckduckgo.com/feedback")!
+        return URL(string: "https://\(internalFeedbackFormHost)/internal-feedback/")!
+    }
+
+    var isInternalFeedbackForm: Bool {
+        scheme == "https"
+            && host == URL.internalFeedbackFormHost
+            && path.hasPrefix(URL.internalFeedbackForm.path)
     }
 
     static var webTrackingProtection: URL {

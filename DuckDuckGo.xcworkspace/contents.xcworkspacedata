@@ -31,6 +31,9 @@
       <FileRef
          location = "group:DDGError">
       </FileRef>
+      <FileRef
+         location = "group:EventHub">
+      </FileRef>
       <FileSystemSynchronizedGroup
          location = "group:Infrastructure"
          name = "Infrastructure">
@@ -43,6 +46,9 @@
       </FileRef>
       <FileRef
          location = "group:PixelKit">
+      </FileRef>
+      <FileRef
+         location = "group:WideEvent">
       </FileRef>
       <FileRef
          location = "group:ScreenTimeDataCleaner">

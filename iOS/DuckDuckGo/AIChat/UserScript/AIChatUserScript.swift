@@ -53,6 +53,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         case newChatAction
         case promptInterruption
         case openSettingsAction
+        case startUsingWeeklyLimitAction
         case toggleSidebarAction
         case syncStatusChanged(AIChatSyncHandler.SyncStatus)
         case customizeResponsesAction
@@ -75,6 +76,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitPromptInterruption"
             case .openSettingsAction:
                 return "submitOpenSettingsAction"
+            case .startUsingWeeklyLimitAction:
+                return "submitStartUsingWeeklyLimitAction"
             case .toggleSidebarAction:
                 return "submitToggleSidebarAction"
             case .syncStatusChanged:
@@ -418,6 +421,12 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// Submits an open settings action to the web content, opening the AI Chat settings.
     func submitOpenSettingsAction() {
         push(.openSettingsAction)
+    }
+
+    /// Reports that the user opted to spend their weekly allowance after the daily one ran out.
+    /// Web owns what that means; native only reports the choice.
+    func submitStartUsingWeeklyLimitAction() {
+        push(.startUsingWeeklyLimitAction)
     }
 
     /// Pushes a model-change action to the web content, switching the active chat's model.

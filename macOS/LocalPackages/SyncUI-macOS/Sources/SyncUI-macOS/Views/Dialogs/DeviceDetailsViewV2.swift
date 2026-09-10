@@ -79,9 +79,13 @@ struct DeviceDetailsViewV2: View {
             Text(UserText.deviceDetailsNameLabelV2)
                 .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
-            TextField("", text: $deviceName, onCommit: save)
-                .disabled(isSaving)
-                .accessibilityIdentifier("SyncSettings.deviceDetails.nameField")
+            TextField(text: $deviceName) {
+                EmptyView()
+            }
+            .labelsHidden()
+            .onSubmit(save)
+            .disabled(isSaving)
+            .accessibilityIdentifier("SyncSettings.deviceDetails.nameField")
         }
         .padding(.horizontal, 10)
         .frame(height: 45)

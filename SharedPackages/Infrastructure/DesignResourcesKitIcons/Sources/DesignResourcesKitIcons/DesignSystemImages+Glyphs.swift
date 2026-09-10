@@ -201,6 +201,7 @@ public extension DesignSystemImages {
             public static var check: DesignSystemImage { .init(resource: .check16) }
             public static var checkCircle: DesignSystemImage { .init(resource: .checkCircle16) }
             public static var chat: DesignSystemImage { .init(resource: .chat16) }
+            public static var chats: DesignSystemImage { .init(resource: .chats16) }
             public static var checkGray: DesignSystemImage { .init(resource: .checkGray16) }
             public static var chevronCircleDown: DesignSystemImage { .init(resource: .chevronCircleDown16) }
             public static var chevronDoubleRight: DesignSystemImage { .init(resource: .chevronDoubleRight16) }
@@ -594,6 +595,7 @@ public extension DesignSystemImages {
             public static var menuHamburgerAlertDot: DesignSystemImage { .init(resource: .menuHamburgerAlertDot24) }
             public static var menuHamburgerAlertRecolorable: DesignSystemImage { .init(resource: .menuHamburgerAlertRecolorable24) }
             public static var microphone: DesignSystemImage { .init(resource: .microphone24) }
+            public static var microphoneBlocked: DesignSystemImage { .init(resource: .microphoneBlocked24) }
             public static var microphoneSolid: DesignSystemImage { .init(resource: .microphoneSolid24) }
             public static var minus: DesignSystemImage { .init(resource: .minus24) }
             public static var moreApple: DesignSystemImage { .init(resource: .moreApple24) }
@@ -660,6 +662,7 @@ public extension DesignSystemImages {
             public static var vpnUnlocked: DesignSystemImage { .init(resource: .vpnUnlocked24) }
             public static var video: DesignSystemImage { .init(resource: .video24) }
             public static var videoAdBlocked: DesignSystemImage { .init(resource: .videoAdBlocked24) }
+            public static var videoBlocked: DesignSystemImage { .init(resource: .videoBlocked24) }
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayer24) }
             public static var videoSolid: DesignSystemImage { .init(resource: .videoSolid24) }
             public static var viewList: DesignSystemImage { .init(resource: .viewList24) }

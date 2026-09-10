@@ -25,6 +25,7 @@ import HistoryView
 import NewTabPage
 @_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyStats

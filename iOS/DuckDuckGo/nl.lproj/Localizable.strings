@@ -20,6 +20,9 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
+"%@: %@" = "%1$@: %2$@";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -63,6 +66,9 @@
 
 /* Add action - button shown in alert */
 "action.title.add" = "Toevoegen";
+
+/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
+"action.title.aiChat.askDuckAI" = "Vraag stellen aan Duck.ai";
 
 /* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
 "action.title.aiChat.hideContextualSheetButton" = "Snelkoppeling voor onderblad verbergen";
@@ -201,6 +207,9 @@
 
 /* Add to Favorites action */
 "action.title.save.favorite" = "Favoriet toevoegen";
+
+/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
+"action.title.searchWithDuckDuckGo" = "Zoeken";
 
 /* Settings action */
 "action.title.settings" = "Instellingen";
@@ -469,11 +478,50 @@
 /* Title for the image generation tool in the unified input tools menu */
 "aichat.toolbar.tools.imagegeneration.title" = "Afbeelding maken";
 
+/* Subtitle for the image generation tool in the unified input tools menu, shown when the chat is already under way on a model that cannot generate images */
+"aichat.toolbar.tools.imagegeneration.unavailable.subtitle" = "Niet beschikbaar voor geselecteerd model";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Antwoorden van internet";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Zoeken op het web";
+
+/* Button in the Duck.ai input footer letting a paid user keep chatting on their weekly allowance after the daily one is spent */
+"aichat.usageWarnings.action.startUsingWeeklyLimit" = "Weeklimiet gebruiken";
+
+/* Button in the Duck.ai input footer warning taking a user who has already used their free trial to the subscription flow */
+"aichat.usageWarnings.action.subscribe" = "Abonneer";
+
+/* Button in the Duck.ai input footer warning that moves the user onto the suggested model */
+"aichat.usageWarnings.action.switch" = "Wisselen van model";
+
+/* Button in the Duck.ai input footer warning taking a user who is still eligible for a free trial to the subscription flow */
+"aichat.usageWarnings.action.tryForFree" = "Probeer het abonnement gratis";
+
+/* Title of the Duck.ai input footer warning shown once the allowance for advanced AI models specifically is used up, while free models remain available */
+"aichat.usageWarnings.advancedModelsLimitReached.title" = "Limiet voor geavanceerde AI-modellen bereikt";
+
+/* Title of the Duck.ai input footer warning shown once the user's daily message limit is used up */
+"aichat.usageWarnings.dailyLimitReached.title" = "Dagelijkse limiet bereikt";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their daily message limit is used. %d is a percentage */
+"aichat.usageWarnings.dailyUsage.title" = "%d%% van de dagelijkse limiet";
+
+/* Accessibility label for the button that dismisses the Duck.ai input footer warning */
+"aichat.usageWarnings.dismiss.a11y" = "Negeren";
+
+/* Duck.ai input footer notice shown while a costly model is selected. %@ is the model's short name, such as 'Opus 4.8' */
+"aichat.usageWarnings.highUsageModel" = "%@ verbruikt limieten tot 2-5x sneller dan basismodellen.";
+
+/* Subtitle of the Duck.ai input footer warning saying how long until the usage limit resets. %@ is a duration such as '2 days' */
+"aichat.usageWarnings.resetsIn" = "Wordt over %@ gereset";
+
+/* Title of the Duck.ai input footer warning shown once the user's weekly message limit is used up */
+"aichat.usageWarnings.weeklyLimitReached.title" = "Wekelijkse gebruikslimiet bereikt";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their weekly message limit is used. %d is a percentage */
+"aichat.usageWarnings.weeklyUsage.title" = "%d%% van de wekelijkse limiet";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Bestaande bladwijzers worden niet gedupliceerd.";
@@ -531,9 +579,6 @@
 
 /* Title for sync error alert */
 "alert.sync-error" = "Synchronisatie- en back-upfout";
-
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Synchronisatie-instellingen";
 
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Probeer het opnieuw.";
@@ -1909,6 +1954,9 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Recente wijzigingen in YouTube hebben invloed op de functionaliteit van Duck Player. We werken aan een oplossing voor deze problemen. Bedankt voor je begrip.";
 
+/* Address bar Duck.ai menu option that opens a fresh chat with no page context */
+"duckai.address.bar.menu.new.chat" = "Nieuwe chat";
+
 /* Fourth paragraph of the Duck.ai widget education screen */
 "duckai.addWidget.settings.fourthParagraph" = "Tik op de widget om deze te bewerken en stel **Duck.ai** en **Duck.ai Voice** in als snelkoppelingen.";
 
@@ -2215,11 +2263,23 @@
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Vat dit boek samen.";
 
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Dit document samenvatten";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Vat dit document samen.";
+
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Deze pagina samenvatten";
 
 /* Suggested prompt submitted text: summarize the current page */
 "duckai.suggestion.summarize-page.prompt" = "Deze pagina samenvatten.";
+
+/* Suggested prompt chip shown when the user has attached a text selection: summarize that selection */
+"duckai.suggestion.summarize-selection.label" = "Deze selectie samenvatten";
+
+/* Suggested prompt submitted text: summarize the attached text selection */
+"duckai.suggestion.summarize-selection.prompt" = "Vat deze selectie samen.";
 
 /* Suggested prompt chip: summarize a discussion thread */
 "duckai.suggestion.summarize-thread.label" = "Deze discussie samenvatten";
@@ -2245,6 +2305,12 @@
 /* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
 "duckai.suggestion.translate-page.prompt" = "Vertaal deze pagina naar %@.";
 
+/* Suggested prompt chip shown when the user has attached a text selection: translate that selection */
+"duckai.suggestion.translate-selection.label" = "Vertaal deze selectie";
+
+/* Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-selection.prompt" = "Vertaal deze selectie naar %@.";
+
 /* Suggested prompt chip: video key points */
 "duckai.suggestion.video-key-points.label" = "Wat zijn de belangrijkste punten?";
 
@@ -2262,6 +2328,12 @@
 
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Is dit de moeite waard? Geef me een mening zonder spoilers.";
+
+/* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
+"duckai.text-selection.context-title" = "Tekstselectie";
+
+/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
+"duckai.text-selection.limit-reached" = "Je kunt tot %d tekstselecties toevoegen. Verwijder er een om een andere toe te voegen.";
 
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Alle chats zijn %@ privé";
@@ -4552,8 +4624,6 @@
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Meer informatie";
 
-/* Switch button label. */
-
 /* Settings screen cell text for passwords */
 "settings.logins" = "Wachtwoorden en automatisch invullen";
 
@@ -5130,17 +5200,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-melding";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Herstelcode gekopieerd naar klembord";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Servergegevens verwijderen";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Je back-up wordt verwijderd van de server. Alle apparaten worden losgekoppeld van de synchronisatie, maar er wordt niets van de apparaten verwijderd.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Wil je de servergegevens verwijderen?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Nu synchroniseren";
@@ -5220,11 +5281,17 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Apparaat verwijderen?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Servergegevens verwijderd";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "De verbinding met alle apparaten die Sync & Backup gebruiken wordt verbroken en je gesynchroniseerde gegevens worden van de server verwijderd.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Sync & Backup uitschakelen en servergegevens verwijderen?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Nieuw apparaat toegevoegd!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Synchronisatie en back-up ingeschakeld";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Herstelcode gekopieerd";
@@ -5772,26 +5839,14 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Wat wil je importeren?";
 
-/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
-"action.title.aiChat.askDuckAI" = "Vraag stellen aan Duck.ai";
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ kan geen afbeeldingen maken. Geen zichtbaarheid van de provider is pas van toepassing als je terugschakelt.";
 
-/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
-"action.title.searchWithDuckDuckGo" = "Zoeken";
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ ondersteunt het maken van afbeeldingen niet.";
 
-/* Suggested prompt chip shown when the user has attached a text selection: summarize that selection */
-"duckai.suggestion.summarize-selection.label" = "Deze selectie samenvatten";
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Gebruikt nu %@";
 
-/* Suggested prompt submitted text: summarize the attached text selection */
-"duckai.suggestion.summarize-selection.prompt" = "Vat deze selectie samen.";
-
-/* Suggested prompt chip shown when the user has attached a text selection: translate that selection */
-"duckai.suggestion.translate-selection.label" = "Vertaal deze selectie";
-
-/* Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language. */
-"duckai.suggestion.translate-selection.prompt" = "Vertaal deze selectie naar %@.";
-
-/* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
-"duckai.text-selection.context-title" = "Tekstselectie";
-
-/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
-"duckai.text-selection.limit-reached" = "Je kunt tot %d tekstselecties toevoegen. Verwijder er een om een andere toe te voegen.";
+/* Address bar Duck.ai menu option that opens the full chat history */
+"duckai.address.bar.menu.all.chats" = "Alle chats";

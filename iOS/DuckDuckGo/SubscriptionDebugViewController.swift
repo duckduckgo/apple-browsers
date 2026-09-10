@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import WebKit
 import BrowserServicesKit
+import FoundationExtensions
 import Subscription
 import Core
 import VPN
@@ -31,12 +32,15 @@ import UserNotifications
 import UIComponents
 import Lottie
 import FeatureFlags_iOS
+import Persistence
 
 final class SubscriptionDebugViewController: UITableViewController {
 
     private let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
     private lazy var subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
     private let reporter: SubscriptionDataReporting
+
+    var keyValueStore: ThrowingKeyValueStoring?
 
     private var subscriptionManager: SubscriptionManager {
         AppDependencyProvider.shared.subscriptionManager
@@ -67,7 +71,10 @@ final class SubscriptionDebugViewController: UITableViewController {
         Sections.metadata: "StoreKit Metadata",
         Sections.regionOverride: "Region override for App Store Sandbox",
         Sections.expirationReminder: "Expiration Reminder Notification",
-        Sections.onboarding: "Onboarding",
+        Sections.onboarding: "Onboarding — On-Device Progress",
+        Sections.onboardingMock: "Onboarding — Mock Flow",
+        Sections.onboardingMockConfig: "Onboarding — Configure Mock Flow",
+        Sections.onboardingSubflows: "Onboarding Subflows",
     ]
 
     enum Sections: Int, CaseIterable {
@@ -81,6 +88,9 @@ final class SubscriptionDebugViewController: UITableViewController {
         case regionOverride
         case expirationReminder
         case onboarding
+        case onboardingMock
+        case onboardingMockConfig
+        case onboardingSubflows
     }
 
     enum AuthorizationRows: Int, CaseIterable {
@@ -121,6 +131,7 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     enum RegionOverrideRows: Int, CaseIterable {
         case currentRegionOverride
+        case noProductsOverride
     }
 
     enum ExpirationReminderRows: Int, CaseIterable {
@@ -128,19 +139,29 @@ final class SubscriptionDebugViewController: UITableViewController {
         case triggerMockNotification
     }
 
-    enum OnboardingRows: Int, CaseIterable {
-        case welcome
-        case vpn
-        case duckAI
-        case tapAllowHint
-    }
+    // Onboarding row enums (OnboardingRows, OnboardingMockRows, OnboardingMockConfigRows,
+    // OnboardingSubflowRows) and their cell/selection handling live in
+    // SubscriptionDebugViewController+SubscriptionOnboarding.swift.
 
     private var notificationAuthStatusText: String = "Loading"
     private var subscriptionStatusText: String = "Loading"
-    
+
 
     private var storefrontID = "Loading"
     private var storefrontCountryCode = "Loading"
+
+    // MARK: - Onboarding mock state (in-memory only, resets on relaunch)
+    // Read/written from SubscriptionDebugViewController+SubscriptionOnboarding.swift.
+
+    var mockCompletedItems: Set<SubscriptionOnboardingChecklistItem> = []
+    var mockNetworkProtection = true
+    var mockIdentityTheftRestoration = true
+    var mockIdentityTheftRestorationGlobal = true
+    var mockPaidAIChat = true
+    var mockDataBrokerProtection = true
+    var mockIsPIRAvailable = true
+
+    var mockForcedTrialLengthDays: Int?
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         return Sections.allCases.count
@@ -150,6 +171,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         super.viewDidLoad()
         loadStoreKitMetadata()
         loadExpirationReminderStatus()
+        tableView.estimatedRowHeight = tableView.rowHeight
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -316,27 +338,29 @@ final class SubscriptionDebugViewController: UITableViewController {
 
                 cell.accessoryView = button
                 adjustMenuButtonWidth()
+            case .noProductsOverride:
+                cell.textLabel?.text = "Load no products"
+                cell.selectionStyle = .none
+
+                let toggle = UISwitch()
+                toggle.isOn = subscriptionUserDefaults.noSubscriptionProductsOverride
+                toggle.addTarget(self, action: #selector(noProductsOverrideChanged(_:)), for: .valueChanged)
+                cell.accessoryView = toggle
             case .none:
                 break
             }
 
         case .onboarding:
-            switch OnboardingRows(rawValue: indexPath.row) {
-            case .welcome:
-                cell.textLabel?.text = "Welcome"
-                cell.accessoryType = .disclosureIndicator
-            case .vpn:
-                cell.textLabel?.text = "VPN"
-                cell.accessoryType = .disclosureIndicator
-            case .duckAI:
-                cell.textLabel?.text = "Duck.ai"
-                cell.accessoryType = .disclosureIndicator
-            case .tapAllowHint:
-                cell.textLabel?.text = "Tap Allow Hint Overlay"
-                cell.accessoryType = .disclosureIndicator
-            case .none:
-                break
-            }
+            configureOnboardingCell(cell, at: indexPath)
+
+        case .onboardingMock:
+            configureOnboardingMockCell(cell, at: indexPath)
+
+        case .onboardingMockConfig:
+            configureOnboardingMockConfigCell(cell, at: indexPath)
+
+        case .onboardingSubflows:
+            configureOnboardingSubflowCell(cell, at: indexPath)
 
         case .none:
             break
@@ -357,6 +381,9 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .regionOverride: return RegionOverrideRows.allCases.count
         case .expirationReminder: return ExpirationReminderRows.allCases.count
         case .onboarding: return OnboardingRows.allCases.count
+        case .onboardingMock: return OnboardingMockRows.allCases.count
+        case .onboardingMockConfig: return OnboardingMockConfigRows.allCases.count
+        case .onboardingSubflows: return OnboardingSubflowRows.allCases.count
         case .none: return 0
         }
     }
@@ -406,13 +433,13 @@ final class SubscriptionDebugViewController: UITableViewController {
             default: break
             }
         case .onboarding:
-            switch OnboardingRows(rawValue: indexPath.row) {
-            case .welcome: showWelcomeOnboarding()
-            case .vpn: showVPNOnboarding()
-            case .duckAI: showDuckAIOnboarding()
-            case .tapAllowHint: showTapAllowHintPlayground()
-            default: break
-            }
+            didSelectOnboardingRow(at: indexPath)
+        case .onboardingMock:
+            didSelectOnboardingMockRow(at: indexPath)
+        case .onboardingMockConfig:
+            didSelectOnboardingMockConfigRow(at: indexPath)
+        case .onboardingSubflows:
+            didSelectOnboardingSubflowRow(at: indexPath)
         case .none:
             break
         }
@@ -453,7 +480,11 @@ final class SubscriptionDebugViewController: UITableViewController {
         }
     }
 
-    private func showAlert(title: String, message: String? = nil) {
+    @objc private func noProductsOverrideChanged(_ sender: UISwitch) {
+        subscriptionUserDefaults.noSubscriptionProductsOverride = sender.isOn
+    }
+
+    func showAlert(title: String, message: String? = nil) {
         DispatchQueue.main.async {
             let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
             let okAction = UIAlertAction(title: "OK", style: .default, handler: nil)
@@ -856,66 +887,14 @@ final class SubscriptionDebugViewController: UITableViewController {
         navigationController?.pushViewController(hostingController, animated: true)
     }
 
-    private func showWelcomeOnboarding() {
-        let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingWelcomeView(onClose: { [weak self] in self?.dismiss(animated: true) })
-                .subscriptionOnboardingNavigationContainer())
-        present(hostingController, animated: true)
-    }
+    // Onboarding screen launchers, the mock full/resume flow, and the on-device progress utilities
+    // (resetOnboardingProgress, expireSetupCardWindow) live in
+    // SubscriptionDebugViewController+SubscriptionOnboarding.swift.
 
-    private func showVPNOnboarding() {
-        let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingVPNActivationView(
-                viewModel: SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
-                .subscriptionOnboardingNavigationContainer()
-                .graphicLottieRenderer(Self.onboardingLottieRenderer))
-        present(hostingController, animated: true)
-    }
-
-    private func showDuckAIOnboarding() {
-        let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingDuckAIView(
-                viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
-                .subscriptionOnboardingNavigationContainer())
-        present(hostingController, animated: true)
-    }
-
-    private func showTapAllowHintPlayground() {
-        let hostingController = UIHostingController(
-            rootView: TapAllowHintOverlayPlaygroundView(onClose: { [weak self] in self?.dismiss(animated: true) }))
-        hostingController.modalPresentationStyle = .overFullScreen
-        hostingController.view.backgroundColor = .clear
-        present(hostingController, animated: true)
-    }
-
-    private static let onboardingLottieRenderer = GraphicLottieRenderer { name, playback in
-        AnyView(
-            Lottie.LottieView(animation: .named(name))
-                .playbackMode(playback == .playOnce
-                    ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
-                    : .paused(at: .progress(playback == .frozenAtEnd ? 1 : 0)))
-        )
-    }
 }
 
 extension Bool {
     fileprivate var toString: String {
         String(self)
-    }
-}
-
-extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate {
-    func sectionDidComplete(_ section: SubscriptionOnboardingSection) {}
-
-    func sectionDidRequestDuckAIChat(modelID: String?) {
-        SubscriptionOnboardingDuckAIChatLauncher().launch(from: self, modelID: modelID)
-    }
-
-    func sectionDidRequestAdvance() {
-        dismiss(animated: true)
-    }
-
-    func sectionDidRequestGoBack() {
-        dismiss(animated: true)
     }
 }

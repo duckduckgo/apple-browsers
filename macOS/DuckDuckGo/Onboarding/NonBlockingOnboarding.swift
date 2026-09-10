@@ -35,7 +35,7 @@ struct NonBlockingOnboarding {
 
     /// First-run onboarding can be resumed without restarting contextual onboarding.
     func initializeContextualOnboarding(_ updater: ContextualOnboardingStateUpdater,
-                                       persistor: NonBlockingOnboardingPersistor = NonBlockingOnboardingPersistor()) {
+                                        persistor: NonBlockingOnboardingPersistor = NonBlockingOnboardingPersistor()) {
         guard isNonBlocking, !persistor.contextualInitialized else { return }
         updater.state = .notStarted
         persistor.contextualInitialized = true

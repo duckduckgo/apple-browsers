@@ -49,8 +49,7 @@ final class WindowControllersManagerBrowsingBeforeCompletionTests: XCTestCase {
         sut.setOnboardingHandlers(onClose: { _ in }, onSkipInPlace: {})
 
         pixelDefaults = UserDefaults(suiteName: UUID().uuidString)!
-        PixelKit.setUp(dryRun: false, appVersion: "1.0.0", session: "test", defaultHeaders: [:], defaults: pixelDefaults) {
-            [weak self] name, _, parameters, _, _, completion in
+        PixelKit.setUp(dryRun: false, appVersion: "1.0.0", session: "test", defaultHeaders: [:], defaults: pixelDefaults) { [weak self] name, _, parameters, _, _, completion in
             if name == "m_mac_onboarding_browsing-before-completion_u" {
                 XCTAssertNil(parameters["cohort"])
                 XCTAssertNil(parameters["enrollmentDate"])

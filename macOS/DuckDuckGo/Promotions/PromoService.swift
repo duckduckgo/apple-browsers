@@ -240,7 +240,8 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// Publisher for promo triggers.
     private let triggerPublisher: AnyPublisher<PromoTrigger, Never>
 
-    private let canPresentPromo: (_ isRestoring: Bool) -> Bool
+    /// Provides onboarding completion state used to suppress internal promos until onboarding has finished.
+    private let isOnboardingCompletedProvider: () -> Bool
 
     /// Triggers to be evaluated after delegate registration and deferral window ends.
     private var bufferedTriggers = Set<PromoTrigger>()
@@ -294,7 +295,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         historyStore: PromoHistoryStoring,
         triggerPublisher: AnyPublisher<PromoTrigger, Never>,
         initialExternalActivation: Bool = false,
-        canPresentPromo: @escaping (_ isRestoring: Bool) -> Bool,
+        isOnboardingCompletedProvider: @escaping () -> Bool,
         stateQueue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.promoService.state"),
         evaluationDeferralWindow: TimeInterval = 0.5,
         registrationFallbackTimeout: TimeInterval = 1.0,
@@ -305,7 +306,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         self.promos = promos
         self.historyStore = historyStore
         self.triggerPublisher = triggerPublisher
-        self.canPresentPromo = canPresentPromo
+        self.isOnboardingCompletedProvider = isOnboardingCompletedProvider
         self.stateQueue = stateQueue
         self.dateProvider = dateProvider
         self.resetDebugDate = resetDebugDate
@@ -331,7 +332,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
                 if !isDelegateRegistrationComplete || triggerEvaluationDeferral.isSet {
                     bufferedTriggers.insert(trigger)
                 } else {
-                    withPresentationPermission { $0.evaluateTriggers([trigger]) }
+                    evaluateTriggers([trigger])
                 }
             }
             .store(in: &cancellables)
@@ -399,7 +400,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             subscribeToExternalDelegateIfNeeded(promoId: promo.id, delegate: promo.delegate)
         }
 
-        withPresentationPermission(isRestoring: true) { $0.restoreVisiblePromos() }
+        restoreVisiblePromos()
         processBufferedTriggersIfReady()
     }
 
@@ -465,17 +466,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         bufferedTriggers.removeAll()
         guard !buffered.isEmpty, !externalActivationSuppression.isSet else { return }
 
-        withPresentationPermission { $0.evaluateTriggers(buffered) }
-    }
-
-    private func withPresentationPermission(isRestoring: Bool = false, _ action: @escaping (PromoService) -> Void) {
-        Task { [weak self] in
-            guard let self, canPresentPromo(isRestoring) else { return }
-            stateQueue.async { [weak self] in
-                guard let self else { return }
-                action(self)
-            }
-        }
+        evaluateTriggers(buffered)
     }
 
     // MARK: - Trigger Evaluation
@@ -485,8 +476,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         guard !externalActivationSuppression.isSet else { return }
 
         for promo in promos {
-            guard activeSessions[promo.id] == nil,
-                  let delegate = promo.delegate as? InternalPromoDelegate else { continue }
+            guard let delegate = promo.delegate as? InternalPromoDelegate else { continue }
             let record = historyStore.record(for: promo.id)
 
             guard let lastShown = record.lastShown else { continue }
@@ -505,6 +495,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// and showing any that are newly eligible. Triggers are evaluated in promo priority order.
     private func evaluateTriggers(_ triggers: Set<PromoTrigger>) {
         dispatchPrecondition(condition: .onQueue(stateQueue))
+        guard isOnboardingCompletedProvider() else { return }
 
         let matchingPromos = promos.filter { $0.triggers.contains(where: triggers.contains) }
         for promo in matchingPromos {

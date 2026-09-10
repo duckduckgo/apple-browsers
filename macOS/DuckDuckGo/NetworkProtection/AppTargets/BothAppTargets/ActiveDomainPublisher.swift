@@ -32,6 +32,14 @@ final class ActiveDomainPublisher {
     private var activeTabContentCancellable: AnyCancellable?
     private var unregisterWindowControllerCancellable: AnyCancellable?
 
+    private let onboardingStateLock = NSLock()
+    private var storedIsActiveTabOnboarding = false
+
+    private(set) var isActiveTabOnboarding: Bool {
+        get { onboardingStateLock.withLock { storedIsActiveTabOnboarding } }
+        set { onboardingStateLock.withLock { storedIsActiveTabOnboarding = newValue } }
+    }
+
     @MainActor private weak var activeWindowController: MainWindowController? {
         didSet {
             subscribeToActiveTabViewModel()
@@ -50,10 +58,8 @@ final class ActiveDomainPublisher {
         activeDomain = windowControllersManager.activeDomain
         self.windowControllersManager = windowControllersManager
 
-        Task { @MainActor in
-            subscribeToKeyWindowControllerChanges()
-            subscribeToUnregisteringWindowController()
-        }
+        subscribeToKeyWindowControllerChanges()
+        subscribeToUnregisteringWindowController()
     }
 
     @Published
@@ -69,6 +75,9 @@ final class ActiveDomainPublisher {
 
     @MainActor
     private func subscribeToActiveTabViewModel() {
+        if activeWindowController == nil {
+            activeTab = nil
+        }
         activeTabViewModelCancellable = activeWindowController?.mainViewController.tabCollectionViewModel.$selectedTabViewModel
             .map(\.?.tab)
             .assign(to: \.activeTab, onWeaklyHeld: self)
@@ -76,7 +85,11 @@ final class ActiveDomainPublisher {
 
     @MainActor
     private func subscribeToActiveTabContentChanges() {
+        isActiveTabOnboarding = activeTab?.content == .onboarding
         activeTabContentCancellable = activeTab?.$content
+            .handleEvents(receiveOutput: { [weak self] content in
+                self?.isActiveTabOnboarding = content == .onboarding
+            })
             .map(WindowControllersManager.domain(from:))
             .removeDuplicates()
             .assign(to: \.activeDomain, onWeaklyHeld: self)

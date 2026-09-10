@@ -1123,6 +1123,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             skipped = true
             NotificationCenter.default.post(name: OnboardingExperimentPersistor.outcomeDidChange, object: nil)
 
+            if advanced { triggerNewTabPageView(on: provider) }
             XCTAssertEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
             provider.dismiss(.defaultApp)
             XCTAssertFalse(provider.cards.contains(.defaultApp))
@@ -1143,20 +1144,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             flags.enabledFeatureFlags = advanced ? [.nextStepsListAdvancedCardOrdering] : []
             let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
                                           featureFlagger: flags, isAppStoreBuild: false)
+            if advanced { triggerNewTabPageView(on: provider) }
             XCTAssertEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
-
-            // A refresh that rotates the ordinary stack must retain unfinished setup's priority.
-            persistor.setTimesShown(5, for: .defaultApp)
-            NotificationCenter.default.post(name: OnboardingExperimentPersistor.outcomeDidChange, object: nil)
-            XCTAssertEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
-
-            if advanced {
-                OnboardingActionsManager.isOnboardingFinished = true
-                NotificationCenter.default.post(name: OnboardingExperimentPersistor.outcomeDidChange, object: nil)
-                XCTAssertEqual(provider.cards.first, .addAppToDockMac, "Completion allows normal impression rotation")
-                OnboardingActionsManager.isOnboardingFinished = false
-                NotificationCenter.default.post(name: OnboardingExperimentPersistor.outcomeDidChange, object: nil)
-            }
 
             provider.dismiss(.defaultApp)
             XCTAssertFalse(provider.cards.contains(.defaultApp))
@@ -1164,6 +1153,96 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             provider.dismiss(.addAppToDockMac)
             XCTAssertFalse(provider.cards.contains(.addAppToDockMac))
         }
+    }
+
+    @MainActor
+    func testTreatmentSetupCardsRotateWithoutBeingPromotedAgain() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        OnboardingActionsManager.isOnboardingFinished = false
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        flags.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                      featureFlagger: flags, isAppStoreBuild: false)
+        triggerNewTabPageView(on: provider)
+        let initialStack = provider.cards
+        persistor.setTimesShown(5, for: .defaultApp)
+
+        NotificationCenter.default.post(name: OnboardingExperimentPersistor.outcomeDidChange, object: nil)
+        XCTAssertEqual(provider.cards, initialStack, "Outcome changes must not rotate the visible stack")
+        triggerNewTabPageView(on: provider)
+        XCTAssertEqual(provider.cards.first, .addAppToDockMac)
+        XCTAssertEqual(persistor.orderedCardIDs?.last, .defaultApp)
+        XCTAssertEqual(provider.cards.count, 3)
+
+        persistor.setTimesShown(5, for: .addAppToDockMac)
+        triggerNewTabPageView(on: provider)
+        XCTAssertFalse(provider.cards.contains(.defaultApp))
+        XCTAssertFalse(provider.cards.contains(.addAppToDockMac))
+        XCTAssertEqual(persistor.orderedCardIDs?.last, .addAppToDockMac)
+        XCTAssertEqual(persistor.dailyVisibleStack, provider.cards)
+    }
+
+    @MainActor
+    func testStandardOrderingStopsPromotingSetupCardsAfterFiveViewsWithoutHidingThem() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        OnboardingActionsManager.isOnboardingFinished = false
+        legacyPersistor.isFirstSession = true
+        persistor.setTimesShown(5, for: .defaultApp)
+        persistor.setTimesShown(5, for: .addAppToDockMac)
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                      featureFlagger: flags, isFirstSession: true, isAppStoreBuild: false)
+
+        XCTAssertNotEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
+        XCTAssertTrue(provider.cards.contains(.defaultApp))
+        XCTAssertTrue(provider.cards.contains(.addAppToDockMac))
+    }
+
+    @MainActor
+    func testAdvancedLevelSwapPreservesOnlyUnexhaustedSetupPriority() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        OnboardingActionsManager.isOnboardingFinished = false
+        appearancePreferences = createAppearancePrefs(demonstrationDays: 2, lastDemonstrated: Date())
+        persistor.firstCardLevel = .level1
+        persistor.visibleStackDayIdentifier = 1
+        persistor.dailyVisibleStack = [.defaultApp, .personalizeBrowser, .emailProtection]
+        persistor.setTimesShown(5, for: .defaultApp)
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        flags.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                      featureFlagger: flags, isAppStoreBuild: false)
+        triggerNewTabPageView(on: provider)
+
+        XCTAssertEqual(persistor.firstCardLevel, .level2)
+        XCTAssertEqual(provider.cards.first, .addAppToDockMac)
+        XCTAssertEqual(provider.cards.count, 3)
+        XCTAssertEqual(persistor.dailyVisibleStack, provider.cards)
+    }
+
+    @MainActor
+    func testLateTreatmentPriorityReconcilesSavedStackOnNextAppearance() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        OnboardingActionsManager.isOnboardingFinished = true
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        flags.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        var skipped = false
+        let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                      featureFlagger: flags, isAppStoreBuild: false, didSkipOnboarding: { skipped })
+        triggerNewTabPageView(on: provider)
+        let savedStack = provider.cards
+
+        skipped = true
+        NotificationCenter.default.post(name: OnboardingExperimentPersistor.outcomeDidChange, object: nil)
+        XCTAssertEqual(provider.cards, savedStack)
+        triggerNewTabPageView(on: provider)
+        XCTAssertEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
+        XCTAssertEqual(provider.cards.count, 3)
+        XCTAssertEqual(persistor.dailyVisibleStack, provider.cards)
+        XCTAssertEqual(Array((persistor.orderedCardIDs ?? []).prefix(3)), provider.cards)
     }
 
     @MainActor

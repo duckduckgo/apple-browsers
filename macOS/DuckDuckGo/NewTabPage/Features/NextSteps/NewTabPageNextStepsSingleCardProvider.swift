@@ -223,7 +223,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         }
         NotificationCenter.default.publisher(for: OnboardingExperimentPersistor.outcomeDidChange)
             .receive(on: scheduler)
-            .sink { [weak self] _ in self?.refreshCardList(updateOrder: true) }
+            .sink { [weak self] _ in self?.refreshCardList() }
             .store(in: &cancellables)
         observeCardVisibilityChanges()
         observeKeyWindowChanges()
@@ -273,16 +273,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
     ///   - updateOrder: When true, refreshes the full advanced-ordering stack (NTP appear only). Mid-session refreshes prune the current stack without reordering.
     ///   - recordNewCardImpression: Whether to record an impression for the newly visible card if the first card in the list has changed after the refresh. Defaults to true.
     func refreshCardList(updateOrder: Bool = false, recordNewCardImpression: Bool = true) {
-        var cards = visibleCards(updateOrder: updateOrder)
-        if OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking,
-           !OnboardingActionsManager.isOnboardingFinished || didSkipOnboarding() {
-            let priority: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac].filter(shouldShowCard)
-            cards = priority + cards.filter { !priority.contains($0) }
-            if shouldUseAdvancedCardOrdering {
-                cards = Array(cards.prefix(Constants.maxVisibleCards))
-                persistor.dailyVisibleStack = cards
-            }
-        }
+        let cards = visibleCards(updateOrder: updateOrder)
 
         if cards.isEmpty && !hasRemainingEligibleCards() {
             appearancePreferences.continueSetUpCardsClosed = true
@@ -298,7 +289,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
     /// Returns visible cards. When `updateOrder` is true and advanced ordering is enabled, refreshes the visible stack with advanced ordering.
     func visibleCards(updateOrder: Bool) -> [NewTabPageDataModel.CardID] {
         guard shouldUseAdvancedCardOrdering else {
-            return standardCards.filter(shouldShowCard)
+            return prioritizingOnboardingCards(in: standardCards).filter(shouldShowCard)
         }
         if updateOrder {
             return refreshVisibleStackWithAdvancedOrdering()
@@ -311,6 +302,15 @@ private extension NewTabPageNextStepsSingleCardProvider {
         }
     }
 
+    func prioritizingOnboardingCards(in cards: [NewTabPageDataModel.CardID]) -> [NewTabPageDataModel.CardID] {
+        guard OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking,
+              !OnboardingActionsManager.isOnboardingFinished || didSkipOnboarding() else { return cards }
+        let priority: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac].filter {
+            shouldShowCard($0) && persistor.timesShown(for: $0) < Constants.maxTimesCardShown
+        }
+        return priority + cards.filter { !priority.contains($0) }
+    }
+
     /// Refreshes the persisted visible stack for a New Tab Page appear.
     /// Applies level swap, rotation, and day-boundary rules to reduce card blindness and overwhelm.
     /// Reconciles stored order and `dailyVisibleStack` with current eligibility, then writes
@@ -319,6 +319,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         let currentDayIdentifier = appearancePreferences.nextStepsCardsDemonstrationDays
         var resolvedOrder = persistor.orderedCardIDs ?? defaultAdvancedCards.map(\.cardID)
         let didLevelSwap = applyLevelSwapIfNeeded(to: &resolvedOrder)
+        resolvedOrder = prioritizingOnboardingCards(in: resolvedOrder)
 
         let isNewDay = persistor.visibleStackDayIdentifier != currentDayIdentifier
         var visibleStack: [NewTabPageDataModel.CardID]
@@ -330,6 +331,13 @@ private extension NewTabPageNextStepsSingleCardProvider {
         }
 
         applyRotationIfNeeded(to: &visibleStack, orderedCardIDs: &resolvedOrder)
+
+        // Rotate the existing top card before promoting setup cards that still need exposure.
+        let prioritizedStack = Array(prioritizingOnboardingCards(in: visibleStack).prefix(Constants.maxVisibleCards))
+        if prioritizedStack != visibleStack {
+            visibleStack = prioritizedStack
+            resolvedOrder = visibleStack + resolvedOrder.filter { !visibleStack.contains($0) }
+        }
 
         persistor.dailyVisibleStack = visibleStack
         if isNewDay {

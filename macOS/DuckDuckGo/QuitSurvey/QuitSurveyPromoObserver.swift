@@ -17,13 +17,13 @@
 //
 
 import Combine
-import ConcurrencyExtensions
 import Foundation
 
 /// Shares the quit survey's visibility with the promo queue.
 final class QuitSurveyPromoObserver: ExternalPromoDelegate {
 
     private let visibilitySubject = CurrentValueSubject<Bool, Never>(false)
+    @MainActor private var pendingReport: (isVisible: Bool, continuation: CheckedContinuation<Void, Never>)?
 
     var isVisible: Bool { visibilitySubject.value }
 
@@ -33,38 +33,30 @@ final class QuitSurveyPromoObserver: ExternalPromoDelegate {
 
     var resultWhenHidden: PromoResult { .ignored() }
 
-    func reportVisible() {
-        visibilitySubject.send(true)
+    @MainActor
+    func reportVisible() async {
+        await reportVisibility(true)
     }
 
-    func reportHidden() {
-        visibilitySubject.send(false)
-    }
-}
-
-/// Waits for the quit survey's dismissal to reach promo history before the app finishes quitting.
-struct QuitSurveyDismissalGate {
-
-    private let historyProvider: any PromoHistoryProviding
-
-    init(historyProvider: any PromoHistoryProviding) {
-        self.historyProvider = historyProvider
+    @MainActor
+    func reportHidden() async {
+        await reportVisibility(false)
     }
 
-    func wait(for timeout: @escaping @Sendable () async -> Void = { try? await Task.sleep(interval: 0.5) }) async {
-        let dismissalRecorded = historyProvider.historyPublisher(for: PromoServiceFactory.quitSurveyPromoID)
-            .compactMap { $0?.lastDismissed }
-            .values
+    @MainActor
+    func promoServiceDidApplyVisibility(_ isVisible: Bool) {
+        guard let pendingReport, pendingReport.isVisible == isVisible else { return }
+        self.pendingReport = nil
+        pendingReport.continuation.resume()
+    }
 
-        await withTaskGroup(of: Void.self) { group in
-            group.addTask {
-                for await _ in dismissalRecorded { break }
-            }
-            group.addTask {
-                await timeout()
-            }
-            await group.next()
-            group.cancelAll()
+    @MainActor
+    private func reportVisibility(_ isVisible: Bool) async {
+        guard visibilitySubject.value != isVisible else { return }
+        precondition(pendingReport == nil)
+        await withCheckedContinuation { continuation in
+            pendingReport = (isVisible, continuation)
+            visibilitySubject.send(isVisible)
         }
     }
 }

@@ -20,6 +20,7 @@ import Combine
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
+@MainActor
 final class QuitSurveyPromoObserverTests: XCTestCase {
 
     private var cancellables = Set<AnyCancellable>()
@@ -35,42 +36,96 @@ final class QuitSurveyPromoObserverTests: XCTestCase {
         XCTAssertFalse(observer.isVisible)
     }
 
-    func testWhenReportVisible_ThenIsVisibleAndPublisherEmitsTrue() {
+    func testWhenReportVisible_ThenWaitsUntilPromoServiceAppliesVisibility() async {
         let observer = QuitSurveyPromoObserver()
         var emissions: [Bool] = []
+        var reportCompleted = false
+        let visibilityExpectation = XCTestExpectation(description: "visibility reported")
         observer.isVisiblePublisher
-            .sink { emissions.append($0) }
+            .sink { isVisible in
+                emissions.append(isVisible)
+                if isVisible {
+                    visibilityExpectation.fulfill()
+                }
+            }
             .store(in: &cancellables)
 
-        observer.reportVisible()
+        let reportTask = Task {
+            await observer.reportVisible()
+            reportCompleted = true
+        }
+        await fulfillment(of: [visibilityExpectation], timeout: 1)
 
         XCTAssertTrue(observer.isVisible)
         XCTAssertEqual(emissions, [false, true])
+        XCTAssertFalse(reportCompleted)
+
+        observer.promoServiceDidApplyVisibility(true)
+        await reportTask.value
+
+        XCTAssertTrue(reportCompleted)
     }
 
-    func testWhenReportHiddenAfterVisible_ThenPublisherEmitsFalse() {
+    func testWhenReportHiddenAfterVisible_ThenWaitsUntilDismissalIsRecorded() async {
         let observer = QuitSurveyPromoObserver()
-        observer.reportVisible()
-        var emissions: [Bool] = []
+        let visibleExpectation = XCTestExpectation(description: "visible")
         observer.isVisiblePublisher
-            .sink { emissions.append($0) }
+            .filter { $0 }
+            .first()
+            .sink { _ in visibleExpectation.fulfill() }
+            .store(in: &cancellables)
+        let showTask = Task { await observer.reportVisible() }
+        await fulfillment(of: [visibleExpectation], timeout: 1)
+        observer.promoServiceDidApplyVisibility(true)
+        await showTask.value
+
+        var emissions: [Bool] = []
+        var reportCompleted = false
+        let hiddenExpectation = XCTestExpectation(description: "hidden")
+        observer.isVisiblePublisher
+            .sink { isVisible in
+                emissions.append(isVisible)
+                if !isVisible {
+                    hiddenExpectation.fulfill()
+                }
+            }
             .store(in: &cancellables)
 
-        observer.reportHidden()
+        let hideTask = Task {
+            await observer.reportHidden()
+            reportCompleted = true
+        }
+        await fulfillment(of: [hiddenExpectation], timeout: 1)
 
         XCTAssertFalse(observer.isVisible)
         XCTAssertEqual(emissions, [true, false])
+        XCTAssertFalse(reportCompleted)
+
+        observer.promoServiceDidApplyVisibility(false)
+        await hideTask.value
+
+        XCTAssertTrue(reportCompleted)
     }
 
-    func testWhenReportVisibleTwice_ThenNoDuplicateEmission() {
+    func testWhenReportVisibleTwice_ThenSecondReportReturnsImmediately() async {
         let observer = QuitSurveyPromoObserver()
         var emissions: [Bool] = []
+        let visibilityExpectation = XCTestExpectation(description: "visibility reported")
         observer.isVisiblePublisher
-            .sink { emissions.append($0) }
+            .sink { isVisible in
+                emissions.append(isVisible)
+                if isVisible {
+                    visibilityExpectation.fulfill()
+                }
+            }
             .store(in: &cancellables)
 
-        observer.reportVisible()
-        observer.reportVisible()
+        let firstReport = Task { await observer.reportVisible() }
+        await fulfillment(of: [visibilityExpectation], timeout: 1)
+        observer.promoServiceDidApplyVisibility(true)
+        await firstReport.value
+
+        await observer.reportVisible()
 
         XCTAssertEqual(emissions, [false, true])
     }
@@ -81,33 +136,4 @@ final class QuitSurveyPromoObserverTests: XCTestCase {
         XCTAssertEqual(observer.resultWhenHidden, .ignored(cooldown: nil))
     }
 
-    func testWhenDismissalRecorded_ThenGateReturnsWithoutWaitingForTimeout() async {
-        let provider = MockPromoHistoryProvider()
-        let dismissalGate = QuitSurveyDismissalGate(historyProvider: provider)
-        // A timeout that never fires: returning at all proves the record path won.
-        let gate = Task { await dismissalGate.wait(for: { await Self.never() }) }
-
-        var record = PromoHistoryRecord(id: PromoServiceFactory.quitSurveyPromoID)
-        record.lastDismissed = Date()
-        provider.record = record
-
-        await gate.value
-    }
-
-    func testWhenTimeoutFires_ThenGateReturnsWithoutADismissal() async {
-        let provider = MockPromoHistoryProvider()
-        let dismissalGate = QuitSurveyDismissalGate(historyProvider: provider)
-
-        // No record is ever sent; returning at all proves the timeout path works.
-        await dismissalGate.wait(for: { })
-    }
-}
-
-extension QuitSurveyPromoObserverTests {
-
-    /// A timeout branch that will not complete on its own, so a gate can only be released by its
-    /// other branch. Honors cancellation, so the gate's task group can tear it down.
-    static func never() async {
-        try? await Task.sleep(nanoseconds: .max / 2)
-    }
 }

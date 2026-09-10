@@ -75,7 +75,7 @@ final class SitePermissionsState {
     fileprivate struct PendingBridgeRequest {
         let context: SitePermissionRequestContext
         let frame: WKFrameInfo
-        let permissionTypes: Set<SitePermissionType>
+        var permissionTypes: Set<SitePermissionType>
         let origin: SitePermissionSecurityOrigin
         let webViewID: ObjectIdentifier
         let continuation: CheckedContinuation<MediaCaptureBridgeDecision, Never>
@@ -1319,8 +1319,6 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
               let coordinator = makeSitePermissionsCoordinatorIfNeeded(dependencies: dependencies) else {
             return .deny
         }
-        sitePermissionsState.handledBridgeRequestIDs.insert(requestID)
-
         let context = SitePermissionRequestContext(
             tabID: tabModel.uid,
             topLevelSite: topLevelSite,
@@ -1328,6 +1326,7 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
             webContentProcessGeneration: sitePermissionsState.webContentProcessGeneration,
             navigationGeneration: sitePermissionsState.navigationGeneration
         )
+        sitePermissionsState.handledBridgeRequestIDs.insert(requestID)
 
         return await withCheckedContinuation { continuation in
             sitePermissionsState.pendingBridgeRequests[requestID] = SitePermissionsState.PendingBridgeRequest(
@@ -1338,8 +1337,16 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
                 webViewID: ObjectIdentifier(webView),
                 continuation: continuation
             )
+            let requestableTypes = coordinator.requestablePermissionTypes(
+                for: SitePermissionRequest(context: context, permissionTypes: permissionTypes)
+            )
+            guard !requestableTypes.isEmpty else {
+                resolveMediaCaptureBridgeRequest(requestID, resolution: .deny(systemBlocks: []))
+                return
+            }
+            sitePermissionsState.pendingBridgeRequests[requestID]?.permissionTypes = requestableTypes
             coordinator.request(
-                SitePermissionRequest(context: context, permissionTypes: permissionTypes),
+                SitePermissionRequest(context: context, permissionTypes: requestableTypes),
                 promptHandler: sitePermissionsPromptHandler(),
                 completion: { [weak self] resolution in
                     self?.resolveMediaCaptureBridgeRequest(requestID, resolution: resolution)
@@ -1386,7 +1393,7 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
             navigationGeneration: pendingRequest.context.navigationGeneration,
             createdAtUptime: sitePermissionsUptimeProvider()
         ))
-        pendingRequest.continuation.resume(returning: .allow)
+        pendingRequest.continuation.resume(returning: .allow(permissionTypes: pendingRequest.permissionTypes))
     }
 
     private func isSupportedMediaCapturePermissionTypes(_ permissionTypes: Set<SitePermissionType>) -> Bool {

@@ -149,6 +149,117 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         }
     }
 
+    func testCombinedRequestPromptsAndAuthorizesOnlyTheTypeNotBlockedBySiteOrGlobalNever() async throws {
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
+        for blockedType: SitePermissionType in [.camera, .microphone] {
+            for isSiteDecision in [false, true] {
+                for promptDecision: SitePermissionPromptDecision in [.allowOnce, .allowWhileUsingSite] {
+                    let remainingType: SitePermissionType = blockedType == .camera ? .microphone : .camera
+                    let remainingCaptureType: WKMediaCaptureType = blockedType == .camera ? .microphone : .camera
+                    let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+                    if isSiteDecision {
+                        store.setPersistentDecision(.deny, for: blockedType, at: site)
+                    } else {
+                        store.setGlobalDefault(.deny, for: blockedType)
+                    }
+                    let authorizationState = AVAuthorizationStateBox(status: .notDetermined)
+                    var requestedMediaTypes = [AVMediaType]()
+                    let sut = makeSUT(store: store, avAuthorizationStatus: { _ in authorizationState.status }, avRequestAccess: { type, completion in
+                        requestedMediaTypes.append(type)
+                        authorizationState.status = .authorized
+                        completion(true)
+                    })
+                    defer { sut.closeSitePermissions() }
+                    let tabDelegate = MockTabDelegate()
+                    sut.delegate = tabDelegate
+                    var prompts = [SitePermissionPrompt]()
+                    sut.sitePermissionsPromptHandlerOverride = { prompt, completion in
+                        prompts.append(prompt)
+                        completion(promptDecision)
+                    }
+
+                    let decision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .cameraAndMicrophone)
+
+                    XCTAssertEqual(decision, .allow(permissionTypes: [remainingType]))
+                    XCTAssertEqual(prompts, [SitePermissionPrompt(site: site, permissionTypes: [remainingType])])
+                    XCTAssertEqual(requestedMediaTypes, [remainingType == .camera ? .video : .audio])
+                    XCTAssertEqual(store.decision(for: blockedType, at: site), isSiteDecision ? .deny : nil)
+                    XCTAssertEqual(store.decision(for: remainingType, at: site), promptDecision == .allowOnce ? nil : .allow)
+                    XCTAssertEqual(store.globalDefault(for: blockedType), isSiteDecision ? .ask : .deny)
+
+                    // The reduced preapproval must never authorize the original combined request or the blocked device.
+                    var nativeDecisions = [WKPermissionDecision]()
+                    let blockedCaptureType: WKMediaCaptureType = blockedType == .camera ? .camera : .microphone
+                    for captureType in [WKMediaCaptureType.cameraAndMicrophone, blockedCaptureType, remainingCaptureType, remainingCaptureType] {
+                        requestPermission(on: sut, originHost: site.host, captureType: captureType) { nativeDecisions.append($0) }
+                    }
+                    XCTAssertEqual(nativeDecisions, [.deny, .deny, .grant, .deny])
+                    XCTAssertEqual(tabDelegate.grantedSitePermissions, [[remainingType]])
+                }
+            }
+        }
+    }
+
+    func testCombinedRequestWithBothTypesBlockedDeclinesWithoutPromptingOrSystemAuthorization() async {
+        let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+        store.setGlobalDefault(.deny, for: .camera)
+        store.setGlobalDefault(.deny, for: .microphone)
+        let sut = makeSUT(store: store, avRequestAccess: { _, _ in XCTFail("Blocked devices must not request system authorization") })
+        sut.sitePermissionsPromptHandlerOverride = { _, _ in XCTFail("Both devices are blocked") }
+
+        let decision = await requestPermissionThroughBridge(on: sut, originHost: "top-level.example", captureType: .cameraAndMicrophone)
+
+        XCTAssertEqual(decision, .deny)
+        requestPermission(on: sut, originHost: "top-level.example", captureType: .cameraAndMicrophone) { XCTAssertEqual($0, .deny) }
+    }
+
+    func testCombinedRequestStillAppliesFramePolicyBeforeRemovingBlockedTypes() async {
+        let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+        store.setGlobalDefault(.deny, for: .camera)
+        let sut = makeSUT(store: store)
+        sut.sitePermissionsPromptHandlerOverride = { _, _ in XCTFail("Original request violates frame policy") }
+        sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+        let response = HTTPURLResponse(url: URL(string: "https://top-level.example/path")!, statusCode: 200,
+                                       httpVersion: nil, headerFields: ["Permissions-Policy": "camera=()"])!
+        sut.captureSitePermissionsMediaPolicy(from: response, isForMainFrame: true)
+        sut.webView(sut.webView, didCommit: nil)
+
+        let decision = await requestPermissionThroughBridge(on: sut, originHost: "top-level.example", captureType: .cameraAndMicrophone)
+
+        XCTAssertEqual(decision, .deny)
+    }
+
+    func testReducedMediaRequestCannotGrantAfterNavigationOrRevocation() async throws {
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
+        for isNavigation in [false, true] {
+            let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+            store.setGlobalDefault(.deny, for: .camera)
+            let sut = makeSUT(store: store)
+            defer { sut.closeSitePermissions() }
+            let prompted = expectation(description: "Microphone prompt appears")
+            var respond: ((SitePermissionPromptDecision) -> Void)?
+            sut.sitePermissionsPromptHandlerOverride = { prompt, completion in
+                XCTAssertEqual(prompt.permissionTypes, [.microphone])
+                respond = completion
+                prompted.fulfill()
+            }
+            let request = makeBridgeRequestTask(on: sut, originHost: site.host, captureType: .cameraAndMicrophone)
+            await fulfillment(of: [prompted], timeout: 1)
+
+            if isNavigation {
+                sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+            } else {
+                sut.revokeSitePermissions([.microphone], for: site)
+            }
+            let decision = await request.value
+            respond?(.allowWhileUsingSite)
+
+            XCTAssertEqual(decision, .deny)
+            XCTAssertTrue(store.permissions(for: site).isEmpty)
+            requestPermission(on: sut, originHost: site.host, captureType: .microphone) { XCTAssertEqual($0, .deny) }
+        }
+    }
+
     func testFlagOnPreservesDuckAIHostMatrixWithoutConstructingCoordinator() throws {
         let sut = makeSUT()
         var didRequestDependencies = false
@@ -240,7 +351,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                                                                     originHost: "top-level.example",
                                                                     captureType: .camera)
         XCTAssertTrue(didPrompt)
-        XCTAssertEqual(enabledDecision, .allow)
+        XCTAssertEqual(enabledDecision, .allow(permissionTypes: [.camera]))
     }
 
     func testFlagOnRejectsBridgeRequestBeforeMainFrameCommit() async {
@@ -1438,7 +1549,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         dialog.onAction(.allowOnce)
 
         let bridgeDecision = await bridgeRequest.value
-        XCTAssertEqual(bridgeDecision, .allow)
+        XCTAssertEqual(bridgeDecision, .allow(permissionTypes: [.camera]))
         requestPermission(on: sut,
                           originHost: "top-level.example",
                           captureType: .camera,
@@ -1577,7 +1688,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             sut.delegate = tabDelegate
             sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.allowOnce) }
             let decision = await requestPermissionThroughBridge(on: sut, originHost: "top-level.example", captureType: .camera)
-            XCTAssertEqual(decision, .allow)
+            XCTAssertEqual(decision, .allow(permissionTypes: [.camera]))
             requestPermission(on: sut, originHost: "top-level.example", captureType: .camera) { decision in
                 XCTAssertEqual(decision, .grant)
             }
@@ -1599,7 +1710,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             sut.delegate = tabDelegate
             sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.allowOnce) }
             let decision = await requestPermissionThroughBridge(on: sut, originHost: "top-level.example", captureType: captureType)
-            XCTAssertEqual(decision, .allow)
+            XCTAssertEqual(decision, .allow(permissionTypes: expectedTypes))
             XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
 
             requestPermission(on: sut, originHost: "top-level.example", captureType: captureType) { decision in
@@ -1644,7 +1755,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         promptCompletion?(.allowOnce)
         let bridgeDecision = await bridgeRequest.value
 
-        XCTAssertEqual(bridgeDecision, .allow)
+        XCTAssertEqual(bridgeDecision, .allow(permissionTypes: [.camera]))
         XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
         XCTAssertEqual(timeline, [.sitePrompt, .systemPrompt])
 
@@ -1671,7 +1782,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let bridgeDecision = await requestPermissionThroughBridge(on: sut,
                                                                   originHost: "top-level.example",
                                                                   captureType: .camera)
-        XCTAssertEqual(bridgeDecision, .allow)
+        XCTAssertEqual(bridgeDecision, .allow(permissionTypes: [.camera]))
 
         var decisions = [WKPermissionDecision]()
         requestPermission(on: sut,
@@ -1696,7 +1807,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
         for captureType: WKMediaCaptureType in [.camera, .microphone] {
             let decision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: captureType)
-            XCTAssertEqual(decision, .allow)
+            XCTAssertEqual(decision, .allow(permissionTypes: captureType == .camera ? [.camera] : [.microphone]))
         }
 
         sut.revokeSitePermissions([.camera], for: site)
@@ -1742,7 +1853,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                                                          originHost: "top-level.example",
                                                          captureType: .camera,
                                                          isMainFrame: true).value
-        XCTAssertEqual(bridgeDecision, .allow)
+        XCTAssertEqual(bridgeDecision, .allow(permissionTypes: [.camera]))
 
         var decisions = [WKPermissionDecision]()
         requestPermission(on: sut,
@@ -1772,7 +1883,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let bridgeDecision = await requestPermissionThroughBridge(on: sut,
                                                                   originHost: "top-level.example",
                                                                   captureType: .camera)
-        XCTAssertEqual(bridgeDecision, .allow)
+        XCTAssertEqual(bridgeDecision, .allow(permissionTypes: [.camera]))
         uptime += 6
 
         var decisions = [WKPermissionDecision]()

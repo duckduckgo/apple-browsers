@@ -21,8 +21,8 @@ import Foundation
 import UserScript
 import WebKit
 
-public enum MediaCaptureBridgeDecision: String, Equatable, Sendable {
-    case allow
+public enum MediaCaptureBridgeDecision: Equatable, Sendable {
+    case allow(permissionTypes: Set<SitePermissionType>)
     case deny
     case bypass
 }
@@ -74,13 +74,13 @@ public final class MediaCaptureUserScript: NSObject, UserScript {
         guard let body = message.body as? [String: Any],
               body["capability"] as? String == Self.capabilityToken,
               let delegate else {
-            return (["decision": MediaCaptureBridgeDecision.deny.rawValue], nil)
+            return (["decision": "deny"], nil)
         }
 
         // A retained document must return to WebKit's behavior on rollback, including contexts
         // the custom flow does not support. Check the flag before applying its eligibility rules.
         guard delegate.isMediaCapturePermissionHandlingEnabled else {
-            return (["decision": MediaCaptureBridgeDecision.bypass.rawValue], nil)
+            return (["decision": "bypass"], nil)
         }
 
         guard body["isEligible"] as? Bool == true,
@@ -91,7 +91,7 @@ public final class MediaCaptureUserScript: NSObject, UserScript {
               requestsVideo || requestsAudio,
               let webView = message.webView,
               !message.frameInfo.securityOrigin.host.isEmpty else {
-            return (["decision": MediaCaptureBridgeDecision.deny.rawValue], nil)
+            return (["decision": "deny"], nil)
         }
 
         var permissionTypes = Set<SitePermissionType>()
@@ -107,7 +107,16 @@ public final class MediaCaptureUserScript: NSObject, UserScript {
                                                                requestID: requestID,
                                                                in: message.frameInfo,
                                                                webView: webView)
-        return (["decision": decision.rawValue], nil)
+        switch decision {
+        case .allow(let permissionTypes):
+            return (["decision": "allow",
+                     "video": permissionTypes.contains(.camera),
+                     "audio": permissionTypes.contains(.microphone)], nil)
+        case .deny:
+            return (["decision": "deny"], nil)
+        case .bypass:
+            return (["decision": "bypass"], nil)
+        }
     }
 
     static func isValidRequestID(_ requestID: String) -> Bool {

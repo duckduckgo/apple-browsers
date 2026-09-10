@@ -44,7 +44,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testInjectedJavaScriptWaitsForAllowReplyThenInvokesSavedNativeFunctionOnce() async throws {
-        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
 
         let result = try await webView.callAsyncJavaScript(
@@ -67,6 +67,92 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         XCTAssertEqual(handler.receivedBodies[0]["capability"] as? String, MediaCaptureUserScript.capabilityToken)
         XCTAssertEqual(handler.receivedBodies[0]["video"] as? Bool, true)
         XCTAssertEqual(handler.receivedBodies[0]["audio"] as? Bool, false)
+    }
+
+    func testPartialGrantsPreserveApprovedConstraintsAndExcludeOnlyBlockedDevice() async throws {
+        for approvedVideo in [false, true] {
+            let (webView, handler) = await makeWebView(
+                reply: (["decision": "allow", "video": approvedVideo, "audio": !approvedVideo], nil),
+                baseURL: URL(string: "https://duck.ai")!
+            )
+            let result = try await webView.callAsyncJavaScript(
+                """
+                let videoReads = 0;
+                let audioReads = 0;
+                const video = { width: { ideal: 1280 } };
+                const audio = { echoCancellation: false };
+                await navigator.mediaDevices.getUserMedia({
+                    get video() { videoReads += 1; return video; },
+                    get audio() { audioReads += 1; return audio; }
+                });
+                return {
+                    videoReads, audioReads,
+                    videoMatches: __nativeMediaRawConstraints.video === (approvedVideo ? video : false),
+                    audioMatches: __nativeMediaRawConstraints.audio === (approvedVideo ? false : audio),
+                    nativeCallCount: __nativeMediaCallCount
+                };
+                """,
+                arguments: ["approvedVideo": approvedVideo],
+                in: nil,
+                contentWorld: .page
+            ) as? [String: Any]
+
+            XCTAssertEqual(result?["videoReads"] as? Int, 1)
+            XCTAssertEqual(result?["audioReads"] as? Int, 1)
+            XCTAssertEqual(result?["videoMatches"] as? Bool, true)
+            XCTAssertEqual(result?["audioMatches"] as? Bool, true)
+            XCTAssertEqual(result?["nativeCallCount"] as? Int, 1)
+            XCTAssertEqual(handler.receivedBodies.count, 1)
+            XCTAssertEqual(handler.receivedBodies[0]["video"] as? Bool, true)
+            XCTAssertEqual(handler.receivedBodies[0]["audio"] as? Bool, true)
+        }
+    }
+
+    func testInvalidAllowRepliesCannotRequestUnapprovedDevices() async throws {
+        let replies: [[String: Any]] = [
+            ["decision": "allow"],
+            ["decision": "allow", "video": true],
+            ["decision": "allow", "video": "true", "audio": false],
+            ["decision": "allow", "video": false, "audio": false],
+            ["decision": "allow", "video": true, "audio": true],
+            ["decision": "allow", "video": false, "audio": true]
+        ]
+        for reply in replies {
+            let (webView, _) = await makeWebView(reply: (reply, nil), baseURL: URL(string: "https://duck.ai")!)
+            let result = try await webView.callAsyncJavaScript(
+                """
+                try {
+                    await navigator.mediaDevices.getUserMedia({ video: true });
+                    return { rejected: false };
+                } catch (error) {
+                    return { rejected: error.name === "NotAllowedError", nativeCallCount: __nativeMediaCallCount };
+                }
+                """,
+                arguments: [:],
+                in: nil,
+                contentWorld: .page
+            ) as? [String: Any]
+
+            XCTAssertEqual(result?["rejected"] as? Bool, true, "\(reply)")
+            XCTAssertEqual(result?["nativeCallCount"] as? Int, 0, "\(reply)")
+        }
+    }
+
+    func testBypassPreservesBothOriginalConstraintObjects() async throws {
+        let (webView, _) = await makeWebView(reply: (["decision": "bypass"], nil), baseURL: URL(string: "about:blank")!)
+        let unchanged = try await webView.callAsyncJavaScript(
+            """
+            const video = { width: { ideal: 1280 } };
+            const audio = { echoCancellation: false };
+            await navigator.mediaDevices.getUserMedia({ video, audio });
+            return __nativeMediaRawConstraints.video === video && __nativeMediaRawConstraints.audio === audio;
+            """,
+            arguments: [:],
+            in: nil,
+            contentWorld: .page
+        ) as? Bool
+
+        XCTAssertEqual(unchanged, true)
     }
 
     func testInjectedJavaScriptRejectsWithoutInvokingNativeFunctionWhenBridgeDenies() async {
@@ -96,7 +182,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testInjectedJavaScriptMarksSyntheticFrameIneligibleWithoutCallingNativeFunction() async {
-        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                                    baseURL: URL(string: "about:blank")!)
 
         do {
@@ -123,7 +209,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testInjectedJavaScriptAllowsOrdinarySameOriginBlobFrame() async throws {
-        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
 
         let result = try await requestCameraFromBlobFrame(in: webView)
@@ -134,7 +220,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testInjectedJavaScriptMarksOpaqueSandboxIneligibleAfterAttributeRemovalWithoutCallingNative() async throws {
-        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
 
         let result = try await requestCameraFromBlobFrame(in: webView, sandbox: "allow-scripts", removeSandboxAfterLoad: true)
@@ -147,7 +233,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testInjectedJavaScriptAllowsSameOriginFramesInOpenAndClosedShadowRoots() async throws {
-        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
 
         for mode in ["open", "closed"] {
@@ -160,7 +246,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testInjectedJavaScriptAllowsSandboxWithSameOriginPermission() async throws {
-        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
 
         // A sandbox with allow-same-origin is eligible for media under the web platform rules.
@@ -172,7 +258,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testInjectedJavaScriptAllowsNewDocumentAfterRemovingOpaqueSandboxAndNavigating() async throws {
-        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
 
         let result = try await requestCameraFromBlobFrame(in: webView,
@@ -186,7 +272,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testInjectedJavaScriptMarksPolicyBlockedFrameIneligibleWithoutCallingNative() async throws {
-        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                                    baseURL: URL(string: "https://duck.ai")!,
                                                    deniedPolicyFeatures: ["camera"])
 
@@ -199,7 +285,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testPolicyFallbackRejectsBlockedSameOriginFramesIncludingShadowRootsAndNestedFrames() async throws {
-        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
 
         for shadowRootMode in [nil, "open", "closed"] as [String?] {
@@ -219,7 +305,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testPolicyFallbackPreservesAllowedSameOriginAllowlistForms() async throws {
-        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
         let policies = ["camera", "camera *", "camera 'self'", "camera 'src'", "camera:'self'",
                         "camera https://other.example https://duck.ai", "microphone 'none'"]
@@ -234,7 +320,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testPolicyFallbackRejectsNonmatchingAllowlistAndUsesFirstDuplicateDirective() async throws {
-        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
 
         for policy in ["camera https://other.example", "camera 'none'; camera *", "camera:'none'", "camera 'self' 'NONE'"] {
@@ -248,7 +334,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testPolicyFallbackAppliesChangedAllowAttributeOnNextNavigation() async throws {
-        let (webView, _) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, _) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                              baseURL: URL(string: "https://duck.ai")!)
 
         for navigate in [false, true] {
@@ -298,7 +384,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testNativeCapabilityIsNotExposedAsAGlobalPropertyName() async throws {
-        let (webView, _) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, _) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                              baseURL: URL(string: "https://duck.ai")!)
 
         let isExposed = try await webView.callAsyncJavaScript(
@@ -312,7 +398,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testLegacyNavigatorGetUserMediaEntryPointsAreUnavailable() async throws {
-        let (webView, _) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, _) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                              baseURL: URL(string: "https://duck.ai")!)
 
         let legacyEntryPointCount = try await webView.callAsyncJavaScript(
@@ -326,7 +412,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testInjectedJavaScriptSnapshotsChangingConstraintGettersBeforeCallingBridgeAndNative() async throws {
-        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
 
         let reads = try await webView.callAsyncJavaScript(
@@ -355,7 +441,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     func testInjectedJavaScriptMarksBorrowedReceiverIneligibleWithoutCallingNative() async {
-        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow", "video": true, "audio": false], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
 
         do {
@@ -536,6 +622,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     class FakeMediaDevices {
         getUserMedia(constraints) {
             globalThis.__nativeMediaCallCount += 1;
+            globalThis.__nativeMediaRawConstraints = constraints;
             globalThis.__nativeMediaConstraints = {
                 video: Boolean(constraints?.video),
                 audio: Boolean(constraints?.audio)
@@ -564,7 +651,7 @@ private final class MediaCapturePermissionDelegate: MediaCaptureUserScriptDelega
                                 in frame: WKFrameInfo,
                                 webView: WKWebView) async -> MediaCaptureBridgeDecision {
         requestCount += 1
-        return .allow
+        return .allow(permissionTypes: permissionTypes)
     }
 }
 
@@ -582,7 +669,7 @@ private final class MediaCaptureReplyHandler: NSObject, WKScriptMessageHandlerWi
         if let body = message.body as? [String: Any] {
             receivedBodies.append(body)
             if body["isEligible"] as? Bool == false,
-               (reply.0 as? [String: String])?["decision"] != "bypass" {
+               (reply.0 as? [String: Any])?["decision"] as? String != "bypass" {
                 return (["decision": "deny"], nil)
             }
         }

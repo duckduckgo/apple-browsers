@@ -205,7 +205,6 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         cell.textLabel?.textColor = .label
         cell.detailTextLabel?.text = nil
         cell.accessoryType = .none
-        cell.textLabel?.numberOfLines = 1
         cell.accessoryView = nil
         cell.isUserInteractionEnabled = true
         cell.selectionStyle = .default

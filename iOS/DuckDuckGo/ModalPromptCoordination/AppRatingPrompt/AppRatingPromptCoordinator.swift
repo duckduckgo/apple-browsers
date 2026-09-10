@@ -81,15 +81,18 @@ final class AppRatingPromptCoordinator: ModalPromptProvider, AppRatingPromptCoor
     private let appRatingPrompt: AppRatingPrompt
     private let coordinationPolicy: AppRatingPromptCoordinationPolicying
     private let store: AppRatingPromptSlotStore
+    private let firePixel: (AppRatingPromptPixel) -> Void
 
     init(
         appRatingPrompt: AppRatingPrompt,
         coordinationPolicy: AppRatingPromptCoordinationPolicying,
-        store: AppRatingPromptSlotStore
+        store: AppRatingPromptSlotStore,
+        firePixel: @escaping (AppRatingPromptPixel) -> Void
     ) {
         self.appRatingPrompt = appRatingPrompt
         self.coordinationPolicy = coordinationPolicy
         self.store = store
+        self.firePixel = firePixel
     }
 
     // MARK: - ModalPromptProvider
@@ -146,7 +149,11 @@ final class AppRatingPromptCoordinator: ModalPromptProvider, AppRatingPromptCoor
     }
 
     func didRequestRating() {
+        // Read before `shown()`, which sets `firstShown` and so flips this.
+        let isFirstRequest = appRatingPrompt.storage.firstShown == nil
+
         appRatingPrompt.shown()
+        firePixel(isFirstRequest ? .firstRequest : .secondRequest)
     }
 
     func didSearch() {

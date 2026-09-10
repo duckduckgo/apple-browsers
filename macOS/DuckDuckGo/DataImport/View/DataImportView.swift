@@ -143,11 +143,7 @@ struct DataImportView: ModalView {
             case .directoryReadPermissionDenied:
                 RequestDirectoryReadPermissionView(source: model.importSource, mode: .retryAfterError)
             case .passwordEntryHelp:
-                PasswordEntryRetryPromptView(
-                    onRetry: {
-                        model.initiateImport()
-                    }
-                )
+                PasswordEntryRetryPromptView()
             case .summary(let summary):
                 NewImportSummaryView(
                     summary: summary,
@@ -455,6 +451,7 @@ extension DataImportViewModel.ButtonType {
         case .continue: .defaultAction
         case .sync: .defaultAction
         case .grantDirectoryAccess: .defaultAction
+        case .showSystemPasswordPrompt: .defaultAction
         }
     }
 
@@ -510,6 +507,8 @@ extension DataImportViewModel.ButtonType {
             UserText.close
         case .grantDirectoryAccess(let source):
             UserText.importBrowserDataRequestAccessButton(for: source)
+        case .showSystemPasswordPrompt:
+            UserText.passwordEntryHelpShowMacOSMessageButton
         }
     }
 

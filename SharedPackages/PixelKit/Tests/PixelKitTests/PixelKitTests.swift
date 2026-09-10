@@ -921,6 +921,35 @@ final class PixelKitTests: XCTestCase {
                  fireRequest: fireRequest)
     }
 
+    /// `.legacyInitial` and `.uniqueByName` have to share one throttle slot.
+    /// `LegacyPixelStateMigration` seeds the legacy `UniquePixel` state into `uniqueByName`, so a
+    /// `.legacyInitial` pixel reading a slot of its own would miss that state and re-fire every
+    /// once-ever pixel for every migrated user on upgrade. Asserted through the public read API so
+    /// the test fails if the two are ever repointed apart, rather than moving with them.
+    func testLegacyInitialSharesTheUniqueByNameThrottleSlot() throws {
+        let pixelKit = makePixelKit()
+
+        pixelKit.fire(TestEventV2.testEvent, frequency: .legacyInitial)
+
+        XCTAssertNotNil(try pixelKit.pixelLastFireDate(event: TestEventV2.testEvent, frequency: .uniqueByName),
+                        "LegacyPixelStateMigration seeds `uniqueByName`, so `.legacyInitial` must record there")
+        XCTAssertNotNil(try pixelKit.pixelLastFireDate(event: TestEventV2.testEvent, frequency: .legacyInitial))
+    }
+
+    /// The once-ever contract itself: a second fire is suppressed.
+    func testLegacyInitialFiresOnceEver() {
+        var firedNames = [String]()
+        let pixelKit = makePixelKit { pixelName, _, _, _, _, completion in
+            firedNames.append(pixelName)
+            completion(true, nil)
+        }
+
+        pixelKit.fire(TestEventV2.testEvent, frequency: .legacyInitial)
+        pixelKit.fire(TestEventV2.testEvent, frequency: .legacyInitial)
+
+        XCTAssertEqual(firedNames.count, 1, "\(firedNames)")
+    }
+
     /// `fireAsync` returns `.sent` and resolves once the underlying request reports success.
     func testAsyncFireReturnsSentWhenRequestSucceeds() async throws {
         let pixelKit = makePixelKit()
@@ -1454,6 +1483,53 @@ final class PixelKitTests: XCTestCase {
         wait(for: [fired], timeout: 1.0)
         XCTAssertEqual(store.items.map(\.pixelName), recorder.pixelNames)
         XCTAssertEqual(store.items.first?.pixelName.hasSuffix("_daily"), true)
+    }
+
+    func testWhenLegacyDailyAndCountFailsWithRetryThenBothLegsAreQueuedAndReplayed() {
+        struct RetryEvent: PixelKit.Event {
+            let name = "retry_event"
+            let namePrefix: PixelKitNamePrefix = .none
+            let platformSuffixPolicy: PixelKitPlatformSuffixPolicy = .legacyOmitted
+            let parameters: [String: String]? = nil
+            let standardParameters: [PixelKitStandardParameter]? = nil
+        }
+
+        let store = MockPixelRetryQueueStore()
+        let fireMock = FireRequestMock()
+        fireMock.defaultResult = (false, NSError(domain: "test", code: 1))
+        let pixelKit = makePixelKit(retryQueueStore: store, fireRequest: fireMock.fireRequest)
+        let expectedNames = ["retry_event_c", "retry_event_d"]
+
+        pixelKit.fire(RetryEvent(), frequency: .legacyDailyAndCount, options: .withRetry)
+
+        // Completion precedes persistence, so wait for both legs to reach the store.
+        let queued = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            store.items.map(\.pixelName).sorted() == expectedNames
+        }, object: nil)
+        wait(for: [queued], timeout: 2.0)
+        XCTAssertEqual(fireMock.calls.map(\.pixelName).sorted(), expectedNames)
+
+        let replayed = expectation(description: "Both frequency legs are replayed")
+        replayed.expectedFulfillmentCount = 2
+        fireMock.onFireReceived = { call in
+            if call.parameters[PixelRetryQueue.Parameters.retriedPixel] == "1" {
+                replayed.fulfill()
+            }
+        }
+        fireMock.defaultResult = (true, nil)
+        pixelKit.fire(TestEventV2.testEvent)
+        wait(for: [replayed], timeout: 2.0)
+
+        // Receiving a replay does not mean its completion has removed the stored item yet.
+        let drained = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            store.items.isEmpty
+        }, object: nil)
+        wait(for: [drained], timeout: 2.0)
+        let replayNames = fireMock.calls
+            .filter { $0.parameters[PixelRetryQueue.Parameters.retriedPixel] == "1" }
+            .map(\.pixelName)
+        XCTAssertEqual(replayNames.sorted(), expectedNames)
+        XCTAssertTrue(store.items.isEmpty)
     }
 
     // MARK: - Legacy daily no-suffix frequency

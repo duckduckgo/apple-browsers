@@ -286,6 +286,16 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "InstallStatisticsTests"
+               BuildableName = "InstallStatisticsTests"
+               BlueprintName = "InstallStatisticsTests"
+               ReferencedContainer = "container:LocalPackages/InstallStatistics">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "SnapshotTestingSupportTests"
                BuildableName = "SnapshotTestingSupportTests"
                BlueprintName = "SnapshotTestingSupportTests"

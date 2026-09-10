@@ -54,6 +54,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let aiChatUserScript: AIChatUserScript?
     let pageContextUserScript: PageContextUserScript?
     let subscriptionUserScript: SubscriptionUserScript?
+    let internalFeedbackUserScript: InternalFeedbackUserScript
     let historyViewUserScript: HistoryViewUserScript
     let serpSettingsUserScript: SERPSettingsUserScript?
     let serpUserScript: SERPInstallOriginUserScript
@@ -109,6 +110,11 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             installOriginVariantProvider: installOriginEnabled ? DefaultInstallOriginVariantProvider() : nil
         )
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
+
+        internalFeedbackUserScript = InternalFeedbackUserScript(
+            deviceInfoProvider: NSApp.delegateTyped.internalFeedbackDeviceInfoProvider,
+            attachmentsProvider: NSApp.delegateTyped.internalFeedbackAttachmentsProvider
+        )
 
         if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
@@ -226,6 +232,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         if let subscriptionUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         }
+
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
 
         if let youtubeOverlayScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: youtubeOverlayScript)

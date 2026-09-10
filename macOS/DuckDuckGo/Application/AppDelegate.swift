@@ -56,6 +56,7 @@ import os.log
 import Persistence
 import PixelExperimentKit
 import PixelKit
+import WideEvent
 import SERPSettings
 import PrivacyConfig
 import PrivacyStats
@@ -158,17 +159,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
-    @MainActor private(set) lazy var quickFeedbackService: QuickFeedbackService = {
-        let diagnosticsCollector = QuickFeedbackDiagnosticsCollector(
-            tabAndWindowCountProvider: windowControllersManager,
-            memoryUsageMonitor: memoryUsageMonitor,
-            launchDate: appLaunchDate
-        )
-        return QuickFeedbackService(
-            diagnosticsCollector: diagnosticsCollector,
-            firePublisher: fireCoordinator.fireViewModel.fire.burningDataPublisher
-        )
-    }()
+    @MainActor private(set) lazy var quickFeedbackDiagnosticsCollector = QuickFeedbackDiagnosticsCollector(
+        tabAndWindowCountProvider: windowControllersManager,
+        memoryUsageMonitor: memoryUsageMonitor,
+        launchDate: appLaunchDate
+    )
+
+    @MainActor private(set) lazy var internalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProviding =
+        InternalFeedbackDeviceInfoProvider(diagnosticsCollector: quickFeedbackDiagnosticsCollector)
+
+    @MainActor private(set) lazy var internalFeedbackAttachmentsProvider = InternalFeedbackAttachmentsProvider()
+
+    @MainActor private(set) lazy var quickFeedbackService = QuickFeedbackService(
+        attachmentsProvider: internalFeedbackAttachmentsProvider,
+        firePublisher: fireCoordinator.fireViewModel.fire.burningDataPublisher
+    )
 
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
@@ -322,6 +327,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     public let subscriptionUIHandler: SubscriptionUIHandling
 
     private(set) lazy var sessionRestorePromptCoordinator = SessionRestorePromptCoordinator(pixelFiring: PixelKit.shared)
+    let brokenSitePromptPresentationCoordinator = BrokenSitePromptPresentationCoordinator()
 
     // MARK: - Automation Server
     private var automationServer: AutomationServer?
@@ -1478,7 +1484,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 syncService: syncService,
                 syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
                 pinningManager: pinningManager,
-                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate
+                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate,
+                brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)

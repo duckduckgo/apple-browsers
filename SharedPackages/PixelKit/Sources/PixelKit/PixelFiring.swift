@@ -53,7 +53,7 @@ extension PixelFiring {
 extension PixelKit: PixelFiring {}
 
 /// `PixelFiring` under a name that survives being imported alongside another module's own
-/// `PixelFiring` protocol (e.g. iOS's legacy `Core.PixelFiring`) without a collision.
+/// same-named protocol without a collision.
 ///
 /// Writing `PixelKit.PixelFiring` does not work as a workaround: this module also declares a
 /// top-level `class PixelKit`, so the module name is shadowed and `PixelKit.PixelFiring` resolves

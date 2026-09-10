@@ -220,7 +220,7 @@ final class MainMenu: NSMenu {
     let sendFeedbackMenuItem = NSMenuItem(title: UserText.sendFeedback, action: #selector(AppDelegate.openFeedback))
         .withImage(DesignSystemImages.Glyphs.Size12.feedback)
 
-    let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
+    let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.showAbout))
         .withImage(DesignSystemImages.Glyphs.Size12.info)
 
     private let featureFlagger: FeatureFlagger
@@ -947,7 +947,7 @@ final class MainMenu: NSMenu {
             // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Clear WebKit Cache", action: #selector(AppDelegate.debugClearWebViewCache)).withAccessibilityIdentifier("MainMenu.clearWebKitCache")
             NSMenuItem(title: "Data Import")
-                .submenu(DataImportDebugMenu(title: "Data Import"))
+                .submenu(DataImportDebugMenu(title: "Data Import", pinningManager: pinningManager))
             NSMenuItem(title: "Favicons") {
                 NSMenuItem(title: "Clear In-Memory Cache", action: #selector(AppDelegate.debugClearFaviconsCache)).withAccessibilityIdentifier("MainMenu.clearFaviconsCache")
                 NSMenuItem(title: "Inspect", action: #selector(MainViewController.inspectFavicons(_:))).withAccessibilityIdentifier("MainMenu.inspectFavicons")

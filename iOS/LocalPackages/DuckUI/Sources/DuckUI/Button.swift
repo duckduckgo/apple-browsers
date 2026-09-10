@@ -100,6 +100,7 @@ private func makeLegacyPrimaryBody(
     disabled: Bool,
     compact: Bool,
     fullWidth: Bool,
+    isFreeform: Bool = false,
     forcePressed: Bool = false
 ) -> some View {
     let backgroundColor = disabled ? colors.disabled : colors.standard
@@ -112,9 +113,12 @@ private func makeLegacyPrimaryBody(
         .lineLimit(nil)
         .font(legacyButtonFont())
         .foregroundColor(foregroundColor)
-        .padding(.vertical)
-        .padding(.horizontal, fullWidth ? nil : 24)
-        .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
+        .if(!isFreeform) { view in
+            view
+                .padding(.vertical)
+                .padding(.horizontal, fullWidth ? nil : 24)
+                .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.legacyHeight - 10 : Consts.legacyHeight)
+        }
         .background(isPressed ? colors.pressed : backgroundColor)
         .cornerRadius(Consts.legacyCornerRadius)
         .ddgButtonDynamicTypeCap()
@@ -127,6 +131,7 @@ private func makeRebrandedPrimaryBody(
     disabled: Bool,
     compact: Bool,
     fullWidth: Bool,
+    isFreeform: Bool = false,
     forcePressed: Bool = false
 ) -> some View {
     let isPressed = configuration.isPressed || forcePressed
@@ -138,9 +143,12 @@ private func makeRebrandedPrimaryBody(
         .lineLimit(nil)
         .font(rebrandedButtonFont(compact: compact))
         .foregroundColor(disabled ? colors.textDisabled : colors.text)
-        .padding(.vertical, compact ? Consts.rebrandedCompactVerticalPadding : nil)
-        .padding(.horizontal, fullWidth ? nil : (compact ? 16 : 24))
-        .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
+        .if(!isFreeform) { view in
+            view
+                .padding(.vertical, compact ? Consts.rebrandedCompactVerticalPadding : nil)
+                .padding(.horizontal, fullWidth ? nil : (compact ? 16 : 24))
+                .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
+        }
         .background(disabled ? backgroundColor.opacity(Consts.disabledOpacity) : backgroundColor)
         .clipShape(Capsule())
         .ddgButtonDynamicTypeCap()
@@ -152,12 +160,14 @@ public struct PrimaryButtonStyleLegacy: ButtonStyle {
     let disabled: Bool
     let compact: Bool
     let fullWidth: Bool
+    let isFreeform: Bool
     let pressed: Bool
 
-    public init(disabled: Bool = false, compact: Bool = false, fullWidth: Bool = true, pressed: Bool = false) {
+    public init(disabled: Bool = false, compact: Bool = false, fullWidth: Bool = true, isFreeform: Bool = false, pressed: Bool = false) {
         self.disabled = disabled
         self.compact = compact
         self.fullWidth = fullWidth
+        self.isFreeform = isFreeform
         self.pressed = pressed
     }
 
@@ -168,6 +178,7 @@ public struct PrimaryButtonStyleLegacy: ButtonStyle {
             disabled: disabled,
             compact: compact,
             fullWidth: fullWidth,
+            isFreeform: isFreeform,
             forcePressed: pressed
         )
     }
@@ -177,12 +188,14 @@ public struct PrimaryButtonStyle: ButtonStyle {
     let disabled: Bool
     let compact: Bool
     let fullWidth: Bool
+    let isFreeform: Bool
     let pressed: Bool
 
-    public init(disabled: Bool = false, compact: Bool = false, fullWidth: Bool = true, pressed: Bool = false) {
+    public init(disabled: Bool = false, compact: Bool = false, fullWidth: Bool = true, isFreeform: Bool = false, pressed: Bool = false) {
         self.disabled = disabled
         self.compact = compact
         self.fullWidth = fullWidth
+        self.isFreeform = isFreeform
         self.pressed = pressed
     }
 
@@ -195,10 +208,11 @@ public struct PrimaryButtonStyle: ButtonStyle {
                 disabled: disabled,
                 compact: compact,
                 fullWidth: fullWidth,
+                isFreeform: isFreeform,
                 forcePressed: pressed
             )
         } else {
-            PrimaryButtonStyleLegacy(disabled: disabled, compact: compact, fullWidth: fullWidth, pressed: pressed)
+            PrimaryButtonStyleLegacy(disabled: disabled, compact: compact, fullWidth: fullWidth, isFreeform: isFreeform, pressed: pressed)
                 .makeBody(configuration: configuration)
         }
     }

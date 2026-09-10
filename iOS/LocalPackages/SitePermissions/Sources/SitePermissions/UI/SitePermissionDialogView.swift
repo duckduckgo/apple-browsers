@@ -83,10 +83,9 @@ public struct SitePermissionDialogView: View {
                         Button {
                             onAction(item.action)
                         } label: {
-                            Text(item.title)
-                                .font(.body.weight(.medium))
+                            PermissionDialogButtonLabel(title: item.title)
                         }
-                        .buttonStyle(SecondaryFillButtonStyle())
+                        .buttonStyle(SecondaryFillButtonStyle(isFreeform: true))
                         .accessibilityIdentifier(accessibilityIdentifier(for: item.action))
                     }
                 }

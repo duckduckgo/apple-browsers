@@ -20,6 +20,18 @@
 import DesignResourcesKit
 import SwiftUI
 
+struct PermissionDialogButtonLabel: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.body.weight(.medium))
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, minHeight: 48)
+    }
+}
+
 private enum PermissionDialogCardConstants {
     static let cornerRadius: CGFloat = 32
     static let padding: CGFloat = 14

@@ -87,19 +87,17 @@ public struct PermissionReminderDialogView: View {
             Button {
                 onAction(item.action)
             } label: {
-                Text(item.title)
-                    .font(.body.weight(.medium))
+                PermissionDialogButtonLabel(title: item.title)
             }
-            .buttonStyle(PrimaryButtonStyle())
+            .buttonStyle(PrimaryButtonStyle(isFreeform: true))
             .accessibilityIdentifier(accessibilityIdentifier(for: item.action))
         case .secondary:
             Button {
                 onAction(item.action)
             } label: {
-                Text(item.title)
-                    .font(.body.weight(.medium))
+                PermissionDialogButtonLabel(title: item.title)
             }
-            .buttonStyle(SecondaryFillButtonStyle())
+            .buttonStyle(SecondaryFillButtonStyle(isFreeform: true))
             .accessibilityIdentifier(accessibilityIdentifier(for: item.action))
         }
     }

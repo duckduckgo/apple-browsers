@@ -787,6 +787,15 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return view
     }
 
+    private var needsSimulatorContextMenuWorkaround: Bool {
+#if targetEnvironment(simulator)
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        return version.majorVersion == 26 && version.minorVersion <= 5
+#else
+        return false
+#endif
+    }
+
     private var glassEffectConstraints: [NSLayoutConstraint] = []
     private var floatingHostToContainerConstraints: [NSLayoutConstraint] = []
     private var floatingHostToGlassContentConstraints: [NSLayoutConstraint] = []
@@ -854,6 +863,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     func makeGlass() {
         guard isFloatingUIEnabled else {
+            makeOpaque()
+            return
+        }
+        // iOS 26.5 Simulator glass breaks button menus.
+        if needsSimulatorContextMenuWorkaround {
             makeOpaque()
             return
         }
@@ -1388,6 +1402,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         aiChatButton.accessibilityLabel = UserText.duckAiFeatureName
         aiChatButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
         aiChatButton.accessibilityTraits = .button
+
+        customizableButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Customizable"
 
         // This is for compatibility purposes with old OmniBar
         searchAreaView.textField.accessibilityIdentifier = "searchEntry"

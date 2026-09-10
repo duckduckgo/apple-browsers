@@ -74,6 +74,8 @@ class FloatingUIXCUITestCase: XCTestCase {
         static let toolbarFire = "Browser.Toolbar.Button.Fire"
         static let toolbarMenu = "Browser.Toolbar.Button.Menu"
         static let domainCapsule = "Browser.FloatingDomainCapsule"
+        static let aiChat = "Browser.OmniBar.Button.AIChat"
+        static let customizable = "Browser.OmniBar.Button.Customizable"
     }
 
     private enum Page {
@@ -183,6 +185,41 @@ class FloatingUIXCUITestCase: XCTestCase {
 
         XCTAssertTrue(app.buttons["New Tab"].waitForExistence(timeout: timeout))
         XCTAssertTrue(app.buttons["New Fire Tab"].exists)
+    }
+
+    func verifyAddressBarButtonMenus() {
+        app.terminate()
+        launchApp(additionalArguments: [
+            "-ff.aiChatContextualFloatingInput", "true",
+            "-ff.aiChatNativeChatHistory", "true",
+            "-ff.aiChatAddressBarRecentChats", "true",
+            "-ff.customizeNTPIcons", "true",
+            "-aichat.settings.isEnabled", "true",
+        ])
+
+        let aiChatButton = element(withIdentifier: AccessibilityID.aiChat)
+        XCTAssertTrue(aiChatButton.waitForHittable(timeout: timeout))
+        aiChatButton.tap()
+        XCTAssertTrue(app.buttons["New Chat"].waitForHittable(timeout: timeout))
+        XCTAssertTrue(app.buttons["Chats"].waitForHittable(timeout: timeout))
+        XCTAssertFalse(app.buttons["Ask About Page"].exists)
+        dismissMenu(containing: "New Chat")
+
+        openPage(path: "/page-one", heading: Page.oneHeading)
+
+        XCTAssertTrue(aiChatButton.waitForHittable(timeout: timeout))
+        aiChatButton.tap()
+        XCTAssertTrue(app.buttons["Ask About Page"].waitForHittable(timeout: timeout))
+        dismissMenu(containing: "Ask About Page")
+
+        aiChatButton.press(forDuration: 0.8)
+        XCTAssertTrue(app.buttons["Ask About Page"].waitForHittable(timeout: timeout))
+        dismissMenu(containing: "Ask About Page")
+
+        let customizableButton = element(withIdentifier: AccessibilityID.customizable)
+        XCTAssertTrue(customizableButton.waitForHittable(timeout: timeout))
+        customizableButton.press(forDuration: 0.8)
+        XCTAssertTrue(app.buttons["Customize"].waitForHittable(timeout: timeout))
     }
 
     func verifyBrowserChromeInLandscape() {
@@ -516,11 +553,12 @@ class FloatingUIXCUITestCase: XCTestCase {
         app.webViews.firstMatch
     }
 
-    private func launchApp(toggleEnabled: Bool? = nil) {
+    private func launchApp(toggleEnabled: Bool? = nil, additionalArguments: [String] = []) {
         app.launchArguments = [
             "-clearAllDefaults",
             "isRunningUITests",
             "-isOnboardingCompleted", "true",
+            "-isInternalUser", "true",
             "-ff.floatingUIAugust2026", "true",
             "-ff.omniBarLongPressMenu", "true",
             "-AppleLanguages", "(en)",
@@ -532,6 +570,7 @@ class FloatingUIXCUITestCase: XCTestCase {
                 "-aichat.settings.showAIChatExperimentalSearchInput", String(toggleEnabled),
             ]
         }
+        app.launchArguments += additionalArguments
         app.launchEnvironment = [
             "UITEST_MODE": "1",
             "BASE_URL": serverBaseURL,
@@ -603,6 +642,11 @@ class FloatingUIXCUITestCase: XCTestCase {
             XCTFail("Address bar did not move to \(position.rawValue). Search field: \(searchField.debugDescription)", file: file, line: line)
         }
         assertBarPosition(position, file: file, line: line)
+    }
+
+    private func dismissMenu(containing actionTitle: String) {
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)).tap()
+        XCTAssertTrue(app.buttons[actionTitle].waitForNonExistence(timeout: timeout))
     }
 
     private func collapseChrome(file: StaticString = #filePath, line: UInt = #line) {
@@ -889,6 +933,7 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testUnifiedToggleInputTransitions() { verifyUnifiedToggleInputTransitions() }
     func testTabSwitcherTransitions() { verifyTabSwitcherTransitions() }
     func testBrowserChromeLongPressMenus() { verifyBrowserChromeLongPressMenus() }
+    func testAddressBarButtonMenus() { verifyAddressBarButtonMenus() }
     func testBrowserChromeInLandscape() { verifyBrowserChromeInLandscape() }
     func testDomainCapsuleAppears() { verifyDomainCapsuleAppears() }
     func testBrowsingMenuOpens() { verifyBrowsingMenuOpens() }
@@ -920,6 +965,7 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testUnifiedToggleInputTransitions() { verifyUnifiedToggleInputTransitions() }
     func testTabSwitcherTransitions() { verifyTabSwitcherTransitions() }
     func testBrowserChromeLongPressMenus() { verifyBrowserChromeLongPressMenus() }
+    func testAddressBarButtonMenus() { verifyAddressBarButtonMenus() }
     func testBrowserChromeInLandscape() { verifyBrowserChromeInLandscape() }
     func testDomainCapsuleAppears() { verifyDomainCapsuleAppears() }
     func testBrowsingMenuOpens() { verifyBrowsingMenuOpens() }

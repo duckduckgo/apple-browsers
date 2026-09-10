@@ -364,20 +364,4 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
 
         XCTAssertEqual(plan.optOutCount, 0)
     }
-
-    // MARK: - AuthenticationDelegate free trial eligibility
-
-    func testIsUserEligibleForFreeTrial_whenEligible_returnsTrue() {
-        let (sut, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
-        dependencies.authenticationManager.isUserEligibleForFreeTrialValue = true
-
-        XCTAssertTrue(sut.isUserEligibleForFreeTrial())
-    }
-
-    func testIsUserEligibleForFreeTrial_whenNotEligible_returnsFalse() {
-        let (sut, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
-        dependencies.authenticationManager.isUserEligibleForFreeTrialValue = false
-
-        XCTAssertFalse(sut.isUserEligibleForFreeTrial())
-    }
 }

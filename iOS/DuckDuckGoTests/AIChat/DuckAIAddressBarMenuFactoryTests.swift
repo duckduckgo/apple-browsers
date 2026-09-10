@@ -170,4 +170,69 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
         XCTAssertEqual(askAboutPageCount, 1)
         XCTAssertEqual(recentChatsCount, 1)
     }
+
+    // MARK: - Context action copy
+
+    func testContextActionTitleForWebPageIsAskAboutPage() {
+        let title = flattenedActions(makeActions(type: .webPage))[1].title
+        XCTAssertEqual(title, UserText.aiChatAttachmentOptionAskAboutPage)
+    }
+
+    func testContextActionTitleForDocumentIsAskAboutDocument() {
+        let title = flattenedActions(makeActions(type: .document))[1].title
+        XCTAssertEqual(title, UserText.aiChatAttachmentOptionAskAboutDocument)
+    }
+
+    func testContextActionTitleForSearchIsContinueInDuckAi() {
+        let title = flattenedActions(makeActions(type: .search(query: "cats")))[1].title
+        XCTAssertEqual(title, UserText.aiChatAttachmentOptionContinueInDuckAi)
+    }
+
+    // MARK: - Menu type resolution
+
+    func testResolveReturnsWebPageWhenFeatureDisabled() {
+        // Even a document or SERP tab falls back to today's plain web-page menu when the flag is off.
+        XCTAssertEqual(DuckAIAddressBarMenuType.resolve(isFeatureEnabled: false,
+                                                        isShowingDocument: true,
+                                                        tabType: .serp,
+                                                        searchQuery: "cats"),
+                       .webPage)
+    }
+
+    func testResolveReturnsDocumentAndTakesPrecedenceOverSerp() {
+        XCTAssertEqual(DuckAIAddressBarMenuType.resolve(isFeatureEnabled: true,
+                                                        isShowingDocument: true,
+                                                        tabType: .serp,
+                                                        searchQuery: "cats"),
+                       .document)
+    }
+
+    func testResolveReturnsSearchForSerpWithQuery() {
+        XCTAssertEqual(DuckAIAddressBarMenuType.resolve(isFeatureEnabled: true,
+                                                        isShowingDocument: false,
+                                                        tabType: .serp,
+                                                        searchQuery: "cats"),
+                       .search(query: "cats"))
+    }
+
+    func testResolveFallsBackToWebPageForSerpWithoutQuery() {
+        XCTAssertEqual(DuckAIAddressBarMenuType.resolve(isFeatureEnabled: true,
+                                                        isShowingDocument: false,
+                                                        tabType: .serp,
+                                                        searchQuery: nil),
+                       .webPage)
+    }
+
+    func testResolveReturnsWebPageForWebAndAIChatTabs() {
+        XCTAssertEqual(DuckAIAddressBarMenuType.resolve(isFeatureEnabled: true,
+                                                        isShowingDocument: false,
+                                                        tabType: .web,
+                                                        searchQuery: nil),
+                       .webPage)
+        XCTAssertEqual(DuckAIAddressBarMenuType.resolve(isFeatureEnabled: true,
+                                                        isShowingDocument: false,
+                                                        tabType: .aiChat,
+                                                        searchQuery: nil),
+                       .webPage)
+    }
 }

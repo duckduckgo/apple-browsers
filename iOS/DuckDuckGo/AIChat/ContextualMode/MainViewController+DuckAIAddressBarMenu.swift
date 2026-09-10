@@ -36,7 +36,6 @@ enum DuckAIAddressBarMenuType: Equatable {
         case .web, .aiChat:
             return .webPage
         case .serp:
-            // `searchQuery` is "" (not nil) for a bare `?q=`, so guard against auto-sending an empty prompt.
             guard let query = searchQuery, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 return .webPage
             }

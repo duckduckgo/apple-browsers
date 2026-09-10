@@ -44,20 +44,17 @@ final class QuitSurveyReturnUserHandler {
     private let installDate: Date
     private let dateProvider: () -> Date
     private let pixelFiring: PixelFiring?
-    private let nonBlockingExperiment: OnboardingNonBlockingExperiment
 
     // MARK: - Initialization
 
     init(
         persistor: QuitSurveyPersistor,
         installDate: Date,
-        nonBlockingExperiment: OnboardingNonBlockingExperiment,
         dateProvider: @escaping () -> Date = { Date() },
         pixelFiring: PixelFiring? = PixelKit.shared
     ) {
         self.persistor = persistor
         self.installDate = installDate
-        self.nonBlockingExperiment = nonBlockingExperiment
         self.dateProvider = dateProvider
         self.pixelFiring = pixelFiring
     }
@@ -97,18 +94,13 @@ final class QuitSurveyReturnUserHandler {
 
     // MARK: - Helpers
 
-    /// Carries the non-blocking onboarding cohort, matching the survey pixels these follow up on.
-    private var surveyPixelOptions: PixelKit.Options {
-        .parameters(nonBlockingExperiment.cohortParameters)
-    }
-
     private func fireReturnUserPixel(reasons: String) {
-        pixelFiring?.fire(QuitSurveyPixels.quitSurveyReturnUser(reasons: reasons), options: surveyPixelOptions)
+        pixelFiring?.fire(QuitSurveyPixels.quitSurveyReturnUser(reasons: reasons))
         persistor.pendingReturnUserReasons = nil
     }
 
     private func fireReturnUserThumbsUpPixel() {
-        pixelFiring?.fire(QuitSurveyPixels.quitSurveyThumbsUpReturnUser, options: surveyPixelOptions)
+        pixelFiring?.fire(QuitSurveyPixels.quitSurveyThumbsUpReturnUser)
         persistor.hasSelectedThumbsUp = nil
     }
 

@@ -48,12 +48,6 @@
             "dbpBackgroundAgent"
         ]
     },
-    "onboardingNonBlockingCohort": {
-        "key": "onboardingNonBlockingCohort",
-        "type": "string",
-        "description": "Which arm of the non-blocking onboarding experiment the user is in. Only present when the user is enrolled in the experiment",
-        "enum": ["control", "treatment"]
-    },
     "subscriptionAuthSource": {
         "key": "source",
         "type": "string",

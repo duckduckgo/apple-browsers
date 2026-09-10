@@ -60,6 +60,47 @@
                     "enum": ["true"]
                 }
             }
+        },
+        "onboardingNonBlocking": {
+            "cohorts": ["control", "treatment"],
+            "metrics": {
+                "onboardingCompleted": {
+                    "description": "User completed the full onboarding flow",
+                    "enum": ["true"]
+                },
+                "onboardingSkipped": {
+                    "description": "User left onboarding without completing it",
+                    "enum": ["true"]
+                },
+                "browsingBeforeCompletion": {
+                    "description": "User browsed before completing onboarding",
+                    "enum": ["true"]
+                },
+                "contextualDismissed": {
+                    "description": "User dismissed all remaining contextual onboarding highlights",
+                    "enum": ["true"]
+                },
+                "importRequested": {
+                    "description": "User requested browser data import",
+                    "enum": ["true"]
+                },
+                "addToDockRequested": {
+                    "description": "User requested adding DuckDuckGo to the Dock",
+                    "enum": ["true"]
+                },
+                "setAsDefaultEnabled": {
+                    "description": "DuckDuckGo was set as the default browser",
+                    "enum": ["true"]
+                },
+                "quitSurveySubmitted": {
+                    "description": "User submitted negative feedback reasons in the first-time quit survey",
+                    "enum": ["true"]
+                },
+                "quitSurveyOnboardingReasonSelected": {
+                    "description": "User selected that onboarding was not helpful in the first-time quit survey",
+                    "enum": ["true"]
+                }
+            }
         }
     }
 }

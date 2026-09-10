@@ -211,6 +211,11 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
     func testConversionWindowsForSetAsDefaultEnabled() {
         XCTAssertEqual(OnboardingNonBlockingExperiment.Metric.setAsDefaultEnabled.conversionWindows, [5...7])
     }
+
+    func testConversionWindowsForQuitSurveyMetrics() {
+        XCTAssertEqual(OnboardingNonBlockingExperiment.Metric.quitSurveySubmitted.conversionWindows, [0...3])
+        XCTAssertEqual(OnboardingNonBlockingExperiment.Metric.quitSurveyOnboardingReasonSelected.conversionWindows, [0...3])
+    }
 }
 
 private extension OnboardingNonBlockingExperimentTests {

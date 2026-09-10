@@ -16,9 +16,7 @@
 //  limitations under the License.
 //
 
-import FeatureFlags_macOS
 @_spi(Testing) import PixelKit
-import PrivacyConfig
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -46,13 +44,10 @@ final class QuitSurveyReturnUserHandlerTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeHandler(cohort: FeatureFlag.OnboardingNonBlockingCohort? = nil) -> QuitSurveyReturnUserHandler {
-        let featureFlagger = cohort.map { MockFeatureFlagger(resolveCohortStub: $0) } ?? MockFeatureFlagger()
-
-        return QuitSurveyReturnUserHandler(
+    private func makeHandler() -> QuitSurveyReturnUserHandler {
+        QuitSurveyReturnUserHandler(
             persistor: persistor,
             installDate: installDate,
-            nonBlockingExperiment: OnboardingNonBlockingExperiment(featureFlagger: featureFlagger),
             dateProvider: { [unowned self] in currentDate },
             pixelFiring: pixelMock
         )
@@ -84,7 +79,6 @@ final class QuitSurveyReturnUserHandlerTests: XCTestCase {
 
         let fired = pixelMock.actualFireCalls.first { $0.pixel.name == QuitSurveyPixelName.quitSurveyReturnUser.rawValue }
         XCTAssertNotNil(fired)
-        XCTAssertNil(fired?.additionalParameters?["onboardingNonBlockingCohort"])
     }
 
     func testWhenThumbsDownFiresPixelReasonsAreCleared() {
@@ -105,30 +99,6 @@ final class QuitSurveyReturnUserHandlerTests: XCTestCase {
         handler.fireReturnUserPixelIfNeeded()
 
         XCTAssertNil(persistor.hasSelectedThumbsUp)
-    }
-
-    // MARK: - Non-Blocking Onboarding Cohort
-
-    func testWhenEnrolledInNonBlockingExperimentReturnPixelCarriesTheCohort() {
-        persistor.pendingReturnUserReasons = "reason=1"
-        let handler = makeHandler(cohort: .treatment)
-        advanceDays(10)
-
-        handler.fireReturnUserPixelIfNeeded()
-
-        let fired = pixelMock.actualFireCalls.first { $0.pixel.name == QuitSurveyPixelName.quitSurveyReturnUser.rawValue }
-        XCTAssertEqual(fired?.additionalParameters?["onboardingNonBlockingCohort"], "treatment")
-    }
-
-    func testWhenEnrolledThumbsUpReturnPixelCarriesTheCohort() {
-        persistor.hasSelectedThumbsUp = true
-        let handler = makeHandler(cohort: .control)
-        advanceDays(10)
-
-        handler.fireReturnUserPixelIfNeeded()
-
-        let fired = pixelMock.actualFireCalls.first { $0.pixel.name == QuitSurveyPixelName.quitSurveyThumbsUpReturnUser.rawValue }
-        XCTAssertEqual(fired?.additionalParameters?["onboardingNonBlockingCohort"], "control")
     }
 
     // MARK: - Thumbs Up Path

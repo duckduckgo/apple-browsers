@@ -39,6 +39,8 @@ struct OnboardingNonBlockingExperiment {
         case importRequested
         case addToDockRequested
         case setAsDefaultEnabled
+        case quitSurveySubmitted
+        case quitSurveyOnboardingReasonSelected
 
         var conversionWindows: [ClosedRange<Int>] {
             switch self {
@@ -48,6 +50,8 @@ struct OnboardingNonBlockingExperiment {
                 return [ConversionWindows.sevenDays]
             case .setAsDefaultEnabled:
                 return [ConversionWindows.fiveToSevenDays]
+            case .quitSurveySubmitted, .quitSurveyOnboardingReasonSelected:
+                return [ConversionWindows.firstThreeDays]
             }
         }
     }
@@ -57,6 +61,7 @@ struct OnboardingNonBlockingExperiment {
         static let fiveDays = 0...5
         static let sevenDays = 0...7
         static let fiveToSevenDays = 5...7
+        static let firstThreeDays = 0...3
     }
 
     init(featureFlagger: FeatureFlagger) {
@@ -87,17 +92,6 @@ struct OnboardingNonBlockingExperiment {
         updater.state = .notStarted
         persistor.contextualInitialized = true
     }
-
-    /// Tags a pixel that isn't one of this experiment's own metrics — the quit survey's, for
-    /// instance — so its responses can be broken down by cohort. Empty for anyone who was never
-    /// enrolled, which leaves their pixel exactly as it is today, and matches how the other
-    /// cohort-tagged pixels here behave.
-    var cohortParameters: [String: String] {
-        guard let cohort else { return [:] }
-        return [Self.cohortParameterKey: cohort.rawValue]
-    }
-
-    private static let cohortParameterKey = "onboardingNonBlockingCohort"
 
     func fireMetric(_ metric: Metric) {
         guard cohort != nil else { return }

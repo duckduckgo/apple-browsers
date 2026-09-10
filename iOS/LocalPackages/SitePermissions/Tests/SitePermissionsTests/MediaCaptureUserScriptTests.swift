@@ -69,30 +69,30 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         XCTAssertEqual(handler.receivedBodies[0]["audio"] as? Bool, false)
     }
 
-    func testPartialGrantsPreserveApprovedConstraintsAndExcludeOnlyBlockedDevice() async throws {
-        for approvedVideo in [false, true] {
+    func testFullGrantsPreserveRequestedConstraintObjectsAndReadGettersOnce() async throws {
+        for (requestedVideo, requestedAudio) in [(true, false), (false, true), (true, true)] {
             let (webView, handler) = await makeWebView(
-                reply: (["decision": "allow", "video": approvedVideo, "audio": !approvedVideo], nil),
+                reply: (["decision": "allow", "video": requestedVideo, "audio": requestedAudio], nil),
                 baseURL: URL(string: "https://duck.ai")!
             )
             let result = try await webView.callAsyncJavaScript(
                 """
                 let videoReads = 0;
                 let audioReads = 0;
-                const video = { width: { ideal: 1280 } };
-                const audio = { echoCancellation: false };
+                const video = requestedVideo ? { width: { ideal: 1280 } } : false;
+                const audio = requestedAudio ? { echoCancellation: false } : false;
                 await navigator.mediaDevices.getUserMedia({
                     get video() { videoReads += 1; return video; },
                     get audio() { audioReads += 1; return audio; }
                 });
                 return {
                     videoReads, audioReads,
-                    videoMatches: __nativeMediaRawConstraints.video === (approvedVideo ? video : false),
-                    audioMatches: __nativeMediaRawConstraints.audio === (approvedVideo ? false : audio),
+                    videoMatches: __nativeMediaRawConstraints.video === video,
+                    audioMatches: __nativeMediaRawConstraints.audio === audio,
                     nativeCallCount: __nativeMediaCallCount
                 };
                 """,
-                arguments: ["approvedVideo": approvedVideo],
+                arguments: ["requestedVideo": requestedVideo, "requestedAudio": requestedAudio],
                 in: nil,
                 contentWorld: .page
             ) as? [String: Any]
@@ -102,6 +102,34 @@ final class MediaCaptureUserScriptTests: XCTestCase {
             XCTAssertEqual(result?["videoMatches"] as? Bool, true)
             XCTAssertEqual(result?["audioMatches"] as? Bool, true)
             XCTAssertEqual(result?["nativeCallCount"] as? Int, 1)
+            XCTAssertEqual(handler.receivedBodies.count, 1)
+            XCTAssertEqual(handler.receivedBodies[0]["video"] as? Bool, requestedVideo)
+            XCTAssertEqual(handler.receivedBodies[0]["audio"] as? Bool, requestedAudio)
+        }
+    }
+
+    func testPartialGrantsRejectCombinedRequestWithoutCallingNativeFunction() async throws {
+        for approvedVideo in [false, true] {
+            let (webView, handler) = await makeWebView(
+                reply: (["decision": "allow", "video": approvedVideo, "audio": !approvedVideo], nil),
+                baseURL: URL(string: "https://duck.ai")!
+            )
+            let result = try await webView.callAsyncJavaScript(
+                """
+                try {
+                    await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    return { rejected: false };
+                } catch (error) {
+                    return { rejected: error.name === "NotAllowedError", nativeCallCount: __nativeMediaCallCount };
+                }
+                """,
+                arguments: [:],
+                in: nil,
+                contentWorld: .page
+            ) as? [String: Any]
+
+            XCTAssertEqual(result?["rejected"] as? Bool, true)
+            XCTAssertEqual(result?["nativeCallCount"] as? Int, 0)
             XCTAssertEqual(handler.receivedBodies.count, 1)
             XCTAssertEqual(handler.receivedBodies[0]["video"] as? Bool, true)
             XCTAssertEqual(handler.receivedBodies[0]["audio"] as? Bool, true)

@@ -191,15 +191,9 @@
             if (reply?.decision === "bypass") {
                 return apply(nativeGetUserMedia, this, [capturedConstraints]);
             }
-            if (reply?.decision === "allow" &&
-                typeof reply.video === "boolean" && typeof reply.audio === "boolean" &&
-                (reply.video || reply.audio) &&
-                (!reply.video || video) && (!reply.audio || audio)) {
-                // WebKit grants one decision per call, so exclude blocked devices before calling it.
-                return apply(nativeGetUserMedia, this, [{
-                    video: reply.video ? rawVideo : false,
-                    audio: reply.audio ? rawAudio : false
-                }]);
+            if (reply?.decision === "allow" && reply.video === video && reply.audio === audio) {
+                // A successful getUserMedia call must include every requested media type.
+                return apply(nativeGetUserMedia, this, [capturedConstraints]);
             }
             throw permissionDenied();
         }, () => {

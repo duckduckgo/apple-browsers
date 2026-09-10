@@ -149,7 +149,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         }
     }
 
-    func testCombinedRequestPromptsAndAuthorizesOnlyTheTypeNotBlockedBySiteOrGlobalNever() async throws {
+    func testCombinedRequestPromptsForUnblockedTypeButRequiresSeparateCaptureRequest() async throws {
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
         for blockedType: SitePermissionType in [.camera, .microphone] {
             for isSiteDecision in [false, true] {
@@ -180,20 +180,26 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
                     let decision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .cameraAndMicrophone)
 
-                    XCTAssertEqual(decision, .allow(permissionTypes: [remainingType]))
+                    XCTAssertEqual(decision, .deny)
                     XCTAssertEqual(prompts, [SitePermissionPrompt(site: site, permissionTypes: [remainingType])])
                     XCTAssertEqual(requestedMediaTypes, [remainingType == .camera ? .video : .audio])
                     XCTAssertEqual(store.decision(for: blockedType, at: site), isSiteDecision ? .deny : nil)
                     XCTAssertEqual(store.decision(for: remainingType, at: site), promptDecision == .allowOnce ? nil : .allow)
                     XCTAssertEqual(store.globalDefault(for: blockedType), isSiteDecision ? .ask : .deny)
 
-                    // The reduced preapproval must never authorize the original combined request or the blocked device.
+                    // Rejecting the combined call must leave no preapproval for either device.
                     var nativeDecisions = [WKPermissionDecision]()
                     let blockedCaptureType: WKMediaCaptureType = blockedType == .camera ? .camera : .microphone
-                    for captureType in [WKMediaCaptureType.cameraAndMicrophone, blockedCaptureType, remainingCaptureType, remainingCaptureType] {
+                    for captureType in [WKMediaCaptureType.cameraAndMicrophone, blockedCaptureType, remainingCaptureType] {
                         requestPermission(on: sut, originHost: site.host, captureType: captureType) { nativeDecisions.append($0) }
                     }
-                    XCTAssertEqual(nativeDecisions, [.deny, .deny, .grant, .deny])
+                    XCTAssertEqual(nativeDecisions, [.deny, .deny, .deny])
+                    XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
+
+                    let separateDecision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: remainingCaptureType)
+                    XCTAssertEqual(separateDecision, .allow(permissionTypes: [remainingType]))
+                    requestPermission(on: sut, originHost: site.host, captureType: remainingCaptureType) { XCTAssertEqual($0, .grant) }
+                    requestPermission(on: sut, originHost: site.host, captureType: remainingCaptureType) { XCTAssertEqual($0, .deny) }
                     XCTAssertEqual(tabDelegate.grantedSitePermissions, [[remainingType]])
                 }
             }

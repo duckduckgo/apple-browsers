@@ -75,7 +75,7 @@ final class SitePermissionsState {
     fileprivate struct PendingBridgeRequest {
         let context: SitePermissionRequestContext
         let frame: WKFrameInfo
-        var permissionTypes: Set<SitePermissionType>
+        let permissionTypes: Set<SitePermissionType>
         let origin: SitePermissionSecurityOrigin
         let webViewID: ObjectIdentifier
         let continuation: CheckedContinuation<MediaCaptureBridgeDecision, Never>
@@ -1341,22 +1341,22 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
                 for: SitePermissionRequest(context: context, permissionTypes: permissionTypes)
             )
             guard !requestableTypes.isEmpty else {
-                resolveMediaCaptureBridgeRequest(requestID, resolution: .deny(systemBlocks: []))
+                resolveMediaCaptureBridgeRequest(requestID, resolution: .deny(systemBlocks: []), grantedPermissionTypes: [])
                 return
             }
-            sitePermissionsState.pendingBridgeRequests[requestID]?.permissionTypes = requestableTypes
             coordinator.request(
                 SitePermissionRequest(context: context, permissionTypes: requestableTypes),
                 promptHandler: sitePermissionsPromptHandler(),
                 completion: { [weak self] resolution in
-                    self?.resolveMediaCaptureBridgeRequest(requestID, resolution: resolution)
+                    self?.resolveMediaCaptureBridgeRequest(requestID, resolution: resolution, grantedPermissionTypes: requestableTypes)
                 }
             )
         }
     }
 
     private func resolveMediaCaptureBridgeRequest(_ requestID: String,
-                                                  resolution: SitePermissionResolution) {
+                                                  resolution: SitePermissionResolution,
+                                                  grantedPermissionTypes: Set<SitePermissionType>) {
         guard let pendingRequest = sitePermissionsState.pendingBridgeRequests[requestID] else { return }
         guard featureFlagger.isFeatureOn(.sitePermissions) else {
             sitePermissionsState.pendingBridgeRequests[requestID] = nil
@@ -1371,7 +1371,10 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
             return
         }
 
+        // Record the remaining permission, but getUserMedia must either provide every requested
+        // track or reject. A partial grant must not start capture or leave a native preapproval.
         guard resolution == .grant,
+              grantedPermissionTypes == pendingRequest.permissionTypes,
               currentSitePermissionContext(tabID: pendingRequest.context.tabID,
                                            requestingFrameID: pendingRequest.context.requestingFrameID) == pendingRequest.context,
               let webView,

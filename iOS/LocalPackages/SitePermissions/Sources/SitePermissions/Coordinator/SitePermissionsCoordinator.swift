@@ -249,7 +249,7 @@ public final class SitePermissionsCoordinator {
         }
     }
 
-    /// Filters site-level denials before media constraints reach WebKit. System blocks still need recovery UI.
+    /// Filters site-level denials before prompting. System blocks still need recovery UI.
     public func requestablePermissionTypes(for request: SitePermissionRequest) -> Set<SitePermissionType> {
         guard !isClosed, isValid(request.context) else { return [] }
         return request.permissionTypes.filter { permissionType in
@@ -297,8 +297,8 @@ public final class SitePermissionsCoordinator {
                     continue
                 }
                 if store.globalDefault(for: permissionType) == .deny {
-                    // Preflight can remove blocked constraints before WebKit sees them. An unreduced
-                    // cameraAndMicrophone request still needs one decision and cannot grant a blocked device.
+                    // Preflight can prompt for the remaining permission separately, but a combined
+                    // getUserMedia call still cannot succeed if either requested device is blocked.
                     return .deny
                 }
                 disposition = .prompt

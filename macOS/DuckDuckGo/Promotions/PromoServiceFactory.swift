@@ -50,7 +50,7 @@ struct PromoServiceFactory {
             triggerPublisher: PromoTrigger.triggerPublisher,
             initialExternalActivation: dependencies.isExternallyActivated,
             canPresentPromo: { isRestoring in
-                await canPresentPromo(isRestoring: isRestoring, dependencies: dependencies)
+                canPresentPromo(isRestoring: isRestoring, dependencies: dependencies)
             },
             stateQueue: stateQueue,
             dateProvider: dateProvider,

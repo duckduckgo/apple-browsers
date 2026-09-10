@@ -240,7 +240,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// Publisher for promo triggers.
     private let triggerPublisher: AnyPublisher<PromoTrigger, Never>
 
-    private let canPresentPromo: (_ isRestoring: Bool) async -> Bool
+    private let canPresentPromo: (_ isRestoring: Bool) -> Bool
 
     /// Triggers to be evaluated after delegate registration and deferral window ends.
     private var bufferedTriggers = Set<PromoTrigger>()
@@ -294,7 +294,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         historyStore: PromoHistoryStoring,
         triggerPublisher: AnyPublisher<PromoTrigger, Never>,
         initialExternalActivation: Bool = false,
-        canPresentPromo: @escaping (_ isRestoring: Bool) async -> Bool,
+        canPresentPromo: @escaping (_ isRestoring: Bool) -> Bool,
         stateQueue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.promoService.state"),
         evaluationDeferralWindow: TimeInterval = 0.5,
         registrationFallbackTimeout: TimeInterval = 1.0,
@@ -470,7 +470,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
 
     private func withPresentationPermission(isRestoring: Bool = false, _ action: @escaping (PromoService) -> Void) {
         Task { [weak self] in
-            guard let self, await canPresentPromo(isRestoring) else { return }
+            guard let self, canPresentPromo(isRestoring) else { return }
             stateQueue.async { [weak self] in
                 guard let self else { return }
                 action(self)

@@ -281,6 +281,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
     func testWhenConfigurationIsDeniedAfterTurningOnThenIsActivatingBecomesFalse() async {
         let controller = MockVPNController(isConnected: false)
         let viewModel = makeViewModel(controller: controller)
+        viewModel.onAppear()
         await viewModel.turnOnVPN()
 
         await waitFor(viewModel.$isActivating, toEqual: false) {

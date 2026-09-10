@@ -204,7 +204,7 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
     // MARK: - Duck.ai fake completion
 
     func testWhenDuckAIIsDisabledAndNotYetCompleteThenItBecomesFakeCompleted() {
-        sut.reconcileDuckAICompletion(isAIChatEnabled: false)
+        sut.reconcileDuckAICompletion(.disabled)
 
         XCTAssertTrue(sut.completedItems.contains(.duckAI))
         XCTAssertTrue(sut.reversibleCompletedItems.contains(.duckAI))
@@ -213,16 +213,16 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
     func testWhenDuckAIIsDisabledButAlreadyReallyCompleteThenItIsLeftAlone() {
         sut.markComplete(.duckAI)
 
-        sut.reconcileDuckAICompletion(isAIChatEnabled: false)
+        sut.reconcileDuckAICompletion(.disabled)
 
         XCTAssertTrue(sut.completedItems.contains(.duckAI))
         XCTAssertFalse(sut.reversibleCompletedItems.contains(.duckAI))
     }
 
     func testWhenDuckAIIsReEnabledAndTheFlagIsSetThenItIsUncompletedAndTheFlagClears() {
-        sut.reconcileDuckAICompletion(isAIChatEnabled: false)
+        sut.reconcileDuckAICompletion(.disabled)
 
-        sut.reconcileDuckAICompletion(isAIChatEnabled: true)
+        sut.reconcileDuckAICompletion(.enabled)
 
         XCTAssertFalse(sut.completedItems.contains(.duckAI))
         XCTAssertFalse(sut.reversibleCompletedItems.contains(.duckAI))
@@ -231,53 +231,54 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
     func testWhenDuckAIIsReEnabledAndTheFlagIsNotSetThenItIsLeftAlone() {
         sut.markComplete(.duckAI)
 
-        sut.reconcileDuckAICompletion(isAIChatEnabled: true)
+        sut.reconcileDuckAICompletion(.enabled)
 
         XCTAssertTrue(sut.completedItems.contains(.duckAI))
     }
 
     func testWhenCyclingDisabledAndEnabledRepeatedlyWithoutARealCompletionThenEachDirectionIsIdempotent() {
-        sut.reconcileDuckAICompletion(isAIChatEnabled: false)
-        sut.reconcileDuckAICompletion(isAIChatEnabled: false)
+        sut.reconcileDuckAICompletion(.disabled)
+        sut.reconcileDuckAICompletion(.disabled)
         XCTAssertTrue(sut.completedItems.contains(.duckAI))
         XCTAssertTrue(sut.reversibleCompletedItems.contains(.duckAI))
 
-        sut.reconcileDuckAICompletion(isAIChatEnabled: true)
-        sut.reconcileDuckAICompletion(isAIChatEnabled: true)
+        sut.reconcileDuckAICompletion(.enabled)
+        sut.reconcileDuckAICompletion(.enabled)
         XCTAssertFalse(sut.completedItems.contains(.duckAI))
         XCTAssertFalse(sut.reversibleCompletedItems.contains(.duckAI))
 
-        sut.reconcileDuckAICompletion(isAIChatEnabled: false)
+        sut.reconcileDuckAICompletion(.disabled)
         XCTAssertTrue(sut.completedItems.contains(.duckAI))
         XCTAssertTrue(sut.reversibleCompletedItems.contains(.duckAI))
     }
 
     /// A real completion must win even while the flag is stale, so a later reconcile can't undo it.
     func testWhenARealCompletionArrivesWhileTheFlagIsStaleThenItWinsAndIsNotLaterUndone() {
-        sut.reconcileDuckAICompletion(isAIChatEnabled: false)
+        sut.reconcileDuckAICompletion(.disabled)
 
         sut.markComplete(.duckAI)
 
         XCTAssertFalse(sut.reversibleCompletedItems.contains(.duckAI))
 
-        sut.reconcileDuckAICompletion(isAIChatEnabled: true)
+        sut.reconcileDuckAICompletion(.enabled)
 
         XCTAssertTrue(sut.completedItems.contains(.duckAI))
     }
 
-    /// `nil` must be a true no-op — passing `true` instead when reconciliation shouldn't run at all would
-    /// incorrectly un-complete an item that's still fake-completed (e.g. a checklist already at 100%).
-    func testWhenIsAIChatEnabledIsNilThenNothingChanges() {
-        sut.reconcileDuckAICompletion(isAIChatEnabled: false)
+    /// `.reconciliationNotNeeded` must be a true no-op — `.enabled` instead when reconciliation shouldn't
+    /// run at all would incorrectly un-complete an item that's still fake-completed (e.g. a checklist
+    /// already at 100%).
+    func testWhenReconciliationNotNeededThenNothingChanges() {
+        sut.reconcileDuckAICompletion(.disabled)
 
-        sut.reconcileDuckAICompletion(isAIChatEnabled: nil)
+        sut.reconcileDuckAICompletion(.reconciliationNotNeeded)
 
         XCTAssertTrue(sut.completedItems.contains(.duckAI))
         XCTAssertTrue(sut.reversibleCompletedItems.contains(.duckAI))
     }
 
     func testWhenProgressIsInitializedWithDuckAIDisabledThenDuckAIIsFakeCompleted() {
-        let progress = makeProgress(isPIRAvailable: true, isAIChatEnabled: false)
+        let progress = makeProgress(isPIRAvailable: true, duckAIChatAvailability: .disabled)
 
         XCTAssertTrue(progress.completedItems.contains(.duckAI))
     }
@@ -464,9 +465,9 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
     private func makeProgress(isPIRAvailable: Bool,
                               completed: Set<SubscriptionOnboardingChecklistItem> = [],
                               entitlement: EntitlementStatus = .mockAllEnabled,
-                              isAIChatEnabled: Bool = true) -> SubscriptionOnboardingProgress {
+                              duckAIChatAvailability: DuckAIChatAvailability = .enabled) -> SubscriptionOnboardingProgress {
         sut.completedItems = completed
-        return SubscriptionOnboardingProgress(persistor: sut, isPIRAvailable: isPIRAvailable, entitlement: entitlement, isAIChatEnabled: isAIChatEnabled)
+        return SubscriptionOnboardingProgress(persistor: sut, isPIRAvailable: isPIRAvailable, entitlement: entitlement, duckAIChatAvailability: duckAIChatAvailability)
     }
 
     // MARK: - Card first shown

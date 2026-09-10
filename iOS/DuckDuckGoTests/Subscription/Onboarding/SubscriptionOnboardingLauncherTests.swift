@@ -80,8 +80,9 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
                        [.orderConfirmation, .welcome, .vpnActivation, .vpnWidget, .vpnTips, .idtr, .duckAI, .progress])
     }
 
-    /// An installed VPN config skips only the activation section — widget/tips are a different signal.
-    func testWhenAVPNConfigurationIsAlreadyInstalledThenOnlyVPNActivationIsSkipped() async throws {
+    /// `.vpnActivation`, `.vpnWidget` and `.vpnTips` all share `.vpn`'s completion, so an installed VPN
+    /// config skips all three together.
+    func testWhenAVPNConfigurationIsAlreadyInstalledThenAllVPNSectionsAreSkipped() async throws {
         subscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection,
                                               .identityTheftRestoration, .identityTheftRestorationGlobal,
                                               .paidAIChat]
@@ -98,7 +99,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
-        XCTAssertEqual(flow.sequence, [.orderConfirmation, .welcome, .vpnWidget, .vpnTips, .idtr, .duckAI, .progress])
+        XCTAssertEqual(flow.sequence, [.orderConfirmation, .welcome, .idtr, .duckAI, .progress])
     }
 
     /// An existing PIR profile marks `.pir` complete — mirrors the VPN backfill above. `.pir` isn't a
@@ -277,7 +278,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
-        XCTAssertEqual(flow.sequence, [.vpnWidget, .vpnTips, .idtr, .duckAI, .progress])
+        XCTAssertEqual(flow.sequence, [.idtr, .duckAI, .progress])
     }
 
     /// A customer already marked `.vpn` complete shouldn't pay for a live VPN-IPC check on every flow launch.
@@ -298,7 +299,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
         XCTAssertEqual(vpnController.isVPNConfiguredCallCount, 0)
     }
 
-    /// Mirrors `testWhenAVPNConfigurationIsAlreadyInstalledThenOnlyVPNActivationIsSkipped` for `postCheckout`.
+    /// Mirrors `testWhenAVPNConfigurationIsAlreadyInstalledThenAllVPNSectionsAreSkipped` for `postCheckout`.
     func testWhenAVPNConfigurationIsAlreadyInstalledThenSubscriptionSettingsSkipsVPNActivation() async throws {
         subscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection,
                                               .identityTheftRestoration, .paidAIChat]
@@ -312,7 +313,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
-        XCTAssertEqual(flow.sequence, [.vpnWidget, .vpnTips, .idtr, .duckAI, .progress])
+        XCTAssertEqual(flow.sequence, [.idtr, .duckAI, .progress])
     }
 
     /// Mirrors `testWhenAPIRProfileAlreadyExistsThenPIRIsMarkedComplete` for `postCheckout`.

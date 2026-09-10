@@ -41,6 +41,14 @@ protocol SubscriptionOnboardingProgressPersisting {
     var postCheckoutFlowStartedAt: Date? { get set }
 }
 
+/// Duck.ai's enabled state, for reconciling its fake-completion status — or that reconciling isn't
+/// relevant right now (e.g. the checklist is already fully complete, so it would have no visible effect).
+enum DuckAIChatAvailability: Equatable {
+    case enabled
+    case disabled
+    case reconciliationNotNeeded
+}
+
 extension SubscriptionOnboardingProgressPersisting {
 
     mutating func markComplete(_ item: SubscriptionOnboardingChecklistItem) {
@@ -53,12 +61,11 @@ extension SubscriptionOnboardingProgressPersisting {
     }
 
     /// Fake-completes `.duckAI` while disabled; undoes it once re-enabled, unless it later completed for real.
-    /// `nil` means Duck.ai's enabled state isn't relevant right now — leave everything as-is.
-    mutating func reconcileDuckAICompletion(isAIChatEnabled: Bool?) {
-        guard let isAIChatEnabled else { return }
+    mutating func reconcileDuckAICompletion(_ availability: DuckAIChatAvailability) {
+        guard availability != .reconciliationNotNeeded else { return }
         progressLock.lock()
         defer { progressLock.unlock() }
-        if !isAIChatEnabled {
+        if availability == .disabled {
             var items = completedItems
             guard !items.contains(.duckAI) else { return }
             items.insert(.duckAI)
@@ -185,9 +192,9 @@ struct SubscriptionOnboardingProgress {
 
     private var persistor: SubscriptionOnboardingProgressPersisting
 
-    init(persistor: SubscriptionOnboardingProgressPersisting, isPIRAvailable: Bool, entitlement: EntitlementStatus, isAIChatEnabled: Bool? = nil) {
+    init(persistor: SubscriptionOnboardingProgressPersisting, isPIRAvailable: Bool, entitlement: EntitlementStatus, duckAIChatAvailability: DuckAIChatAvailability = .reconciliationNotNeeded) {
         var persistor = persistor
-        persistor.reconcileDuckAICompletion(isAIChatEnabled: isAIChatEnabled)
+        persistor.reconcileDuckAICompletion(duckAIChatAvailability)
         self.persistor = persistor
         self.checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable, entitlement: entitlement)
     }

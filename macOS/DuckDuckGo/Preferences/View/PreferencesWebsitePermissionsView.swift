@@ -42,8 +42,8 @@ struct PreferencesWebsitePermissionsView: View {
 
     var body: some View {
         Group {
-            if let detailModel = model.detailModel {
-                WebsitePermissionDetailView(model: detailModel) {
+            if let detailModel = model.viewState.detailModel {
+                PreferencesWebsitePermissionDetailView(model: detailModel) {
                     model.send(action: .closeDetail)
                     onDetailNavigation()
                 }
@@ -67,7 +67,7 @@ struct PreferencesWebsitePermissionsView: View {
 
     private var recentsSection: some View {
         PreferencePaneSection(UserText.websitePermissionsRecentsSection) {
-            WebsitePermissionListContainer {
+            PreferencesWebsitePermissionListContainer {
                 VStack(spacing: 0) {
                     ForEach(Array(model.viewState.recents.enumerated()), id: \.element.id) { index, row in
                         recentRow(row)
@@ -96,7 +96,7 @@ struct PreferencesWebsitePermissionsView: View {
 
     private var permissionsSection: some View {
         PreferencePaneSection(UserText.permissionsSection) {
-            WebsitePermissionListContainer {
+            PreferencesWebsitePermissionListContainer {
                 VStack(spacing: 0) {
                     ForEach(Array(model.viewState.rows.enumerated()), id: \.element.id) { index, row in
                         Button {

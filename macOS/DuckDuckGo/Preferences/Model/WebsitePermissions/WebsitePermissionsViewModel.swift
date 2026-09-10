@@ -29,9 +29,6 @@ final class WebsitePermissionsViewModel: ObservableObject {
     @Published
     private(set) var viewState = WebsitePermissionsViewState()
 
-    @Published
-    private(set) var detailModel: WebsitePermissionDetailViewModel?
-
     private let permissionManager: PermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
     private var permissionsCancellable: AnyCancellable?
@@ -58,14 +55,14 @@ final class WebsitePermissionsViewModel: ObservableObject {
             permissionManager.removePermission(forDomain: row.domain, permissionType: row.permissionType)
 
         case .openDetail(let category):
-            detailModel = WebsitePermissionDetailViewModel(
+            viewState.detailModel = WebsitePermissionDetailViewModel(
                 category: category,
                 permissionManager: permissionManager,
                 featureFlagger: featureFlagger
             )
 
         case .closeDetail:
-            detailModel = nil
+            viewState.detailModel = nil
         }
     }
 
@@ -84,7 +81,8 @@ final class WebsitePermissionsViewModel: ObservableObject {
                 }
                 viewState = WebsitePermissionsViewState(
                     recents: makeRecentRows(from: editableEntries),
-                    rows: makeRows(from: editableEntries))
+                    rows: makeRows(from: editableEntries),
+                    detailModel: viewState.detailModel)
             }
     }
 

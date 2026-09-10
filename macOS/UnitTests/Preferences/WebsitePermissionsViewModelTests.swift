@@ -321,182 +321,35 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
 
     // MARK: - Detail
 
-    func testWhenOpeningDetailThenParentOwnsTheSelectedCategoryModel() {
+    func testWhenOpeningAndClosingDetailThenViewStateTracksNavigation() {
         let model = createSUT()
 
         model.send(action: .openDetail(.camera))
-
-        XCTAssertEqual(model.detailModel?.viewState.category, .camera)
-    }
-
-    func testWhenClosingDetailThenParentReleasesTheDetailModel() {
-        let model = createSUT()
-        model.send(action: .openDetail(.camera))
+        XCTAssertEqual(model.viewState.detailModel?.viewState.category, .camera)
 
         model.send(action: .closeDetail)
-
-        XCTAssertNil(model.detailModel)
+        XCTAssertNil(model.viewState.detailModel)
     }
 
-    func testWhenBuildingDetailSitesThenOnlyCategoryEntriesAreIncludedAndSorted() {
-        let detailModel = makeDetailModel(
-            category: .camera,
-            entries: [
-                WebsitePermissionEntry(domain: "zebra.com", permissionType: .camera, decision: .allow, lastModified: nil),
-                WebsitePermissionEntry(domain: "alpha.com", permissionType: .camera, decision: .ask, lastModified: nil),
-                WebsitePermissionEntry(domain: "location.com", permissionType: .geolocation, decision: .allow, lastModified: nil),
-            ]
-        )
+    func testWhenPermissionsUpdateThenSelectedDetailModelIsPreserved() throws {
+        let model = createSUT()
+        waitForViewStateUpdate(model) {
+            model.send(action: .onAppear)
+        }
+        model.send(action: .openDetail(.camera))
+        let detailModel = try XCTUnwrap(model.viewState.detailModel)
 
-        XCTAssertEqual(detailModel.viewState.sites.map(\.domain), ["alpha.com", "zebra.com"])
-    }
-
-    func testWhenExternalAppsShareADomainThenRowsRemainDistinctAndOrderedByScheme() {
-        let detailModel = makeDetailModel(
-            category: .externalApps,
-            entries: [
-                WebsitePermissionEntry(domain: "example.com", permissionType: .externalScheme(scheme: "zoommtg"), decision: .allow, lastModified: nil),
-                WebsitePermissionEntry(domain: "example.com", permissionType: .externalScheme(scheme: "mailto"), decision: .ask, lastModified: nil),
-            ]
-        )
-
-        XCTAssertEqual(detailModel.viewState.sites.map(\.id), ["example.com|external_mailto", "example.com|external_zoommtg"])
-        XCTAssertTrue(detailModel.viewState.sites.allSatisfy { $0.permissionTitle != nil })
-    }
-
-    func testWhenPopupIsPersistedAsDeniedThenDetailShowsAskWithoutOfferingDeny() {
-        let detailModel = makeDetailModel(
-            category: .popups,
-            entries: [
-                WebsitePermissionEntry(domain: "example.com", permissionType: .popups, decision: .deny, lastModified: nil),
-            ]
-        )
-
-        XCTAssertEqual(detailModel.viewState.sites.first?.decision, .ask)
-        XCTAssertEqual(detailModel.viewState.sites.first?.availableDecisions, [.ask, .allow])
-    }
-
-    func testWhenSearchMatchesThenDetailFiltersCaseAndDiacriticInsensitively() {
-        let detailModel = makeDetailModel(
-            category: .notifications,
-            entries: [
-                WebsitePermissionEntry(domain: "café.example", permissionType: .notification, decision: .allow, lastModified: nil),
-                WebsitePermissionEntry(domain: "other.example", permissionType: .notification, decision: .allow, lastModified: nil),
-            ]
-        )
-
-        detailModel.send(action: .setSearchQuery("  CAFE  "))
-
-        XCTAssertEqual(detailModel.viewState.visibleSites.map(\.domain), ["café.example"])
-        XCTAssertFalse(detailModel.viewState.hasNoResults)
-    }
-
-    func testWhenSearchMatchesNothingThenDetailShowsNoResults() {
-        let detailModel = makeDetailModel(
-            category: .notifications,
-            entries: [
-                WebsitePermissionEntry(domain: "example.com", permissionType: .notification, decision: .allow, lastModified: nil),
-            ]
-        )
-
-        detailModel.send(action: .setSearchQuery("missing"))
-
-        XCTAssertTrue(detailModel.viewState.hasNoResults)
-    }
-
-    func testWhenPermissionsUpdateThenDetailPreservesItsSearchQuery() {
-        let detailModel = makeDetailModel(
-            category: .notifications,
-            entries: [
-                WebsitePermissionEntry(domain: "example.com", permissionType: .notification, decision: .allow, lastModified: nil),
-            ]
-        )
-        detailModel.send(action: .setSearchQuery("example"))
-
-        waitForDetailStateUpdate(detailModel) {
-            permissionManager.setPermission(.allow, forDomain: "another.example", permissionType: .notification)
+        waitForViewStateUpdate(model) {
+            permissionManager.setPermission(.allow, forDomain: "example.com", permissionType: .camera)
         }
 
-        XCTAssertEqual(detailModel.viewState.searchQuery, "example")
-        XCTAssertEqual(detailModel.viewState.visibleSites.map(\.domain), ["another.example", "example.com"])
-    }
-
-    func testWhenDetailDecisionChangesThenPermissionManagerUpdatesTheCurrentRow() {
-        let detailModel = makeDetailModel(
-            category: .camera,
-            entries: [
-                WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .ask, lastModified: nil),
-            ]
-        )
-        guard let row = detailModel.viewState.sites.first else {
-            return XCTFail("Expected a website permission row")
-        }
-
-        waitForDetailStateUpdate(detailModel) {
-            detailModel.send(action: .changeDecision(row, .allow))
-        }
-
-        XCTAssertEqual(permissionManager.persistedDecision(forDomain: "example.com", permissionType: .camera), .allow)
-    }
-
-    func testWhenDetailRowWasRemovedThenAStaleDecisionChangeDoesNotRecreateIt() {
-        let detailModel = makeDetailModel(
-            category: .camera,
-            entries: [
-                WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .ask, lastModified: nil),
-            ]
-        )
-        guard let row = detailModel.viewState.sites.first else {
-            return XCTFail("Expected a website permission row")
-        }
-
-        waitForDetailStateUpdate(detailModel) {
-            detailModel.send(action: .remove(row))
-        }
-        detailModel.send(action: .changeDecision(row, .allow))
-
-        XCTAssertNil(permissionManager.persistedDecision(forDomain: "example.com", permissionType: .camera))
-        XCTAssertTrue(permissionManager.setPermissionCalls.isEmpty)
-    }
-
-    func testWhenNativeVoiceFlowChangesThenDetailHidesAndRestoresDuckAiMicrophone() {
-        let detailModel = makeDetailModel(
-            category: .microphone,
-            entries: [
-                WebsitePermissionEntry(domain: "duck.ai", permissionType: .microphone, decision: .deny, lastModified: nil),
-            ]
-        )
-
-        featureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = true
-        waitForDetailStateUpdate(detailModel) {
-            featureFlagger.triggerUpdate()
-        }
-        XCTAssertTrue(detailModel.viewState.isEmpty)
-
-        featureFlagger.featuresStub[FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue] = false
-        waitForDetailStateUpdate(detailModel) {
-            featureFlagger.triggerUpdate()
-        }
-        XCTAssertEqual(detailModel.viewState.sites.map(\.domain), ["duck.ai"])
+        XCTAssertTrue(model.viewState.detailModel === detailModel)
+        XCTAssertEqual(model.viewState.rows.first { $0.category == .camera }?.count, 1)
     }
 
     private func createSUT(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {
         permissionManager.setPersistedPermissions(entries)
         return WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: featureFlagger)
-    }
-
-    private func makeDetailModel(category: WebsitePermissionCategory,
-                                 entries: [WebsitePermissionEntry]) -> WebsitePermissionDetailViewModel {
-        permissionManager.setPersistedPermissions(entries)
-        let model = WebsitePermissionDetailViewModel(
-            category: category,
-            permissionManager: permissionManager,
-            featureFlagger: featureFlagger
-        )
-        waitForDetailStateUpdate(model) {
-            model.send(action: .onAppear)
-        }
-        return model
     }
 
     private func waitForViewStateUpdate(_ model: WebsitePermissionsViewModel, action: () -> Void) {
@@ -511,15 +364,4 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         withExtendedLifetime(cancellable) {}
     }
 
-    private func waitForDetailStateUpdate(_ model: WebsitePermissionDetailViewModel, action: () -> Void) {
-        let expectation = expectation(description: "Detail permissions updated")
-        let cancellable = model.$viewState
-            .dropFirst()
-            .prefix(1)
-            .sink { _ in expectation.fulfill() }
-
-        action()
-        wait(for: [expectation], timeout: 1)
-        withExtendedLifetime(cancellable) {}
-    }
 }

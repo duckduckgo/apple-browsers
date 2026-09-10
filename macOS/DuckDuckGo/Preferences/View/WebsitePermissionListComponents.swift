@@ -21,17 +21,6 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUI
 
-struct WebsitePermissionListContainer<Content>: View where Content: View {
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        content()
-            .frame(maxWidth: .infinity)
-            .background(Color(designSystemColor: .containerFillSecondary))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-}
-
 struct WebsitePermissionSiteRow: View {
     private enum Constants {
         static let rowHeight: CGFloat = 56

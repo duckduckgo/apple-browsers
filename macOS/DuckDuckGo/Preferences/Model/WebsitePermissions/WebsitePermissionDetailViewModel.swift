@@ -19,10 +19,10 @@
 import Combine
 import Foundation
 import PrivacyConfig
+import os.log
 
 @MainActor
 final class WebsitePermissionDetailViewModel: ObservableObject {
-
     @Published
     private(set) var viewState: WebsitePermissionDetailViewState
 
@@ -50,21 +50,39 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
         case .setSearchQuery(let query):
             viewState.setSearchQuery(query)
 
-        case .changeDecision(let row, let decision):
-            guard let currentRow = currentRow(matching: row),
-                  currentRow.permissionType.isUserEditable(forDomain: currentRow.domain, featureFlagger: featureFlagger),
-                  currentRow.availableDecisions.contains(decision),
-                  currentRow.decision != decision else { return }
-            permissionManager.setPermission(decision, forDomain: currentRow.domain, permissionType: currentRow.permissionType)
+        case .changeDecision(let rowID, let decision):
+            changeDecision(decision, for: rowID)
 
-        case .remove(let row):
-            guard let currentRow = currentRow(matching: row),
-                  currentRow.permissionType.isUserEditable(forDomain: currentRow.domain, featureFlagger: featureFlagger) else { return }
-            permissionManager.removePermission(forDomain: currentRow.domain, permissionType: currentRow.permissionType)
+        case .remove(let rowID):
+            remove(rowID: rowID)
         }
     }
 
     // MARK: - Private
+
+    private func changeDecision(_ decision: PersistedPermissionDecision, for rowID: WebsitePermissionDetailViewState.SiteRow.ID) {
+        guard
+            let siteRow = row(matchingID: rowID),
+            siteRow.permissionType.isUserEditable(forDomain: siteRow.domain, featureFlagger: featureFlagger),
+            siteRow.availableDecisions.contains(decision),
+            siteRow.decision != decision
+        else {
+            Logger.general.debug("WebsitePermissionDetailViewModel: Ignored permission decision change for row \(rowID)")
+            return
+        }
+        permissionManager.setPermission(decision, forDomain: siteRow.domain, permissionType: siteRow.permissionType)
+    }
+
+    private func remove(rowID: WebsitePermissionDetailViewState.SiteRow.ID) {
+        guard
+            let siteRow = row(matchingID: rowID),
+            siteRow.permissionType.isUserEditable(forDomain: siteRow.domain, featureFlagger: featureFlagger)
+        else {
+            Logger.general.debug("WebsitePermissionDetailViewModel: Ignored permission removal for row \(rowID)")
+            return
+        }
+        permissionManager.removePermission(forDomain: siteRow.domain, permissionType: siteRow.permissionType)
+    }
 
     private func setupObserver() {
         guard permissionsCancellable == nil else { return }
@@ -81,8 +99,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
         let category = viewState.category
         let sites = entries
             .filter {
-                category.contains($0.permissionType) &&
-                    $0.permissionType.isUserEditable(forDomain: $0.domain, featureFlagger: featureFlagger)
+                category.contains($0.permissionType) && $0.permissionType.isUserEditable(forDomain: $0.domain, featureFlagger: featureFlagger)
             }
             .map(makeSiteRow)
             .sorted(by: isOrderedBefore)
@@ -109,8 +126,10 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
         return String(format: UserText.websitePermissionsExternalAppFormat, permissionType.localizedDescription)
     }
 
-    private func isOrderedBefore(_ first: WebsitePermissionDetailViewState.SiteRow,
-                                 _ second: WebsitePermissionDetailViewState.SiteRow) -> Bool {
+    private func isOrderedBefore(
+        _ first: WebsitePermissionDetailViewState.SiteRow,
+        _ second: WebsitePermissionDetailViewState.SiteRow
+    ) -> Bool {
         let domainComparison = first.domain.localizedCaseInsensitiveCompare(second.domain)
         if domainComparison != .orderedSame {
             return domainComparison == .orderedAscending
@@ -118,8 +137,8 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
         return first.permissionType.rawValue < second.permissionType.rawValue
     }
 
-    private func currentRow(matching row: WebsitePermissionDetailViewState.SiteRow) -> WebsitePermissionDetailViewState.SiteRow? {
-        viewState.sites.first { $0.id == row.id }
+    private func row(matchingID id: WebsitePermissionDetailViewState.SiteRow.ID) -> WebsitePermissionDetailViewState.SiteRow? {
+        viewState.sites.first { $0.id == id }
     }
 }
 
@@ -127,72 +146,7 @@ extension WebsitePermissionDetailViewModel {
     enum Action {
         case onAppear
         case setSearchQuery(String)
-        case changeDecision(WebsitePermissionDetailViewState.SiteRow, PersistedPermissionDecision)
-        case remove(WebsitePermissionDetailViewState.SiteRow)
-    }
-}
-
-struct WebsitePermissionDetailViewState: Equatable {
-    let category: WebsitePermissionCategory
-    private(set) var searchQuery: String
-    let sites: [SiteRow]
-    private(set) var visibleSites: [SiteRow]
-
-    init(category: WebsitePermissionCategory, searchQuery: String = "", sites: [SiteRow] = []) {
-        self.category = category
-        self.searchQuery = searchQuery
-        self.sites = sites
-        visibleSites = Self.filteredSites(from: sites, matching: searchQuery)
-    }
-
-    var isEmpty: Bool {
-        sites.isEmpty
-    }
-
-    var hasNoResults: Bool {
-        !sites.isEmpty && visibleSites.isEmpty
-    }
-
-    var trimmedSearchQuery: String {
-        searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    mutating func setSearchQuery(_ query: String) {
-        searchQuery = query
-        visibleSites = Self.filteredSites(from: sites, matching: query)
-    }
-
-    private static func filteredSites(from sites: [SiteRow], matching query: String) -> [SiteRow] {
-        let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !normalizedQuery.isEmpty else { return sites }
-
-        let foldedQuery = normalizedQuery.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
-        return sites.filter {
-            $0.domain
-                .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
-                .contains(foldedQuery)
-        }
-    }
-}
-
-extension WebsitePermissionDetailViewState {
-    struct SiteRow: Identifiable, Equatable {
-        let domain: String
-        let permissionType: PermissionType
-        let decision: PersistedPermissionDecision
-        let permissionTitle: String?
-        let availableDecisions: [PersistedPermissionDecision]
-
-        var id: String {
-            "\(domain)|\(permissionType.rawValue)"
-        }
-
-        var faviconURL: URL? {
-            URL(string: "\(URL.NavigationalScheme.https.separated())\(domain)")
-        }
-
-        var accessibilityIdentifier: String {
-            "WebsitePermissions.Detail.Row.\(id)"
-        }
+        case changeDecision(rowID: WebsitePermissionDetailViewState.SiteRow.ID, decision: PersistedPermissionDecision)
+        case remove(rowID: WebsitePermissionDetailViewState.SiteRow.ID)
     }
 }

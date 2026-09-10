@@ -1,5 +1,5 @@
 //
-//  WebsitePermissionDetailView.swift
+//  PreferencesWebsitePermissionDetailView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import DesignResourcesKitIcons
 import PreferencesUI_macOS
 import SwiftUI
 
-struct WebsitePermissionDetailView: View {
+struct PreferencesWebsitePermissionDetailView: View {
     private enum Constants {
         static let chevronSize: CGFloat = 16
         static let searchWidth: CGFloat = 173
@@ -76,7 +76,7 @@ struct WebsitePermissionDetailView: View {
                 }
             }
 
-            WebsitePermissionListContainer {
+            PreferencesWebsitePermissionListContainer {
                 if model.viewState.isEmpty {
                     emptyState
                 } else if model.viewState.hasNoResults {
@@ -144,8 +144,8 @@ struct WebsitePermissionDetailView: View {
                     decision: row.decision,
                     availableDecisions: row.availableDecisions,
                     accessibilityIdentifier: row.accessibilityIdentifier,
-                    onDecisionChanged: { model.send(action: .changeDecision(row, $0)) },
-                    onRemove: { model.send(action: .remove(row)) }
+                    onDecisionChanged: { model.send(action: .changeDecision(rowID: row.id, decision: $0)) },
+                    onRemove: { model.send(action: .remove(rowID: row.id)) }
                 )
 
                 if index < model.viewState.visibleSites.count - 1 {

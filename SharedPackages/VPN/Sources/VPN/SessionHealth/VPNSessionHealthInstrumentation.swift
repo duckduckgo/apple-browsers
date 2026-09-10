@@ -262,6 +262,11 @@ private extension DefaultVPNSessionHealthInstrumentation {
             return false
         }
 
+        guard isTelemetryEnabled() else {
+            wideEvent.discardFlow(data)
+            return true
+        }
+
         Logger.networkProtectionSessionHealth.log("Completing vpn_session_health pixel: status=\(status.description, privacy: .public)")
         logPixelDetails(data)
 

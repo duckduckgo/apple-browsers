@@ -323,6 +323,23 @@ final class MapperToModelTests: XCTestCase {
         XCTAssertEqual((firstElement["parent"] as? [String: Any])?["selector"] as? String, "#email-wrapper")
     }
 
+    func testMapToModel_extractedProfileRoundTripsExtras() throws {
+        // Given
+        let extractedProfile = ExtractedProfile(name: "Jane Smith",
+                                                addresses: [AddressCityState(city: "Springfield", state: "IL", extras: ["zip": "62701"])],
+                                                identifier: "https://broker.example/id/jane-smith",
+                                                extras: ["county": "Sangamon"])
+        let profileData = try MapperToDB(mechanism: { $0 }).mapToDB(extractedProfile)
+        let extractedProfileDB = ExtractedProfileDB(id: 1, brokerId: 1, profileQueryId: 1, profile: profileData, removedDate: nil)
+
+        // When
+        let result = try MapperToModel(mechanism: { $0 }).mapToModel(extractedProfileDB)
+
+        // Then
+        XCTAssertEqual(result.extras, ["county": "Sangamon"])
+        XCTAssertEqual(result.addresses?.first?.extras, ["zip": "62701"])
+    }
+
     // MARK: - Helpers
 
     private func makeProfileQuery() -> ProfileQuery {

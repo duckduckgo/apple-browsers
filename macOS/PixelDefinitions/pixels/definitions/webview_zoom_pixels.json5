@@ -4,7 +4,7 @@
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_webview_zoom-changed": {
         "description": "Fired on each page zoom action (zoom in, zoom out, or actual size).",
@@ -13,6 +13,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "entry_point",
                 "type": "string",

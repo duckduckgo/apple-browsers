@@ -22,4 +22,5 @@ import os.log
 
 extension Logger {
     static let unifiedInputState = Logger(subsystem: "UnifiedInputState", category: "PerTab")
+    static let duckAIUsageWarnings = Logger(subsystem: "UsageWarnings", category: "UTIFooter")
 }

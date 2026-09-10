@@ -18,39 +18,98 @@
 //
 
 import XCTest
+import UIKit
 
 @testable import DuckDuckGo
 
 final class TabsBarViewControllerSizingTests: XCTestCase {
 
-    private let accuracy: CGFloat = 0.001
-    private let minWidth = TabsBarViewController.Constants.minItemWidth
+    // Per-tab sizing and add-tab-button placement math now lives in TabsBarLayoutTests; this file
+    // covers only the view controller's programmatic hierarchy.
 
-    private func itemWidth(_ available: CGFloat, _ visibleItems: Int, maxWidth: CGFloat) -> CGFloat {
-        TabsBarViewController.itemWidth(availableWidth: available, visibleItems: visibleItems, minWidth: minWidth, maxWidth: maxWidth)
+    @MainActor
+    func testCreateBuildsProgrammaticHierarchy() {
+        let controller = TabsBarViewController.create()
+
+        controller.loadViewIfNeeded()
+
+        XCTAssertNotNil(controller.collectionView)
+        XCTAssertNotNil(controller.buttonsBackground)
+        XCTAssertNotNil(controller.buttonsStack)
+        XCTAssertIdentical(controller.collectionView.delegate, controller)
+        XCTAssertIdentical(controller.collectionView.dataSource, controller)
+        XCTAssertEqual(controller.buttonsStack.spacing, TabsBarViewController.Constants.stackSpacing)
+        XCTAssertEqual(controller.buttonsStack.arrangedSubviews.count, 4)
+        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[0], controller.aiChatChip)
+        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[1], controller.aiChatMenuButton)
+        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[2], controller.fireButton)
+        // addTabButton is positioned manually outside buttonsStack, see recomputeItemSize()/TabsBarLayout.
+        XCTAssertFalse(controller.buttonsStack.arrangedSubviews.contains(controller.addTabButton))
+        XCTAssertIdentical(controller.addTabButton.superview, controller.view)
     }
 
-    func testTabsAreCappedAtMaxWidth() {
-        XCTAssertEqual(itemWidth(900, 1, maxWidth: 300), 300, accuracy: accuracy)
-        XCTAssertEqual(itemWidth(900, 2, maxWidth: 300), 300, accuracy: accuracy)
-        XCTAssertEqual(itemWidth(900, 3, maxWidth: 300), 300, accuracy: accuracy)
+    // MARK: - Duck.ai chrome controls
+
+    @MainActor
+    func testAIChatMenuButtonIsTheDuckAIPill() throws {
+        let controller = TabsBarViewController.create()
+        controller.loadViewIfNeeded()
+
+        let configuration = try XCTUnwrap(controller.aiChatMenuButton.configuration)
+        XCTAssertEqual(configuration.title, UserText.actionOpenAIChat)
+        let icon = try XCTUnwrap(configuration.image)
+        XCTAssertEqual(icon.size, CGSize(width: 16, height: 16))
+        XCTAssertEqual(icon.renderingMode, .alwaysTemplate)
+        XCTAssertEqual(configuration.background.cornerRadius, TabsBarViewController.Constants.aiChatMenuButtonCornerRadius)
+        XCTAssertEqual(controller.aiChatMenuButton.accessibilityLabel, UserText.accessibilityLabelOpenAIChat)
     }
 
-    func testTabsFillEquallyWhenMaxWidthDoesNotBind() {
-        XCTAssertEqual(itemWidth(900, 4, maxWidth: 300), 225, accuracy: accuracy)
-        XCTAssertEqual(itemWidth(900, 6, maxWidth: 300), 150, accuracy: accuracy)
+    @MainActor
+    func testWhenContextualSessionIsActiveThenAIChatMenuButtonSwapsToTheDownGlyph() throws {
+        let controller = TabsBarViewController.create()
+        controller.loadViewIfNeeded()
+        let closedGlyph = try XCTUnwrap(controller.aiChatMenuButton.configuration?.image?.pngData())
+
+        controller.updateAIChatMenuButtonForContextualChat(hasContextualSession: true)
+
+        let openGlyph = try XCTUnwrap(controller.aiChatMenuButton.configuration?.image?.pngData())
+        XCTAssertNotEqual(openGlyph, closedGlyph)
+
+        controller.updateAIChatMenuButtonForContextualChat(hasContextualSession: false)
+
+        XCTAssertEqual(try XCTUnwrap(controller.aiChatMenuButton.configuration?.image?.pngData()), closedGlyph)
     }
 
-    func testTabsFloorAtMinWidth() {
-        XCTAssertEqual(itemWidth(900, 8, maxWidth: 300), 120, accuracy: accuracy)
-        XCTAssertEqual(itemWidth(900, 20, maxWidth: 300), 120, accuracy: accuracy)
+    @MainActor
+    func testTabStripStartsAtDefaultFirstTabLeadingMargin() {
+        let view = TabsBarView()
+        view.frame = CGRect(x: 0, y: 0, width: 1024, height: 40)
+
+        view.layoutIfNeeded()
+
+        let expected = TabsBarViewController.Constants.firstTabLeadingMargin - TabsBarViewController.Constants.tabRampSize.width
+        XCTAssertEqual(view.collectionView.frame.minX, expected)
     }
 
-    func testMinWidthWinsWhenMaxBelowFloor() {
-        XCTAssertEqual(itemWidth(300, 1, maxWidth: 99), 120, accuracy: accuracy)
+    @MainActor
+    func testTabStripStartsAfterWindowControlsWhenMarginGrows() {
+        let view = TabsBarView()
+        view.frame = CGRect(x: 0, y: 0, width: 1024, height: 40)
+
+        view.firstTabLeadingMargin = 96
+        view.layoutIfNeeded()
+
+        XCTAssertEqual(view.collectionView.frame.minX, 96 - TabsBarViewController.Constants.tabRampSize.width)
     }
 
-    func testZeroVisibleItemsReturnsZero() {
-        XCTAssertEqual(itemWidth(900, 0, maxWidth: 300), 0, accuracy: accuracy)
+    @MainActor
+    func testCollectionViewRegistersTabsBarCell() {
+        let controller = TabsBarViewController.create()
+
+        controller.loadViewIfNeeded()
+
+        let cell = controller.collectionView.dequeueReusableCell(withReuseIdentifier: TabsBarCell.reuseIdentifier,
+                                                                 for: IndexPath(item: 0, section: 0))
+        XCTAssertTrue(cell is TabsBarCell)
     }
 }

@@ -33,11 +33,9 @@ final class AddressBarPerformanceCoordinatorTests: XCTestCase {
         private let lock = NSLock()
         private var pixels: [AddressBarPerformancePixel] = []
 
-        func fire(_ event: PixelKitEvent,
+        func fire(event: PixelKit.Event,
                   frequency: PixelKit.Frequency,
-                  includeAppVersionParameter: Bool,
-                  withAdditionalParameters: [String: String]?,
-                  withNamePrefix: String?,
+                  options: PixelKit.Options,
                   onComplete: @escaping PixelKit.CompletionBlock) {
             guard let pixel = event as? AddressBarPerformancePixel else {
                 XCTFail("Unexpected event type: \(type(of: event))")

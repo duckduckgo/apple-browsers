@@ -60,8 +60,17 @@ public protocol BrowserAutomationProvider: AnyObject {
     /// Execute a script in the current tab's webview
     func executeScript(_ script: String, args: [String: Any]) async -> Result<Any?, Error>
 
+    /// Clear all website data from the store used by the current web view.
+    func clearWebsiteData() async -> Bool
+
     /// Take a screenshot of the current webview
     /// - Parameter rect: Optional rect to crop the screenshot (for element screenshots)
     /// - Returns: PNG image data, or nil if screenshot failed
     func takeScreenshot(rect: CGRect?) async -> Data?
+}
+
+public extension BrowserAutomationProvider {
+    func clearWebsiteData() async -> Bool {
+        false
+    }
 }

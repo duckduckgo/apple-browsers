@@ -28,6 +28,7 @@ import os.log
 import PixelKit
 import Combine
 import WebExtensions
+import FeatureFlags_iOS
 
 protocol AutoconsentPreferences {
     var cookiePopupPreference: CookiePopupPreference { get set }
@@ -72,6 +73,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private var lastHandledCMPName: String?
     private var reloadLoopDetected: Bool = false
     private var consentHeuristicEnabled: Bool?
+    private var consentHeuristicMode: String?
     private var cpmStage: CookieConsentCPMStage = .notStarted
     private var cpmErrors: [String] = []
     private var lastConsentStatus: CookieConsentInfo?
@@ -317,6 +319,7 @@ extension AutoconsentUserScript {
         }
 
         self.consentHeuristicEnabled = isHeuristicActionEnabled()
+        self.consentHeuristicMode = heuristicModeValue()
 
         let topURLDomain = message.webView?.url?.host
         guard config.isFeature(.autoconsent, enabledForDomain: topURLDomain) else {
@@ -370,7 +373,7 @@ extension AutoconsentUserScript {
                 "detectRetries": 20,
                 "isMainWorld": false,
                 "enableHeuristicDetection": true,
-                "heuristicMode": heuristicModeValue()
+                "heuristicMode": consentHeuristicMode ?? "off"
             ] as [String: Any?]
         ] as [String: Any?], nil)
     }
@@ -488,7 +491,7 @@ extension AutoconsentUserScript {
             consentRule: messageData.cmp,
             consentHeuristicEnabled: consentHeuristicEnabled
         )
-        if messageData.cmp == "HEURISTIC" {
+        if messageData.cmp.hasPrefix("HEURISTIC") {
             firePixel(pixel: .doneHeuristic)
         } else {
             firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
@@ -598,8 +601,8 @@ extension AutoconsentUserScript {
 
     func firePixel(pixel: AutoconsentPixel) {
         var additionalParams: [String: String] = [:]
-        if let enabled = consentHeuristicEnabled {
-            additionalParams["consentHeuristicEnabled"] = enabled ? "1" : "0"
+        if let consentHeuristicMode {
+            additionalParams["consentHeuristicEnabled"] = consentHeuristicMode
         }
 
         // Add fromExtension=0 when web extensions are available but autoconsent extension is not
@@ -623,6 +626,7 @@ extension AutoconsentUserScript {
         cpmStage = .notStarted
         cpmErrors.removeAll()
         consentHeuristicEnabled = nil
+        consentHeuristicMode = nil
         lastConsentStatus = nil
     }
 
@@ -658,7 +662,6 @@ extension AutoconsentUserScript {
 
     @MainActor
     private func heuristicModeValue() -> String {
-        // If the new preferences menu is not enabled, use reject only, otherwise use the value from the setting.
         if !(consentHeuristicEnabled ?? false) {
             return "off"
         }
@@ -666,7 +669,7 @@ extension AutoconsentUserScript {
             return "tier2"
         }
         if preferences.cookiePopupPreference == .default {
-            return config.isSubfeatureEnabled(AutoconsentSubfeature.cookiePopupPreferenceSetting) ? "tier1" : "reject"
+            return "tier1"
         }
         return "off"
     }

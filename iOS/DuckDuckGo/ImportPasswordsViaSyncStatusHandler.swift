@@ -18,8 +18,10 @@
 //
 
 import Foundation
+import FoundationExtensions
 import Core
 import DDGSync
+import PixelKit
 
 class ImportPasswordsViaSyncStatusHandler {
 
@@ -48,7 +50,7 @@ class ImportPasswordsViaSyncStatusHandler {
             return
         }
         
-        if importCheckStartDate.isLessThan48HoursAgo() {
+        if importCheckStartDate.isLessThan(daysAgo: 2) {
             guard syncService.authState != .inactive else {
                 return
             }
@@ -70,7 +72,7 @@ class ImportPasswordsViaSyncStatusHandler {
     }
 
     func clearSettingAndFirePixel(_ type: Pixel.Event) {
-        Pixel.fire(pixel: type)
+        PixelKit.fire(type)
         appSettings.clearAutofillImportViaSyncStart()
     }
 

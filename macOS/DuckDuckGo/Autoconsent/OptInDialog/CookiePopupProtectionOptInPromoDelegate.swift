@@ -19,7 +19,7 @@
 import AppKit
 import BrowserServicesKit
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import Persistence
 import PixelKit
 import PrivacyConfig
@@ -120,8 +120,7 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
     }
 
     private func computeEligibility() -> Bool {
-        guard featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting),
-              featureFlagger.isFeatureOn(.cookiePopupOptInDialog) else { return false }
+        guard featureFlagger.isFeatureOn(.cookiePopupOptInDialog) else { return false }
         // Nothing to offer users already on the most-private setting — it already accepts no-opt-out cookies.
         guard cookiePopupProtectionPreferences.cookiePopupPreference != .max else { return false }
         guard store.shownCount < Self.maxShowCount else { return false }
@@ -134,6 +133,14 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
         guard let browserTabViewController = windowControllersManager
             .lastKeyMainWindowController?.mainViewController.browserTabViewController else {
+            return .noChange
+        }
+
+        // A/B experiment: this is the last point both arms share before diverging, so enroll here.
+        // `resolveCohort` assigns + enrolls the user; `control` is held back (dialog suppressed), while
+        // `treatment`/unassigned fall through to the current presentation. Skipped for debug force-shows.
+        if !force,
+           featureFlagger.resolveCohort(for: FeatureFlag.cookiePopupOptInDialogExperiment) as? FeatureFlag.CookiePopupOptInDialogCohort == .control {
             return .noChange
         }
 

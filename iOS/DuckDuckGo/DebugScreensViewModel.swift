@@ -24,6 +24,7 @@ import PrivacyConfig
 import Combine
 import Core
 import Configuration
+import FeatureFlags_iOS
 
 /// The view mode for the debug view.  You shouldn't have to add or change anything here.
 ///  Please add new views/controllers to DebugScreensViewModel+Screens.swift.
@@ -44,6 +45,14 @@ class DebugScreensViewModel: ObservableObject {
     @Published var isShakeToOpenDebugMenuEnabled = true {
         didSet {
             AppUserDefaults().shakeToOpenDebugMenuEnabled = isShakeToOpenDebugMenuEnabled
+        }
+    }
+
+    @Published var isSlowAnimationsEnabled = false {
+        didSet {
+            guard oldValue != isSlowAnimationsEnabled else { return }
+            AppUserDefaults().slowAnimationsEnabled = isSlowAnimationsEnabled
+            Self.applySlowAnimations(enabled: isSlowAnimationsEnabled)
         }
     }
 
@@ -102,6 +111,18 @@ class DebugScreensViewModel: ObservableObject {
         self.isInternalUser = dependencies.internalUserDecider.isInternalUser
         self.isInspectibleWebViewsEnabled = AppUserDefaults().inspectableWebViewEnabled
         self.isShakeToOpenDebugMenuEnabled = AppUserDefaults().shakeToOpenDebugMenuEnabled
+        self.isSlowAnimationsEnabled = AppUserDefaults().slowAnimationsEnabled
+    }
+
+    /// Matches Simulator Debug → Slow Animations (~10×) by slowing every window's layer clock.
+    static func applySlowAnimations(enabled: Bool) {
+        let speed = enabled ? AppUserDefaults.slowAnimationsLayerSpeed : 1.0
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            for sceneWindow in windowScene.windows {
+                sceneWindow.layer.speed = speed
+            }
+        }
     }
 
     func refreshFilter() {
@@ -127,6 +148,7 @@ class DebugScreensViewModel: ObservableObject {
         }
     }
 
+    @MainActor
     func executeAction(_ screen: DebugScreen) {
         switch screen {
         case .action(_, let action):

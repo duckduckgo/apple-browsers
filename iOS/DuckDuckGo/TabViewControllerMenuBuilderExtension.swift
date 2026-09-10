@@ -31,6 +31,8 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckPlayer
 import UIComponents
+import FeatureFlags_iOS
+import PixelKit
 
 extension TabViewController {
 
@@ -54,12 +56,7 @@ extension TabViewController {
 
         if shouldShowAIChatInMenu {
             
-            var chatEntry: BrowsingMenuEntry
-            if aiChatFullModeFeature.isAvailable {
-                chatEntry = buildNewAIChatEntry()
-            } else {
-                chatEntry = buildChatEntry(withSmallIcon: false)
-            }
+            let chatEntry = devicePlatform.isIphone ? buildNewAIChatEntry() : buildChatEntry(withSmallIcon: false)
 
             entries.append(newTabEntry)
             entries.append(chatEntry)
@@ -111,7 +108,7 @@ extension TabViewController {
             entries.append(printEntry)
         }
 
-        if let domain = self.privacyInfo?.domain {
+        if let domain = Self.privacyProtectionToggleDomain(for: privacyInfo) {
             entries.append(self.buildToggleProtectionEntry(forDomain: domain))
         }
 
@@ -217,7 +214,7 @@ extension TabViewController {
                  accessibilityLabel: UserText.actionPrintSite,
                  image: smallIcon ? DesignSystemImages.Glyphs.Size16.print : DesignSystemImages.Glyphs.Size24.print,
                  action: { [weak self] in
-            Pixel.fire(pixel: smallIcon ? .browsingMenuListPrint : .browsingMenuPrint)
+            PixelKit.fire(smallIcon ? Pixel.Event.browsingMenuListPrint : .browsingMenuPrint)
             self?.print()
         })
     }
@@ -245,10 +242,12 @@ extension TabViewController {
     }
 
     private func buildDownloadsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
-        .regular(name: UserText.actionDownloads,
-                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
-                 showNotificationDot: AppDependencyProvider.shared.downloadManager.unseenDownloadsAvailable,
-                 action: { [weak self] in
+        let downloadManager = AppDependencyProvider.shared.downloadManager
+
+        return .regular(name: UserText.actionDownloads,
+                        image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
+                        showNotificationDot: downloadManager.hasDownloadsNeedingAttention,
+                        action: { [weak self] in
             self?.onOpenDownloadsAction()
         })
     }
@@ -266,7 +265,7 @@ extension TabViewController {
                  image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChat : DesignSystemImages.Glyphs.Size24.aiChat,
                  action: { [weak self] in
             self?.openAIChat()
-            Pixel.fire(pixel: .browsingMenuAIChat)
+            PixelKit.fire(Pixel.Event.browsingMenuAIChat)
         })
     }
     
@@ -289,12 +288,7 @@ extension TabViewController {
             }))
 
             if shouldShowAIChatInMenu {
-                var chatEntry: BrowsingMenuEntry
-                if aiChatFullModeFeature.isAvailable {
-                    chatEntry = buildNewAIChatEntry(withSmallIcon: true)
-                } else {
-                    chatEntry = buildChatEntry(withSmallIcon: true)
-                }
+                let chatEntry = devicePlatform.isIphone ? buildNewAIChatEntry(withSmallIcon: true) : buildChatEntry(withSmallIcon: true)
                 entries.append(chatEntry)
             }
 
@@ -327,6 +321,11 @@ extension TabViewController {
 
         var entries = [BrowsingMenuEntry]()
 
+        if let sitePermissionsEntry = buildSitePermissionsEntry() {
+            entries.append(sitePermissionsEntry)
+            entries.append(.separator)
+        }
+
         let bookmarkEntries = buildBookmarkEntries(for: link, with: bookmarksInterface)
         entries.append(bookmarkEntries.bookmark)
         entries.append(bookmarkEntries.favorite)
@@ -354,6 +353,18 @@ extension TabViewController {
         entries.append(buildFindInPageEntry(forLink: link))
                 
         return entries
+    }
+
+    private func buildSitePermissionsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
+        guard isSitePermissionsManagementAvailable else { return nil }
+
+        return .regular(
+            name: UserText.sitePermissions,
+            image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.options : DesignSystemImages.Glyphs.Size24.options,
+            action: { [weak self] in
+                self?.presentSitePermissionsManagement()
+            }
+        )
     }
     
     private func buildAITabLinkEntries(useSmallIcon: Bool = true, addPrint: Bool = true, useDetailTextForZoom: Bool) -> [BrowsingMenuEntry] {
@@ -400,7 +411,7 @@ extension TabViewController {
                                          action: { [weak self] in
             guard let self = self else { return }
             guard let menu = self.chromeDelegate?.omniBar.barView.menuButton else { return }
-            Pixel.fire(pixel: .browsingMenuShare)
+            PixelKit.fire(Pixel.Event.browsingMenuShare)
             self.onShareAction(forLink: self.link!, fromView: menu)
         })
     }
@@ -415,31 +426,42 @@ extension TabViewController {
                 strongSelf.onCopyAction(for: text)
             }
 
-            Pixel.fire(pixel: .browsingMenuCopy)
+            PixelKit.fire(Pixel.Event.browsingMenuCopy)
             let addressBarBottom = strongSelf.appSettings.currentAddressBarPosition.isBottom
             ActionMessageView.present(message: UserText.actionCopyMessage,
                                       presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom))
         })
     }
 
+    private func buildCopyLinkEntry(for url: URL) -> BrowsingMenuEntry {
+        let title = UserText.copyLinkTitle(for: url, isPrivacyProtectionEnabled: privacyConfigurationManager.privacyConfig.isProtected(domain: url.host))
+        return BrowsingMenuEntry.regular(name: title,
+                                         image: DesignSystemImages.Glyphs.Size24.link,
+                                         action: { [weak self] in
+            guard let self else { return }
+            self.onCopyAction(forUrl: url)
+            PixelKit.fire(Pixel.Event.browsingMenuCopy)
+        })
+    }
+
     private func onNewTabAction() {
-        Pixel.fire(pixel: .browsingMenuNewTab, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.browsingMenuNewTab, options: .parameters([
             PixelParameters.browsingMode: BrowsingMode.normal.pixelParamValue
-        ])
+        ]))
         delegate?.tabDidRequestNewTab(self)
     }
 
     private func onNewFireTabAction() {
-        Pixel.fire(pixel: .browsingMenuNewTab, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.browsingMenuNewTab, options: .parameters([
             PixelParameters.browsingMode: BrowsingMode.fire.pixelParamValue
-        ])
+        ]))
         delegate?.tabDidRequestNewTab(self)
     }
 
     private func buildFindInPageEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.findInPage : DesignSystemImages.Glyphs.Size24.findInPage
         return BrowsingMenuEntry.regular(name: UserText.findInPage, image: image, action: { [weak self] in
-            Pixel.fire(pixel: .browsingMenuFindInPage)
+            PixelKit.fire(Pixel.Event.browsingMenuFindInPage)
             self?.requestFindInPage()
         })
     }
@@ -466,7 +488,7 @@ extension TabViewController {
                                          image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.reload : DesignSystemImages.Glyphs.Size24.reload,
                                          action: { [weak self] in
             guard let self = self else { return }
-            Pixel.fire(pixel: .browsingMenuRefreshPage)
+            PixelKit.fire(Pixel.Event.browsingMenuRefreshPage)
             self.reload()
         })
     }
@@ -539,9 +561,9 @@ extension TabViewController {
                  accessibilityLabel: UserText.actionNewAIChat,
                  image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChatAdd : DesignSystemImages.Glyphs.Size24.aiChatAdd,
                  action: { [weak self] in
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
-            Pixel.fire(pixel: .browsingMenuAIChat)
-            self?.openNewChatInNewTab()
+            PixelKit.fire(Pixel.Event.aiChatSettingsMenuNewChatTabTapped, frequency: .dailyAndCount)
+            PixelKit.fire(Pixel.Event.browsingMenuAIChat)
+            self?.requestNewAIChatTabFromMenu()
         })
     }
 
@@ -552,15 +574,19 @@ extension TabViewController {
                  accessibilityLabel: UserText.duckAiFeatureName,
                  image: DesignSystemImages.Glyphs.Size24.duckAi,
                  action: { [weak self] in
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
-            Pixel.fire(pixel: .browsingMenuAIChat)
-            self?.openNewChatInNewTab()
+            PixelKit.fire(Pixel.Event.aiChatSettingsMenuNewChatTabTapped, frequency: .dailyAndCount)
+            PixelKit.fire(Pixel.Event.browsingMenuAIChat)
+            self?.requestNewAIChatTabFromMenu()
         })
     }
 
+    /// The delegate reports the entry, because `TabURLInterceptor` may cancel this navigation
+    /// and re-enter `openAIChat`, which would otherwise report the same entry a second time.
+    private func requestNewAIChatTabFromMenu() {
+        delegate?.tabDidRequestNewAIChatTab(tab: self)
+    }
+
     private func buildDuckAiChatsEntry(withSmallIcon smallIcon: Bool = true) -> BrowsingMenuEntry {
-        // Size24 `chats` forced to `.alwaysTemplate` so it tints in dark mode; Size16 falls back
-        // to `aiChatHistory` (no `chats` glyph at 16px).
         let image = smallIcon
             ? DesignSystemImages.Glyphs.Size16.aiChatHistory
             : DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
@@ -571,7 +597,7 @@ extension TabViewController {
             self?.openAIChatHistory()
         })
     }
-    
+
     /// Mirrors the Plus-menu "New Voice Chat": starts a Duck.ai voice session.
     private func buildAINewVoiceChatEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.aiChatHeaderNewVoiceChatTitle,
@@ -593,7 +619,7 @@ extension TabViewController {
                         accessibilityLabel: UserText.aiChatAppMenuChats,
                         image: image,
                         action: { [weak self] in
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuSidebarTapped)
+            PixelKit.fire(Pixel.Event.aiChatSettingsMenuSidebarTapped, frequency: .dailyAndCount)
             self?.submitToggleSidebarAction()
         })
     }
@@ -608,7 +634,7 @@ extension TabViewController {
                         accessibilityLabel: UserText.aiChatAppMenuChats,
                         image: image,
                         action: { [weak self] in
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuSidebarTapped)
+            PixelKit.fire(Pixel.Event.aiChatSettingsMenuSidebarTapped, frequency: .dailyAndCount)
             self?.openChatListInNewTab()
         })
     }
@@ -618,7 +644,7 @@ extension TabViewController {
                  accessibilityLabel: UserText.actionAIChatHistory,
                  image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.aiChatHistory : DesignSystemImages.Glyphs.Size24.aiChatHistory,
                  action: { [weak self] in
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuSidebarTapped)
+            PixelKit.fire(Pixel.Event.aiChatSettingsMenuSidebarTapped, frequency: .dailyAndCount)
             self?.submitToggleSidebarAction()
         })
     }
@@ -629,7 +655,7 @@ extension TabViewController {
                  accessibilityLabel: UserText.actionAIChatSettings,
                  image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.aiChatSettings : largeIcon,
                  action: { [weak self] in
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuAIChatSettingsTapped)
+            PixelKit.fire(Pixel.Event.aiChatSettingsMenuAIChatSettingsTapped, frequency: .dailyAndCount)
             self?.submitOpenSettingsAction()
         })
     }
@@ -644,20 +670,20 @@ extension TabViewController {
                         accessibilityLabel: UserText.actionAIChatSettings,
                         image: image,
                         action: { [weak self] in
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuAIChatSettingsTapped)
+            PixelKit.fire(Pixel.Event.aiChatSettingsMenuAIChatSettingsTapped, frequency: .dailyAndCount)
             self?.openSettingsInNewTab()
         })
     }
 
     private func performSaveBookmarkAction(for link: Link,
                                            with bookmarksInterface: MenuBookmarksInteracting) {
-        Pixel.fire(pixel: .browsingMenuAddToBookmarks)
-        DailyPixel.fire(pixel: .addBookmarkDaily)
+        PixelKit.fire(Pixel.Event.browsingMenuAddToBookmarks)
+        PixelKit.fire(Pixel.Event.addBookmarkDaily, frequency: .legacyDailyNoSuffix)
         saveAsBookmark(favorite: false, viewModel: bookmarksInterface)
     }
 
     private func performEditBookmarkAction(for link: Link) {
-        Pixel.fire(pixel: .browsingMenuEditBookmark)
+        PixelKit.fire(Pixel.Event.browsingMenuEditBookmark)
 
         delegate?.tabDidRequestEditBookmark(tab: self)
     }
@@ -668,7 +694,7 @@ extension TabViewController {
                                     useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         if bookmark?.isFavorite(on: .mobile) ?? false {
             let action: () -> Void = { [weak self] in
-                Pixel.fire(pixel: .browsingMenuRemoveFromFavorites)
+                PixelKit.fire(Pixel.Event.browsingMenuRemoveFromFavorites)
                 self?.performRemoveFavoriteAction(for: link, with: bookmarksInterface)
             }
 
@@ -686,8 +712,8 @@ extension TabViewController {
                                               image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.favorite : DesignSystemImages.Glyphs.Size24.favorite,
                                               tag: .favorite,
                                               action: { [weak self] in
-            Pixel.fire(pixel: addToFavoriteFlow ? .browsingMenuAddToFavoritesAddFavoriteFlow : .browsingMenuAddToFavorites)
-            DailyPixel.fire(pixel: .addFavoriteDaily)
+            PixelKit.fire(addToFavoriteFlow ? Pixel.Event.browsingMenuAddToFavoritesAddFavoriteFlow : .browsingMenuAddToFavorites)
+            PixelKit.fire(Pixel.Event.addFavoriteDaily, frequency: .legacyDailyNoSuffix)
             self?.performAddFavoriteAction(for: link, with: bookmarksInterface)
         })
         return entry
@@ -732,7 +758,7 @@ extension TabViewController {
             guard let self, let delegate = self.delegate else { return }
 
             delegate.tabDidRequestNewPrivateEmailAddress(tab: self)
-            Pixel.fire(pixel: .browsingMenuNewDuckAddress)
+            PixelKit.fire(Pixel.Event.browsingMenuNewDuckAddress)
         }
     }
 
@@ -747,9 +773,9 @@ extension TabViewController {
 
             self.presentShareSheet(withItems: items, fromView: view) { [weak self] activityType, result, _, error in
                 if result {
-                    Pixel.fire(pixel: .shareSheetResultSuccess)
+                    PixelKit.fire(Pixel.Event.shareSheetResultSuccess)
                 } else {
-                    Pixel.fire(pixel: .shareSheetResultFail, error: error)
+                    PixelKit.fire(Pixel.Event.shareSheetResultFail.withError(error))
                 }
 
                 if let activityType {
@@ -760,21 +786,25 @@ extension TabViewController {
     }
     
     private func firePixelForActivityType(_ activityType: UIActivity.ActivityType) {
+        let addToHomeScreen: UIActivity.ActivityType? = if #available(iOS 16.4, *) { .addToHomeScreen } else { nil }
+
         switch activityType {
         case .copyToPasteboard:
-            Pixel.fire(pixel: .shareSheetActivityCopy)
+            PixelKit.fire(Pixel.Event.shareSheetActivityCopy)
         case .saveBookmarkInDuckDuckGo:
-            Pixel.fire(pixel: .shareSheetActivityAddBookmark)
+            PixelKit.fire(Pixel.Event.shareSheetActivityAddBookmark)
         case .saveFavoriteInDuckDuckGo:
-            Pixel.fire(pixel: .shareSheetActivityAddFavorite)
+            PixelKit.fire(Pixel.Event.shareSheetActivityAddFavorite)
         case .findInPage:
-            Pixel.fire(pixel: .shareSheetActivityFindInPage)
+            PixelKit.fire(Pixel.Event.shareSheetActivityFindInPage)
         case .print:
-            Pixel.fire(pixel: .shareSheetActivityPrint)
+            PixelKit.fire(Pixel.Event.shareSheetActivityPrint)
         case .addToReadingList:
-            Pixel.fire(pixel: .shareSheetActivityAddToReadingList)
+            PixelKit.fire(Pixel.Event.shareSheetActivityAddToReadingList)
+        case addToHomeScreen:
+            PixelKit.fire(Pixel.Event.shareSheetActivityAddToHomeScreen)
         default:
-            Pixel.fire(pixel: .shareSheetActivityOther)
+            PixelKit.fire(Pixel.Event.shareSheetActivityOther)
         }
     }
 
@@ -796,8 +826,8 @@ extension TabViewController {
                 if error == nil, let downloadLink = download.link {
                     let fileSize = downloadLink.localFileURL?.fileSize ?? 0
                     let isFileSizeGreaterThan10MB = (fileSize > 10 * 1000 * 1000)
-                    Pixel.fire(pixel: .downloadsSharingPredownloadedLocalFile,
-                               withAdditionalParameters: [PixelParameters.fileSizeGreaterThan10MB: isFileSizeGreaterThan10MB ? "1" : "0"])
+                    PixelKit.fire(Pixel.Event.downloadsSharingPredownloadedLocalFile,
+                                  options: .parameters([PixelParameters.fileSizeGreaterThan10MB: isFileSizeGreaterThan10MB ? "1" : "0"]))
                     completion(downloadLink)
                 } else {
                     completion(originalLink)
@@ -807,7 +837,7 @@ extension TabViewController {
     }
     
     private func onToggleDesktopSiteAction(forUrl url: URL) {
-        Pixel.fire(pixel: .browsingMenuToggleBrowsingMode)
+        PixelKit.fire(Pixel.Event.browsingMenuToggleBrowsingMode)
         tabModel.toggleDesktopMode()
         updateContentMode()
         
@@ -819,23 +849,23 @@ extension TabViewController {
     }
     
     private func onReportBrokenSiteAction() {
-        Pixel.fire(pixel: .browsingMenuReportBrokenSite)
-        delegate?.tabDidRequestReportBrokenSite(tab: self)
+        PixelKit.fire(Pixel.Event.browsingMenuReportBrokenSite)
+        delegate?.tabDidRequestReportBrokenSite(tab: self, entryPoint: .report)
     }
     
     private func onOpenDownloadsAction() {
-        Pixel.fire(pixel: .downloadsListOpened,
-                   withAdditionalParameters: [PixelParameters.originatedFromMenu: "1"])
+        PixelKit.fire(Pixel.Event.downloadsListOpened,
+                      options: .parameters([PixelParameters.originatedFromMenu: "1"]))
         delegate?.tabDidRequestDownloads(tab: self)
     }
     
     private func onOpenAutofillLoginsAction() {
-        Pixel.fire(pixel: .browsingMenuAutofill)
+        PixelKit.fire(Pixel.Event.browsingMenuAutofill)
         delegate?.tab(self, didRequestAutofillLogins: nil, source: .overflow, extensionPromotionManager: extensionPromotionManager)
     }
     
     private func onBrowsingSettingsAction() {
-        Pixel.fire(pixel: .settingsPresentedFromMenu)
+        PixelKit.fire(Pixel.Event.settingsPresentedFromMenu)
         delegate?.tabDidRequestSettings(tab: self)
     }
 
@@ -849,6 +879,19 @@ extension TabViewController {
 
     private func openAIChatHistory() {
         delegate?.tabDidRequestAIChatHistory(tab: self, source: .browserMenu)
+    }
+
+    /// The domain the "Disable/Enable Privacy Protection" browsing-menu toggle applies to,
+    /// or `nil` when the toggle should not be offered.
+    ///
+    /// The toggle is suppressed on the DuckDuckGo SERP to match the Privacy Dashboard, which is
+    /// also unavailable there (see `MainViewController.onPrivacyIconPressed` and
+    /// `PrivacyIconLogic.privacyIcon(for:)`, which shows the Dax logo instead of a shield on the
+    /// SERP). Offering a way to disable protection with no dashboard to re-enable it from is
+    /// confusing, and DuckDuckGo Search does not track the user regardless.
+    static func privacyProtectionToggleDomain(for privacyInfo: PrivacyInfo?) -> String? {
+        guard let privacyInfo, !privacyInfo.url.isDuckDuckGoSearch else { return nil }
+        return privacyInfo.domain
     }
 
     private func buildToggleProtectionEntry(forDomain domain: String, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
@@ -878,10 +921,10 @@ extension TabViewController {
         } else {
             togglePrivacyProtection(domain: domain)
         }
-        Pixel.fire(pixel: isProtected ? .browsingMenuDisableProtection : .browsingMenuEnableProtection)
+        PixelKit.fire(isProtected ? Pixel.Event.browsingMenuDisableProtection : .browsingMenuEnableProtection)
         let tdsEtag = AppDependencyProvider.shared.configurationStore.loadEtag(for: .trackerDataSet) ?? ""
         SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
-            UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.debugBreakageExperiment, frequency: .uniqueByName, options: .parameters(parameters))
         }
     }
 
@@ -926,10 +969,10 @@ extension TabViewController {
         switch promoStatus {
         case .promo:
             vpnPromoHelper.subscriptionPromoWasShown()
-            Pixel.fire(pixel: .subscriptionEntryAppMenuImpression)
+            PixelKit.fire(Pixel.Event.subscriptionEntryAppMenuImpression)
         case .noPromo:
             showNotificationDot = false
-            Pixel.fire(pixel: .subscriptionEntryAppMenuImpression)
+            PixelKit.fire(Pixel.Event.subscriptionEntryAppMenuImpression)
         case .subscribed:
             if case .connected = AppDependencyProvider.shared.connectionObserver.recentValue {
                 image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOn : DesignSystemImages.Glyphs.Size24.vpn
@@ -950,10 +993,10 @@ extension TabViewController {
                                          customDotColor: customDotColor,
                                          detailText: showStatusStringInDetail ? detailText : nil) { [weak self] in
             self?.onOpenVPNAction(with: vpnPromoHelper)
-            Pixel.fire(pixel: .browsingMenuVPN)
+            PixelKit.fire(Pixel.Event.browsingMenuVPN)
             switch promoStatus {
             case .promo, .noPromo:
-                Pixel.fire(pixel: .subscriptionEntryAppMenuSubscriptionClick)
+                PixelKit.fire(Pixel.Event.subscriptionEntryAppMenuSubscriptionClick)
             case .subscribed:
                 break
             }
@@ -1032,7 +1075,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
             return buildDuckAIHeaderTile()
         }
 
-        if aiChatFullModeFeature.isAvailable {
+        if devicePlatform.isIphone {
             return buildNewAIChatEntry(withSmallIcon: false)
         } else {
             return buildChatEntry(withSmallIcon: false)
@@ -1074,6 +1117,11 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeShareEntry() -> BrowsingMenuEntry {
         buildShareEntry(useSmallIcon: false)
     }
+
+    func makeCopyLinkEntry() -> BrowsingMenuEntry? {
+        guard let link = validLink else { return nil }
+        return buildCopyLinkEntry(for: link.url)
+    }
     
     func makePrintEntry() -> BrowsingMenuEntry {
         buildPrintEntry(withSmallIcon: false)
@@ -1110,6 +1158,10 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         guard let link = validLink else { return nil }
         return buildBookmarkEntries(for: link, with: bookmarksInterface, useSmallIcon: false)
     }
+
+    func makeSitePermissionsEntry() -> BrowsingMenuEntry? {
+        buildSitePermissionsEntry(useSmallIcon: false)
+    }
     
     func makeFindInPageEntry() -> BrowsingMenuEntry? {
         guard let link = validLink else { return nil }
@@ -1132,7 +1184,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeToggleProtectionEntry() -> BrowsingMenuEntry? {
-        guard let domain = privacyInfo?.domain else { return nil }
+        guard let domain = Self.privacyProtectionToggleDomain(for: privacyInfo) else { return nil }
         return buildToggleProtectionEntry(forDomain: domain, useSmallIcon: false)
     }
     
@@ -1164,14 +1216,45 @@ extension TabViewController: BrowsingMenuEntryBuilding {
                         action: { [weak self] in
             guard let self else { return }
             if isEnabled {
-                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingMenuDisableTapped,
-                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+                PixelKit.fire(Pixel.Event.webExtensionAdBlockingMenuDisableTapped,
+                              frequency: .dailyAndStandard)
                 self.delegate?.tabDidRequestYouTubeAdBlockPicker(tab: self)
             } else {
-                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingMenuEnableTapped,
-                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+                PixelKit.fire(Pixel.Event.webExtensionAdBlockingMenuEnableTapped,
+                              frequency: .dailyAndStandard)
                 self.delegate?.tabDidRequestSetYouTubeAdBlockingEnabled(true, tab: self)
             }
         })
+    }
+
+    func makeSendInternalFeedbackEntry() -> BrowsingMenuEntry? {
+        guard featureFlagger.internalUserDecider.isInternalUser else { return nil }
+
+        return .regular(name: UserText.actionSendInternalFeedback,
+                        image: DesignSystemImages.Glyphs.Size24.feedback) { [weak self] in
+            guard let self else { return }
+            AppDependencyProvider.shared.internalFeedbackAttachmentsProvider.setScreenshotPNGData(captureVisibleBrowser()?.pngData())
+            delegate?.tab(self,
+                          didRequestNewTabForUrl: .internalFeedbackForm,
+                          openedByPage: false,
+                          inheritingAttribution: nil)
+        }
+    }
+
+    private func captureVisibleBrowser() -> UIImage? {
+        guard let window = view.window, !window.bounds.isEmpty else { return nil }
+        return UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
+    }
+}
+
+extension URL {
+
+    var urlForCopyLinkAction: URL {
+        guard isDuckPlayer, let (videoID, timestamp) = youtubeVideoParams else {
+            return self
+        }
+        return .youtube(videoID, timestamp: timestamp)
     }
 }

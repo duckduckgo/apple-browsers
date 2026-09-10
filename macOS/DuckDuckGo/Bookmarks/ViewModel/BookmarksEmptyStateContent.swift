@@ -49,9 +49,9 @@ enum BookmarksEmptyStateContent {
         }
     }
 
-    var image: NSImage? {
+    func image(isAppRebranded: Bool) -> NSImage? {
         switch self {
-        case .noBookmarks: .bookmarksImport128
+        case .noBookmarks: isAppRebranded ? .bookmarksImport128 : .bookmarksImport128Legacy
         case .noSearchResults: .bookmarkEmptySearch
         }
     }

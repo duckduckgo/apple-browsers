@@ -18,7 +18,7 @@
 
 import AppKit
 
-/// Borderless panel that hosts `BookmarksBarMenuPopover` content. Used in place of
+/// Borderless panel that hosts `BookmarksBarMenuCustomPopover` content. Used in place of
 /// `NSPopover` so the visible shape (corner radius, border, shadow) is fully under
 /// our control on macOS 26+, where the popover chrome is rendered by an `NSGlassView`
 /// that can't be clipped from outside. The shape and material backdrop live in the

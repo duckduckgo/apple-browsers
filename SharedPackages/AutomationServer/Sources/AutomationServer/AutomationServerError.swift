@@ -32,4 +32,5 @@ public enum AutomationServerError: Error {
     case unauthorized
     case requestTooLarge
     case invalidPort
+    case websiteDataClearingFailed
 }

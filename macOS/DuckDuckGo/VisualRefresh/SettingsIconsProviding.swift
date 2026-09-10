@@ -38,6 +38,7 @@ protocol SettingsIconsProviding {
     var dataClearingIcon: NSImage { get }
     var duckPlayerIcon: NSImage { get }
     var youTubeAdBlockingIcon: NSImage { get }
+    var websitePermissionsIcon: NSImage { get }
     var duckAIIcon: NSImage { get }
     var aiGeneralIcon: NSImage { get }
     var paidAIChatIcon: NSImage { get }
@@ -52,8 +53,8 @@ final class LegacySettingsIconProvider: SettingsIconsProviding {
     var webTrackingProtectionIcon: NSImage = .webTrackingProtectionIcon
     var threatProtectionIcon: NSImage = .radarColor16
     var cookiePopUpProtectionIcon: NSImage = .cookieProtectionIcon
-    var emailProtectionIcon: NSImage = .emailProtectionIcon
-    var subscriptionIcon: NSImage = .privacyPro
+    var emailProtectionIcon: NSImage = .emailProtectionIconLegacy
+    var subscriptionIcon: NSImage = .privacyProLegacy
     var vpnIcon: NSImage = .VPN
     var personalInformationRemovalIcon: NSImage = .personalInformationRemovalMulticolor16
     var identityTheftRestorationIcon: NSImage = .identityTheftRestorationMulticolor16
@@ -65,7 +66,8 @@ final class LegacySettingsIconProvider: SettingsIconsProviding {
     var dataClearingIcon: NSImage = .fireSettings
     var duckPlayerIcon: NSImage = .duckPlayerSettings
     var youTubeAdBlockingIcon: NSImage = .duckPlayerSettings
-    var duckAIIcon: NSImage = .aiChatPreferences
+    var websitePermissionsIcon: NSImage = DesignSystemImages.Glyphs.Size16.permissions
+    var duckAIIcon: NSImage = .aiChatPreferencesLegacy
     var paidAIChatIcon: NSImage = .duckAiPaidColor16
     var aboutIcon: NSImage = .about
     var otherPlatformsIcon: NSImage = .otherPlatformsPreferences
@@ -75,7 +77,7 @@ final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var aiGeneralIcon: NSImage = DesignSystemImages.Color.Size16.aiGeneral
     var defaultBrowserIcon: NSImage = DesignSystemImages.Color.Size16.defaultBrowser
     var privateSearchIcon: NSImage = DesignSystemImages.Color.Size16.findSearch
-    var webTrackingProtectionIcon: NSImage = DesignSystemImages.Color.Size16.shieldCheck
+    var webTrackingProtectionIcon: NSImage = DesignSystemImages.Color.Size16.shield
     var threatProtectionIcon: NSImage = DesignSystemImages.Color.Size16.radar
     var cookiePopUpProtectionIcon: NSImage = DesignSystemImages.Color.Size16.cookie
     var emailProtectionIcon: NSImage = DesignSystemImages.Color.Size16.emailProtection
@@ -91,6 +93,7 @@ final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var dataClearingIcon: NSImage = DesignSystemImages.Color.Size16.fire
     var duckPlayerIcon: NSImage = DesignSystemImages.Color.Size16.videoPlayer
     var youTubeAdBlockingIcon: NSImage = DesignSystemImages.Color.Size16.adsBlocked
+    var websitePermissionsIcon: NSImage = DesignSystemImages.Glyphs.Size16.permissions
     var duckAIIcon: NSImage = DesignSystemImages.Color.Size16.aiChat
     var paidAIChatIcon: NSImage = DesignSystemImages.Color.Size16.paidAiChat
     var aboutIcon: NSImage = DesignSystemImages.Color.Size16.duckDuckGo

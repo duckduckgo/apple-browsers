@@ -23,6 +23,13 @@
             }
         ]
     },
+    "tab_bar_close_other_tabs": {
+        "description": "User confirms 'Close Other Tabs' from the long-press / right-click menu on a tab in the iPad tabs bar, closing every tab except the pressed one.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_tab_bar_new_tab": {
         "description": "User opens a new tab via the add-tab button in the iPad tabs bar.",
         "owners": ["dus7"],

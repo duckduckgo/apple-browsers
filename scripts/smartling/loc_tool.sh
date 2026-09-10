@@ -102,18 +102,21 @@ case "$cmd" in
 	download)
 		JOB_ID=$(parse_job_id "$@")
 
-		# Parse optional output directory
+		# Parse optional output directory and allow-unfinished flag
 		OUT_DIR=""
 		if [ "${3:-}" = "--out-dir" ] && [ -n "${4:-}" ]; then
 			OUT_DIR="$4"
 		fi
+		ALLOW_UNFINISHED=""
+		for arg in "$@"; do
+			[ "$arg" = "--allow-unfinished" ] && ALLOW_UNFINISHED="--allow-unfinished"
+		done
 
 		# Run download
-		if [ -n "$OUT_DIR" ]; then
-			python3 "$PYTHON_TOOL" download --job-id "$JOB_ID" --out-dir "$OUT_DIR"
-		else
-			python3 "$PYTHON_TOOL" download --job-id "$JOB_ID"
-		fi
+		DOWNLOAD_ARGS=(download --job-id "$JOB_ID")
+		[ -n "$OUT_DIR" ] && DOWNLOAD_ARGS+=(--out-dir "$OUT_DIR")
+		[ -n "$ALLOW_UNFINISHED" ] && DOWNLOAD_ARGS+=("$ALLOW_UNFINISHED")
+		python3 "$PYTHON_TOOL" "${DOWNLOAD_ARGS[@]}"
 		;;
 	*)
 		usage; exit 1;;

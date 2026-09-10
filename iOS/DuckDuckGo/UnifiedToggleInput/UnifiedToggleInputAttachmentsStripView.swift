@@ -23,7 +23,7 @@ import UIKit
 final class UnifiedToggleInputAttachmentsStripView: UIView {
 
     enum Constants {
-        static let spacing: CGFloat = 4
+        static let spacing: CGFloat = 10
         static let horizontalPadding: CGFloat = 12
         static let topPadding: CGFloat = 8
         static let stripHeight: CGFloat = topPadding + UnifiedToggleInputAttachmentThumbnailView.Constants.chipHeight
@@ -32,6 +32,13 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     private(set) var attachments: [UnifiedToggleInputAttachment] = []
     var onAttachmentRemoved: ((UUID, UnifiedToggleInputAttachment, Bool) -> Void)?
     var onAttachmentsChanged: (() -> Void)?
+    var onPageContextRemove: (() -> Void)?
+    /// Tapping the chip in its placeholder state asks for the page to be attached again.
+    var onPageContextTap: (() -> Void)?
+    var onSelectionContextRemove: ((String) -> Void)?
+
+    private(set) var hasVisiblePageContext = false
+    private(set) var hasVisibleSelectionContext = false
 
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -50,6 +57,11 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
+
+    private let pageContextChip = AIChatContextChipView()
+
+    /// Page context keeps its own separate slot — selections augment the page rather than replace it.
+    private var selectionContextChips: [(id: String, view: AIChatContextChipView)] = []
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -98,9 +110,70 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
 
     func removeAllAttachments() {
         attachments.removeAll()
-        stackView.arrangedSubviews.forEach {
-            stackView.removeArrangedSubview($0)
-            $0.removeFromSuperview()
+        stackView.arrangedSubviews
+            .compactMap { $0 as? UnifiedToggleInputAttachmentThumbnailView }
+            .forEach {
+                stackView.removeArrangedSubview($0)
+                $0.removeFromSuperview()
+            }
+        onAttachmentsChanged?()
+    }
+
+    func setPageContextChipState(_ state: AIChatContextChipView.State) {
+        pageContextChip.configure(state: state)
+    }
+
+    func setPageContextChipVisible(_ isVisible: Bool) {
+        guard hasVisiblePageContext != isVisible else { return }
+        let shouldAutoScroll = shouldAutoScrollAfterAddingAttachment()
+        hasVisiblePageContext = isVisible
+
+        if isVisible {
+            stackView.addArrangedSubview(pageContextChip)
+            if shouldAutoScroll {
+                scheduleScrollToTrailingEdge()
+            }
+        } else {
+            stackView.removeArrangedSubview(pageContextChip)
+            pageContextChip.removeFromSuperview()
+        }
+
+        onAttachmentsChanged?()
+    }
+
+    /// Reuses existing chips so attaching one more doesn't re-animate the ones already on screen.
+    func setSelectionContextChips(_ items: [(id: String, title: String, favicon: UIImage?)]) {
+        let incomingIDs = Set(items.map(\.id))
+        let didChange = incomingIDs != Set(selectionContextChips.map(\.id))
+        let shouldAutoScroll = didChange && !items.isEmpty && shouldAutoScrollAfterAddingAttachment()
+
+        for chip in selectionContextChips where !incomingIDs.contains(chip.id) {
+            stackView.removeArrangedSubview(chip.view)
+            chip.view.removeFromSuperview()
+        }
+
+        var reconciled: [(id: String, view: AIChatContextChipView)] = []
+        for item in items {
+            if let existing = selectionContextChips.first(where: { $0.id == item.id }) {
+                existing.view.configure(state: .attached(title: item.title, favicon: item.favicon))
+                reconciled.append(existing)
+            } else {
+                let view = AIChatContextChipView()
+                view.configure(state: .attached(title: item.title, favicon: item.favicon))
+                view.onRemove = { [weak self] in
+                    self?.onSelectionContextRemove?(item.id)
+                }
+                stackView.addArrangedSubview(view)
+                reconciled.append((id: item.id, view: view))
+            }
+        }
+
+        selectionContextChips = reconciled
+        hasVisibleSelectionContext = !items.isEmpty
+
+        guard didChange else { return }
+        if shouldAutoScroll {
+            scheduleScrollToTrailingEdge()
         }
         onAttachmentsChanged?()
     }
@@ -108,6 +181,12 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     private func setupUI() {
         translatesAutoresizingMaskIntoConstraints = false
         clipsToBounds = false
+        pageContextChip.onRemove = { [weak self] in
+            self?.onPageContextRemove?()
+        }
+        pageContextChip.onTap = { [weak self] in
+            self?.onPageContextTap?()
+        }
         addSubview(scrollView)
         scrollView.addSubview(stackView)
         let bottomConstraint = scrollView.bottomAnchor.constraint(equalTo: bottomAnchor)

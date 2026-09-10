@@ -22,31 +22,14 @@ import Foundation
 import os.log
 import Subscription
 
-/// The subscription upsell flow that a gated Duck.ai selection should route to.
-enum DuckAISubscriptionUpsellingFlow {
-    case purchase
-    case upgrade
-    case none
-}
-
-extension AIChatUserTier {
-    func upgradeFlow(for requiredTier: AIChatModelPublicAccessTier) -> DuckAISubscriptionUpsellingFlow {
-        switch (self, requiredTier) {
-        case (.plus, .pro):
-            return .upgrade
-        case (.free, .plus), (.free, .pro):
-            return .purchase
-        default:
-            return .none
-        }
-    }
-}
-
 /// Routes the Duck.ai subscription purchase / upgrade flows triggered by tapping a gated
 /// model or reasoning level.
 protocol DuckAISubscriptionUpselling {
     func presentPurchaseFlow(source: SubscriptionFlowSource, isAITabState: Bool)
     func presentUpgradeFlow(source: SubscriptionFlowSource, isAITabState: Bool)
+    /// For entry points that own their funnel origin outright rather than deriving it from a
+    /// gated-control source — the usage-limit card, for one.
+    func presentPurchaseFlow(origin: SubscriptionFunnelOrigin)
 }
 
 extension DuckAISubscriptionUpselling {
@@ -122,11 +105,24 @@ struct DuckAISubscriptionUpsellPresenter: DuckAISubscriptionUpselling {
         )
     }
 
+    func presentPurchaseFlow(origin: SubscriptionFunnelOrigin) {
+        notificationCenter.post(
+            name: .settingsDeepLinkNotification,
+            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(
+                redirectURLComponents: makeRedirectURLComponents(origin: origin)
+            )
+        )
+    }
+
     private func makeRedirectURLComponents(source: SubscriptionFlowSource, isAITabState: Bool) -> URLComponents {
+        makeRedirectURLComponents(origin: origin(for: source, isAITabState: isAITabState))
+    }
+
+    private func makeRedirectURLComponents(origin: SubscriptionFunnelOrigin) -> URLComponents {
         var components = URLComponents()
         components.queryItems = [
             URLQueryItem(name: "featurePage", value: Self.subscriptionFeaturePage),
-            URLQueryItem(name: AttributionParameter.origin, value: origin(for: source, isAITabState: isAITabState).rawValue)
+            URLQueryItem(name: AttributionParameter.origin, value: origin.rawValue)
         ]
         return components
     }

@@ -21,6 +21,7 @@ import Foundation
 import SwiftUI
 import Core
 import PrivacyConfig
+import FeatureFlags_iOS
 
 struct FeatureFlagsMenuView: View {
     @ObservedObject var viewModel: FeatureFlagsSettingViewModel = FeatureFlagsSettingViewModel()
@@ -80,6 +81,11 @@ struct FeatureFlagsMenuView: View {
                     Text(verbatim: "Default: \(viewModel.defaultValue(for: flag))")
                         .font(.caption)
                         .foregroundColor(.gray)
+                    if flag == .promoPresentationCoordination {
+                        Text(verbatim: "Relaunch required for changes to take effect.")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
                 }
             }
             Button(action: {

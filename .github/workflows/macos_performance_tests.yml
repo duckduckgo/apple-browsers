@@ -24,7 +24,7 @@ on:
     # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
-      - '.github/**'
+      - '.github/workflows/macos_performance_tests.yml'
       - '.xcode-version'
 
 concurrency:
@@ -51,7 +51,7 @@ jobs:
       matrix:
         runner: [macos-26-xlarge]
         include:
-          - xcode-version: 26.4
+          - xcode-version: 26.6
             runner: macos-26-xlarge
             os-version: 26
 
@@ -70,6 +70,9 @@ jobs:
       with:
         submodules: recursive
         ref: ${{ inputs.branch || github.sha }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Start measuring duration
       id: start-duration
@@ -385,7 +388,7 @@ jobs:
     name: Report Memory Metrics to ClickHouse
     needs: performance-tests
     if: always()
-    runs-on: [ self-hosted, apple ]
+    runs-on: [ self-hosted, apple, Linux ]
 
     steps:
       - name: Download startup metrics

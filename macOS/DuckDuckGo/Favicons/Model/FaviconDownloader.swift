@@ -37,6 +37,7 @@ final class FaviconDownloader: NSObject {
 
     /// Maximum allowed size for favicon downloads (1MB)
     private static nonisolated let maxFaviconSize: Int64 = 1024 * 1024
+    private static nonisolated let faviconDownloadTimeout: TimeInterval = 15
 
     private var pendingDownloads: [WKDownload: FaviconDownloadTask] = [:]
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -60,8 +61,17 @@ final class FaviconDownloader: NSObject {
     private func downloadUsingWKDownload(from url: URL, using webView: WKWebView?) async throws -> Data {
         // Use provided webView (to share session/cookies), or create a temporary one if needed
         let targetWebView = webView ?? createTemporaryWebView()
+        let targetWebViewDescription = String(describing: ObjectIdentifier(targetWebView))
+        Logger.favicons.debug(
+            "FaviconDownloader: Starting WKDownload for \(url.shortDescription) using webView=\(targetWebViewDescription, privacy: .public)"
+        )
 
-        let download = await targetWebView.startDownload(using: URLRequest(url: url))
+        let request = URLRequest(url: url, timeoutInterval: Self.faviconDownloadTimeout)
+        let download = await targetWebView.startDownload(using: request)
+        let downloadDescription = String(describing: ObjectIdentifier(download))
+        Logger.favicons.debug(
+            "FaviconDownloader: Started WKDownload \(downloadDescription, privacy: .public) for \(url.shortDescription)"
+        )
 
         // Observe progress to cancel if download exceeds size limit
         let progressObserver = download.progress.observe(\.completedUnitCount) { [weak self, weak download] progress, _ in

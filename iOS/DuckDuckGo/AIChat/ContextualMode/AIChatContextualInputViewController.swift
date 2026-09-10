@@ -73,6 +73,7 @@ final class AIChatContextualInputViewController: UIViewController {
         static let quickActionsBottomSpacing: CGFloat = 12
         static let keyboardSpacing: CGFloat = 20
         static let iPadBottomPadding: CGFloat = 16
+        static let dimmedStartActionsAlpha: CGFloat = 0.4
     }
 
     // MARK: - Properties
@@ -80,6 +81,7 @@ final class AIChatContextualInputViewController: UIViewController {
     weak var delegate: AIChatContextualInputViewControllerDelegate?
 
     private let showsBasicNativeInput: Bool
+    private let showsWelcomeMessage: Bool
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private lazy var basicNativeInputViewController = AIChatBasicNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
     private lazy var inputSurface: AIChatContextualInputSurface = {
@@ -114,13 +116,17 @@ final class AIChatContextualInputViewController: UIViewController {
     }()
 
     private var welcomeCenterYConstraint: NSLayoutConstraint?
+    private var startActionsLeadingConstraint: NSLayoutConstraint?
+    private var startActionsTrailingConstraint: NSLayoutConstraint?
     private var bottomConstraint: NSLayoutConstraint?
 
     // MARK: - Initialization
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
-         showsBasicNativeInput: Bool = true) {
+         showsBasicNativeInput: Bool = true,
+         showsWelcomeMessage: Bool = true) {
         self.showsBasicNativeInput = showsBasicNativeInput
+        self.showsWelcomeMessage = showsWelcomeMessage
         self.voiceSearchHelper = voiceSearchHelper
         super.init(nibName: nil, bundle: nil)
     }
@@ -212,6 +218,39 @@ final class AIChatContextualInputViewController: UIViewController {
         quickActionsView.setLoading(isLoading)
     }
 
+    /// Clipping is released because interactive glass scales a chip past its bounds on touch. Safe here:
+    /// the scroll view is sized to its content, so it never actually scrolls.
+    func useGlassStartActionBackgrounds() {
+        quickActionsView.chipBackgroundStyle = .glass
+        quickActionsScrollView.clipsToBounds = false
+        quickActionsView.clipsToBounds = false
+    }
+
+    var startActionCount: Int {
+        quickActionsView.chipCount
+    }
+
+    func showStartActions() {
+        quickActionsView.showChips()
+    }
+
+    /// Removes this controller's own horizontal inset so a host can align the chips itself.
+    func clearStartActionsHorizontalInset() {
+        startActionsLeadingConstraint?.constant = 0
+        startActionsTrailingConstraint?.constant = 0
+    }
+
+    /// Whether `point`, expressed in `view`'s coordinate space, lands on a chip rather than the gaps
+    /// around them. Lets a host pass taps in the empty areas through to whatever sits behind.
+    func containsStartAction(at point: CGPoint, from view: UIView) -> Bool {
+        quickActionsView.containsChip(at: point, from: view)
+    }
+
+    func setStartActionsDimmed(_ dimmed: Bool) {
+        quickActionsView.alpha = dimmed ? Constants.dimmedStartActionsAlpha : 1
+        quickActionsView.isUserInteractionEnabled = !dimmed
+    }
+
 }
 
 // MARK: - Private Setup
@@ -266,6 +305,7 @@ private extension AIChatContextualInputViewController {
         bottomConstraint = basicNativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
 
         let centerY = welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
+        centerY.priority = .defaultHigh
         welcomeCenterYConstraint = centerY
 
         NSLayoutConstraint.activate([
@@ -301,11 +341,17 @@ private extension AIChatContextualInputViewController {
         configureWelcomeLabel()
 
         let centerY = welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
+        centerY.priority = .defaultHigh
         welcomeCenterYConstraint = centerY
 
+        let scrollLeading = quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding)
+        startActionsLeadingConstraint = scrollLeading
+        let scrollTrailing = quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding)
+        startActionsTrailingConstraint = scrollTrailing
+
         NSLayoutConstraint.activate([
-            quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
-            quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            scrollLeading,
+            scrollTrailing,
             quickActionsScrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Constants.quickActionsBottomSpacing),
 
             quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
@@ -316,6 +362,7 @@ private extension AIChatContextualInputViewController {
             quickActionsScrollView.frameLayoutGuide.heightAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.heightAnchor),
 
             centerY,
+            welcomeLabel.bottomAnchor.constraint(lessThanOrEqualTo: quickActionsScrollView.topAnchor, constant: -Constants.quickActionsBottomSpacing),
             welcomeLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             welcomeLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: Constants.horizontalPadding),
             welcomeLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
@@ -347,6 +394,8 @@ private extension AIChatContextualInputViewController {
     }
 
     func configureWelcomeLabel() {
+        welcomeLabel.isHidden = !showsWelcomeMessage
+
         let font = UIFont(name: "DuckSansDisplay-Medium", size: 25) ?? UIFont.daxTitle2()
 
         let paragraphStyle = NSMutableParagraphStyle()

@@ -74,7 +74,7 @@ jobs:
 
     # This doesn't need Xcode, so could technically run on Ubuntu, but actions that add comments and tasks
     # in Asana use BSD-specific sed syntax, that doesn't work with GNU sed (available on Linux).
-    runs-on: macos-26
+    runs-on: bitrise:macos26-m4
 
     env:
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
@@ -95,6 +95,9 @@ jobs:
         fetch-depth: 0 # Fetch all history and tags in order to look up tags
         submodules: recursive
         ref: ${{ inputs.commit-sha || env.BRANCH }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Assert release branch
       run: |

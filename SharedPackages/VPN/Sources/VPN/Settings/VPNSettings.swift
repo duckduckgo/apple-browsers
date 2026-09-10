@@ -396,32 +396,6 @@ public final class VPNSettings {
         }
     }
 
-    /// Syncs `excludeCGNAT` against the feature-flag state. When the flag is off, the
-    /// value is forced to `false`. When on, the stored value is left alone (the storage
-    /// default produces the experimental on-by-default for users with the flag).
-    /// Call at app launch, tunnel start, and when the VPN settings screen appears so
-    /// readers of the raw value (tunnel, metadata) always see the effective value.
-    public func updateExcludeCGNAT(isFeatureEnabled: Bool) {
-        let effective = isFeatureEnabled ? excludeCGNAT : false
-        guard excludeCGNAT != effective else { return }
-        excludeCGNAT = effective
-    }
-
-    // MARK: - Orphan Proxy Detection
-
-    /// When `false`, the tunnel stops writing its heartbeat (see `TunnelHeartbeatStore`), which in turn
-    /// disables the transparent proxy's orphan detection. Resolved from a remote kill switch by the app
-    /// and delivered to the tunnel via the startup options snapshot. Defaults to `true`.
-    public var isOrphanProxyDetectionEnabled: Bool {
-        get {
-            defaults.networkProtectionSettingOrphanProxyDetectionEnabled
-        }
-
-        set {
-            defaults.networkProtectionSettingOrphanProxyDetectionEnabled = newValue
-        }
-    }
-
     // MARK: - Exclude APNs
 
     public var excludeAPNsPublisher: AnyPublisher<Bool, Never> {

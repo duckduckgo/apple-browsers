@@ -1,0 +1,59 @@
+{
+    "app-launch_metrickit_first-draw": {
+        "description": "Fired once per MetricKit time-to-first-draw launch data point, for recent (<24h) data on the current app version. One pixel per launch in the histogram bucket.",
+        "owners": ["THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "min_launch_duration_ms",
+                "type": "integer",
+                "description": "Lower edge of the MetricKit histogram bucket, in milliseconds"
+            },
+            {
+                "key": "max_launch_duration_ms",
+                "type": "integer",
+                "description": "Upper edge of the MetricKit histogram bucket, in milliseconds"
+            }
+        ]
+    },
+    "app-launch_metrickit_resume": {
+        "description": "Fired once per MetricKit application-resume launch data point, for recent (<24h) data on the current app version. One pixel per launch in the histogram bucket.",
+        "owners": ["THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "min_launch_duration_ms",
+                "type": "integer",
+                "description": "Lower edge of the MetricKit histogram bucket, in milliseconds"
+            },
+            {
+                "key": "max_launch_duration_ms",
+                "type": "integer",
+                "description": "Upper edge of the MetricKit histogram bucket, in milliseconds"
+            }
+        ]
+    },
+    "app-launch_metrickit_optimized-first-draw": {
+        "description": "Fired once per MetricKit optimized (prewarmed) time-to-first-draw launch data point, for recent (<24h) data on the current app version. One pixel per launch in the histogram bucket.",
+        "owners": ["THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "min_launch_duration_ms",
+                "type": "integer",
+                "description": "Lower edge of the MetricKit histogram bucket, in milliseconds"
+            },
+            {
+                "key": "max_launch_duration_ms",
+                "type": "integer",
+                "description": "Upper edge of the MetricKit histogram bucket, in milliseconds"
+            }
+        ]
+    }
+}

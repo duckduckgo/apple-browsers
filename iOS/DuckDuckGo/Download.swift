@@ -36,6 +36,7 @@ class Download: NSObject, Identifiable, ObservableObject {
     var location: URL?
     let date = Date()
     var temporary: Bool
+    var hasBeenSeenInDownloads = false
     let session: DownloadSession
     var completionBlock: Completion?
 

@@ -261,8 +261,6 @@ final class AppContentBlocking {
             switch listName {
             case defaultTDSListName:
                 listType = .tds
-            case DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName:
-                listType = .clickToLoad
             case AdClickAttributionRulesSplitter.blockingAttributionRuleListName(forListNamed: defaultTDSListName):
                 listType = .blockingAttribution
             case AdClickAttributionRulesProvider.Constants.attributedTempRuleListName:

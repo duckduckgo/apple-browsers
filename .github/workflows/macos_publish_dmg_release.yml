@@ -82,7 +82,7 @@ jobs:
     outputs:
       stop_workflow: ${{ steps.download-stop-workflow.outcome == 'success' }}
 
-    runs-on: macos-26
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out the code
@@ -116,7 +116,7 @@ jobs:
     outputs:
       dmg-url: ${{ steps.set-common-env.outputs.dmg-url }}
 
-    runs-on: macos-26-xlarge
+    runs-on: bitrise:macos26-m4
     timeout-minutes: 10
 
     steps:
@@ -127,6 +127,9 @@ jobs:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           submodules: recursive
           ref: main
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Download tag artifact
         id: download-tag
@@ -209,13 +212,13 @@ jobs:
         env:
           DMG_NAME: duckduckgo-${{ steps.verify-tag.outputs.release-version }}.dmg
         run: |
-          # Public release doesn't need fetching a DMG (it's already uploaded to S3)
-          if [[ "${RELEASE_TYPE}" != 'public' ]]; then
-            DMG_URL="${{ vars.DMG_URL_ROOT }}${DMG_NAME}"
-            curl -fLSs -o "$DMG_NAME" "$DMG_URL"
-          fi
+          DMG_URL="${{ vars.DMG_URL_ROOT }}${DMG_NAME}"
+          curl -fLSs -o "$DMG_NAME" "$DMG_URL"
           echo "dmg-name=$DMG_NAME" >> $GITHUB_OUTPUT
           echo "dmg-path=$DMG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Validate release DMG before publishing to Sparkle
+        run: ./scripts/validate_release_artifact.sh dmg "${{ steps.fetch-dmg.outputs.dmg-path }}" "${{ steps.verify-tag.outputs.release-version }}"
 
       - name: Generate appcast
         id: appcast

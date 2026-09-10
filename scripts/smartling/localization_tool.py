@@ -313,9 +313,11 @@ async def download_command(args):
         print(f"📊 Status: {job['jobStatus']}")
 
         if job['jobStatus'] != "COMPLETED":
-            print("DOWNLOADED=0")
-            print(f"⚠️  Job not completed (status: {job['jobStatus']})")
-            return
+            if not args.allow_unfinished:
+                print("DOWNLOADED=0")
+                print(f"⚠️  Job not completed (status: {job['jobStatus']})")
+                return
+            print(f"⚠️  Job not completed (status: {job['jobStatus']}), downloading anyway (--allow-unfinished)")
 
         file_uris = await client.get_job_files(args.job_id)
         if not file_uris:
@@ -375,6 +377,8 @@ def main():
     download_parser = subparsers.add_parser('download')
     download_parser.add_argument('--job-id', required=True)
     download_parser.add_argument('--out-dir', default='./downloads')
+    download_parser.add_argument('--allow-unfinished', action='store_true',
+                                 help='Download even if the job is not COMPLETED (defaults to False)')
 
     args = parser.parse_args()
     if not args.command:

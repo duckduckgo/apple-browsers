@@ -22,18 +22,14 @@ import Core
 import Foundation
 import PrivacyConfig
 import Testing
+import FeatureFlags_iOS
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 @Suite("NavigationResponseRouter", .serialized)
 final class NavigationResponseRouterTests {
 
-    init() {
-        PixelFiringMock.tearDown()
-    }
-
-    deinit {
-        PixelFiringMock.tearDown()
-    }
+    private let pixelKitMock = PixelKitMock()
 
     // MARK: - BLOB (branch 1)
 
@@ -146,10 +142,10 @@ final class NavigationResponseRouterTests {
     }
 
     @available(iOS 16, *)
-    @Test("Returns autoPreviewPersist for calendar MIME when icsCalendarLinks is on, even with walletPassDownload also on", .timeLimit(.minutes(1)))
-    func returnsAutoPreviewPersistForCalendarMIMEWhenICSFlagOn() {
+    @Test("Returns autoPreviewPersist for calendar MIME, even with walletPassDownload also on", .timeLimit(.minutes(1)))
+    func returnsAutoPreviewPersistForCalendarMIME() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(mimeType: .calendar)
 
         // WHEN
@@ -160,24 +156,10 @@ final class NavigationResponseRouterTests {
     }
 
     @available(iOS 16, *)
-    @Test("Returns autoPreviewTransient for calendar MIME when icsCalendarLinks is off", .timeLimit(.minutes(1)))
-    func returnsAutoPreviewTransientForCalendarMIMEWhenICSFlagOff() {
-        // GIVEN
-        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: false)
-        let shape = makeShape(mimeType: .calendar)
-
-        // WHEN
-        let decision = router.decide(for: shape)
-
-        // THEN
-        #expect(decision == .autoPreviewTransient)
-    }
-
-    @available(iOS 16, *)
     @Test("Returns autoPreviewPersist for .ics URL extension even when MIME is octet-stream", .timeLimit(.minutes(1)))
     func returnsAutoPreviewPersistForICSByURLExtension() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(
             url: URL(string: "https://example.com/event.ics"),
             mimeType: .octetStream,
@@ -195,7 +177,7 @@ final class NavigationResponseRouterTests {
     @Test("Returns autoPreviewPersist for .ics suggestedFilename even when URL has no .ics extension", .timeLimit(.minutes(1)))
     func returnsAutoPreviewPersistForICSBySuggestedFilename() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(
             url: URL(string: "https://example.com/download"),
             mimeType: .octetStream,
@@ -227,7 +209,7 @@ final class NavigationResponseRouterTests {
     @Test("Returns autoPreviewPersist for calendar MIME with a nil URL", .timeLimit(.minutes(1)))
     func returnsAutoPreviewPersistForCalendarWithNilURL() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(url: nil, mimeType: .calendar)
 
         // WHEN
@@ -240,10 +222,10 @@ final class NavigationResponseRouterTests {
     // MARK: - vCard contact links
 
     @available(iOS 16, *)
-    @Test("Returns autoPreviewPersist for contact MIME when vcardContactLinks is on, even with walletPassDownload also on", .timeLimit(.minutes(1)))
-    func returnsAutoPreviewPersistForContactMIMEWhenVCardFlagOn() {
+    @Test("Returns autoPreviewPersist for contact MIME, even with walletPassDownload also on", .timeLimit(.minutes(1)))
+    func returnsAutoPreviewPersistForContactMIME() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, vcardContactLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(mimeType: .contact)
 
         // WHEN
@@ -254,24 +236,10 @@ final class NavigationResponseRouterTests {
     }
 
     @available(iOS 16, *)
-    @Test("Returns autoPreviewTransient for contact MIME when vcardContactLinks is off", .timeLimit(.minutes(1)))
-    func returnsAutoPreviewTransientForContactMIMEWhenVCardFlagOff() {
-        // GIVEN
-        let router = makeRouter(walletPassDownload: true, vcardContactLinks: false)
-        let shape = makeShape(mimeType: .contact)
-
-        // WHEN
-        let decision = router.decide(for: shape)
-
-        // THEN
-        #expect(decision == .autoPreviewTransient)
-    }
-
-    @available(iOS 16, *)
     @Test("Returns autoPreviewPersist for .vcf URL extension even when MIME is octet-stream", .timeLimit(.minutes(1)))
     func returnsAutoPreviewPersistForVCardByURLExtension() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, vcardContactLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(
             url: URL(string: "https://example.com/contact.vcf"),
             mimeType: .octetStream,
@@ -289,7 +257,7 @@ final class NavigationResponseRouterTests {
     @Test("Returns autoPreviewPersist for .vcard suggestedFilename even when URL has no extension", .timeLimit(.minutes(1)))
     func returnsAutoPreviewPersistForVCardBySuggestedFilename() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, vcardContactLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(
             url: URL(string: "https://example.com/download"),
             mimeType: .octetStream,
@@ -307,30 +275,30 @@ final class NavigationResponseRouterTests {
     @Test("Fires m_download_started with can_auto_preview=1 for a vCard contact", .timeLimit(.minutes(1)))
     func firesDownloadStartedPixelForVCard() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, vcardContactLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(mimeType: .contact)
 
         // WHEN
         _ = router.decide(for: shape)
 
         // THEN
-        let downloadStarted = PixelFiringMock.allPixelsFired.first { $0.pixelName == Pixel.Event.downloadStarted.name }
+        let downloadStarted = pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.downloadStarted.name }
         #expect(downloadStarted != nil)
-        #expect(downloadStarted?.params?[PixelParameters.canAutoPreviewMIMEType] == "1")
+        #expect(downloadStarted?.additionalParameters?[PixelParameters.canAutoPreviewMIMEType] == "1")
     }
 
     @available(iOS 16, *)
     @Test("Does not fire wallet_pass_preview_requested for a vCard contact", .timeLimit(.minutes(1)))
     func doesNotFireWalletPassPreviewRequestedForVCard() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, vcardContactLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(mimeType: .contact)
 
         // WHEN
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(!PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+        #expect(!pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     // MARK: - Data scheme download (branch 3a)
@@ -448,9 +416,9 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        let downloadStarted = PixelFiringMock.allPixelsFired.first { $0.pixelName == Pixel.Event.downloadStarted.name }
+        let downloadStarted = pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.downloadStarted.name }
         #expect(downloadStarted != nil)
-        #expect(downloadStarted?.params?[PixelParameters.canAutoPreviewMIMEType] == "1")
+        #expect(downloadStarted?.additionalParameters?[PixelParameters.canAutoPreviewMIMEType] == "1")
     }
 
     @available(iOS 16, *)
@@ -464,9 +432,9 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        let downloadStarted = PixelFiringMock.allPixelsFired.first { $0.pixelName == Pixel.Event.downloadStarted.name }
+        let downloadStarted = pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.downloadStarted.name }
         #expect(downloadStarted != nil)
-        #expect(downloadStarted?.params?[PixelParameters.canAutoPreviewMIMEType] == "1")
+        #expect(downloadStarted?.additionalParameters?[PixelParameters.canAutoPreviewMIMEType] == "1")
     }
 
     @available(iOS 16, *)
@@ -480,7 +448,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     @available(iOS 16, *)
@@ -498,7 +466,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     @available(iOS 16, *)
@@ -512,7 +480,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     // MARK: - Wallet pass preview pixel
@@ -528,7 +496,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+        #expect(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     @available(iOS 16, *)
@@ -542,7 +510,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+        #expect(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     @available(iOS 16, *)
@@ -556,7 +524,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+        #expect(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     @available(iOS 16, *)
@@ -570,28 +538,28 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(!PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+        #expect(!pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     @available(iOS 16, *)
     @Test("Does not fire wallet_pass_preview_requested for ICS", .timeLimit(.minutes(1)))
     func doesNotFireWalletPassPreviewRequestedForICS() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(mimeType: .calendar)
 
         // WHEN
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(!PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+        #expect(!pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     @available(iOS 16, *)
     @Test("Does not fire wallet_pass_preview_requested for ICS routed via URL extension", .timeLimit(.minutes(1)))
     func doesNotFireWalletPassPreviewRequestedForICSByURLExtension() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, icsCalendarLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(
             url: URL(string: "https://example.com/event.ics"),
             mimeType: .octetStream,
@@ -602,20 +570,16 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(!PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+        #expect(!pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     // MARK: - Helpers
 
-    private func makeRouter(walletPassDownload: Bool = true,
-                            icsCalendarLinks: Bool = false,
-                            vcardContactLinks: Bool = false) -> NavigationResponseRouter {
+    private func makeRouter(walletPassDownload: Bool = true) -> NavigationResponseRouter {
         var enabled: [FeatureFlag] = []
         if walletPassDownload { enabled.append(.walletPassDownload) }
-        if icsCalendarLinks { enabled.append(.icsCalendarLinks) }
-        if vcardContactLinks { enabled.append(.vcardContactLinks) }
         let flagger = MockFeatureFlagger(enabledFeatureFlags: enabled)
-        return NavigationResponseRouter(featureFlagger: flagger, pixelFiring: PixelFiringMock.self)
+        return NavigationResponseRouter(featureFlagger: flagger, pixelFiring: pixelKitMock)
     }
 
     private func makeShape(

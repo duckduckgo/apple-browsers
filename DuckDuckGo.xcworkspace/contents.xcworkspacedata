@@ -23,7 +23,16 @@
          location = "group:BrowserServicesKit">
       </FileRef>
       <FileRef
+         location = "group:Common">
+      </FileRef>
+      <FileRef
          location = "group:DataBrokerProtectionCore">
+      </FileRef>
+      <FileRef
+         location = "group:DDGError">
+      </FileRef>
+      <FileRef
+         location = "group:EventHub">
       </FileRef>
       <FileSystemSynchronizedGroup
          location = "group:Infrastructure"
@@ -33,6 +42,15 @@
          location = "group:Onboarding">
       </FileRef>
       <FileRef
+         location = "group:Persistence">
+      </FileRef>
+      <FileRef
+         location = "group:PixelKit">
+      </FileRef>
+      <FileRef
+         location = "group:WideEvent">
+      </FileRef>
+      <FileRef
          location = "group:ScreenTimeDataCleaner">
       </FileRef>
       <FileRef
@@ -40,6 +58,9 @@
       </FileRef>
       <FileRef
          location = "group:SERPSettings">
+      </FileRef>
+      <FileRef
+         location = "group:SnapshotTestingSupport">
       </FileRef>
       <FileRef
          location = "group:UIComponents">

@@ -44,11 +44,13 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
     func makeDuckAIMenuItems() -> [BrowsingMenuEntry]
     func makeSettingsEntry() -> BrowsingMenuEntry
     func makeShareEntry() -> BrowsingMenuEntry
+    func makeCopyLinkEntry() -> BrowsingMenuEntry?
     func makePrintEntry() -> BrowsingMenuEntry
     func makeDownloadsEntry() -> BrowsingMenuEntry
     func makeAutoFillEntry() -> BrowsingMenuEntry?
     func makeVPNEntry() -> BrowsingMenuEntry?
     func makeOpenBookmarksEntry() -> BrowsingMenuEntry
+    func makeSitePermissionsEntry() -> BrowsingMenuEntry?
     func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)?
     func makeFindInPageEntry() -> BrowsingMenuEntry?
     func makeZoomEntry() -> BrowsingMenuEntry?
@@ -60,6 +62,7 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
     func makeUseNewDuckAddressEntry() -> BrowsingMenuEntry?
     func makeKeepSignInEntry() -> BrowsingMenuEntry?
     func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry?
+    func makeSendInternalFeedbackEntry() -> BrowsingMenuEntry?
 }
 
 protocol BrowsingMenuBuilding: AnyObject {

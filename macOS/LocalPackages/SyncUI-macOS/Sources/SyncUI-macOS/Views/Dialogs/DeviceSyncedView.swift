@@ -26,7 +26,7 @@ struct DeviceSyncedView: View {
     var body: some View {
         SyncDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
-                Image(.syncSetupSuccess)
+                Image(model.isAppRebranded ? .syncSetupSuccess : .syncSetupSuccessLegacy)
                 SyncUIViews.TextHeader(text: UserText.deviceSynced)
             }
             .frame(width: 320)
@@ -34,7 +34,7 @@ struct DeviceSyncedView: View {
             Button(UserText.done) {
                 model.endFlow()
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
         }
         .frame(width: 360)
         .onReceive(timer, perform: { _ in

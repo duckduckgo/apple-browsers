@@ -31,11 +31,13 @@ import DataBrokerProtection_iOS
 import RemoteMessaging
 import PageRefreshMonitor
 import PixelKit
+import WideEvent
 import PixelExperimentKit
 import PrivacyConfig
 import Networking
 import Configuration
 import Network
+import FeatureFlags_iOS
 
 protocol DependencyProvider {
 
@@ -56,8 +58,8 @@ protocol DependencyProvider {
     var networkProtectionTunnelController: NetworkProtectionTunnelController { get }
     var connectionObserver: ConnectionStatusObserver { get }
     var serverInfoObserver: ConnectionServerInfoObserver { get }
+    var connectionErrorObserver: ConnectionErrorObserver { get }
     var vpnSettings: VPNSettings { get }
-    var persistentPixel: PersistentPixelFiring { get }
     var wideEvent: WideEventManaging { get }
     var freeTrialConversionService: FreeTrialConversionInstrumentationService { get }
     var subscriptionManager: any SubscriptionManager { get }
@@ -65,6 +67,9 @@ protocol DependencyProvider {
     var subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
     var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging { get }
+    var internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProvider { get }
+    var internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider { get }
+    var subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging { get }
 }
 
 /// Provides dependencies for objects that are not directly instantiated
@@ -93,6 +98,7 @@ final class AppDependencyProvider: DependencyProvider {
     var subscriptionManager: any SubscriptionManager
     var tokenHandlerProvider: any SubscriptionTokenHandling
     let subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling
+    let subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging = SubscriptionOnboardingSessionState()
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
@@ -102,27 +108,33 @@ final class AppDependencyProvider: DependencyProvider {
 
     let connectionObserver: ConnectionStatusObserver = ConnectionStatusObserverThroughSession()
     let serverInfoObserver: ConnectionServerInfoObserver = ConnectionServerInfoObserverThroughSession()
+    lazy var connectionErrorObserver: ConnectionErrorObserver = ConnectionErrorObserverThroughSession()
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
-    let persistentPixel: PersistentPixelFiring = PersistentPixel()
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
+    let internalFeedbackAttachmentsProvider = InternalFeedbackAttachmentsProvider()
+    let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
 
     private init() {
 
         // Configuring PixelKit
-        let isPhone = UIDevice.current.userInterfaceIdiom == .phone
-        let source = isPhone ? PixelKit.Source.iOS : PixelKit.Source.iPadOS
+        let isTablet = UIDevice.current.userInterfaceIdiom == .pad
+        let source = isTablet ? PixelKit.Source.iPadOS : PixelKit.Source.iOS
+        let pixelKitDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: source.rawValue,
                        session: "ios-browser",
                        defaultHeaders: [:],
-                       defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
+                       defaults: pixelKitDefaults,
+                       parameterProvider: IOSPixelKitParameterProvider()) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
             let url = URL.pixelUrl(forPixelNamed: pixelName)
-            let apiHeaders = APIRequestV2.HeadersV2(userAgent: Pixel.defaultPixelUserAgent, additionalHeaders: headers)
+            // `PixelKit.Options.userAgent` arrives under this key, and overrides the pixel one.
+            let apiHeaders = APIRequestV2.HeadersV2(userAgent: headers[PixelKit.Header.userAgent] ?? PixelUserAgent.default,
+                                                    additionalHeaders: headers)
             guard let request = APIRequestV2(url: url, method: .get, queryItems: parameters.toQueryItems(), headers: apiHeaders) else {
                 assertionFailure("Invalid Pixel request")
                 onComplete(false, nil)
@@ -137,6 +149,15 @@ final class AppDependencyProvider: DependencyProvider {
                 }
             }
         }
+
+        // Carries legacy pixel last-fire dates into PixelKit's throttle store; must run after `setUp`.
+        LegacyPixelStateMigration(
+            destination: pixelKitDefaults,
+            dailyStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.daily),
+            uniqueStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.unique),
+            debounceStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.debounce),
+            completionFlagStore: pixelKitDefaults
+        ).run()
 
         let featureFlagOverrideStore = UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!
         let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: featureFlagOverrideStore,
@@ -205,9 +226,9 @@ final class AppDependencyProvider: DependencyProvider {
                               PixelParameters.subscriptionKeychainError: error.localizedDescription,
                               PixelParameters.source: KeychainErrorSource.browser.rawValue,
                               PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainAccessError,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                         withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.subscriptionKeychainAccessError,
+                          frequency: .legacyDailyAndCount,
+                          options: .parameters(parameters))
         }
 
         // Init V2 classes for migration
@@ -258,9 +279,11 @@ final class AppDependencyProvider: DependencyProvider {
 
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
                                                                          pixelHandler: pixelHandler)
+        let monthlyFreeTrialDecider = IOSMonthlyFreeTrialDecider(featureFlagger: featureFlagger)
         let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
                                                                subscriptionFeatureFlagger: subscriptionFeatureFlagger,
-                                                               pendingTransactionHandler: pendingTransactionHandler)
+                                                               pendingTransactionHandler: pendingTransactionHandler,
+                                                               monthlyFreeTrialDecider: monthlyFreeTrialDecider)
         let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                                oAuthClient: authClient,
                                                                userDefaults: subscriptionUserDefaults,
@@ -299,7 +322,6 @@ final class AppDependencyProvider: DependencyProvider {
         vpnFeatureVisibility = DefaultNetworkProtectionVisibility(authenticationStateProvider: authenticationStateProvider)
         networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,
                                                                               featureFlagger: featureFlagger,
-                                                                              persistentPixel: persistentPixel,
                                                                               settings: vpnSettings,
                                                                               wideEvent: wideEvent,
                                                                               freeTrialConversionService: freeTrialConversionService

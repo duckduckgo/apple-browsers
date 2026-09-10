@@ -26,7 +26,7 @@ struct InfoPanelView: View {
     private enum Constants {
         static let contentSpacing: CGFloat = 6
         static let iconSize: CGFloat = 18
-        static let infoButtonPadding: CGFloat = 4
+        static let dismissButtonPadding: CGFloat = 4
         static let maxWidth: CGFloat = 480
 
         static let legacyHorizontalPadding: CGFloat = 10
@@ -44,7 +44,7 @@ struct InfoPanelView: View {
         let icon: UIImage
         let backgroundColor: Color
         let onTap: () -> Void
-        let onInfo: () -> Void
+        let onDismiss: () -> Void
     }
 
     let model: Model
@@ -53,7 +53,7 @@ struct InfoPanelView: View {
     private var cornerRadius: CGFloat { isRebranded ? Constants.rebrandedCornerRadius : Constants.legacyCornerRadius }
     private var horizontalPadding: CGFloat { isRebranded ? Constants.rebrandedHorizontalPadding : Constants.legacyHorizontalPadding }
     private var subtitleColor: Color { Color(designSystemColor: isRebranded ? .textSecondary : .textPrimary) }
-    private var infoIconColor: Color { Color(designSystemColor: isRebranded ? .iconsTertiary : .iconsSecondary) }
+    private var dismissIconColor: Color { Color(designSystemColor: isRebranded ? .iconsTertiary : .iconsSecondary) }
 
     var body: some View {
         HStack(alignment: .center, spacing: Constants.contentSpacing) {
@@ -69,13 +69,11 @@ struct InfoPanelView: View {
                 .font(.subheadline)
             Spacer()
 
-            Button(action: { model.onInfo() }, label: {
-                Image(uiImage: UIImage(resource: .infoIcon))
+            Button(action: { model.onDismiss() }, label: {
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
                     .renderingMode(.template)
-                    .resizable()
-                    .frame(width: Constants.iconSize, height: Constants.iconSize)
-                    .foregroundColor(infoIconColor)
-                    .padding(Constants.infoButtonPadding)
+                    .foregroundColor(dismissIconColor)
+                    .padding([.top, .bottom, .leading], Constants.dismissButtonPadding)
             })
             .accessibilityLabel(Text(UserText.tabSwitcherTrackerCountInfoA11y))
             .accessibilityHint(Text(UserText.tabSwitcherTrackerCountInfoHintA11y))
@@ -104,12 +102,12 @@ extension InfoPanelView.Model {
     /// - Parameters:
     ///   - state: The current state from the tracker count view model
     ///   - onTap: Action to perform when the panel is tapped
-    ///   - onInfo: Action to perform when the info button is tapped
+    ///   - onDismiss: Action to perform when the dismiss button is tapped
     /// - Returns: A configured InfoPanelView.Model for tracker info display
     static func trackerInfoPanel(
         state: TabSwitcherTrackerCountViewModel.State,
         onTap: @escaping () -> Void,
-        onInfo: @escaping () -> Void
+        onDismiss: @escaping () -> Void
     ) -> InfoPanelView.Model {
         return InfoPanelView.Model(
             title: state.title,
@@ -119,7 +117,7 @@ extension InfoPanelView.Model {
                 ? Color(designSystemColor: .surfaceSecondary)
                 : Color(singleUseColor: .tabSwitcherTrackerCountBackground),
             onTap: onTap,
-            onInfo: onInfo
+            onDismiss: onDismiss
         )
     }
 }
@@ -133,7 +131,7 @@ struct InfoPanelView_Previews: PreviewProvider {
                          icon: UIImage(rebrandable: "TrackerShield") ?? UIImage(resource: .trackerShield),
                          backgroundColor: Color(singleUseColor: .tabSwitcherTrackerCountBackground),
                          onTap: {},
-                         onInfo: {})
+                         onDismiss: {})
         )
         .previewLayout(.sizeThatFits)
         .padding()

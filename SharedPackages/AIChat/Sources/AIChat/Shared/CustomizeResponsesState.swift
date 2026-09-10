@@ -23,6 +23,34 @@ public enum CustomizeResponsesStorageKey {
     public static let active = "duckaiCustomizationActive"
 }
 
+/// Localized labels for the enum-valued customization fields, keyed by the stable English id the
+/// frontend persists (e.g. `"Casual"`, `"Brainstorm partner"`). Each map resolves an id to its
+/// localized display string; an id absent from the map falls back to the raw id (which is English),
+/// so a value the frontend adds that native doesn't know about is shown verbatim.
+///
+/// Maps are field-specific because the same id can appear under two fields with different meanings
+/// (e.g. `"Writer"` is both an assistant role and a your-role, `"Professional"` is both a tone and a
+/// your-role) and may translate differently per locale.
+public struct CustomizeResponsesTranslations: Equatable {
+
+    public let tone: [String: String]
+    public let length: [String: String]
+    public let assistantRole: [String: String]
+    public let userRole: [String: String]
+
+    public static let empty = CustomizeResponsesTranslations()
+
+    public init(tone: [String: String] = [:],
+                length: [String: String] = [:],
+                assistantRole: [String: String] = [:],
+                userRole: [String: String] = [:]) {
+        self.tone = tone
+        self.length = length
+        self.assistantRole = assistantRole
+        self.userRole = userRole
+    }
+}
+
 public struct CustomizeResponsesState: Equatable {
 
     public let hasCustomization: Bool
@@ -40,9 +68,11 @@ public struct CustomizeResponsesState: Equatable {
     public static func make(customizationValue: Any?,
                             activeValue: Any?,
                             clarifiesLabel: String,
+                            translations: CustomizeResponsesTranslations = .empty,
                             maxSubLabelLength: Int = 15) -> CustomizeResponsesState {
         let summary = CustomizeResponsesSubLabel.summary(from: customizationValue,
                                                          clarifiesLabel: clarifiesLabel,
+                                                         translations: translations,
                                                          maxLength: maxSubLabelLength)
         return CustomizeResponsesState(hasCustomization: summary.isCustomized,
                                        subLabel: summary.subLabel,
@@ -62,7 +92,7 @@ enum CustomizeResponsesSubLabel {
 
     private static let defaultValue = "Default"
 
-    static func summary(from customizationValue: Any?, clarifiesLabel: String, maxLength: Int) -> (isCustomized: Bool, subLabel: String?) {
+    static func summary(from customizationValue: Any?, clarifiesLabel: String, translations: CustomizeResponsesTranslations, maxLength: Int) -> (isCustomized: Bool, subLabel: String?) {
         let root: [String: Any]?
         switch customizationValue {
         case let json as String:
@@ -75,7 +105,7 @@ enum CustomizeResponsesSubLabel {
             return (false, nil)
         }
         guard let payload = root?["data"] as? [String: Any] else { return (false, nil) }
-        return (!isEmpty(payload), buildSubLabel(payload, clarifiesLabel: clarifiesLabel, maxLength: maxLength))
+        return (!isEmpty(payload), buildSubLabel(payload, clarifiesLabel: clarifiesLabel, translations: translations, maxLength: maxLength))
     }
 
     private static func isEmpty(_ data: [String: Any]) -> Bool {
@@ -89,20 +119,25 @@ enum CustomizeResponsesSubLabel {
             && !isClarifyingActive(data)
     }
 
-    private static func buildSubLabel(_ data: [String: Any], clarifiesLabel: String, maxLength: Int) -> String? {
+    private static func buildSubLabel(_ data: [String: Any], clarifiesLabel: String, translations: CustomizeResponsesTranslations, maxLength: Int) -> String? {
         var parts: [String] = []
-        addIfSetAndNotDefault(&parts, data, "tone")
-        addIfSetAndNotDefault(&parts, data, "length")
-        addIfSetAndNotDefault(&parts, data, "assistantRole")
-        addIfSetAndNotDefault(&parts, data, "userRole")
+        addLocalizedIfSetAndNotDefault(&parts, data, "tone", translations.tone)
+        addLocalizedIfSetAndNotDefault(&parts, data, "length", translations.length)
+        addLocalizedIfSetAndNotDefault(&parts, data, "assistantRole", translations.assistantRole)
+        addLocalizedIfSetAndNotDefault(&parts, data, "userRole", translations.userRole)
         if isClarifyingActive(data) { parts.append(clarifiesLabel) }
         addIfHasText(&parts, data, "assistantName")
         addIfHasText(&parts, data, "userName")
         return parts.isEmpty ? nil : truncateByWord(parts.joined(separator: ", "), maxLength: maxLength)
     }
 
-    private static func addIfSetAndNotDefault(_ parts: inout [String], _ data: [String: Any], _ key: String) {
-        if isSetAndNotDefault(data, key) { parts.append(string(data, key)!.trimmingCharacters(in: .whitespaces)) }
+    /// Appends the field's value localized via `map`, falling back to the raw (English) id when the
+    /// id isn't mapped. Default-valued fields are skipped (a `"Default"` role contributes nothing).
+    private static func addLocalizedIfSetAndNotDefault(_ parts: inout [String], _ data: [String: Any], _ key: String, _ map: [String: String]) {
+        if isSetAndNotDefault(data, key) {
+            let id = string(data, key)!.trimmingCharacters(in: .whitespaces)
+            parts.append(map[id] ?? id)
+        }
     }
 
     private static func addIfHasText(_ parts: inout [String], _ data: [String: Any], _ key: String) {

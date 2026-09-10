@@ -101,7 +101,14 @@ public protocol JobQueueManaging {
 
 public protocol JobQueueManagerDelegate: AnyObject {
     func queueManagerWillEnqueueOperations(_ queueManager: JobQueueManaging)
+    func queueManagerDidStartOperations(_ queueManager: JobQueueManaging)
+    func queueManagerDidFinishOperations(_ queueManager: JobQueueManaging)
     func queueManagerDidCompleteIndividualJob(_ queueManager: JobQueueManaging, identifier: CompletedJobIdentifier?)
+}
+
+public extension JobQueueManagerDelegate {
+    func queueManagerDidStartOperations(_ queueManager: JobQueueManaging) {}
+    func queueManagerDidFinishOperations(_ queueManager: JobQueueManaging) {}
 }
 
 public final class JobQueueManager: JobQueueManaging {
@@ -114,7 +121,9 @@ public final class JobQueueManager: JobQueueManaging {
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
     private var mode = BrokerProfileJobQueueMode.idle
+    private let operationErrorsLock = NSLock()
     private var operationErrors: [Error] = []
+    private var activeRunID: UUID?
 
     public var debugRunningStatusString: String {
         switch mode {
@@ -165,8 +174,12 @@ public final class JobQueueManager: JobQueueManaging {
                                                           completion: (() -> Void)?) {
         cancelCurrentModeAndResetIfNeeded()
         mode = .immediate(errorHandler: nil, completion: nil)
+        let runID = UUID()
+        activeRunID = runID
+        delegate?.queueManagerDidStartOperations(self)
         addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: jobDependencies)
         addJobs(for: .optOut,
+                runID: runID,
                 showWebView: showWebView,
                 isAuthenticatedUser: isAuthenticatedUser,
                 jobDependencies: jobDependencies,
@@ -278,9 +291,14 @@ private extension JobQueueManager {
 
         cancelCurrentModeAndResetIfNeeded()
         mode = newMode
+        let runID = UUID()
+        activeRunID = runID
+
+        delegate?.queueManagerDidStartOperations(self)
 
         addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: jobDependencies)
         addJobs(for: type,
+                runID: runID,
                 priorityDate: mode.priorityDate,
                 showWebView: showWebView,
                 isAuthenticatedUser: isAuthenticatedUser,
@@ -296,6 +314,7 @@ private extension JobQueueManager {
             let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: BrokerProfileJobQueueError.interrupted, operationErrors: operationErrorsForCurrentOperations())
             errorHandler?(errorCollection)
             resetMode()
+            delegate?.queueManagerDidFinishOperations(self)
             completion?()
         default:
             break
@@ -304,10 +323,12 @@ private extension JobQueueManager {
 
     func resetMode() {
         mode = .idle
-        operationErrors = []
+        activeRunID = nil
+        operationErrorsLock.withLock { operationErrors = [] }
     }
 
     func addJobs(for jobType: JobType,
+                 runID: UUID,
                  priorityDate: Date? = nil,
                  showWebView: Bool,
                  isAuthenticatedUser: Bool,
@@ -333,20 +354,27 @@ private extension JobQueueManager {
             Logger.dataBrokerProtection.error("DataBrokerProtectionProcessor error: addOperations, error: \(error.localizedDescription, privacy: .public)")
             errorHandler?(DataBrokerProtectionJobsErrorCollection(oneTimeError: error))
             resetMode()
+            delegate?.queueManagerDidFinishOperations(self)
             completion?()
             return
         }
 
         jobQueue.addBarrierBlock1 { [weak self] in
+            if let self, self.activeRunID != runID { return }
             let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: nil, operationErrors: self?.operationErrorsForCurrentOperations())
             errorHandler?(errorCollection)
             self?.resetMode()
+            if let self {
+                self.delegate?.queueManagerDidFinishOperations(self)
+            }
             completion?()
         }
     }
 
     func operationErrorsForCurrentOperations() -> [Error]? {
-        return operationErrors.count != 0 ? operationErrors : nil
+        operationErrorsLock.withLock {
+            operationErrors.isEmpty ? nil : operationErrors
+        }
     }
 }
 
@@ -357,7 +385,7 @@ extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
                                             identifier: CompletedJobIdentifier?,
                                             dataBrokerParent: String?,
                                             isFreeScan: Bool?) {
-        operationErrors.append(error)
+        operationErrorsLock.withLock { operationErrors.append(error) }
         delegate?.queueManagerDidCompleteIndividualJob(self, identifier: identifier)
 
         guard let error = error as? DataBrokerProtectionError, let brokerURL, let version else { return }
@@ -389,7 +417,7 @@ extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
 
 extension JobQueueManager: EmailConfirmationErrorDelegate {
     public func emailConfirmationOperationDidError(_ error: Error, withBrokerURL brokerURL: String?, version: String?) {
-        operationErrors.append(error)
+        operationErrorsLock.withLock { operationErrors.append(error) }
 
         guard let error = error as? DataBrokerProtectionError, let brokerURL, let version else {
             return

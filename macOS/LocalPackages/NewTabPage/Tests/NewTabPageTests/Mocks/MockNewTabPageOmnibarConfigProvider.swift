@@ -18,6 +18,7 @@
 
 import Combine
 import NewTabPage
+import WebKit
 
 final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
@@ -54,7 +55,39 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var isImageGenerationEnabled: Bool = false
 
+    var isUpdatedCreateImageEnabled: Bool = false
+
+    var imageGenerationModelId: String?
+
+    var activateImageGenerationResult: NewTabPageDataModel.OmnibarCreateImageModelSwitch?
+    private(set) var activateImageGenerationCallCount = 0
+
+    @MainActor
+    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? {
+        activateImageGenerationCallCount += 1
+        return activateImageGenerationResult
+    }
+
     var isWebSearchEnabled: Bool = false
+
+    var isCustomizeResponsesEnabled: Bool = false
+
+    var customizeResponsesStateResult = NewTabPageDataModel.OmnibarCustomizeResponsesState.none
+    @MainActor
+    func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState {
+        customizeResponsesStateResult
+    }
+
+    let customizeResponsesStateSubject = PassthroughSubject<Void, Never>()
+    var customizeResponsesStatePublisher: AnyPublisher<Void, Never> {
+        customizeResponsesStateSubject.eraseToAnyPublisher()
+    }
+
+    var refreshUsageLimitsCallCount = 0
+    @MainActor
+    func refreshUsageLimits(requestingWebView: WKWebView?) {
+        refreshUsageLimitsCallCount += 1
+    }
 
     @Published var isAttachTabsEnabled: Bool = false
 
@@ -91,5 +124,17 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
         $selectedReasoningEffort.dropFirst().eraseToAnyPublisher()
+    }
+
+    @Published var isAIChatDeletionEnabled: Bool = false
+
+    var isAIChatDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isAIChatDeletionEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    @Published var isSearchSuggestionDeletionEnabled: Bool = false
+
+    var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isSearchSuggestionDeletionEnabled.removeDuplicates().eraseToAnyPublisher()
     }
 }

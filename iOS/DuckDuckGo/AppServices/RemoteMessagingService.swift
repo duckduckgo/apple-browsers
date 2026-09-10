@@ -56,10 +56,10 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
          subscriptionDataReporter: SubscriptionDataReporting,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          idleReturnEligibilityManager: IdleReturnEligibilityManaging,
-         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
+         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     ) {
         remoteMessagingActionHandler = RemoteMessagingActionHandler(
-            lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher()
+            surveyUsageStateRefresher: RemoteMessagingSurveyUsageStateRefresher()
         )
 
         self.remoteMessagingImageLoader = remoteMessagingImageLoader

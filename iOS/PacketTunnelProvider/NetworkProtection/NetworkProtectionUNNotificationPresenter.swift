@@ -55,11 +55,11 @@ final class NetworkProtectionUNNotificationPresenter: NSObject, VPNNotifications
         }
     }
 
-    private func notificationContent(body: String) -> UNNotificationContent {
+    private func notificationContent(title: String? = nil, body: String) -> UNNotificationContent {
         let content = UNMutableNotificationContent()
 
         content.threadIdentifier = threadIdentifier
-        content.title = UserText.networkProtectionNotificationsTitle
+        content.title = title ?? UserText.networkProtectionNotificationsTitle
         content.body = body
         content.interruptionLevel = .timeSensitive
         content.relevanceScore = 0
@@ -86,6 +86,12 @@ final class NetworkProtectionUNNotificationPresenter: NSObject, VPNNotifications
         }
         let content = notificationContent(body: body)
         showNotification(.connection, content)
+    }
+
+    func showStrictRoutingReminderNotification() {
+        let content = notificationContent(title: UserText.networkProtectionStrictRoutingReminderNotificationTitle,
+                                          body: UserText.networkProtectionStrictRoutingReminderNotificationBody)
+        showNotification(.strictRoutingReminder, content)
     }
 
     func showReconnectingNotification() {

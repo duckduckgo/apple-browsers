@@ -22,7 +22,7 @@ import AppKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_macOS
 
 protocol ThemeManaging {
     var appearance: ThemeAppearance { get }

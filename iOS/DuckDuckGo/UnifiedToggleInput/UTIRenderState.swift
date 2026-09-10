@@ -29,6 +29,7 @@ struct UTIRenderState: Equatable {
     var isFloatingReturnKeyVisible: Bool
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
+    var isInlineDismissHidden: Bool
     /// True when the UTI is hosted by a Duck.ai tab.
     var isAITab: Bool
 
@@ -42,6 +43,7 @@ struct UTIRenderState: Equatable {
             inactiveAppearance: inactiveAppearance,
             inputMode: inputMode,
             isTopBarPosition: usesOmnibarMargins,
+            isInlineDismissHidden: isInlineDismissHidden,
             isAITab: isAITab
         )
     }

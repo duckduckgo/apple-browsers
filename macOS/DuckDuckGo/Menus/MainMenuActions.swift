@@ -25,12 +25,13 @@ import FoundationExtensions
 import Configuration
 import Networking
 import Crashes
-import FeatureFlags
+import FeatureFlags_macOS
 import History
 import HistoryView
 import os.log
 import PixelKit
 import PrivacyConfig
+import PrivacyDashboard
 import Subscription
 import SwiftUI
 import Utilities
@@ -86,6 +87,7 @@ extension AppDelegate {
 
     @objc func newAIChat(_ sender: Any?) {
         DispatchQueue.main.async {
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.mainMenuFileNewChat)
             NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
             PixelKit.fire(AIChatPixel.aichatApplicationMenuFileClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
@@ -125,6 +127,40 @@ extension AppDelegate {
 
                 self?.windowControllersManager.show(url: selectedURL, source: .ui, newTab: true)
             }
+        }
+    }
+
+    /// Opens `debug://failure` in the **current tab** (or fills a lone New Tab), or creates a window if none.
+    /// Uses `show(url:newTab:false)` so **Debug → Open demo** does not always append a tab (e.g. pinned-tab UI tests).
+    /// Menu targets `AppDelegate` when there is no key window (all closed).
+    @objc func openFailureURLSchemeDemoDebugPage(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return }
+        DispatchQueue.main.async {
+            self.windowControllersManager.show(url: URL.debugURL(.failure), source: .ui, newTab: false)
+        }
+    }
+
+    @objc func openFailureURLSchemeAlternatingFailuresDebugPage(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return }
+        DispatchQueue.main.async {
+            let url = URL.debugURL(.failure, parameters: [.alternatingFailures: URL.DebugURLQueryParameter.enabledValue])
+            self.windowControllersManager.show(url: url, source: .ui, newTab: false)
+        }
+    }
+
+    @objc func openFailureURLSchemeNotConnectedQueryDebugPage(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return }
+        DispatchQueue.main.async {
+            let url = URL.debugURL(.failure, parameters: [.simulatedError: URL.DebugURLSimulatedError.notConnected.rawValue])
+            self.windowControllersManager.show(url: url, source: .ui, newTab: false)
+        }
+    }
+
+    @objc func openFailureURLSchemeHostNotFoundQueryDebugPage(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return }
+        DispatchQueue.main.async {
+            let url = URL.debugURL(.failure, parameters: [.simulatedError: URL.DebugURLSimulatedError.hostNotFound.rawValue])
+            self.windowControllersManager.show(url: url, source: .ui, newTab: false)
         }
     }
 
@@ -247,9 +283,13 @@ extension AppDelegate {
     }
 
     @objc func openReportBrokenSite(_ sender: Any?) {
+        openReportBrokenSite(entryPoint: .report)
+    }
+
+    func openReportBrokenSite(entryPoint: PrivacyDashboardEntryPoint, in sourceWindow: NSWindow? = nil) {
         let privacyDashboardViewController = PrivacyDashboardViewController(
             privacyInfo: nil,
-            entryPoint: .report,
+            entryPoint: entryPoint,
             contentBlocking: privacyFeatures.contentBlocking,
             permissionManager: permissionManager,
             webTrackingProtectionPreferences: webTrackingProtectionPreferences
@@ -264,7 +304,9 @@ extension AppDelegate {
         privacyDashboardWindow = window
 
         DispatchQueue.main.async {
-            guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
+            let windowControllersManager = Application.appDelegate.windowControllersManager
+            guard let parentWindowController = windowControllersManager.mainWindowController(for: sourceWindow)
+                    ?? windowControllersManager.lastKeyMainWindowController,
                   let tabModel = parentWindowController.mainViewController.tabCollectionViewModel.selectedTabViewModel else {
                 assertionFailure("AppDelegate: Failed to present PrivacyDashboard")
                 return
@@ -301,6 +343,7 @@ extension AppDelegate {
             },
             preselectedCategory: category,
             preselectedSubCategory: subcategory,
+            isAppRebranded: Application.appDelegate.themeManager.isAppRebranded,
             onClose: {
                 window?.close()
             },
@@ -349,6 +392,7 @@ extension AppDelegate {
         var window: NSWindow?
 
         let formView = RequestNewFeatureFormFlowView(
+            isAppRebranded: Application.appDelegate.themeManager.isAppRebranded,
             onClose: {
                 window?.close()
             },
@@ -427,11 +471,6 @@ extension AppDelegate {
             let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection)
             WindowsManager.openNewWindow(with: tabCollectionViewModel)
         }
-    }
-
-    @MainActor
-    @objc func openAbout(_ sender: Any?) {
-        AboutPanelController.show(internalUserDecider: internalUserDecider)
     }
 
     @objc func openImportBookmarksWindow(_ sender: Any?) {
@@ -537,6 +576,11 @@ extension AppDelegate {
     }
 
     @MainActor
+    @objc func debugClearFaviconsCache(_ sender: Any?) {
+        faviconManager.clearInMemoryFaviconCache()
+    }
+
+    @MainActor
     @objc func skipOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
         Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
@@ -598,13 +642,6 @@ extension AppDelegate {
         NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
-    @MainActor
-    @objc func debugShowFeatureAwarenessDialogForNTPWidget(_ sender: Any?) {
-        Task {
-            await Application.appDelegate.autoconsentStatsPopoverCoordinator.showDialogForDebug()
-        }
-    }
-
     @objc func debugIncrementAutoconsentStats(_ sender: Any?) {
         Task {
             await autoconsentStats.recordAutoconsentAction(clicksMade: 1, timeSpent: 1.0)
@@ -614,7 +651,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func debugClearBlockedCookiesPopoverSeenFlag(_ sender: Any?) {
-        Application.appDelegate.autoconsentStatsPopoverCoordinator.clearBlockedCookiesPopoverSeenFlag()
+        try? keyValueStore.removeObject(forKey: CookiePopupsBlockedPromoDelegate.StorageKey.blockedCookiesPopoverSeen)
         print("DEBUG: Cleared blockedCookiesPopoverSeen flag")
     }
 
@@ -1352,7 +1389,26 @@ extension MainViewController {
     @objc func toggleDuckAISidebar(_ sender: Any?) {
         guard featureFlagger.isFeatureOn(.aiChatChromeSidebar),
               aiChatMenuConfig.shouldDisplayAnyAIChatFeature else { return }
+        // Always a plain open/close, no page attach — even in menu-button layout. Only the tab-bar
+        // "Ask About Page" item attaches the current page.
+        if !tabBarViewController.isDuckAIChatPresented {
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.mainMenuSidebar)
+        }
         aiChatCoordinator.toggleSidebar()
+    }
+
+    /// Duck.ai → Ask About Page / Close Sidebar (⌥⌘L in menu-button layout): toggles the Duck.ai chat —
+    /// closes it if presented (sidebar or floating), otherwise opens the sidebar with the current page
+    /// attached. Routed through the responder chain so it targets the key window reliably.
+    @objc func askAboutPage(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.aiChatChromeSidebar),
+              featureFlagger.isFeatureOn(.aiChatChromeMenuButton),
+              aiChatMenuConfig.shouldDisplayAnyAIChatFeature else { return }
+        if tabBarViewController.isDuckAIChatPresented {
+            tabBarViewController.closeDuckAIChat()
+        } else {
+            tabBarViewController.openDuckAISidebarWithPageAttachment()
+        }
     }
 
     @objc func toggleAutofillShortcut(_ sender: Any) {
@@ -1501,6 +1557,11 @@ extension MainViewController {
         browserTabViewController.openNewTab(with: .url(.favicons, source: .ui))
     }
 
+    @objc func inspectPermissions(_ sender: Any?) {
+        makeKeyIfNeeded()
+        browserTabViewController.openNewTab(with: .url(.permissions, source: .ui))
+    }
+
     @objc func debugShowCookiePopupProtectionOptInDialog(_ sender: Any?) {
         browserTabViewController.showCookiePopupProtectionOptInDialog()
     }
@@ -1564,8 +1625,11 @@ extension MainViewController {
     @objc func moveTabToNewWindow(_ sender: Any?) {
         guard let (tab, index) = getActiveTabAndIndex() else { return }
 
-        tabCollectionViewModel.remove(at: index)
-        WindowsManager.openNewWindow(with: tab)
+        // The tab moves to a new window; it isn't closed and reopened.
+        TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
+            tabCollectionViewModel.remove(at: index)
+            WindowsManager.openNewWindow(with: tab)
+        }
     }
 
     @objc func newTabNextToActive(_ sender: Any?) {
@@ -1609,14 +1673,19 @@ extension MainViewController {
         let otherTabs = otherTabCollectionViewModels.flatMap { $0.tabCollection.tabs }
         let otherLocalHistoryOfRemovedTabs = Set(otherTabCollectionViewModels.flatMap { $0.tabCollection.localHistoryOfRemovedTabs })
 
-        WindowsManager.closeWindows(except: excludedWindowControllers.compactMap(\.window))
-
-        tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
+        // The merged tabs stay alive under the same identity; they aren't newly opened.
+        TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
+            tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
+        }
         tabCollectionViewModel.tabCollection.localHistoryOfRemovedTabs += otherLocalHistoryOfRemovedTabs
 
         // Tabs from `otherTabCollectionViewModels` were moved to `tabCollectionViewModel`
         // clear the collection models so they are empty at `deinit` and no deinit checks assert.
         otherTabCollectionViewModels.forEach { $0.clearAfterMerge() }
+
+        // Close the now-empty source windows last. Closing them while they still held the tabs would
+        // let WebKit tear the (still-registered) moved tabs down together with their old window.
+        WindowsManager.closeWindows(except: excludedWindowControllers.compactMap(\.window))
     }
 
     // MARK: - Printing
@@ -1954,6 +2023,13 @@ extension AppDelegate: NSMenuItemValidation {
             return isDisplayingOneOrMoreWindows
 
         case #selector(AppDelegate.newWindow(_:)):
+            return isUserInteractionAllowed || !isDisplayingOneOrMoreWindows
+
+        case #selector(AppDelegate.openFailureURLSchemeDemoDebugPage(_:)),
+            #selector(AppDelegate.openFailureURLSchemeAlternatingFailuresDebugPage(_:)),
+            #selector(AppDelegate.openFailureURLSchemeNotConnectedQueryDebugPage(_:)),
+            #selector(AppDelegate.openFailureURLSchemeHostNotFoundQueryDebugPage(_:)):
+            guard featureFlagger.isFeatureOn(.debugURLScheme) else { return false }
             return isUserInteractionAllowed || !isDisplayingOneOrMoreWindows
 
         case #selector(AppDelegate.newBurnerWindow(_:)),

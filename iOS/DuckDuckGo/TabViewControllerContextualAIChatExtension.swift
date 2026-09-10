@@ -29,20 +29,52 @@ extension TabViewController {
     /// Re-presents an active chat if one exists for this tab, or restores from persisted URL after app restart.
     ///
     /// - Parameter presentingViewController: The view controller to present the sheet from.
-    func presentContextualAIChatSheet(from presentingViewController: UIViewController) {
+    func presentContextualAIChatSheet(from presentingViewController: UIViewController, attachingPage: Bool = false) {
         Task { @MainActor in
-            var restoreURL: URL?
-
-            if !aiChatContextualSheetCoordinator.hasActiveSheet,
-               let urlString = tabModel.contextualChatURL {
-                restoreURL = URL(string: urlString)
-            }
-
             await aiChatContextualSheetCoordinator.presentSheet(
                 from: presentingViewController,
-                restoreURL: restoreURL
+                restoreURL: restoreURLForContextualSheet(),
+                attachingPage: attachingPage
             )
         }
+    }
+
+    func presentContextualFloatingInput(from presentingViewController: UIViewController) {
+        Task { @MainActor in
+            await aiChatContextualSheetCoordinator.presentFloatingInput(from: presentingViewController)
+        }
+    }
+
+    /// Presents the contextual surface with `text` attached as its own context. Nothing is submitted — the selection
+    /// is there for the user to ask about, so the page is not auto-attached on top of it.
+    @MainActor
+    func presentContextualAIChat(withSelectedText text: String,
+                                 from presentingViewController: UIViewController) async {
+        let url = webView.url
+        await aiChatContextualSheetCoordinator.handleSelectionAction(
+            .ask,
+            selection: AIChatPageTextSelection(
+                text: text,
+                url: url,
+                faviconBase64: url.flatMap { getFaviconBase64(for: $0) }
+            ),
+            restoreURL: restoreURLForContextualSheet(),
+            from: presentingViewController
+        )
+    }
+
+    /// A conversation this tab can return to: either still live in the coordinator, or persisted by an
+    /// earlier launch and waiting to be restored.
+    var hasContextualChatToReopen: Bool {
+        aiChatContextualSheetCoordinator.sessionState.hasActiveChat || tabModel.contextualChatURL != nil
+    }
+
+    /// The persisted chat to restore, for both the plain and the selection-carrying entry points —
+    /// attaching a selection must not cost the user the conversation they already had.
+    private func restoreURLForContextualSheet() -> URL? {
+        guard !aiChatContextualSheetCoordinator.hasActiveSheet,
+              let urlString = tabModel.contextualChatURL else { return nil }
+        return URL(string: urlString)
     }
 
     /// Reloads the contextual AI chat web view if one exists.
@@ -77,7 +109,7 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
     }
 
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL) {
-        delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
+        delegate?.tab(self, didRequestNewDuckAITabForUrl: url, entrySource: .contextualChat)
     }
 
     func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator) {
@@ -103,5 +135,14 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
 
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestDeleteChatWithID chatID: String) {
         delegate?.tabDidRequestDeleteContextualChat(tab: self, chatID: chatID)
+    }
+
+    func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator) {
+        delegate?.tabDidRequestNewVoiceChat(self)
+    }
+
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
+                                          didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {
+        delegate?.tab(self, didSubmitDuckAIPromptWithOrigin: origin)
     }
 }

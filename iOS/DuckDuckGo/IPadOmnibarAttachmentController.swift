@@ -21,6 +21,7 @@ import AIChat
 import Core
 import UIKit
 import UniformTypeIdentifiers
+import PixelKit
 
 /// Drives the Duck.ai attachment picker shown on the far left of the iPad address bar's expanded
 /// AI-chat input area, and the strip of pending attachments displayed above the toolbar row.
@@ -33,6 +34,7 @@ import UniformTypeIdentifiers
 final class IPadOmnibarAttachmentController {
 
     private let store: UTIModelStore
+    private let keepsUnavailableAttachmentButtonVisible: Bool
     private let presenter = UnifiedToggleInputAttachmentPresenter()
 
     /// The strip that renders and owns the pending attachments. Set by the omnibar view controller
@@ -41,7 +43,7 @@ final class IPadOmnibarAttachmentController {
         didSet {
             attachmentsStripView?.onAttachmentRemoved = { _, attachment, isUserInitiated in
                 guard isUserInitiated else { return }
-                UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment)
+                UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment, surface: .addressBar)
             }
         }
     }
@@ -52,8 +54,9 @@ final class IPadOmnibarAttachmentController {
     /// Requested after a picker completes, so the omnibar can ensure it stays expanded.
     var onExpandRequested: (() -> Void)?
 
-    init(store: UTIModelStore) {
+    init(store: UTIModelStore, keepsUnavailableAttachmentButtonVisible: Bool = false) {
         self.store = store
+        self.keepsUnavailableAttachmentButtonVisible = keepsUnavailableAttachmentButtonVisible
 
         presenter.onExpandIfNeeded = { [weak self] in
             self?.onExpandRequested?()
@@ -77,6 +80,10 @@ final class IPadOmnibarAttachmentController {
     /// Whether the selected model accepts any attachment kind (so the button should be shown at all).
     var isAttachButtonAvailable: Bool {
         store.selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty
+    }
+
+    var isAttachButtonVisible: Bool {
+        isAttachButtonAvailable || (store.selectedModel != nil && keepsUnavailableAttachmentButtonVisible)
     }
 
     /// Whether the current selection still allows attaching more (so the button should be enabled).
@@ -171,10 +178,9 @@ final class IPadOmnibarAttachmentController {
 
     private func addFileAttachment(_ fileAttachment: AIChatFileAttachment, sourceURL: URL?) {
         if let validationError = attachmentPolicy.fileValidationError(for: fileAttachment) {
-            DailyPixel.fireDailyAndCount(
-                pixel: .unifiedToggleInputFileValidationFailed,
-                withAdditionalParameters: ["reason": validationError.reason.rawValue]
-            )
+            PixelKit.fire(Pixel.Event.unifiedToggleInputFileValidationFailed,
+                          frequency: .dailyAndCount,
+                          options: .parameters(["reason": validationError.reason.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]))
             attachmentsStripView?.addAttachment(.invalidFile(
                 UnifiedToggleInputInvalidFileAttachment(
                     id: fileAttachment.id,
@@ -188,7 +194,7 @@ final class IPadOmnibarAttachmentController {
             return
         }
 
-        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputFileAttached)
+        PixelKit.fire(Pixel.Event.unifiedToggleInputFileAttached, frequency: .dailyAndCount, options: .parameters(["surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]))
         attachmentsStripView?.addAttachment(.file(fileAttachment))
     }
 
@@ -207,10 +213,9 @@ final class IPadOmnibarAttachmentController {
         } else {
             reason = .other
         }
-        DailyPixel.fireDailyAndCount(
-            pixel: .unifiedToggleInputFileValidationFailed,
-            withAdditionalParameters: ["reason": reason.rawValue]
-        )
+        PixelKit.fire(Pixel.Event.unifiedToggleInputFileValidationFailed,
+                      frequency: .dailyAndCount,
+                      options: .parameters(["reason": reason.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]))
         attachmentsStripView?.addAttachment(.invalidFile(
             UnifiedToggleInputInvalidFileAttachment(
                 fileName: metadata.fileName,

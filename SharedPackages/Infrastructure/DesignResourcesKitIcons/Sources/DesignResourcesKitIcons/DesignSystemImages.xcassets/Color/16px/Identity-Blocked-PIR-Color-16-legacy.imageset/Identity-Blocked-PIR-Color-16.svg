@@ -1,0 +1,27 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Identity-Blocked-PIR-Color-16_svg__a)">
+    <path fill="#FFD65C" d="M8 1a7 7 0 0 1 7 7 5 5 0 0 0-7 7A7 7 0 1 1 8 1Z"/>
+    <path fill="url(#Identity-Blocked-PIR-Color-16_svg__b)" d="M7.663 9.51A4.977 4.977 0 0 0 7 12c0 1.128.374 2.168 1.004 3.005H8a6.986 6.986 0 0 1-5.309-2.436c.957-1.735 2.811-2.943 4.971-3.058ZM8 3.5a2.5 2.5 0 0 1 2.083 3.88 5.007 5.007 0 0 0-1.606 1.073A2.5 2.5 0 1 1 8 3.5Z"/>
+    <path fill="url(#Identity-Blocked-PIR-Color-16_svg__c)" d="M8 0a8.003 8.003 0 0 1 7.794 6.19c.116.5.182 1.01.2 1.52.015.448-.557.632-.908.356A4.892 4.892 0 0 0 15 8a7 7 0 1 0-12.64 4.145 6.36 6.36 0 0 1 2.082-2.125l.2-.122A6.697 6.697 0 0 1 8 9c-.238.317-.44.664-.598 1.033a5.674 5.674 0 0 0-2.256.73l-.17.103a5.336 5.336 0 0 0-1.92 2.088A6.978 6.978 0 0 0 8 15l.066.086c.276.351.092.922-.355.907a7.983 7.983 0 0 1-1.042-.103A8 8 0 0 1 8 0Zm0 3a3 3 0 0 1 2.77 4.152A5.007 5.007 0 0 0 7.999 9 3 3 0 1 1 8 3Zm0 1a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/>
+    <path fill="#DE5833" d="M15.5 12a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"/>
+    <path fill="url(#Identity-Blocked-PIR-Color-16_svg__d)" d="M15 12a3 3 0 1 0-6 0 3 3 0 0 0 6 0Zm1 0a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/>
+    <path fill="#fff" d="m13.5 11.5.051.002a.5.5 0 0 1 0 .996l-.051.002h-3a.5.5 0 0 1 0-1h3Z"/>
+  </g>
+  <defs>
+    <linearGradient id="Identity-Blocked-PIR-Color-16_svg__b" x1="8" x2="8" y1="3.5" y2="15.506" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E2A412"/>
+      <stop offset="1" stop-color="#C18010"/>
+    </linearGradient>
+    <linearGradient id="Identity-Blocked-PIR-Color-16_svg__c" x1="8" x2="8" y1="0" y2="16" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C18010"/>
+      <stop offset="1" stop-color="#5A2807"/>
+    </linearGradient>
+    <linearGradient id="Identity-Blocked-PIR-Color-16_svg__d" x1="12" x2="12" y1="8.5" y2="15.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BC4726"/>
+      <stop offset="1" stop-color="#9A3216"/>
+    </linearGradient>
+    <clipPath id="Identity-Blocked-PIR-Color-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

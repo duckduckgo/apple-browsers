@@ -1,0 +1,69 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_contextual_immediate_uti_pre_submit_toolbar
+
+---
+
+# Immediate contextual UTI before the first prompt shows its normal toolbar: model picker visible,
+# attachment menu available, no placeholder chip. The address-bar button now opens a menu, and its
+# Ask About Page opens the floating input with the page already attached — so the attachment-menu
+# attach is exercised after clearing that chip. The sheet only arrives on first submit.
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.contextualDuckAIMode: "true"
+        ff.aiChatContextualUnifiedToggleInput: "true"
+        ff.aiChatAutoAttachContextByDefault: "false"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+- assertVisible: ".*Privacy Test Pages.*"
+
+- runFlow:
+    file: ../shared/open_contextual_duckai_from_address_bar.yaml
+
+# The floating input hosts the UTI over the page; no sheet chrome until the first submit.
+- assertNotVisible:
+    id: "AIChat.ContextualSheet"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+- assertVisible: "Attach"
+- assertNotVisible:
+    id: "AIChat.ContextChip.Placeholder"
+
+# Entry attached the page; clear it to reach the unattached state the attachment menu acts on.
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 10000
+- tapOn:
+    id: "AIChat.ContextChip.RemoveButton"
+- assertNotVisible:
+    id: "AIChat.ContextChip.AttachedTitle"
+
+- tapOn: "Attach"
+- assertVisible: "Add Image"
+- assertVisible: "Add File"
+- assertVisible: "Ask About Page"
+- tapOn: "Ask About Page"
+
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 10000
+- assertNotVisible:
+    id: "AIChat.ContextChip.Placeholder"

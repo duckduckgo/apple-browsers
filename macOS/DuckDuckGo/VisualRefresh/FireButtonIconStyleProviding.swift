@@ -21,18 +21,15 @@ import DesignResourcesKitIcons
 
 protocol FireButtonIconStyleProviding {
     var icon: NSImage { get }
-    var lightAnimation: String { get }
-    var darkAnimation: String { get }
+    var animationName: String { get }
 }
 
 final class LegacyFireButtonIconStyleProvider: FireButtonIconStyleProviding {
-    var icon: NSImage = .burn
-    var lightAnimation = "flame-mouse-over"
-    var darkAnimation = "dark-flame-mouse-over"
+    let icon: NSImage = DesignSystemImages.Glyphs.Size16.fireSolid
+    let animationName = "fire-button-mouse-over-legacy"
 }
 
 final class CurrentFireButtonIconStyleProvider: FireButtonIconStyleProviding {
-    var icon: NSImage = DesignSystemImages.Glyphs.Size16.fireSolid
-    var lightAnimation = "fire-button-mouse-over-new"
-    var darkAnimation = "fire-button-mouse-over-new"
+    let icon: NSImage = DesignSystemImages.Glyphs.Size16.fireSolid
+    let animationName: String  = "Flame-24"
 }

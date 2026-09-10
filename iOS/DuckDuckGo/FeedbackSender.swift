@@ -24,6 +24,7 @@ import os.log
 import Networking
 import Common
 import FoundationExtensions
+import PixelKit
 
 /// Represents single component that is being sent to the server.
 /// Feedback as a whole can consist of multiple components. These components are included both in
@@ -107,7 +108,7 @@ struct FeedbackSubmitter: FeedbackSender {
     }
     
     public func firePositiveSentimentPixel() {
-        Pixel.fire(pixel: .feedbackPositive)
+        PixelKit.fire(Pixel.Event.feedbackPositive)
     }
     
     public func fireNegativeSentimentPixel(with model: Feedback.Model) {
@@ -120,7 +121,7 @@ struct FeedbackSubmitter: FeedbackSender {
         }
         
         let pixel = Pixel.Event.feedbackNegativePrefix(category: category)
-        Pixel.fire(pixel: pixel)
+        PixelKit.fire(pixel)
     }
 
 }

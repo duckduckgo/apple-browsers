@@ -70,7 +70,6 @@ final class SSLErrorTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
         addressBarTextField = app.addressBar
@@ -300,7 +299,7 @@ final class SSLErrorTests: UITestCase {
 
         // Navigate to secure site and verify shield without dot
         navigateTo(URL(string: "https://www.wikipedia.org/")!)
-        XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: UITests.Timeouts.navigation),
                       "Wikipedia should load")
         verifyAddressBarContains("wikipedia.org", context: "on Wikipedia")
         verifyShieldWithoutDot(context: "on secure site")

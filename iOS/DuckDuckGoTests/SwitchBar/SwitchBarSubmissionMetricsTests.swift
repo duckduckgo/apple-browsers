@@ -142,11 +142,22 @@ final class SwitchBarSubmissionMetricsTests: XCTestCase {
     func testAIChatSubmissionCallsSetWasUsedBefore() {
         let mockFeatureDiscovery = MockFeatureDiscovery()
         let metrics = SwitchBarSubmissionMetrics(featureDiscovery: mockFeatureDiscovery)
-        
+
         metrics.process("test prompt", for: .aiChat)
-        
+
         XCTAssertTrue(mockFeatureDiscovery.wasSetWasUsedBeforeCalled(for: .aiChat))
         XCTAssertEqual(mockFeatureDiscovery.setWasUsedBeforeCallCount, 1)
+    }
+
+    /// The UTI coordinator fires more pixels for the same submission after this one, so the
+    /// first-prompt flag must be marked by the submission flow's owner, never in here.
+    func testAIChatSubmissionDoesNotMarkFirstDuckAIPrompt() {
+        let mockFeatureDiscovery = MockFeatureDiscovery()
+        let metrics = SwitchBarSubmissionMetrics(featureDiscovery: mockFeatureDiscovery)
+
+        metrics.process("test prompt", for: .aiChat)
+
+        XCTAssertFalse(mockFeatureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
     }
     
     func testSearchSubmissionDoesNotCallSetWasUsedBefore() {

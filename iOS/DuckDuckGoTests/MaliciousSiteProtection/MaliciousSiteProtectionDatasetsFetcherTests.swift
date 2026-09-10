@@ -21,6 +21,7 @@ import CombineSchedulers
 import ConcurrencyExtensions
 import enum UIKit.UIBackgroundRefreshStatus
 import Foundation
+import FoundationExtensions
 import MaliciousSiteProtection
 import Testing
 @testable import DuckDuckGo

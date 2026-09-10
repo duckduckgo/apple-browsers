@@ -20,8 +20,8 @@ import Combine
 import Common
 import FoundationExtensions
 import History
-import InlineSnapshotTesting
 import NetworkingTestingUtils
+import SnapshotTestingSupport
 import os.log
 import PrivacyConfig
 import PrivacyConfigTestsUtils

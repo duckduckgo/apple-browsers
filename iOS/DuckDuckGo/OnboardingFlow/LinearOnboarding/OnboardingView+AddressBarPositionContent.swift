@@ -2,7 +2,7 @@
 //  OnboardingView+AddressBarPositionContent.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,60 +17,68 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
-
-private enum Metrics {
-    static let titleFont = Font.system(size: 20, weight: .semibold)
-}
+import SwiftUI
 
 extension OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-46879
     struct AddressBarPositionContent: View {
 
-        private var animateTitle: Binding<Bool>
-        private var showContent: Binding<Bool>
-        private var isSkipped: Binding<Bool>
+        @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
+        @Binding private var isVisible: Bool
+        private let content: OnboardingAddressBarPositionContent
         private let action: () -> Void
 
         init(
-            animateTitle: Binding<Bool> = .constant(true),
-            showContent: Binding<Bool> = .constant(true),
-            isSkipped: Binding<Bool>,
+            content: OnboardingAddressBarPositionContent,
+            isVisible: Binding<Bool>,
             action: @escaping () -> Void
         ) {
-            self.animateTitle = animateTitle
-            self.showContent = showContent
-            self.isSkipped = isSkipped
+            self.content = content
+            self._isVisible = isVisible
             self.action = action
         }
 
         var body: some View {
-            VStack(spacing: 16.0) {
-                AnimatableTypingText(UserText.Onboarding.AddressBarPosition.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
-                    showContent.wrappedValue = true
-                }
-                .foregroundColor(.primary)
-                .font(Metrics.titleFont)
+            VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
+                TypingText(
+                    content.title,
+                    startAnimating: $shouldStartTyping,
+                    onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
+                    }
+                )
+                .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                .font(onboardingTheme.typography.title)
+                .multilineTextAlignment(.center)
 
-                VStack(spacing: 24) {
-                    OnboardingAddressBarPositionPicker()
+                VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
+                    OnboardingView.OnboardingAddressBarPositionPicker(
+                        topOption: content.topOption,
+                        bottomOption: content.bottomOption,
+                        defaultIndicator: content.defaultIndicator
+                    )
 
                     Button(action: action) {
-                        Text(verbatim: UserText.Onboarding.AddressBarPosition.cta)
+                        Text(verbatim: content.primaryCTA)
                     }
-                    .buttonStyle(PrimaryButtonStyle())
+                    .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
-                .visibility(showContent.wrappedValue ? .visible : .invisible)
+                .opacity(showContent ? 1 : 0)
+                .animation(reduceMotion ? nil : .easeIn(duration: 0.25), value: showContent)
             }
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
     }
 
-}
-
-// MARK: - Preview
-
-#Preview {
-    OnboardingView.AddressBarPositionContent(isSkipped: .constant(false), action: {})
 }

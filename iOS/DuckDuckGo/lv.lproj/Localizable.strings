@@ -20,6 +20,9 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
+"%@: %@" = "%1$@: %2$@";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -64,6 +67,9 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Pievienot";
 
+/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
+"action.title.aiChat.askDuckAI" = "Pajautā Duck.ai";
+
 /* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
 "action.title.aiChat.hideContextualSheetButton" = "Paslēpt apakšējā paneļa saīsni";
 
@@ -102,6 +108,9 @@
 
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "Atcelt";
+
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Tērzēšana";
 
 /* Copy action */
 "action.title.copy" = "Kopēt";
@@ -199,6 +208,9 @@
 /* Add to Favorites action */
 "action.title.save.favorite" = "Pievienot izlases vienumu";
 
+/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
+"action.title.searchWithDuckDuckGo" = "Meklēt";
+
 /* Settings action */
 "action.title.settings" = "Iestatījumi";
 
@@ -247,24 +259,6 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Mākslīgā intelekta funkcijas";
 
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
-"aiChat.tabSwitcher.card.chip.chat" = "Tērzēšana";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.transcript" = "Transkripcija";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.voice" = "Balss tērzēšana";
-
-/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.untitledChat" = "Jauna tērzēšanas saruna";
-
-/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening" = "Klausīšanās…";
-
-/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Klausās...";
-
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Tērzēšana";
 
@@ -298,6 +292,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Tu vari vienlaikus pievienot tikai %d attēlus.";
 
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Jautā par lapu";
+
 /* Top-level attachment menu option to add a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Pievienot failu";
 
@@ -322,11 +319,20 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Šis faila tips netiek atbalstīts, lūdzu, pievieno %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Rediģējot atbilde tiks aizstāta ar jaunu.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Rediģēt ziņu";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Jauns";
 
 /* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newFireTab" = "Jauna Fire cilne";
+
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "Jauns attēls";
 
 /* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
 "aichat.header.plusMenu.newSearch" = "Jauna meklēšana";
@@ -336,6 +342,84 @@
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Jauna balss tērzēšana";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "Neizdevās lejupielādēt. Lūdzu, mēģini vēlreiz.";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Atvērt Duck.ai";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Nav nesenu sarunu";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Ielādējot tavas Duck.ai sarunas, radās kļūda. Lūdzu, vēlāk mēģini vēlreiz.";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Neizdevās ielādēt sarunas";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "Vairāk";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Tērzēšanas aizsardzība";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Izvēlies tērzēšanas";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Nav atrasta neviena atbilstība";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Dzēst";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Lejupielādēt";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Piespraust";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Atlasīt";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Noņemt piespraudi";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Meklēt";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Meklēt";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Piespraustās";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Nesenās";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Dzēst visus";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Dzēst sarunu";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Lejupielādēt sarunu";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Piespraust sarunu";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Noņemt piespraudi";
+
+/* Section header for Pro-only models shown to DuckDuckGo Plus subscribers */
+"aichat.model-picker.pro-plan-exclusive" = "Ekskluzīvi Pro plānam";
+
+/* Section header for subscription models shown to users who are not eligible for a free trial */
+"aichat.model-picker.subscriber-exclusive" = "Tikai abonentiem";
+
+/* Section header for subscription models shown to free users */
+"aichat.model-picker.try-free" = "Izmēģini bez maksas";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Analītiskiem uzdevumiem";
@@ -355,18 +439,6 @@
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Spriešana";
 
-/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
-"aiChat.syncIntroSheet.body" = "Atrodi kvadrātkodu DuckDuckGo lietotnē savā otrajā ierīcē, ejot uz **Iestatījumi** › **Sync & Backup** › **Sinhronizācija ar citu ierīci**.";
-
-/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.notNow" = "Ne tagad";
-
-/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.scan.button" = "Skenēt kvadrātkodu";
-
-/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.title" = "Sinhronizēsim tērzēšanas sarunas visās tavās ierīcēs!";
-
 /* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.button" = "Sinhronizēt ar citu ierīci";
 
@@ -375,6 +447,24 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Piekļūsti savām tērzēšanas sarunām visās savās ierīcēs, izmantojot Sync & Backup.";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Tērzēšana";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Transkripcija";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
+"aiChat.tabSwitcher.card.chip.voice" = "Balss tērzēšana";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
+"aiChat.tabSwitcher.card.untitledChat" = "Jauna tērzēšanas saruna";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
+"aiChat.tabSwitcher.card.voice.listening" = "Klausīšanās…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Klausās...";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Noteikts tonis, garums un uzvedība";
@@ -388,11 +478,50 @@
 /* Title for the image generation tool in the unified input tools menu */
 "aichat.toolbar.tools.imagegeneration.title" = "Izveidot attēlu";
 
+/* Subtitle for the image generation tool in the unified input tools menu, shown when the chat is already under way on a model that cannot generate images */
+"aichat.toolbar.tools.imagegeneration.unavailable.subtitle" = "Nav pieejams izvēlētajam modelim";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Meklēt atbildes tīmeklī";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Tīmekļa meklēšana";
+
+/* Button in the Duck.ai input footer letting a paid user keep chatting on their weekly allowance after the daily one is spent */
+"aichat.usageWarnings.action.startUsingWeeklyLimit" = "Sākot lietot nedēļas limitu";
+
+/* Button in the Duck.ai input footer warning taking a user who has already used their free trial to the subscription flow */
+"aichat.usageWarnings.action.subscribe" = "Abonēt";
+
+/* Button in the Duck.ai input footer warning that moves the user onto the suggested model */
+"aichat.usageWarnings.action.switch" = "Pārslēgt modeli";
+
+/* Button in the Duck.ai input footer warning taking a user who is still eligible for a free trial to the subscription flow */
+"aichat.usageWarnings.action.tryForFree" = "Izmēģināt abonementu bez maksas";
+
+/* Title of the Duck.ai input footer warning shown once the allowance for advanced AI models specifically is used up, while free models remain available */
+"aichat.usageWarnings.advancedModelsLimitReached.title" = "Sasniegts uzlaboto MI modeļu limits";
+
+/* Title of the Duck.ai input footer warning shown once the user's daily message limit is used up */
+"aichat.usageWarnings.dailyLimitReached.title" = "Sasniegts dienas limits";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their daily message limit is used. %d is a percentage */
+"aichat.usageWarnings.dailyUsage.title" = "%d%% no dienas limita";
+
+/* Accessibility label for the button that dismisses the Duck.ai input footer warning */
+"aichat.usageWarnings.dismiss.a11y" = "Nerādīt";
+
+/* Duck.ai input footer notice shown while a costly model is selected. %@ is the model's short name, such as 'Opus 4.8' */
+"aichat.usageWarnings.highUsageModel" = "%@ patērē lietojuma limitu 2–5 reizes ātrāk nekā pamata modeļi.";
+
+/* Subtitle of the Duck.ai input footer warning saying how long until the usage limit resets. %@ is a duration such as '2 days' */
+"aichat.usageWarnings.resetsIn" = "Tiks atiestatīts pēc %@";
+
+/* Title of the Duck.ai input footer warning shown once the user's weekly message limit is used up */
+"aichat.usageWarnings.weeklyLimitReached.title" = "Sasniegts nedēļas lietojuma limits";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their weekly message limit is used. %d is a percentage */
+"aichat.usageWarnings.weeklyUsage.title" = "%d%% no nedēļas limita";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Esošās grāmatzīmes netiks dublētas.";
@@ -401,10 +530,10 @@
 "alert.sync-already-paired-with-account-button" = "Sapratu";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Tu jau esi savienojis pārī ar šo kontu abās ierīcēs.";
+"alert.sync-already-paired-with-account-description" = "Šīs ierīces jau ir savienotas ar Sync & Backup.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Jau savienots";
+"alert.sync-already-paired-with-account-title" = "Jau sinhronizēts.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Dažas grāmatzīmes ir formatētas nepareizi vai pārāk garas un netika sinhronizētas.";
@@ -425,10 +554,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Sinhronizācija atcelta otrā ierīcē.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "Pārlūkprogrammā apmeklē duck.ai, ej uz Iestatījumi, pēc tam sadaļā “Sync & Backup” izvēlies “Ieslēgt” un pēc tam “Sinhronizēt ar citu ierīci”.";
+"alert.sync-code-only-compatible-with-duckai-description" = "Otrā pārlūkprogrammā apmeklē Duck.ai, dodies uz sadaļu “Iestatījumi”, pēc tam sadaļā “Sync & Backup” izvēlies “Ieslēgt” un pēc tam “Sinhronizēt ar citu ierīci”.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Noskenē šo kodu no Duck.ai iestatījumiem.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Noskenē šo kodu, izmantojot pārlūkprogrammu, kas nav DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Dažas paroles ir formatētas nepareizi vai pārāk garas un netika sinhronizētas.";
@@ -451,8 +580,11 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Sinhronizācijas un dublēšanas kļūda";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Sinhronizācijas iestatījumi";
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Lūdzu, mēģini vēlreiz.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Sinhronizācija neizdevās.";
 
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Lūdzu, sinhronizē šo ierīci no jau pievienotas DuckDuckGo pārlūkprogrammas citā ierīcē.";
@@ -478,6 +610,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Sinhronizācija ir apturēta";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Sapratu";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Pārslēgt sinhronizāciju";
 
@@ -489,9 +624,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backup uz laiku nav pieejams.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Šis kods pašreizējā lietotnes versijā netiek atbalstīts.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Atjaunini DuckDuckGo pārlūkprogrammu un mēģini vēlreiz.";
@@ -527,13 +659,13 @@
 "alert.unable-to-remove-device-description" = "Nevar noņemt šo ierīci no sinhronizācijas un dublēšanas.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Atvaino, šis kods nav derīgs. Lūdzu, pārliecinies, ka ir ievadīts vai skenēts pareizais kods.";
+"alert.unable-to-scan-qr-code-description" = "Lūdzu, pārliecinies, ka ir ievadīts vai skenēts pareizais kods.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Šis nav derīgs sinhronizēšanas kods.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Nevar izveidot savienojumu ar serveri.";
-
-/* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Nevar sinhronizēt ar citu ierīci.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Nevar izslēgt sinhronizāciju un dublēšanu.";
@@ -876,6 +1008,12 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Nosaukums";
+
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Lai saglabātu šo paroli, ievadi vietni vai lietotājvārdu.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Jāievada vietne vai lietotājvārds";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Pievienot paroli";
@@ -1411,6 +1549,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Ekrāna apakšā pieskaries pogai **Pievienot vadīklu**";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Jauns";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Apstiprināt";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Mēs centīsimies noraidīt pēc iespējas vairāk sīkfailu. Ja nav noraidīšanas iespējas, mēs ietaupīsim tev klikšķi un pieņemsim šos sīkfailus tavā vietā.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Noraidīt, ja iespējams, vai pieņemt manā vietā";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Es turpināšu tos pārvaldīt pats";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Vai tev ir apnikuši sīkfailu uznirstošie logi, kas neliek tevi mierā?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Mēs varam ietaupīt tev klikšķi un pieņemt šos sīkfailus tavā vietā.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Pieņemt sīkfailus, no kuriem nevar atteikties";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Es turpināšu tos pieņemt pats";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Noguris no sīkfailu uznirstošajiem logiem, no kuriem nevar atteikties?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Vēlāk to vienmēr vari mainīt sadaļā\n**Iestatījumi** > **Sīkfailu uznirstošo logu aizsardzība**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Vienmēr sūtīt avārijas ziņojumus";
 
@@ -1783,6 +1954,9 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Nesen ieviestās YouTube izmaiņas ir ietekmējušas Duck Player funkcionalitāti. Mēs strādājam, lai novērstu šīs problēmas, un novērtējam tavu sapratni.";
 
+/* Address bar Duck.ai menu option that opens a fresh chat with no page context */
+"duckai.address.bar.menu.new.chat" = "Jauna tērzēšanas saruna";
+
 /* Fourth paragraph of the Duck.ai widget education screen */
 "duckai.addWidget.settings.fourthParagraph" = "Pieskaries logrīkam, lai to rediģētu, pēc tam iestati **Duck.ai** un **Duck.ai Voice** kā īsceļus.";
 
@@ -1794,6 +1968,9 @@
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Nosūtīts kopā ar tavu ziņojumu uz Duck.ai";
+
+/* Row in the contextual chat's chats popup that opens Duck.ai in a new tab */
+"duckai.contextual.open.duckai" = "Atvērt Duck.ai";
 
 /* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
 "duckai.contextual.recent.chats.button" = "Pēdējās tērzēšanas sarunas";
@@ -1893,6 +2070,270 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Sazinies ar Duck.ai, izmantojot Siri!";
+
+/* Suggested prompt chip: cast and crew */
+"duckai.suggestion.cast-crew.label" = "Lomu atveidotāji un veidotāji";
+
+/* Suggested prompt submitted text: cast and crew */
+"duckai.suggestion.cast-crew.prompt" = "Kas ir galvenie aktieri un filmēšanas grupa, un ar ko vēl viņi ir pazīstami?";
+
+/* Suggested prompt chip: counterarguments */
+"duckai.suggestion.counterarguments.label" = "Kādi ir pretargumenti?";
+
+/* Suggested prompt submitted text: counterarguments */
+"duckai.suggestion.counterarguments.prompt" = "Kādi ir galvenie pretargumenti vai kritika?";
+
+/* Suggested prompt chip: course learning outcomes */
+"duckai.suggestion.course-learn.label" = "Ko es uzzināšu?";
+
+/* Suggested prompt submitted text: course learning outcomes */
+"duckai.suggestion.course-learn.prompt" = "Kādas ir galvenās lietas, ko es apgūšu šajā kursā?";
+
+/* Suggested prompt chip: is a course worth taking */
+"duckai.suggestion.course-worth.label" = "Vai ir vērts to apgūt?";
+
+/* Suggested prompt submitted text: is a course worth taking */
+"duckai.suggestion.course-worth.prompt" = "Vai, spriežot pēc šīs lapas, šo kursu ir vērts apgūt?";
+
+/* Suggested prompt chip: draft a cover letter */
+"duckai.suggestion.cover-letter.label" = "Sagatavo pieteikuma vēstuli";
+
+/* Suggested prompt submitted text: draft a cover letter */
+"duckai.suggestion.cover-letter.prompt" = "Sagatavo pieteikuma vēstuli šai vakancei.";
+
+/* Suggested prompt chip: event details */
+"duckai.suggestion.event-details.label" = "Kāda ir svarīgākā informācija?";
+
+/* Suggested prompt submitted text: event details */
+"duckai.suggestion.event-details.prompt" = "Apkopo svarīgāko informāciju par šo notikumu.";
+
+/* Suggested prompt chip: explain the top answer */
+"duckai.suggestion.explain-answer.label" = "Izskaidro labāko atbildi";
+
+/* Suggested prompt submitted text: explain the top answer */
+"duckai.suggestion.explain-answer.prompt" = "Izskaidro pieņemtāko atbildi vienkāršā valodā.";
+
+/* Suggested prompt chip: explain a research paper */
+"duckai.suggestion.explain-paper.label" = "Izskaidro šo rakstu";
+
+/* Suggested prompt submitted text: explain a research paper */
+"duckai.suggestion.explain-paper.prompt" = "Izskaidro šo pētniecisko darbu vienkāršā valodā.";
+
+/* Suggested prompt chip: explain a code repository */
+"duckai.suggestion.explain-repo.label" = "Izskaidro šo repozitoriju";
+
+/* Suggested prompt submitted text: explain a code repository */
+"duckai.suggestion.explain-repo.prompt" = "Paskaidro, ko šis repozitorijs dara un kā to izmantot.";
+
+/* Suggested prompt chip: explain the content simply */
+"duckai.suggestion.explain-simply.label" = "Izskaidro to vienkārši";
+
+/* Suggested prompt submitted text: explain the content simply */
+"duckai.suggestion.explain-simply.prompt" = "Paskaidro to vienkāršā, saprotamā valodā.";
+
+/* Suggested prompt chip: what an FAQ page answers */
+"duckai.suggestion.faq-answer.label" = "Kādu atbildi tas sniedz?";
+
+/* Suggested prompt submitted text: what an FAQ page answers */
+"duckai.suggestion.faq-answer.prompt" = "Uz kādiem galvenajiem jautājumiem šī lapa sniedz atbildes?";
+
+/* Suggested prompt chip: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.label" = "Apkopo jautājumus un atbildes";
+
+/* Suggested prompt submitted text: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.prompt" = "Apkopo jautājumus un atbildes šajā lapā.";
+
+/* Suggested prompt chip: product alternatives */
+"duckai.suggestion.find-alternatives.label" = "Atrodi man alternatīvas";
+
+/* Suggested prompt submitted text: product alternatives */
+"duckai.suggestion.find-alternatives.prompt" = "Iesaki dažas alternatīvas šai precei.";
+
+/* Suggested prompt chip: how-to materials */
+"duckai.suggestion.howto-materials.label" = "Kas man būs nepieciešams?";
+
+/* Suggested prompt submitted text: how-to materials */
+"duckai.suggestion.howto-materials.prompt" = "Uzskaiti rīkus, materiālus vai priekšnosacījumus, kas man tam ir nepieciešami.";
+
+/* Suggested prompt chip: how-to steps */
+"duckai.suggestion.howto-steps.label" = "Paskaidro man soli pa solim";
+
+/* Suggested prompt submitted text: how-to steps */
+"duckai.suggestion.howto-steps.prompt" = "Sadali to skaidros, numurētos soļos.";
+
+/* Suggested prompt chip: interview prep */
+"duckai.suggestion.interview-prep.label" = "Palīdzi man sagatavoties intervijai";
+
+/* Suggested prompt submitted text: interview prep */
+"duckai.suggestion.interview-prep.prompt" = "Kādi intervijas jautājumi varētu tikt uzdoti par šo vakanci?";
+
+/* Suggested prompt chip: key takeaways of an article */
+"duckai.suggestion.key-takeaways.label" = "Kādi ir galvenie secinājumi?";
+
+/* Suggested prompt submitted text: key takeaways of an article */
+"duckai.suggestion.key-takeaways.prompt" = "Kādi ir galvenie šī raksta secinājumi?";
+
+/* Suggested prompt chip: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.label" = "Ko man pasūtīt?";
+
+/* Suggested prompt submitted text: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.prompt" = "Kādus ēdienus šeit noteikti ir vērts nogaršot?";
+
+/* Suggested prompt chip: paper contributions */
+"duckai.suggestion.paper-contributions.label" = "Kas ir galvenie autori?";
+
+/* Suggested prompt submitted text: paper contributions */
+"duckai.suggestion.paper-contributions.prompt" = "Kādi ir šī raksta galvenie autori?";
+
+/* Suggested prompt chip: summarize a person's background */
+"duckai.suggestion.person-background.label" = "Apkopo informāciju par tiem";
+
+/* Suggested prompt submitted text: summarize a person's background */
+"duckai.suggestion.person-background.prompt" = "Apkopo šī cilvēka biogrāfiju un ievērojamākos darbus.";
+
+/* Suggested prompt chip: place hours and location */
+"duckai.suggestion.place-hours.label" = "Kāds ir darba laiks un atrašanās vieta?";
+
+/* Suggested prompt submitted text: place hours and location */
+"duckai.suggestion.place-hours.prompt" = "Kāds ir šīs vietas darba laiks, atrašanās vieta un kontaktinformācija?";
+
+/* Suggested prompt chip: place reputation */
+"duckai.suggestion.place-reviews.label" = "Vai šī vieta ir laba?";
+
+/* Suggested prompt submitted text: place reputation */
+"duckai.suggestion.place-reviews.prompt" = "Vai šī vieta ir laba? Apkopo tās reputāciju, pamatojoties uz atsauksmēm un vērtējumiem.";
+
+/* Suggested prompt chip: product pros and cons */
+"duckai.suggestion.product-pros-cons.label" = "Kādi ir plusi un mīnusi?";
+
+/* Suggested prompt submitted text: product pros and cons */
+"duckai.suggestion.product-pros-cons.prompt" = "Kādi ir šī produkta plusi un mīnusi?";
+
+/* Suggested prompt chip: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.label" = "Aprēķini uzturvērtību";
+
+/* Suggested prompt submitted text: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.prompt" = "Aprēķini šīs receptes uzturvērtību.";
+
+/* Suggested prompt chip: related articles */
+"duckai.suggestion.related-articles.label" = "Iesaki saistītus rakstus, ko apskatīt";
+
+/* Suggested prompt submitted text: related articles */
+"duckai.suggestion.related-articles.prompt" = "Iesaki saistītus rakstus vai tēmas, ko vērts izpētīt tālāk.";
+
+/* Suggested prompt chip: summarize reviews */
+"duckai.suggestion.review-summary.label" = "Apkopo atsauksmes";
+
+/* Suggested prompt submitted text: summarize reviews */
+"duckai.suggestion.review-summary.prompt" = "Apkopo atsauksmēs teikto.";
+
+/* Suggested prompt chip: review verdict */
+"duckai.suggestion.review-verdict.label" = "Kāds ir vērtējums?";
+
+/* Suggested prompt submitted text: review verdict */
+"duckai.suggestion.review-verdict.prompt" = "Kāds ir kopējais viedoklis un vērtējums par šo?";
+
+/* Suggested prompt chip: scale a recipe */
+"duckai.suggestion.scale-recipe.label" = "Pielāgo porciju skaitu";
+
+/* Suggested prompt submitted text: scale a recipe */
+"duckai.suggestion.scale-recipe.prompt" = "Pārraksti šo recepti, pielāgojot to citam porciju skaitam.";
+
+/* Suggested prompt chip: shopping list from a recipe */
+"duckai.suggestion.shopping-list.label" = "Ģenerē iepirkumu sarakstu";
+
+/* Suggested prompt submitted text: shopping list from a recipe */
+"duckai.suggestion.shopping-list.prompt" = "Izveido iepirkumu sarakstu ar šai receptei atbilstošiem daudzumiem.";
+
+/* Suggested prompt chip: similar books */
+"duckai.suggestion.similar-books.label" = "Iesaki līdzīgas grāmatas";
+
+/* Suggested prompt submitted text: similar books */
+"duckai.suggestion.similar-books.prompt" = "Iesaki līdzīgas grāmatas.";
+
+/* Suggested prompt chip: similar movies or shows */
+"duckai.suggestion.similar-titles.label" = "Iesaki līdzīgus darbus";
+
+/* Suggested prompt submitted text: similar movies or shows */
+"duckai.suggestion.similar-titles.prompt" = "Iesaki līdzīgas filmas vai seriālus.";
+
+/* Suggested prompt chip: summarize a book */
+"duckai.suggestion.summarize-book.label" = "Apkopo šo grāmatu";
+
+/* Suggested prompt submitted text: summarize a book */
+"duckai.suggestion.summarize-book.prompt" = "Apkopo šo grāmatu.";
+
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Apkopo šo dokumentu";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Apkopo šo dokumentu.";
+
+/* Suggested prompt chip: summarize the current page */
+"duckai.suggestion.summarize-page.label" = "Apkopot šo lapu";
+
+/* Suggested prompt submitted text: summarize the current page */
+"duckai.suggestion.summarize-page.prompt" = "Apkopo šo lapu.";
+
+/* Suggested prompt chip shown when the user has attached a text selection: summarize that selection */
+"duckai.suggestion.summarize-selection.label" = "Apkopo šo fragmentu";
+
+/* Suggested prompt submitted text: summarize the attached text selection */
+"duckai.suggestion.summarize-selection.prompt" = "Apkopo šo fragmentu.";
+
+/* Suggested prompt chip: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.label" = "Apkopot šo diskusiju";
+
+/* Suggested prompt submitted text: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.prompt" = "Apkopo šo diskusiju pavedienu.";
+
+/* Suggested prompt chip: summarize a video */
+"duckai.suggestion.summarize-video.label" = "Apkopo šo video";
+
+/* Suggested prompt submitted text: summarize a video */
+"duckai.suggestion.summarize-video.prompt" = "Apkopo šo video.";
+
+/* Suggested prompt chip: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.label" = "Pielāgo manu CV";
+
+/* Suggested prompt submitted text: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.prompt" = "Palīdzi man pielāgot savu CV šai vakancei.";
+
+/* Suggested prompt chip: translate the current page */
+"duckai.suggestion.translate-page.label" = "Tulkot šo lapu";
+
+/* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-page.prompt" = "Tulko šo lapu – %@.";
+
+/* Suggested prompt chip shown when the user has attached a text selection: translate that selection */
+"duckai.suggestion.translate-selection.label" = "Tulko šo fragmentu";
+
+/* Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-selection.prompt" = "Pārtulko šo teksta fragmentu %@ valodā.";
+
+/* Suggested prompt chip: video key points */
+"duckai.suggestion.video-key-points.label" = "Kādi ir galvenie punkti?";
+
+/* Suggested prompt submitted text: video key points */
+"duckai.suggestion.video-key-points.prompt" = "Kādi ir galvenie punkti, kas apskatīti šajā video?";
+
+/* Suggested prompt chip: person background */
+"duckai.suggestion.who-is-this.label" = "Kas ir šis cilvēks?";
+
+/* Suggested prompt submitted text: person background */
+"duckai.suggestion.who-is-this.prompt" = "Sniedz man īsu informāciju par šo cilvēku.";
+
+/* Suggested prompt chip: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.label" = "Vai to ir vērts skatīties?";
+
+/* Suggested prompt submitted text: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.prompt" = "Vai to ir vērts skatīties? Sniedz man pārskatu, neatklājot sižeta pavērsienus.";
+
+/* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
+"duckai.text-selection.context-title" = "Teksta fragments";
+
+/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
+"duckai.text-selection.limit-reached" = "Vari pievienot līdz %d teksta fragmentiem. Noņem vienu, lai pievienotu citu.";
 
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Visas tērzēšanas sarunas ir %@ privātas";
@@ -2185,14 +2626,17 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Pēdējo reizi izmantotā Fire cilne";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Aizvērt cilni";
+/* Menu item that closes the last used open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeLastUsedTab" = "Aizvērt pēdējo lietoto cilni";
 
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Dzēst cilni";
 
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Atgriezties pie cilnes";
+/* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
+"escapeHatch.menu.hideReturnToShortcut" = "Paslēpt “Atgriezties” saīsni";
+
+/* Menu item that returns the user to the last used open tab from the escape hatch card */
+"escapeHatch.menu.returnToLastUsedTab" = "Atgriezties pēdējā izmantotajā cilnē";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Citas iespējas";
@@ -2205,6 +2649,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Atgriezties pie %1$@, %2$@";
+
+/* Swipe action that closes the open tab referenced by the escape hatch card */
+"escapeHatch.swipeAction.closeTab" = "Aizvērt cilni";
 
 /* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
 "escapeHatch.tabSwitcher.privateTabs.label" = "Privātās cilnes";
@@ -2605,6 +3052,12 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importēt savas paroles DuckDuckGo";
 
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Izmanto DuckDuckGo, lai izvairītos no reklāmām, kas tevi izseko tīmeklī, un samazinātu savus tiešsaistes pēdu nospiedumus.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Pārvaldi savu tiešsaistes pieredzi";
+
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Jautā jebko privāti";
 
@@ -2920,6 +3373,9 @@
 /* Message label text for the status view when VPN is disconnected */
 "network.protection.status.header.message.on" = "Visu ierīču Interneta trafiks tiek aizsargāts,\n izmantojot VPN.";
 
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Daļa datplūsmas var apiet VPN, kamēr stingrā maršrutēšana ir izslēgta. Publiskajos tīklos ieteicams izmantot stingro maršrutēšanu.";
+
 /* Header title label text for the status view when VPN is disconnected */
 "network.protection.status.header.title.off" = "DuckDuckGo VPN ir izslēgts";
 
@@ -2962,8 +3418,29 @@
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "Pārvaldīt";
 
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Stingrā maršrutēšana: izslēgta";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Stingra maršrutēšana: ieslēgta";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Publiskajos tīklos ieteicams izmantot stingro maršrutēšanu.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Dažas lietotnes var nedarboties, kamēr ir ieslēgta stingrā maršrutēšana.";
+
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Problēmu novēršana";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Daļa datplūsmas var apiet VPN, kamēr tā ir izslēgta. Publiskajos tīklos ieteicams izmantot stingro maršrutēšanu.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Stingrā maršrutēšana ir IZSLĒGTA";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "DuckDuckGo VPN ir ieslēgts. Tava atrašanās vieta un darbības tiešsaistē ir aizsargātas.";
@@ -2996,7 +3473,7 @@
 "network.protection.vpn.data-volume" = "Datu apjoms";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Ieteicams izslēgt, lai visa tava datplūsma notiktu caur VPN. Ja rodas problēmas ar tādām funkcijām kā Wi-Fi zvani, ziņojumapmaiņa vai balss pasts, mēģini to ieslēgt.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Ļauj mobilo sakaru operatora pakalpojumiem, piemēram, Wi-Fi zvaniem un balss pastam, apiet VPN.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Neietvert operatora pakalpojumus";
@@ -3074,10 +3551,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Saīsnes";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Ieteicama tīklos, kuriem neuzticies, piemēram, publiskam Wi-Fi viesnīcās, bāros u.tml. Ja rodas problēmas ar funkcijām (piemēram, CarPlay, AirDrop u.c.) vai savienošanos ar citām ierīcēm, pamēģini to izslēgt. [Uzzināt vairāk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Bloķē lietotnes, kas apiet VPN. Ja rodas problēmas ar Wi-Fi funkcijām (piemēram, AirDrop vai iPhone Mirroring), var palīdzēt tās izslēgšana. Stingri ieteicams tīklos, kuriem neuzticies, piemēram, publiskajā Wi-Fi. [Uzzināt vairāk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Stingra maršrutēšana";
+"network.protection.vpn.strict.routing.setting.title" = "Ieslēgt stingro maršrutēšanu (ieteicams)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Apstiprināt";
@@ -3158,7 +3635,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "YouTube reklāmu bloķēšana ieslēgta";
+"omnibar.notification.youtube-ad-block-on" = "Reklāmu bloķēšana ieslēgta";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Sapratu";
@@ -3640,6 +4117,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Šī lapa ielādējas tikai pārlūkprogrammā Safari";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Šī lapa vairākas reizes pārtrauca ielādi. Mēģini pārlādēt vai nosūti mums atsauksmi.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Pārlādēt";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Sūtīt atsauksmi";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Mēs nevarējām ielādēt šo lapu";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Šai vietnei ir nederīgs drošības sertifikāts, un tās apmeklēšana var nebūt droša.";
 
@@ -3690,6 +4179,9 @@
 
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Dzēst visus";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Dzēst sarunas";
 
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "Dzēst cilni";
@@ -3814,17 +4306,14 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Neaktivitātes taimeris";
 
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Pēdējā lietotā cilne";
+/* Option: open last used tab when returning after inactivity */
+"settings.afterInactivity.option.openLastUsedTab" = "Atvērt pēdējo lietoto cilni";
 
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Jauna cilne";
+/* Option: open New Tab when returning after inactivity */
+"settings.afterInactivity.option.openNewTab" = "Atvērt jaunu cilni";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Pēc neaktivitātes perioda";
-
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Izmēģini jauno iespēju pārslēgties starp meklēšanu un Duck.ai adrešu joslā.";
 
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Duck.ai iestatījumi";
@@ -3840,9 +4329,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Meklē tīmeklī vai jautā Duck.ai tieši adrešu joslā";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Meklēšanas Assist iestatījumi";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Nekad";
@@ -3869,7 +4355,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Tērzēšanas ieteikumi";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "Izmantot DuckDuckGo bez MI";
+"settings.aifeatures.disable.all" = "Lietot DuckDuckGo bez MI";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Atspējo Duck.ai, paslēpj mākslīgā intelekta atbildes meklēšanā un filtrē zināmas MI spama vietnes attēlu meklēšanas rezultātos.";
@@ -4009,14 +4495,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Pabeidz iestatīšanu";
 
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Mēs centīsimies tavā vietā atlasīt tikai visprivātākās pieejamās sīkfailu opcijas un pēc tam aizvērt šos uznirstošos logus.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Automātiski pārvaldīt sīkfailu uznirstošos logus";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Sīkfailu uznirstošo logu aizsardzība";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo mēģinās izvēlēties visprivātākos pieejamos iestatījumus un paslēpt šos uznirstošos logus tavā vietā.\n[Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo var automātiski pārvaldīt sīkfailu preferences, lai maksimāli palielinātu privātumu, samazinātu sīkfailus un aizvērtu šos uznirstošos logus.\n[Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Pārvaldīt sīkfailu uznirstošos logus";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Ļauj DuckDuckGo arī ietaupīt tev vienu klikšķi, tavā vietā pieņemot sīkfailus, lai aizvērtu uznirstošos logus, no kuriem nevar atteikties.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Uznirstošie logi bez atteikšanās iespējas";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Dzēst cilnes un datus";
@@ -4120,11 +4618,11 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatūra";
 
+/* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
+"settings.lastTabShortcut.subtitle" = "Rāda saiti, lai atgrieztos pēdējā izmantotajā cilnē, kad atver lietotni pēc neaktivitātes perioda.";
+
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Uzzināt vairāk";
-
-/* Switch button label. */
-"settings.let.duckduckgo.manage.cookie.consent.popups" = "Ļaut DuckDuckGo pārvaldīt sīkfailu piekrišanas uznirstošos logus";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Paroles un automātiskā aizpildīšana";
@@ -4149,6 +4647,9 @@
 
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Nākamie soļi";
+
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Paslēpt";
 
 /* Label describing a feature which is turned off */
 "settings.off" = "Izslēgts";
@@ -4179,6 +4680,9 @@
 
 /* Settings screen cell text for setting the refresh button position. */
 "settings.refreshButton.position.title" = "Pogas 'Atkārtoti ielādēt' vieta";
+
+/* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
+"settings.returnToShortcut.label" = "Saīsne “Atgriezties”";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Meklēšanas iestatījumi";
@@ -4344,6 +4848,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Neaizsargātas vietnes";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Šīm vietnēm netiks izmantota privātuma aizsardzība.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Privātuma aizsardzība ir iespējota visām vietnēm";
 
 /* Settings cell for Version */
 "settings.version" = "Versija";
@@ -4690,17 +5200,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI brīdinājums";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Atgūšanas kods ir nokopēts starpliktuvē";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Dzēst servera datus";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Tavs dublējums tiks dzēsts no servera. Visas ierīces tiks atvienotas no sinhronizācijas, bet nekas netiks dzēsts ne no vienas ierīces.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Dzēst servera datus?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Sinhronizēt tagad";
@@ -4780,11 +5281,17 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Noņemt ierīci?";
 
-/* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Ierīce veiksmīgi sinhronizēta!";
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Servera dati izdzēsti";
 
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup iespējots";
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Visas ierīces, kas izmanto Sync & Backup, tiks atvienotas, un tavi sinhronizētie dati tiks dzēsti no servera.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Vai izslēgt Sync & Backup un dzēst servera datus?";
+
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Pievienota jauna ierīce!";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Atgūšanas kods nokopēts";
@@ -5264,10 +5771,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Iegūsti DuckDuckGo operētājsistēmai Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Nosūti anonīmu ziņojumu par traucējumiem pakalpojumam DuckDuckGo. Palīdzi uzlabot reklāmu bloķēšanu visiem!";
+"youtube.ad.blocking.breakage-report.message" = "Nosūti DuckDuckGo anonīmu ziņojumu un palīdzi uzlabot reklāmu bloķēšanu visiem!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Nosūtīt ziņojumu par traucējumiem";
+"youtube.ad.blocking.breakage-report.send" = "Sūtīt anonīmu ziņojumu";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "YouTube reklāmu bloķēšana nedarbojas?";
@@ -5332,52 +5839,14 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ nevar izveidot attēlus. Pilnīga neredzamība pakalpojumu sniedzējam netiks piemērota, kamēr nepārslēgsies atpakaļ.";
 
-/* No comment provided by engineer. */
-"No matches for \"%@\"" = "Nav atbilstību vaicājumam \"%@\"";
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ neatbalsta attēlu izveidi.";
 
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Tagad izmanto %@";
 
-/* Open the native Duck.ai chat history sheet from the browser menu. */
-"action.title.chats" = "Tērzēšana";
-
-/* Title shown when the user has no Duck.ai chat history yet. */
-"aiChat.history.emptyState.title" = "Nav nesenu sarunu";
-
-/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
-"aiChat.history.emptyState.openDuckAi" = "Atvērt Duck.ai";
-
-/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
-"aiChat.history.searchBar.placeholder" = "Meklēt";
-
-/* Section header above the user's pinned chats in the Duck.ai chat history list. */
-"aiChat.history.section.pinned" = "Piespraustās";
-
-/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
-"aiChat.history.section.recent" = "Nesenās";
-
-/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
-"aiChat.history.noSearchResults.title" = "Nav atrasta neviena atbilstība";
-
-/* Title of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.title" = "Neizdevās ielādēt sarunas";
-
-/* Message of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.message" = "Ielādējot tavas Duck.ai sarunas, radās kļūda. Lūdzu, vēlāk mēģini vēlreiz.";
-
-/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.delete.a11y" = "Dzēst sarunu";
-
-/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.download.a11y" = "Lejupielādēt sarunu";
-
-/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
-"aiChat.history.swipe.pin.a11y" = "Piespraust sarunu";
-
-/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
-"aiChat.history.swipe.unpin.a11y" = "Noņemt piespraudi";
-
-/* Button to delete all chats in scoped fire confirmation dialog */
-"scoped.fire.confirmation.delete.chats.button" = "Dzēst sarunas";
-
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+/* Address bar Duck.ai menu option that opens the full chat history */
+"duckai.address.bar.menu.all.chats" = "Visas tērzēšanas sarunas";

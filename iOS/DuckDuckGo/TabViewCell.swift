@@ -22,6 +22,7 @@ import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
+import PixelKit
 
 protocol TabViewCellDelegate: AnyObject {
 
@@ -192,19 +193,27 @@ class TabViewCell: UICollectionViewCell {
         let imageAspectRatio = image.size.width > 0 ? image.size.height / image.size.width : 1.0
         let containerAspectRatio = background.bounds.width > 0 ? (background.bounds.height - TabViewCell.Constants.cellHeaderHeight) / background.bounds.width : 1.0
 
-        let strechContainerVerically = containerAspectRatio < imageAspectRatio
-
         if let constraint = previewAspectRatio {
             preview?.removeConstraint(constraint)
+            previewAspectRatio = nil
         }
 
-        previewBottomConstraint?.isActive = !strechContainerVerically
-        previewBottomConstraint?.constant = 0
-        previewTrailingConstraint?.isActive = strechContainerVerically
-
-        if let preview {
-            previewAspectRatio = preview.heightAnchor.constraint(equalTo: preview.widthAnchor, multiplier: imageAspectRatio)
-            previewAspectRatio?.isActive = true
+        if imageAspectRatio <= containerAspectRatio {
+            // Wide (landscape) capture is flatter than the cell: pin all edges and let
+            // scaleAspectFill centre-crop the horizontal overflow, so the cell is filled with
+            // no empty space and the page stays centred.
+            previewBottomConstraint?.isActive = true
+            previewBottomConstraint?.constant = 0
+            previewTrailingConstraint?.isActive = true
+        } else {
+            // Tall (portrait) capture: pin full width from the top and crop the excess height.
+            previewBottomConstraint?.isActive = false
+            previewBottomConstraint?.constant = 0
+            previewTrailingConstraint?.isActive = true
+            if let preview {
+                previewAspectRatio = preview.heightAnchor.constraint(equalTo: preview.widthAnchor, multiplier: imageAspectRatio)
+                previewAspectRatio?.isActive = true
+            }
         }
     }
 
@@ -245,7 +254,7 @@ class TabViewCell: UICollectionViewCell {
                                                             height: Constants.cellLogoSize),
                                                format: renderFormat)
         return renderer.image { _ in
-            UIImage(resource: .logo).draw(in: CGRect(x: 0,
+            UIImage(rebrandable: "duckduckgo-favicon-128x128")?.draw(in: CGRect(x: 0,
                                                      y: 0,
                                                      width: Constants.cellLogoSize,
                                                      height: Constants.cellLogoSize))
@@ -405,9 +414,9 @@ class TabViewCell: UICollectionViewCell {
 
     private func startRemoveAnimation() {
         self.isDeleting = true
-        Pixel.fire(pixel: .tabSwitcherSwipeCloseTab, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.tabSwitcherSwipeCloseTab, options: .parameters([
             PixelParameters.browsingMode: isFireTab ? BrowsingMode.fire.pixelParamValue : BrowsingMode.normal.pixelParamValue
-        ])
+        ]))
         self.deleteTab()
         UIView.animate(withDuration: Constants.swipeAnimationDuration, animations: {
             self.transform = CGAffineTransform.identity.translatedBy(x: -self.frame.width, y: 0)
@@ -434,25 +443,29 @@ class TabViewCell: UICollectionViewCell {
     }
 
     @objc func deleteTab() {
-        Pixel.fire(pixel: .tabSwitcherClickCloseTab, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.tabSwitcherClickCloseTab, options: .parameters([
             PixelParameters.browsingMode: isFireTab ? BrowsingMode.fire.pixelParamValue : BrowsingMode.normal.pixelParamValue
-        ])
+        ]))
         closeTab()
     }
 
     private func fireTabCloseSegmentationPixel() {
         guard let tab else { return }
         if tab.isAITab {
-            DailyPixel.fireDailyAndCount(pixel: .tabManagerCloseAITab)
+            PixelKit.fire(Pixel.Event.tabManagerCloseAITab, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .tabManagerCloseWebTab)
+            PixelKit.fire(Pixel.Event.tabManagerCloseWebTab, frequency: .dailyAndCount)
         }
     }
 
     func updateSelectionIndicator(_ image: UIImageView) {
         if !isSelected {
+            image.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: Constants.selectionIndicatorSize)
             image.image = DesignSystemImages.Glyphs.Size24.shapeCircle
+            image.tintColor = UIColor(designSystemColor: .iconsTertiary)
         } else {
+            // Hack to fix image size.
+            image.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: Constants.selectionIndicatorSize - 4)
             image.image = DesignSystemImages.Recolorable.Size24.check.applyPalleteColorsToSymbol(
                 foreground: UIColor(designSystemColor: .accentContentPrimary),
                 background: accentColor,
@@ -551,7 +564,7 @@ class TabViewCell: UICollectionViewCell {
             updateEmptyTabLabel(for: tab)
             link?.isHidden = false
             link?.text = UserText.homeTabSearchAndFavorites
-            favicon.image = UIImage(resource: .logo)
+            favicon.image = UIImage(rebrandable: "duckduckgo-favicon-128x128")
             unread.isHidden = true
             self.preview?.isHidden = !tab.viewed
             title.isHidden = !tab.viewed

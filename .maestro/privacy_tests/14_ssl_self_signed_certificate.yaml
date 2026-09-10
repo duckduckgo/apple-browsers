@@ -1,0 +1,29 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - privacy
+
+---
+
+# Set up
+- runFlow:
+    file: ../shared/setup.yaml
+
+- assertVisible:
+    id: "searchEntry"
+
+# Navigate to a site with a self-signed certificate
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://self-signed.badssl.com"
+- pressKey: Enter
+
+# Verify the SSL warning page and the self-signed specific messaging
+- assertVisible: "Warning: This site may be insecure"
+- assertVisible:
+    id: "Globe-24"
+- tapOn: "Advanced"
+- scrollUntilVisible:
+    element:
+      text: ".*not trusted by your device.*"
+    direction: DOWN

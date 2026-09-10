@@ -26,11 +26,11 @@ on:
 
 jobs:
   make-adhoc:
-    runs-on: macos-26-xlarge
+    runs-on: bitrise:macos26-m4pro
     name: Make ad-hoc build
 
     env:
-      RUNS_ON: macos-26-xlarge # keep this in sync with runs-on above
+      RUNS_ON: bitrise:macos26-m4pro # keep this in sync with runs-on above
 
     steps:
 
@@ -46,6 +46,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Start measuring duration
         id: start-duration
         uses: ./.github/actions/measure-duration
@@ -55,7 +58,7 @@ jobs:
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
         with:
-          xcode-version: ${{ github.event.inputs.build-type == 'Experimental' && '26.4' || '' }}
+          xcode-version: ${{ github.event.inputs.build-type == 'Experimental' && '26.6' || '' }}
 
       - name: Add commit SHA to plist
         run: |

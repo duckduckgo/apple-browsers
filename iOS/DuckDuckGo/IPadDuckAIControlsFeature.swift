@@ -21,6 +21,7 @@ import Foundation
 import PrivacyConfig
 import Common
 import Core
+import FeatureFlags_iOS
 
 /// Provides access to the iPad Duck.ai bar controls (the address-bar model picker).
 protocol IPadDuckAIControlsFeatureProviding {

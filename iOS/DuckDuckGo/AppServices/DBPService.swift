@@ -26,6 +26,8 @@ import BrowserServicesKit
 import PixelKit
 import Networking
 import Subscription
+import os.log
+import FeatureFlags_iOS
 
 final class DBPService: NSObject {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
@@ -37,7 +39,8 @@ final class DBPService: NSObject {
 
     init(appDependencies: DependencyProvider,
          contentBlocking: ContentBlocking,
-         freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording) {
         let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             runTypeProvider: appDependencies.dbpSettings)
@@ -65,9 +68,20 @@ final class DBPService: NSObject {
                 authenticationManager: authManager,
                 pixelHandler: notificationPixelHandler
             )
+            let subscriptionManager = appDependencies.subscriptionManager
             let eventsHandler = BrokerProfileJobEventsHandler(
                 userNotificationService: notificationService,
-                freemiumUserStateManager: freemiumDBPUserStateManager
+                freemiumUserStateManager: freemiumDBPUserStateManager,
+                // Marks the onboarding checklist's PIR step and reports the PIR-activated experiment metric.
+                // Fires for freemium saves too, so subscription status is checked rather than assumed.
+                onProfileSaved: {
+                    let wasAlreadyActivated = onboardingActivationRecorder.recordPIRActivatedIfNeeded()
+                    Task {
+                        SubscriptionOnboardingExperiment.firePIRActivatedMetricIfNeeded(
+                            isSubscriptionActive: await subscriptionManager.isActiveSubscription(),
+                            isAlreadyActivated: wasAlreadyActivated)
+                    }
+                }
             )
 
             #if DEBUG
@@ -87,17 +101,25 @@ final class DBPService: NSObject {
                 wideEvent: appDependencies.wideEvent,
                 subscriptionManager: dbpSubscriptionManager,
                 quickLinkOpenURLHandler: { url in
-                    if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                       SubscriptionPurchaseFlowPath.contains(components.path) {
-                        let urlInterceptor = TabURLInterceptorDefault(featureFlagger: appDependencies.featureFlagger) {
-                            appDependencies.subscriptionManager.isSubscriptionPurchaseEligible
-                        }
-
-                        guard urlInterceptor.allowsNavigatingTo(url: url) else { return }
+                    func openQuickLink() {
+                        let quickLinkURLString = AppDeepLinkSchemes.quickLink.appending(url.absoluteString)
+                        guard let quickLinkURL = URL(string: quickLinkURLString) else { return }
+                        UIApplication.shared.open(quickLinkURL)
                     }
 
-                    guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(url.absoluteString)) else { return }
-                    UIApplication.shared.open(quickLinkURL)
+                    switch FreemiumDBPPurchaseURLRouter().route(
+                        for: url,
+                        isPurchaseEligible: appDependencies.subscriptionManager.isSubscriptionPurchaseEligible
+                    ) {
+                    case .subscriptionPurchaseFlow(let components):
+                        NotificationCenter.default.post(
+                            name: .dataBrokerProtectionOpenSubscriptionFlow,
+                            object: nil,
+                            userInfo: [DataBrokerProtectionSubscriptionFlowParameter.redirectURLComponents: components]
+                        )
+                    case .quickLink:
+                        openQuickLink()
+                    }
                 },
                 feedbackViewCreator: {
                     let viewModel = UnifiedFeedbackFormViewModel(
@@ -116,7 +138,8 @@ final class DBPService: NSObject {
                 profileStateManager: profileStateManager,
                 isWebViewInspectable: isWebViewInspectable,
                 freeTrialConversionService: appDependencies.freeTrialConversionService,
-                contentBlocking: dbpContentBlocking)
+                contentBlocking: dbpContentBlocking,
+                shouldDeferSecureVaultInitialization: appDependencies.featureFlagger.isFeatureOn(.dbpDeferredSecureVaultInit))
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil
@@ -133,16 +156,30 @@ final class DBPService: NSObject {
             await dbpIOSManager?.appDidBecomeActive()
         }
     }
+
+    func prepareSecureVaultResourcesAtLaunch() async {
+        do {
+            try await dbpIOSManager?.prepareSecureVaultResourcesAtLaunch()
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to initialize PIR Secure Vault resources: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+}
+
+extension NSNotification.Name {
+    static let dataBrokerProtectionOpenSubscriptionFlow = Notification.Name(
+        rawValue: "com.duckduckgo.notification.dataBrokerProtectionOpenSubscriptionFlow"
+    )
+}
+
+enum DataBrokerProtectionSubscriptionFlowParameter {
+    static let redirectURLComponents = "redirectURLComponents"
 }
 
 final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     
     private let appDependencies: DependencyProvider
     private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
-
-    var isRemoteBrokerDeliveryFeatureOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
-    }
 
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
@@ -158,6 +195,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
 
     var isOptOutRetryErrorFrequencyExperimentOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
+    }
+
+    var isExtractedProfileRefreshOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
     }
 
     var isFreemiumPIREnabled: Bool {

@@ -75,6 +75,16 @@ final class AIChatAttachmentValidatorTests: XCTestCase {
         XCTAssertEqual(error?.message, "fileCount:2")
     }
 
+    func testRemainingFilesInConversation_BoundedByUsageAndPending() {
+        let pending = [AIChatAttachmentValidator.FileDescriptor(mimeType: "application/pdf", fileSizeBytes: 10, pageCount: 1)]
+        let validator = makeValidator(
+            limits: makeLimits(maxFilesPerConversation: 3),
+            usage: .init(filesUsed: 1),
+            pendingFiles: pending
+        )
+        XCTAssertEqual(validator.remainingFilesInConversation, 1)
+    }
+
     // MARK: - Page validation
 
     func testWhenPDFUnderPageLimit_ThenValid() {
@@ -146,6 +156,30 @@ final class AIChatAttachmentValidatorTests: XCTestCase {
     func testImageSubmission_WithinLimits_ThenNil() {
         let validator = makeValidator(limits: makeLimits(maxImagesPerTurn: 3, maxImagesPerConversation: 5), pendingImageCount: 2)
         XCTAssertNil(validator.imageSubmissionValidationMessage())
+    }
+
+    func testImageCapacity_WithHeadroom_ThenNil() {
+        let validator = makeValidator(limits: makeLimits(maxImagesPerTurn: 3, maxImagesPerConversation: 10), pendingImageCount: 1)
+        XCTAssertNil(validator.imageCapacityValidationMessage())
+    }
+
+    func testImageCapacity_PerTurnExhaustedButConversationHasRoom_ThenTurnLimit() {
+        let validator = makeValidator(limits: makeLimits(maxImagesPerTurn: 3, maxImagesPerConversation: 10), pendingImageCount: 3)
+        XCTAssertEqual(validator.imageCapacityValidationMessage(), "imageTurn:3")
+    }
+
+    func testImageCapacity_ConversationExhausted_ThenCountLimit() {
+        let validator = makeValidator(
+            limits: makeLimits(maxImagesPerTurn: 5, maxImagesPerConversation: 5),
+            usage: .init(imagesUsed: 4),
+            pendingImageCount: 1
+        )
+        XCTAssertEqual(validator.imageCapacityValidationMessage(), "imageCount:5")
+    }
+
+    func testImageCapacity_ModelWithoutImageSupport_ThenUnavailable() {
+        let validator = makeValidator(model: makeModel(supportsImageUpload: false))
+        XCTAssertEqual(validator.imageCapacityValidationMessage(), "unavailable")
     }
 
     // MARK: - Prompt length

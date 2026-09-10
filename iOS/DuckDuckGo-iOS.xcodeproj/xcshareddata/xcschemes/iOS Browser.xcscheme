@@ -196,6 +196,16 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SitePermissionsTests"
+               BuildableName = "SitePermissionsTests"
+               BlueprintName = "SitePermissionsTests"
+               ReferencedContainer = "container:LocalPackages/SitePermissions">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "FoundationExtensionsTests"
                BuildableName = "FoundationExtensionsTests"
                BlueprintName = "FoundationExtensionsTests"
@@ -233,6 +243,16 @@
             </BuildableReference>
          </TestableReference>
          <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "EventHubTests"
+               BuildableName = "EventHubTests"
+               BlueprintName = "EventHubTests"
+               ReferencedContainer = "container:../SharedPackages/EventHub">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
             skipped = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
@@ -242,7 +262,74 @@
                ReferencedContainer = "container:DuckDuckGo-iOS.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SyncUI-iOSTests"
+               BuildableName = "SyncUI-iOSTests"
+               BlueprintName = "SyncUI-iOSTests"
+               ReferencedContainer = "container:LocalPackages/SyncUI-iOS">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AppRoutingTests"
+               BuildableName = "AppRoutingTests"
+               BlueprintName = "AppRoutingTests"
+               ReferencedContainer = "container:LocalPackages/AppRouting">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "InstallStatisticsTests"
+               BuildableName = "InstallStatisticsTests"
+               BlueprintName = "InstallStatisticsTests"
+               ReferencedContainer = "container:LocalPackages/InstallStatistics">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SnapshotTestingSupportTests"
+               BuildableName = "SnapshotTestingSupportTests"
+               BlueprintName = "SnapshotTestingSupportTests"
+               ReferencedContainer = "container:../SharedPackages/SnapshotTestingSupport">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FeatureFlagsTests"
+               BuildableName = "FeatureFlagsTests"
+               BlueprintName = "FeatureFlagsTests"
+               ReferencedContainer = "container:LocalPackages/FeatureFlags-iOS">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DataBrokerProtection-iOSTests"
+               BuildableName = "DataBrokerProtection-iOSTests"
+               BlueprintName = "DataBrokerProtection-iOSTests"
+               ReferencedContainer = "container:LocalPackages/DataBrokerProtection-iOS">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "SKIP_SNAPSHOT_TESTS"
+            value = "1"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -279,10 +366,6 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-isOnboardingCompleted false"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-ff.onboardingRebranding true"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>

@@ -23,8 +23,10 @@ import DataBrokerProtection_iOS
 import SwiftUI
 import UIComponents
 import UIKit
+import VPN
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import PixelKit
 
 struct SettingsSubscriptionView: View {
 
@@ -71,11 +73,18 @@ struct SettingsSubscriptionView: View {
         if let vcProvider = settingsViewModel.dataBrokerProtectionViewControllerProvider {
             DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
                 .edgesIgnoringSafeArea(.bottom)
+                // Prevent an accidental downward swipe on the web view from dismissing the
+                // whole Settings modal and losing the user's place in the free-scan flow.
+                .interactiveDismissDisabled(true)
         }
     }
 
     var currentStorefrontRegion: SubscriptionRegion {
         return AppDependencyProvider.shared.subscriptionManager.currentStorefrontRegion
+    }
+
+    private var shouldShowFreemiumPIRSettingsEntryPoint: Bool {
+        settingsViewModel.canShowFreemiumPIRSettingsEntryPoint
     }
     
     private var winBackURLComponents: URLComponents? {
@@ -103,7 +112,7 @@ struct SettingsSubscriptionView: View {
                     .foregroundColor(Color.init(designSystemColor: .accentPrimary))
                     .padding(.leading, 32.0)
             }, action: {
-                Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedOutOfferCTAClicked)
+                PixelKit.fire(Pixel.Event.subscriptionWinBackOfferSettingsLoggedOutOfferCTAClicked)
                 subscriptionNavigationCoordinator.redirectURLComponents = winBackURLComponents
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
             }, isButton: true, shouldShowWinBackOffer: true)
@@ -112,7 +121,7 @@ struct SettingsSubscriptionView: View {
             let restoreView = subscriptionRestoreViewV2
                 .navigationViewStyle(.stack)
                 .onFirstAppear {
-                    Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
+                    PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseClick)
                 }
             NavigationLink(destination: restoreView,
                            isActive: $isShowingRestoreFlow) {
@@ -120,7 +129,7 @@ struct SettingsSubscriptionView: View {
             }
         }
         .onFirstAppear {
-            Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedOutOfferShown)
+            PixelKit.fire(Pixel.Event.subscriptionWinBackOfferSettingsLoggedOutOfferShown)
         }
     }
 
@@ -150,7 +159,7 @@ struct SettingsSubscriptionView: View {
                     .foregroundColor(Color.init(designSystemColor: .accentPrimary))
                     .padding(.leading, 32.0)
             }, action: {
-                Pixel.fire(pixel: .subscriptionEntrySettingsSubscriptionClick)
+                PixelKit.fire(Pixel.Event.subscriptionEntrySettingsSubscriptionClick)
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
             }, isButton: true)
 
@@ -158,7 +167,7 @@ struct SettingsSubscriptionView: View {
             let restoreView = subscriptionRestoreViewV2
                 .navigationViewStyle(.stack)
                 .onFirstAppear {
-                    Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
+                    PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseClick)
                 }
             NavigationLink(destination: restoreView,
                            isActive: $isShowingRestoreFlow) {
@@ -166,39 +175,37 @@ struct SettingsSubscriptionView: View {
             }
         }
         .onFirstAppear {
-            Pixel.fire(pixel: .subscriptionEntrySettingsImpression)
+            PixelKit.fire(Pixel.Event.subscriptionEntrySettingsImpression)
         }
     }
 
     @ViewBuilder
-    private var freemiumPIRSettingsEntryPointSection: some View {
-        if settingsViewModel.canShowFreemiumPIRSettingsEntryPoint {
-            Section(header: Text(UserText.settingsPProOtherProtectionsSection)) {
-                SettingsCellView(
-                    label: UserText.settingsPProDBPTitle,
-                    subtitle: UserText.settingsPProFreemiumDBPSubtitle,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR)
-                )
-                .disabled(true)
+    private var freemiumPIRSettingsEntryPointRows: some View {
+        SettingsCellView(
+            label: UserText.settingsPProDBPTitle,
+            subtitle: UserText.settingsPProFreemiumDBPSubtitle,
+            image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR)
+        )
+        .disabled(true)
 
-                SettingsCustomCell(content: {
-                    Text(UserText.settingsPProFreemiumDBPFreeScanCTA)
-                        .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .accentPrimary))
-                        .padding(.leading, 32.0)
-                }, action: {
-                    Pixel.fire(pixel: .freemiumPIRSettingsEntryPointClicked)
-                    isShowingDBP = true
-                }, isButton: true)
-                .background(
-                    NavigationLink(destination: LazyView(dataBrokerProtectionDestination),
-                                   isActive: $isShowingDBP) {
-                        EmptyView()
-                    }
-                    .hidden()
-                )
+        SettingsCustomCell(content: {
+            Text(settingsViewModel.hasCompletedFreemiumScan
+                 ? UserText.settingsPProFreemiumDBPShowResultsCTA
+                 : UserText.settingsPProFreemiumDBPFreeScanCTA)
+                .daxBodyRegular()
+                .foregroundColor(Color(designSystemColor: .accentPrimary))
+                .padding(.leading, 32.0)
+        }, action: {
+            PixelKit.fire(Pixel.Event.freemiumPIRSettingsEntryPointClicked)
+            isShowingDBP = true
+        }, isButton: true)
+        .background(
+            NavigationLink(destination: LazyView(dataBrokerProtectionDestination),
+                           isActive: $isShowingDBP) {
+                EmptyView()
             }
-        }
+            .hidden()
+        )
     }
 
     @ViewBuilder
@@ -252,7 +259,7 @@ struct SettingsSubscriptionView: View {
 
         // Renew Subscription (Expired)
         let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.expired,
-                                                      viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                      viewModel: SubscriptionSettingsViewModel(onboardingKeyValueStore: settingsViewModel.keyValueStore, userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                       settingsViewModel: settingsViewModel,
                                                       viewPlans: {
             subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
@@ -274,14 +281,14 @@ struct SettingsSubscriptionView: View {
         disabledFeaturesView
             // Subscribe with Win-back offer
             let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.expired,
-                                                          viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                          viewModel: SubscriptionSettingsViewModel(onboardingKeyValueStore: settingsViewModel.keyValueStore, userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                           settingsViewModel: settingsViewModel,
                                                           takeWinBackOffer: {
-                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
+                PixelKit.fire(Pixel.Event.subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
                 subscriptionNavigationCoordinator.redirectURLComponents = winBackURLComponents
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
             }).onFirstAppear {
-                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsShown)
+                PixelKit.fire(Pixel.Event.subscriptionWinBackOfferSubscriptionSettingsShown)
             }
                 .environmentObject(subscriptionNavigationCoordinator)
             NavigationLink(destination: settingsView) {
@@ -294,7 +301,7 @@ struct SettingsSubscriptionView: View {
             }
         }
         .onFirstAppear {
-            Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedInOfferShown)
+            PixelKit.fire(Pixel.Event.subscriptionWinBackOfferSettingsLoggedInOfferShown)
         }
     }
 
@@ -304,7 +311,7 @@ struct SettingsSubscriptionView: View {
 
         // Renew Subscription (Expired)
         let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.activating,
-                                                      viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                      viewModel: SubscriptionSettingsViewModel(onboardingKeyValueStore: settingsViewModel.keyValueStore, userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                       settingsViewModel: settingsViewModel,
                                                       viewPlans: {
             subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
@@ -328,7 +335,9 @@ struct SettingsSubscriptionView: View {
             let hasVPNEntitlement = userEntitlements.contains(.networkProtection)
             let isVPNConnected = settingsViewModel.state.networkProtectionConnected
 
-            NavigationLink(destination: LazyView(NetworkProtectionRootView()), isActive: $isShowingVPN) {
+            NavigationLink(
+                destination: LazyView(NetworkProtectionRootView(source: .subscriptionSettings)),
+                isActive: $isShowingVPN) {
                 SettingsCellView(
                     label: UserText.settingsPProVPNTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.vpn),
@@ -404,7 +413,7 @@ struct SettingsSubscriptionView: View {
         let isActiveTrialOffer = settingsViewModel.state.subscription.isActiveTrialOffer
         let configuration: SubscriptionSettingsViewConfiguration = isActiveTrialOffer ? .trial : .subscribed
         NavigationLink(destination: LazyView(SubscriptionSettingsViewV2(configuration: configuration,
-                                                                        viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                                        viewModel: SubscriptionSettingsViewModel(onboardingKeyValueStore: settingsViewModel.keyValueStore, userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                                         settingsViewModel: settingsViewModel))
             .environmentObject(subscriptionNavigationCoordinator)
         ) {
@@ -414,10 +423,7 @@ struct SettingsSubscriptionView: View {
         
     var body: some View {
         Group {
-            freemiumPIRSettingsEntryPointSection
-
             if isShowingSubscription {
-
                 let isSignedIn = settingsViewModel.state.subscription.isSignedIn
                 let hasSubscription = settingsViewModel.state.subscription.hasSubscription
                 let hasActiveSubscription = settingsViewModel.state.subscription.hasActiveSubscription
@@ -437,7 +443,7 @@ struct SettingsSubscriptionView: View {
                     // Signed out, Eligible for Win-back offer
                     case (false, _, _, _) where isWinBackEligible:
                         resubscribeWithWinbackOfferView
-                        
+
                     // Signed out
                     case (false, _, _, _):
                         purchaseSubscriptionView
@@ -449,7 +455,7 @@ struct SettingsSubscriptionView: View {
                     // Subscription Expired, Eligible for Win-back offer
                     case (true, true, false, _) where isWinBackEligible:
                         subscribeWithWinBackOfferView
-                        
+
                     // Signed In, Subscription Present & Not Active
                     case (true, true, false, _):
                         subscriptionExpiredView
@@ -463,13 +469,22 @@ struct SettingsSubscriptionView: View {
                         subscriptionDetailsView
                     }
                 }
-                .onReceive(subscriptionNavigationCoordinator.$shouldPopToAppSettings) { shouldDismiss in
-                    if shouldDismiss {
-                        isShowingRestoreFlow = false
-                        isShowingDBP = false
-                        subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = false
-                    }
+            }
+
+            if shouldShowFreemiumPIRSettingsEntryPoint {
+                Section {
+                    freemiumPIRSettingsEntryPointRows
                 }
+                .onFirstAppear {
+                    PixelKit.fire(Pixel.Event.freemiumPIRSettingsEntryPointImpression)
+                }
+            }
+        }
+        .onReceive(subscriptionNavigationCoordinator.$shouldPopToAppSettings) { shouldDismiss in
+            if shouldDismiss {
+                isShowingRestoreFlow = false
+                isShowingDBP = false
+                subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = false
             }
         }
         .onReceive(settingsViewModel.$state) { state in

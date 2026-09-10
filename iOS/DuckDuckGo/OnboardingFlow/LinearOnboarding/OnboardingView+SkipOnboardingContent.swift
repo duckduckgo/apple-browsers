@@ -2,7 +2,7 @@
 //  OnboardingView+SkipOnboardingContent.swift
 //  DuckDuckGo
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,75 +17,81 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import Onboarding
 import DuckUI
+import Onboarding
+import SwiftUI
 
 extension OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-44303
     struct SkipOnboardingContent: View {
-        private static let fireButtonCopy = "Fire Button"
+        @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-        typealias Copy = UserText.Onboarding.Skip
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
+        /// Drives typing/content reveal off the parent's bubble lifecycle so the animation
+        /// doesn't re-fire on background return (which re-fires `onAppear` but not `isVisible`).
+        @Binding var isVisible: Bool
 
-        private var animateTitle: Binding<Bool>
-        private var animateMessage: Binding<Bool>
-        private var showCTA: Binding<Bool>
-        private var isSkipped: Binding<Bool>
+        private let content: OnboardingIntroStepContent.SkipFlowStepContent
         private let startBrowsingAction: () -> Void
         private let resumeOnboardingAction: () -> Void
 
         init(
-            animateTitle: Binding<Bool>,
-            animateMessage: Binding<Bool>,
-            showCTA: Binding<Bool>,
-            isSkipped: Binding<Bool>,
+            content: OnboardingIntroStepContent.SkipFlowStepContent,
+            isVisible: Binding<Bool>,
             startBrowsingAction: @escaping () -> Void,
             resumeOnboardingAction: @escaping () -> Void
         ) {
-            self.animateTitle = animateTitle
-            self.animateMessage = animateMessage
-            self.showCTA = showCTA
-            self.isSkipped = isSkipped
+            self.content = content
+            self._isVisible = isVisible
             self.startBrowsingAction = startBrowsingAction
             self.resumeOnboardingAction = resumeOnboardingAction
         }
 
         var body: some View {
-            VStack(spacing: 24.0) {
-                AnimatableTypingText(Copy.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
-                    withAnimation {
-                        animateMessage.wrappedValue = true
+            LinearDialogContentContainer(
+                metrics: .init(
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
+                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                message: AnyView(
+                    Text(attributedStringWithAttachments: OnboardingRichTextMessageRenderer.render(content.message))
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .font(onboardingTheme.typography.body)
+                ),
+                showContent: $showContent,
+                title: {
+                    TypingText(content.title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
+                    })
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .font(onboardingTheme.typography.title)
+                },
+                actions: {
+                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
+                        Button(action: startBrowsingAction) {
+                            Text(content.primaryCTA)
+                        }
+                        .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+
+                        Button(action: resumeOnboardingAction) {
+                            Text(content.secondaryCTA)
+                        }
+                        .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                     }
                 }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 20, weight: .bold))
-
-                AnimatableTypingText(Copy.message.attributed.withFont(.daxBodyBold(), forText: Self.fireButtonCopy), startAnimating: animateMessage, skipAnimation: isSkipped) {
-                    withAnimation {
-                        showCTA.wrappedValue = true
-                    }
-                }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 16))
-
-                VStack {
-                    Button(action: startBrowsingAction) {
-                        Text(Copy.confirmSkipOnboardingCTA)
-                    }
-                    .buttonStyle(PrimaryButtonStyle())
-
-                    OnboardingBorderedButton(
-                        maxHeight: 50.0,
-                        content: {
-                            Text(Copy.resumeOnboardingCTA)
-                        },
-                        action: resumeOnboardingAction
-                    )
-                }
-                .visibility(showCTA.wrappedValue ? .visible : .invisible)
-            }
+            )
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
-
     }
 }

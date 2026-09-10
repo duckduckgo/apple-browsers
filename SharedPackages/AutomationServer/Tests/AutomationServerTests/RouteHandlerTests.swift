@@ -27,7 +27,7 @@ final class RouteHandlerTests: XCTestCase {
 
     override func setUp() async throws {
         mockProvider = MockBrowserAutomationProvider()
-        server = try AutomationServerCore(provider: mockProvider, port: 59998)
+        server = try AutomationServerCore(provider: mockProvider, port: 59998, authToken: nil)
     }
 
     override func tearDown() async throws {
@@ -320,5 +320,168 @@ final class RouteHandlerTests: XCTestCase {
         } else {
             XCTFail("Expected success")
         }
+    }
+
+    // MARK: - /clearWebsiteData Tests
+
+    func testClearWebsiteData_CallsProvider() async {
+        let url = URLComponents(string: "/clearWebsiteData")!
+
+        let result = await server.handlePath(url, method: "POST")
+
+        XCTAssertTrue(mockProvider.clearWebsiteDataCalled)
+        if case .success(let message) = result {
+            XCTAssertEqual(message, "done")
+        } else {
+            XCTFail("Expected success")
+        }
+    }
+
+    func testClearWebsiteData_ReturnsErrorWhenProviderFails() async {
+        mockProvider.clearWebsiteDataResult = false
+        let url = URLComponents(string: "/clearWebsiteData")!
+
+        let result = await server.handlePath(url, method: "POST")
+
+        if case .failure(let error) = result {
+            XCTAssertEqual(error, .websiteDataClearingFailed)
+        } else {
+            XCTFail("Expected failure")
+        }
+    }
+
+    func testClearWebsiteData_RejectsGet() async {
+        let url = URLComponents(string: "/clearWebsiteData")!
+
+        let result = await server.handlePath(url, method: "GET")
+
+        XCTAssertFalse(mockProvider.clearWebsiteDataCalled)
+        if case .failure(let error) = result {
+            XCTAssertEqual(error, .methodNotAllowed)
+        } else {
+            XCTFail("Expected failure")
+        }
+    }
+
+    func testClearWebsiteData_RejectsRequestWhenTokenIsAbsent() async {
+        let result = await server.handleConnection(request(path: "/clearWebsiteData", method: "POST"))
+
+        XCTAssertEqual(result.0, "unauthorized")
+        assertUnauthorized(result.1)
+        XCTAssertFalse(mockProvider.clearWebsiteDataCalled)
+    }
+
+    func testClearWebsiteData_RejectsRequestWhenTokenIsEmpty() async throws {
+        let serverWithEmptyToken = try AutomationServerCore(provider: mockProvider, port: 59997, authToken: "")
+        defer { serverWithEmptyToken.listener.cancel() }
+
+        let result = await serverWithEmptyToken.handleConnection(request(path: "/clearWebsiteData", method: "POST"))
+
+        XCTAssertEqual(result.0, "unauthorized")
+        assertUnauthorized(result.1)
+        XCTAssertFalse(mockProvider.clearWebsiteDataCalled)
+    }
+
+    func testClearWebsiteData_RejectsRequestWithIncorrectToken() async throws {
+        let authenticatedServer = try AutomationServerCore(provider: mockProvider, port: 59997, authToken: "expected-token")
+        defer { authenticatedServer.listener.cancel() }
+
+        let result = await authenticatedServer.handleConnection(
+            request(path: "/clearWebsiteData", method: "POST", token: "incorrect-token")
+        )
+
+        XCTAssertEqual(result.0, "unauthorized")
+        assertUnauthorized(result.1)
+        XCTAssertFalse(mockProvider.clearWebsiteDataCalled)
+    }
+
+    func testClearWebsiteData_AllowsRequestWithCorrectToken() async throws {
+        let authenticatedServer = try AutomationServerCore(provider: mockProvider, port: 59997, authToken: "expected-token")
+        defer { authenticatedServer.listener.cancel() }
+
+        let result = await authenticatedServer.handleConnection(
+            request(path: "/clearWebsiteData", method: "POST", token: "expected-token")
+        )
+
+        XCTAssertEqual(result.0, "/clearWebsiteData")
+        assertSuccess(result.1, expectedMessage: "done")
+        XCTAssertTrue(mockProvider.clearWebsiteDataCalled)
+    }
+
+    func testLegacyRoute_AllowsRequestWhenTokenIsAbsent() async {
+        mockProvider.currentURL = URL(string: "https://duckduckgo.com")
+
+        let result = await server.handleConnection(request(path: "/getUrl"))
+
+        XCTAssertEqual(result.0, "/getUrl")
+        assertSuccess(result.1, expectedMessage: "https://duckduckgo.com")
+    }
+
+    func testLegacyRoute_AllowsRequestWhenTokenIsEmpty() async throws {
+        let serverWithEmptyToken = try AutomationServerCore(provider: mockProvider, port: 59997, authToken: "")
+        defer { serverWithEmptyToken.listener.cancel() }
+        mockProvider.currentURL = URL(string: "https://duckduckgo.com")
+
+        let result = await serverWithEmptyToken.handleConnection(request(path: "/getUrl"))
+
+        XCTAssertEqual(result.0, "/getUrl")
+        assertSuccess(result.1, expectedMessage: "https://duckduckgo.com")
+    }
+
+    func testLegacyRoute_RejectsIncorrectTokenWhenTokenIsConfigured() async throws {
+        let authenticatedServer = try AutomationServerCore(provider: mockProvider, port: 59997, authToken: "expected-token")
+        defer { authenticatedServer.listener.cancel() }
+
+        let result = await authenticatedServer.handleConnection(
+            request(path: "/getUrl", token: "incorrect-token")
+        )
+
+        XCTAssertEqual(result.0, "unauthorized")
+        assertUnauthorized(result.1)
+    }
+
+    func testLegacyRoute_AllowsCorrectTokenWhenTokenIsConfigured() async throws {
+        let authenticatedServer = try AutomationServerCore(provider: mockProvider, port: 59997, authToken: "expected-token")
+        defer { authenticatedServer.listener.cancel() }
+        mockProvider.currentURL = URL(string: "https://duckduckgo.com")
+
+        let result = await authenticatedServer.handleConnection(
+            request(path: "/getUrl", token: "expected-token")
+        )
+
+        XCTAssertEqual(result.0, "/getUrl")
+        assertSuccess(result.1, expectedMessage: "https://duckduckgo.com")
+    }
+
+    private func request(path: String, method: String = "GET", token: String? = nil) -> Data {
+        var lines = [
+            "\(method) \(path) HTTP/1.1",
+            "Host: 127.0.0.1",
+        ]
+        if let token {
+            lines.append("Authorization: Bearer \(token)")
+        }
+        return (lines.joined(separator: "\r\n") + "\r\n\r\n").data(using: .utf8)!
+    }
+
+    private func assertUnauthorized(_ result: ConnectionResult, file: StaticString = #filePath, line: UInt = #line) {
+        guard case .failure(let error) = result else {
+            XCTFail("Expected unauthorized failure", file: file, line: line)
+            return
+        }
+        XCTAssertEqual(error, .unauthorized, file: file, line: line)
+    }
+
+    private func assertSuccess(
+        _ result: ConnectionResult,
+        expectedMessage: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        guard case .success(let message) = result else {
+            XCTFail("Expected success", file: file, line: line)
+            return
+        }
+        XCTAssertEqual(message, expectedMessage, file: file, line: line)
     }
 }

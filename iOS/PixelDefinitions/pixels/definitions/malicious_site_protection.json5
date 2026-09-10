@@ -3,7 +3,10 @@
         "description": "Fires when the Malicious Site Protection error page is shown to the user, blocking a navigation to a known phishing, malware, or scam site.",
         "owners": ["alessandroboron"],
         "triggers": ["other"],
-        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "suffixes": [
+            ["daily_standard", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
         "parameters": [
             "appVersion",
             "pixelSource",

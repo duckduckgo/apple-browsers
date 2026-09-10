@@ -29,8 +29,14 @@ let package = Package(
             name: "WebExtensions",
             targets: ["WebExtensions"]
         ),
+        .library(
+            name: "WebExtensionsTestSupport",
+            targets: ["WebExtensionsTestSupport"]
+        ),
     ],
     dependencies: [
+        .package(path: "../Common"),
+        .package(path: "../Persistence"),
         .package(path: "../BrowserServicesKit"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
@@ -39,24 +45,30 @@ let package = Package(
         .target(
             name: "WebExtensions",
             dependencies: [
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 "ZIPFoundation",
             ],
             resources: [
                 .copy("BundledWebExtensions")
             ]
         ),
+        .target(
+            name: "WebExtensionsTestSupport",
+            dependencies: [
+                "WebExtensions",
+            ]
+        ),
         .testTarget(
             name: "WebExtensionsTests",
             dependencies: [
                 "WebExtensions",
-                .product(name: "Persistence", package: "BrowserServicesKit"),
-                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
+                "WebExtensionsTestSupport",
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit")
             ]
         ),

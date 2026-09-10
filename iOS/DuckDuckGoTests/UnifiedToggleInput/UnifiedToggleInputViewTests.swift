@@ -29,6 +29,90 @@ import UniformTypeIdentifiers
 
 final class UnifiedToggleInputViewTests: XCTestCase {
 
+    func testWhenExpandedInputSwitchesToSearchThenCardKeepsOutline() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.setInputMode(.aiChat, animated: false)
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        let outlinedCard = try XCTUnwrap(sut.subviews.first { $0.layer.borderWidth > 0 })
+
+        sut.setInputMode(.search, animated: false)
+
+        XCTAssertEqual(outlinedCard.layer.borderWidth, 0.5)
+    }
+
+    func testWhenExpandedSearchOnlyInputIsShownThenCardHasNoOutline() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler, isToggleEnabled: false)
+
+        sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+
+        XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
+    }
+
+    func testWhenExpandedInputHidesToggleThenModeSyncDoesNotShowOutline() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+
+        sut.setInputMode(.aiChat, animated: false)
+
+        XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
+    }
+
+    func testWhenTopInputRevealsToggleThenModeSwitchKeepsOutline() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.cardPosition = .top
+        sut.setInputMode(.aiChat, animated: false)
+        sut.prepareForOmnibarEditingShow()
+        XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
+
+        sut.applyOmnibarEditingShowPose()
+        let outlinedCard = try XCTUnwrap(sut.subviews.first { $0.layer.borderWidth > 0 })
+        sut.setInputMode(.search, animated: false)
+
+        XCTAssertEqual(outlinedCard.layer.borderWidth, 0.5)
+    }
+
+    func testWhenTopInputHidesToggleThenOutlineIsRemoved() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.cardPosition = .top
+        sut.prepareForOmnibarEditingShow()
+        sut.applyOmnibarEditingShowPose()
+        let outlinedCard = try XCTUnwrap(sut.subviews.first { $0.layer.borderWidth > 0 })
+
+        sut.applyToggleHideChanges()
+
+        XCTAssertEqual(outlinedCard.layer.borderWidth, 0)
+    }
+
+    func testWhenFocusedInSplitOmnibarSessionThenCardMatchesRestingAddressBarInset() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.cardPosition = .top
+        sut.usesOmnibarMargins = true
+        sut.prepareForOmnibarEditingShow()
+        sut.applyOmnibarEditingShowPose()
+        prepareForFitting(sut, width: 402, height: 192)
+        applyFittingHeight(to: sut, width: 402)
+
+        let inset = try XCTUnwrap(activeCardHorizontalInset(in: sut))
+
+        XCTAssertEqual(inset, 16)
+    }
+
+    func testWhenToggleIsEnabledOnExpandedSearchInputThenOutlineAppears() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler, isToggleEnabled: false)
+        sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+
+        sut.updateToggleEnabled(true, showsToolbar: false)
+
+        XCTAssertTrue(sut.subviews.contains { $0.layer.borderWidth > 0 })
+    }
+
     func test_searchModeTextSubmitStaysEnabledWhenInvalidDuckAIAttachmentIsHidden() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)
@@ -52,6 +136,22 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         flushMainQueue()
 
         XCTAssertFalse(sut.isToolbarSubmitEnabled)
+    }
+
+    func test_flankedPillCentresTrailingButtonsOnItsTallerCard() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.frame = CGRect(x: 0, y: 0, width: 402, height: 120)
+
+        let buttons = try XCTUnwrap(firstDescendant(of: SwitchBarButtonsView.self, in: sut))
+
+        sut.applyCardLayout(.collapsed, animated: false)
+        sut.layoutIfNeeded()
+        XCTAssertEqual(buttons.center.y, 22, accuracy: 0.5)
+
+        sut.applyCardLayout(.flanked, animated: false)
+        sut.layoutIfNeeded()
+        XCTAssertEqual(buttons.center.y, 24, accuracy: 0.5)
     }
 
     func test_dismissPoseFadesAttachmentsStripOutSoItAnimatesWithTheCollapse() throws {
@@ -119,6 +219,55 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         flushMainQueue()
 
         XCTAssertEqual(scrollView.contentOffset.x, 0, accuracy: 1)
+    }
+
+    func test_attachmentStripShowsPageContextChipWithoutAddingAttachment() throws {
+        let sut = UnifiedToggleInputAttachmentsStripView()
+
+        sut.setPageContextChipState(.attached(title: "DuckDuckGo", favicon: nil))
+        sut.setPageContextChipVisible(true)
+
+        XCTAssertTrue(sut.attachments.isEmpty)
+        XCTAssertTrue(sut.hasVisiblePageContext)
+        XCTAssertNotNil(firstDescendant(of: AIChatContextChipView.self, in: sut))
+    }
+
+    func test_attachmentStripPageContextRemoveDoesNotRemoveFileAttachment() throws {
+        let sut = UnifiedToggleInputAttachmentsStripView()
+        var removeCount = 0
+        sut.onPageContextRemove = { removeCount += 1 }
+        sut.addAttachment(makeFileAttachment())
+        sut.setPageContextChipState(.attached(title: "DuckDuckGo", favicon: nil))
+        sut.setPageContextChipVisible(true)
+
+        let removeButton = try XCTUnwrap(findButton(accessibilityIdentifier: "AIChat.ContextChip.RemoveButton", in: sut))
+        removeButton.sendActions(for: .touchUpInside)
+
+        XCTAssertEqual(removeCount, 1)
+        XCTAssertEqual(sut.attachments.count, 1)
+        XCTAssertTrue(sut.hasVisiblePageContext)
+    }
+
+    @MainActor
+    func test_visiblePageContextShowsAttachmentStripButDoesNotEnableAttachmentOnlySubmit() throws {
+        let originatingURL = CurrentValueSubject<URL?, Never>(URL(string: "https://duckduckgo.com"))
+        let viewModel = UnifiedToggleInputPageContextChipViewModel(
+            originatingURLPublisher: originatingURL.eraseToAnyPublisher(),
+            initialAttachedContext: nil,
+            isAutoAttachEnabled: { true }
+        )
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.bindPageContextChip(to: viewModel)
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+
+        viewModel.setAttached(makePageContext(title: "DuckDuckGo", url: "https://duckduckgo.com"))
+        flushMainQueue()
+
+        let strip = try XCTUnwrap(firstDescendant(of: UnifiedToggleInputAttachmentsStripView.self, in: sut))
+        XCTAssertEqual(strip.alpha, 1, accuracy: 0.001)
+        XCTAssertTrue(sut.currentAttachments.isEmpty)
+        XCTAssertFalse(sut.isToolbarSubmitEnabled)
     }
 
     @MainActor
@@ -615,6 +764,16 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         wait(for: [expectation], timeout: 1)
     }
 
+    private func activeCardHorizontalInset(in view: UnifiedToggleInputView) -> CGFloat? {
+        view.constraints.first { constraint in
+            constraint.isActive
+                && constraint.firstAttribute == .leading
+                && constraint.secondAttribute == .leading
+                && constraint.secondItem === view
+                && (constraint.firstItem as? UIView)?.isUserInteractionEnabled == false
+        }?.constant
+    }
+
     private func prepareForFitting(_ view: UIView, width: CGFloat = 320, height: CGFloat = 68) {
         view.frame = CGRect(x: 0, y: 0, width: width, height: height)
         view.setNeedsLayout()
@@ -658,6 +817,11 @@ final class UnifiedToggleInputViewTests: XCTestCase {
                 pageCount: 1
             )
         )
+    }
+
+    private func makePageContext(title: String, url: String) -> AIChatPageContext {
+        let data = AIChatPageContextData(title: title, favicon: [], url: url, content: "", truncated: false, fullContentLength: 0)
+        return AIChatPageContext(contextData: data, favicon: nil)
     }
 
     private func firstDescendant<T: UIView>(of type: T.Type, in view: UIView) -> T? {
@@ -733,7 +897,6 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var currentText: String = ""
     var currentToggleState: TextEntryMode
     var isVoiceSearchEnabled: Bool = false
-    var isAIVoiceChatEnabled: Bool = false
     var hasUserInteractedWithText: Bool = false
     var isCurrentTextValidURL: Bool = false
     var buttonState: SwitchBarButtonState = .noButtons

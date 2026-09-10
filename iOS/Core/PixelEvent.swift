@@ -26,6 +26,15 @@ import DDGSync
 import MaliciousSiteProtection
 import PixelKit
 
+// -------------------------------------------------------------------------------------------------------------------------
+// ▗▖ ▗▖ ▗▄▖ ▗▄▄▖ ▗▖  ▗▖▗▄▄▄▖▗▖  ▗▖ ▗▄▄▖
+// ▐▌ ▐▌▐▌ ▐▌▐▌ ▐▌▐▛▚▖▐▌  █  ▐▛▚▖▐▌▐▌
+// ▐▌ ▐▌▐▛▀▜▌▐▛▀▚▖▐▌ ▝▜▌  █  ▐▌ ▝▜▌▐▌▝▜▌
+// ▐▙█▟▌▐▌ ▐▌▐▌ ▐▌▐▌  ▐▌▗▄█▄▖▐▌  ▐▌▝▚▄▞▘
+//
+// Deprecated file, please do not add any more Pixels to this file, use instead PixelKit.Event in a separate file
+// -------------------------------------------------------------------------------------------------------------------------
+
 extension Pixel {
     
     public enum Event {
@@ -62,7 +71,6 @@ extension Pixel {
         case forgetAllPressedTabSwitching
         case forgetAllPressedSettings
         case forgetAllExecuted
-        case forgetAllDataCleared
         
         case forgetAllPressedBrowsingDaily
         case forgetAllPressedTabSwitcherDaily
@@ -70,7 +78,6 @@ extension Pixel {
 
         // MARK: Single Tab Burn
         case singleTabBurnExecuted
-        case singleTabDataCleared
         
         case privacyDashboardOpened
         case privacyDashboardFirstTimeOpenedUnique
@@ -147,10 +154,6 @@ extension Pixel {
         case settingsDoNotSellOn
         case settingsDoNotSellOff
         
-        case settingsAutoconsentShown
-        case settingsAutoconsentOn
-        case settingsAutoconsentOff
-
         case autoconsentSettingsShown
         case autoconsentSettingsOn
         case autoconsentSettingsOff
@@ -219,6 +222,7 @@ extension Pixel {
         case shareSheetActivityFindInPage
         case shareSheetActivityPrint
         case shareSheetActivityAddToReadingList
+        case shareSheetActivityAddToHomeScreen
         case shareSheetActivityOther
         
         case tabBarBackPressed
@@ -229,6 +233,7 @@ extension Pixel {
 
         case tabBarTabSelected
         case tabBarTabClosed
+        case tabBarCloseOtherTabs
         case tabBarNewTab
         case tabBarOverflowDaily
         case tabBarOpenTabCountDaily
@@ -374,6 +379,8 @@ extension Pixel {
         case voiceSearchAIChatDone
         case openVoiceSearch
         case voiceSearchCancelled
+        case voiceSearchError
+        case voiceSearchNoSpeech
 
         case bookmarkLaunchList
         case bookmarkLaunchScored
@@ -1124,6 +1131,7 @@ extension Pixel {
         case syncAutoRestorePreservedAccountClearFailed
 
         case syncSetupBarcodeScreenShown
+        case syncSetupScanQRScreenShown
         case syncSetupBarcodeScannerSuccess
         case syncSetupBarcodeScannerFailed
         case syncSetupBarcodeCodeCopied
@@ -1359,6 +1367,31 @@ extension Pixel {
          */
         case subscriptionSkippedOnboardingPromotionDismiss
 
+        /**
+         * Event Trigger: The subscription promotion modal is shown to an existing user (7+ days since install)
+         * who has never seen a subscription offer
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoExistingUserCoordinator`
+         */
+        case subscriptionExistingUserPromotionImpression
+
+        /**
+         * Event Trigger: The user tapped the CTA on the existing-user subscription promotion modal
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoExistingUserCoordinator`
+         */
+        case subscriptionExistingUserPromotionTap
+
+        /**
+         * Event Trigger: The user dismissed the existing-user subscription promotion modal
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoExistingUserCoordinator`
+         */
+        case subscriptionExistingUserPromotionDismiss
+
         // Win-back Offer
         case subscriptionWinBackOfferLaunchPromptShown
         case subscriptionWinBackOfferLaunchPromptCTAClicked
@@ -1417,6 +1450,9 @@ extension Pixel {
         case settingsSyncRecoverSyncedDataTapped
         case settingsSyncSignupConfirmedTapped
         case settingsSyncRecoveryConfirmedTapped
+        case settingsSyncAnotherDevicePromptShown
+        case settingsSyncAnotherDevicePromptOptionTapped
+        case settingsSyncAnotherDevicePromptDismissed
         case settingsAppearanceOpen
         case settingsThemeSelectorPressed
         case settingsAddressBarTopSelected
@@ -1590,11 +1626,6 @@ extension Pixel {
         // MARK: WebView Error Page Shown
         case webViewErrorPageShown
 
-        // MARK: External Scheme Navigation
-        case webViewExternalSchemeNavigationSafariRedirectLoadURLRequested
-        case webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown
-        case webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage
-
         // MARK: Browsing
         case stopPageLoad
 
@@ -1666,6 +1697,10 @@ extension Pixel {
         case aiChatContextualAutoAttachDAU
         case aiChatIsEnabledDaily
 
+        // MARK: Duck.ai subscription funnel (frontend-reported entry points)
+        case aiChatSubscriptionFunnelImpression
+        case aiChatSubscriptionFunnelClick
+
         case duckAiNativeStorageMigrationDoneUnique(key: String)
         case duckAiNativeStorageMigrationDoneCount(key: String)
         case duckAiNativeStorageMigrationDoneBlankCount
@@ -1705,7 +1740,8 @@ extension Pixel {
         case aiChatSettingsMenuSidebarTapped
         case aiChatSettingsMenuAIChatSettingsTapped
         case aiChatSettingsMenuNewChatTabTapped
-        
+        case aiChatNewImageTapped
+
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
         case aiChatTabDidTerminate
@@ -1732,25 +1768,16 @@ extension Pixel {
         case aiChatNewAddressBarPickerV2Confirmed
         
         // MARK: Experimental Omnibar Metrics
-        case aiChatExperimentalOmnibarShown
         case aiChatExperimentalOmnibarPromptSubmitted
         case aiChatExperimentalOmnibarQuerySubmitted
         case aiChatExperimentalOmnibarModeSwitched
         case aiChatExperimentalOmnibarSessionBothModes
-        case aiChatExperimentalOmnibarFirstSettingsViewed
-        case aiChatExperimentalOmnibarFirstEnabled
-        case aiChatExperimentalOmnibarFirstInteraction
-        case aiChatExperimentalOmnibarFirstSearchSubmission
-        case aiChatExperimentalOmnibarFirstPromptSubmission
-        case aiChatExperimentalOmnibarFullConversionUser
         case aiChatExperimentalOmnibarTextAreaFocused
         case aiChatExperimentalOmnibarClearButtonPressed
         case aiChatExperimentalOmnibarBackButtonPressed
         case aiChatExperimentalOmnibarKeyboardGoPressed
-        case aiChatExperimentalOmnibarFloatingSubmitPressed
         case aiChatExperimentalOmnibarFloatingReturnPressed
         case aiChatExperimentalOmnibarSessionSummary
-        case aiChatExperimentalOmnibarDailyRetention
         case aiChatLegacyOmnibarShown
         case aiChatLegacyOmnibarQuerySubmitted
         case aiChatLegacyOmnibarAichatButtonPressed
@@ -1782,6 +1809,10 @@ extension Pixel {
         case aiChatHistoryPinAdded
         case aiChatHistoryPinRemoved
         case aiChatHistoryDownloadStarted
+        case aiChatHistoryDownloadSuccessful
+        case aiChatHistorySelectionDeleteConfirmed
+        case aiChatHistorySelectionDownloadStarted
+        case aiChatHistoryChatProtectionTapped
         case aiChatHistoryEditModeEntered
         case aiChatHistoryNewChatTapped
         case aiChatHistoryLoadFailed
@@ -1801,8 +1832,6 @@ extension Pixel {
         case aiChatContextualExpandButtonTapped
         case aiChatContextualNewChatButtonTapped
         case aiChatContextualQuickActionSummarizeSelected
-        case aiChatContextualPageContextPlaceholderShown
-        case aiChatContextualPageContextPlaceholderTapped
         case aiChatContextualPageContextAutoAttached
         case aiChatContextualPageContextUpdatedOnNavigation
         case aiChatContextualPageContextManuallyAttachedNative
@@ -1816,7 +1845,24 @@ extension Pixel {
         case aiChatContextualFireButtonConfirmed
         case aiChatContextualPageContextCollectionEmpty
         case aiChatContextualPageContextCollectionUnavailable
+
+        // Page-context extraction measurement.
+        case aiChatPageContextExtractionSuccess
+        case aiChatPageContextExtractionFailed
+        case aiChatPageContextExtractionPrevented
+
+        case aiChatContextualQuickActionAskAboutPageShown
         case aiChatContextualQuickActionAskAboutPageSelected
+        case aiChatContextualAddressBarMenuShown
+        case aiChatContextualAddressBarMenuNewChatSelected
+        case aiChatContextualAddressBarMenuAskAboutPageSelected
+        case aiChatContextualFloatingInputDismissedWithoutSubmission
+        case aiChatContextualFloatingInputPromotedToSheet
+        case aiChatContextualSuggestionSelected
+        case aiChatContextualSuggestionsViewed
+        case aiChatContextualHeaderTitleTapped
+        case aiChatContextualSuggestionsCatalogLoadFailed
+        case aiChatContextualSuggestionsContextCollectionTimedOut
         case aiChatContextualRecentChatsPopupDisplayed
         case aiChatContextualRecentChatSelected
         case aiChatContextualViewAllChatsTapped
@@ -1835,18 +1881,27 @@ extension Pixel {
         case unifiedToggleInputReasoningEffortPickerShown
         case unifiedToggleInputImageAttached
         case unifiedToggleInputImageRemoved
+        case unifiedToggleInputImageValidationFailed
         case unifiedToggleInputFileAttached
         case unifiedToggleInputFileRemoved
         case unifiedToggleInputFileValidationFailed
         case unifiedToggleInputVoiceTapped
         case unifiedToggleInputStopGenerationTapped
+        case unifiedToggleInputEditReceived
+        case unifiedToggleInputEditSubmitted
+        case unifiedToggleInputEditCancelled
+        case unifiedToggleInputEditImageRemoved
+        case unifiedToggleInputEditFileRemoved
         case unifiedToggleInputSubscriptionUpsellTriggered
         case unifiedToggleInputChatHeaderUpgradeTapped
+        case unifiedToggleInputChatHeaderUpgradeShown
         case unifiedToggleInputPromptSubmitted
         case unifiedToggleInputShowModelPicker
         case unifiedToggleInputSubmitChangeModel
         case unifiedToggleInputSubmitChangeModelPromptSent
         case unifiedToggleInputDuckAIDirectNavigation
+        case aiChatDuckAIDirectNavigation
+        case unifiedToggleInputQuerySubmitted
 
         // MARK: Unified Toggle Input - Duck.ai autocomplete suggestion clicks
         case autocompleteDuckAIClickWebsite
@@ -1872,7 +1927,6 @@ extension Pixel {
         case tabInteractionStateSourceMissingRootDirectory
         case tabInteractionStateSourceFailedToWrite
 
-        case tabInteractionStateFailedToRestore
         case tabInteractionStateRestorationTime(_ time: BucketAggregation)
 
         // MARK: Malicious Site Protection
@@ -1934,6 +1988,7 @@ extension Pixel {
         case subscriptionExpirationReminderSchedulingError
 
         // MARK: - Freemium Personal Information Removal
+        case freemiumPIRSettingsEntryPointImpression
         case freemiumPIRSettingsEntryPointClicked
 
         // MARK: - Data Broker Protection Notifications
@@ -1987,8 +2042,6 @@ extension Pixel {
         case webExtensionUninstallAllError
         case webExtensionLoaded
         case webExtensionLoadError
-        case webExtensionDeferredProtectedDataUnavailable
-        case webExtensionResumedProtectedDataAvailable
         case webExtensionEmbeddedInstalled
         case webExtensionEmbeddedUpgraded
         case webExtensionEmbeddedInstallError
@@ -2009,6 +2062,11 @@ extension Pixel {
         case webExtensionAdBlockingUpgraded
         case webExtensionAdBlockingInstallError
 
+        case webExtensionSearchTokenInstalled
+        case webExtensionSearchTokenUpgraded
+        case webExtensionSearchTokenInstallError
+        case webExtensionSearchTokenNotLoaded
+
         case webExtensionAdBlockingSettingsOpen
         case webExtensionAdBlockingEnabled
         case webExtensionAdBlockingDisabled
@@ -2028,25 +2086,14 @@ extension Pixel {
 
         case webExtensionDailyAdBlockingState
 
-        case webExtensionAdBlockingDetectedAdBlockerDaily
-        case webExtensionAdBlockingDetectedPlayabilityErrorDaily
-        case webExtensionAdBlockingDetectedVideoAdDaily
-        case webExtensionAdBlockingDetectedStaticAdDaily
-        case webExtensionAdBlockingDetectedBufferingDaily
-
         // MARK: - Fire Mode
         case browsingModeSwitched
         case tabSwitcherModeToggled
         case fireModeBurnExecuted
         case normalModeBurnExecuted
-        case fireModeDataCleared
-        case normalModeDataCleared
         case fireModeLastTabClosedBurn
         case fireModeEmptyStateNewTab
         case linkLongPressMenuShown
-        case linkLongPressNewTab
-        case linkLongPressBackgroundTab
-        case linkLongPressFireTab
 
         // MARK: - Custom Product Page
         case customProductPageDuckAIOpenedAIChat
@@ -2055,21 +2102,6 @@ extension Pixel {
 }
 
 extension Pixel.Event: Equatable {}
-
-extension Pixel.Event {
-    /// Maps a C-S-S `webEvent` `type` string to the matching pixel case.
-    /// Returns `nil` for unknown types so the caller can no-op.
-    public static func adBlockingDetectedEvent(type: String) -> Pixel.Event? {
-        switch type {
-        case "youtube_adBlocker": return .webExtensionAdBlockingDetectedAdBlockerDaily
-        case "youtube_playabilityError": return .webExtensionAdBlockingDetectedPlayabilityErrorDaily
-        case "youtube_videoAd": return .webExtensionAdBlockingDetectedVideoAdDaily
-        case "youtube_staticAd": return .webExtensionAdBlockingDetectedStaticAdDaily
-        case "youtube_buffering": return .webExtensionAdBlockingDetectedBufferingDaily
-        default: return nil
-        }
-    }
-}
 
 extension Pixel.Event {
 
@@ -2099,7 +2131,6 @@ extension Pixel.Event {
         case .forgetAllPressedTabSwitching: return "mf_tp"
         case .forgetAllPressedSettings: return "m_forget-all-pressed_settings"
         case .forgetAllExecuted: return "mf"
-        case .forgetAllDataCleared: return "mf_dc"
         
         case .forgetAllPressedBrowsingDaily: return "m_forget-all-pressed_browsing_daily"
         case .forgetAllPressedTabSwitcherDaily: return "m_forget-all-pressed_tab-switcher_daily"
@@ -2107,7 +2138,6 @@ extension Pixel.Event {
 
         // MARK: Single Tab Burn
         case .singleTabBurnExecuted: return "m_single-tab-burn_executed"
-        case .singleTabDataCleared: return "m_single-tab-data_cleared"
             
         case .privacyDashboardOpened: return "mp"
         case .privacyDashboardFirstTimeOpenedUnique: return "m_privacy_dashboard_first_time_used_unique"
@@ -2147,10 +2177,6 @@ extension Pixel.Event {
         case .settingsDoNotSellOn: return "ms_dns_on"
         case .settingsDoNotSellOff: return "ms_dns_off"
             
-        case .settingsAutoconsentShown: return "m_settings_autoconsent_shown"
-        case .settingsAutoconsentOn: return "m_settings_autoconsent_on"
-        case .settingsAutoconsentOff: return "m_settings_autoconsent_off"
-
         case .autoconsentSettingsShown: return "autoconsent_settings_shown"
         case .autoconsentSettingsOn: return "autoconsent_settings_on"
         case .autoconsentSettingsOff: return "autoconsent_settings_off"
@@ -2170,6 +2196,9 @@ extension Pixel.Event {
         case .settingsSyncRecoverSyncedDataTapped: return "m_settings_sync_recover_synced_data_tapped"
         case .settingsSyncSignupConfirmedTapped: return "m_settings_sync_signup_confirmed_tapped"
         case .settingsSyncRecoveryConfirmedTapped: return "m_settings_sync_recovery_confirmed_tapped"
+        case .settingsSyncAnotherDevicePromptShown: return "m_settings_sync_another_device_prompt_shown"
+        case .settingsSyncAnotherDevicePromptOptionTapped: return "m_settings_sync_another_device_prompt_option_tapped"
+        case .settingsSyncAnotherDevicePromptDismissed: return "settings_sync_another_device_prompt_dismissed"
         case .settingsAppearanceOpen: return "m_settings_appearance_open"
         case .settingsThemeSelectorPressed: return "m_settings_theme_selector_pressed"
         case .settingsAddressBarTopSelected: return "m_settings_address_bar_top_selected"
@@ -2254,6 +2283,7 @@ extension Pixel.Event {
         case .shareSheetActivityFindInPage: return "m_sharesheet_activity_findinpage"
         case .shareSheetActivityPrint: return "m_sharesheet_activity_print"
         case .shareSheetActivityAddToReadingList: return "m_sharesheet_activity_addtoreadinglist"
+        case .shareSheetActivityAddToHomeScreen: return "m_sharesheet_activity_addtohomescreen"
         case .shareSheetActivityOther: return "m_sharesheet_activity_other"
             
         case .tabBarBackPressed: return "mt_bk"
@@ -2263,6 +2293,7 @@ extension Pixel.Event {
         case .tabBarTabSwitcherOpened: return "m_tab_manager_opened"
         case .tabBarTabSelected: return "m_tab_bar_tab_selected"
         case .tabBarTabClosed: return "m_tab_bar_tab_closed"
+        case .tabBarCloseOtherTabs: return "tab_bar_close_other_tabs"
         case .tabBarNewTab: return "m_tab_bar_new_tab"
         case .tabBarOverflowDaily: return "m_tab_bar_overflow_daily"
         case .tabBarOpenTabCountDaily: return "m_tab_bar_open_tab_count_daily"
@@ -2381,6 +2412,8 @@ extension Pixel.Event {
         case .voiceSearchAIChatDone: return "m_voice_search_aichat_done"
         case .openVoiceSearch: return "m_open_voice_search"
         case .voiceSearchCancelled: return "m_voice_search_cancelled"
+        case .voiceSearchError: return "voice_search_error"
+        case .voiceSearchNoSpeech: return "voice_search_no_speech"
             
         case .bookmarkImportSuccess: return "m_bi_s"
         case .bookmarkImportFailure: return "m_bi_e"
@@ -2969,8 +3002,6 @@ extension Pixel.Event {
         case .tabInteractionStateSourceFailedToWrite:
             return "m_d_tab-interaction-state-source_failed-to-write"
 
-        case .tabInteractionStateFailedToRestore:
-            return "m_d_tab-interaction-state_failed-to-restore"
         case .tabInteractionStateRestorationTime(let aggregation):
             return "m_d_tab-interaction-state_restoration-time-\(aggregation)"
 
@@ -3159,6 +3190,7 @@ extension Pixel.Event {
         case .syncAutoRestorePreservedAccountClearFailed: return "sync-auto-restore_preserved_account_clear_failed"
 
         case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
+        case .syncSetupScanQRScreenShown: return "sync_setup_scan_qr_screen_shown"
         case .syncSetupBarcodeScannerSuccess: return "sync_setup_barcode_scanner_success"
         case .syncSetupBarcodeScannerFailed: return "sync_setup_barcode_scanner_failed"
         case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
@@ -3288,6 +3320,10 @@ extension Pixel.Event {
         case .subscriptionSkippedOnboardingPromotionImpression: return "m_privacy-pro_skipped_onboarding_promotion_impression"
         case .subscriptionSkippedOnboardingPromotionTap: return "m_privacy-pro_skipped_onboarding_promotion_tap"
         case .subscriptionSkippedOnboardingPromotionDismiss: return "m_privacy-pro_skipped_onboarding_promotion_dismiss"
+
+        case .subscriptionExistingUserPromotionImpression: return "m_privacy-pro_existing_user_promotion_impression"
+        case .subscriptionExistingUserPromotionTap: return "m_privacy-pro_existing_user_promotion_tap"
+        case .subscriptionExistingUserPromotionDismiss: return "m_privacy-pro_existing_user_promotion_dismiss"
 
         // Win-back Offer
         case .subscriptionWinBackOfferLaunchPromptShown: return "m_privacy-pro_winback_launch_prompt_shown"
@@ -3508,11 +3544,6 @@ extension Pixel.Event {
         // MARK: - WebView Error Page shown
         case .webViewErrorPageShown: return "m_errorpageshown"
 
-        // MARK: - External Scheme Navigation
-        case .webViewExternalSchemeNavigationSafariRedirectLoadURLRequested: return "m_webview_external-scheme-navigation_safari-redirect_load-url-requested"
-        case .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown: return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown"
-        case .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage: return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page_report-broken-site"
-
         // MARK: - DuckPlayer FE Application Telemetry
         case .duckPlayerLandscapeLayoutImpressions: return "duckplayer_landscape_layout_impressions"
 
@@ -3575,6 +3606,11 @@ extension Pixel.Event {
         case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
         case .aiChatIsEnabledDaily: return "m_aichat_is_enabled_daily"
 
+        // The hyphen inside these snake_case names is deliberate: it matches the macOS names so a single
+        // query answers both platforms.
+        case .aiChatSubscriptionFunnelImpression: return "m_aichat_subscription-funnel_impression"
+        case .aiChatSubscriptionFunnelClick: return "m_aichat_subscription-funnel_click"
+
         // AI Features telemetry: no `m_` prefix so the wire names are identical to macOS.
         case .aiFeaturesStateDaily: return "ai_features_state_daily"
         case .aiFeaturesDisabled: return "ai_features_disabled"
@@ -3625,7 +3661,8 @@ extension Pixel.Event {
         case .aiChatSettingsMenuSidebarTapped: return "m_aichat_settings_menu_sidebar_tapped"
         case .aiChatSettingsMenuAIChatSettingsTapped: return "m_aichat_settings_menu_aichat_settings_tapped"
         case .aiChatSettingsMenuNewChatTabTapped: return "m_aichat_settings_menu_new_chat_tab_tapped"
-            
+        case .aiChatNewImageTapped: return "aichat_new_image_tapped"
+
         case .aiChatTabSwitcherOpened: return "m_aichat_tab_switcher_opened"
         case .aiChatFireButtonTapped: return "m_aichat_fire_button_tapped"
         case .aiChatTabDidTerminate: return "m_aichat_tab_did_terminate"
@@ -3643,25 +3680,16 @@ extension Pixel.Event {
         case .aiChatNewAddressBarPickerV2Confirmed: return "m_aichat_new_address_bar_picker_v2_confirmed"
         
         // MARK: Experimental Omnibar Metrics
-        case .aiChatExperimentalOmnibarShown: return "m_aichat_experimental_omnibar_shown"
         case .aiChatExperimentalOmnibarPromptSubmitted: return "m_aichat_experimental_omnibar_prompt_submitted"
         case .aiChatExperimentalOmnibarQuerySubmitted: return "m_aichat_experimental_omnibar_query_submitted"
         case .aiChatExperimentalOmnibarModeSwitched: return "m_aichat_experimental_omnibar_mode_switched"
         case .aiChatExperimentalOmnibarSessionBothModes: return "m_aichat_experimental_omnibar_session_both_modes"
-        case .aiChatExperimentalOmnibarFirstSettingsViewed: return "m_aichat_experimental_omnibar_first_settings_viewed"
-        case .aiChatExperimentalOmnibarFirstEnabled: return "m_aichat_experimental_omnibar_first_enabled"
-        case .aiChatExperimentalOmnibarFirstInteraction: return "m_aichat_experimental_omnibar_first_interaction"
-        case .aiChatExperimentalOmnibarFirstSearchSubmission: return "m_aichat_experimental_omnibar_first_search_submission"
-        case .aiChatExperimentalOmnibarFirstPromptSubmission: return "m_aichat_experimental_omnibar_first_prompt_submission"
-        case .aiChatExperimentalOmnibarFullConversionUser: return "m_aichat_experimental_omnibar_full_conversion_user"
         case .aiChatExperimentalOmnibarTextAreaFocused: return "m_aichat_experimental_omnibar_text_area_focused"
         case .aiChatExperimentalOmnibarClearButtonPressed: return "m_aichat_experimental_omnibar_clear_button_pressed"
         case .aiChatExperimentalOmnibarBackButtonPressed: return "m_aichat_experimental_omnibar_back_button_pressed"
         case .aiChatExperimentalOmnibarKeyboardGoPressed: return "m_aichat_experimental_omnibar_keyboard_go_pressed"
-        case .aiChatExperimentalOmnibarFloatingSubmitPressed: return "m_aichat_experimental_omnibar_floating_submit_pressed"
         case .aiChatExperimentalOmnibarFloatingReturnPressed: return "m_aichat_experimental_omnibar_floating_return_pressed"
         case .aiChatExperimentalOmnibarSessionSummary: return "m_aichat_experimental_omnibar_session_summary"
-        case .aiChatExperimentalOmnibarDailyRetention: return "m_aichat_experimental_omnibar_daily_retention"
         case .aiChatLegacyOmnibarShown: return "m_aichat_legacy_omnibar_shown"
         case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
@@ -3693,6 +3721,10 @@ extension Pixel.Event {
         case .aiChatHistoryPinAdded: return "aichat_history_pin_added"
         case .aiChatHistoryPinRemoved: return "aichat_history_pin_removed"
         case .aiChatHistoryDownloadStarted: return "aichat_history_download_started"
+        case .aiChatHistoryDownloadSuccessful: return "aichat_history_download_successful"
+        case .aiChatHistorySelectionDeleteConfirmed: return "aichat_history_selection_delete_confirmed"
+        case .aiChatHistorySelectionDownloadStarted: return "aichat_history_selection_download_started"
+        case .aiChatHistoryChatProtectionTapped: return "aichat_history_chat_protection_tapped"
         case .aiChatHistoryEditModeEntered: return "aichat_history_edit_mode_entered"
         case .aiChatHistoryNewChatTapped: return "aichat_history_new_chat_tapped"
         case .aiChatHistoryLoadFailed: return "aichat_history_load_failed"
@@ -3712,8 +3744,6 @@ extension Pixel.Event {
         case .aiChatContextualExpandButtonTapped: return "m_aichat_contextual_expand_button_tapped"
         case .aiChatContextualNewChatButtonTapped: return "m_aichat_contextual_new_chat_button_tapped"
         case .aiChatContextualQuickActionSummarizeSelected: return "m_aichat_contextual_quick_action_summarize_selected"
-        case .aiChatContextualPageContextPlaceholderShown: return "m_aichat_contextual_page_context_placeholder_shown"
-        case .aiChatContextualPageContextPlaceholderTapped: return "m_aichat_contextual_page_context_placeholder_tapped"
         case .aiChatContextualPageContextAutoAttached: return "m_aichat_contextual_page_context_auto_attached"
         case .aiChatContextualPageContextUpdatedOnNavigation: return "m_aichat_contextual_page_context_updated_on_navigation"
         case .aiChatContextualPageContextManuallyAttachedNative: return "m_aichat_contextual_page_context_manually_attached_native"
@@ -3727,11 +3757,25 @@ extension Pixel.Event {
         case .aiChatContextualFireButtonConfirmed: return "m_aichat_contextual_fire_button_confirmed"
         case .aiChatContextualPageContextCollectionEmpty: return "m_aichat_contextual_page_context_collection_empty"
         case .aiChatContextualPageContextCollectionUnavailable: return "m_aichat_contextual_page_context_collection_unavailable"
+        case .aiChatPageContextExtractionSuccess: return "aichat_page_context_extraction_success"
+        case .aiChatPageContextExtractionFailed: return "aichat_page_context_extraction_failed"
+        case .aiChatPageContextExtractionPrevented: return "aichat_page_context_extraction_prevented"
+        case .aiChatContextualQuickActionAskAboutPageShown: return "m_aichat_contextual_quick_action_ask_about_page_shown"
         case .aiChatContextualQuickActionAskAboutPageSelected: return "m_aichat_contextual_quick_action_ask_about_page_selected"
+        case .aiChatContextualAddressBarMenuShown: return "aichat_contextual_address_bar_menu_shown"
+        case .aiChatContextualAddressBarMenuNewChatSelected: return "aichat_contextual_address_bar_menu_new_chat_selected"
+        case .aiChatContextualAddressBarMenuAskAboutPageSelected: return "aichat_contextual_address_bar_menu_ask_about_page_selected"
+        case .aiChatContextualFloatingInputDismissedWithoutSubmission: return "aichat_contextual_floating_input_dismissed_without_submission"
+        case .aiChatContextualFloatingInputPromotedToSheet: return "aichat_contextual_floating_input_promoted_to_sheet"
+        case .aiChatContextualSuggestionSelected: return "aichat_contextual_suggestion_selected"
+        case .aiChatContextualSuggestionsViewed: return "aichat_contextual_suggestions_viewed"
+        case .aiChatContextualHeaderTitleTapped: return "aichat_contextual_header_title_tapped"
+        case .aiChatContextualSuggestionsCatalogLoadFailed: return "debug_aichat_contextual_suggestions_catalog_load_failed"
+        case .aiChatContextualSuggestionsContextCollectionTimedOut:
+            return "debug_aichat_contextual_suggestions_context_collection_timed_out"
         case .aiChatContextualRecentChatsPopupDisplayed: return "m_aichat_contextual_recent_chats_popup_displayed"
         case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"
         case .aiChatContextualViewAllChatsTapped: return "m_aichat_contextual_view_all_chats_tapped"
-
         // MARK: Unified Toggle Input (UTI)
         case .unifiedToggleInputImageGenerationSelected: return "m_aichat_unified_input_image_generation_selected"
         case .unifiedToggleInputImageGenerationDeselected: return "m_aichat_unified_input_image_generation_deselected"
@@ -3746,18 +3790,27 @@ extension Pixel.Event {
         case .unifiedToggleInputReasoningEffortPickerShown: return "m_aichat_unified_input_reasoning_effort_picker_shown"
         case .unifiedToggleInputImageAttached: return "m_aichat_unified_input_image_attached"
         case .unifiedToggleInputImageRemoved: return "m_aichat_unified_input_image_removed"
+        case .unifiedToggleInputImageValidationFailed: return "m_aichat_unified_input_image_validation_failed"
         case .unifiedToggleInputFileAttached: return "m_aichat_unified_input_file_attached"
         case .unifiedToggleInputFileRemoved: return "m_aichat_unified_input_file_removed"
         case .unifiedToggleInputFileValidationFailed: return "m_aichat_unified_input_file_validation_failed"
         case .unifiedToggleInputVoiceTapped: return "m_aichat_unified_input_voice_tapped"
         case .unifiedToggleInputStopGenerationTapped: return "m_aichat_unified_input_stop_generation_tapped"
+        case .unifiedToggleInputEditReceived: return "aichat_edit_prompt_opened"
+        case .unifiedToggleInputEditSubmitted: return "aichat_edit_prompt_submitted"
+        case .unifiedToggleInputEditCancelled: return "aichat_edit_prompt_cancelled"
+        case .unifiedToggleInputEditImageRemoved: return "aichat_edit_prompt_image_removed"
+        case .unifiedToggleInputEditFileRemoved: return "aichat_edit_prompt_file_removed"
         case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
         case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
+        case .unifiedToggleInputChatHeaderUpgradeShown: return "m_aichat_unified_input_chat_header_upgrade_shown"
         case .unifiedToggleInputPromptSubmitted: return "m_aichat_unified_input_prompt_submitted"
         case .unifiedToggleInputShowModelPicker: return "aichat_unified_input_show_model_picker"
         case .unifiedToggleInputSubmitChangeModel: return "aichat_unified_input_submit_change_model"
         case .unifiedToggleInputSubmitChangeModelPromptSent: return "aichat_unified_input_submit_change_model_prompt_sent"
         case .unifiedToggleInputDuckAIDirectNavigation: return "m_aichat_unified_input_duck_ai_direct_navigation"
+        case .aiChatDuckAIDirectNavigation: return "m_aichat_duck_ai_direct_navigation"
+        case .unifiedToggleInputQuerySubmitted: return "m_aichat_unified_input_query_submitted"
 
         case .autocompleteDuckAIClickWebsite: return "m_autocomplete_duckai_click_website"
         case .autocompleteDuckAIClickBookmark: return "m_autocomplete_duckai_click_bookmark"
@@ -3899,6 +3952,7 @@ extension Pixel.Event {
         case .subscriptionExpirationReminderSchedulingError: return "push-notification_subscription-expiration-reminder_scheduling-error"
 
         // MARK: Freemium Personal Information Removal
+        case .freemiumPIRSettingsEntryPointImpression: return "m_dbp_freemium_settings_entry_point_impression"
         case .freemiumPIRSettingsEntryPointClicked: return "m_dbp_freemium_settings_entry_point_clicked"
 
         // MARK: Data Broker Protection Notifications
@@ -3958,8 +4012,6 @@ extension Pixel.Event {
         case .webExtensionUninstallAllError: return "m_web_extension_uninstall_all_error"
         case .webExtensionLoaded: return "m_web_extension_loaded"
         case .webExtensionLoadError: return "m_web_extension_load_error"
-        case .webExtensionDeferredProtectedDataUnavailable: return "m_web_extension_deferred_protected_data_unavailable"
-        case .webExtensionResumedProtectedDataAvailable: return "m_web_extension_resumed_protected_data_available"
         case .webExtensionEmbeddedInstalled: return "m_web_extension_embedded_installed"
         case .webExtensionEmbeddedUpgraded: return "m_web_extension_embedded_upgraded"
         case .webExtensionEmbeddedInstallError: return "m_web_extension_embedded_install_error"
@@ -3980,6 +4032,11 @@ extension Pixel.Event {
         case .webExtensionAdBlockingUpgraded: return "m_web_extension_ad_blocking_upgraded"
         case .webExtensionAdBlockingInstallError: return "m_web_extension_ad_blocking_install_error"
 
+        case .webExtensionSearchTokenInstalled: return "search-token_web_extension_installed"
+        case .webExtensionSearchTokenUpgraded: return "search-token_web_extension_upgraded"
+        case .webExtensionSearchTokenInstallError: return "search-token_web_extension_install_error"
+        case .webExtensionSearchTokenNotLoaded: return "search-token_web_extension_not_loaded"
+
         case .webExtensionScriptletFetchSuccess: return "m_web_extension_scriptlet_fetch_success"
         case .webExtensionScriptletFetchError: return "m_web_extension_scriptlet_fetch_error"
         case .webExtensionScriptletValidationError: return "m_web_extension_scriptlet_validation_error"
@@ -3998,25 +4055,14 @@ extension Pixel.Event {
         case .webExtensionAdBlockingPickerDisableUntilRelaunch: return "m_web_extension_ad_blocking_picker_disable_until_relaunch"
         case .webExtensionAdBlockingBreakageReportEntered: return "m_web_extension_ad_blocking_breakage_report_entered"
 
-        case .webExtensionAdBlockingDetectedAdBlockerDaily: return "m_web_extension_adblocking_detected_ad_blocker_daily"
-        case .webExtensionAdBlockingDetectedPlayabilityErrorDaily: return "m_web_extension_adblocking_detected_playability_error_daily"
-        case .webExtensionAdBlockingDetectedVideoAdDaily: return "m_web_extension_adblocking_detected_video_ad_daily"
-        case .webExtensionAdBlockingDetectedStaticAdDaily: return "m_web_extension_adblocking_detected_static_ad_daily"
-        case .webExtensionAdBlockingDetectedBufferingDaily: return "m_web_extension_adblocking_detected_buffering_daily"
-
         // MARK: - Fire Mode
         case .browsingModeSwitched: return "m_browsing-mode_switched"
         case .tabSwitcherModeToggled: return "m_tab-switcher_mode-toggled"
         case .fireModeBurnExecuted: return "m_fire-mode_burn_executed"
         case .normalModeBurnExecuted: return "m_normal-mode_burn_executed"
-        case .fireModeDataCleared: return "m_fire-mode_data-cleared"
-        case .normalModeDataCleared: return "m_normal-mode_data-cleared"
         case .fireModeLastTabClosedBurn: return "m_fire-mode_last-tab-closed_burn"
         case .fireModeEmptyStateNewTab: return "m_fire-mode_empty-state_new-tab"
         case .linkLongPressMenuShown: return "m_link-long-press_menu-shown"
-        case .linkLongPressNewTab: return "m_link-long-press_new-tab"
-        case .linkLongPressBackgroundTab: return "m_link-long-press_background-tab"
-        case .linkLongPressFireTab: return "m_link-long-press_fire-tab"
 
         // MARK: - Custom Product Page
         case .customProductPageDuckAIOpenedAIChat: return "m_custom-product-page_duck-ai_opened-ai-chat"
@@ -4143,7 +4189,7 @@ extension Pixel.Event {
 
 // This is a temporary mapper from PixelKit to Pixel events for MaliciousSiteProtection
 // Malicious Site Protection BSK library depends on PixelKit which is not ready yet to be ported to iOS.
-// The below code maps between `PixelKitEvent` to `Pixel.Event` in order to use `Pixel.fire` on the client.
+// The below code maps between `PixelKit.Event` to `Pixel.Event` in order to use `Pixel.fire` on the client.
 public extension Pixel.Event {
 
     enum MaliciousSiteProtectionEvent: Equatable {
@@ -4188,7 +4234,7 @@ public extension Pixel.Event {
             }
         }
 
-        private var event: PixelKitEvent {
+        private var event: PixelKit.Event {
             switch self {
             case .errorPageShown(let category, let clientSideHit):
                 return MaliciousSiteProtection.Event.errorPageShown(category: category, clientSideHit: clientSideHit)

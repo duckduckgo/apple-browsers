@@ -149,6 +149,7 @@ extension NetworkProtectionStatusView {
                     runLoopMode: RunLoop.Mode? = nil,
                     userDefaults: UserDefaults,
                     locationFormatter: VPNLocationFormatting,
+                    isStrictRoutingAvailable: Bool = false,
                     uninstallHandler: @escaping UninstallHandler,
                     subscriptionExpiredViewAppearHandler: (() -> Void)? = nil,
                     subscriptionExpiredViewSubscribeButtonClickPixelHandler: (() -> Void)? = nil,
@@ -175,6 +176,7 @@ extension NetworkProtectionStatusView {
                                                                   vpnSettings: .init(defaults: userDefaults),
                                                                   proxySettings: .init(defaults: userDefaults),
                                                                   locationFormatter: locationFormatter,
+                                                                  isStrictRoutingAvailable: isStrictRoutingAvailable,
                                                                   uiActionHandler: uiActionHandler)
 
             connectionStatus = statusReporter.statusObserver.recentValue

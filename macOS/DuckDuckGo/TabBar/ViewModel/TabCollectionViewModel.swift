@@ -20,7 +20,7 @@ import AppKit
 import Combine
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import History
 import os.log
@@ -444,21 +444,27 @@ final class TabCollectionViewModel: NSObject {
 
         shouldReturnToPreviousActiveTab = true
         tabCollection.append(tab: tab)
-        if tab.content == .newtab {
-            NotificationCenter.default.post(name: .newTabPageOpen, object: nil)
-            if isBurner {
-                var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
-                if persistor.fireTabVisitCount < SubscriptionPromoConstants.requiredVisitCount {
-                    persistor.fireTabVisitCount += 1
-                }
-            }
-        }
+        handleNewTabPageSideEffects(for: tab)
         let insertionIndex = tabCollection.tabs.indices.index(before: tabCollection.tabs.endIndex)
+        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
+        delegate?.tabCollectionViewModelDidAppend(self, selected: selected)
         if selected {
             selectUnpinnedTab(at: insertionIndex, forceChange: forceChange)
         }
-        delegate?.tabCollectionViewModelDidAppend(self, selected: selected)
         return insertionIndex
+    }
+
+    /// Side effects that accompany opening a New Tab Page tab, shared by the append and
+    /// atomic-replace paths.
+    private func handleNewTabPageSideEffects(for tab: Tab) {
+        guard tab.content == .newtab else { return }
+        NotificationCenter.default.post(name: .newTabPageOpen, object: nil)
+        if isBurner {
+            var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
+            if persistor.fireTabVisitCount < SubscriptionPromoConstants.requiredVisitCount {
+                persistor.fireTabVisitCount += 1
+            }
+        }
     }
 
     func append(tabs: [AnyTab], andSelect shouldSelectLastTab: Bool) {
@@ -491,6 +497,7 @@ final class TabCollectionViewModel: NSObject {
             let newSelectionIndex = tabCollection.tabs.count - 1
             selectUnpinnedTab(at: newSelectionIndex)
         }
+        // The delegate reloads the whole collection and needs the final selection for layout.
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
@@ -532,10 +539,16 @@ final class TabCollectionViewModel: NSObject {
         }()
 
         tabCollection.insert(tabToInsert, at: index.item)
+        // Notify the delegate before updating selection: setting `selectionIndex` publishes
+        // `selectedTabViewModel`, and a subscriber can synchronously insert another tab (a
+        // queued pop-up arriving at `createdChild` while the web view is attached on
+        // selection) while the collection view still holds the pre-insert item count,
+        // raising NSInternalInconsistencyException. The tab bar sizes the incoming tab from
+        // `index`/`selected` — see `TabBarViewController.incomingSelectionIndex`.
+        delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
         if selected {
             select(at: index)
         }
-        delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
     }
 
     func insert(_ tab: Tab, at index: TabIndex, selected: Bool = true) {
@@ -731,14 +744,19 @@ final class TabCollectionViewModel: NSObject {
         }
 
         let parentTab = movedTab.parentTab
-        guard sourceCollection.moveTab(at: fromIndex.item, to: targetCollection, at: toIndex.item) else {
-            return
+
+        // Same Tab, new window — suppress the destination's open so its identity is preserved.
+        Self.withWebExtensionTabLifecycleEventsSuppressed {
+            guard sourceCollection.moveTab(at: fromIndex.item, to: targetCollection, at: toIndex.item) else {
+                return
+            }
+
+            didRemoveTab(movedTab, at: fromIndex, withParent: parentTab)
+
+            // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
+            otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
+            otherViewModel.selectWithoutResettingState(at: toIndex)
         }
-
-        didRemoveTab(movedTab, at: fromIndex, withParent: parentTab)
-
-        otherViewModel.selectWithoutResettingState(at: toIndex)
-        otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
     }
 
     func removeAllTabs(except exceptionIndex: Int? = nil, forceChange: Bool = false) {
@@ -755,6 +773,20 @@ final class TabCollectionViewModel: NSObject {
         } else {
             selectionIndex = nil
         }
+        delegate?.tabCollectionViewModelDidMultipleChanges(self)
+    }
+
+    /// Atomically removes all unpinned tabs and appends `tab`, emitting a single batched change so the
+    /// tab bar reloads instead of animating an individual insertion. Used when burning replaces a
+    /// window's contents with a fresh tab, avoiding a visible flash of the tab being inserted before
+    /// the others are removed.
+    func removeAllTabs(andAppend tab: Tab, forceChange: Bool = false) {
+        guard changesEnabled || forceChange else { return }
+
+        shouldReturnToPreviousActiveTab = true
+        tabCollection.removeAll(andAppend: tab)
+        handleNewTabPageSideEffects(for: tab)
+        selectUnpinnedTab(at: 0, forceChange: forceChange)
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
@@ -825,9 +857,9 @@ final class TabCollectionViewModel: NSObject {
         let newIndex = tabIndex.makeNext()
 
         tabCollection(for: tabIndex)?.insert(tabCopy, at: newIndex.item)
-        select(at: newIndex)
-
+        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
         delegate?.tabCollectionViewModelDidInsert(self, at: newIndex, selected: true)
+        select(at: newIndex)
     }
 
     func pinTab(at index: Int) {
@@ -842,8 +874,11 @@ final class TabCollectionViewModel: NSObject {
         // Materialize if unloaded — pinned tabs must always be loaded
         guard let tab = materialize(at: .unpinned(index)) else { return }
 
-        pinnedTabsManager?.pin(tab)
-        removeUnpinnedTab(at: index, published: false)
+        // Report the move as a single `.pinned` change (emitted by `pin`) rather than a close + reopen.
+        Self.withWebExtensionTabLifecycleEventsSuppressed {
+            pinnedTabsManager?.pin(tab)
+            removeUnpinnedTab(at: index, published: false)
+        }
         selectPinnedTab(at: pinnedTabsCollection.tabs.count - 1)
     }
 
@@ -854,12 +889,25 @@ final class TabCollectionViewModel: NSObject {
             shouldBlockPinnedTabsManagerUpdates = false
         }
 
-        guard let tab = pinnedTabsManager?.unpinTab(at: index, published: false) else {
-            Logger.tabLazyLoading.error("Unable to unpin a tab")
+        Self.withWebExtensionTabLifecycleEventsSuppressed {
+            guard let tab = pinnedTabsManager?.unpinTab(at: index, published: false) else {
+                Logger.tabLazyLoading.error("Unable to unpin a tab")
+                return
+            }
+            insert(tab, at: .unpinned(0))
+        }
+    }
+
+    /// Runs `body` with web extension tab open/close events suppressed, so a tab that merely moves
+    /// between collections or windows keeps its identity instead of being unregistered and
+    /// re-registered. WebKit re-resolves the tab's window lazily via `window(for:)`.
+    static func withWebExtensionTabLifecycleEventsSuppressed(_ body: () -> Void) {
+        guard #available(macOS 15.4, *),
+              let eventsListener = NSApp.delegateTyped.webExtensionManager?.eventsListener else {
+            body()
             return
         }
-
-        insert(tab, at: .unpinned(0))
+        eventsListener.withTabLifecycleEventsSuppressed(body)
     }
 
     @discardableResult

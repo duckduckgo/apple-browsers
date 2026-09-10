@@ -1,0 +1,35 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Image-AI-Blocked-16_svg__a)">
+    <path fill="#adc2fc" d="M12 1.5A3.5 3.5 0 0 1 15.5 5v2.716c0 .266-.33.41-.544.252a5 5 0 0 0-7.522 6.069c.095.211-.052.463-.283.463H4A3.5 3.5 0 0 1 .5 11V5A3.5 3.5 0 0 1 4 1.5z"/>
+    <path fill="url(#Image-AI-Blocked-16_svg__b)" d="M12 1a4 4 0 0 1 4 4v2.802c0 .384-.53.578-.827.334A5 5 0 0 0 15 8V5a3 3 0 0 0-3-3H4a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h3.417q.072.165.156.324c.153.292-.044.676-.374.676H4a4 4 0 0 1-4-4V5a4 4 0 0 1 4-4z"/>
+    <path fill="#adc2fc" d="M12 1a4 4 0 0 1 3.994 3.781l-.025.008-.735.184a1.74 1.74 0 0 0-1.261 1.261l-.184.735a1.4 1.4 0 0 1-.122.317 5 5 0 0 0-2.43-.228l-.025-.09-.184-.734a1.74 1.74 0 0 0-1.262-1.261l-.735-.184c-1.341-.335-1.34-2.242 0-2.577l.735-.184c.54-.135.978-.52 1.185-1.028z"/>
+    <path fill="#ddd" d="M7.608 9.608A5 5 0 0 0 7 12c0 .726.156 1.415.434 2.037.095.211-.052.463-.283.463H4a3.5 3.5 0 0 1-2.475-1.025L6.5 8.5zM12 7q-.585.002-1.13.129l.63-.629z"/>
+    <path fill="url(#Image-AI-Blocked-16_svg__c)" d="M6.5 8a.5.5 0 0 1 .353.147L7.877 9.17a5 5 0 0 0-.498.916l-.88-.879-4.237 4.237c.49.35 1.09.556 1.738.556h3.417q.072.165.155.324c.154.292-.043.676-.373.676h-3.2a4 4 0 0 1-2.827-1.172.5.5 0 0 1 0-.707l4.974-4.974.037-.034A.5.5 0 0 1 6.5 8m4.646-1.853a.5.5 0 0 1 .707 0l.912.91a5.04 5.04 0 0 0-3 .47z"/>
+    <path fill="#fff0c2" d="M6 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/>
+    <path fill="url(#Image-AI-Blocked-16_svg__d)" d="M12.182.273c.082-.331.553-.331.636 0l.184.735a2.74 2.74 0 0 0 1.99 1.99l.734.184c.332.082.332.553 0 .636l-.734.184a2.74 2.74 0 0 0-1.99 1.99l-.184.734c-.082.332-.554.332-.636 0l-.184-.734a2.74 2.74 0 0 0-1.99-1.99l-.735-.184c-.331-.083-.331-.554 0-.636l.735-.184a2.74 2.74 0 0 0 1.99-1.99z"/>
+    <path fill="#de5833" d="M15.5 12a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0"/>
+    <path fill="url(#Image-AI-Blocked-16_svg__e)" d="M15 12a3 3 0 1 0-6 0 3 3 0 0 0 6 0m1 0a4 4 0 1 1-8 0 4 4 0 0 1 8 0"/>
+    <path fill="#fff" d="M13.5 11.5a.5.5 0 0 1 0 1h-3a.5.5 0 0 1 0-1z"/>
+  </g>
+  <defs>
+    <linearGradient id="Image-AI-Blocked-16_svg__b" x1="8" x2="8" y1="1" y2="15" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#557ff3"/>
+      <stop offset="1" stop-color="#2b55ca"/>
+    </linearGradient>
+    <linearGradient id="Image-AI-Blocked-16_svg__c" x1="6.895" x2="6.895" y1="15" y2="6" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#888"/>
+      <stop offset="1" stop-color="#aaa"/>
+    </linearGradient>
+    <linearGradient id="Image-AI-Blocked-16_svg__d" x1="12.5" x2="12.5" y1=".025" y2="6.975" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#557ff3"/>
+      <stop offset="1" stop-color="#2b55ca"/>
+    </linearGradient>
+    <linearGradient id="Image-AI-Blocked-16_svg__e" x1="12" x2="12" y1="8.5" y2="15.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#bc4726"/>
+      <stop offset="1" stop-color="#9a3216"/>
+    </linearGradient>
+    <clipPath id="Image-AI-Blocked-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

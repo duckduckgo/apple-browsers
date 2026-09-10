@@ -65,6 +65,7 @@ final class BookmarkListPopover: NSPopover {
     }
 
     override func show(relativeTo positioningRect: NSRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
+        viewController.hostWindow = positioningView.window
         viewController.adjustPreferredContentSize(positionedRelativeTo: positioningRect, of: positioningView, at: preferredEdge)
         super.show(relativeTo: positioningRect, of: positioningView, preferredEdge: preferredEdge)
     }

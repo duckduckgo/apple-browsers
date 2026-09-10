@@ -23,7 +23,7 @@ import Combine
 import CombineExtensions
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import LoginItems
 import VPN
@@ -243,6 +243,7 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 isMenuBarStatusView: false,
                 userDefaults: .netP,
                 locationFormatter: DefaultVPNLocationFormatter(),
+                isStrictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRoutingToggle),
                 uninstallHandler: { [weak self] reason in
 
                     let showNotification = reason == .expiration

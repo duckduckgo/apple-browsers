@@ -503,7 +503,7 @@ struct NewFileImportView: View {
             }
 
             VStack(alignment: .center, spacing: 20) {
-                Image(nsImage: isTargeted ? DesignSystemImages.Color.Size128.fileDrop : DesignSystemImages.Color.Size128.fileDrag)
+                Image(nsImage: isTargeted ? DesignSystemImages.Color.Size56.fileDrop : DesignSystemImages.Color.Size56.fileDrag)
 
                 VStack(alignment: .center, spacing: 0) {
                     Text(UserText.importDragAndDropFile).font(.system(size: 14, weight: .bold))
@@ -778,20 +778,19 @@ struct NewInstructionsView: View {
 struct NewCircleNumberView: View {
 
     enum Constants {
-        static let diameter: CGFloat = 20
+        static let diameter: CGFloat = 16
     }
 
     let number: Int
 
     var body: some View {
         Circle()
-            .fill(.globalBackground)
+            .fill(Color(designSystemColor: .toneTintSecondary))
             .frame(width: Constants.diameter, height: Constants.diameter)
             .overlay(
                 Text("\(number)")
-                    .foregroundColor(Color(.onboardingActionButton))
-                    .bold()
-
+                    .font(.system(size: 8.75, weight: .semibold))
+                    .foregroundColor(Color(designSystemColor: .accentAltTextPrimary))
             )
     }
 

@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import WebKit
 import BrowserServicesKit
+import FoundationExtensions
 import Subscription
 import Core
 import VPN
@@ -28,12 +29,18 @@ import StoreKit
 import PrivacyConfig
 import Networking
 import UserNotifications
+import UIComponents
+import Lottie
+import FeatureFlags_iOS
+import Persistence
 
 final class SubscriptionDebugViewController: UITableViewController {
 
     private let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
     private lazy var subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
     private let reporter: SubscriptionDataReporting
+
+    var keyValueStore: ThrowingKeyValueStoring?
 
     private var subscriptionManager: SubscriptionManager {
         AppDependencyProvider.shared.subscriptionManager
@@ -64,6 +71,10 @@ final class SubscriptionDebugViewController: UITableViewController {
         Sections.metadata: "StoreKit Metadata",
         Sections.regionOverride: "Region override for App Store Sandbox",
         Sections.expirationReminder: "Expiration Reminder Notification",
+        Sections.onboarding: "Onboarding — On-Device Progress",
+        Sections.onboardingMock: "Onboarding — Mock Flow",
+        Sections.onboardingMockConfig: "Onboarding — Configure Mock Flow",
+        Sections.onboardingSubflows: "Onboarding Subflows",
     ]
 
     enum Sections: Int, CaseIterable {
@@ -76,6 +87,10 @@ final class SubscriptionDebugViewController: UITableViewController {
         case metadata
         case regionOverride
         case expirationReminder
+        case onboarding
+        case onboardingMock
+        case onboardingMockConfig
+        case onboardingSubflows
     }
 
     enum AuthorizationRows: Int, CaseIterable {
@@ -116,6 +131,7 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     enum RegionOverrideRows: Int, CaseIterable {
         case currentRegionOverride
+        case noProductsOverride
     }
 
     enum ExpirationReminderRows: Int, CaseIterable {
@@ -123,12 +139,29 @@ final class SubscriptionDebugViewController: UITableViewController {
         case triggerMockNotification
     }
 
+    // Onboarding row enums (OnboardingRows, OnboardingMockRows, OnboardingMockConfigRows,
+    // OnboardingSubflowRows) and their cell/selection handling live in
+    // SubscriptionDebugViewController+SubscriptionOnboarding.swift.
+
     private var notificationAuthStatusText: String = "Loading"
     private var subscriptionStatusText: String = "Loading"
-    
+
 
     private var storefrontID = "Loading"
     private var storefrontCountryCode = "Loading"
+
+    // MARK: - Onboarding mock state (in-memory only, resets on relaunch)
+    // Read/written from SubscriptionDebugViewController+SubscriptionOnboarding.swift.
+
+    var mockCompletedItems: Set<SubscriptionOnboardingChecklistItem> = []
+    var mockNetworkProtection = true
+    var mockIdentityTheftRestoration = true
+    var mockIdentityTheftRestorationGlobal = true
+    var mockPaidAIChat = true
+    var mockDataBrokerProtection = true
+    var mockIsPIRAvailable = true
+
+    var mockForcedTrialLengthDays: Int?
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         return Sections.allCases.count
@@ -138,6 +171,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         super.viewDidLoad()
         loadStoreKitMetadata()
         loadExpirationReminderStatus()
+        tableView.estimatedRowHeight = tableView.rowHeight
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -304,9 +338,29 @@ final class SubscriptionDebugViewController: UITableViewController {
 
                 cell.accessoryView = button
                 adjustMenuButtonWidth()
+            case .noProductsOverride:
+                cell.textLabel?.text = "Load no products"
+                cell.selectionStyle = .none
+
+                let toggle = UISwitch()
+                toggle.isOn = subscriptionUserDefaults.noSubscriptionProductsOverride
+                toggle.addTarget(self, action: #selector(noProductsOverrideChanged(_:)), for: .valueChanged)
+                cell.accessoryView = toggle
             case .none:
                 break
             }
+
+        case .onboarding:
+            configureOnboardingCell(cell, at: indexPath)
+
+        case .onboardingMock:
+            configureOnboardingMockCell(cell, at: indexPath)
+
+        case .onboardingMockConfig:
+            configureOnboardingMockConfigCell(cell, at: indexPath)
+
+        case .onboardingSubflows:
+            configureOnboardingSubflowCell(cell, at: indexPath)
 
         case .none:
             break
@@ -326,6 +380,10 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .metadata: return MetadataRows.allCases.count
         case .regionOverride: return RegionOverrideRows.allCases.count
         case .expirationReminder: return ExpirationReminderRows.allCases.count
+        case .onboarding: return OnboardingRows.allCases.count
+        case .onboardingMock: return OnboardingMockRows.allCases.count
+        case .onboardingMockConfig: return OnboardingMockConfigRows.allCases.count
+        case .onboardingSubflows: return OnboardingSubflowRows.allCases.count
         case .none: return 0
         }
     }
@@ -374,6 +432,14 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .triggerMockNotification: triggerMockExpirationReminder()
             default: break
             }
+        case .onboarding:
+            didSelectOnboardingRow(at: indexPath)
+        case .onboardingMock:
+            didSelectOnboardingMockRow(at: indexPath)
+        case .onboardingMockConfig:
+            didSelectOnboardingMockConfigRow(at: indexPath)
+        case .onboardingSubflows:
+            didSelectOnboardingSubflowRow(at: indexPath)
         case .none:
             break
         }
@@ -414,7 +480,11 @@ final class SubscriptionDebugViewController: UITableViewController {
         }
     }
 
-    private func showAlert(title: String, message: String? = nil) {
+    @objc private func noProductsOverrideChanged(_ sender: UISwitch) {
+        subscriptionUserDefaults.noSubscriptionProductsOverride = sender.isOn
+    }
+
+    func showAlert(title: String, message: String? = nil) {
         DispatchQueue.main.async {
             let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
             let okAction = UIAlertAction(title: "OK", style: .default, handler: nil)
@@ -816,6 +886,11 @@ final class SubscriptionDebugViewController: UITableViewController {
         let hostingController = UIHostingController(rootView: ProductionSubscriptionPurchaseDebugView(subscriptionSelectionHandler: handler))
         navigationController?.pushViewController(hostingController, animated: true)
     }
+
+    // Onboarding screen launchers, the mock full/resume flow, and the on-device progress utilities
+    // (resetOnboardingProgress, expireSetupCardWindow) live in
+    // SubscriptionDebugViewController+SubscriptionOnboarding.swift.
+
 }
 
 extension Bool {

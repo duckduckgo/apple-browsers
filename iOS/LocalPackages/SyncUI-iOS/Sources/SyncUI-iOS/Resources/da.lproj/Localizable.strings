@@ -76,12 +76,6 @@
 /* Standard Buttons - Done Button */
 "done.button" = "Færdig";
 
-/* Edit Device View - Header */
-"edit.device.header" = "Enhedens navn";
-
-/* Edit Device View - Title */
-"edit.device.title" = "Rediger %@";
-
 /* Fetch Favicons Onboarding - Button Title */
 "fetch.favicons.onboarding.button.title" = "Hold bogmærkeikoner opdaterede";
 
@@ -97,14 +91,8 @@
 /* No comment provided by engineer. */
 "Keep Development" = "Behold udvikling";
 
-/* Manually Enter Code View - Title */
-"manually.enter.code.title" = "Indtast kode manuelt";
-
 /* Standard Buttons - Not Now Button */
 "not.now.button" = "Ikke nu";
-
-/* Standard Buttons - Paste Button */
-"paste.button" = "Indsæt";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Administrer bogmærker";
@@ -114,9 +102,6 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Administrer kreditkort…";
-
-/* Preparing to sync title */
-"preparing.to.sync.title" = "Forbereder synkronisering";
 
 /* Recover Synced Data Sheet - Button */
 "recover.synced.data.sheet.button" = "Gendan synkroniserede data";
@@ -175,20 +160,11 @@
 /* Sync Settings - Recovery section header */
 "sync.settings.recovery.section.header" = "Gendannelse";
 
-/* Sync settings 'Already set up' section header containing useful options */
-"sync.simplified.already.set.up.section.header" = "Allerede konfigureret på en anden enhed?";
+/* Body on the sync-setup prompt explaining the sync-another-device option */
+"sync.simplified.another.device.v2.body" = "Vi hjælper dig med at synkronisere dine enheder.";
 
-/* Prompt body text after enabling sync */
-"sync.simplified.another.device.body" = "Der er taget en backup af dine bogmærker, data til automatisk udfyldning og dine Duck.ai-chats. Hold dem nu synkroniseret med din computer eller tablet.";
-
-/* Primary button to sync another device when sync is enabled */
-"sync.simplified.another.device.button" = "Synkroniser en anden enhed";
-
-/* Prompt secondary button */
-"sync.simplified.another.device.notnow" = "Ikke nu";
-
-/* Prompt title after enabling sync */
-"sync.simplified.another.device.title" = "Synkroniser dine data med en anden enhed?";
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v2.title" = "Synkroniser denne enhed med en computer i nærheden.";
 
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Indlæser ikoner fra hjemmesider, du har bogmærket. Ikondownloads eksponeres for dit netværk.";
@@ -199,8 +175,8 @@
 /* Caption displayed on 'unify favorites' toggle. */
 "sync.simplified.bookmarks.section.unified-favorites.caption" = "Brug de samme favoritbogmærker på mobil og computer.";
 
-/* Text shown next to toggle while sync is being set up */
-"sync.simplified.connecting" = "Forbinder...";
+/* Title shown on the connecting screen while Sync & Backup is being set up on this device */
+"sync.simplified.connecting.v2.title" = "Sync & Backup er end-to-end-krypteret på alle dine enheder.";
 
 /* Sync settings 'Copy Recovery Code' button */
 "sync.simplified.copy.recovery.code.button" = "Kopiér gendannelseskode";
@@ -208,20 +184,89 @@
 /* Sync settings action button title to turn off sync and delete server data */
 "sync.simplified.delete.sync.data.button" = "Slå Sync og slet serverdata fra";
 
+/* Description on the device-added success screen explaining what the recovery code is for */
+"sync.simplified.device.added.v2.description" = "Brug denne kode til at gendanne dine data, hvis du mister adgangen til din enhed. Opbevar den sikkert.";
+
+/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedTitle. */
+"sync.simplified.device.added.v2.fallback.device.name" = "Denne enhed";
+
+/* Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added. */
+"sync.simplified.device.added.v2.title" = "%@ er blevet føjet til Sync & Backup.";
+
 /* Sync settings 'Download Recovery Code' button */
 "sync.simplified.download.recovery.code.button" = "Download gendannelseskode";
 
-/* Button subtitle to get the DuckDuckGo desktop browser */
-"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo til Mac og Windows";
+/* Section header above the get-desktop-browser option in sync setup */
+"sync.simplified.download.section.header" = "Download";
 
-/* Button title to get the DuckDuckGo desktop browser. */
-"sync.simplified.get.desktop.browser.title" = "Hent browser til computeren";
+/* Button to download the recovery code on the recover-your-data screen */
+"sync.simplified.download.your.recovery.code.button" = "Download din gendannelseskode";
 
-/* Description of the Sync & Backup feature (when AI chat sync is available) */
-"sync.simplified.header.message" = "Gem dine bogmærker, data til automatisk udfyldning og Duck.ai-chats, og synkroniser dem mellem dine enheder med end-to-end-kryptering.";
+/* Description shown when Sync & Backup is enabled (when AI chat sync is available) */
+"sync.simplified.enabled.header.message" = "Dine bogmærker, data til automatisk udfyldning og Duck.ai-chats synkroniseres og sikkerhedskopieres med end-to-end-kryptering.";
+
+/* Description shown when Sync & Backup is enabled */
+"sync.simplified.enabled.header.message.basic" = "Dine bogmærker og data til automatisk udfyldning synkroniseres med end-to-end-kryptering.";
+
+/* Sync & Backup screen title shown when Sync is enabled */
+"sync.simplified.enabled.header.title" = "DuckDuckGo er synkroniseret";
+
+/* Label above the example sync code placeholder on the enter-code tab */
+"sync.simplified.enter.code.example.label" = "Eksempelkode:";
+
+/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.enter.code.open" = "Åbn din anden";
+
+/* Button to paste the sync code on the enter-code tab */
+"sync.simplified.enter.code.paste.button" = "Indsæt synkroniseringskode";
+
+/* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.enter.code.steps" = "Gå til **Sync & Backup** › **Synkroniser med en anden enhed** › **Kopiér tekstkode**.";
+
+/* Title on the enter-code tab of the scan screen */
+"sync.simplified.enter.code.title" = "Indtast synkroniseringskoden.";
+
+/* Row label to get the DuckDuckGo desktop browser */
+"sync.simplified.get.our.desktop.browser.title" = "Hent vores browser til computeren";
+
+/* Sync setup row label to recover synced data using an existing recovery code */
+"sync.simplified.have.recovery.code.button" = "Jeg har en gendannelseskode";
 
 /* Description of the Sync & Backup feature */
-"sync.simplified.header.message.basic" = "Gem dine bogmærker og data til automatisk udfyldning, og synkroniser dem mellem dine enheder med end-to-end-kryptering.";
+"sync.simplified.header.message.basic.v2" = "Synkroniser dine data til automatisk udfyldning og bogmærker, end-to-end-krypteret på tværs af dine DuckDuckGo-apps.";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message.v2" = "Synkroniser og sikkerhedskopier dine data til automatisk udfyldning, bogmærker og Duck.ai-chats, end-to-end-krypteret på tværs af dine DuckDuckGo-apps.";
+
+/* Sync & Backup screen title */
+"sync.simplified.header.title" = "Hold DuckDuckGo synkroniseret";
+
+/* Footer caption shown under the Remove Device button on the manage device screen */
+"sync.simplified.manage.device.remove.footer" = "Denne enhed vil ikke længere have adgang til dine synkroniserede data, hvis du fjerner den.";
+
+/* Status label shown under a device name on the manage device screen when the device is synced */
+"sync.simplified.manage.device.status.synced" = "Synkroniseret";
+
+/* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
+"sync.simplified.manage.device.turn.off.footer" = "Denne enhed vil ikke længere have adgang til dine synkroniserede data, hvis dette slås fra.";
+
+/* My Devices section header shown when Sync & Backup is enabled */
+"sync.simplified.my.devices.section.header" = "Mine enheder";
+
+/* Section header above the recovery-code option in sync setup */
+"sync.simplified.recover.synced.data.section.header" = "Gendan synkroniserede data";
+
+/* Title shown on the connecting screen while a device's synced data is being recovered */
+"sync.simplified.recovering.data.v2.title" = "Gendanner data";
+
+/* Label above the recovery code on the recover-your-data screen */
+"sync.simplified.recovery.code.label" = "Gendannelseskode";
+
+/* Description on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.description" = "End-to-end krypteret på alle dine enheder.";
+
+/* Title on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.title" = "Sync & Backup aktiveret";
 
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Brug denne kode til at gendanne dine data, hvis du mister adgangen til denne enhed. Sync & Backup-data kan ikke gendannes efter 18 måneders inaktivitet. [Læs mere](%@)";
@@ -229,14 +274,8 @@
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo-appen";
 
-/* Floating prompt over QR code scanner preview */
-"sync.simplified.scan-or-view-code.camera.prompt" = "Ret kameraet mod QR-koden for at scanne";
-
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Forbinder...";
-
-/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Hold \"Sync & Backup\" åben på begge enheder";
 
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Vend tilbage til denne enhed, når du har indsat koden.";
@@ -244,41 +283,59 @@
 /* Title of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.title" = "Indsæt koden på din anden enhed";
 
-/* Button to navigate to manual sync code entry */
-"sync.simplified.scan-or-view-code.manually.enter.code" = "Indtast kode manuelt";
-
-/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
-"sync.simplified.scan-or-view-code.paste.code.instructions" = "Gå til **Indstillinger > Sync & Backup > Synkroniser med en anden enhed**, og vælg **Vis tekstkode** i DuckDuckGo-appen på en anden synkroniseret enhed, og indsæt koden her for at synkronisere denne enhed.";
-
 /* Status text while verifying a pasted sync code */
 "sync.simplified.scan-or-view-code.paste.code.verifying" = "Bekræftelse af kode";
-
-/* First line of QR code scanning instructions */
-"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Åbn DuckDuckGo-appen på din anden enhed.";
-
-/* Second line of QR code scanning instructions */
-"sync.simplified.scan-or-view-code.scan.instructions.line2" = "Find QR-koden i Indstillinger > Sync & Backup > Synkroniser med en anden enhed.";
 
 /* Title of button to share a sync code */
 "sync.simplified.scan-or-view-code.share" = "Del kode";
 
-/* Button title to show QR code scanner */
-"sync.simplified.scan-or-view-code.tab.scan" = "Scan QR-kode";
+/* Close button in the scan screen navigation bar */
+"sync.simplified.scan.v2.close.button" = "Luk";
 
-/* Button title to view your sync code */
-"sync.simplified.scan-or-view-code.tab.view.code" = "Vis kode";
+/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+"sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo til computer";
 
-/* Navigation title for simplified QR scanning screen */
-"sync.simplified.scan-or-view-code.title" = "Synkroniser dine enheder";
+/* Heading overlaid on the camera on the scan-QR tab of the scan screen */
+"sync.simplified.scan.v2.qr.heading" = "Scan QR-kode for at synkronisere.";
 
-/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Scan eller indsæt denne kode på din anden enhed";
+/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.scan.v2.qr.open" = "Åbn";
 
-/* Sync & Backup enabled / disabled toggle title */
-"sync.simplified.toggle.title" = "Synkronisering og sikkerhedskopiering";
+/* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
+"sync.simplified.scan.v2.qr.ready.button" = "Jeg er klar til at scanne";
 
-/* Use Recovery Code sync setup button label */
-"sync.simplified.use.recovery.code.button" = "Brug gendannelseskode";
+/* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.scan.v2.qr.steps" = "og gå til **Sync & Backup** › **Synkroniser med en anden enhed**";
+
+/* Segmented control tab title for entering a code */
+"sync.simplified.scan.v2.tab.enter.code" = "Indtast kode";
+
+/* Segmented control tab title for scanning a QR code */
+"sync.simplified.scan.v2.tab.scan.qr" = "Scan QR-kode";
+
+/* Status label shown next to the title when Sync & Backup is disabled */
+"sync.simplified.status.off" = "Fra";
+
+/* Status label shown next to the title when Sync & Backup is enabled */
+"sync.simplified.status.on" = "Til";
+
+/* Button to copy the text sync code on the sync-code sheet */
+"sync.simplified.sync.code.copy.button" = "Kopiér tekstkode";
+
+/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.sync.code.sheet.open" = "Åbn på en anden enhed";
+
+/* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.sync.code.sheet.scan" = "Gå til **Sync & Backup** › **Synkroniser med en anden enhed**, og scan denne kode:";
+
+/* Navigation title of the sheet that shows this device's sync QR code */
+"sync.simplified.sync.code.sheet.title" = "Scan eller kopier kode";
+
+/* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
+"sync.simplified.this.device.only" = "Synkroniser kun denne enhed";
+
+/* Sync & Backup enabled / disabled toggle title, referring to the current device */
+"sync.simplified.toggle.title.this.device" = "Synkroniser denne enhed";
 
 /* Sync With Another Device sync setup button label */
 "sync.simplified.with.another.device.button" = "Synkroniser med en anden enhed";
@@ -294,9 +351,6 @@
 
 /* Title of the warning message */
 "sync.warning.sync.unavailable" = "Synkronisering og sikkerhedskopiering er ikke tilgængelig";
-
-/* Synced Devices - Section Header */
-"synced.devices.section.header" = "Synkroniserede enheder";
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Denne enhed";

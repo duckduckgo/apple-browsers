@@ -31,6 +31,10 @@ let package = Package(
             targets: ["DataBrokerProtection-iOS"])
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/WideEvent"),
+        .package(path: "../../../SharedPackages/Common"),
+        .package(path: "../../../SharedPackages/Persistence"),
+        .package(path: "../../../SharedPackages/PixelKit"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../../../SharedPackages/DataBrokerProtectionCore"),
@@ -39,15 +43,16 @@ let package = Package(
         .target(
             name: "DataBrokerProtection-iOS",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "DataBrokerProtectionCore", package: "DataBrokerProtectionCore"),
                 .product(name: "DataBrokerProtectionDebugServer", package: "DataBrokerProtectionCore"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
             ],
             swiftSettings: [
@@ -60,8 +65,9 @@ let package = Package(
                 "DataBrokerProtection-iOS",
                 "DataBrokerProtectionCore",
                 "BrowserServicesKit",
+                .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "DataBrokerProtectionCoreTestsUtils", package: "DataBrokerProtectionCore"),
-                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
             ]
         )

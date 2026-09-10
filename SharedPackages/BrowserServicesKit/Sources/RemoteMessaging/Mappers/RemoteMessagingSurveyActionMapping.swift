@@ -24,6 +24,7 @@ public enum RemoteMessagingSurveyActionParameter: String, CaseIterable {
     case atbVariant = "var"
     case daysInstalled = "delta"
     case hardwareModel = "mo"
+    case lastDuckAIUsage = "last_duck_ai_usage"
     case lastSearchState = "last_search_state"
     case locale = "locale"
     case osVersion = "osv"

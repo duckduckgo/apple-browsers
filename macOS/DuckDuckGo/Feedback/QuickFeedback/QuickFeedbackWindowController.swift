@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Combine
 import WebKit
 
 @MainActor
@@ -26,6 +27,7 @@ final class QuickFeedbackWindowController: NSWindowController {
     private let signOutBar = NSView()
     private let signOutButton = NSButton()
     private var signOutBarHeightConstraint: NSLayoutConstraint!
+    private var cancellables = Set<AnyCancellable>()
 
     /// Exposed so the autofill overlay anchors to this panel rather than the main browser window.
     private(set) var webViewContainer: NSView!
@@ -50,6 +52,7 @@ final class QuickFeedbackWindowController: NSWindowController {
         super.init(window: panel)
 
         setupContentView(in: panel)
+        subscribeToUserInteractionDialogChanges()
     }
 
     @available(*, unavailable)
@@ -118,5 +121,35 @@ final class QuickFeedbackWindowController: NSWindowController {
 
     @objc private func signOutClicked() {
         onSignOutRequested?()
+    }
+
+    // MARK: - Open panel
+
+    /// This popup's `Tab` lives outside `BrowserTabViewController`, which normally presents
+    /// `userInteractionDialog` requests — without this, file input clicks silently do nothing.
+    private func subscribeToUserInteractionDialogChanges() {
+        tab.$userInteractionDialog
+            .dropFirst()
+            .sink { [weak self] userInteractionDialog in
+                guard let self, let dialog = userInteractionDialog?.dialog, case .openPanel(let request) = dialog else { return }
+                self.showOpenPanel(with: request)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func showOpenPanel(with request: OpenPanelDialogRequest) {
+        let openPanel = NSOpenPanel()
+        openPanel.allowsMultipleSelection = request.parameters.allowsMultipleSelection
+        // Match the popup's floating level, otherwise the panel opens behind it.
+        openPanel.level = window?.level ?? .floating
+
+        openPanel.begin { [weak request] response in
+            switch response {
+            case .OK:
+                request?.submit(openPanel.urls)
+            default:
+                request?.submit(nil)
+            }
+        }
     }
 }

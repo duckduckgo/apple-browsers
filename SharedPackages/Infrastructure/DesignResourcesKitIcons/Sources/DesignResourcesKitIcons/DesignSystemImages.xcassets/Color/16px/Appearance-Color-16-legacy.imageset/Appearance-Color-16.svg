@@ -1,0 +1,38 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Appearance-Color-16_svg__a)" data-figma-skip-parse="true">
+    <foreignObject width="2250" height="2250" x="-1125" y="-1125" transform="matrix(0 -.008 .008 0 8 8)">
+      <div style="background:conic-gradient(from 90deg,#5784ff 0deg,#6bbc5a 76.875deg,#fed72d 146.25deg,#f17c50 217.5deg,#977de3 283.125deg,#5784ff 360deg);height:100%;width:100%;opacity:1" xmlns="http://www.w3.org/1999/xhtml"/>
+    </foreignObject>
+  </g>
+  <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Z" data-figma-gradient-fill="{&quot;type&quot;:&quot;GRADIENT_ANGULAR&quot;,&quot;stops&quot;:[{&quot;color&quot;:{&quot;r&quot;:0.34117648005485535,&quot;g&quot;:0.51764708757400513,&quot;b&quot;:1.0,&quot;a&quot;:1.0},&quot;position&quot;:0.0},{&quot;color&quot;:{&quot;r&quot;:0.41960790753364563,&quot;g&quot;:0.73725491762161255,&quot;b&quot;:0.35294118523597717,&quot;a&quot;:1.0},&quot;position&quot;:0.21354167163372040},{&quot;color&quot;:{&quot;r&quot;:0.99607843160629272,&quot;g&quot;:0.84705865383148193,&quot;b&quot;:0.18039214611053467,&quot;a&quot;:1.0},&quot;position&quot;:0.406250},{&quot;color&quot;:{&quot;r&quot;:0.94509804248809814,&quot;g&quot;:0.48627451062202454,&quot;b&quot;:0.31372550129890442,&quot;a&quot;:1.0},&quot;position&quot;:0.60416668653488159},{&quot;color&quot;:{&quot;r&quot;:0.59215688705444336,&quot;g&quot;:0.49019607901573181,&quot;b&quot;:0.89019608497619629,&quot;a&quot;:1.0},&quot;position&quot;:0.78645831346511841},{&quot;color&quot;:{&quot;r&quot;:0.34117648005485535,&quot;g&quot;:0.51764708757400513,&quot;b&quot;:1.0,&quot;a&quot;:1.0},&quot;position&quot;:1.0}],&quot;stopsVar&quot;:[],&quot;transform&quot;:{&quot;m00&quot;:-1.8927353716453876e-13,&quot;m01&quot;:16.0,&quot;m02&quot;:0.0,&quot;m10&quot;:-16.0,&quot;m11&quot;:-2.1058981923734177e-13,&quot;m12&quot;:16.0},&quot;opacity&quot;:1.0,&quot;blendMode&quot;:&quot;NORMAL&quot;,&quot;visible&quot;:true}"/>
+  <path fill="#96C54E" d="M16 8c0 .7-.092 1.395-.273 2.07L8 8h8Z"/>
+  <path fill="#B5CB44" d="M15.727 10.07a7.998 7.998 0 0 1-.799 1.93L8 8l7.727 2.07Z"/>
+  <path fill="#D5D13B" d="M14.929 12a8 8 0 0 1-1.272 1.657L8 8l6.929 4Z"/>
+  <path fill="#F6D731" d="M13.657 13.657A8 8 0 0 1 12 14.928L8 8l5.657 5.657Z"/>
+  <path fill="#FDCA34" d="M12 14.928a8.005 8.005 0 0 1-1.929.8L8.001 8l4 6.928Z"/>
+  <path fill="#FAB63B" d="M10.07 15.727A8.002 8.002 0 0 1 8 16V8l2.07 7.727Z"/>
+  <path fill="#F7A243" d="M8 16c-.7 0-1.395-.092-2.07-.273L8 8v8Z"/>
+  <path fill="#F49049" d="M5.93 15.727A8.005 8.005 0 0 1 4 14.928L8 8l-2.07 7.727Z"/>
+  <path fill="#F17D51" d="M4 14.928a8 8 0 0 1-1.656-1.271L8 8l-4 6.928Z"/>
+  <path fill="#DD7D73" d="M2.343 13.657A8 8 0 0 1 1.072 12L8 8l-5.657 5.657Z"/>
+  <path fill="#C67D98" d="M1.072 12a7.999 7.999 0 0 1-.799-1.93L8.001 8l-6.929 4Z"/>
+  <path fill="#B17DB9" d="M.272 10.07A8 8 0 0 1 0 8h8L.272 10.07Z"/>
+  <path fill="#9F7ED7" d="M0 8a8 8 0 0 1 .273-2.07L8 8H0Z"/>
+  <path fill="#8F7EE7" d="M.273 5.93a8 8 0 0 1 .8-1.93L8 8 .273 5.93Z"/>
+  <path fill="#8380EC" d="M1.072 4a8 8 0 0 1 1.272-1.657L8 8 1.072 4Z"/>
+  <path fill="#7681F2" d="M2.343 2.343A8 8 0 0 1 4 1.072L8 8 2.343 2.343Z"/>
+  <path fill="#6A82F7" d="M4 1.072a8 8 0 0 1 1.93-.8L8 8 4 1.072Z"/>
+  <path fill="#5D84FD" d="M5.93.273A8 8 0 0 1 8 0v8L5.93.273Z"/>
+  <path fill="#5A8AEF" d="M8 0a8 8 0 0 1 2.07.273L8 8V0Z"/>
+  <path fill="#5D95CF" d="M10.07.273a8 8 0 0 1 1.93.799L8 8 10.07.273Z"/>
+  <path fill="#619FB0" d="M12 1.072a8 8 0 0 1 1.657 1.271L8 8l4-6.928Z"/>
+  <path fill="#65AA90" d="M13.657 2.343A8 8 0 0 1 14.928 4L8 8l5.657-5.657Z"/>
+  <path fill="#69B570" d="M14.929 4c.35.605.618 1.254.799 1.93L8 8l6.929-4Z"/>
+  <path fill="#76BF57" d="M15.727 5.93C15.908 6.604 16 7.3 16 8H8l7.727-2.07Z"/>
+  <path fill="#040B24" fill-opacity=".6" fill-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16Z" clip-rule="evenodd" style="mix-blend-mode:multiply"/>
+  <defs>
+    <clipPath id="Appearance-Color-16_svg__a">
+      <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Z"/>
+    </clipPath>
+  </defs>
+</svg>

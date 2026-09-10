@@ -18,40 +18,36 @@
 
 import SwiftUI
 import Onboarding
-import FeatureFlags
-import PrivacyConfig
 
 final class ContextualDaxDialogsProvider: ContextualDaxDialogsFactory {
-    private let featureFlagger: FeatureFlagger
     private let legacyDaxDialogsFactory: ContextualDaxDialogsFactory
     private let rebrandedDaxDialogsFactory: ContextualDaxDialogsFactory
 
     convenience init(
-        featureFlagger: FeatureFlagger,
         onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
+        subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
         fireCoordinator: FireCoordinator
     ) {
         let legacyFactory = DefaultContextualDaxDialogViewFactory(
             onboardingPixelReporter: onboardingPixelReporter,
+            subscriptionUpsellMetrics: subscriptionUpsellMetrics,
             fireCoordinator: fireCoordinator
         )
         let rebrandedFactory = RebrandedContextualDaxDialogsFactory(
             onboardingPixelReporter: onboardingPixelReporter,
+            subscriptionUpsellMetrics: subscriptionUpsellMetrics,
             fireCoordinator: fireCoordinator
         )
         self.init(
-            featureFlagger: featureFlagger,
             legacyDaxDialogsFactory: legacyFactory,
             rebrandedDaxDialogsFactory: rebrandedFactory
         )
     }
 
     init(
-        featureFlagger: FeatureFlagger,
         legacyDaxDialogsFactory: ContextualDaxDialogsFactory,
         rebrandedDaxDialogsFactory: ContextualDaxDialogsFactory
     ) {
-        self.featureFlagger = featureFlagger
         self.legacyDaxDialogsFactory = legacyDaxDialogsFactory
         self.rebrandedDaxDialogsFactory = rebrandedDaxDialogsFactory
     }
@@ -59,7 +55,7 @@ final class ContextualDaxDialogsProvider: ContextualDaxDialogsFactory {
     private var factory: ContextualDaxDialogsFactory {
         // Rebranded panel layout breaks on macOS 12 and below. For now, we'll just
         // ensure we show the legacy contextual dialogs on those versions.
-        if #available(macOS 13.0, *), featureFlagger.isFeatureOn(.onboardingRebranding) {
+        if #available(macOS 13.0, *) {
             rebrandedDaxDialogsFactory
         } else {
             legacyDaxDialogsFactory

@@ -34,6 +34,13 @@ protocol BookmarksBarMenuViewControllerDelegate: AnyObject {
 }
 
 final class BookmarksBarMenuViewController: NSViewController {
+    override var undoManager: UndoManager? {
+        var hostWindow = isViewLoaded ? view.window : nil
+        while let parentWindow = hostWindow?.parent {
+            hostWindow = parentWindow
+        }
+        return hostWindow?.undoManager ?? super.undoManager
+    }
 
     fileprivate enum Constants {
         static let noContentMenuSize = CGSize(width: 8, height: 40)
@@ -59,10 +66,6 @@ final class BookmarksBarMenuViewController: NSViewController {
     private var submenuPopover: (any BookmarksBarMenuPopoverPresenting)?
     private(set) var preferredContentOffset: CGPoint = .zero
 
-    /// True when the enclosing popover is `BookmarksBarMenuCustomPopover` (which has no
-    /// window chrome, so this VC needs to provide its own backdrop / corner radius).
-    private let usesCustomWindowChrome: Bool
-
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var dataSource: BookmarkOutlineViewDataSource = {
@@ -71,13 +74,7 @@ final class BookmarksBarMenuViewController: NSViewController {
             bookmarkManager: bookmarkManager,
             treeController: treeController,
             dragDropManager: dragDropManager,
-            sortMode: .manual,
-            presentFaviconsFetcherOnboarding: { [weak self] in
-                guard let self, let window = self.view.window else {
-                    return
-                }
-                self.faviconsFetcherOnboarding?.presentOnboardingIfNeeded(in: window)
-            }
+            sortMode: .manual
         )
     }()
 
@@ -88,18 +85,9 @@ final class BookmarksBarMenuViewController: NSViewController {
         return [BookmarkNode]()
     }
 
-    private(set) lazy var faviconsFetcherOnboarding: FaviconsFetcherOnboarding? = {
-        guard let syncService = NSApp.delegateTyped.syncService, let syncBookmarksAdapter = NSApp.delegateTyped.syncDataProviders?.bookmarksAdapter else {
-            assertionFailure("SyncService and/or SyncBookmarksAdapter is nil")
-            return nil
-        }
-        return .init(syncService: syncService, syncBookmarksAdapter: syncBookmarksAdapter)
-    }()
-
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,
          rootFolder: BookmarkFolder? = nil,
-         usesCustomWindowChrome: Bool = false,
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
@@ -109,7 +97,6 @@ final class BookmarksBarMenuViewController: NSViewController {
                                                      rootFolder: rootFolder,
                                                      isBookmarksBarMenu: true)
         self.themeManager = themeManager
-        self.usesCustomWindowChrome = usesCustomWindowChrome
         super.init(nibName: nil, bundle: nil)
         self.representedObject = rootFolder
     }
@@ -122,34 +109,29 @@ final class BookmarksBarMenuViewController: NSViewController {
 
     // MARK: View Lifecycle
     override func loadView() {
-        if usesCustomWindowChrome {
-            // Custom panel chrome (no NSPopover) — provide our own clipped corners and a
-            // `.menu` material backdrop. `NSGlassEffectView` was tried here on macOS 26 to
-            // match liquid-glass context menus but its `.regular` style samples the screen
-            // behind the panel and drifts dark over dark content; neither `tintColor`
-            // (any alpha) nor an in-window backdrop suppressed the sampling effectively.
-            view = NSView()
-            view.autoresizesSubviews = false
-            view.wantsLayer = true
-            view.layer?.cornerRadius = Self.popoverCornerRadius
-            view.layer?.masksToBounds = true
+        // Custom panel chrome (no NSPopover) — provide our own clipped corners and a
+        // `.menu` material backdrop. `NSGlassEffectView` was tried here on macOS 26 to
+        // match liquid-glass context menus but its `.regular` style samples the screen
+        // behind the panel and drifts dark over dark content; neither `tintColor`
+        // (any alpha) nor an in-window backdrop suppressed the sampling effectively.
+        view = NSView()
+        view.autoresizesSubviews = false
+        view.wantsLayer = true
+        view.layer?.cornerRadius = Self.popoverCornerRadius
+        view.layer?.masksToBounds = true
 
-            let backdrop = NSVisualEffectView()
-            backdrop.material = .popover
-            backdrop.blendingMode = .behindWindow
-            backdrop.state = .active
-            backdrop.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(backdrop)
-            NSLayoutConstraint.activate([
-                backdrop.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                backdrop.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                backdrop.topAnchor.constraint(equalTo: view.topAnchor),
-                backdrop.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            ])
-        } else {
-            view = NSView()
-            view.autoresizesSubviews = false
-        }
+        let backdrop = NSVisualEffectView()
+        backdrop.material = .popover
+        backdrop.blendingMode = .behindWindow
+        backdrop.state = .active
+        backdrop.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(backdrop)
+        NSLayoutConstraint.activate([
+            backdrop.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backdrop.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backdrop.topAnchor.constraint(equalTo: view.topAnchor),
+            backdrop.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.drawsBackground = false
@@ -576,7 +558,7 @@ final class BookmarksBarMenuViewController: NSViewController {
         }
 
         // popover borders
-        let contentInsets = BookmarksBarMenuPopover.popoverInsets
+        let contentInsets = BookmarksBarMenuCustomPopover.popoverInsets
         // positioning rect in Screen coordinates
         let windowRect = positioningView.convert(positioningRect, to: nil)
         let screenPosRect = mainWindow.convertToScreen(windowRect)
@@ -623,7 +605,7 @@ final class BookmarksBarMenuViewController: NSViewController {
     }
 
     private func calculatePreferredContentSize() -> NSSize {
-        let contentInsets = BookmarksBarMenuPopover.popoverInsets
+        let contentInsets = BookmarksBarMenuCustomPopover.popoverInsets
         var contentSize = NSSize(width: 0, height: 20)
         for row in 0..<outlineView.numberOfRows {
             let node = outlineView.item(atRow: row) as? BookmarkNode
@@ -703,11 +685,7 @@ final class BookmarksBarMenuViewController: NSViewController {
             // reuse the popover for another folder
             submenuPopover.reloadData(withRootFolder: folder)
         } else {
-            if usesCustomWindowChrome {
-                submenuPopover = BookmarksBarMenuCustomPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
-            } else {
-                submenuPopover = BookmarksBarMenuPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
-            }
+            submenuPopover = BookmarksBarMenuCustomPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
             submenuPopover.bookmarksBarMenuDelegate = self
             self.submenuPopover = submenuPopover
         }

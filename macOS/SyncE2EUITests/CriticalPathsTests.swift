@@ -203,8 +203,8 @@ final class CriticalPathsTests: XCTestCase {
         settingsSheetsQuery.buttons["Enter Code"].click()
         settingsSheetsQuery.buttons["Paste"].click()
         let alertSheet = sheetsQuery.sheets["alert"]
-        alertSheet.staticTexts["Sync & Backup Error"].click()
-        XCTAssertTrue(alertSheet.exists, "Sync Error text is not visible")
+        alertSheet.staticTexts["Sync failed."].assertExists()
+        alertSheet.buttons["Got It"].assertExists().click()
 
     }
 
@@ -313,7 +313,7 @@ final class CriticalPathsTests: XCTestCase {
         settingsSheetsQuery.buttons["Paste"].click()
         settingsSheetsQuery.buttons["Next"].click()
         settingsSheetsQuery.buttons["Done"].click()
-        let secondDevice = settingsWindow.images["SyncedDeviceMobile"]
+        let secondDevice = settingsWindow.images["SyncSettings.syncedDevice.mobile"]
         XCTAssertTrue(secondDevice.exists, "Original Device not visible")
     }
 

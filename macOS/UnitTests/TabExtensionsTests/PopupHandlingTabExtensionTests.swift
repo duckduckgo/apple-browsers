@@ -19,7 +19,7 @@
 import Combine
 import Common
 import ConcurrencyExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import FoundationExtensions
 import PrivacyConfig
 import WebKit
@@ -1256,6 +1256,38 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         XCTAssertNil(policy, "Pinned tab same-domain navigation should return .next (nil)")
     }
 
+    @MainActor
+    func testWhenPinnedTabNavigatesFromErrorPageToAnotherDomain_ThenStaysInCurrentTab() async {
+        // GIVEN - Tab is pinned and currently showing an internal error page
+        popupHandlingExtension = createExtension(isTabPinned: true)
+
+        // WHEN - Navigate from the error page to a different domain
+        let targetURL = URL(string: "https://different.com")!
+        let errorFrame = FrameInfo(webView: webView,
+                                   handle: FrameHandle(rawValue: 1),
+                                   isMainFrame: true,
+                                   url: URL.error,
+                                   securityOrigin: URL.error.securityOrigin)
+
+        let navigationAction = NavigationAction(
+            request: URLRequest(url: targetURL),
+            navigationType: .linkActivated(isMiddleClick: false),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: true,
+            sourceFrame: errorFrame,
+            targetFrame: errorFrame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+
+        var prefs = NavigationPreferences.default
+        let policy = await popupHandlingExtension.decidePolicy(for: navigationAction, preferences: &prefs)
+
+        // THEN - Should allow navigation in current tab (.next is nil)
+        XCTAssertNil(policy, "Pinned tab error-page navigation should return .next (nil)")
+    }
+
     // MARK: - pageInitiatedPopupOpened Flag Tests
 
     @MainActor
@@ -2079,6 +2111,10 @@ class MockPopupBlockingConfiguration: PopupBlockingConfiguration {
 }
 
 class TestPermissionManager: PermissionManagerProtocol {
+    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> {
+        Empty().eraseToAnyPublisher()
+    }
+
     var persistedPermissions: [String: [PermissionType: PersistedPermissionDecision]] = [:]
 
     var permissionPublisher: AnyPublisher<(domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision), Never> {
@@ -2106,7 +2142,10 @@ class TestPermissionManager: PermissionManagerProtocol {
         return persistedPermissions[domain]?[permissionType]
     }
 
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
+    func setPermission(_ decision: PersistedPermissionDecision,
+                       forDomain domain: String,
+                       permissionType: PermissionType,
+                       lastModified: Date = Date()) {
         if persistedPermissions[domain] == nil {
             persistedPermissions[domain] = [:]
         }

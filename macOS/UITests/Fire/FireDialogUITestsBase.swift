@@ -31,10 +31,10 @@ extension FireDialogUITests {
     var fireDialogCookiesToggle: XCUIElement { app.fireDialogCookiesToggle }
     var fireDialogTabsToggle: XCUIElement { app.fireDialogTabsToggle }
     var fireDialogBurnButton: XCUIElement { app.fireDialogBurnButton }
+    var fireDialogDetailsDisclosureButton: XCUIElement { app.fireDialogDetailsDisclosureButton }
 
-    func setUpFireDialogUITests() {
-        continueAfterFailure = false
-        app = XCUIApplication.setUp()
+    func setUpFireDialogUITests(featureFlags: [String: Bool] = [:]) {
+        app = XCUIApplication.setUp(featureFlags: featureFlags)
         app.enforceSingleWindow()
 
         // Reset fireproof sites
@@ -43,7 +43,11 @@ extension FireDialogUITests {
 
         // Clear state
         app.fireButton.click()
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
@@ -163,7 +167,8 @@ extension FireDialogUITests {
     }
 
     func fireproofCurrentSite(file: StaticString = #file, line: UInt = #line) {
-        app.fireDialogManageFireproofButton.click()
+        app.fireDialogMoreOptionsMenuButton.click()
+        app.fireDialogManageFireproofSitesMenuItem.click()
 
         let fireproofDialog = app.sheets.containing(.staticText, where: .keyPath(\.value, equalTo: "Fireproof Sites")).firstMatch
         XCTAssertTrue(
@@ -205,4 +210,20 @@ extension FireDialogUITests {
             "Fire animation didn't finish and cease existing in a reasonable timeframe."
         )
     }
+
+    /// Verifies a fresh New Tab Page is showing after a burn completes.
+    ///
+    /// Only the web view is asserted, not the `tabs["New Tab"]` title: a Delete-All-history burn
+    /// replaces the tab with a `.contentFromURL` tab whose tab-bar title stays stale (it doesn't
+    /// reset to "New Tab"), so the title is not a reliable post-burn signal. Callers running in a
+    /// flow where the title does reset can assert `app.tabs["New Tab"]` in addition to this.
+    func verifyNewTabPageIsOpen(file: StaticString = #file, line: UInt = #line) {
+        XCTAssertTrue(
+            app.webViews["New Tab Page"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "New Tab Page should be open after burning tabs",
+            file: file,
+            line: line
+        )
+    }
+
 }

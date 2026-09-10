@@ -1,0 +1,53 @@
+//
+//  EventHubDataParameterTests.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Testing
+@testable import EventHub
+
+/// Component-level data-parameter behaviour that the telemetry specification does not state as a case:
+/// a `null` value, and the guard that stops a pixel firing when none of its data parameters resolve.
+/// The specification's own data-parameter cases, T-DAT-1 to T-DAT-5, live in `TelemetrySpecTests`.
+@Suite("EventHub data parameters")
+struct EventHubDataParameterTests {
+    static let immediateDataConfig = """
+    { "telemetry": { "webEvent_login": {
+        "state": "enabled",
+        "trigger": { "type": "immediate_v2", "source": "login" },
+        "parameters": { "loginState": { "template": "data", "dataKey": "loginState" } }
+    } } }
+    """
+
+    @Test("immediate data param encodes a null value")
+    func immediateDataParamEncodesNullValue() {
+        let f = EventHubFixture.active(Self.immediateDataConfig)
+        f.manager.handleWebEvent(EventHubFixture.eventWithData("login", dataJSON: #"{ "loginState": null }"#), tabID: .new())
+        #expect(f.fired.count == 1)
+        #expect(f.fired.first?.parameters["loginState"] == "null")
+    }
+
+    @Test("an immediate pixel does not fire when its only data param is absent")
+    func immediatePixelDoesNotFireWhenOnlyDataParamAbsent() {
+        // A pixel that declares data parameters but resolves none of them has nothing to report. A
+        // pixel declaring no parameters at all still fires on the event alone — see
+        // `EventHubImmediatePixelTests`.
+        let f = EventHubFixture.active(Self.immediateDataConfig)
+        f.manager.handleWebEvent(EventHubFixture.eventWithData("login", dataJSON: #"{ "other": "x" }"#), tabID: .new())
+        #expect(f.fired.isEmpty)
+    }
+
+}

@@ -19,11 +19,15 @@
 
 import AIChat
 import BrowserServicesKitTestsUtils
+import PixelKit
+import PixelExperimentKit
+import PrivacyConfig
 import UIKit
 import UserScript
 import XCTest
 import WebKit
 import Subscription
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 @testable import Core
 
@@ -35,17 +39,26 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockMetricHandler: MockAIChatPixelMetricHandler!
     var mockProductSurfaceTelemetry: MockProductSurfaceTelemetry!
     var mockFreeTrialConversionService: MockFreeTrialConversionInstrumentationService!
+    var mockOnboardingActivationRecorder: MockSubscriptionOnboardingActivationRecorder!
     var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
     var mockIPadDuckAIControlsFeature: MockIPadDuckAIControlsFeatureProvider!
+    var mockSubscriptionManager: SubscriptionManagerMock!
 
     override func setUpWithError() throws {
+        PixelKit.configureExperimentKit(featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                         eventTracker: ExperimentEventTracker(),
+                                         fire: { _, _, _ in })
+
         mockSettings = MockAIChatSettingsProvider()
         mockPayloadHandler = AIChatPayloadHandler()
         mockMetricHandler = MockAIChatPixelMetricHandler()
         mockProductSurfaceTelemetry = MockProductSurfaceTelemetry()
         mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
+        mockOnboardingActivationRecorder = MockSubscriptionOnboardingActivationRecorder()
         mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
         mockIPadDuckAIControlsFeature = MockIPadDuckAIControlsFeatureProvider()
+        mockSubscriptionManager = SubscriptionManagerMock()
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, activeOffers: []))
 
         handler = AIChatContentHandler(
             aiChatSettings: mockSettings,
@@ -54,6 +67,8 @@ final class AIChatContentHandlerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
+            onboardingActivationRecorder: mockOnboardingActivationRecorder,
+            subscriptionManager: mockSubscriptionManager,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
             iPadDuckAIControlsFeature: mockIPadDuckAIControlsFeature
@@ -108,6 +123,26 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockUserScript.webViewSet)
+    }
+
+    /// They are installed before `setup` runs, so they have to survive it.
+    func testSetupForwardsSelectionsProviderAndConsumedHandlerInstalledBeforehand() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: "selected", url: URL(string: "https://example.com")!)
+        var didConsume = false
+
+        handler.setAttachedSelectionsProvider { [selection] }
+        handler.setAttachedSelectionsConsumedHandler { _ in didConsume = true }
+
+        // When
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
+
+        // Then
+        XCTAssertEqual(mockUserScript.attachedSelectionsProvider?(), [selection])
+        mockUserScript.attachedSelectionsConsumedHandler?([selection.id])
+        XCTAssertTrue(didConsume)
     }
 
     func testSetupSetsDisplayMode() throws {
@@ -456,6 +491,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
+            onboardingActivationRecorder: mockOnboardingActivationRecorder,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in pageContext }
         )
@@ -484,6 +520,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
+            onboardingActivationRecorder: mockOnboardingActivationRecorder,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in nil }
         )
@@ -697,6 +734,7 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+        XCTAssertTrue(mockOnboardingActivationRecorder.recordDuckAIActivatedCalled)
     }
 
     func testWhenPlusModelTierFirstPromptSubmitted_ThenMarkDuckAIActivatedIsCalled() throws {
@@ -708,6 +746,7 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+        XCTAssertTrue(mockOnboardingActivationRecorder.recordDuckAIActivatedCalled)
     }
 
     func testWhenFreeModelTierPromptSubmitted_ThenMarkDuckAIActivatedIsNotCalled() throws {
@@ -719,6 +758,7 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertFalse(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+        XCTAssertFalse(mockOnboardingActivationRecorder.recordDuckAIActivatedCalled)
     }
 
     func testWhenNoModelTierPromptSubmitted_ThenMarkDuckAIActivatedIsNotCalled() throws {
@@ -730,16 +770,11 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertFalse(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+        XCTAssertFalse(mockOnboardingActivationRecorder.recordDuckAIActivatedCalled)
     }
 }
 
 // MARK: - Mocks
-
-final class MockAIChatRequestAuthHandler: AIChatRequestAuthorizationHandling {
-    func shouldAllowRequestWithNavigationAction(_ navigationAction: WKNavigationAction) -> Bool {
-        true
-    }
-}
 
 final class MockIPadDuckAIControlsFeatureProvider: IPadDuckAIControlsFeatureProviding {
     var isAvailable: Bool
@@ -772,9 +807,12 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var submitStartChatActionCallCount = 0
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
+    var submitOpenChatProtectionActionCallCount = 0
     var submitPageContextCallCount = 0
     var lastSubmittedPageContextViaSubmit: AIChatPageContextData?
     var lastDisplayModeSet: AIChatDisplayMode?
+    var attachedSelectionsProvider: (() -> [AIChatSelectionContextData])?
+    var attachedSelectionsConsumedHandler: (([String]) -> Void)?
 
     func setPayloadHandler(_ payloadHandler: any AIChat.AIChatConsumableDataHandling) {
         payloadHandlerSet = true
@@ -787,6 +825,14 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 
     func setPageContextProvider(_ provider: PageContextAsyncProvider?) {
         pageContextProviderSet = true
+    }
+
+    func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?) {
+        attachedSelectionsProvider = provider
+    }
+
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?) {
+        attachedSelectionsConsumedHandler = handler
     }
 
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?) {
@@ -829,6 +875,10 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 
     func submitToggleSidebarAction() {
         submitToggleSidebarActionCallCount += 1
+    }
+
+    func submitOpenChatProtectionAction() {
+        submitOpenChatProtectionActionCallCount += 1
     }
 
     func submitPageContext(_ context: AIChatPageContextData?) {
@@ -883,9 +933,13 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func voiceModeClosed(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func showReasoningPicker(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func openFilePicker(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
 }
 // swiftlint:enable inclusive_language
 

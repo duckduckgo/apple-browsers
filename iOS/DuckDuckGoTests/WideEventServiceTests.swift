@@ -20,9 +20,8 @@
 import XCTest
 import Common
 import FoundationExtensions
-import PixelKit
+@_spi(Testing) import WideEvent
 import Subscription
-import PixelKitTestingUtilities
 import SubscriptionTestingUtilities
 import BrowserServicesKit
 @testable import DuckDuckGo
@@ -226,6 +225,7 @@ final class WideEventServiceTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "test",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             activateAccountDuration: activateAccountDuration,
             contextData: WideEventContextData(),
             appData: WideEventAppData(),

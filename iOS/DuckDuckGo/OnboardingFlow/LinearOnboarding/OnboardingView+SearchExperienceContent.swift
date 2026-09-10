@@ -2,7 +2,7 @@
 //  OnboardingView+SearchExperienceContent.swift
 //  DuckDuckGo
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,65 +17,73 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingView {
+
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12192-50600
     struct SearchExperienceContent: View {
-        private var animateTitle: Binding<Bool>
-        private var isSkipped: Binding<Bool>
-        private let action: () -> Void
-        
+
+        @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+        @State private var shouldStartTyping = false
         @State private var showContent = false
+        @Binding private var isVisible: Bool
+        private let content: OnboardingSearchExperienceContent
+        private let action: () -> Void
+
         @StateObject private var viewModel = OnboardingSearchExperiencePickerViewModel()
 
-        init(animateTitle: Binding<Bool> = .constant(true),
-             isSkipped: Binding<Bool>,
-             action: @escaping () -> Void) {
-            self.animateTitle = animateTitle
-            self.isSkipped = isSkipped
+        init(
+            content: OnboardingSearchExperienceContent,
+            isVisible: Binding<Bool>,
+            action: @escaping () -> Void
+        ) {
+            self.content = content
+            self._isVisible = isVisible
             self.action = action
         }
 
         var body: some View {
-            VStack(spacing: 16.0) {
-                AnimatableTypingText(UserText.Onboarding.SearchExperience.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
-                    showContent = true
-                }
-                .foregroundColor(.primary)
-                .font(Metrics.titleFont)
+            VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing) {
+                TypingText(
+                    content.title,
+                    startAnimating: $shouldStartTyping,
+                    onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
+                    }
+                )
+                .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                .font(onboardingTheme.typography.title)
+                .multilineTextAlignment(.center)
 
-                VStack(spacing: 24.0) {
-                    OnboardingSearchExperiencePicker(viewModel: viewModel)
-                    
-                    Text(AttributedString(UserText.Onboarding.SearchExperience.footerAttributed()))
-                        .foregroundColor(.secondary)
-                        .font(.footnote)
+                VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
+                    OnboardingView.OnboardingSearchExperiencePicker(isDuckAISelected: viewModel.isSearchAndAIChatEnabled)
+
+                    Text(content.footer)
+                        .foregroundColor(onboardingTheme.colorPalette.textSecondary)
+                        .font(onboardingTheme.typography.small)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Button(action: {
                         viewModel.confirmChoice()
                         action()
                     }) {
-                        Text(UserText.Onboarding.SearchExperience.cta)
+                        Text(content.primaryCTA)
                     }
-                    .buttonStyle(PrimaryButtonStyle())
+                    .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
-                .padding(.top, 8)
-                .visibility(showContent ? .visible : .invisible)
+                .opacity(showContent ? 1 : 0)
+                .animation(reduceMotion ? nil : .easeIn(duration: 0.25), value: showContent)
             }
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
     }
-}
 
-private enum Metrics {
-    static let titleFont = Font.system(size: 20, weight: .semibold)
-    static let messageFont = Font.system(size: 16)
-}
-
-// MARK: - Preview
-
-#Preview {
-    OnboardingView.SearchExperienceContent(isSkipped: .constant(false), action: {})
 }

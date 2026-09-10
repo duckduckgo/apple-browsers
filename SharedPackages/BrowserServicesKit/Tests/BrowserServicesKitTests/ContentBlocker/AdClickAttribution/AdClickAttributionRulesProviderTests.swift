@@ -26,22 +26,29 @@ import XCTest
 
 class MockCompiledRuleListSource: CompiledRuleListsSource {
 
+    private let lock = NSLock()
+
     var currentRules: [ContentBlockerRulesManager.Rules] {
         [currentMainRules, currentAttributionRules].compactMap { $0 }
     }
 
-    var currentMainRules: ContentBlockerRulesManager.Rules?
+    private var _currentMainRules: ContentBlockerRulesManager.Rules?
+    var currentMainRules: ContentBlockerRulesManager.Rules? {
+        get { lock.lock(); defer { lock.unlock() }; return _currentMainRules }
+        set { lock.lock(); _currentMainRules = newValue; lock.unlock() }
+    }
 
     var onCurrentRulesQueried: () -> Void = { }
 
-    var _currentAttributionRules: ContentBlockerRulesManager.Rules?
+    private var _currentAttributionRules: ContentBlockerRulesManager.Rules?
     var currentAttributionRules: ContentBlockerRulesManager.Rules? {
         get {
             onCurrentRulesQueried()
+            lock.lock(); defer { lock.unlock() }
             return _currentAttributionRules
         }
         set {
-            _currentAttributionRules = newValue
+            lock.lock(); _currentAttributionRules = newValue; lock.unlock()
         }
     }
 }

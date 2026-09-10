@@ -27,6 +27,8 @@ import WebKit
 /// `duck-ai-data-clearing` feature.
 public protocol AIChatJSDataCleaning {
     @MainActor func clearJSData(chatID: String?) async -> Result<Void, Error>
+    /// Clears a specific set of chats, reusing one web view session (one navigation per domain).
+    @MainActor func clearJSData(chatIDs: [String]) async -> Result<Void, Error>
 }
 
 public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
@@ -63,7 +65,21 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
         } else {
             Logger.aiChat.debug("WebViewAIChatJSDataCleaner: deleting all chats from webView")
         }
+        // `nil` clears everything in one message; a single id clears just that chat.
+        return await clear(chatIDs: chatID.map { [$0] })
+    }
 
+    @MainActor
+    public func clearJSData(chatIDs: [String]) async -> Result<Void, Error> {
+        guard !chatIDs.isEmpty else { return .success(()) }
+        Logger.aiChat.debug("WebViewAIChatJSDataCleaner: deleting \(chatIDs.count) chats from webView")
+        return await clear(chatIDs: chatIDs)
+    }
+
+    /// - Parameter chatIDs: `nil` clears all chats; otherwise the specific ids, cleared within a
+    ///   single web view session (each domain is navigated once, then the clear message is sent per id).
+    @MainActor
+    private func clear(chatIDs: [String]?) async -> Result<Void, Error> {
         guard webView == nil else {
             return .failure(CleanerError.operationInProgress)
         }
@@ -71,13 +87,13 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
         return await withCheckedContinuation { continuation in
             self.continuation = continuation
             Task { @MainActor in
-                await self.processAllDomains(chatID: chatID)
+                await self.processAllDomains(chatIDs: chatIDs)
             }
         }
     }
 
     @MainActor
-    private func processAllDomains(chatID: String?) async {
+    private func processAllDomains(chatIDs: [String]?) async {
         do {
             try setupWebView()
             for domain in URL.aiChatDomains {
@@ -88,7 +104,7 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
                     return
                 }
 
-                let clearingResult = await executeClearingScript(chatID: chatID)
+                let clearingResult = await executeClearingScript(chatIDs: chatIDs)
 
                 guard case .success = clearingResult else {
                     finish(result: clearingResult)
@@ -178,13 +194,22 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
         navigationContinuation = nil
     }
 
+    /// Sends the clear message for the already-navigated domain: once for all (`nil`), or once per id.
     @MainActor
-    private func executeClearingScript(chatID: String?) async -> Result<Void, Error> {
+    private func executeClearingScript(chatIDs: [String]?) async -> Result<Void, Error> {
         guard let script = aiChatDataClearingUserScript else {
             return .failure(CleanerError.scriptNotInitialized)
         }
 
-        return await script.clearAIChatDataAsync(chatID: chatID, timeout: 5)
+        guard let chatIDs else {
+            return await script.clearAIChatDataAsync(chatID: nil, timeout: 5)
+        }
+
+        for chatID in chatIDs {
+            let result = await script.clearAIChatDataAsync(chatID: chatID, timeout: 5)
+            guard case .success = result else { return result }
+        }
+        return .success(())
     }
 
     @MainActor

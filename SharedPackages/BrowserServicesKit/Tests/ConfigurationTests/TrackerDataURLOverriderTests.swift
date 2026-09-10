@@ -161,6 +161,10 @@ private class MockFeatureFlaggerMockSettings: FeatureFlagger {
         return mockCohorts[featureFlag.rawValue]
     }
 
+    func assignedCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
+        return mockCohorts[featureFlag.rawValue]
+    }
+
     var allActiveExperiments: Experiments {
         return [:]
     }
@@ -228,6 +232,10 @@ class MockPrivacyConfiguration: PrivacyConfiguration {
     var mockSubfeatureSettings: [String: String] = [:]
     func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
         return subfeatureSettings ?? mockSubfeatureSettings[subfeature.rawValue]
+    }
+
+    func allSubfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] {
+        [:]
     }
 
     func exceptionsList(forFeature featureKey: PrivacyFeature) -> [String] { exceptionsList(featureKey) }

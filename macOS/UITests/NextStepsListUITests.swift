@@ -24,7 +24,7 @@ final class NextStepsListUITests: UITestCase {
     private var webView: XCUIElement!
 
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
         resetNextSteps()
@@ -93,7 +93,7 @@ private extension NextStepsListUITests {
     }
 
     var nextStepsSection: XCUIElement {
-        webView.staticTexts["Next Steps"]
+        webView.staticTexts.containing(\.value, containing: "NEXT STEPS").firstMatch
     }
 
     var nextStepsCardDismissButton: XCUIElement {

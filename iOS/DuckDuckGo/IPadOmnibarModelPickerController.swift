@@ -32,7 +32,7 @@ import UIKit
 final class IPadOmnibarModelPickerController {
 
     private let store: UTIModelStore
-    private let menuFactory = UnifiedToggleInputModelMenuFactory()
+    private let menuFactory: UnifiedToggleInputModelMenuFactory
     private let upsellPresenter: DuckAISubscriptionUpselling
     var onModelsUpdated: (() -> Void)?
 
@@ -49,15 +49,20 @@ final class IPadOmnibarModelPickerController {
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
-        upsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()
+        upsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter(),
+        updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
     ) {
+        let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.upsellPresenter = upsellPresenter
+        self.menuFactory = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled)
         store = UTIModelStore(
             modelsService: modelsService ?? AIChatModelsService(
-                baseURL: aiChatModelsBaseURL(forChatURL: aiChatSettings.aiChatURL)
+                baseURL: aiChatModelsBaseURL(forChatURL: aiChatSettings.aiChatURL),
+                accessTokenProvider: subscriptionManager
             ),
             preferences: preferences,
-            subscriptionManager: subscriptionManager
+            subscriptionManager: subscriptionManager,
+            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled
         )
         store.onModelsUpdated = { [weak self] in
             self?.onModelsUpdated?()
@@ -83,11 +88,12 @@ final class IPadOmnibarModelPickerController {
 
     func makeMenu(onSelect: @escaping (String) -> Void) -> UIMenu? {
         guard hasModels else { return nil }
+
         return menuFactory.makeMenu(
             models: store.models,
             selectedId: store.persistedModelId,
-            plusSectionTitle: UserText.aiChatPlusModelsSectionHeader,
-            proSectionTitle: UserText.aiChatProModelsSectionHeader,
+            userTier: store.subscriptionState.userTier,
+            freeTrialEligibility: store.freeTrialEligibility,
             onSelect: onSelect
         )
     }
@@ -102,7 +108,7 @@ final class IPadOmnibarModelPickerController {
             let isNewSelection = modelId != store.persistedModelId
             store.updateSelectedModel(modelId, isNewChatContext: true)
             if isNewSelection {
-                UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId)
+                UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId, surface: .addressBar)
             }
         } else if routeGatedModelSelection(model) {
             // Remember the gated model so a post-purchase `/models` refresh can apply it.
@@ -138,7 +144,7 @@ final class IPadOmnibarModelPickerController {
         let isNewSelection = modelId != store.persistedModelId
         store.updateSelectedModel(modelId, isNewChatContext: true)
         if isNewSelection {
-            UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId)
+            UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId, surface: .addressBar)
         }
     }
 }

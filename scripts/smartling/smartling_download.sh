@@ -7,6 +7,7 @@ set -euo pipefail
 
 JOB_ID="$1"
 PLATFORM="$2"
+ALLOW_UNFINISHED="${3:-false}"
 
 if [ -z "$JOB_ID" ]; then
 	echo "Error: Job ID is required"
@@ -28,8 +29,13 @@ DOWNLOAD_DIR="$(mktemp -d)/smartling_downloads"
 mkdir -p "$DOWNLOAD_DIR"
 
 # Download translated files
+ALLOW_FLAG=""
+if [ "$ALLOW_UNFINISHED" = "true" ]; then
+	echo "⚠️  allow-unfinished enabled: downloading even if the Smartling job is not COMPLETED"
+	ALLOW_FLAG="--allow-unfinished"
+fi
 echo "Downloading translations from Smartling job $JOB_ID..."
-./scripts/smartling/loc_tool.sh download --job-id "$JOB_ID" --out-dir "$DOWNLOAD_DIR" || download_failed=1
+./scripts/smartling/loc_tool.sh download --job-id "$JOB_ID" --out-dir "$DOWNLOAD_DIR" $ALLOW_FLAG || download_failed=1
 
 # Handle download failure gracefully and set step outputs
 if [ "${download_failed:-0}" = "1" ]; then

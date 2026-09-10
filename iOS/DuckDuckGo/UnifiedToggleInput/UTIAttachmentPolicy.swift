@@ -73,6 +73,10 @@ struct UTIAttachmentPolicy {
         validator.remainingFileSizeBytes
     }
 
+    var remainingFilesInConversation: Int {
+        validator.remainingFilesInConversation
+    }
+
     func fileValidationMessage(for attachment: AIChatFileAttachment) -> String? {
         validator.fileValidationMessage(for: .init(attachment))
     }
@@ -100,6 +104,10 @@ struct UTIAttachmentPolicy {
 
     func imageSubmissionValidationMessage() -> String? {
         validator.imageSubmissionValidationMessage()
+    }
+
+    func imageCapacityValidationMessage() -> String? {
+        validator.imageCapacityValidationMessage()
     }
 
     func isAttachmentSupported(_ attachment: UnifiedToggleInputAttachment) -> Bool {

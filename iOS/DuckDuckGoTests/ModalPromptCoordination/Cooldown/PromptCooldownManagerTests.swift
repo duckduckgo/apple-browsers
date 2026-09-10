@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import Testing
 @testable import DuckDuckGo
 

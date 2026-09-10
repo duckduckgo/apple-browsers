@@ -18,10 +18,13 @@
 //
 
 import BrowserServicesKit
+import Combine
 import Persistence
 import DesignResourcesKitIcons
 import UIKit
 import Core
+import PixelKit
+import VPN
 
 /// Handles logic and persistence of customization options.  iPad is not supported so this returns false for `isEnabled` on iPad.
 class MobileCustomization {
@@ -74,7 +77,7 @@ class MobileCustomization {
             case .fire:
                 DesignSystemImages.Glyphs.Size24.fireSolid
             case .vpn:
-                DesignSystemImages.Glyphs.Size24.vpn
+                DesignSystemImages.Glyphs.Size24.vpnUnlocked
             case .passwords:
                 DesignSystemImages.Glyphs.Size24.key
             case .downloads:
@@ -105,13 +108,22 @@ class MobileCustomization {
             case .fire:
                 DesignSystemImages.Glyphs.Size16.fireSolid
             case .vpn:
-                DesignSystemImages.Glyphs.Size16.vpnOn
+                DesignSystemImages.Glyphs.Size16.vpnOff
             case .passwords:
                 DesignSystemImages.Glyphs.Size16.keyLogin
             case .downloads:
                 DesignSystemImages.Glyphs.Size16.downloads
             case .duckAIVoice:
                 DesignSystemImages.Glyphs.Size16.voice
+            }
+        }
+
+        var requiresWebPage: Bool {
+            switch self {
+            case .share, .addEditBookmark, .addEditFavorite, .zoom:
+                true
+            default:
+                false
             }
         }
 
@@ -145,6 +157,11 @@ class MobileCustomization {
             .fire,
             .vpn,
             .zoom,
+            .bookmarks,
+            .downloads,
+            .home,
+            .newTab,
+            .passwords,
             .none
         ]
 
@@ -157,11 +174,14 @@ class MobileCustomization {
             .share,
             .vpn,
             .downloads,
+            .addEditBookmark,
+            .addEditFavorite,
+            .zoom,
         ]
 
     var toolbarButtonOptions: [Button] {
         var buttons = Self.toolbarButtons
-        if voiceShortcutFeature.isAvailable {
+        if isDuckAIEnabled() {
             buttons.append(.duckAIVoice)
         }
         return buttons
@@ -169,7 +189,7 @@ class MobileCustomization {
 
     var addressBarButtonOptions: [Button] {
         var buttons = Self.addressBarButtons
-        if voiceShortcutFeature.isAvailable {
+        if isDuckAIEnabled() {
             buttons.append(.duckAIVoice)
         }
         return buttons
@@ -197,8 +217,13 @@ class MobileCustomization {
     private let keyValueStore: ThrowingKeyValueStoring
     private let isPad: Bool
     private let postChangeNotification: (State) -> Void
-    private let pixelFiring: PixelFiring.Type
-    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
+    private let pixelFiring: (any PixelKitFiring)?
+    private let connectionStatusObserver: ConnectionStatusObserver?
+    private let isDuckAIEnabled: () -> Bool
+
+    var connectionStatusPublisher: AnyPublisher<ConnectionStatus, Never> {
+        connectionStatusObserver?.publisher ?? Empty<ConnectionStatus, Never>().eraseToAnyPublisher()
+    }
 
     public weak var delegate: Delegate?
 
@@ -214,14 +239,15 @@ class MobileCustomization {
          postChangeNotification: @escaping ((State) -> Void) = {
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: $0)
          },
-         pixelFiring: PixelFiring.Type = Pixel.self,
-         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature()
-    ) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         connectionStatusObserver: ConnectionStatusObserver? = nil,
+         isDuckAIEnabled: @escaping () -> Bool = { true }) {
         self.keyValueStore = keyValueStore
         self.isPad = isPad
         self.postChangeNotification = postChangeNotification
         self.pixelFiring = pixelFiring
-        self.voiceShortcutFeature = voiceShortcutFeature
+        self.connectionStatusObserver = connectionStatusObserver
+        self.isDuckAIEnabled = isDuckAIEnabled
     }
 
     /// Get the current button for the given storage key.  If the button isn't in the alloweed list then the default is returned.  This prevents migration problems if the options change.
@@ -242,29 +268,33 @@ class MobileCustomization {
         postChangeNotification(state)
     }
 
+    func refreshAvailability() {
+        cachedState = nil
+    }
+
     func fireAddressBarCustomizationStartedPixel() {
-        pixelFiring.fire(.customizationAddressBarStarted, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.customizationAddressBarStarted)
     }
 
     func fireAddressBarCustomizationSelectedPixel(oldValue: Button) {
         // Use all cases for this check as we don't want to return the default unless it was actually selected
         if oldValue != current(forKey: .addressBarButton, containedIn: Button.allCases, Self.addressBarDefault) {
-            pixelFiring.fire(.customizationAddressBarSelected, withAdditionalParameters: [
+            pixelFiring?.fire(Pixel.Event.customizationAddressBarSelected, options: .parameters([
                 "selected": state.currentAddressBarButton.rawValue
-            ])
+            ]))
         }
     }
 
     func fireToolbarCustomizationStartedPixel() {
-        pixelFiring.fire(.customizationToolbarStarted, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.customizationToolbarStarted)
     }
 
     func fireToolbarCustomizationSelectedPixel(oldValue: Button) {
         // Use all cases for this check as we don't want to return the default unless it was actually selected
         if oldValue != current(forKey: .toolbarButton, containedIn: Button.allCases, Self.toolbarDefault) {
-            pixelFiring.fire(.customizationToolbarSelected, withAdditionalParameters: [
+            pixelFiring?.fire(Pixel.Event.customizationToolbarSelected, options: .parameters([
                 "selected": state.currentToolbarButton.rawValue
-            ])
+            ]))
         }
     }
 
@@ -276,6 +306,14 @@ class MobileCustomization {
         try? keyValueStore.set(button.rawValue, forKey: StorageKeys.addressBarButton.rawValue)
     }
 
+    func smallIconForButton(_ button: Button) -> UIImage? {
+        guard button == .vpn else { return button.smallIcon }
+        if case .connected = connectionStatusObserver?.recentValue ?? .disconnected {
+            return DesignSystemImages.Glyphs.Size16.vpnOn
+        }
+        return DesignSystemImages.Glyphs.Size16.vpnOff
+    }
+
     func largeIconForButton(_ button: Button) -> UIImage? {
 
         switch button {
@@ -284,6 +322,12 @@ class MobileCustomization {
 
         case .addEditFavorite:
             return delegate?.canEditFavorite() == true ? button.altLargeIcon : button.largeIcon
+
+        case .vpn:
+            if case .connected = connectionStatusObserver?.recentValue ?? .disconnected {
+                return DesignSystemImages.Glyphs.Size24.vpn
+            }
+            return DesignSystemImages.Glyphs.Size24.vpnUnlocked
 
         default:
             return button.largeIcon

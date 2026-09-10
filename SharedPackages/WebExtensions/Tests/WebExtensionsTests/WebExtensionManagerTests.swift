@@ -31,6 +31,11 @@ final class WebExtensionManagerTests: XCTestCase {
     var lifecycleDelegateMock: WebExtensionLifecycleDelegateMock!
     var configurationMock: WebExtensionConfigurationProvidingMock!
     private var createdTestExtensionDirs: [URL] = []
+    private var recordedSleeps: [TimeInterval] = []
+    /// Whether the loader had already been asked to unload when each sleep began, so the tests can
+    /// tell a wait that precedes the unload from one that follows it.
+    private var unloadCalledAtSleepTime: [Bool] = []
+    private var currentDate = Date()
 
     @MainActor
     override func setUp() {
@@ -43,6 +48,9 @@ final class WebExtensionManagerTests: XCTestCase {
         eventsListenerMock = WebExtensionEventsListenerMock()
         lifecycleDelegateMock = WebExtensionLifecycleDelegateMock()
         configurationMock = WebExtensionConfigurationProvidingMock()
+        recordedSleeps = []
+        unloadCalledAtSleepTime = []
+        currentDate = Date()
     }
 
     override func tearDown() {
@@ -65,27 +73,38 @@ final class WebExtensionManagerTests: XCTestCase {
     // MARK: - Helper
 
     @MainActor
-    private func makeManager() -> WebExtensionManager {
-        WebExtensionManager(
+    private func makeManager(cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil) -> WebExtensionManager {
+        let manager = WebExtensionManager(
             configuration: configurationMock,
             windowTabProvider: windowTabProviderMock,
             storageProvider: storageProvidingMock,
             installationStore: installedExtensionStoringMock,
             loader: webExtensionLoadingMock,
             eventsListener: eventsListenerMock,
-            lifecycleDelegate: lifecycleDelegateMock
+            lifecycleDelegate: lifecycleDelegateMock,
+            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
         )
+        manager.unloadGuard = WebExtensionUnloadGuard(
+            now: { [unowned self] in currentDate },
+            sleeper: { [unowned self] in
+                recordedSleeps.append($0)
+                unloadCalledAtSleepTime.append(webExtensionLoadingMock.unloadExtensionCalled)
+            }
+        )
+        return manager
     }
 
     private func makeInstalledWebExtension(uniqueIdentifier: String,
                                            filename: String = "extension.zip",
                                            name: String? = nil,
-                                           version: String? = nil) -> InstalledWebExtension {
+                                           version: String? = nil,
+                                           embeddedType: DuckDuckGoWebExtensionType? = nil) -> InstalledWebExtension {
         InstalledWebExtension(
             uniqueIdentifier: uniqueIdentifier,
             filename: filename,
             name: name,
-            version: version
+            version: version,
+            embeddedType: embeddedType
         )
     }
 
@@ -93,8 +112,10 @@ final class WebExtensionManagerTests: XCTestCase {
     /// `unloadAllExtensions()` has something to capture for the lightweight reload tests.
     @MainActor
     @discardableResult
-    private func loadRealContext(identifier: String, into controller: WKWebExtensionController) async throws -> WKWebExtensionContext {
-        let dir = try makeTestExtensionDirectory()
+    private func loadRealContext(identifier: String,
+                                 into controller: WKWebExtensionController,
+                                 permissions: [String] = []) async throws -> WKWebExtensionContext {
+        let dir = try makeTestExtensionDirectory(permissions: permissions)
         let webExtension = try await WKWebExtension(resourceBaseURL: dir)
         let context = WKWebExtensionContext(for: webExtension)
         context.uniqueIdentifier = identifier
@@ -102,14 +123,16 @@ final class WebExtensionManagerTests: XCTestCase {
         return context
     }
 
-    private func makeTestExtensionDirectory() throws -> URL {
+    private func makeTestExtensionDirectory(permissions: [String] = []) throws -> URL {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("ReloadTestExtension-\(UUID().uuidString)")
+        let permissionsJSON = permissions.map { "\"\($0)\"" }.joined(separator: ", ")
         let manifest = """
         {
             "manifest_version": 3,
             "name": "Reload Test Extension",
             "version": "1.0.0",
-            "description": "Minimal backgroundless test extension for reload unit tests"
+            "description": "Minimal backgroundless test extension for reload unit tests",
+            "permissions": [\(permissionsJSON)]
         }
         """
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -340,6 +363,40 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenFullLoadFollowsDataClearing_ThenReportsEmbeddedExtensionReload() async throws {
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "extension1", embeddedType: .embedded)
+        ]
+        webExtensionLoadingMock.mockLoadResults = [
+            .success(WebExtensionLoadResult(identifier: "extension1", filename: "extension.zip", displayName: "Extension 1", version: "1.0"))
+        ]
+        let manager = makeManager()
+        try await loadRealContext(identifier: "extension1", into: manager.controller)
+
+        manager.unloadAllExtensions()
+        await manager.loadInstalledExtensions()
+
+        let monitor = try XCTUnwrap(manager.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)
+        XCTAssertEqual(monitor.extensionReloadGeneration, 1)
+    }
+
+    @MainActor
+    func testWhenExtensionsAreUnloadedForDataClearingThenWillReloadIsReportedImmediately() async throws {
+        let monitor = CapturingCPMLifecycleMonitor()
+        let manager = makeManager(cpmMessagingHealthMonitor: monitor)
+        try await loadRealContext(identifier: "extension1", into: manager.controller)
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "extension1", embeddedType: .embedded)
+        ]
+
+        manager.unloadAllExtensions()
+
+        XCTAssertEqual(monitor.lifecycleEvents, [
+            .willReload(identifier: "extension1", type: .embedded, trigger: .dataClearing)
+        ])
+    }
+
+    @MainActor
     func testWhenReloadInstalledExtensionsCalledAfterUnload_ThenUsesLightweightReloadAndSkipsFullLoad() async throws {
         let manager = makeManager()
         try await loadRealContext(identifier: "extension1", into: manager.controller)
@@ -375,6 +432,113 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertTrue(webExtensionLoadingMock.reloadWebExtensionCalled)
         XCTAssertTrue(webExtensionLoadingMock.loadWebExtensionsCalled)
     }
+
+    @MainActor
+    func testWhenLightweightReloadFallsBack_ThenLifecycleHasOneReloadPairAndNoLoadedEvent() async throws {
+        let manager = makeManager()
+        try await loadRealContext(identifier: "extension1", into: manager.controller)
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "extension1", embeddedType: .embedded)
+        ]
+        webExtensionLoadingMock.mockLoadResults = [
+            .success(WebExtensionLoadResult(identifier: "extension1", filename: "extension.zip", displayName: "Extension 1", version: "1.0"))
+        ]
+        var lifecycleEvents = manager.lifecycleEvents.makeAsyncIterator()
+
+        manager.unloadAllExtensions()
+        webExtensionLoadingMock.mockError = NSError(domain: "test", code: 1)
+        await manager.reloadInstalledExtensions()
+        let firstEvent = await lifecycleEvents.next()
+        let secondEvent = await lifecycleEvents.next()
+
+        XCTAssertEqual(
+            firstEvent,
+            .willReload(identifier: "extension1", type: .embedded, trigger: .dataClearing)
+        )
+        XCTAssertEqual(
+            secondEvent,
+            .reloaded(identifier: "extension1", type: .embedded, trigger: .dataClearing)
+        )
+    }
+
+    // MARK: - Unload Guard Integration Tests
+
+    // The guard's windowing logic is covered in WebExtensionUnloadGuardTests; these prove the
+    // manager's unload/reload paths actually consult the guard and record loads with it.
+
+    /// Loads a real DNR-permission context into the manager's controller and records its load date
+    /// via `loadInstalledExtensions()`, so the settle window can be exercised.
+    @MainActor
+    private func makeManagerWithLoadedExtension(identifier: String,
+                                                filename: String = "extension.zip",
+                                                embeddedType: DuckDuckGoWebExtensionType? = nil) async throws -> WebExtensionManager {
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: identifier, filename: filename, version: "0.0.1", embeddedType: embeddedType)
+        ]
+        webExtensionLoadingMock.mockLoadResults = [
+            .success(WebExtensionLoadResult(identifier: identifier, filename: filename, displayName: nil, version: "0.0.1"))
+        ]
+        let manager = makeManager()
+        try await loadRealContext(identifier: identifier, into: manager.controller, permissions: ["declarativeNetRequest"])
+        await manager.loadInstalledExtensions()
+        return manager
+    }
+
+    /// Loads the embedded ad blocker, the only bundled extension that requests declarativeNetRequest.
+    @MainActor
+    private func makeManagerWithLoadedAdBlocker() async throws -> WebExtensionManager {
+        try await makeManagerWithLoadedExtension(identifier: "old-adblock",
+                                                 filename: "content-blocker-extension-apple.zip",
+                                                 embeddedType: .adBlockingExtension)
+    }
+
+    /// The window is only useful if it elapses before the unload, so every path asserts both.
+    private func assertSleptForRemainderBeforeUnloading(file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertEqual(recordedSleeps.count, 1, "expected exactly one settle wait", file: file, line: line)
+        XCTAssertEqual(recordedSleeps.first ?? 0, 2.0, accuracy: 0.001, file: file, line: line)
+        XCTAssertEqual(unloadCalledAtSleepTime, [false],
+                       "the wait must happen before the unload, not after it", file: file, line: line)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled,
+                      "the unload should still happen once the window elapses", file: file, line: line)
+    }
+
+    @MainActor
+    func testWhenDNRExtensionIsReloadedWithinSettleWindow_ThenReloadSleepsForRemainder() async throws {
+        let manager = try await makeManagerWithLoadedExtension(identifier: "dnr-extension")
+
+        currentDate = currentDate.addingTimeInterval(1)
+        try await manager.reloadExtension(identifier: "dnr-extension")
+
+        assertSleptForRemainderBeforeUnloading()
+    }
+
+    @MainActor
+    func testWhenDisabledDNRExtensionIsUninstalledWithinSettleWindow_ThenSyncSleepsFirst() async throws {
+        let manager = try await makeManagerWithLoadedAdBlocker()
+
+        currentDate = currentDate.addingTimeInterval(1)
+        await manager.syncEmbeddedExtensions(enabledTypes: [])
+
+        assertSleptForRemainderBeforeUnloading()
+        XCTAssertFalse(installedExtensionStoringMock.installedExtensions.contains { $0.uniqueIdentifier == "old-adblock" },
+                       "disabling should have uninstalled the extension after the settle window")
+    }
+
+    // The upgrade branch resolves the bundled extension through `Bundle.module`, which traps on iOS.
+    // Gated for the same reason as DarkReaderBundlePatchTests.
+#if os(macOS)
+    @MainActor
+    func testWhenEmbeddedDNRExtensionIsUpgradedWithinSettleWindow_ThenSyncSleepsBeforeUninstall() async throws {
+        let manager = try await makeManagerWithLoadedAdBlocker()
+
+        currentDate = currentDate.addingTimeInterval(1)
+        await manager.syncEmbeddedExtensions(enabledTypes: [.adBlockingExtension])
+
+        assertSleptForRemainderBeforeUnloading()
+        XCTAssertFalse(installedExtensionStoringMock.installedExtensions.contains { $0.uniqueIdentifier == "old-adblock" },
+                       "upgrade should have uninstalled the old extension after the settle window")
+    }
+#endif
 
     // MARK: - Computed Properties Tests
 
@@ -504,4 +668,15 @@ final class WebExtensionManagerTests: XCTestCase {
         return extensionDir
     }
 
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class CapturingCPMLifecycleMonitor: CPMMessagingHealthMonitoring {
+    private(set) var lifecycleEvents: [WebExtensionLifecycleEvent] = []
+
+    func handle(_ event: CPMMessagingHealthEvent) {
+        guard case .extensionLifecycle(let lifecycleEvent) = event else { return }
+        lifecycleEvents.append(lifecycleEvent)
+    }
 }

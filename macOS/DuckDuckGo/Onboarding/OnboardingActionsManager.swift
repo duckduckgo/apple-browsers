@@ -19,6 +19,7 @@
 import AIChat
 import Combine
 import Common
+import FeatureFlags_macOS
 import DuckPlayer
 import FoundationExtensions
 import Foundation
@@ -121,6 +122,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private var aiChatPreferencesStorage: AIChatPreferencesStorage
     private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
+    private let chromeExtensionExperiment: OnboardingChromeExtensionExperiment
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     private var cancellables = Set<AnyCancellable>()
@@ -130,7 +132,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     var configuration: OnboardingConfiguration {
         let systemSettings: SystemSettings
-        let order = featureFlagger.isFeatureOn(.onboardingRebranding) ? "v4" : "v3"
         let platform = OnboardingPlatform(name: "macos")
         if dockCustomization.supportsAddingToDock {
             systemSettings = SystemSettings(rows: [
@@ -164,7 +165,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
         return OnboardingConfiguration(stepDefinitions: stepDefinitions,
                                        exclude: excludedSteps,
-                                       order: order,
+                                       order: "v4",
                                        env: env,
                                        locale: preferredLocale,
                                        platform: platform)
@@ -184,8 +185,15 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     private var didRequestDefaultBrowser: Bool = false
 
+    // MARK: Chrome extension install
+
+    private var isEligibleForChromeExtensionInstall: Bool {
+        chromeExtensionInstaller.canInstallDDGExtension
+    }
+
     private var shouldShowChromeInstallOption: Bool {
-        featureFlagger.isFeatureOn(.onboardingChromeExtension) && chromeExtensionInstaller.canInstallDDGExtension
+        isEligibleForChromeExtensionInstall
+            && chromeExtensionExperiment.cohort == .treatment
     }
 
     convenience init(
@@ -201,7 +209,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         installDateProvider: @escaping () -> Date
     ) {
         let chromeExtensionInstaller = ChromeExtensionInstaller(
-            featureFlagger: featureFlagger,
             buildType: StandardApplicationBuildType(),
             isChromeInstalled: { ThirdPartyBrowser.chrome.isInstalled },
             applicationSupportURL: .nonSandboxApplicationSupportDirectoryURL,
@@ -250,6 +257,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.aiChatPreferencesStorage = aiChatPreferencesStorage
         self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
+        self.chromeExtensionExperiment = OnboardingChromeExtensionExperiment(featureFlagger: featureFlagger)
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
         self.chromeExtensionInstaller = chromeExtensionInstaller
     }
@@ -257,6 +265,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     func onboardingStarted() {
         navigation.updatePreventUserInteraction(prevent: true)
         stepShown(step: .welcome)
+        if isEligibleForChromeExtensionInstall {
+            chromeExtensionExperiment.enroll()
+        }
     }
 
     @MainActor
@@ -305,6 +316,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     func setAsDefault() {
         try? defaultBrowserProvider.presentDefaultBrowserPrompt()
         onboardingSharedPixelHandler.fire(.setDefault(.clicked(.engage)))
+        chromeExtensionExperiment.fireMetric(.setAsDefault)
         didRequestDefaultBrowser = true
     }
 
@@ -504,6 +516,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private func fireOnboardingFinishedPixels(userSawToggleOnboarding: Bool) {
         PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
         fireSharedPixelForFinalStep(userSawToggleOnboarding)
+        chromeExtensionExperiment.fireMetric(.onboardingCompleted)
 
         guard userSawToggleOnboarding else { return }
 

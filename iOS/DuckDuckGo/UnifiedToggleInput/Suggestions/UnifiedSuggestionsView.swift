@@ -89,6 +89,9 @@ struct UnifiedSuggestionsView: View {
         SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
                             isAddressBarAtBottom: isAddressBarAtBottom)
             .opacity(isShowingList ? 1 : 0)
+            // Fade *in* on a mode change, but snap *out* — otherwise the recents list lingers over the
+            // Search favorites/logo (which snap in instantly) when toggling away from Duck.ai.
+            .animation(isShowingList ? .easeInOut(duration: 0.2) : nil, value: isShowingList)
             // Fade out with the collapse (like the logo) so a list→favorites dismiss hands off to the
             // NTP favorites instead of snapping away when the host is hidden.
             .modifier(DismissFade(isFadingOut: viewModel.isFadingOut))

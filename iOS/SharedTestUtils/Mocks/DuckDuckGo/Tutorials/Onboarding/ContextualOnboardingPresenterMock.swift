@@ -164,6 +164,8 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 class MockDaxDialogsManager: DaxDialogsManaging {
     var hasSeenOnboarding: Bool = false
 
+    var isShowingContextualOnboardingDialog: Bool = false
+
     var isShowingFireDialog: Bool = false
 
     var shouldShowPrivacyButtonPulse: Bool = false

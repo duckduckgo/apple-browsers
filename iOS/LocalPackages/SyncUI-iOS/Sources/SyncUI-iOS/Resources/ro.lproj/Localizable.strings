@@ -76,12 +76,6 @@
 /* Standard Buttons - Done Button */
 "done.button" = "Terminat";
 
-/* Edit Device View - Header */
-"edit.device.header" = "Numele dispozitivului";
-
-/* Edit Device View - Title */
-"edit.device.title" = "Editează %@";
-
 /* Fetch Favicons Onboarding - Button Title */
 "fetch.favicons.onboarding.button.title" = "Păstrează pictogramele de marcaje actualizate";
 
@@ -97,14 +91,8 @@
 /* No comment provided by engineer. */
 "Keep Development" = "Continuă dezvoltarea";
 
-/* Manually Enter Code View - Title */
-"manually.enter.code.title" = "Completează manual codul";
-
 /* Standard Buttons - Not Now Button */
 "not.now.button" = "Nu acum";
-
-/* Standard Buttons - Paste Button */
-"paste.button" = "Lipește";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Gestionează marcajele";
@@ -114,9 +102,6 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Gestionează cardurile de credit…";
-
-/* Preparing to sync title */
-"preparing.to.sync.title" = "Se pregătește sincronizarea";
 
 /* Recover Synced Data Sheet - Button */
 "recover.synced.data.sheet.button" = "Recuperează datele sincronizate";
@@ -175,20 +160,11 @@
 /* Sync Settings - Recovery section header */
 "sync.settings.recovery.section.header" = "Recuperare";
 
-/* Sync settings 'Already set up' section header containing useful options */
-"sync.simplified.already.set.up.section.header" = "Ai configurat deja pe alt dispozitiv?";
+/* Body on the sync-setup prompt explaining the sync-another-device option */
+"sync.simplified.another.device.v2.body" = "Te vom ajuta să-ți sincronizezi dispozitivele.";
 
-/* Prompt body text after enabling sync */
-"sync.simplified.another.device.body" = "Marcajele, datele de completare automată și chaturile Duck.ai sunt salvate în siguranță. Acum menține-le sincronizate cu computerul sau tableta.";
-
-/* Primary button to sync another device when sync is enabled */
-"sync.simplified.another.device.button" = "Sincronizează un alt dispozitiv";
-
-/* Prompt secondary button */
-"sync.simplified.another.device.notnow" = "Nu acum";
-
-/* Prompt title after enabling sync */
-"sync.simplified.another.device.title" = "Dorești să sincronizezi datele cu un alt dispozitiv?";
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v2.title" = "Sincronizează acest dispozitiv cu un computer din apropiere.";
 
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Încarcă pictograme de pe site-urile pe care le-ai salvat la favorite. Descărcările de pictograme sunt expuse în rețeaua ta.";
@@ -199,8 +175,8 @@
 /* Caption displayed on 'unify favorites' toggle. */
 "sync.simplified.bookmarks.section.unified-favorites.caption" = "Folosește aceleași marcaje preferate pe mobil și pe desktop.";
 
-/* Text shown next to toggle while sync is being set up */
-"sync.simplified.connecting" = "Se conectează...";
+/* Title shown on the connecting screen while Sync & Backup is being set up on this device */
+"sync.simplified.connecting.v2.title" = "Sync & Backup este criptat de la un capăt la altul pe toate dispozitivele tale.";
 
 /* Sync settings 'Copy Recovery Code' button */
 "sync.simplified.copy.recovery.code.button" = "Copiază codul de recuperare";
@@ -208,20 +184,89 @@
 /* Sync settings action button title to turn off sync and delete server data */
 "sync.simplified.delete.sync.data.button" = "Oprește sincronizarea și șterge datele de pe server";
 
+/* Description on the device-added success screen explaining what the recovery code is for */
+"sync.simplified.device.added.v2.description" = "Folosește acest cod pentru a-ți restaura datele dacă pierzi accesul la dispozitive. Păstrează-l în siguranță.";
+
+/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedTitle. */
+"sync.simplified.device.added.v2.fallback.device.name" = "Acest dispozitiv";
+
+/* Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added. */
+"sync.simplified.device.added.v2.title" = "%@ a fost adăugat la Sync & Backup.";
+
 /* Sync settings 'Download Recovery Code' button */
 "sync.simplified.download.recovery.code.button" = "Descarcă codul de recuperare";
 
-/* Button subtitle to get the DuckDuckGo desktop browser */
-"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo pentru Mac și Windows";
+/* Section header above the get-desktop-browser option in sync setup */
+"sync.simplified.download.section.header" = "Descarcă";
 
-/* Button title to get the DuckDuckGo desktop browser. */
-"sync.simplified.get.desktop.browser.title" = "Obține browserul pentru desktop";
+/* Button to download the recovery code on the recover-your-data screen */
+"sync.simplified.download.your.recovery.code.button" = "Descarcă-ți codul de recuperare";
 
-/* Description of the Sync & Backup feature (when AI chat sync is available) */
-"sync.simplified.header.message" = "Salvează-ți marcajele, datele de completare automată și chaturile Duck.ai și sincronizează-le între dispozitivele tale cu criptare de la un capăt la altul.";
+/* Description shown when Sync & Backup is enabled (when AI chat sync is available) */
+"sync.simplified.enabled.header.message" = "Marcajele, datele de completare automată și chaturile Duck.ai sunt sincronizate și beneficiază de copiere de rezervă, cu criptare de la un capăt la altul.";
+
+/* Description shown when Sync & Backup is enabled */
+"sync.simplified.enabled.header.message.basic" = "Marcajele și datele de completare automată sunt sincronizate cu criptare de la un capăt la altul.";
+
+/* Sync & Backup screen title shown when Sync is enabled */
+"sync.simplified.enabled.header.title" = "DuckDuckGo este sincronizat";
+
+/* Label above the example sync code placeholder on the enter-code tab */
+"sync.simplified.enter.code.example.label" = "Exemplu de cod:";
+
+/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.enter.code.open" = "Deschide celălalt";
+
+/* Button to paste the sync code on the enter-code tab */
+"sync.simplified.enter.code.paste.button" = "Lipește codul de sincronizare";
+
+/* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.enter.code.steps" = "Accesează **Sync & Backup** › **Sincronizează cu un alt dispozitiv** › **Copiază codul text**.";
+
+/* Title on the enter-code tab of the scan screen */
+"sync.simplified.enter.code.title" = "Completează codul de sincronizare.";
+
+/* Row label to get the DuckDuckGo desktop browser */
+"sync.simplified.get.our.desktop.browser.title" = "Obține browserul nostru pentru desktop";
+
+/* Sync setup row label to recover synced data using an existing recovery code */
+"sync.simplified.have.recovery.code.button" = "Am un cod de recuperare";
 
 /* Description of the Sync & Backup feature */
-"sync.simplified.header.message.basic" = "Salvează marcajele și datele de completare automată și sincronizează-le între dispozitivele tale cu criptare de la un capăt la altul.";
+"sync.simplified.header.message.basic.v2" = "Sincronizează-ți datele de completare automată și marcajele, criptate de la un capăt la altul în aplicațiile tale DuckDuckGo.";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message.v2" = "Sincronizează și efectuează copii de rezervă pentru datele de completare automată, marcajele și chaturile Duck.ai, care vor fi criptate de la un capăt la altul în aplicațiile tale DuckDuckGo.";
+
+/* Sync & Backup screen title */
+"sync.simplified.header.title" = "Păstrează DuckDuckGo sincronizat";
+
+/* Footer caption shown under the Remove Device button on the manage device screen */
+"sync.simplified.manage.device.remove.footer" = "Acest dispozitiv nu va mai putea accesa datele tale sincronizate dacă îl elimini.";
+
+/* Status label shown under a device name on the manage device screen when the device is synced */
+"sync.simplified.manage.device.status.synced" = "Sincronizat";
+
+/* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
+"sync.simplified.manage.device.turn.off.footer" = "Acest dispozitiv nu va mai putea accesa datele tale sincronizate dacă această opțiune este dezactivată.";
+
+/* My Devices section header shown when Sync & Backup is enabled */
+"sync.simplified.my.devices.section.header" = "Dispozitivele mele";
+
+/* Section header above the recovery-code option in sync setup */
+"sync.simplified.recover.synced.data.section.header" = "Recuperează datele sincronizate";
+
+/* Title shown on the connecting screen while a device's synced data is being recovered */
+"sync.simplified.recovering.data.v2.title" = "Se recuperează datele";
+
+/* Label above the recovery code on the recover-your-data screen */
+"sync.simplified.recovery.code.label" = "Cod de recuperare";
+
+/* Description on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.description" = "Criptare de la un capăt la altul pe toate dispozitivele tale.";
+
+/* Title on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.title" = "Sync & Backup activat";
 
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Folosește acest cod pentru a restaura datele dacă pierzi accesul la acest dispozitiv. Datele din Sync & Backup nu pot fi recuperate după 18 luni de inactivitate. [Află mai multe](%@)";
@@ -229,14 +274,8 @@
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "Aplicația DuckDuckGo";
 
-/* Floating prompt over QR code scanner preview */
-"sync.simplified.scan-or-view-code.camera.prompt" = "Îndreaptă camera spre codul QR pentru a scana";
-
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Se conectează...";
-
-/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Păstrează „Sync & Backup” deschis pe ambele dispozitive";
 
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Revino la acest dispozitiv după ce lipești codul.";
@@ -244,41 +283,59 @@
 /* Title of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.title" = "Lipește codul pe celălalt dispozitiv";
 
-/* Button to navigate to manual sync code entry */
-"sync.simplified.scan-or-view-code.manually.enter.code" = "Introdu manual codul";
-
-/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
-"sync.simplified.scan-or-view-code.paste.code.instructions" = "Accesează **Setări > Sync & Backup > Sincronizează cu un alt dispozitiv** și selectează **Vizualizează codul text** în aplicația DuckDuckGo pe un alt dispozitiv sincronizat și lipește codul aici pentru a sincroniza acest dispozitiv.";
-
 /* Status text while verifying a pasted sync code */
 "sync.simplified.scan-or-view-code.paste.code.verifying" = "Se verifică codul";
-
-/* First line of QR code scanning instructions */
-"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Deschide aplicația DuckDuckGo pe celălalt dispozitiv.";
-
-/* Second line of QR code scanning instructions */
-"sync.simplified.scan-or-view-code.scan.instructions.line2" = "Găsește codul QR în Setări > Sync & Backup > Sincronizează cu un alt dispozitiv.";
 
 /* Title of button to share a sync code */
 "sync.simplified.scan-or-view-code.share" = "Distribuie codul";
 
-/* Button title to show QR code scanner */
-"sync.simplified.scan-or-view-code.tab.scan" = "Scanează codul QR";
+/* Close button in the scan screen navigation bar */
+"sync.simplified.scan.v2.close.button" = "Închide";
 
-/* Button title to view your sync code */
-"sync.simplified.scan-or-view-code.tab.view.code" = "Vezi codul";
+/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+"sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo pentru desktop";
 
-/* Navigation title for simplified QR scanning screen */
-"sync.simplified.scan-or-view-code.title" = "Sincronizează-ți dispozitivele";
+/* Heading overlaid on the camera on the scan-QR tab of the scan screen */
+"sync.simplified.scan.v2.qr.heading" = "Scanează codul QR pentru sincronizare.";
 
-/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Scanează sau lipește acest cod pe celălalt dispozitiv";
+/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.scan.v2.qr.open" = "Deschide";
 
-/* Sync & Backup enabled / disabled toggle title */
-"sync.simplified.toggle.title" = "Sincronizare și copiere de rezervă";
+/* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
+"sync.simplified.scan.v2.qr.ready.button" = "Sunt gata de scanare";
 
-/* Use Recovery Code sync setup button label */
-"sync.simplified.use.recovery.code.button" = "Folosește codul de recuperare";
+/* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.scan.v2.qr.steps" = "și accesează **Sync & Backup** › **Sincronizează cu un alt dispozitiv**";
+
+/* Segmented control tab title for entering a code */
+"sync.simplified.scan.v2.tab.enter.code" = "Completează codul";
+
+/* Segmented control tab title for scanning a QR code */
+"sync.simplified.scan.v2.tab.scan.qr" = "Scanează codul QR";
+
+/* Status label shown next to the title when Sync & Backup is disabled */
+"sync.simplified.status.off" = "Dezactivat";
+
+/* Status label shown next to the title when Sync & Backup is enabled */
+"sync.simplified.status.on" = "Activat";
+
+/* Button to copy the text sync code on the sync-code sheet */
+"sync.simplified.sync.code.copy.button" = "Copiază codul text";
+
+/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.sync.code.sheet.open" = "Pe un alt dispozitiv, deschide";
+
+/* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.sync.code.sheet.scan" = "Accesează **Sync & Backup** › **Sincronizează cu un alt dispozitiv** și scanează acest cod:";
+
+/* Navigation title of the sheet that shows this device's sync QR code */
+"sync.simplified.sync.code.sheet.title" = "Scanează sau copiază codul";
+
+/* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
+"sync.simplified.this.device.only" = "Sincronizează doar acest dispozitiv";
+
+/* Sync & Backup enabled / disabled toggle title, referring to the current device */
+"sync.simplified.toggle.title.this.device" = "Sincronizează acest dispozitiv";
 
 /* Sync With Another Device sync setup button label */
 "sync.simplified.with.another.device.button" = "Sincronizează cu un alt dispozitiv";
@@ -294,9 +351,6 @@
 
 /* Title of the warning message */
 "sync.warning.sync.unavailable" = "Sincronizare și backup nu este disponibil";
-
-/* Synced Devices - Section Header */
-"synced.devices.section.header" = "Dispozitive sincronizate";
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Acest dispozitiv";

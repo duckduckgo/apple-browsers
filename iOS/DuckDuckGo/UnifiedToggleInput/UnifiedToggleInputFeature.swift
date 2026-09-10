@@ -19,9 +19,9 @@
 
 import Foundation
 import Common
-import FoundationExtensions
 import Core
 import PrivacyConfig
+import FeatureFlags_iOS
 
 protocol UnifiedToggleInputFeatureProviding {
     var isAvailable: Bool { get }
@@ -31,37 +31,20 @@ protocol UnifiedToggleInputFeatureProviding {
     /// No protocol-extension default: every conformer (including test mocks) must declare an
     /// explicit value so test coverage isn't silently masked by a convenient fallback.
     var isToggleHiddenOnDuckAITab: Bool { get }
+
+    /// When true, a native image/file paste is routed into the attachment strip. Backed by `FeatureFlag.unifiedToggleInputAttachmentPaste`.
+    var isAttachmentPasteEnabled: Bool { get }
 }
 
 struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
 
-    private static let isEligibleKey = "com.duckduckgo.unifiedToggleInput.eligible"
     private static let isToggleHiddenOnDuckAITabKey = "com.duckduckgo.unifiedToggleInput.aiChatTabHideToggle.session.enabled"
+    private static let isAttachmentPasteEnabledKey = "com.duckduckgo.unifiedToggleInput.attachmentPaste.session.enabled"
 
-    /// Forward-only "this device has had UTI" bit. Persists across launches and flag flips and is
-    /// cleared only by uninstall. Lets the new-user cutoff (`unifiedToggleInputIncludeNewUsers`)
-    /// stop *new* users without revoking UTI from anyone already granted.
-    private static let hasGrantedKey = "com.duckduckgo.unifiedToggleInput.hasGranted"
-
-    /// Snapshot the feature flags once per session. Call early at launch, before any consumer reads `isAvailable` / `isToggleHiddenOnDuckAITab`.
-    static func resolve(using featureFlagger: FeatureFlagger,
-                        devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
-        let featureOn = featureFlagger.isFeatureOn(.unifiedToggleInput)
-        let includeNewUsers = featureFlagger.isFeatureOn(.unifiedToggleInputIncludeNewUsers)
-        let hasGranted = UserDefaults.app.bool(forKey: hasGrantedKey)
-
-        // Eligible when the `unifiedToggleInput` flag is on AND the user either already had UTI
-        // (sticky grant) or new users are still being included. That flag off revokes UTI from everyone.
-        let isEligible = featureOn && (hasGranted || includeNewUsers)
-        UserDefaults.app.set(isEligible, forKey: isEligibleKey)
+    /// Snapshot the feature flags once per session. Call early at launch, before any consumer reads them.
+    static func resolve(using featureFlagger: FeatureFlagger) {
         UserDefaults.app.set(featureFlagger.isFeatureOn(.aiChatTabHideToggle), forKey: isToggleHiddenOnDuckAITabKey)
-
-        // Lock in the grant the first launch UTI is actually available on this device, so a later
-        // new-user cutoff never revokes it. Device-gated so a device that never showed UTI is not
-        // wrongly treated as granted if UTI later expands beyond iPhone.
-        if isEligible && devicePlatform.isIphone && !hasGranted {
-            UserDefaults.app.set(true, forKey: hasGrantedKey)
-        }
+        UserDefaults.app.set(featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPaste), forKey: isAttachmentPasteEnabledKey)
     }
 
     private let devicePlatform: DevicePlatformProviding.Type
@@ -70,24 +53,16 @@ struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
         self.devicePlatform = devicePlatform
     }
 
-    private var isEligible: Bool {
-        UserDefaults.app.bool(forKey: Self.isEligibleKey)
-    }
-
     var isAvailable: Bool {
-        isEligible && devicePlatform.isIphone
+        devicePlatform.isIphone
     }
 
     var isToggleHiddenOnDuckAITab: Bool {
         UserDefaults.app.bool(forKey: Self.isToggleHiddenOnDuckAITabKey)
     }
 
-#if DEBUG
-    /// Test-only: clears the persisted UTI state (sticky grant + eligibility snapshot) so each test
-    /// starts from a clean, un-granted device without depending on a follow-up `resolve(...)`.
-    static func resetPersistedStateForTesting() {
-        UserDefaults.app.removeObject(forKey: hasGrantedKey)
-        UserDefaults.app.removeObject(forKey: isEligibleKey)
+    var isAttachmentPasteEnabled: Bool {
+        UserDefaults.app.bool(forKey: Self.isAttachmentPasteEnabledKey)
     }
-#endif
+
 }

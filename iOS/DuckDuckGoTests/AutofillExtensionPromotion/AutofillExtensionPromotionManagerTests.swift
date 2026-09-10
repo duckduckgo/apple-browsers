@@ -20,8 +20,7 @@
 import XCTest
 import AuthenticationServices
 @testable import DuckDuckGo
-import Persistence
-@testable import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import BrowserServicesKitTestsUtils
 
 @available(iOS 18.0, *)

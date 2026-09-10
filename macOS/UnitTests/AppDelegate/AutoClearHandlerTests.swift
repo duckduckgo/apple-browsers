@@ -19,7 +19,7 @@
 import AppKit
 import Combine
 import Foundation
-import PixelKitTestingUtilities
+@_spi(Testing) import WideEvent
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
@@ -93,6 +93,7 @@ class AutoClearHandlerTests: XCTestCase {
                                    stateRestorationManager: mockStateRestoration,
                                    aiChatSyncCleaner: nil,
                                    wideEvent: WideEventMock(),
+                                   pixelFiring: nil,
                                    alertPresenter: mockAlertPresenter)
     }
 

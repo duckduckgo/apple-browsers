@@ -38,6 +38,10 @@ enum SyncErrorMessage {
 
     var title: String {
         switch self {
+        case .unableToRecognizeCode:
+            return UserText.unableToRecognizeCodeTitle
+        case .unableToSyncWithDevice:
+            return UserText.syncFailedTitle
         case .alreadyPairedWithAccount:
             return UserText.syncAlreadyPairedWithAccountTitle
         case .updateRequired:
@@ -51,14 +55,14 @@ enum SyncErrorMessage {
         }
     }
 
-    var description: String {
+    var description: String? {
         switch self {
         case .unknownError:
             return UserText.unknownErrorTryAgainMessage
         case .unableToSyncToServer:
             return UserText.unableToSyncToServerDescription
         case .unableToSyncWithDevice:
-            return UserText.unableToSyncWithOtherDeviceDescription
+            return UserText.syncFailedDescription
         case .unableToMergeTwoAccounts:
             return UserText.unableToMergeTwoAccountsErrorDescription
         case .unableToUpdateDeviceName:
@@ -74,7 +78,7 @@ enum SyncErrorMessage {
         case .unableToRecognizeCode:
             return UserText.unableToRecognizeCode
         case .updateRequired:
-            return UserText.syncUpdateRequiredDescription
+            return nil
         case .unsupportedThirdPartyRecoveryCode:
             return UserText.syncUnsupportedThirdPartyRecoveryCodeDescription
         case .thirdPartyAccountAlreadyUpgraded:
@@ -88,6 +92,8 @@ enum SyncErrorMessage {
 
     var buttonTitle: String {
         switch self {
+        case .unableToRecognizeCode, .unableToSyncWithDevice, .updateRequired, .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncSetupErrorGotItButton
         case .alreadyPairedWithAccount:
             return UserText.syncAlreadyPairedWithAccountButton
         case .syncCancelledFromOtherDevice:

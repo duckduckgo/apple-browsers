@@ -36,11 +36,12 @@ class DownloadsListDataSource {
                                    completeDownloads: downloadsDirectoryFiles.map { AnyDownloadListRepresentable($0) })
         downloadManager.startMonitoringDownloadsDirectoryChanges()
         setupChangeListeners()
+        markDownloadsSeen()
     }
     
     deinit {
         downloadManager.stopMonitoringDownloadsDirectoryChanges()
-        downloadManager.markAllDownloadsSeen()
+        markDownloadsSeen()
     }
     
     private func setupChangeListeners() {
@@ -69,6 +70,11 @@ class DownloadsListDataSource {
         
         model.update(ongoingDownloads: ongoingDownloads,
                      completeDownloads: completeDownloads)
+        markDownloadsSeen()
+    }
+
+    private func markDownloadsSeen() {
+        downloadManager.markAllDownloadsSeen()
     }
     
     func cancelDownloadWithIdentifier(_ identifier: String) {

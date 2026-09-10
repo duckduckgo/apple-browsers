@@ -13,21 +13,23 @@ let package = Package(
             targets: ["SubscriptionUI"]),
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/WideEvent"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../PreferencesUI-macOS"),
         .package(path: "../SwiftUIExtensions"),
-        .package(path: "../FeatureFlags")
+        .package(path: "../FeatureFlags-macOS")
     ],
     targets: [
         .target(
             name: "SubscriptionUI",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "PreferencesUI-macOS", package: "PreferencesUI-macOS"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
-                .product(name: "FeatureFlags", package: "FeatureFlags")
+                .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS")
             ],
             resources: [
                 .process("Resources")

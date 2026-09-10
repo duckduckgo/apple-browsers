@@ -87,6 +87,10 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// (expands the input, reveals the model chip).
     case showModelPicker
 
+    case showReasoningPicker
+
+    case openFilePicker
+
     /// Posted by the FE while the subscription recovery card is showing for the active chat.
     case disableChatInput
 
@@ -96,6 +100,9 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Posted by the FE to request focus on the native address bar (UTI).
     /// Native honors this only when the Unified Toggle Input feature is enabled.
     case focusChatInput
+
+    case editPrompt
+    case cancelEdit
 
     // Sync
     case getSyncStatus
@@ -110,7 +117,11 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Pushed to the duck.ai page to open the Duck.ai Settings modal.
     case submitOpenSettingsAction
 
-    /// Posted by the native-customize-modal placement when the user dismisses the Customize Responses card.
+    /// Pushed to the duck.ai page when the user opts to spend their weekly allowance after the
+    /// daily one is gone. Web owns what that means; native only reports the choice.
+    case submitStartUsingWeeklyLimitAction
+
+    /// Posted by the Customize Responses card placement when the user dismisses it.
     case customizeResponsesModalClosed
 }
 // swiftlint:enable inclusive_language

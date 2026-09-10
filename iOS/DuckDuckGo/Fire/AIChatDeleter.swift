@@ -21,11 +21,16 @@ import AIChat
 import Core
 import UserScript
 import WebKit
+import PixelKit
 
 protocol AIChatDeleting {
     @discardableResult
     @MainActor
     func deleteChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error>
+
+    @discardableResult
+    @MainActor
+    func deleteChats(chatIDs: [String], isFireMode: Bool) async -> Result<Void, Error>
 
     @discardableResult
     @MainActor
@@ -59,13 +64,39 @@ struct AIChatDeleter: AIChatDeleting {
         let result = await cleaner.deleteAIChat(chatID: chatID)
         switch result {
         case .success:
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSingleDeleteSuccessful)
+            PixelKit.fire(Pixel.Event.aiChatSingleDeleteSuccessful, frequency: .dailyAndCount)
             if !isFireMode {
                 await aiChatSyncCleaner.recordChatDeletion(chatID: chatID)
             }
         case .failure(let error):
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSingleDeleteFailed)
+            PixelKit.fire(Pixel.Event.aiChatSingleDeleteFailed, frequency: .dailyAndCount)
             Logger.aiChat.debug("Failed to delete AI Chat: \(error.localizedDescription)")
+            if let userScriptError = error as? UserScriptError {
+                userScriptError.fireLoadJSFailedPixelIfNeeded()
+            }
+        }
+        return result
+    }
+
+    @discardableResult
+    @MainActor
+    func deleteChats(chatIDs: [String], isFireMode: Bool) async -> Result<Void, Error> {
+        guard let cleaner = historyCleaner(isFireMode: isFireMode) else {
+            return .success(())
+        }
+
+        let result = await cleaner.deleteAIChats(chatIDs: chatIDs)
+        switch result {
+        case .success:
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount)
+            if !isFireMode {
+                for chatID in chatIDs {
+                    await aiChatSyncCleaner.recordChatDeletion(chatID: chatID)
+                }
+            }
+        case .failure(let error):
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount)
+            Logger.aiChat.debug("Failed to delete AI Chats: \(error.localizedDescription)")
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
             }
@@ -83,12 +114,12 @@ struct AIChatDeleter: AIChatDeleting {
         let result = await cleaner.cleanAIChatHistory()
         switch result {
         case .success:
-            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteSuccessful)
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount)
             if !isFireMode {
                 await aiChatSyncCleaner.recordLocalClear(date: Date())
             }
         case .failure(let error):
-            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed)
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount)
             Logger.aiChat.debug("Failed to clear AI Chat history: \(error.localizedDescription)")
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()

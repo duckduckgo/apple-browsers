@@ -25,16 +25,14 @@ import DesignResourcesKit
 /// bar, driven by `DefaultTabSwitcherBarsStateHandler`. This preserves the existing behaviour;
 /// it is the path used whenever floating UI is disabled.
 ///
-/// The bottom bar reuses the browser's `BrowserToolbarView` (rather than the storyboard `UIToolbar`)
-/// so the button positions line up exactly with the browser/NTP toolbar during the tab-switcher
-/// transition. The storyboard `UIToolbar` is removed from the hierarchy and otherwise unused.
+/// The bottom bar reuses the browser's `BrowserToolbarView` so the button positions line up
+/// exactly with the browser/NTP toolbar during the tab-switcher transition.
 @MainActor
 final class LegacyTabSwitcherChrome: TabSwitcherChrome {
 
     private let titleBarView = TabSwitcherTitleBarView()
     private lazy var borderView = StyledTopBottomBorderView()
     private let bottomToolbar = BrowserToolbarView()
-    private let toolbar: UIToolbar
     private let appSettings: AppSettings
     private var barsHandler: TabSwitcherBarsStateHandling
 
@@ -50,10 +48,8 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
         barsHandler.fireButton
     }
 
-    init(toolbar: UIToolbar,
-         appSettings: AppSettings,
+    init(appSettings: AppSettings,
          barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()) {
-        self.toolbar = toolbar
         self.appSettings = appSettings
         self.barsHandler = barsHandler
     }
@@ -111,9 +107,6 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
         titleBarView.translatesAutoresizingMaskIntoConstraints = false
         bottomToolbar.translatesAutoresizingMaskIntoConstraints = false
         contentView.translatesAutoresizingMaskIntoConstraints = false
-
-        // Drop the storyboard UIToolbar from the hierarchy; `bottomToolbar` replaces it.
-        toolbar.removeFromSuperview()
 
         let viewsToRemoveConstraintsFor: [UIView] = [titleBarView, bottomToolbar, contentView, borderView]
         viewsToRemoveConstraintsFor.forEach { targetView in

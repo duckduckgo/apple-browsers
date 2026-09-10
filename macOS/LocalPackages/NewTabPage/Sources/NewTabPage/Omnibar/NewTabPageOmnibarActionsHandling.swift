@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 public protocol NewTabPageOmnibarActionsHandling: AnyObject {
 
     @MainActor
@@ -40,5 +42,22 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
 
     @MainActor
     func viewAllAiChats(target: NewTabPageDataModel.OpenTarget)
+
+    /// Shows the delete-confirmation dialog and, on confirm, starts deletion (may finish in the
+    /// background). Returns the user's choice.
+    @MainActor
+    func confirmDeleteAiChat(chatId: String, title: String, sourceWindow: NSWindow?) async -> Bool
+
+    /// Removes a history-based suggestion identified by its exact URL. Fire-and-forget.
+    @MainActor
+    func removeSuggestion(_ url: String)
+
+    /// Opens the Duck.ai Customize Responses modal from the NTP omnibar Tools menu.
+    @MainActor
+    func openCustomizeResponses()
+
+    /// Persists whether the stored response customization is applied (from the row's toggle).
+    @MainActor
+    func setCustomizeResponsesActive(_ active: Bool)
 
 }

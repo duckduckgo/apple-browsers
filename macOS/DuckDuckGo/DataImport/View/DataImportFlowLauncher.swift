@@ -19,7 +19,7 @@
 import AppKit
 import DDGSync
 import BrowserServicesKit
-import FeatureFlags
+import FeatureFlags_macOS
 
 /// Protocol for re-launching data import flows from within data import
 ///
@@ -126,6 +126,14 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
             syncFeatureVisibility: syncFeatureVisibility,
             pinningManager: pinningManager
         ).show(in: window, completion: completion)
+    }
+
+    /// Launches the data import flow directly at the given screen.
+    ///
+    /// - Important: Only intended for the `Debug → Data Import` flow. Regular entry points always start at the beginning of the flow.
+    @MainActor
+    func launchDataImport(at screen: DataImportViewModel.Screen) {
+        relaunchDataImport(model: DataImportViewModel(screen: screen, syncFeatureVisibility: syncFeatureVisibility))
     }
 
     @MainActor

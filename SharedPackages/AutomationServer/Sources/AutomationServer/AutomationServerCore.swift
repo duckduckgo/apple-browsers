@@ -180,10 +180,14 @@ public final class AutomationServerCore {
     private let authToken: String?
     private let maxRequestSize = 1_048_576 // 1MB
 
-    public init(provider: BrowserAutomationProvider, port: Int?) throws {
+    public init(
+        provider: BrowserAutomationProvider,
+        port: Int?,
+        authToken: String? = ProcessInfo.processInfo.environment["AUTOMATION_TOKEN"]
+    ) throws {
         let port = port ?? 8788
         self.provider = provider
-        self.authToken = ProcessInfo.processInfo.environment["AUTOMATION_TOKEN"]
+        self.authToken = authToken.flatMap { $0.isEmpty ? nil : $0 }
 
         // Validate port is in valid range before UInt16 conversion
         guard port.isValidPort else {
@@ -301,18 +305,6 @@ public final class AutomationServerCore {
             Logger.automationServer.debug("First line: \(firstLine)")
         }
 
-        // Validate authentication token if configured
-        if let expectedToken = authToken {
-            let headers = extractHeaders(from: stringContent)
-            let authHeader = headers["authorization"] ?? ""
-            let expectedValue = "Bearer \(expectedToken)"
-
-            guard authHeader == expectedValue else {
-                Logger.automationServer.error("Unauthorized request - invalid or missing auth token")
-                return ("unauthorized", .failure(.unauthorized))
-            }
-        }
-
         guard let (method, pathString) = extractMethodAndPath(from: stringContent) else {
             return ("unknown", .failure(.unknownMethod))
         }
@@ -322,6 +314,21 @@ public final class AutomationServerCore {
             Logger.automationServer.error("Invalid URL: \(pathString)")
             return ("unknown", .failure(.invalidURL))
         }
+
+        if let expectedToken = authToken {
+            let headers = extractHeaders(from: stringContent)
+            let authHeader = headers["authorization"] ?? ""
+            let expectedValue = "Bearer \(expectedToken)"
+
+            guard authHeader == expectedValue else {
+                Logger.automationServer.error("Unauthorized request - invalid or missing auth token")
+                return ("unauthorized", .failure(.unauthorized))
+            }
+        } else if url.path == "/clearWebsiteData" {
+            Logger.automationServer.error("Unauthorized website data clearing request - automation token is not configured")
+            return ("unauthorized", .failure(.unauthorized))
+        }
+
         return (url.path, await handlePath(url, method: method))
     }
 
@@ -426,6 +433,9 @@ public final class AutomationServerCore {
         case "/contentBlockerReady":
             guard method == "GET" else { return .failure(.methodNotAllowed) }
             return contentBlockerReady()
+        case "/clearWebsiteData":
+            guard method == "POST" else { return .failure(.methodNotAllowed) }
+            return await clearWebsiteData()
         default:
             return .failure(.unknownMethod)
         }
@@ -572,6 +582,13 @@ public final class AutomationServerCore {
         let isReady = provider.isContentBlockerReady
         Logger.automationServer.debug("Content blocker ready: \(isReady)")
         return .success(isReady ? "true" : "false")
+    }
+
+    public func clearWebsiteData() async -> ConnectionResult {
+        guard await provider.clearWebsiteData() else {
+            return .failure(.websiteDataClearingFailed)
+        }
+        return .success("done")
     }
 
     public func executeScript(_ script: String, args: [String: Any]) async -> ConnectionResult {

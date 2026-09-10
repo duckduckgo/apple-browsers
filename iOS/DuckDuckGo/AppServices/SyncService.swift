@@ -24,6 +24,8 @@ import DDGSync
 import Persistence
 import PrivacyConfig
 import AIChat
+import FeatureFlags_iOS
+import PixelKit
 
 final class SyncService {
 
@@ -82,6 +84,7 @@ final class SyncService {
         sync = DDGSync(
             dataProvidersSource: syncDataProviders,
             errorEvents: SyncErrorHandler(),
+            unifiedDeviceListEvents: UnifiedDeviceListPixelHandler(),
             privacyConfigurationManager: privacyConfigurationManager,
             keyValueStore: keyValueStore,
             environment: environment,
@@ -94,6 +97,15 @@ final class SyncService {
                 },
                 isPairingV2CodeEnabled: {
                     featureFlagger.isFeatureOn(for: FeatureFlag.syncCanShowV2ConnectCode)
+                },
+                canWriteUnifiedDeviceList: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncCanWriteUnifiedDeviceList)
+                },
+                canUsePatchEndpointForLegacyDeviceRename: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncCanUsePatchEndpointForLegacyDeviceRename)
+                },
+                canReadUnifiedDeviceList: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncCanReadUnifiedDeviceList)
                 }
             ),
             shouldPreserveAccountWhenSyncDisabled: {
@@ -116,11 +128,10 @@ final class SyncService {
         isSyncInProgressCancellable = sync.isSyncInProgressPublisher
             .filter { $0 }
             .sink { [weak sync] _ in
-                DailyPixel.fire(pixel: .syncDaily, includedParameters: [.appVersion])
+                PixelKit.fire(Pixel.Event.syncDaily, frequency: .legacyDailyNoSuffix)
                 sync?.syncDailyStats.sendStatsIfNeeded(handler: { params in
-                    Pixel.fire(pixel: .syncSuccessRateDaily,
-                               withAdditionalParameters: params,
-                               includedParameters: [.appVersion])
+                    PixelKit.fire(Pixel.Event.syncSuccessRateDaily,
+                                  options: .parameters(params))
                 })
             }
 

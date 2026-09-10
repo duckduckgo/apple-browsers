@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import DDGError
 import UserScript
 import WebKit
 import os.log

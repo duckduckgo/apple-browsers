@@ -50,7 +50,9 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
     }
     var selectedWindowIndex: Int
     var selectedTab: Tab? {
-        allTabCollectionViewModels[selectedWindowIndex].selectedTab
+        // Matches the real WindowControllersManager: no window means nil, not a crash.
+        guard allTabCollectionViewModels.indices.contains(selectedWindowIndex) else { return nil }
+        return allTabCollectionViewModels[selectedWindowIndex].selectedTab
     }
 
     struct ShowArgs: Equatable {
@@ -121,6 +123,28 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
     @MainActor
     func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool) {
         openAIChatCalls.append(OpenAIChatCall(url: url, behavior: behavior, hasPrompt: hasPrompt))
+    }
+
+    struct OpenAIChatInNewTabOfCall {
+        let url: URL
+        let windowController: MainWindowController
+        let hasPrompt: Bool
+    }
+    var openAIChatInNewTabOfCalls: [OpenAIChatInNewTabOfCall] = []
+
+    func openAIChat(_ url: URL, inNewTabOf windowController: MainWindowController, hasPrompt: Bool) {
+        openAIChatInNewTabOfCalls.append(OpenAIChatInNewTabOfCall(url: url, windowController: windowController, hasPrompt: hasPrompt))
+    }
+
+    struct OpenAIChatInNewWindowCall {
+        let url: URL
+        let droppingPoint: NSPoint
+        let hasPrompt: Bool
+    }
+    var openAIChatInNewWindowCalls: [OpenAIChatInNewWindowCall] = []
+
+    func openAIChat(_ url: URL, inNewWindowAt droppingPoint: NSPoint, hasPrompt: Bool) {
+        openAIChatInNewWindowCalls.append(OpenAIChatInNewWindowCall(url: url, droppingPoint: droppingPoint, hasPrompt: hasPrompt))
     }
 
     struct InsertAIChatTabCall: Equatable {

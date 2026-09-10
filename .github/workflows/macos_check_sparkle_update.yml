@@ -21,6 +21,9 @@ jobs:
         # peter-evans/create-pull-request (Duplicate header: "Authorization", HTTP 400).
         uses: actions/checkout@v5
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Assign SSH keys
         uses: webfactory/ssh-agent@v0.9.1
         with:
@@ -49,6 +52,12 @@ jobs:
         run: |
           xcodebuild -resolvePackageDependencies \
             -workspace DuckDuckGo.xcworkspace \
+            -scheme "macOS Browser"
+          # Also resolve the macOS project directly: gym builds via the
+          # auto-detected DuckDuckGo-macOS.xcodeproj, so its own lockfile is
+          # what the build consumes and must be bumped too.
+          xcodebuild -resolvePackageDependencies \
+            -project macOS/DuckDuckGo-macOS.xcodeproj \
             -scheme "macOS Browser"
 
       - name: Create draft Pull Request

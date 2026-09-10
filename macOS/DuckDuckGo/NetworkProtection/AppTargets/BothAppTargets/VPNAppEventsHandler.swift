@@ -20,7 +20,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import ConcurrencyExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import FoundationExtensions
 import LoginItems
@@ -79,7 +79,7 @@ final class VPNAppEventsHandler {
 
     // MARK: - Login Item Control Checkpoints
 
-    private enum LoginItemsControlCheckpointPixel: PixelKitEvent {
+    private enum LoginItemsControlCheckpointPixel: PixelKit.Event {
         case cannotStopVPN(_ error: Error)
 
         var name: String {

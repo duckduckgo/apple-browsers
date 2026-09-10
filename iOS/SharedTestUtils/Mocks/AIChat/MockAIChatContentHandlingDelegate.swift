@@ -65,9 +65,11 @@ public final class MockAIChatContentHandlingDelegate: AIChatContentHandlingDeleg
 final class MockUnifiedToggleInputFeatureProvider: UnifiedToggleInputFeatureProviding {
     var isAvailable: Bool
     var isToggleHiddenOnDuckAITab: Bool
+    var isAttachmentPasteEnabled: Bool
 
-    init(isAvailable: Bool = false, isToggleHiddenOnDuckAITab: Bool = false) {
+    init(isAvailable: Bool = false, isToggleHiddenOnDuckAITab: Bool = false, isAttachmentPasteEnabled: Bool = false) {
         self.isAvailable = isAvailable
         self.isToggleHiddenOnDuckAITab = isToggleHiddenOnDuckAITab
+        self.isAttachmentPasteEnabled = isAttachmentPasteEnabled
     }
 }

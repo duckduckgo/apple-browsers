@@ -28,6 +28,8 @@ import AIChat
 import WebExtensions
 import DuckUI
 import Persistence
+import FeatureFlags_iOS
+import UIComponents
 
 extension DebugScreensViewModel {
 
@@ -51,7 +53,10 @@ extension DebugScreensViewModel {
                 }
             }),
             .view(title: "CPM", { d in
-                CPMDebugScreensView(keyValueStore: d.keyValueStore)
+                CPMDebugScreensView(
+                    keyValueStore: d.keyValueStore,
+                    cooldownResetter: d.promoCoordinationCooldownResetter
+                )
             }),
             .action(title: "Reset Sync Promos", { d in
                 let syncPromoPresenter = SyncPromoManager(syncService: d.syncService)
@@ -83,7 +88,7 @@ extension DebugScreensViewModel {
 
                 controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
-            .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
+            resetModalPromptsCooldownPeriodScreen,
 
             // MARK: SwiftUI Views
             .view(title: "DuckUI", { _ in
@@ -97,6 +102,9 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Duck.ai Toggle Prompt", { _ in
                 DuckAIToggleDebugView()
+            }),
+            .view(title: "Search Token", { _ in
+                SearchTokenDebugView()
             }),
             .view(title: "Data Audit", { _ in
                 DataAuditDebugScreen()
@@ -152,23 +160,36 @@ extension DebugScreensViewModel {
             .view(title: "Alert Playground", { _ in
                 AlertPlaygroundView()
             }),
+            .view(title: "Confetti Playground", { _ in
+                ConfettiPlaygroundView()
+            }),
             .view(title: "Tab Generator", { d in
                 BulkGeneratorView(factory: BulkTabFactory(tabManager: d.tabManager))
             }),
             .view(title: "Default Browser Prompt", { d in
                 DefaultBrowserPromptDebugView(model: DefaultBrowserPromptDebugViewModel(keyValueFilesStore: d.keyValueStore))
             }),
-            .view(title: "Notifications Playground", { _ in
-                LocalNotificationsPlaygroundView()
+            .view(title: "Notifications Playground", { d in
+                LocalNotificationsPlaygroundView(keyValueStore: d.keyValueStore)
             }),
             .view(title: "Win-back Offer", { d in
                 WinBackOfferDebugView(keyValueStore: d.keyValueStore)
             }),
-            .view(title: "Modal Prompt Coordination", { d in
-                ModalPromptCoordinationDebugView(keyValueStore: d.keyValueStore)
+            .view(title: "Prompt Coordination", { d in
+                PromptCoordinationDebugView(
+                    diagnosticsProvider: d.promoCoordinationDiagnosticsProvider,
+                    cooldownResetter: d.promoCoordinationCooldownResetter
+                )
             }),
             .view(title: "What's New", { dependencies in
-                WhatsNewDebugView(keyValueStore: dependencies.keyValueStore, remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler)
+                WhatsNewDebugView(
+                    diagnosticsProvider: dependencies.promoCoordinationDiagnosticsProvider,
+                    cooldownResetter: dependencies.promoCoordinationCooldownResetter,
+                    remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler
+                )
+            }),
+            .view(title: "Next Steps Dismissal", { d in
+                SettingsNextStepsDebugView(keyValueStore: d.keyValueStore)
             }),
 
             // MARK: Controllers
@@ -237,9 +258,11 @@ extension DebugScreensViewModel {
                 return LoggingDebugViewController()
             }),
             .controller(title: "Subscription", { dependencies in
-                return self.debugStoryboard.instantiateViewController(identifier: "SubscriptionDebugViewController") { coder in
+                let subscriptionDebugViewController = self.debugStoryboard.instantiateViewController(identifier: "SubscriptionDebugViewController") { coder in
                     SubscriptionDebugViewController(coder: coder, subscriptionDataReporter: dependencies.subscriptionDataReporter)
                 }
+                subscriptionDebugViewController.keyValueStore = dependencies.keyValueStore
+                return subscriptionDebugViewController
             }),
             .controller(title: "Configuration URLs", { _ in
                 return self.debugStoryboard.instantiateViewController(identifier: "ConfigurationURLDebugViewController") { coder in
@@ -262,11 +285,10 @@ extension DebugScreensViewModel {
                     func searchFromOnboarding(for query: String) {}
                 }
 
-                let isOnboardingRebranding = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.onboardingRebranding)
-                let defaultFlow: OnboardingDebugFlow = isOnboardingRebranding ? .rebranding : .legacy
-
                 weak var capturedController: OnboardingDebugViewController?
-                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(initialFlow: defaultFlow) { flow in
+
+                // swiftlint:disable:next empty_parentheses_with_trailing_closure
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView() {
                     guard let capturedController else { return }
 
                     let viewModel = OnboardingIntroFactory.makeViewModel(
@@ -274,11 +296,16 @@ extension DebugScreensViewModel {
                         systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
                         daxDialogsManager: d.daxDialogManager,
                         syncAutoRestoreHandler: d.syncAutoRestoreHandler,
-                        onboardingManager: OnboardingManager()
+                        onboardingManager: OnboardingManager(),
+                        // Debug preview: a self-contained store/availability is fine here.
+                        keyValueStore: UserDefaults.app,
+                        adBlockingAvailability: AdBlockingAvailability(
+                            featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                            isEnabledByUserProvider: { false }
+                        )
                     )
                     let controller = OnboardingIntroFactory.makeController(
                         viewModel: viewModel,
-                        isRebranded: flow.isRebranding,
                         delegate: capturedController
                     )
                     controller.modalPresentationStyle = .overFullScreen
@@ -295,13 +322,12 @@ extension DebugScreensViewModel {
         ].compactMap { $0 }
     }
     
-    private func resetModalPromptsCooldownPeriod(_ dependencies: DebugScreen.Dependencies) {
-        let store = PromptCooldownKeyValueFilesStore(
-            keyValueStore: dependencies.keyValueStore,
-            eventMapper: .init(mapping: { _, _, _, _ in })
-        )
+    private var resetModalPromptsCooldownPeriodScreen: DebugScreen? {
+        guard let cooldownResetter = dependencies.promoCoordinationCooldownResetter else { return nil }
 
-        store.lastPresentationTimestamp = nil
+        return .action(title: "Reset Prompts Cooldown Period") { _ in
+            cooldownResetter.resetModalCooldown()
+        }
     }
 
     private var webExtensionsDebugScreen: DebugScreen? {
@@ -311,8 +337,12 @@ extension DebugScreensViewModel {
         }
 
         return .view(title: "Web Extensions") { d in
-            if let manager = d.webExtensionManager {
-                WebExtensionsDebugView(webExtensionManager: manager)
+            if let manager = d.webExtensionManager,
+               let cpmMessagingHealthMonitor = manager.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor {
+                WebExtensionsDebugView(
+                    webExtensionManager: manager,
+                    cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
+                )
             } else {
                 Text("Web Extensions not available")
             }
@@ -325,6 +355,7 @@ extension DebugScreensViewModel {
 private struct CPMDebugScreensView: View {
 
     let keyValueStore: ThrowingKeyValueStoring
+    let cooldownResetter: PromoCoordinationCooldownResetting?
 
     var body: some View {
         List {
@@ -336,7 +367,7 @@ private struct CPMDebugScreensView: View {
                     // Clears the shown flag + shown count.
                     CookiePopupProtectionOptInPromptStore(keyValueStore: keyValueStore).reset()
                     // Also lift the global modal cooldown — otherwise the queue suppresses all prompts on launch until it expires.
-                    try? keyValueStore.set(nil, forKey: PromptCooldownKeyValueFilesStore.StorageKey.lastPromptShownTimestamp)
+                    cooldownResetter?.resetModalCooldown()
                     ActionMessageView.present(message: "Reset opt-in dialog launch state - DONE")
                 }
             }

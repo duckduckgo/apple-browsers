@@ -18,7 +18,7 @@
 //
 
 import Foundation
-@testable import Core
+@testable import DuckDuckGo
 
 final class MockURLOpener: URLOpener {
     private(set) var didCallCanOpenURL = false

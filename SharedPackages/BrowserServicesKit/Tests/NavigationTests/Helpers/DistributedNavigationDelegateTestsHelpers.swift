@@ -30,6 +30,12 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
 
     let standardTimeout: TimeInterval = 15
 
+    // Counts how many tests have accumulated web content processes without a
+    // bulk termination.  We never kill the current test's process directly
+    // (avoids async IPC crash in resetStateAfterProcessTermination); instead
+    // we call _terminateAllWebContentProcesses on the pool once every ~10 tests.
+    private static var accumulatedWebViewCount = 0
+
     var navigationDelegateProxy: NavigationDelegateProxy!
 
     var navigationDelegate: DistributedNavigationDelegate { navigationDelegateProxy.delegate }
@@ -38,7 +44,6 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
     var currentHistoryItemIdentityCancellable: AnyCancellable!
     var history = [UInt64: HistoryItemIdentity]()
 
-    private static var webContentProcessPIDs = [pid_t]()
     var _webView: WKWebView!
     @discardableResult
     func withWebView<T>(testURLSchemeHandler: TestNavigationSchemeHandler? = nil, do block: (WKWebView) throws -> T) rethrows -> T {
@@ -83,17 +88,20 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
                 let navigationDelegateProxyKey = UnsafeRawPointer(bitPattern: "navigationDelegateProxyKey".hashValue)!
                 objc_setAssociatedObject(_webView, navigationDelegateProxyKey, navigationDelegateProxy, .OBJC_ASSOCIATION_RETAIN)
             }
-            if let pid = _webView.pid {
-                Self.webContentProcessPIDs.append(pid)
-            }
-            if Self.webContentProcessPIDs.count > 10 {
-                while Self.webContentProcessPIDs.count > 5 {
-                    let pid = Self.webContentProcessPIDs.removeFirst()
-                    kill(pid, SIGTERM)
-                }
-            }
-            _webView.killWebContentProcess()
+
+            // Save the pool before releasing the webView so we can call
+            // _terminateAllWebContentProcesses on it after the webView is gone.
+            let processPool = _webView.configuration.processPool
+            // Nil the webView first: WebPageProxy.close() fires, removeWebPage()
+            // empties m_pageMap for this process.  Any subsequent IPC-close
+            // callback from _terminateAllWebContentProcesses finds no pages and
+            // returns early, never reaching resetStateAfterProcessTermination.
             self._webView = nil
+
+            if Self.accumulatedWebViewCount > 10 {
+                Self.accumulatedWebViewCount = 0
+                processPool.perform(Selector(("_terminateAllWebContentProcesses")))
+            }
         }
         navigationDelegateProxy = nil
         currentHistoryItemIdentityCancellable = nil
@@ -114,6 +122,8 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
     func makeWebView(testURLSchemeHandler: TestNavigationSchemeHandler? = nil) -> WKWebView {
+        Self.accumulatedWebViewCount += 1
+
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         if let testURLSchemeHandler {

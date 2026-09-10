@@ -33,6 +33,10 @@ protocol TabDelegate: AnyObject {
 
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
 
+    /// The current cached search token, or nil if none is live. Used by the SERP interceptor
+    /// to attach the `X-DDG-Search-Token` header for the treatment cohort of the Search Token experiment.
+    func searchToken(for tab: TabViewController) -> String?
+
     func tabDidRequestNewTab(_ tab: TabViewController)
 
     func tabDidRequestNewVoiceChat(_ tab: TabViewController)
@@ -54,6 +58,22 @@ protocol TabDelegate: AnyObject {
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,
              inheritingAttribution: AdClickAttributionLogic.State?)
+
+    func tab(_ tab: TabViewController,
+             didRequestNewDuckAITabForUrl url: URL,
+             entrySource: AIChatEntryPointSource)
+
+    /// A navigation the page started into Duck.ai from a page native attributes, today the DuckDuckGo homepage.
+    /// Opens a page-owned tab when `opensNewTab`; either way the tab hosting the chat is stamped with `entrySource`.
+    func tab(_ tab: TabViewController,
+             didStartDuckAINavigationTo url: URL,
+             entrySource: AIChatEntryPointSource,
+             opensNewTab: Bool,
+             inheritingAttribution: AdClickAttributionLogic.State?)
+
+    /// Called on navigate forward on a tab that had just closed a link-opened tab via back.
+    /// Re-open that tab at `url` as a child of `tab` again.
+    func tab(_ tab: TabViewController, didRequestReopenClosedTabAt url: URL)
 
     func tab(_ tab: TabViewController,
              didRequestNewBackgroundTabForUrl url: URL,
@@ -82,7 +102,7 @@ protocol TabDelegate: AnyObject {
     ///   - logoURL: The extracted logo URL, or nil if no logo was found or the page reset to default
     func tab(_ tab: TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?)
 
-    func tabDidRequestReportBrokenSite(tab: TabViewController)
+    func tabDidRequestReportBrokenSite(tab: TabViewController, entryPoint: PrivacyDashboardEntryPoint)
 
     func tab(_ tab: TabViewController, didRequestToggleReportWithCompletionHandler completionHandler: @escaping (Bool) -> Void)
 
@@ -93,6 +113,16 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestDownloads(tab: TabViewController)
 
     func tabDidRequestAIChat(tab: TabViewController)
+
+    /// Called for the browsing menu's new-chat entries, which load a duck.ai URL in a new tab.
+    /// Routed through the delegate so the entry pixel is reported alongside the interceptor state.
+    func tabDidRequestNewAIChatTab(tab: TabViewController)
+
+    /// Called when the user picks Ask Duck.ai from the web view's text-selection edit menu.
+    func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String)
+
+    /// Called when the user picks Search with DuckDuckGo from the web view's text-selection edit menu.
+    func tab(_ tab: TabViewController, didRequestSearchForSelectedText text: String)
 
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource)
 
@@ -132,6 +162,17 @@ protocol TabDelegate: AnyObject {
 
     /// User activated an in-page link in this tab.
     func tabDidEngageWithPage(_ tab: TabViewController)
+
+    /// A page started loading. Advances the App Store rating prompt's usage-day counter, which is
+    /// what makes the prompt become due. Call for every page, not only searches.
+    func tabDidLoadPageForAppRatingPrompt(_ tab: TabViewController)
+
+    /// Whether to request the App Store rating dialog now. Only ask on a search page, the prompt's
+    /// trigger. Follow a `true` with `tabDidRequestAppRatingPrompt(_:)`.
+    func tabShouldRequestAppRatingPrompt(_ tab: TabViewController) -> Bool
+
+    /// The rating dialog was requested, consuming one of the two per-install chances.
+    func tabDidRequestAppRatingPrompt(_ tab: TabViewController)
     
     func tabDidRequestFireButtonPulse(tab: TabViewController)
 
@@ -173,6 +214,10 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: TabViewController)
 
     func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: TabViewController)
+
+    func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
+
+    func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool)
 }
 
 extension TabDelegate {
@@ -186,5 +231,11 @@ extension TabDelegate {
     func tabDidRequestNewVoiceChat(_ tab: TabViewController) {}
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
+
+    func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {}
+
+    func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool) {}
+
+    func searchToken(for tab: TabViewController) -> String? { nil }
 
 }

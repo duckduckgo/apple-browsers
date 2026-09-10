@@ -1,0 +1,194 @@
+{
+    "dataimport_directory-permission_prompt-screen_shown_macos": {
+        "description": "Fired when the browser data directory read permission screen is shown to the user before importing (macOS 27+).",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "The browser the user is importing data from",
+                "type": "string",
+                "enum": [
+                    "brave",
+                    "chrome",
+                    "edge",
+                    "firefox",
+                    "opera",
+                    "safari",
+                    "fileImport",
+                    "csv",
+                    "bookmarksHTML",
+                    "onePassword8",
+                    "onePassword7",
+                    "bitwarden",
+                    "lastPass",
+                    "other"
+                ]
+            }
+        ]
+    },
+    "dataimport_directory-permission_granted_macos": {
+        "description": "Fired when the user grants read access to the browser data directory (macOS 27+).",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "The browser the user is importing data from",
+                "type": "string",
+                "enum": [
+                    "brave",
+                    "chrome",
+                    "edge",
+                    "firefox",
+                    "opera",
+                    "safari",
+                    "fileImport",
+                    "csv",
+                    "bookmarksHTML",
+                    "onePassword8",
+                    "onePassword7",
+                    "bitwarden",
+                    "lastPass",
+                    "other"
+                ]
+            }
+        ]
+    },
+    "dataimport_directory-permission_denied_macos": {
+        "description": "Fired when the user completes the directory access panel but read access to the browser data directory was not obtained, because the selection doesn't cover the required directory or it remains unreadable (macOS 27+).",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "The browser the user is importing data from",
+                "type": "string",
+                "enum": [
+                    "brave",
+                    "chrome",
+                    "edge",
+                    "firefox",
+                    "opera",
+                    "safari",
+                    "fileImport",
+                    "csv",
+                    "bookmarksHTML",
+                    "onePassword8",
+                    "onePassword7",
+                    "bitwarden",
+                    "lastPass",
+                    "other"
+                ]
+            }
+        ]
+    },
+    "dataimport_directory-permission_cancelled_macos": {
+        "description": "Fired when the user dismisses the directory access panel without granting read access to the browser data directory (macOS 27+).",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "The browser the user is importing data from",
+                "type": "string",
+                "enum": [
+                    "brave",
+                    "chrome",
+                    "edge",
+                    "firefox",
+                    "opera",
+                    "safari",
+                    "fileImport",
+                    "csv",
+                    "bookmarksHTML",
+                    "onePassword8",
+                    "onePassword7",
+                    "bitwarden",
+                    "lastPass",
+                    "other"
+                ]
+            }
+        ]
+    },
+    "dataimport_directory-permission_retry-screen_shown_macos": {
+        "description": "Fired when the try again screen is shown to the user after read access to the browser data directory was not obtained (macOS 27+).",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "The browser the user is importing data from",
+                "type": "string",
+                "enum": [
+                    "brave",
+                    "chrome",
+                    "edge",
+                    "firefox",
+                    "opera",
+                    "safari",
+                    "fileImport",
+                    "csv",
+                    "bookmarksHTML",
+                    "onePassword8",
+                    "onePassword7",
+                    "bitwarden",
+                    "lastPass",
+                    "other"
+                ]
+            }
+        ]
+    },
+    "dataimport_directory-permission_error-screen_shown_macos": {
+        "description": "Fired when the error screen is shown to the user during the browser data directory read permission flow (macOS 27+).",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "The browser the user is importing data from",
+                "type": "string",
+                "enum": [
+                    "brave",
+                    "chrome",
+                    "edge",
+                    "firefox",
+                    "opera",
+                    "safari",
+                    "fileImport",
+                    "csv",
+                    "bookmarksHTML",
+                    "onePassword8",
+                    "onePassword7",
+                    "bitwarden",
+                    "lastPass",
+                    "other"
+                ]
+            }
+        ]
+    }
+}

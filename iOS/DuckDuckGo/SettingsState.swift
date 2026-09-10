@@ -67,7 +67,6 @@ struct SettingsState {
     var addressBar: AddressBar
     var showsFullURL: Bool
     var showTrackersBlockedAnimation: Bool
-    var isExperimentalAIChatEnabled: Bool
     var refreshButtonPosition: RefreshButtonPosition
     var mobileCustomization: MobileCustomization.State
     var forceWebsiteDarkMode: Bool
@@ -100,6 +99,7 @@ struct SettingsState {
     var voiceSearchEnabled: Bool
     var speechRecognitionAvailable: Bool // Returns if the device has speech recognition available
     var loginsEnabled: Bool
+    var sitePermissionsEnabled: Bool
     
     // Network Protection properties
     var networkProtectionConnected: Bool
@@ -138,7 +138,6 @@ struct SettingsState {
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
             showTrackersBlockedAnimation: true,
-            isExperimentalAIChatEnabled: false,
             refreshButtonPosition: .addressBar,
             mobileCustomization: .default,
             forceWebsiteDarkMode: false,
@@ -160,6 +159,7 @@ struct SettingsState {
             voiceSearchEnabled: false,
             speechRecognitionAvailable: false,
             loginsEnabled: false,
+            sitePermissionsEnabled: false,
             networkProtectionConnected: false,
             subscription: Subscription(hasAppStoreProductsAvailable: false,
                                        isSignedIn: false,
@@ -188,12 +188,5 @@ struct SettingsState {
             youTubeAdBlockingEnabled: false,
             youTubeAdBlockingDisclosureHidden: false
         )
-    }
-}
-
-extension SettingsState {
-    var autoconsentEnabled: Bool {
-        get { cookiePopupPreference.isBlockingEnabled }
-        mutating set { cookiePopupPreference = newValue ? .default : .off }
     }
 }

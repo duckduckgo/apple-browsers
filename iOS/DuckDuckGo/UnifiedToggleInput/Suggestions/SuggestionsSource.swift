@@ -42,19 +42,22 @@ final class DuckAISuggestionsSource: SuggestionsSource {
     private let query: () -> String
     /// Gates the URL-hits sub-source only (the "Search Suggestions" setting); chat history is unaffected.
     private let searchSuggestionsEnabled: () -> Bool
+    /// Gates the chat-history sub-source only (the "Chat Suggestions" setting); URL hits are unaffected.
+    private let chatSuggestionsEnabled: () -> Bool
 
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
          chatManager: AIChatHistoryManager,
          query: @escaping () -> String,
-         deleteEnabled: @escaping () -> Bool = { false },
          viewAllChatsEnabled: @escaping () -> Bool = { false },
-         searchSuggestionsEnabled: @escaping () -> Bool = { true }) {
+         searchSuggestionsEnabled: @escaping () -> Bool = { true },
+         chatSuggestionsEnabled: @escaping () -> Bool = { true }) {
         self.chatViewModel = chatViewModel
         self.urlLoader = urlLoader
         self.chatManager = chatManager
         self.query = query
         self.searchSuggestionsEnabled = searchSuggestionsEnabled
+        self.chatSuggestionsEnabled = chatSuggestionsEnabled
 
         let pipeline = DuckAISuggestionsPipeline(
             chatsPublisher: chatViewModel.$filteredSuggestions.eraseToAnyPublisher(),
@@ -64,20 +67,24 @@ final class DuckAISuggestionsSource: SuggestionsSource {
         )
 
         sectionsPublisher = pipeline.snapshotPublisher
-            .map { snapshot in Self.sections(from: snapshot, query: query(), deleteEnabled: deleteEnabled(), viewAllChatsEnabled: viewAllChatsEnabled()) }
+            .map { snapshot in Self.sections(from: snapshot, query: query(), viewAllChatsEnabled: viewAllChatsEnabled()) }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
 
     func start(textPublisher: AnyPublisher<String, Never>) {
-        chatManager.subscribeToTextChanges(textPublisher)
+        // Skipped entirely when "Chat Suggestions" is off, so chat history (incl. recents) is
+        // suppressed without touching URL hits.
+        if chatSuggestionsEnabled() {
+            chatManager.subscribeToTextChanges(textPublisher)
+            chatManager.refreshSuggestions(query: query())
+        }
         // Empty when "Search Suggestions" is off, so URL hits are suppressed without touching chat history.
         let urlTextPublisher = textPublisher
             .map { [searchSuggestionsEnabled] text in searchSuggestionsEnabled() ? text : "" }
             .removeDuplicates()
             .eraseToAnyPublisher()
         urlLoader.subscribeToTextChanges(urlTextPublisher)
-        chatManager.refreshSuggestions(query: query())
     }
 
     func tearDown() {
@@ -101,10 +108,10 @@ final class DuckAISuggestionsSource: SuggestionsSource {
         static let viewAllChats = "view-all-chats"
     }
 
-    static func sections(from snapshot: DuckAISuggestionsPipeline.Snapshot, query: String, deleteEnabled: Bool = false, viewAllChatsEnabled: Bool = false) -> [SuggestionSection] {
+    static func sections(from snapshot: DuckAISuggestionsPipeline.Snapshot, query: String, viewAllChatsEnabled: Bool = false) -> [SuggestionSection] {
         var sections: [SuggestionSection] = []
         if !snapshot.chats.isEmpty {
-            var chatRows = snapshot.chats.map { SuggestionRowMapper.row(for: $0, includesFireDelete: deleteEnabled) }
+            var chatRows = snapshot.chats.map { SuggestionRowMapper.row(for: $0) }
             // Append the "View all chats" entry when browsing recents; hide it while the user is searching.
             if viewAllChatsEnabled && query.isEmpty {
                 chatRows.append(SuggestionRowMapper.viewAllChatsRow(id: RowID.viewAllChats))
@@ -114,7 +121,7 @@ final class DuckAISuggestionsSource: SuggestionsSource {
         if !snapshot.urls.isEmpty {
             sections.append(SuggestionSection(
                 id: SectionID.urls,
-                rows: snapshot.urls.map { SuggestionRowMapper.row(for: $0, query: query, idPrefix: SectionID.urls, includesDeleteAccessory: deleteEnabled) }))
+                rows: snapshot.urls.map { SuggestionRowMapper.row(for: $0, query: query, idPrefix: SectionID.urls) }))
         }
         if !query.isEmpty {
             sections.append(SuggestionSection(

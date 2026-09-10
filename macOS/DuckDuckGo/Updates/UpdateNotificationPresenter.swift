@@ -104,6 +104,7 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
 
             let viewController = PopoverMessageViewController(message: text,
                                                               image: icon,
+                                                              configuration: presentMultiline ? .default : .updateNotification,
                                                               autoDismissDuration: Self.presentationTimeInterval,
                                                               shouldShowCloseButton: true,
                                                               presentMultiline: presentMultiline,
@@ -118,6 +119,9 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
                 self?.currentPopover = nil
             })
 
+            if #available(macOS 26.0, *) {
+                viewController.view.prefersCompactControlSizeMetrics = true
+            }
             viewController.identifier = .updateNotificationPopover
 
             if self.showNotificationPopover(viewController) {

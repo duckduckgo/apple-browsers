@@ -31,10 +31,9 @@ struct TabInputState: Equatable {
     /// Driven by FE `hideChatInput` / `showChatInput` user-script messages. Persisted per tab
     /// because FE does not re-emit when the user returns to a tab already in voice mode.
     var aiChatInputBoxVisibility: AIChatInputBoxVisibility
-    /// True while the voice-mode background is on screen. Driven by FE `voiceModeOpened` /
-    /// `voiceModeClosed` (the background paint events, not the mic-session ones). Paints the immersive
-    /// voice chrome and hides the header chats/compose pill; orthogonal to `aiChatInputBoxVisibility`.
-    var isVoiceSurfaceVisible: Bool
+    /// True while the voice surface is on screen (FE `voiceModeOpened`/`voiceModeClosed` paint events).
+    /// Persisted per tab because FE doesn't re-emit when returning to a tab already in voice mode.
+    var isVoiceSessionActive: Bool
     /// Recovery `showModelPicker` pin: keeps the model chip visible mid-chat until prompt submit.
     /// Used when the user has lost access to the selected model.
     var isModelPickerForcedVisible: Bool
@@ -47,7 +46,7 @@ struct TabInputState: Equatable {
         selectedReasoningMode: AIChatReasoningMode? = nil,
         selectedTool: AIChatRAGTool? = nil,
         aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown,
-        isVoiceSurfaceVisible: Bool = false,
+        isVoiceSessionActive: Bool = false,
         isModelPickerForcedVisible: Bool = false
     ) {
         self.text = text
@@ -57,7 +56,7 @@ struct TabInputState: Equatable {
         self.selectedReasoningMode = selectedReasoningMode
         self.selectedTool = selectedTool
         self.aiChatInputBoxVisibility = aiChatInputBoxVisibility
-        self.isVoiceSurfaceVisible = isVoiceSurfaceVisible
+        self.isVoiceSessionActive = isVoiceSessionActive
         self.isModelPickerForcedVisible = isModelPickerForcedVisible
     }
 
@@ -69,8 +68,15 @@ struct TabInputState: Equatable {
             && lhs.selectedReasoningMode == rhs.selectedReasoningMode
             && lhs.selectedTool == rhs.selectedTool
             && lhs.aiChatInputBoxVisibility == rhs.aiChatInputBoxVisibility
-            && lhs.isVoiceSurfaceVisible == rhs.isVoiceSurfaceVisible
+            && lhs.isVoiceSessionActive == rhs.isVoiceSessionActive
             && lhs.isModelPickerForcedVisible == rhs.isModelPickerForcedVisible
+    }
+
+    /// The in-progress composition: what the user is drafting, as opposed to restored/ambient state.
+    mutating func clearDraft() {
+        text = ""
+        attachments = []
+        selectedTool = nil
     }
 
     /// Compact, privacy-aware description for debug logs. Reports text length and
@@ -83,6 +89,6 @@ struct TabInputState: Equatable {
         let model = selectedModelID ?? "nil"
         let reasoning = selectedReasoningMode?.rawValue ?? "nil"
         let tool = selectedTool?.rawValue ?? "nil"
-        return "mode=\(mode) text.count=\(textLen) attachments=\(attachments) model=\(model) reasoning=\(reasoning) tool=\(tool) inputBox=\(aiChatInputBoxVisibility.rawValue) voice=\(isVoiceSurfaceVisible) modelPickerPin=\(isModelPickerForcedVisible)"
+        return "mode=\(mode) text.count=\(textLen) attachments=\(attachments) model=\(model) reasoning=\(reasoning) tool=\(tool) inputBox=\(aiChatInputBoxVisibility.rawValue) voice=\(isVoiceSessionActive) modelPickerPin=\(isModelPickerForcedVisible)"
     }
 }

@@ -33,17 +33,34 @@ struct OnboardingPrimaryButtonStyle: ButtonStyle {
     }
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .fixedSize(horizontal: false, vertical: true)
-            .multilineTextAlignment(.center)
-            .lineLimit(nil)
-            .font(typography.linear.button)
-            .foregroundColor(colorPalette.primaryButtonTextColor)
-            .padding(.vertical)
-            .padding(.horizontal, nil)
-            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 44)
-            .background(configuration.isPressed ? colorPalette.primaryButtonPressedColor : colorPalette.primaryButtonBackgroundColor)
-            .cornerRadius(64.0)
+        // `isEnabled` is read inside `ButtonContent` rather than as an `@Environment` property on
+        // the style itself. When the style is type-erased via `AnyButtonStyle`, only the eraser is
+        // installed in the view hierarchy, so `@Environment` on this struct is never populated.
+        // Reading it inside the returned view tree resolves it correctly.
+        ButtonContent(configuration: configuration, typography: typography, colorPalette: colorPalette)
+    }
+
+    private struct ButtonContent: View {
+        @Environment(\.isEnabled) private var isEnabled
+
+        let configuration: Configuration
+        let typography: OnboardingTheme.Typography
+        let colorPalette: OnboardingTheme.ColorPalette
+
+        var body: some View {
+            configuration.label
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.center)
+                .lineLimit(nil)
+                .font(typography.linear.button)
+                .foregroundColor(colorPalette.primaryButtonTextColor)
+                .padding(.vertical)
+                .padding(.horizontal, nil)
+                .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 44)
+                .background(configuration.isPressed ? colorPalette.primaryButtonPressedColor : colorPalette.primaryButtonBackgroundColor)
+                .opacity(isEnabled ? 1.0 : 0.4)
+                .cornerRadius(64.0)
+        }
     }
 
 }

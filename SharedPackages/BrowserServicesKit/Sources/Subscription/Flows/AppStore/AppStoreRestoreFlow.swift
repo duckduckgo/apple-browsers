@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import DDGError
 import StoreKit
 import os.log
 import Networking

@@ -26,8 +26,12 @@ public class MockOAuthClient: OAuthClient {
         internalCurrentTokenContainer != nil
     }
     public var internalCurrentTokenContainer: Networking.TokenContainer?
+    public var currentTokenContainerError: Error?
     public func currentTokenContainer() throws -> TokenContainer? {
-        internalCurrentTokenContainer
+        if let currentTokenContainerError {
+            throw currentTokenContainerError
+        }
+        return internalCurrentTokenContainer
     }
 
     public func setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws {
@@ -103,9 +107,12 @@ public class MockOAuthClient: OAuthClient {
         if let logoutError {
             throw logoutError
         }
+        internalCurrentTokenContainer = nil
     }
 
-    public func removeLocalAccount() throws {}
+    public func removeLocalAccount() throws {
+        internalCurrentTokenContainer = nil
+    }
 
     public var changeAccountEmailResponse: Result<String, Error>!
     public func changeAccount(email: String?) async throws -> String {

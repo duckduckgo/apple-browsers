@@ -18,11 +18,19 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
+import DuckUI
+import FeatureFlags_iOS
 import UIKit
 
 extension TabViewController {
 
     func setupErrorActionButton() {
+        guard AppRebrand.isAppRebranded() == false else {
+            errorActionButton.applyPrimaryStyle()
+            return
+        }
+
         var buttonConfiguration = UIButton.Configuration.filled()
         buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
         buttonConfiguration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
@@ -101,17 +109,25 @@ extension TabViewController {
         rootView.addSubview(containerStackView)
 
         let safeArea = rootView.safeAreaLayoutGuide
-        // In floating UI mode the web view spans full-screen and underflows the glass chrome, so its
-        // top is pinned to the screen edge rather than the safe area. The chrome-obscured region is
-        // instead communicated to WebKit via `additionalSafeAreaInsets` (see updateFloatingUISafeAreaInsets)
-        // so that page `position: fixed` elements rest below the omnibar / above the toolbar.
-        let containerStackViewTop = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        // The tab's own manager, not a fresh one: a fresh instance ignores the injected UTI feature and
+        // could disagree with the rest of the tab's floating layout.
+        let isFloatingUIEnabled = floatingUIManager.isFloatingUIEnabled
+        // Floating UI: top/bottom pin to the screen edges so content underflows the glass chrome (via
+        // WebKit obscured insets); leading/trailing pin to the safe area so landscape respects the notch.
+        let containerStackViewTop = isFloatingUIEnabled
             ? containerStackView.topAnchor.constraint(equalTo: rootView.topAnchor)
             : containerStackView.topAnchor.constraint(equalTo: safeArea.topAnchor)
+        let containerStackViewLeading = isFloatingUIEnabled
+            ? containerStackView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor)
+            : containerStackView.leadingAnchor.constraint(equalTo: rootView.leadingAnchor)
+        let containerStackViewTrailing = isFloatingUIEnabled
+            ? containerStackView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor)
+            : containerStackView.trailingAnchor.constraint(equalTo: rootView.trailingAnchor)
+        containerStackViewTopConstraint = containerStackViewTop
         NSLayoutConstraint.activate([
             containerStackViewTop,
-            containerStackView.leadingAnchor.constraint(equalTo: rootView.leadingAnchor),
-            containerStackView.trailingAnchor.constraint(equalTo: rootView.trailingAnchor),
+            containerStackViewLeading,
+            containerStackViewTrailing,
             containerStackView.bottomAnchor.constraint(equalTo: rootView.bottomAnchor)
         ])
 
@@ -127,7 +143,7 @@ extension TabViewController {
             privacyDashboardAnchor.heightAnchor.constraint(equalToConstant: 80)
         ])
 
-        setupErrorView(in: rootView)
+        setupErrorView(in: outerContainer)
 
         final class JSAlertContainerView: UIView { }
         jsAlertContainerView = JSAlertContainerView()
@@ -146,11 +162,15 @@ extension TabViewController {
 
         showBarsTapGestureRecogniser = UITapGestureRecognizer(target: self, action: #selector(onBottomOfScreenTapped(_:)))
         showBarsTapGestureRecogniser.delegate = self
+        // This sits above the web view, so holding touch-end back would stall every tap on every
+        // page while waiting for a recognizer that only fires on a bottom-of-screen tap.
+        showBarsTapGestureRecogniser.delaysTouchesEnded = !featureFlagger.isFeatureOn(.suppressShowBarsGestureRecogniserDelay)
         rootView.addGestureRecognizer(showBarsTapGestureRecogniser)
     }
 
     func setupErrorView(in rootView: UIView) {
-        error = UIView()
+        let errorScrollView = UIScrollView()
+        error = errorScrollView
         error.translatesAutoresizingMaskIntoConstraints = false
         error.isHidden = true
         rootView.addSubview(error)
@@ -165,10 +185,11 @@ extension TabViewController {
         errorInfoImage = UIImageView(image: UIImage(rebrandable: "Dax-Accident"))
         errorInfoImage.contentMode = .scaleAspectFit
         errorInfoImage.translatesAutoresizingMaskIntoConstraints = false
-        errorInfoImage.translatesAutoresizingMaskIntoConstraints = false
+        errorInfoImageWidthConstraint = errorInfoImage.widthAnchor.constraint(equalToConstant: 296)
+        errorInfoImageHeightConstraint = errorInfoImage.heightAnchor.constraint(equalToConstant: 188)
         NSLayoutConstraint.activate([
-            errorInfoImage.widthAnchor.constraint(equalToConstant: 296),
-            errorInfoImage.heightAnchor.constraint(equalToConstant: 188)
+            errorInfoImageWidthConstraint,
+            errorInfoImageHeightConstraint
         ])
 
         let labelsStack = UIStackView()
@@ -201,22 +222,26 @@ extension TabViewController {
         errorContentStack.setCustomSpacing(32, after: errorReportBrokenSiteButton)
 
         let safeArea = rootView.safeAreaLayoutGuide
-        let minHeightConstraint = error.heightAnchor.constraint(equalToConstant: 400)
-        minHeightConstraint.priority = .defaultLow
         let errorActionButtonFillWidthConstraint = errorActionButton.widthAnchor.constraint(equalTo: error.widthAnchor, constant: -64)
         errorActionButtonFillWidthConstraint.priority = .defaultHigh
+        let errorContentHeightConstraint = errorScrollView.contentLayoutGuide.heightAnchor.constraint(
+            equalTo: errorScrollView.frameLayoutGuide.heightAnchor)
+        errorContentHeightConstraint.priority = .defaultHigh
         NSLayoutConstraint.activate([
+            error.topAnchor.constraint(equalTo: safeArea.topAnchor),
+            error.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor),
             error.centerXAnchor.constraint(equalTo: safeArea.centerXAnchor),
-            error.centerYAnchor.constraint(equalTo: safeArea.centerYAnchor),
             error.widthAnchor.constraint(equalTo: rootView.widthAnchor),
-            minHeightConstraint,
 
-            errorContentStack.centerXAnchor.constraint(equalTo: error.centerXAnchor),
-            errorContentStack.centerYAnchor.constraint(equalTo: error.centerYAnchor),
-            errorContentStack.leadingAnchor.constraint(equalTo: error.leadingAnchor, constant: 10),
-            errorContentStack.trailingAnchor.constraint(equalTo: error.trailingAnchor, constant: -10),
-            errorContentStack.topAnchor.constraint(greaterThanOrEqualTo: error.topAnchor),
-            errorContentStack.bottomAnchor.constraint(lessThanOrEqualTo: error.bottomAnchor),
+            errorScrollView.contentLayoutGuide.heightAnchor.constraint(greaterThanOrEqualTo: errorScrollView.frameLayoutGuide.heightAnchor),
+            errorContentHeightConstraint,
+            errorContentStack.centerXAnchor.constraint(equalTo: errorScrollView.contentLayoutGuide.centerXAnchor),
+            errorContentStack.centerYAnchor.constraint(equalTo: errorScrollView.contentLayoutGuide.centerYAnchor),
+            errorContentStack.leadingAnchor.constraint(equalTo: errorScrollView.contentLayoutGuide.leadingAnchor, constant: 10),
+            errorContentStack.trailingAnchor.constraint(equalTo: errorScrollView.contentLayoutGuide.trailingAnchor, constant: -10),
+            errorContentStack.topAnchor.constraint(greaterThanOrEqualTo: errorScrollView.contentLayoutGuide.topAnchor),
+            errorContentStack.bottomAnchor.constraint(lessThanOrEqualTo: errorScrollView.contentLayoutGuide.bottomAnchor),
+            errorContentStack.widthAnchor.constraint(equalTo: errorScrollView.frameLayoutGuide.widthAnchor, constant: -20),
 
             labelsStack.widthAnchor.constraint(lessThanOrEqualToConstant: 400),
             errorMessage.widthAnchor.constraint(lessThanOrEqualTo: errorHeader.widthAnchor),

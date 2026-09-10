@@ -43,7 +43,6 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
 
         let chatManager = AIChatHistoryManager(
             suggestionsReader: NilSuggestionsReader(),
-            aiChatSettings: MockAIChatSettingsProvider(),
             aiChatDeleter: StubAIChatDeleter(),
             viewModel: chatViewModel,
             isFireTab: false
@@ -92,7 +91,6 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
         let chatViewModel = AIChatSuggestionsViewModel()
         let chatManager = AIChatHistoryManager(
             suggestionsReader: NilSuggestionsReader(),
-            aiChatSettings: MockAIChatSettingsProvider(),
             aiChatDeleter: StubAIChatDeleter(),
             viewModel: chatViewModel,
             isFireTab: false
@@ -120,7 +118,6 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
         let chatViewModel = AIChatSuggestionsViewModel()
         let chatManager = AIChatHistoryManager(
             suggestionsReader: NilSuggestionsReader(),
-            aiChatSettings: MockAIChatSettingsProvider(),
             aiChatDeleter: StubAIChatDeleter(),
             viewModel: chatViewModel,
             isFireTab: false
@@ -140,6 +137,59 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
         await fulfillment(of: [expectation(for: predicate, evaluatedWith: nil)], timeout: 5.0)
 
         XCTAssertEqual(urlLoader.lastCompletedFetchQuery, "hotmail")
+    }
+
+    // MARK: - Chat Suggestions gating
+
+    func test_chatHistory_isSuppressed_whenChatSuggestionsDisabled() async {
+        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource())
+        let chatViewModel = AIChatSuggestionsViewModel()
+        let chatManager = AIChatHistoryManager(
+            suggestionsReader: NilSuggestionsReader(),
+            aiChatDeleter: StubAIChatDeleter(),
+            viewModel: chatViewModel,
+            isFireTab: false
+        )
+        let source = DuckAISuggestionsSource(
+            chatViewModel: chatViewModel,
+            urlLoader: urlLoader,
+            chatManager: chatManager,
+            query: { "" },
+            chatSuggestionsEnabled: { false }
+        )
+        let textSubject = PassthroughSubject<String, Never>()
+        source.start(textPublisher: textSubject.eraseToAnyPublisher())
+        textSubject.send("recipes")
+
+        // Wait past the chat manager's 150ms text debounce; a running fetch would set the query.
+        try? await Task.sleep(nanoseconds: 400_000_000)
+
+        XCTAssertNil(chatManager.lastCompletedFetchQuery)
+    }
+
+    func test_chatHistory_fetches_whenChatSuggestionsEnabled() async {
+        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource())
+        let chatViewModel = AIChatSuggestionsViewModel()
+        let chatManager = AIChatHistoryManager(
+            suggestionsReader: NilSuggestionsReader(),
+            aiChatDeleter: StubAIChatDeleter(),
+            viewModel: chatViewModel,
+            isFireTab: false
+        )
+        let source = DuckAISuggestionsSource(
+            chatViewModel: chatViewModel,
+            urlLoader: urlLoader,
+            chatManager: chatManager,
+            query: { "" },
+            chatSuggestionsEnabled: { true }
+        )
+        let textSubject = PassthroughSubject<String, Never>()
+        source.start(textPublisher: textSubject.eraseToAnyPublisher())
+
+        let predicate = NSPredicate { _, _ in chatManager.lastCompletedFetchQuery != nil }
+        await fulfillment(of: [expectation(for: predicate, evaluatedWith: nil)], timeout: 5.0)
+
+        XCTAssertEqual(chatManager.lastCompletedFetchQuery, "")
     }
 }
 
@@ -163,6 +213,7 @@ private final class StubSuggestionLoadingDataSource: SuggestionLoadingDataSource
 @MainActor
 private struct StubAIChatDeleter: AIChatDeleting {
     func deleteChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error> { .success(()) }
+    func deleteChats(chatIDs: [String], isFireMode: Bool) async -> Result<Void, Error> { .success(()) }
     func deleteAllChats(isFireMode: Bool) async -> Result<Void, Error> { .success(()) }
     func scheduleSync() {}
 }

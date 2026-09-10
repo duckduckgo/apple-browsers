@@ -96,6 +96,10 @@ extension VPNUIActionHandler: VPNUIActionHandling {
         await vpnURLEventHandler.showLocations()
     }
 
+    func showVPNSettings() async {
+        await vpnURLEventHandler.showPreferences()
+    }
+
     func showSubscription(origin: String?) async {
         await vpnURLEventHandler.showSubscription(origin: origin)
     }

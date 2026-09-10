@@ -70,23 +70,21 @@ extension Preferences {
                         )
                     }
 
+                    SpacedCheckbox {
+                        ToggleMenuItemWithDescription(
+                            UserText.vpnExcludeCGNATSettingTitle,
+                            UserText.vpnExcludeCGNATSettingDescription,
+                            isOn: $model.excludeCGNAT,
+                            spacing: 12
+                        )
+                    }
+
                     if model.isStrictRoutingAvailable {
                         SpacedCheckbox {
                             ToggleMenuItemWithDescription(
                                 UserText.vpnStrictRoutingSettingTitle,
                                 UserText.vpnStrictRoutingSettingDescription,
                                 isOn: $model.enforceRoutes,
-                                spacing: 12
-                            )
-                        }
-                    }
-
-                    if model.isExcludeCGNATAvailable {
-                        SpacedCheckbox {
-                            ToggleMenuItemWithDescription(
-                                UserText.vpnExcludeCGNATSettingTitle,
-                                UserText.vpnExcludeCGNATSettingDescription,
-                                isOn: $model.excludeCGNAT,
                                 spacing: 12
                             )
                         }
@@ -148,6 +146,12 @@ extension Preferences {
 
                 PreferencePaneSection(UserText.vpnDnsServerTitle) {
                     PreferencePaneSubSection {
+                        if model.isCustomDNSSelected {
+                            TextMenuItemCaption(UserText.vpnDnsServerIPv4Disclaimer)
+                        } else {
+                            TextMenuItemCaption(UserText.vpnSecureDNSSettingDescription)
+                        }
+
                         Picker(selection: $model.isCustomDNSSelected, label: EmptyView()) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(UserText.vpnDnsServerPickerDefaultTitle)
@@ -167,7 +171,9 @@ extension Preferences {
                                     Text(UserText.vpnDnsServerPickerCustomTitle)
                                     Button(UserText.vpnDnsServerPickerCustomButtonTitle) {
                                         showsCustomDNSServerPageSheet.toggle()
-                                    }.disabled(!model.isCustomDNSSelected)
+                                    }
+                                    .tint(nil)
+                                    .disabled(!model.isCustomDNSSelected)
                                 }
                                 if let dnsServersText = model.customDNSServers {
                                     TextMenuItemCaption(dnsServersText)
@@ -176,6 +182,7 @@ extension Preferences {
                             }.tag(true)
                         }
                         .pickerStyle(.radioGroup)
+                        .rebrandedControlTint()
                         .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                         .onChange(of: model.isCustomDNSSelected) { isCustomDNSSelected in
                             if isCustomDNSSelected && (model.customDNSServers?.isEmpty ?? true) {
@@ -192,22 +199,16 @@ extension Preferences {
                                 model.isCustomDNSSelected = false
                             }
                         }
-
-                        if model.isCustomDNSSelected {
-                            TextMenuItemCaption(UserText.vpnDnsServerIPv4Disclaimer)
-                        } else {
-                            TextMenuItemCaption(UserText.vpnSecureDNSSettingDescription)
-                        }
                     }
                 }.sheet(isPresented: $showsCustomDNSServerPageSheet) {
                     CustomDNSServerPageSheet(model: model,
                                              isSheetPresented: $showsCustomDNSServerPageSheet)
                 }
 
-                // SECTION: Diagnostics
+                // SECTION: Troubleshooting
 
-                if model.showsCopyDiagnosticsButton {
-                    PreferencePaneSection {
+                PreferencePaneSection(UserText.vpnTroubleshootingTitle) {
+                    PreferencePaneSubSection {
                         Button(copyDiagnosticsButtonTitle) {
                             Task { @MainActor in
                                 await model.copySupportInfo()
@@ -217,23 +218,17 @@ extension Preferences {
 
                         TextMenuItemCaption(UserText.vpnSettingsCopyDiagnosticsCaption)
                     }
-                    .padding(.bottom, 12)
-                }
 
-                // SECTION: Uninstall
-
-                if model.showUninstallVPN {
-                    PreferencePaneSection {
-                        Button(UserText.uninstallVPNButtonTitle) {
-                            Task { @MainActor in
-                                await model.uninstallVPN()
+                    if model.showUninstallVPN {
+                        PreferencePaneSubSection {
+                            Button(UserText.uninstallVPNButtonTitle) {
+                                Task { @MainActor in
+                                    await model.uninstallVPN()
+                                }
                             }
                         }
                     }
                 }
-            }
-            .onAppear {
-                model.onViewAppeared()
             }
         }
 

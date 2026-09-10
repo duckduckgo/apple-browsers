@@ -170,7 +170,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             stageDurationCalculator.fireOptOutSubmitSuccess(tries: attemptNumber)
             markSubmissionWideEventCompleted(
                 broker: broker,
-                profileIdentifier: extractedProfile.identifier,
                 brokerId: jobData.brokerId,
                 profileQueryId: jobData.profileQueryId,
                 extractedProfileId: jobData.extractedProfileId
@@ -413,7 +412,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
     }
 
     private func markSubmissionWideEventCompleted(broker: DataBroker,
-                                                  profileIdentifier: String?,
                                                   brokerId: Int64,
                                                   profileQueryId: Int64,
                                                   extractedProfileId: Int64) {
@@ -423,10 +421,9 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                                               brokerId: brokerId,
                                                               profileQueryId: profileQueryId,
                                                               extractedProfileId: extractedProfileId)
-        let wideEventId = OptOutWideEventIdentifier(profileIdentifier: profileIdentifier,
-                                                            brokerId: brokerId,
-                                                            profileQueryId: profileQueryId,
-                                                            extractedProfileId: extractedProfileId)
+        let wideEventId = OptOutWideEventIdentifier(brokerId: brokerId,
+                                                    profileQueryId: profileQueryId,
+                                                    extractedProfileId: extractedProfileId)
         OptOutSubmissionWideEventRecorder.startIfPossible(
             wideEvent: wideEvent,
             identifier: wideEventId,

@@ -66,6 +66,15 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateSubmitButtonAppearance() }
     }
 
+    /// A spent allowance blocks the voice button too: it opens a chat the allowance can't pay for.
+    var isInputBlockedByUsageLimit: Bool = false {
+        didSet {
+            guard oldValue != isInputBlockedByUsageLimit else { return }
+            updateSubmitButtonAppearance()
+            updateToolbarControlsEnabledState()
+        }
+    }
+
     var usesNewPromptSubmitStyle: Bool = false {
         didSet { updateSubmitButtonAppearance() }
     }
@@ -106,6 +115,14 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateModelChipConfiguration() }
     }
 
+    var isModelChipMenuIndicatorHidden: Bool = false {
+        didSet {
+            guard oldValue != isModelChipMenuIndicatorHidden else { return }
+            updateModelChipConfiguration()
+            modelChipButton.isUserInteractionEnabled = !isModelChipMenuIndicatorHidden
+        }
+    }
+
     var selectedTool: AIChatRAGTool? {
         didSet { updateChipVisibility() }
     }
@@ -114,11 +131,13 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateReasoningButtonAppearance() }
     }
 
+    private var storedModelPickerMenu: UIMenu?
+
     var modelPickerMenu: UIMenu? {
-        get { modelChipButton.menu }
+        get { storedModelPickerMenu }
         set {
-            modelChipButton.menu = newValue
-            modelChipButton.showsMenuAsPrimaryAction = (newValue != nil)
+            storedModelPickerMenu = newValue
+            updateModelPickerPrimaryAction()
         }
     }
 
@@ -135,6 +154,18 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
         return false
     }
+    
+    @discardableResult
+    func presentReasoningPickerMenu() -> Bool {
+        guard reasoningPickerMenu != nil else { return false }
+
+        if #available(iOS 17.4, *) {
+            reasoningButton.performPrimaryAction()
+            return true
+        }
+        return false
+    }
+
 
     var reasoningPickerMenu: UIMenu? {
         get { reasoningButton.menu }
@@ -196,6 +227,15 @@ final class UnifiedToggleInputToolbarView: UIView {
         set { returnKeyButton.isHidden = newValue }
     }
 
+    var isEditing: Bool = false {
+        didSet {
+            guard oldValue != isEditing else { return }
+            leftControlsGroup.isHidden = isEditing
+            secondaryTrailingGroup.isHidden = isEditing
+            updateSubmitButtonAppearance()
+        }
+    }
+
     private var modelChipExplicitlyHidden = false
 
     // MARK: - UI Components
@@ -206,11 +246,17 @@ final class UnifiedToggleInputToolbarView: UIView {
         action: nil
     )
 
-    private(set) lazy var imageButton: UIButton = makeToolButton(
-        image: DesignSystemImages.Glyphs.Size24.attach,
-        accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
-        action: nil
-    )
+    private(set) lazy var imageButton: UIButton = {
+        let button = makeToolButton(
+            image: DesignSystemImages.Glyphs.Size24.attach,
+            accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
+            action: nil
+        )
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
+        return button
+    }()
 
     private lazy var reasoningButton: UIButton = {
         let button = makeToolButton(
@@ -230,9 +276,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     private lazy var modelChipButton: UIButton = {
         var config = UIButton.Configuration.plain()
         config.title = modelName
-        config.image = UIImage(systemName: "chevron.down")?.withConfiguration(
-            UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
-        )
+        config.image = isModelChipMenuIndicatorHidden ? nil : Self.modelChipMenuIndicatorImage
         config.imagePlacement = .trailing
         config.imagePadding = Constants.chipSpacing
         config.titleLineBreakMode = .byTruncatingTail
@@ -380,6 +424,24 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }()
 
+    private lazy var leftControlsGroup: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [imageButton, toolsButton, selectedToolChipView])
+        stack.axis = .horizontal
+        stack.spacing = Constants.leftGroupSpacing
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
+    private lazy var secondaryTrailingGroup: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton])
+        stack.axis = .horizontal
+        stack.spacing = Constants.rightGroupSpacing
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
     // MARK: - Initialization
 
     override init(frame: CGRect) {
@@ -395,18 +457,12 @@ final class UnifiedToggleInputToolbarView: UIView {
 private extension UnifiedToggleInputToolbarView {
 
     private func setupUI() {
-        let leftGroup = UIStackView(arrangedSubviews: [imageButton, toolsButton, selectedToolChipView])
-        leftGroup.axis = .horizontal
-        leftGroup.spacing = Constants.leftGroupSpacing
-        leftGroup.alignment = .center
-        leftGroup.translatesAutoresizingMaskIntoConstraints = false
-
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let rightGroup = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton, returnKeyButton, submitButton, stopButton])
+        let rightGroup = UIStackView(arrangedSubviews: [secondaryTrailingGroup, returnKeyButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
         rightGroup.alignment = .center
@@ -414,7 +470,7 @@ private extension UnifiedToggleInputToolbarView {
         rightGroup.setContentHuggingPriority(.required, for: .horizontal)
         rightGroup.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        let outerStack = UIStackView(arrangedSubviews: [leftGroup, spacer, rightGroup])
+        let outerStack = UIStackView(arrangedSubviews: [leftControlsGroup, spacer, rightGroup])
         outerStack.axis = .horizontal
         outerStack.alignment = .center
         outerStack.translatesAutoresizingMaskIntoConstraints = false
@@ -460,8 +516,18 @@ private extension UnifiedToggleInputToolbarView {
         return button
     }
 
+    static let modelChipMenuIndicatorImage = UIImage(systemName: "chevron.down")?.withConfiguration(
+        UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
+    )
+
     private func updateModelChipConfiguration() {
         modelChipButton.configuration?.title = modelName
+        modelChipButton.configuration?.image = isModelChipMenuIndicatorHidden ? nil : Self.modelChipMenuIndicatorImage
+    }
+
+    private func updateModelPickerPrimaryAction() {
+        modelChipButton.menu = storedModelPickerMenu
+        modelChipButton.showsMenuAsPrimaryAction = modelChipButton.menu != nil
     }
 
     private func updateReasoningButtonAppearance() {
@@ -486,7 +552,7 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     func updateSubmitButtonAppearance() {
-        let showVoice = isAIVoiceChatActive && !isSubmitEnabled
+        let showVoice = isAIVoiceChatActive && !isSubmitEnabled && !isEditing
         let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
         let icon: UIImage? = {
             if showVoice {
@@ -499,9 +565,13 @@ private extension UnifiedToggleInputToolbarView {
         }()
         submitButton.setImage(icon, for: .normal)
         let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard
-        let isActive = submitAllowed || showVoice
+        let isActive = (submitAllowed || showVoice) && !isInputBlockedByUsageLimit
         submitButton.isEnabled = isActive
-        if showVoice {
+        // The blocked button keeps its icon and takes the inactive submit fill: the voice and
+        // return-key styles have no disabled state of their own.
+        if isInputBlockedByUsageLimit {
+            submitButton.applySubmitStyle(isActive: false, isFireTab: isFireTab, activeForeground: .white)
+        } else if showVoice {
             submitButton.applyAIVoiceChatStyle()
         } else if usesReturnKeyStyle {
             submitButton.applyReturnKeyStyle()
@@ -521,7 +591,7 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     func updateToolbarControlsEnabledState() {
-        let controlsAreEnabled = !isGenerating
+        let controlsAreEnabled = !isGenerating && !isInputBlockedByUsageLimit
         imageButton.isEnabled = controlsAreEnabled && isImageButtonAvailable
         toolsButton.isEnabled = controlsAreEnabled
         reasoningButton.isEnabled = controlsAreEnabled

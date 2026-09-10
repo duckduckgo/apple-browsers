@@ -85,7 +85,7 @@ struct PasswordManagementLoginItemView: View {
 
                     Buttons()
                         .padding(.top, editMode ? 12 : 10)
-                        .padding(.bottom, editMode ? 12 : 3)
+                        .padding(.bottom, editMode ? 12 : 1)
                         .padding(.horizontal)
 
                 }
@@ -139,7 +139,7 @@ private struct Buttons: View {
                     _ = model.save()
                 }
                 .disabled(!model.isDirty)
-                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty))
+                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty, topPadding: 4, bottomPadding: 4))
                 .keyboardShortcut(.defaultAction)
 
             } else {
@@ -150,7 +150,6 @@ private struct Buttons: View {
                 Button(UserText.pmEdit) {
                     model.edit()
                 }
-
             }
 
         }

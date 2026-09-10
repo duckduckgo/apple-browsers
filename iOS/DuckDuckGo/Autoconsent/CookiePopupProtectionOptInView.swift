@@ -21,6 +21,7 @@ import SwiftUI
 import DuckUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import MetricBuilder
 import UIComponents
 
 enum CookiePopupProtectionOptInVariant {
@@ -71,6 +72,7 @@ struct CookiePopupProtectionOptInView: View {
     private let onConfirm: (CookiePopupProtectionOptInOption) -> Void
     @StateObject private var optionsModel: RadioButtonViewModel
 
+    @MainActor
     init(variant: CookiePopupProtectionOptInVariant, onConfirm: @escaping (CookiePopupProtectionOptInOption) -> Void) {
         self.variant = variant
         self.onConfirm = onConfirm
@@ -86,8 +88,8 @@ struct CookiePopupProtectionOptInView: View {
                 selectedTextColor: Color(designSystemColor: .textPrimary),
                 unselectedTextColor: Color(designSystemColor: .textPrimary),
                 unselectedCheckboxColor: Color(designSystemColor: .iconsSecondary),
-                cornerRadius: 16,
-                horizontalPadding: 20,
+                cornerRadius: ContainerMetrics.cornerRadius,
+                horizontalPadding: 16,
                 verticalPadding: 16,
                 checkboxSize: 28,
                 buttonSpacing: 12
@@ -132,7 +134,7 @@ struct CookiePopupProtectionOptInView: View {
 
                     HStack(spacing: 8) {
                         BadgeView(text: UserText.cookiePopupProtectionOptInBadge)
-                        Text(UserText.cookiePopupProtectionOptInHeader.uppercased())
+                        Text(verbatim: "DuckDuckGo".uppercased())
                             .font(.system(size: 13, weight: .semibold))
                             .tracking(0.6)
                             .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -141,7 +143,7 @@ struct CookiePopupProtectionOptInView: View {
 
                     innerCard
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 16)
                 .padding(.bottom, 24)
             }
             .bounceBasedOnSizeIfAvailable()
@@ -163,6 +165,7 @@ struct CookiePopupProtectionOptInView: View {
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
+                .padding(.horizontal, 8)
                 .padding(.bottom, 16)
 
             Text(variant.message)
@@ -171,6 +174,7 @@ struct CookiePopupProtectionOptInView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity)
+                .padding(.horizontal, 8)
                 .padding(.bottom, 24)
 
             RadioButtonView(viewModel: optionsModel)
@@ -193,11 +197,11 @@ struct CookiePopupProtectionOptInView: View {
         }
         .padding(.horizontal, 16)
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: 34)
                 .fill(Color(designSystemColor: .backgroundSheets))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: 34)
                 .stroke(Color(designSystemColor: .accentPrimary).opacity(0.3), lineWidth: 1)
         )
     }

@@ -14,7 +14,6 @@ appId: com.duckduckgo.mobile.ios
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
         ff.browsingMenuSheetEnabledByDefault: "true"
-        ff.unifiedToggleInput: "true"
 
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"

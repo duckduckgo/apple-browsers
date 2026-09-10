@@ -28,16 +28,27 @@ enum DuckAIAddressBarMenuFactory {
     /// Groups New Chat and Ask About Page above a separator, with All Chats below.
     static func makeActions(featureFlagger: FeatureFlagger,
                             userInterfaceIdiom: UIUserInterfaceIdiom,
+                            type: DuckAIAddressBarMenuType,
                             onNewChat: @escaping () -> Void,
                             onAskAboutPage: @escaping () -> Void,
                             onRecentChats: @escaping () -> Void) -> [UIMenuElement] {
+        let askAboutTitle: String = {
+            switch type {
+            case .webPage:
+                UserText.aiChatAttachmentOptionAskAboutPage
+            case .search:
+                UserText.aiChatAttachmentOptionContinueInDuckAi
+            case .document:
+                UserText.aiChatAttachmentOptionAskAboutDocument
+            }
+        }()
         var groups: [UIMenuElement] = [
             UIMenu(title: "", options: .displayInline, children: [
                 UIAction(title: UserText.duckAiAddressBarMenuNewChat,
                          image: DesignSystemImages.Glyphs.Size16.compose) { _ in
                     onNewChat()
                 },
-                UIAction(title: UserText.aiChatAttachmentOptionAskAboutPage,
+                UIAction(title: askAboutTitle,
                          image: DesignSystemImages.Glyphs.Size16.chevronCircleDown) { _ in
                     onAskAboutPage()
                 }
@@ -56,3 +67,5 @@ enum DuckAIAddressBarMenuFactory {
         return groups
     }
 }
+
+

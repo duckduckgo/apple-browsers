@@ -20,6 +20,12 @@
 import Core
 import UIKit
 
+enum DuckAIAddressBarMenuType {
+    case webPage
+    case search(query: String)
+    case document
+}
+
 extension MainViewController {
 
     /// What the address-bar Duck.ai button should do for the current tab and session.
@@ -51,7 +57,7 @@ extension MainViewController {
     }
 
     /// Attaches the Duck.ai menu to the address-bar button, or detaches it so a tap acts directly.
-    func refreshDuckAIAddressBarMenu() {
+    func refreshDuckAIAddressBarMenu(type: DuckAIAddressBarMenuType) {
         let button = omniBar.barView.aiChatButton
         guard duckAIAddressBarEntry == .menu else {
             button?.menu = nil
@@ -74,7 +80,7 @@ extension MainViewController {
         button?.menu = UIMenu(title: UserText.duckAiFeatureName, children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuShown()
-                completion(self?.duckAIAddressBarMenuChildren() ?? [])
+                completion(self?.duckAIAddressBarMenuChildren(type: type) ?? [])
             }
         ])
         button?.showsMenuAsPrimaryAction = true
@@ -125,17 +131,24 @@ extension MainViewController {
         }
     }
 
-    private func duckAIAddressBarMenuChildren() -> [UIMenuElement] {
+    private func duckAIAddressBarMenuChildren(type: DuckAIAddressBarMenuType) -> [UIMenuElement] {
         DuckAIAddressBarMenuFactory.makeActions(
             featureFlagger: featureFlagger,
             userInterfaceIdiom: UIDevice.current.userInterfaceIdiom,
+            type: type,
             onNewChat: { [weak self] in
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuNewChatSelected()
                 self?.openFreshDuckAIChatFromAddressBarMenu()
             },
             onAskAboutPage: { [weak self] in
-                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutPageSelected()
-                self?.askAboutCurrentPageFromAddressBar()
+                switch type {
+                case .webPage, .document:
+                    self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutPageSelected()
+                    self?.askAboutCurrentPageFromAddressBar()
+                case .search(let query):
+                    self?.duckAIAddressBarPixelHandler.fireAddressBarMenuNewChatSelected()
+                    self?.openFreshDuckAIChatFromAddressBarMenu(with: query)
+                }
             },
             onRecentChats: { [weak self] in
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuRecentChatsSelected()
@@ -151,8 +164,9 @@ extension MainViewController {
 
     /// `openAIChat()` rather than `openAIChatFromAddressBar`: the latter sends the omnibar's text as
     /// a prompt whenever the field is being edited, and New Chat must always open empty.
-    private func openFreshDuckAIChatFromAddressBarMenu() {
+    private func openFreshDuckAIChatFromAddressBarMenu(with query: String? = nil) {
         omniBar.endEditing()
-        openAIChat(source: .addressBarIcon)
+        openAIChat(source: .addressBarIcon, query, autoSend: true)
     }
+    
 }

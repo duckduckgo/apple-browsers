@@ -515,6 +515,10 @@ class TabViewController: UIViewController {
     var isAITab: Bool {
         tabModel.isAITab
     }
+    
+    var tabType: TabType {
+        tabModel.type
+    }
 
     /// The tab's chat identity: written on commit and on settled same-document URL rewrites.
     /// Seeded from the stored link so a recreated controller's reload isn't a chat change.

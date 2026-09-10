@@ -24,6 +24,7 @@ import AIChat
 enum TabType {
     case web
     case aiChat
+    case serp
 }
 
 protocol TabObserver: AnyObject {
@@ -150,9 +151,12 @@ public class Tab: NSObject, NSCoding {
     var duckAIEntrySource: AIChatEntryPointSource?
 
     /// Type of tab: web or AI Chat, derived from the current URL
-    private var type: TabType {
-        if let link, link.url.isDuckAIURL(debugSettings: aichatDebugSettings) {
+    var type: TabType {
+        guard let link else { return .web}
+        if link.url.isDuckAIURL(debugSettings: aichatDebugSettings) {
             return .aiChat
+        } else if link.url.isDuckDuckGoSearch {
+            return .serp
         }
         return .web
     }

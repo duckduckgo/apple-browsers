@@ -1274,7 +1274,7 @@ class MainViewController: UIViewController {
         if UIDevice.current.userInterfaceIdiom == .phone {
             omniBar.barView.updateAIChatButtonForContextualChat(hasContextualSession: hasContextualSession)
         }
-        refreshDuckAIAddressBarMenu()
+        refreshDuckAIAddressBarMenu(type: duckAIAddressBarMenuType(for: currentTab))
         guard let tabsBarController else { return }
         tabsBarController.updateAIChatChipState(isContextualSheetPresented: isSheetPresented)
     }
@@ -1341,7 +1341,21 @@ class MainViewController: UIViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidHide),
                                                name: UIResponder.keyboardDidHideNotification, object: nil)
     }
-
+    
+    private func duckAIAddressBarMenuType(for tab: TabViewController?) -> DuckAIAddressBarMenuType {
+        guard let tab else { return .webPage }
+        switch tab.tabType {
+        case .web:
+            return .webPage
+        case .aiChat:
+            return .webPage
+        case .serp:
+            if let query = tab.url?.searchQuery {
+                return .search(query: query)
+            }
+            return .webPage
+        }
+    }
 
     var keyboardShowing = false
     // Set at keyboardWillChangeFrame time (before keyboardDidShow) so the web-keyboard scroll guard
@@ -2959,7 +2973,7 @@ class MainViewController: UIViewController {
     func refreshOmniBar() {
         updateOmniBarLoadingState()
         bindAIChatChromeChipToCurrentTab()
-        refreshDuckAIAddressBarMenu()
+        refreshDuckAIAddressBarMenu(type: duckAIAddressBarMenuType(for: currentTab))
         viewCoordinator.omniBar.refreshFireMode(fireMode: isCurrentTabFireTab())
         // A fresh NTP has no `TabViewController` yet; drive UTI from the tab model so fire-mode still applies.
         unifiedToggleInputCoordinator?.updateIsFireTab(isCurrentTabFireTab())

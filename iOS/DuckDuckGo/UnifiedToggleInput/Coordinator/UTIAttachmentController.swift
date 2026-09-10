@@ -471,9 +471,13 @@ final class UTIAttachmentController {
                 guard let attach = environment.pageContextAttachHandler() else { return false }
                 attach()
             } else {
+                let favicon = FaviconsHelper.loadFaviconSync(forDomain: currentCandidate.url.host,
+                                                             usingCache: .tabs,
+                                                             useFakeFavicon: false).image
                 view.addAttachment(.tab(UnifiedToggleInputTabAttachment(tabId: currentCandidate.tabId,
                                                                         title: currentCandidate.title,
-                                                                        url: currentCandidate.url)))
+                                                                        url: currentCandidate.url,
+                                                                        favicon: favicon)))
             }
         } else if candidate.tabId == source.currentTabID {
             guard let remove = environment.pageContextRemoveHandler() else { return false }

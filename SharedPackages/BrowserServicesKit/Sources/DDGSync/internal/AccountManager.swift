@@ -462,6 +462,17 @@ struct UpdateDevices {
 
 extension SyncAccount {
 
+    func updatingDeviceName(_ deviceName: String) -> SyncAccount {
+        SyncAccount(deviceId: self.deviceId,
+                    deviceName: deviceName,
+                    deviceType: self.deviceType,
+                    userId: self.userId,
+                    primaryKey: self.primaryKey,
+                    secretKey: self.secretKey,
+                    token: self.token,
+                    state: self.state)
+    }
+
     func updatingState(_ state: SyncAuthState) -> SyncAccount {
         SyncAccount(deviceId: self.deviceId,
                     deviceName: self.deviceName,

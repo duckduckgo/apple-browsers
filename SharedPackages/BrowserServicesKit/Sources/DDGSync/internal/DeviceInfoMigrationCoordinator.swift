@@ -20,9 +20,16 @@ import Foundation
 import os.log
 import Persistence
 
+enum DeviceInfoRenameMode: Equatable {
+    case unified
+    /// Updates legacy fields and omits `info`, clearing stale server-side `device_info`.
+    case legacyOnly
+}
+
 protocol DeviceInfoMigrationCoordinating {
     func migrateCurrentDeviceIfNeeded(for account: SyncAccount) async
     func repairCurrentDeviceInfo(for account: SyncAccount) async
+    func renameCurrentDevice(to name: String, for account: SyncAccount, mode: DeviceInfoRenameMode) async throws -> [RegisteredDevice]
     func hasCompletedMigration(for account: SyncAccount) -> Bool
     func reset()
 }
@@ -54,8 +61,7 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
 
     private let accountManager: AccountManaging
     private let scopedAccess: ScopedAccessCredentialManaging
-    private let crypter: CryptingInternal
-    private let deviceInfoCodec: DeviceInfoCoding
+    private let updateBuilder: DeviceInfoUpdateBuilder
     private let secureStore: SecureStoring
     private let keyValueStore: ThrowingKeyValueStoring
     private let canWriteUnifiedDeviceList: () -> Bool
@@ -69,8 +75,7 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
          canWriteUnifiedDeviceList: @escaping () -> Bool) {
         self.accountManager = accountManager
         self.scopedAccess = scopedAccess
-        self.crypter = crypter
-        self.deviceInfoCodec = deviceInfoCodec
+        self.updateBuilder = DeviceInfoUpdateBuilder(crypter: crypter, deviceInfoCodec: deviceInfoCodec)
         self.secureStore = secureStore
         self.keyValueStore = keyValueStore
         self.canWriteUnifiedDeviceList = canWriteUnifiedDeviceList
@@ -98,6 +103,48 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
         await updateCurrentDeviceInfo(for: account, identity: identity)
     }
 
+    func renameCurrentDevice(to name: String, for account: SyncAccount, mode: DeviceInfoRenameMode) async throws -> [RegisteredDevice] {
+        let identity = DeviceInfoMigrationIdentity(account: account)
+        guard let currentAccount = currentAccount(matching: identity),
+              isCurrentAccountSnapshot(account, identity: identity) else {
+            throw SyncError.accountNotFound
+        }
+
+        let update: UpdateDevices.Update
+        switch mode {
+        case .unified:
+            let protectedKey = try await prepareAccountInfoProtectedKey(for: currentAccount,
+                                                                         identity: identity)
+            guard !Task.isCancelled,
+                  isCurrentAccountSnapshot(currentAccount, identity: identity) else {
+                throw CancellationError()
+            }
+            update = try updateBuilder.makeUpdate(deviceID: currentAccount.deviceId,
+                                                   deviceName: name,
+                                                   deviceType: currentAccount.deviceType,
+                                                   primaryKey: currentAccount.primaryKey,
+                                                   protectedKey: protectedKey)
+        case .legacyOnly:
+            update = try updateBuilder.makeUpdateWithoutUnifiedInfo(deviceID: currentAccount.deviceId,
+                                                                     deviceName: name,
+                                                                     deviceType: currentAccount.deviceType,
+                                                                     primaryKey: currentAccount.primaryKey)
+        }
+
+        let devices = try await applyRename(update,
+                                            newDeviceName: name,
+                                            account: currentAccount,
+                                            identity: identity)
+        switch mode {
+        case .unified:
+            markMigrationComplete(for: currentAccount)
+            Logger.sync.debug("Sync-UnifiedDevices: current device rename complete")
+        case .legacyOnly:
+            Logger.sync.debug("Sync-UnifiedDevices: current device rename PATCH without unified info complete")
+        }
+        return devices
+    }
+
     private func updateCurrentDeviceInfo(for account: SyncAccount,
                                          identity: DeviceInfoMigrationIdentity) async {
         do {
@@ -108,18 +155,11 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
                 return
             }
 
-            let encryptedDeviceInfo = try deviceInfoCodec.encrypt(
-                DeviceInfo(name: currentAccount.deviceName, type: currentAccount.deviceType),
-                using: protectedKey)
-            guard encryptedDeviceInfo.utf8.count <= DeviceInfo.maximumEncryptedLength else {
-                throw DeviceInfoMigrationError.encryptedDeviceInfoTooLarge
-            }
-
-            let update = UpdateDevices.Update(
-                id: currentAccount.deviceId,
-                name: try crypter.encryptAndBase64Encode(currentAccount.deviceName, using: currentAccount.primaryKey),
-                type: try crypter.encryptAndBase64Encode(currentAccount.deviceType, using: currentAccount.primaryKey),
-                info: encryptedDeviceInfo)
+            let update = try updateBuilder.makeUpdate(deviceID: currentAccount.deviceId,
+                                                       deviceName: currentAccount.deviceName,
+                                                       deviceType: currentAccount.deviceType,
+                                                       primaryKey: currentAccount.primaryKey,
+                                                       protectedKey: protectedKey)
             guard !Task.isCancelled,
                   isCurrentAccountSnapshot(currentAccount, identity: identity) else {
                 return
@@ -141,6 +181,25 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
             let errorType = String(describing: Swift.type(of: error))
             Logger.sync.error("Sync-UnifiedDevices: failed to update current device_info: \(errorType)")
         }
+    }
+
+    private func applyRename(_ update: UpdateDevices.Update,
+                             newDeviceName: String,
+                             account: SyncAccount,
+                             identity: DeviceInfoMigrationIdentity) async throws -> [RegisteredDevice] {
+        guard !Task.isCancelled,
+              isCurrentAccountSnapshot(account, identity: identity) else {
+            throw CancellationError()
+        }
+
+        let devices = try await accountManager.updateDevice(update, for: account)
+        guard !Task.isCancelled,
+              isCurrentAccountSnapshot(account, identity: identity) else {
+            throw CancellationError()
+        }
+
+        try secureStore.persistAccount(account.updatingDeviceName(newDeviceName))
+        return devices
     }
 
     func reset() {

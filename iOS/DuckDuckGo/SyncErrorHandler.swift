@@ -26,6 +26,7 @@ import Foundation
 import SyncDataProviders
 import os.log
 import Core
+import PixelKit
 
 public enum AsyncErrorType: String {
     case bookmarksCountLimitExceeded

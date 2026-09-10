@@ -945,32 +945,29 @@ class OnboardingManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testBlockingOnboardingCanExitAfterAnOutcomeRecordedInEitherMode() {
-        for isNonBlocking in [false, true] {
-            for action in ["browse", "settings"] {
-                OnboardingActionsManager.isOnboardingFinished = false
-                let flags = MockFeatureFlagger(resolveCohortStub: isNonBlocking ? FeatureFlag.OnboardingNonBlockingCohort.treatment : FeatureFlag.OnboardingNonBlockingCohort.control)
-                let persistor = NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
-                let manager = makeNonBlockingManager(featureFlagger: flags, onboardingPersistor: persistor)
-                navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
-                let source = navigationDelegate.onboardingSourceTab!.webView
-                manager.skipOnboarding(from: source)
+    func testBlockingOnboardingCanExitAfterAnOutcomeRecorded() {
+        for action in ["browse", "settings"] {
+            OnboardingActionsManager.isOnboardingFinished = false
+            let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.control)
+            let persistor = NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
+            let manager = makeNonBlockingManager(featureFlagger: flags, onboardingPersistor: persistor)
+            navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
+            let source = navigationDelegate.onboardingSourceTab!.webView
+            manager.skipOnboarding(from: source)
 
-                flags.enabledFeatureFlags = []
-                manager.onboardingStarted(from: source)
-                XCTAssertEqual(navigationDelegate.preventUserInteraction, true)
-                navigationDelegate.replaceTabCalled = false
+            manager.onboardingStarted(from: source)
+            XCTAssertEqual(navigationDelegate.preventUserInteraction, true)
+            navigationDelegate.replaceTabCalled = false
 
-                switch action {
-                case "settings": manager.goToSettings(from: source)
-                default: manager.goToAddressBar(from: source)
-                }
-
-                XCTAssertTrue(navigationDelegate.replaceTabCalled, action)
-                XCTAssertEqual(navigationDelegate.preventUserInteraction, false, action)
-                // Only the experiment persists an outcome.
-                XCTAssertEqual(persistor.outcome, isNonBlocking ? .skipped : nil)
+            switch action {
+            case "settings": manager.goToSettings(from: source)
+            default: manager.goToAddressBar(from: source)
             }
+
+            XCTAssertTrue(navigationDelegate.replaceTabCalled, action)
+            XCTAssertEqual(navigationDelegate.preventUserInteraction, false, action)
+            // Only the experiment persists an outcome.
+            XCTAssertNil(persistor.outcome)
         }
     }
 

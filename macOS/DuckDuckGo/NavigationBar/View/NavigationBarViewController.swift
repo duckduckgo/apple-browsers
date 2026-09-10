@@ -1605,7 +1605,7 @@ final class NavigationBarViewController: NSViewController {
               let tab = tabCollectionViewModel.selectedTabViewModel?.tab,
               let url = tab.url, !url.isDuckDuckGo
         else { return }
-        if OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking {
+        if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
             guard tab.content != .onboarding else { return }
         } else {
             guard isOnboardingFinished else { return }

@@ -60,7 +60,7 @@ struct PromoServiceFactory {
 
     @MainActor
     static func canPresentPromo(isRestoring: Bool, dependencies: PromoDependencies) -> Bool {
-        if OnboardingNonBlockingExperiment(featureFlagger: dependencies.featureFlagger).isNonBlocking {
+        if NonBlockingOnboarding(featureFlagger: dependencies.featureFlagger).isNonBlocking {
             return dependencies.windowControllersManager.selectedTab?.content != .onboarding
         }
         return isRestoring || dependencies.isOnboardingCompletedProvider()

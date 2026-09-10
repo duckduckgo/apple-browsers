@@ -231,7 +231,7 @@ final class BrowserTabViewController: NSViewController {
         contextualCompletionCancellable = onboardingDialogTypeProvider.isContextualOnboardingCompletedPublisher
             .sink { [weak self] completed in
                 guard let self, completed,
-                      OnboardingNonBlockingExperiment(featureFlagger: self.featureFlagger).isNonBlocking,
+                      NonBlockingOnboarding(featureFlagger: self.featureFlagger).isNonBlocking,
                       self.presentedContextualOnboardingDialogType != nil else { return }
                 self.delegate?.dismissViewHighlight()
                 self.removeExistingDialog()
@@ -891,8 +891,8 @@ final class BrowserTabViewController: NSViewController {
     private func handleContextualOnboardingOnManualDismiss(dialogType: ContextualDialogType) {
         let displayedDialogType = displayedDialogType(forRoot: dialogType)
         onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: displayedDialogType)
-        let experiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
-        if experiment.isNonBlocking {
+        let onboarding = NonBlockingOnboarding(featureFlagger: featureFlagger)
+        if onboarding.isNonBlocking {
             onboardingPixelReporter.measureDialogDismissed(dialogType: displayedDialogType)
             PixelKit.fire(GeneralPixel.onboardingContextualDismissed, frequency: .uniqueByName)
             onboardingDialogTypeProvider.turnOffFeature()
@@ -902,7 +902,7 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private func handleContextualOnboardingOnGotItPressed(dialogType: ContextualDialogType) {
-        if OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking,
+        if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking,
            onboardingDialogTypeProvider.state == .onboardingCompleted { return }
         let displayedDialogType = displayedDialogType(forRoot: dialogType)
         onboardingDialogTypeProvider.gotItPressed()

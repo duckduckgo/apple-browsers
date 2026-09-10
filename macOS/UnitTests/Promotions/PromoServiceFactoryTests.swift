@@ -41,21 +41,20 @@ final class PromoServiceFactoryTests: XCTestCase {
 
     @MainActor
     func testOnboardingPresentationEligibility() throws {
-        let cohorts: [FeatureFlag.OnboardingNonBlockingCohort?] = [nil, .control, .treatment]
         let tabs: [Tab?] = [nil, Tab(content: .onboarding), Tab(content: .newtab),
                             Tab(content: .url(URL(string: "https://example.com")!, source: .ui))]
         for completed in [false, true] {
             let dependencies = makeDependencies(isOnboardingCompleted: completed)
             let flags = try XCTUnwrap(dependencies.featureFlagger as? MockFeatureFlagger)
             let windows = try XCTUnwrap(dependencies.windowControllersManager as? WindowControllersManagerMock)
-            for cohort in cohorts {
-                flags.resolveCohortStub = cohort
+            for isNonBlocking in [false, true] {
+                flags.enabledFeatureFlags = isNonBlocking ? [.onboardingAsync] : []
                 for (index, tab) in tabs.enumerated() {
                     windows.selectedTabOverride = tab
                     for restoring in [false, true] {
-                        let expected = cohort == .treatment ? index != 1 : completed || restoring
+                        let expected = isNonBlocking ? index != 1 : completed || restoring
                         XCTAssertEqual(PromoServiceFactory.canPresentPromo(isRestoring: restoring, dependencies: dependencies), expected,
-                                       "cohort=\(String(describing: cohort)), completed=\(completed), tab=\(index), restoring=\(restoring)")
+                                       "isNonBlocking=\(isNonBlocking), completed=\(completed), tab=\(index), restoring=\(restoring)")
                     }
                 }
             }

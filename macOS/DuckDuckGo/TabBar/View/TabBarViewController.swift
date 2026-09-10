@@ -936,7 +936,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         } else if aiChatMenuConfig.shouldOpenAIChatInSidebar, case .url = tab.content {
             canToggleSidebar = true
         } else if aiChatMenuConfig.shouldOpenAIChatInSidebar, case .onboarding = tab.content,
-                  OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking {
+                  NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
             canToggleSidebar = true
         }
 
@@ -953,7 +953,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private var isDuckAIChromeButtonsEnabled: Bool {
         guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return false }
-        return tab.content != .onboarding || OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking
+        return tab.content != .onboarding || NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
     }
 
     private func updateDuckAIChromeSegmentedControlState() {

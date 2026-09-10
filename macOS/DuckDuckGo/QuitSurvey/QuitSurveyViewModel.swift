@@ -94,7 +94,7 @@ final class QuitSurveyViewModel: ObservableObject {
         QuitSurveyOption(id: "hard-to-find-settings", text: UserText.quitSurveyOptionHardToFindSettings),
         QuitSurveyOption(id: "no-password-manager-extensions", text: UserText.quitSurveyOptionNoPasswordManagerExtensions),
         QuitSurveyOption(id: "ad-blocker-didnt-work", text: UserText.quitSurveyOptionAdBlockerDidntWork),
-        QuitSurveyOption(id: onboardingWasntHelpfulOptionId, text: UserText.quitSurveyOptionOnboardingWasntHelpful),
+        QuitSurveyOption(id: "onboarding-wasnt-helpful", text: UserText.quitSurveyOptionOnboardingWasntHelpful),
         QuitSurveyOption(id: "benefits-unclear", text: UserText.quitSurveyOptionBenefitsUnclear),
         QuitSurveyOption(id: "privacy-concerns", text: UserText.quitSurveyOptionPrivacyConcerns),
         QuitSurveyOption(id: "just-trying-it-out", text: UserText.quitSurveyOptionJustTryingItOut),
@@ -105,7 +105,6 @@ final class QuitSurveyViewModel: ObservableObject {
     ]
 
     static let websitesDidntWorkOptionId = "websites-didnt-work"
-    static let onboardingWasntHelpfulOptionId = "onboarding-wasnt-helpful"
     private static let websitesDidntWorkOption = QuitSurveyOption(id: websitesDidntWorkOptionId, text: UserText.quitSurveyOptionWebsitesDidntWork)
     private static let somethingElseOption = QuitSurveyOption(id: "something-else", text: UserText.quitSurveyOptionSomethingElse)
 
@@ -267,11 +266,6 @@ final class QuitSurveyViewModel: ObservableObject {
         let reasons = getReasonsForPixel()
         let affectedDomains = effectiveDomains.isEmpty ? nil : effectiveDomains.sorted().joined(separator: ",")
         fireThumbsDownPixelSubmission(reasons: reasons, affectedDomains: affectedDomains)
-        let onboardingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
-        onboardingExperiment.fireMetric(.quitSurveySubmitted)
-        if selectedOptions.contains(Self.onboardingWasntHelpfulOptionId) {
-            onboardingExperiment.fireMetric(.quitSurveyOnboardingReasonSelected)
-        }
 
         // Store reasons for the return user pixel (fired on next app launch).
         // Clear any prior thumbs-up flag — a submitted thumbs-down overrides it.

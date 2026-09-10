@@ -16,11 +16,8 @@
 //  limitations under the License.
 //
 
-import FeatureFlags_macOS
 import History
-import PixelExperimentKit
 @_spi(Testing) import PixelKit
-import PrivacyConfig
 import XCTest
 import PrivacyConfig
 
@@ -88,16 +85,6 @@ private func makeViewModel(
 
 @MainActor
 final class QuitSurveyViewModelTests: XCTestCase {
-
-    private var firedExperimentEvents: [PixelKit.Event] = []
-
-    override func tearDown() {
-        PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(),
-                                        eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
-                                        fire: { _, _, _ in })
-        firedExperimentEvents = []
-        super.tearDown()
-    }
 
     func testRecentDomainsIsEmptyIfFFisNotEnabledAndHistoryIsNotEmpty() {
         let now = Date()
@@ -566,50 +553,5 @@ final class QuitSurveyViewModelTests: XCTestCase {
         vm.submitFeedback()
 
         XCTAssertNil(persistor.hasSelectedThumbsUp)
-    }
-
-    // MARK: - Non-Blocking Onboarding Experiment
-
-    func testSubmittingFeedbackFiresQuitSurveySubmittedExperimentMetricWithoutChangingExistingPixel() {
-        let pixelMock = PixelKitMock(expecting: [])
-        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-        configureExperimentKit(featureFlagger: featureFlagger, cohort: .treatment)
-        let vm = makeViewModel(featureFlagger: featureFlagger, pixelFiring: pixelMock)
-
-        vm.toggleOption("slow-to-open")
-        vm.submitFeedback()
-
-        XCTAssertEqual(firedExperimentEvents.compactMap { $0.parameters?["metric"] }, ["quitSurveySubmitted"])
-        let surveyPixel = pixelMock.actualFireCalls.first { $0.pixel.name == QuitSurveyPixelName.quitSurveyThumbsDownSubmission.rawValue }
-        XCTAssertNil(surveyPixel?.additionalParameters)
-    }
-
-    func testSubmittingOnboardingReasonFiresNumeratorAndDenominatorExperimentMetrics() {
-        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.control)
-        configureExperimentKit(featureFlagger: featureFlagger, cohort: .control)
-        let vm = makeViewModel(featureFlagger: featureFlagger)
-
-        vm.toggleOption(QuitSurveyViewModel.onboardingWasntHelpfulOptionId)
-        vm.submitFeedback()
-
-        XCTAssertEqual(Set(firedExperimentEvents.compactMap { $0.parameters?["metric"] }),
-                       ["quitSurveySubmitted", "quitSurveyOnboardingReasonSelected"])
-    }
-
-    private func configureExperimentKit(featureFlagger: MockFeatureFlagger,
-                                        cohort: FeatureFlag.OnboardingNonBlockingCohort) {
-        let subfeatureID = MacOSBrowserConfigSubfeature.onboardingNonBlocking.rawValue
-        featureFlagger.allActiveExperiments = [
-            subfeatureID: ExperimentData(
-                parentID: PrivacyFeature.macOSBrowserConfig.rawValue,
-                cohortID: cohort.rawValue,
-                enrollmentDate: Date()
-            )
-        ]
-        PixelKit.configureExperimentKit(
-            featureFlagger: featureFlagger,
-            eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
-            fire: { [weak self] event, _, _ in self?.firedExperimentEvents.append(event) }
-        )
     }
 }

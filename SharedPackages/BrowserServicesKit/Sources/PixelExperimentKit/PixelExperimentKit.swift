@@ -36,15 +36,14 @@ struct ExperimentEvent: PixelKit.Event {
 
 extension PixelKit {
 
-    public struct Constants {
+    struct Constants {
         static let enrollmentEventPrefix = "experiment_enroll"
         static let metricsEventPrefix = "experiment_metrics"
         static let metricKey = "metric"
         static let conversionWindowDaysKey = "conversionWindowDays"
         static let valueKey = "value"
         static let enrollmentDateKey = "enrollmentDate"
-        /// Keeps additional per-experiment search windows under the standard search metric.
-        public static let searchMetricValue = "search"
+        static let searchMetricValue = "search"
         static let appUseMetricValue = "app_use"
         static let aiChatMetricValue = "duck_ai_prompt_sent"
         static let aiChatNewChatMetricValue = "duck_ai_new_chat"

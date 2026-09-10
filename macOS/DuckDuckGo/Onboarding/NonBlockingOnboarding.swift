@@ -1,5 +1,5 @@
 //
-//  OnboardingNonBlockingExperiment.swift
+//  NonBlockingOnboarding.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,88 +18,32 @@
 
 import FeatureFlags_macOS
 import Foundation
-import PixelKit
 import Persistence
 import PrivacyConfig
 
-struct OnboardingNonBlockingExperiment {
+struct NonBlockingOnboarding {
 
     private let featureFlagger: FeatureFlagger
-
-    private static let subfeatureID = MacOSBrowserConfigSubfeature.onboardingNonBlocking.rawValue
-
-    enum Metric: String {
-        case onboardingCompleted
-        case importRequested
-        case addToDockRequested
-        case setAsDefaultEnabled
-        case quitSurveySubmitted
-        case quitSurveyOnboardingReasonSelected
-
-        var conversionWindows: [ClosedRange<Int>] {
-            switch self {
-            case .onboardingCompleted, .importRequested, .addToDockRequested:
-                return [ConversionWindows.oneDay, ConversionWindows.fiveDays, ConversionWindows.sevenDays]
-            case .setAsDefaultEnabled:
-                return [ConversionWindows.fiveToSevenDays]
-            case .quitSurveySubmitted, .quitSurveyOnboardingReasonSelected:
-                return [ConversionWindows.firstThreeDays]
-            }
-        }
-    }
-
-    private enum ConversionWindows {
-        static let oneDay = 0...1
-        static let fiveDays = 0...5
-        static let sevenDays = 0...7
-        static let fiveToSevenDays = 5...7
-        static let firstThreeDays = 0...3
-    }
 
     init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
     }
 
-    /// Assigns a cohort via `resolveCohort`. Caller must only invoke for eligible new installs.
-    func enroll(buildType: ApplicationBuildType = StandardApplicationBuildType()) {
-        guard !buildType.isDebugBuild, !buildType.isReviewBuild, !buildType.isAlphaBuild else { return }
-        _ = featureFlagger.resolveCohort(for: FeatureFlag.onboardingNonBlocking)
-    }
-
-    /// Already-assigned cohort, or `nil` when not enrolled. Never assigns.
-    var cohort: FeatureFlag.OnboardingNonBlockingCohort? {
-        featureFlagger.assignedCohort(for: FeatureFlag.onboardingNonBlocking) as? FeatureFlag.OnboardingNonBlockingCohort
-    }
-
-    /// Whether onboarding should run non-blocking: the local debug flag forces it,
-    /// and the treatment cohort gets it.
     var isNonBlocking: Bool {
-        featureFlagger.isFeatureOn(.onboardingAsync) || cohort == .treatment
+        featureFlagger.isFeatureOn(.onboardingAsync)
     }
 
     /// First-run onboarding can be resumed without restarting contextual onboarding.
     func initializeContextualOnboarding(_ updater: ContextualOnboardingStateUpdater,
-                                       persistor: OnboardingExperimentPersistor = OnboardingExperimentPersistor()) {
+                                       persistor: NonBlockingOnboardingPersistor = NonBlockingOnboardingPersistor()) {
         guard isNonBlocking, !persistor.contextualInitialized else { return }
         updater.state = .notStarted
         persistor.contextualInitialized = true
     }
-
-    func fireMetric(_ metric: Metric) {
-        guard cohort != nil else { return }
-        for window in metric.conversionWindows {
-            PixelKit.fireExperimentPixel(
-                for: Self.subfeatureID,
-                metric: metric.rawValue,
-                conversionWindowDays: window,
-                value: "true"
-            )
-        }
-    }
 }
 
-/// The experiment's durable lifecycle data. Contextual progress remains in its existing storage.
-final class OnboardingExperimentPersistor {
+/// Durable onboarding progress, shared by the early and fully initialized page handlers.
+final class NonBlockingOnboardingPersistor {
     enum Outcome: String {
         case completed
         case skipped

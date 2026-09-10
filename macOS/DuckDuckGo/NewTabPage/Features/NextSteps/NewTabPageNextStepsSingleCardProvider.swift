@@ -190,7 +190,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
          scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler(),
-         didSkipOnboarding: @escaping () -> Bool = { OnboardingExperimentPersistor().outcome == .skipped }) {
+         didSkipOnboarding: @escaping () -> Bool = { NonBlockingOnboardingPersistor().outcome == .skipped }) {
         self.didSkipOnboarding = didSkipOnboarding
         self.cardActionHandler = cardActionHandler
         self.pixelHandler = pixelHandler
@@ -221,7 +221,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         if !shouldUseAdvancedCardOrdering {
             refreshCardList(recordNewCardImpression: false)
         }
-        NotificationCenter.default.publisher(for: OnboardingExperimentPersistor.outcomeDidChange)
+        NotificationCenter.default.publisher(for: NonBlockingOnboardingPersistor.outcomeDidChange)
             .receive(on: scheduler)
             .sink { [weak self] _ in self?.refreshCardList() }
             .store(in: &cancellables)
@@ -289,7 +289,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
     /// Returns visible cards. When `updateOrder` is true and advanced ordering is enabled, refreshes the visible stack with advanced ordering.
     func visibleCards(updateOrder: Bool) -> [NewTabPageDataModel.CardID] {
         guard shouldUseAdvancedCardOrdering else {
-            if OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking {
+            if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
                 return prioritizingOnboardingCards(in: standardCards).filter(shouldShowCard)
             }
             return standardCards.filter(shouldShowCard)
@@ -321,7 +321,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         let currentDayIdentifier = appearancePreferences.nextStepsCardsDemonstrationDays
         var resolvedOrder = persistor.orderedCardIDs ?? defaultAdvancedCards.map(\.cardID)
         let didLevelSwap = applyLevelSwapIfNeeded(to: &resolvedOrder)
-        let isNonBlocking = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking
+        let isNonBlocking = NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
         if isNonBlocking {
             resolvedOrder = prioritizingOnboardingCards(in: resolvedOrder)
         }

@@ -311,7 +311,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
     let eventHubIntegration: MacOSEventHubIntegration
     private lazy var webNotificationClickHandler = WebNotificationClickHandler(tabFinder: windowControllersManager)
-    private lazy var onboardingNonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
@@ -1074,7 +1073,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagger: featureFlagger,
                 subscriptionManager: subscriptionManager
             ),
-            isNonBlocking: { [featureFlagger] in OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking }
+            isNonBlocking: { [featureFlagger] in NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking }
         )
 
         let onboardingManager = onboardingContextualDialogsManager
@@ -1659,9 +1658,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func fireDailyActiveUserPixels() {
         PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily)
         PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily)
-        if defaultBrowserPreferences.isDefault {
-            onboardingNonBlockingExperiment.fireMetric(.setAsDefaultEnabled)
-        }
         PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily)
     }
 
@@ -1784,7 +1780,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
                 isOnboardingFinished: { [featureFlagger, windowControllersManager] in
-                    if OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking {
+                    if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
                         guard let tab = windowControllersManager.selectedTab else { return false }
                         return tab.content != .onboarding
                     }
@@ -1820,7 +1816,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 wideEvent: wideEvent,
                 isOnboardingFinished: { [featureFlagger, windowControllersManager] in
-                    if OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking {
+                    if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
                         guard let tab = windowControllersManager.selectedTab else { return false }
                         return tab.content != .onboarding
                     }

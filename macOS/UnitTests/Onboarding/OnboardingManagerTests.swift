@@ -47,7 +47,6 @@ class OnboardingManagerTests: XCTestCase {
     var importProvider: CapturingDataImportProvider!
     private var onboardingSharedPixelHandler: MockOnboardingSharedPixelHandler!
     private var chromeExtensionInstaller: MockThirdPartyBrowserExtensionInstalling!
-    private var experimentFiredEvents: [PixelKit.Event]!
     /// Held strongly here: the manager's reference to it is weak.
     private var contextualOnboardingState: MockContextualOnboardingState!
 
@@ -77,7 +76,6 @@ class OnboardingManagerTests: XCTestCase {
         importProvider = CapturingDataImportProvider()
         onboardingSharedPixelHandler = MockOnboardingSharedPixelHandler()
         chromeExtensionInstaller = MockThirdPartyBrowserExtensionInstalling()
-        experimentFiredEvents = []
         contextualOnboardingState = MockContextualOnboardingState()
         manager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
@@ -89,19 +87,16 @@ class OnboardingManagerTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller,
-            experimentPersistor: OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
+            onboardingPersistor: NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
         )
     }
 
     override func tearDown() {
         UserDefaults.standard.set(originalOnboardingFinished, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
-        // The experiment kit's fire closure is global and outlives this class, so hand it back a
-        // sink that captures nothing — otherwise a later test firing an experiment pixel would
-        // reach into this instance after its properties are gone.
+
         PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(),
                                         eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
                                         fire: { _, _, _ in })
-
         manager = nil
         contextualOnboardingState = nil
         navigationDelegate = nil
@@ -115,7 +110,6 @@ class OnboardingManagerTests: XCTestCase {
         importProvider = nil
         onboardingSharedPixelHandler = nil
         chromeExtensionInstaller = nil
-        experimentFiredEvents = nil
     }
 
     func testReturnsExpectedOnboardingConfig_WhenNoFlagsAreOn_ExcludesAddressBarMode() {
@@ -177,7 +171,7 @@ class OnboardingManagerTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller,
-            experimentPersistor: OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
+            onboardingPersistor: NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
         )
         let stepDefinitions = StepDefinitions(
             systemSettings: SystemSettings(rows: ["dock-instructions", "import"]),
@@ -210,7 +204,7 @@ class OnboardingManagerTests: XCTestCase {
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller,
-            experimentPersistor: OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
+            onboardingPersistor: NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
         )
 
         let systemSettings = SystemSettings(rows: ["dock", "import"])
@@ -700,7 +694,7 @@ class OnboardingManagerTests: XCTestCase {
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller,
-            experimentPersistor: OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
+            onboardingPersistor: NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
         )
 
         // When
@@ -728,7 +722,7 @@ class OnboardingManagerTests: XCTestCase {
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller,
-            experimentPersistor: OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
+            onboardingPersistor: NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
         )
 
         // When
@@ -799,16 +793,17 @@ class OnboardingManagerTests: XCTestCase {
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller,
-            experimentPersistor: OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
+            onboardingPersistor: NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
         )
     }
 
-    // MARK: Non-blocking onboarding experiment
+    // MARK: Non-blocking onboarding
 
-    func testOnboardingStarted_TreatmentCohort_TakesNonBlockingBranch() {
+    func testOnboardingStarted_NonBlockingEnabled_TakesNonBlockingBranch() {
         // Given
-        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-        let managerWithTreatment = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.onboardingAsync]
+        let managerWithTreatment = makeNonBlockingManager(featureFlagger: featureFlagger)
 
         // When
         managerWithTreatment.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
@@ -818,10 +813,10 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertNil(navigationDelegate.onboardingOnClose, "Page initialization must not replace native handlers")
     }
 
-    func testOnboardingStarted_ControlCohort_TakesLockingBranch() {
+    func testOnboardingStarted_NonBlockingDisabled_TakesLockingBranch() {
         // Given
-        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.control)
-        let managerWithControl = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+        let featureFlagger = MockFeatureFlagger()
+        let managerWithControl = makeNonBlockingManager(featureFlagger: featureFlagger)
 
         // When
         managerWithControl.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
@@ -832,42 +827,12 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertNil(navigationDelegate.onboardingOnClose)
     }
 
-    func testOnboardingStarted_UnassignedCohort_TakesLockingBranch() {
-        // Given
-        let featureFlagger = MockFeatureFlagger()
-        let managerWithoutEnrollment = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
-
-        // When
-        managerWithoutEnrollment.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
-
-        // Then
-        XCTAssertTrue(navigationDelegate.updatePreventUserInteractionCalled)
-        XCTAssertTrue(navigationDelegate.preventUserInteraction ?? false)
-        XCTAssertNil(navigationDelegate.onboardingOnClose)
-    }
-
-    @MainActor
-    func testGoToAddressBar_FiresOnboardingCompletedMetric_NotOnboardingSkipped() {
-        // Given
-        let cohort = FeatureFlag.OnboardingNonBlockingCohort.control
-        let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
-        configureNonBlockingExperimentKit(cohort: cohort, featureFlagger: featureFlagger)
-        let managerWithControl = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
-
-        // When
-        managerWithControl.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
-
-        // Then
-        XCTAssertTrue(experimentFiredEvents.contains(where: { $0.parameters?["metric"] == "onboardingCompleted" }))
-        XCTAssertFalse(experimentFiredEvents.contains(where: { $0.parameters?["metric"] == "onboardingSkipped" }))
-    }
-
     // MARK: - Contextual highlights
 
     @MainActor
     func testSkipOnboarding_SuppressesContextualHighlights() {
-        // Given — no cohort and no local flag, so this is the plain blocking flow.
-        let managerUnderTest = makeNonBlockingExperimentManager(featureFlagger: MockFeatureFlagger())
+        // Given — the non-blocking flag is off.
+        let managerUnderTest = makeNonBlockingManager(featureFlagger: MockFeatureFlagger())
         contextualOnboardingState.state = .notStarted
 
         // When
@@ -880,11 +845,12 @@ class OnboardingManagerTests: XCTestCase {
     @MainActor
     func testNonBlockingOnboarding_PreservesContextualStateForEitherOutcome() {
         for state in [ContextualOnboardingState.ongoing, .onboardingCompleted] {
-            for outcome in [OnboardingExperimentPersistor.Outcome.completed, .skipped] {
+            for outcome in [NonBlockingOnboardingPersistor.Outcome.completed, .skipped] {
                 OnboardingActionsManager.isOnboardingFinished = false
                 navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
-                let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-                let manager = makeNonBlockingExperimentManager(featureFlagger: flags)
+                let flags = MockFeatureFlagger()
+                flags.enabledFeatureFlags = [.onboardingAsync]
+                let manager = makeNonBlockingManager(featureFlagger: flags)
                 contextualOnboardingState.state = state
 
                 switch outcome {
@@ -899,16 +865,17 @@ class OnboardingManagerTests: XCTestCase {
 
     @MainActor
     func testLateCallbacksCannotReplaceBrowsingAfterEitherOutcome() {
-        for outcome in [OnboardingExperimentPersistor.Outcome.completed, .skipped] {
+        for outcome in [NonBlockingOnboardingPersistor.Outcome.completed, .skipped] {
             OnboardingActionsManager.isOnboardingFinished = false
             navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
             let source = navigationDelegate.onboardingSourceTab!.webView
-            let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+            let flags = MockFeatureFlagger()
+            flags.enabledFeatureFlags = [.onboardingAsync]
             let store = MockKeyValueFileStore()
-            let early = makeNonBlockingExperimentManager(featureFlagger: flags,
-                                                         experimentPersistor: OnboardingExperimentPersistor(keyValueStore: store))
-            let full = makeNonBlockingExperimentManager(featureFlagger: flags,
-                                                        experimentPersistor: OnboardingExperimentPersistor(keyValueStore: store))
+            let early = makeNonBlockingManager(featureFlagger: flags,
+                                                onboardingPersistor: NonBlockingOnboardingPersistor(keyValueStore: store))
+            let full = makeNonBlockingManager(featureFlagger: flags,
+                                               onboardingPersistor: NonBlockingOnboardingPersistor(keyValueStore: store))
             switch outcome {
             case .completed: early.goToAddressBar(from: source)
             case .skipped:
@@ -927,29 +894,27 @@ class OnboardingManagerTests: XCTestCase {
 
             XCTAssertFalse(navigationDelegate.replaceTabCalled)
             XCTAssertFalse(navigationDelegate.updatePreventUserInteractionCalled)
-            XCTAssertEqual(OnboardingExperimentPersistor(keyValueStore: store).outcome, outcome)
+            XCTAssertEqual(NonBlockingOnboardingPersistor(keyValueStore: store).outcome, outcome)
         }
     }
 
     @MainActor
-    func testFailedOutcomeWriteStillFinishesAndReportsOnceAcrossManagers() {
-        for outcome in [OnboardingExperimentPersistor.Outcome.completed, .skipped] {
+    func testFailedOutcomeWriteStillFinishesOnceAcrossManagers() {
+        for outcome in [NonBlockingOnboardingPersistor.Outcome.completed, .skipped] {
             OnboardingActionsManager.isOnboardingFinished = false
             let sourceTab = Tab(content: .onboarding)
             navigationDelegate.onboardingSourceTab = sourceTab
             let source = sourceTab.webView
-            experimentFiredEvents = []
             navigationDelegate.replaceTabCalled = false
             navigationDelegate.updatePreventUserInteractionCalled = false
-            let cohort = FeatureFlag.OnboardingNonBlockingCohort.treatment
-            let flags = MockFeatureFlagger(resolveCohortStub: cohort)
-            configureNonBlockingExperimentKit(cohort: cohort, featureFlagger: flags)
+            let flags = MockFeatureFlagger()
+            flags.enabledFeatureFlags = [.onboardingAsync]
             let store = MockKeyValueFileStore()
             store.shouldThrowOnSet = true
-            let early = makeNonBlockingExperimentManager(featureFlagger: flags,
-                                                         experimentPersistor: OnboardingExperimentPersistor(keyValueStore: store))
-            let full = makeNonBlockingExperimentManager(featureFlagger: flags,
-                                                        experimentPersistor: OnboardingExperimentPersistor(keyValueStore: store))
+            let early = makeNonBlockingManager(featureFlagger: flags,
+                                                onboardingPersistor: NonBlockingOnboardingPersistor(keyValueStore: store))
+            let full = makeNonBlockingManager(featureFlagger: flags,
+                                               onboardingPersistor: NonBlockingOnboardingPersistor(keyValueStore: store))
             switch outcome {
             case .completed: early.goToAddressBar(from: source)
             case .skipped:
@@ -960,11 +925,7 @@ class OnboardingManagerTests: XCTestCase {
             XCTAssertTrue(navigationDelegate.updatePreventUserInteractionCalled)
             XCTAssertEqual(navigationDelegate.preventUserInteraction, false)
             XCTAssertTrue(OnboardingActionsManager.isOnboardingFinished)
-            XCTAssertNil(OnboardingExperimentPersistor(keyValueStore: store).outcome)
-            let metric = "onboardingCompleted"
-            let expectedEventCount = outcome == .completed ? 3 : 0
-            let outcomeEvents = experimentFiredEvents.filter { $0.parameters?["metric"] == metric }
-            XCTAssertEqual(outcomeEvents.count, expectedEventCount)
+            XCTAssertNil(NonBlockingOnboardingPersistor(keyValueStore: store).outcome)
 
             // Make any repeated outcome write observable, independently of pixel deduplication.
             store.shouldThrowOnSet = false
@@ -981,32 +942,29 @@ class OnboardingManagerTests: XCTestCase {
                     }
                     XCTAssertEqual(navigationDelegate.replaceTabCalled, action != "skip", action)
                     XCTAssertFalse(navigationDelegate.updatePreventUserInteractionCalled, action)
-                    XCTAssertNil(OnboardingExperimentPersistor(keyValueStore: store).outcome, action)
+                    XCTAssertNil(NonBlockingOnboardingPersistor(keyValueStore: store).outcome, action)
                 }
             }
-            XCTAssertEqual(experimentFiredEvents.filter { $0.parameters?["metric"] == metric }.count, expectedEventCount)
-            XCTAssertFalse(experimentFiredEvents.contains { $0.parameters?["metric"] == "onboardingSkipped" })
         }
     }
 
     @MainActor
-    func testControlCanExitAfterAnOutcomeRecordedInEitherCohort() {
-        for cohort in [FeatureFlag.OnboardingNonBlockingCohort.control, .treatment] {
+    func testBlockingOnboardingCanExitAfterAnOutcomeRecordedInEitherMode() {
+        for isNonBlocking in [false, true] {
             for action in ["browse", "settings"] {
                 OnboardingActionsManager.isOnboardingFinished = false
-                let flags = MockFeatureFlagger(resolveCohortStub: cohort)
-                configureNonBlockingExperimentKit(cohort: cohort, featureFlagger: flags)
-                let persistor = OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
-                let manager = makeNonBlockingExperimentManager(featureFlagger: flags, experimentPersistor: persistor)
+                let flags = MockFeatureFlagger()
+                flags.enabledFeatureFlags = isNonBlocking ? [.onboardingAsync] : []
+                let persistor = NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
+                let manager = makeNonBlockingManager(featureFlagger: flags, onboardingPersistor: persistor)
                 navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
                 let source = navigationDelegate.onboardingSourceTab!.webView
                 manager.skipOnboarding(from: source)
 
-                flags.resolveCohortStub = FeatureFlag.OnboardingNonBlockingCohort.control
+                flags.enabledFeatureFlags = []
                 manager.onboardingStarted(from: source)
                 XCTAssertEqual(navigationDelegate.preventUserInteraction, true)
                 navigationDelegate.replaceTabCalled = false
-                experimentFiredEvents = []
 
                 switch action {
                 case "settings": manager.goToSettings(from: source)
@@ -1016,25 +974,23 @@ class OnboardingManagerTests: XCTestCase {
                 XCTAssertTrue(navigationDelegate.replaceTabCalled, action)
                 XCTAssertEqual(navigationDelegate.preventUserInteraction, false, action)
                 XCTAssertEqual(persistor.outcome, .skipped)
-                XCTAssertTrue(experimentFiredEvents.isEmpty)
             }
         }
     }
 
     @MainActor
     func testLiveOnboardingCanExitWithAnAlreadyRecordedOutcome() {
-        for outcome in [OnboardingExperimentPersistor.Outcome.skipped, .completed] {
+        for outcome in [NonBlockingOnboardingPersistor.Outcome.skipped, .completed] {
             for action in ["browse", "settings"] {
-                let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-                configureNonBlockingExperimentKit(cohort: .treatment, featureFlagger: flags)
-                experimentFiredEvents = []
+                let flags = MockFeatureFlagger()
+                flags.enabledFeatureFlags = [.onboardingAsync]
                 let store = MockKeyValueFileStore()
-                let persistor = OnboardingExperimentPersistor(keyValueStore: store)
+                let persistor = NonBlockingOnboardingPersistor(keyValueStore: store)
                 persistor.record(outcome)
                 OnboardingActionsManager.isOnboardingFinished = true
                 navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
                 navigationDelegate.replaceTabCalled = false
-                let manager = makeNonBlockingExperimentManager(featureFlagger: flags, experimentPersistor: persistor)
+                let manager = makeNonBlockingManager(featureFlagger: flags, onboardingPersistor: persistor)
                 let source = navigationDelegate.onboardingSourceTab!.webView
 
                 switch action {
@@ -1044,23 +1000,20 @@ class OnboardingManagerTests: XCTestCase {
 
                 XCTAssertTrue(navigationDelegate.replaceTabCalled, action)
                 XCTAssertEqual(persistor.outcome, outcome)
-                XCTAssertTrue(experimentFiredEvents.isEmpty)
             }
         }
     }
 
     @MainActor
-    func testControlRecordsFreshCompletionAfterResetAndRestartWithoutQuitting() {
-        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.control)
-        configureNonBlockingExperimentKit(cohort: .control, featureFlagger: flags)
-        let persistor = OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
-        let manager = makeNonBlockingExperimentManager(featureFlagger: flags, experimentPersistor: persistor)
+    func testBlockingOnboardingRecordsFreshCompletionAfterResetAndRestartWithoutQuitting() {
+        let flags = MockFeatureFlagger()
+        let persistor = NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
+        let manager = makeNonBlockingManager(featureFlagger: flags, onboardingPersistor: persistor)
         manager.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
         XCTAssertEqual(persistor.outcome, .completed)
 
         persistor.reset()
         OnboardingActionsManager.isOnboardingFinished = false
-        experimentFiredEvents = []
         navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
         let source = navigationDelegate.onboardingSourceTab!.webView
         manager.onboardingStarted(from: source)
@@ -1069,19 +1022,18 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertTrue(OnboardingActionsManager.isOnboardingFinished)
         XCTAssertEqual(persistor.outcome, .completed)
         XCTAssertEqual(navigationDelegate.preventUserInteraction, false)
-        let completionCount = experimentFiredEvents.filter { $0.parameters?["metric"] == "onboardingCompleted" }.count
-        XCTAssertEqual(completionCount, 3)
 
         manager.onboardingStarted(from: source)
         manager.goToAddressBar(from: source)
-        XCTAssertEqual(experimentFiredEvents.filter { $0.parameters?["metric"] == "onboardingCompleted" }.count, completionCount)
+        XCTAssertEqual(navigationDelegate.preventUserInteraction, false)
     }
 
     @MainActor
     func testSameManagerCanFinishNewOnboardingAfterResetWithoutQuitting() {
-        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-        let persistor = OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
-        let manager = makeNonBlockingExperimentManager(featureFlagger: flags, experimentPersistor: persistor)
+        let flags = MockFeatureFlagger()
+        flags.enabledFeatureFlags = [.onboardingAsync]
+        let persistor = NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
+        let manager = makeNonBlockingManager(featureFlagger: flags, onboardingPersistor: persistor)
         let oldSource = navigationDelegate.onboardingSourceTab!.webView
         manager.skipOnboarding(from: oldSource)
 
@@ -1101,9 +1053,10 @@ class OnboardingManagerTests: XCTestCase {
 
     @MainActor
     func testMessageFromBrowsingTabCannotRecordAnOutcomeOrReplaceTabs() {
-        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-        let persistor = OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
-        let manager = makeNonBlockingExperimentManager(featureFlagger: flags, experimentPersistor: persistor)
+        let flags = MockFeatureFlagger()
+        flags.enabledFeatureFlags = [.onboardingAsync]
+        let persistor = NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
+        let manager = makeNonBlockingManager(featureFlagger: flags, onboardingPersistor: persistor)
         let browsingTab = Tab(content: .newtab)
         manager.goToAddressBar(from: browsingTab.webView)
         manager.goToSettings(from: nil)
@@ -1114,9 +1067,9 @@ class OnboardingManagerTests: XCTestCase {
 
     @MainActor
     func testNonBlockingHandlersAreAvailableBeforeThePageInitializes() {
-        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-        let managerUnderTest = makeNonBlockingExperimentManager(featureFlagger: flags)
-        configureNonBlockingExperimentKit(cohort: .treatment, featureFlagger: flags)
+        let flags = MockFeatureFlagger()
+        flags.enabledFeatureFlags = [.onboardingAsync]
+        let managerUnderTest = makeNonBlockingManager(featureFlagger: flags)
         contextualOnboardingState.state = .notStarted
 
         managerUnderTest.installNonBlockingHandlers()
@@ -1127,15 +1080,13 @@ class OnboardingManagerTests: XCTestCase {
 
         XCTAssertEqual(contextualOnboardingState.state, .notStarted)
         XCTAssertTrue(OnboardingActionsManager.isOnboardingFinished)
-        XCTAssertFalse(experimentFiredEvents.contains { $0.parameters?["metric"] == "onboardingSkipped" })
-        XCTAssertFalse(experimentFiredEvents.contains { $0.parameters?["metric"] == "onboardingCompleted" })
     }
 
     @MainActor
     func testBlockingOnboarding_DoesNotReArmHighlightsOnCompletion() {
         // Given — the blocking flow arms the highlights at the start, so completion must leave the
         // state where `Tab.startOnboarding()` put it rather than resetting it.
-        let managerUnderTest = makeNonBlockingExperimentManager(featureFlagger: MockFeatureFlagger())
+        let managerUnderTest = makeNonBlockingManager(featureFlagger: MockFeatureFlagger())
         contextualOnboardingState.state = .ongoing
 
         // When
@@ -1143,20 +1094,6 @@ class OnboardingManagerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(contextualOnboardingState.state, .ongoing)
-    }
-
-    @MainActor
-    func testNoNonBlockingExperimentMetricFires_WhenNotEnrolled() {
-        // Given
-        let featureFlagger = MockFeatureFlagger()
-        configureNonBlockingExperimentKit(cohort: nil, featureFlagger: featureFlagger)
-        let managerWithoutEnrollment = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
-
-        // When
-        managerWithoutEnrollment.goToAddressBar(from: navigationDelegate.onboardingSourceTab?.webView)
-
-        // Then
-        XCTAssertTrue(experimentFiredEvents.isEmpty)
     }
 
 }
@@ -1180,7 +1117,7 @@ private extension OnboardingManagerTests {
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller,
-            experimentPersistor: OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
+            onboardingPersistor: NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
         )
     }
 
@@ -1189,12 +1126,12 @@ private extension OnboardingManagerTests {
     }
 }
 
-// MARK: - Non-blocking onboarding experiment test helpers
+// MARK: - Non-blocking onboarding test helpers
 
 private extension OnboardingManagerTests {
 
-    func makeNonBlockingExperimentManager(featureFlagger: MockFeatureFlagger,
-                                          experimentPersistor: OnboardingExperimentPersistor? = nil) -> OnboardingActionsManager {
+    func makeNonBlockingManager(featureFlagger: MockFeatureFlagger,
+                                onboardingPersistor: NonBlockingOnboardingPersistor? = nil) -> OnboardingActionsManager {
         OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -1206,28 +1143,8 @@ private extension OnboardingManagerTests {
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller,
             contextualOnboardingStateUpdater: contextualOnboardingState,
-            experimentPersistor: experimentPersistor ?? OnboardingExperimentPersistor(keyValueStore: MockKeyValueFileStore())
+            onboardingPersistor: onboardingPersistor ?? NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
         )
     }
 
-    func configureNonBlockingExperimentKit(cohort: FeatureFlag.OnboardingNonBlockingCohort?,
-                                           featureFlagger: MockFeatureFlagger) {
-        if let cohort {
-            let subfeatureID = MacOSBrowserConfigSubfeature.onboardingNonBlocking.rawValue
-            featureFlagger.allActiveExperiments = [
-                subfeatureID: ExperimentData(
-                    parentID: PrivacyFeature.macOSBrowserConfig.rawValue,
-                    cohortID: cohort.rawValue,
-                    enrollmentDate: Date()
-                )
-            ]
-        } else {
-            featureFlagger.allActiveExperiments = [:]
-        }
-        PixelKit.configureExperimentKit(
-            featureFlagger: featureFlagger,
-            eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
-            fire: { [weak self] event, _, _ in self?.experimentFiredEvents?.append(event) }
-        )
-    }
 }

@@ -1004,10 +1004,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             return
         }
 
-        let experiment = OnboardingNonBlockingExperiment(featureFlagger: Application.appDelegate.featureFlagger)
+        let onboarding = NonBlockingOnboarding(featureFlagger: Application.appDelegate.featureFlagger)
         let updater = Application.appDelegate.onboardingContextualDialogsManager
-        if experiment.isNonBlocking {
-            experiment.initializeContextualOnboarding(updater)
+        if onboarding.isNonBlocking {
+            onboarding.initializeContextualOnboarding(updater)
         } else {
             updater.state = .notStarted
         }

@@ -128,18 +128,18 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
     private let chromeExtensionExperiment: OnboardingChromeExtensionExperiment
-    private let nonBlockingExperiment: OnboardingNonBlockingExperiment
+    private let nonBlockingOnboarding: NonBlockingOnboarding
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     private weak var contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater?
     private var cancellables = Set<AnyCancellable>()
     private var hasInstalledHandlers = false
-    private let experimentPersistor: OnboardingExperimentPersistor
+    private let onboardingPersistor: NonBlockingOnboardingPersistor
 
     /// Early and fully installed scripts can have different managers for the same first-run flow.
     private var canEndOnboarding: Bool {
-        if nonBlockingExperiment.isNonBlocking {
-            return !Self.isOnboardingFinished && experimentPersistor.outcome == nil
+        if nonBlockingOnboarding.isNonBlocking {
+            return !Self.isOnboardingFinished && onboardingPersistor.outcome == nil
         }
         return !Self.isOnboardingFinished
     }
@@ -267,9 +267,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling,
         chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling,
         contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater? = nil,
-        experimentPersistor: OnboardingExperimentPersistor = OnboardingExperimentPersistor()
+        onboardingPersistor: NonBlockingOnboardingPersistor = NonBlockingOnboardingPersistor()
     ) {
-        self.experimentPersistor = experimentPersistor
+        self.onboardingPersistor = onboardingPersistor
         self.navigation = navigationDelegate
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider
@@ -280,7 +280,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
         self.chromeExtensionExperiment = OnboardingChromeExtensionExperiment(featureFlagger: featureFlagger)
-        self.nonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
+        self.nonBlockingOnboarding = NonBlockingOnboarding(featureFlagger: featureFlagger)
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
         self.chromeExtensionInstaller = chromeExtensionInstaller
         self.contextualOnboardingStateUpdater = contextualOnboardingStateUpdater
@@ -288,7 +288,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     /// Installed when the tab is established, before the page can receive user input.
     func installNonBlockingHandlers() {
-        guard nonBlockingExperiment.isNonBlocking, !hasInstalledHandlers, canEndOnboarding else { return }
+        guard nonBlockingOnboarding.isNonBlocking, !hasInstalledHandlers, canEndOnboarding else { return }
         hasInstalledHandlers = true
         navigation.setOnboardingHandlers(
             onClose: { [weak self] tab in self?.skipOnboarding(from: tab.webView) },
@@ -297,7 +297,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     func onboardingStarted(from webView: WKWebView?) {
-        if nonBlockingExperiment.isNonBlocking {
+        if nonBlockingOnboarding.isNonBlocking {
             guard canEndOnboarding,
                   navigation.onboardingTab(for: webView) != nil else { return }
         } else {
@@ -329,7 +329,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     /// Records a skip before the caller performs normal tab removal.
     @MainActor
     func skipOnboarding(from webView: WKWebView?) {
-        if nonBlockingExperiment.isNonBlocking {
+        if nonBlockingOnboarding.isNonBlocking {
             guard navigation.onboardingTab(for: webView) != nil else { return }
         }
         _ = finishOnboarding(.skipped)
@@ -337,7 +337,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     @MainActor
     private func leaveOnboarding(from webView: WKWebView?, content: TabContent) -> Tab? {
-        if nonBlockingExperiment.isNonBlocking {
+        if nonBlockingOnboarding.isNonBlocking {
             // Validate before recording anything. A late message from a page that is no longer
             // onboarding must neither finish a new session nor replace its browsing tab.
             guard let source = navigation.onboardingTab(for: webView) else { return nil }
@@ -364,13 +364,11 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     func addToDock() {
         dockCustomization.addToDock()
         onboardingSharedPixelHandler.fire(.addToDock(.clicked(.engage)))
-        nonBlockingExperiment.fireMetric(.addToDockRequested)
     }
 
     @MainActor
     func importData() async -> Bool {
         onboardingSharedPixelHandler.fire(.importData(.clicked(.engage)))
-        nonBlockingExperiment.fireMetric(.importRequested)
         return await withCheckedContinuation { continuation in
             dataImportProvider.showImportWindow(customTitle: UserText.importDataTitleOnboarding, completion: { [weak self] in
                 guard let self else {
@@ -551,7 +549,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     /// Accepts an outcome once, before callers replace tabs or perform other navigation.
-    private func finishOnboarding(_ outcome: OnboardingExperimentPersistor.Outcome) -> Bool {
+    private func finishOnboarding(_ outcome: NonBlockingOnboardingPersistor.Outcome) -> Bool {
         guard canEndOnboarding else { return false }
         Self.isOnboardingFinished = true
         navigation.updatePreventUserInteraction(prevent: false)
@@ -561,21 +559,21 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         return true
     }
 
-    private func recordOnboardingOutcome(_ outcome: OnboardingExperimentPersistor.Outcome) {
-        let isFirstOutcome = experimentPersistor.outcome == nil
-        experimentPersistor.record(outcome)
+    private func recordOnboardingOutcome(_ outcome: NonBlockingOnboardingPersistor.Outcome) {
+        let isFirstOutcome = onboardingPersistor.outcome == nil
+        onboardingPersistor.record(outcome)
         switch outcome {
         case .completed:
             let userSawToggleOnboarding = wasToggleOnboardingStepShown()
             if userSawToggleOnboarding {
                 aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
             }
-            if !nonBlockingExperiment.isNonBlocking || isFirstOutcome {
+            if !nonBlockingOnboarding.isNonBlocking || isFirstOutcome {
                 fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
             }
         case .skipped:
             // Skipping must not record a final step or suppress a toggle popover the user never saw.
-            if !nonBlockingExperiment.isNonBlocking {
+            if !nonBlockingOnboarding.isNonBlocking {
                 contextualOnboardingStateUpdater?.state = .onboardingCompleted
             }
             if isFirstOutcome {
@@ -606,7 +604,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
         fireSharedPixelForFinalStep(userSawToggleOnboarding)
         chromeExtensionExperiment.fireMetric(.onboardingCompleted)
-        nonBlockingExperiment.fireMetric(.onboardingCompleted)
 
         guard userSawToggleOnboarding else { return }
 

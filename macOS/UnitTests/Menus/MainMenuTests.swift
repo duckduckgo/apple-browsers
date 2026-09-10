@@ -59,13 +59,13 @@ class MainMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testOnboardingMenuAvailabilityForControlAndTreatment() throws {
+    func testOnboardingMenuAvailabilityForBlockingAndNonBlocking() throws {
         let appDelegate = try XCTUnwrap(Application.appDelegate)
         let featureFlagger = try XCTUnwrap(appDelegate.featureFlagger as? MockFeatureFlagger)
-        let originalCohort = featureFlagger.resolveCohortStub
+        let originalFeatures = featureFlagger.featuresStub
         let originalOnboardingFinished = OnboardingActionsManager.isOnboardingFinished
         defer {
-            featureFlagger.resolveCohortStub = originalCohort
+            featureFlagger.featuresStub = originalFeatures
             OnboardingActionsManager.isOnboardingFinished = originalOnboardingFinished
         }
 
@@ -79,8 +79,8 @@ class MainMenuTests: XCTestCase {
             #selector(AppDelegate.showManageBookmarks(_:)),
             #selector(AppDelegate.openImportBrowserDataWindow(_:))
         ]
-        for cohort in [FeatureFlag.OnboardingNonBlockingCohort.control, .treatment] {
-            featureFlagger.resolveCohortStub = cohort
+        for isNonBlocking in [false, true] {
+            featureFlagger.enabledFeatureFlags = isNonBlocking ? [.onboardingAsync] : []
             for finished in [false, true] {
                 OnboardingActionsManager.isOnboardingFinished = finished
                 for action in actions {
@@ -88,7 +88,7 @@ class MainMenuTests: XCTestCase {
                     menuItem.action = action
                     let canOpenFirstWindow = action == #selector(AppDelegate.newWindow(_:))
                         && appDelegate.windowControllersManager.mainWindowControllers.isEmpty
-                    XCTAssertEqual(appDelegate.validateMenuItem(menuItem), finished || cohort == .treatment || canOpenFirstWindow,
+                    XCTAssertEqual(appDelegate.validateMenuItem(menuItem), finished || isNonBlocking || canOpenFirstWindow,
                                    NSStringFromSelector(action))
                 }
             }

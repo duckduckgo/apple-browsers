@@ -43,4 +43,16 @@ class MaliciousSiteProtectionURLTests: XCTestCase {
         }
     }
 
+    func testWhenURLHasLargeFragmentThenCanonicalizationDiscardsIt() throws {
+        let url = try XCTUnwrap(URL(string: "http://www.example.com/PHISHING#" + String(repeating: "A", count: 1_000_000)))
+
+        XCTAssertEqual(url.canonicalURL()?.absoluteString, "http://example.com/phishing")
+    }
+
+    func testWhenURLHasEncodedFragmentDelimiterThenItRemainsInCanonicalization() throws {
+        let url = try XCTUnwrap(URL(string: "http://www.example.com/PHISHING%23SECTION#discarded"))
+
+        XCTAssertEqual(url.canonicalURL()?.absoluteString, "http://example.com/phishing#section")
+    }
+
 }

@@ -165,7 +165,12 @@ extension MainViewController {
         // Only AI tabs have an AI chat input to reconcile. For a non-AI tabs this can
         //  cause glitches in the positioning of the bars.
         guard currentTab?.isAITab == true else { return }
-        viewCoordinator.setAITabBottomChromeHidden(aiTabChromeDecision().hidesInputBar)
+        let hidesInputBar = aiTabChromeDecision().hidesInputBar
+        if hidesInputBar {
+            // Hiding the bar doesn't resign its text field, which would leave the keyboard up over nothing.
+            unifiedToggleInputCoordinator?.viewController.deactivateInput()
+        }
+        viewCoordinator.setAITabBottomChromeHidden(hidesInputBar)
     }
 
     /// Hides the header chats/compose pill while a voice session is in progress. Idempotent.
@@ -306,6 +311,7 @@ extension MainViewController {
             webView.backgroundColor = webViewBackgroundColor
             webView.scrollView.backgroundColor = webViewBackgroundColor
             webView.underPageBackgroundColor = webViewBackgroundColor
+            currentTab?.pullToRefreshViewAdapter?.webViewBackgroundDidChange()
         }
     }
 
@@ -574,8 +580,9 @@ private extension MainViewController {
         if keyboardShowing,
            !coordinator.viewController.isInputFirstResponder,
            currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true {
-            DispatchQueue.main.async { [weak coordinator] in
-                guard let coordinator, coordinator.isAITabExpanded else { return }
+            DispatchQueue.main.async { [weak self, weak coordinator] in
+                guard let self, let coordinator, coordinator.isAITabExpanded,
+                      !self.aiTabChromeDecision().hidesInputBar else { return }
                 coordinator.activateInput()
             }
         }
@@ -643,6 +650,7 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
+
         NotificationCenter.default.publisher(for: .aiChatShowModelPicker)
             .compactMap { $0.object as? WKWebView }
             .receive(on: DispatchQueue.main)
@@ -660,6 +668,7 @@ private extension MainViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.handleShowPicker(.attachment, for: $0) }
             .store(in: &unifiedToggleInputCancellables)
+
     }
 
     private enum AIChatPickerRequest {
@@ -851,8 +860,9 @@ private extension MainViewController {
         case .showCollapsed(let expandAfterRefresh):
             coordinator.showCollapsed()
             guard expandAfterRefresh else { return }
-            DispatchQueue.main.async { [weak coordinator] in
-                guard let coordinator, coordinator.isAITabState else { return }
+            DispatchQueue.main.async { [weak self, weak coordinator] in
+                guard let self, let coordinator, coordinator.isAITabState,
+                      !self.aiTabChromeDecision().hidesInputBar else { return }
                 coordinator.showExpanded(inputMode: .aiChat)
             }
         }
@@ -1566,6 +1576,21 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         requestTabSwitcher()
     }
 
+}
+
+// MARK: - TabDelegate (Duck.ai navigation)
+
+extension MainViewController {
+
+    // Non-private: a private method can't witness the cross-file `TabDelegate` conformance.
+    func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool) {
+        unifiedToggleInputCoordinator?.handleNavigationCommit(
+            tabUID: tab.tabModel.uid,
+            didChangeChat: didChangeChat,
+            // Voice-mode documents assert hidden input natively before the FE can (`refreshAITab`).
+            startsWithHiddenInput: tab.webView.url?.isDuckAIVoiceMode == true
+        )
+    }
 }
 
 // MARK: - AIChatEditHeaderViewDelegate

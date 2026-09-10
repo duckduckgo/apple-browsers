@@ -27,7 +27,11 @@ extension MainViewController {
         DuckAIAddressBarEntry.resolve(
             isContextualModeAvailable: aiChatContextualModeFeature.isAvailable,
             isFloatingInputAvailable: aiChatContextualFloatingInputFeature.isAvailable,
-            isHomeTab: currentTab?.tabModel.isHomeTab ?? true,
+            isHomeTab: tabManager.currentTabsModel.currentTab?.isHomeTab ?? true,
+            isChatHistoryAvailable: DuckAIAddressBarMenuFactory.isChatHistoryAvailable(
+                featureFlagger: featureFlagger,
+                userInterfaceIdiom: UIDevice.current.userInterfaceIdiom
+            ),
             hasChatToReopen: currentTab?.hasContextualChatToReopen ?? false,
             isContextualSurfacePresented: isContextualSurfacePresented
         )
@@ -44,7 +48,7 @@ extension MainViewController {
     var hasContextualSession: Bool {
         DuckAIAddressBarEntry.showsContextualGlyph(
             isContextualModeAvailable: aiChatContextualModeFeature.isAvailable,
-            isHomeTab: currentTab?.tabModel.isHomeTab ?? true,
+            isHomeTab: tabManager.currentTabsModel.currentTab?.isHomeTab ?? true,
             hasChatToReopen: currentTab?.hasContextualChatToReopen ?? false,
             isContextualSurfacePresented: isContextualSurfacePresented
         )
@@ -73,6 +77,7 @@ extension MainViewController {
         // Deferred so the shown pixel records an actual display rather than the menu being attached.
         button?.menu = UIMenu(title: UserText.duckAiFeatureName, children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
+                self?.recordNewTabPageSessionAction { $0.tapDuckaiButton() }
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuShown()
                 completion(self?.duckAIAddressBarMenuChildren() ?? [])
             }
@@ -127,6 +132,9 @@ extension MainViewController {
 
     private func duckAIAddressBarMenuChildren() -> [UIMenuElement] {
         DuckAIAddressBarMenuFactory.makeActions(
+            featureFlagger: featureFlagger,
+            userInterfaceIdiom: UIDevice.current.userInterfaceIdiom,
+            isHomeTab: tabManager.currentTabsModel.currentTab?.isHomeTab ?? true,
             onNewChat: { [weak self] in
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuNewChatSelected()
                 self?.openFreshDuckAIChatFromAddressBarMenu()
@@ -134,8 +142,18 @@ extension MainViewController {
             onAskAboutPage: { [weak self] in
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutPageSelected()
                 self?.askAboutCurrentPageFromAddressBar()
+            },
+            onRecentChats: { [weak self] in
+                self?.duckAIAddressBarPixelHandler.fireAddressBarMenuRecentChatsSelected()
+                self?.openRecentChatsFromAddressBarMenu()
             }
         )
+    }
+
+    private func openRecentChatsFromAddressBarMenu() {
+        omniBar.endEditing()
+        recordNewTabPageSessionDeparture()
+        openAIChatHistory(source: .addressBar)
     }
 
     /// `openAIChat()` rather than `openAIChatFromAddressBar`: the latter sends the omnibar's text as

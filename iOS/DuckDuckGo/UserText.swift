@@ -54,6 +54,9 @@ public struct UserText {
     public static let actionNewBackgroundTabForUrl = NSLocalizedString("action.title.newBackgroundTabForUrl", value: "Open in Background", comment: "Open in New Background Tab action")
     public static let actionForgetAll = NSLocalizedString("action.title.forgetAll", value: "Clear Tabs and Data", comment: "")
     public static let actionForgetAllDone = NSLocalizedString("action.title.forgetAllDone", value: "Tabs and data cleared", comment: "Confirmation message")
+    public static let sitePermissions = NotLocalizedString("site.permissions",
+                                                          value: "Site Permissions",
+                                                          comment: "Browser menu item that opens permission controls for the current website")
 
     // MARK: Scoped Fire Confirmation
 
@@ -181,6 +184,7 @@ public struct UserText {
     public static let actionSaveBookmark = NSLocalizedString("action.title.save.bookmark", value: "Add Bookmark", comment: "Add to Bookmarks action")
     public static let actionSaveFavorite = NSLocalizedString("action.title.save.favorite", value: "Add Favorite", comment: "Add to Favorites action")
     public static let actionReportBrokenSite = NSLocalizedString("action.title.reportBrokenSite", value: "Report Broken Site", comment: "Report broken site action")
+    public static let actionSendInternalFeedback = NotLocalizedString("action.title.sendInternalFeedback", value: "Send Internal Feedback", comment: "Internal only — not localized")
     public static let actionSettings = NSLocalizedString("action.title.settings", value: "Settings", comment: "Settings action")
     public static let actionGenericEdit = NSLocalizedString("action.generic.edit", value: "Edit", comment: "Buton label for Edit action")
     public static let actionGenericUndo = NSLocalizedString("action.generic.undo", value: "Undo", comment: "Button label for Undo action")
@@ -575,6 +579,20 @@ public struct UserText {
     public static let settingsAutoplayLabel = NSLocalizedString("settings.autoplay", value: "Autoplay", comment: "Settings label for the autoplay settings screen")
     public static let settingsAutoplayFooter = NSLocalizedString("settings.autoplay.footer", value: "Autoplay settings will only apply to newly opened tabs. Changes cannot be applied to existing tabs unless the application is restarted. To manage autoplay in Duck Player, go to ", comment: "Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings")
     public static let settingsAutoplayDuckPlayerLink = NSLocalizedString("settings.autoplay.duck.player.link", value: "Duck Player Settings", comment: "Link text in the autoplay settings footer that navigates to Duck Player settings")
+    public static let settingsSitePermissionsCamera = NotLocalizedString("settings.site.permissions.camera", value: "Camera", comment: "Camera permission title in Settings")
+    public static let settingsSitePermissionsMicrophone = NotLocalizedString("settings.site.permissions.microphone", value: "Microphone", comment: "Microphone permission title in Settings")
+    public static let settingsSitePermissionsLocation = NotLocalizedString("settings.site.permissions.location", value: "Location", comment: "Location permission title in Settings")
+    public static let settingsSitePermissionsAskEachTime = NotLocalizedString("settings.site.permissions.ask.each.time", value: "Ask Each Time", comment: "Site permission option that asks on each visit")
+    public static let settingsSitePermissionsAlwaysAllow = NotLocalizedString("settings.site.permissions.always.allow", value: "Always Allow", comment: "Site permission option that always grants access")
+    public static let settingsSitePermissionsNeverAllow = NotLocalizedString("settings.site.permissions.never.allow", value: "Never Allow", comment: "Site permission option that prevents access")
+    public static let settingsSitePermissionsManageSites = NotLocalizedString("settings.site.permissions.manage.sites", value: "Manage Sites", comment: "Header for sites with stored permissions")
+    public static let settingsSitePermissionsRemoveAll = NotLocalizedString("settings.site.permissions.remove.all", value: "Remove All Site Permissions", comment: "Button that removes every stored site permission")
+    public static let settingsSitePermissionsRemoveSite = NotLocalizedString("settings.site.permissions.remove.site", value: "Remove Permissions", comment: "Button that removes all stored permissions for one site")
+    public static let settingsSitePermissionsSystemSettingsFooterPrefix = NotLocalizedString("settings.site.permissions.system.settings.footer.prefix", value: "You can view and modify DuckDuckGo’s system permissions in ", comment: "Settings footer before the System Settings link")
+    public static let settingsSitePermissionsSystemSettingsLink = NotLocalizedString("settings.site.permissions.system.settings.link", value: "System Settings.", comment: "Link that opens the DuckDuckGo page in System Settings")
+    public static let settingsSitePermissionsRemovedAll = NotLocalizedString("settings.site.permissions.removed.all", value: "Permissions removed for all sites", comment: "Toast after all stored site permissions are removed")
+    public static let settingsSitePermissionsRemovedSiteFormat = NotLocalizedString("settings.site.permissions.removed.site.format", value: "Permissions removed for %@", comment: "Toast after one site's stored permissions are removed; placeholder is the domain")
+    public static let settingsSitePermissionsSiteHeaderFormat = NotLocalizedString("settings.site.permissions.site.header.format", value: "Permissions for %@", comment: "Header for one site's permission settings; placeholder is the domain")
     public static let settingsMediaSection = NSLocalizedString("settings.media.section", value: "Media", comment: "Header for the media section in general settings")
 
     public static let webJSAlertOKButton = NSLocalizedString("webJSAlert.OK.button", value: "OK", comment: "OK button for JavaScript alerts")
@@ -2241,7 +2259,7 @@ public struct UserText {
     public static let aiChatToolbarWebSearchToolSubtitle = NSLocalizedString("aichat.toolbar.tools.websearch.subtitle", value: "Source answers from the web", comment: "Subtitle for the web search tool in the unified input tools menu")
     public static let aiChatToolbarImageGenerationToolTitle = NSLocalizedString("aichat.toolbar.tools.imagegeneration.title", value: "Create Image", comment: "Title for the image generation tool in the unified input tools menu")
     public static let aiChatToolbarImageGenerationToolSubtitle = NSLocalizedString("aichat.toolbar.tools.imagegeneration.subtitle", value: "Turn text into images", comment: "Subtitle for the image generation tool in the unified input tools menu")
-    public static let aiChatToolbarImageGenerationToolUnavailableSubtitle = NotLocalizedString("aichat.toolbar.tools.imagegeneration.unavailable.subtitle", value: "Not available for selected model", comment: "Subtitle for the image generation tool in the unified input tools menu, shown when the chat is already under way on a model that cannot generate images")
+    public static let aiChatToolbarImageGenerationToolUnavailableSubtitle = NSLocalizedString("aichat.toolbar.tools.imagegeneration.unavailable.subtitle", value: "Not available for selected model", comment: "Subtitle for the image generation tool in the unified input tools menu, shown when the chat is already under way on a model that cannot generate images")
     public static let aiChatToolbarReasoningButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.reasoning.button.accessibility.label", value: "Reasoning mode", comment: "Accessibility label for the reasoning mode button in the Duck.ai native input toolbar")
     public static let aiChatReasoningModeFastTitle = NSLocalizedString("aichat.reasoning.fast.title", value: "Fast", comment: "Title for the fast reasoning mode in the Duck.ai reasoning picker")
     public static let aiChatReasoningModeFastSubtitle = NSLocalizedString("aichat.reasoning.fast.subtitle", value: "Answers quickly", comment: "Subtitle for the fast reasoning mode in the Duck.ai reasoning picker")
@@ -2345,9 +2363,9 @@ public struct UserText {
 
     // MARK: - Duck.ai Create Image model switch (unified toggle input footer)
 
-    public static let utiCreateImageModelSwitchTitle = NotLocalizedString("aichat.createImage.modelSwitch.title", value: "Now using %@", comment: "Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna'")
-    public static let utiCreateImageModelSwitchSubtitle = NotLocalizedString("aichat.createImage.modelSwitch.subtitle", value: "%@ doesn't support image creation.", comment: "Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral'")
-    public static let utiCreateImageModelSwitchPrivacyPreservingSubtitle = NotLocalizedString("aichat.createImage.modelSwitch.privacyPreserving.subtitle", value: "%@ can't create images. Its extra privacy protections won't apply until you switch back.", comment: "Subtitle of the Duck.ai input footer card shown when the model that was switched away from is one of the models with extra privacy protections. %@ is that model's short name, such as 'Gemma'")
+    public static let utiCreateImageModelSwitchTitle = NSLocalizedString("aichat.createImage.modelSwitch.title", value: "Now using %@", comment: "Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna'")
+    public static let utiCreateImageModelSwitchSubtitle = NSLocalizedString("aichat.createImage.modelSwitch.subtitle", value: "%@ doesn't support image creation.", comment: "Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral'")
+    public static let utiCreateImageModelSwitchPrivacyPreservingSubtitle = NSLocalizedString("aichat.createImage.modelSwitch.privacyPreserving.subtitle", value: "%@ can't create images. Zero Provider Visibility won't apply until you switch back.", comment: "Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma'")
     public static let aiChatHeaderNewVoiceChatTitle = NSLocalizedString("aichat.header.plusMenu.newVoiceChat", value: "New Voice Chat", comment: "Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu")
     public static let aiChatHeaderNewImageTitle = NSLocalizedString("aichat.header.plusMenu.newImage", value: "New Image", comment: "Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode")
     public static let aiChatHeaderNewTabTitle = NSLocalizedString("aichat.header.plusMenu.newTab", value: "New Tab", comment: "Title for the New Tab row in the Duck.ai tab header Plus (+) menu")

@@ -154,6 +154,12 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1214798984829406
     case subscriptionPromoForExistingUsers
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218291758637477
+    case subscriptionOnboardingFreeTrialsSep2026
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218291758637484
+    case subscriptionOnboardingPaidSubsSep2026
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
 
@@ -301,6 +307,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1213651297612976?focus=true
     case aiChatNativeChatHistory
+
+    /// Kill switch for Recent Chats in the address-bar Duck.ai menu; enabled by default.
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1218242514345528
+    case aiChatAddressBarRecentChats
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216562593480288
     case aiChatHistoryMultiselect
@@ -568,6 +578,18 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
+    /// Cohorts for the `subscriptionOnboardingFreeTrialsSep2026` ABN test.
+    public enum SubscriptionOnboardingFreeTrialsSep2026Cohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    /// Cohorts for the `subscriptionOnboardingPaidSubsSep2026` ABN test.
+    public enum SubscriptionOnboardingPaidSubsSep2026Cohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
     public static var localOverrideStoreName: String = "com.duckduckgo.app.featureFlag.localOverrides"
 
     private struct Config {
@@ -675,6 +697,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionExpirationReminderNotification))
         case .subscriptionPromoForExistingUsers:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForExistingUsers))
+        case .subscriptionOnboardingFreeTrialsSep2026:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingFreeTrialsSep2026), cohortType: SubscriptionOnboardingFreeTrialsSep2026Cohort.self)
+        case .subscriptionOnboardingPaidSubsSep2026:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingPaidSubsSep2026), cohortType: SubscriptionOnboardingPaidSubsSep2026Cohort.self)
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
@@ -775,6 +801,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled))
         case .aiChatNativeChatHistory:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.nativeChatHistory))
+        case .aiChatAddressBarRecentChats:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.addressBarRecentChats))
         case .aiChatHistoryMultiselect:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.historyMultiselect))
         case .aiChatNativeSidebar:

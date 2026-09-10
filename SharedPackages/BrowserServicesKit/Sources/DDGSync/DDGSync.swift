@@ -246,15 +246,22 @@ public class DDGSync: DDGSyncing {
             throw SyncError.accountNotFound
         }
 
+        let wasDeviceInfoMigrationRunning = deviceInfoMigrationTask != nil
         do {
-            return try await dependencies.account.fetchDevicesForAccount(account).devices
+            let result = try await dependencies.account.fetchDevicesForAccount(account)
+            if result.needsCurrentDeviceInfoRepair && !wasDeviceInfoMigrationRunning {
+                scheduleCurrentDeviceInfoRepair(for: account)
+            }
+            return result.devices
         } catch {
             throw handleUnauthenticatedAndMap(error)
         }
     }
 
     public func updateDeviceName(_ name: String) async throws -> [RegisteredDevice] {
-        await cancelDeviceInfoMigrationAndWait()
+        isDeviceRenameInProgress = true
+        defer { isDeviceRenameInProgress = false }
+        await cancelDeviceInfoUpdatesAndWait()
 
         guard let account = try dependencies.secureStore.account() else {
             throw SyncError.accountNotFound
@@ -522,6 +529,10 @@ public class DDGSync: DDGSyncing {
                 deviceInfoMigrationTask?.cancel()
                 deviceInfoMigrationTask = nil
                 deviceInfoMigrationTaskID = nil
+                currentDeviceInfoRepairTask?.cancel()
+                currentDeviceInfoRepairTask = nil
+                currentDeviceInfoRepairTaskID = nil
+                hasAttemptedCurrentDeviceInfoRepair = false
                 try dependencies.secureStore.removeAccount()
                 clearAccountInfoKeyCache(for: storedAccount)
                 deviceInfoMigrationCoordinator.reset()
@@ -721,6 +732,33 @@ public class DDGSync: DDGSyncing {
         }
     }
 
+    private func scheduleCurrentDeviceInfoRepair(for account: SyncAccount) {
+        guard dependencies.syncFeatureFlags.canWriteUnifiedDeviceList(),
+              let currentAccount = try? dependencies.secureStore.account(),
+              currentAccount.userId == account.userId,
+              currentAccount.deviceId == account.deviceId,
+              deviceInfoMigrationTask == nil,
+              currentDeviceInfoRepairTask == nil,
+              !isDeviceRenameInProgress,
+              !hasAttemptedCurrentDeviceInfoRepair else {
+            return
+        }
+        Logger.sync.debug("Sync-UnifiedDevices: scheduling current device_info repair")
+        let deviceInfoMigrationCoordinator = deviceInfoMigrationCoordinator
+        let taskID = UUID()
+        currentDeviceInfoRepairTaskID = taskID
+        // A failed best-effort repair retries on a later app launch, not on every device-list poll.
+        hasAttemptedCurrentDeviceInfoRepair = true
+        let task = Task {
+            await deviceInfoMigrationCoordinator.repairCurrentDeviceInfo(for: currentAccount)
+        }
+        currentDeviceInfoRepairTask = task
+        Task { [weak self] in
+            await task.value
+            self?.clearCompletedCurrentDeviceInfoRepairTask(withID: taskID)
+        }
+    }
+
     private func clearCompletedDeviceInfoMigrationTask(withID taskID: UUID) {
         guard deviceInfoMigrationTaskID == taskID else {
             return
@@ -729,14 +767,26 @@ public class DDGSync: DDGSyncing {
         deviceInfoMigrationTaskID = nil
     }
 
-    private func cancelDeviceInfoMigrationAndWait() async {
-        guard let deviceInfoMigrationTask else {
+    private func clearCompletedCurrentDeviceInfoRepairTask(withID taskID: UUID) {
+        guard currentDeviceInfoRepairTaskID == taskID else {
             return
         }
-        deviceInfoMigrationTask.cancel()
-        await deviceInfoMigrationTask.value
+        currentDeviceInfoRepairTask = nil
+        currentDeviceInfoRepairTaskID = nil
+    }
+
+    private func cancelDeviceInfoUpdatesAndWait() async {
+        let deviceInfoMigrationTask = deviceInfoMigrationTask
+        let currentDeviceInfoRepairTask = currentDeviceInfoRepairTask
+        deviceInfoMigrationTask?.cancel()
+        currentDeviceInfoRepairTask?.cancel()
+        await deviceInfoMigrationTask?.value
+        await currentDeviceInfoRepairTask?.value
         self.deviceInfoMigrationTask = nil
         deviceInfoMigrationTaskID = nil
+        self.currentDeviceInfoRepairTask = nil
+        currentDeviceInfoRepairTaskID = nil
+        hasAttemptedCurrentDeviceInfoRepair = false
     }
 
     private func persistRecoveredThirdPartyScopedPasswordIfAvailable(from accessCredentials: [AccessCredential]?, account: SyncAccount) {
@@ -803,6 +853,10 @@ public class DDGSync: DDGSyncing {
         deviceInfoMigrationTask?.cancel()
         deviceInfoMigrationTask = nil
         deviceInfoMigrationTaskID = nil
+        currentDeviceInfoRepairTask?.cancel()
+        currentDeviceInfoRepairTask = nil
+        currentDeviceInfoRepairTaskID = nil
+        hasAttemptedCurrentDeviceInfoRepair = false
         dependencies.scheduler.isEnabled = false
         startSyncCancellable?.cancel()
         syncQueueCancellable?.cancel()
@@ -870,4 +924,8 @@ public class DDGSync: DDGSyncing {
     private var syncQueueRequestErrorCancellable: AnyCancellable?
     private var deviceInfoMigrationTask: Task<Void, Never>?
     private var deviceInfoMigrationTaskID: UUID?
+    private var currentDeviceInfoRepairTask: Task<Void, Never>?
+    private var currentDeviceInfoRepairTaskID: UUID?
+    private var isDeviceRenameInProgress = false
+    private var hasAttemptedCurrentDeviceInfoRepair = false
 }

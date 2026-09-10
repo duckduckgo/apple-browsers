@@ -46,11 +46,8 @@ public protocol BrowserTool: AnyObject {
     /// MCP hints; omitted for untrusted page tools.
     var annotations: MCPToolAnnotations? { get }
 
-    /// Runs the tool.
-    ///
-    /// Callers go through the invoker so gating and consent run first. A tool still re-checks
-    /// anything it owns — notably the Fire boundary — so calling it directly cannot bypass a
-    /// refusal it is responsible for.
+    /// Runs the tool. Callers go through the invoker so gating runs first, but a tool still
+    /// re-checks the Fire boundary so a direct call cannot bypass it.
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult
 }
 
@@ -58,11 +55,8 @@ public extension BrowserTool {
     var outputSchema: JSONValue? { nil }
     var annotations: MCPToolAnnotations? { nil }
 
-    /// This tool's `tools/list` descriptor.
-    ///
-    /// DEBUG builds also advertise the permission mode and current decision so the debug harness
-    /// can show them; release builds keep the wire MCP-clean.
-    /// - Parameter permissionState: the effective stored decision, when the caller knows it.
+    /// This tool's `tools/list` descriptor. DEBUG builds also advertise the permission mode and
+    /// current decision; release builds keep the wire MCP-clean.
     func descriptor(permissionState: String? = nil) -> BrowserToolDescriptor {
 #if DEBUG
         let permissionDefault: String? = permissionMode.rawValue
@@ -96,6 +90,10 @@ public struct BrowserToolCallContext: Equatable, Sendable {
     /// docked to share one session and one scope.
     public let ownerTabID: String
 
+    /// Opaque handle for the window the chat belongs to, minted by the platform. Tools scope to
+    /// this rather than to `ownerTabID`, which a shared tab can make ambiguous.
+    public let ownerWindowToken: String?
+
     /// True in a Fire window. Every tool refuses with `unavailable` — never a Fire-specific
     /// token, so the front end cannot infer that the user is browsing privately.
     public let isBurner: Bool
@@ -104,8 +102,12 @@ public struct BrowserToolCallContext: Equatable, Sendable {
     /// because there would be no way to obtain consent.
     public let supportsElicitationForm: Bool
 
-    public init(ownerTabID: String, isBurner: Bool, supportsElicitationForm: Bool) {
+    public init(ownerTabID: String,
+                ownerWindowToken: String? = nil,
+                isBurner: Bool,
+                supportsElicitationForm: Bool) {
         self.ownerTabID = ownerTabID
+        self.ownerWindowToken = ownerWindowToken
         self.isBurner = isBurner
         self.supportsElicitationForm = supportsElicitationForm
     }

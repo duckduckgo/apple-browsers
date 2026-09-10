@@ -19,8 +19,7 @@
 import XCTest
 @testable import AIChat
 
-/// The invoker owns every reason a call can be refused. Consent arrives in a later change; these
-/// cover the gates that exist now.
+/// The invoker owns every reason a call can be refused.
 @MainActor
 final class BrowserToolInvokerTests: XCTestCase {
 
@@ -85,6 +84,22 @@ final class BrowserToolInvokerTests: XCTestCase {
         XCTAssertEqual(result, .failure(.invalidArguments))
     }
 
+    /// Tools scope to the window handle rather than to the owner tab id, because a shared pinned
+    /// tab resolves in every window and would let a call act on the wrong one.
+    func testWhenCallIsInvokedThenTheToolReceivesTheOwnerWindowHandle() async {
+        let tool = SpyBrowserTool(name: "alpha")
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+        let context = BrowserToolCallContext(ownerTabID: "owner-tab",
+                                             ownerWindowToken: "window-1",
+                                             isBurner: false,
+                                             supportsElicitationForm: true)
+
+        _ = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context)
+
+        XCTAssertEqual(tool.receivedContext?.ownerWindowToken, "window-1")
+        XCTAssertEqual(tool.receivedContext?.ownerTabID, "owner-tab")
+    }
+
     func testWhenCallSucceedsThenItMapsOntoTheMCPEnvelopeWithoutError() {
         let result = BrowserToolResult.success(["ok": true]).callToolResult
 
@@ -111,7 +126,10 @@ final class BrowserToolInvokerTests: XCTestCase {
     }
 
     private func context(isBurner: Bool = false) -> BrowserToolCallContext {
-        BrowserToolCallContext(ownerTabID: "owner-tab", isBurner: isBurner, supportsElicitationForm: true)
+        BrowserToolCallContext(ownerTabID: "owner-tab",
+                               ownerWindowToken: "window-1",
+                               isBurner: isBurner,
+                               supportsElicitationForm: true)
     }
 }
 
@@ -140,6 +158,7 @@ private final class SpyBrowserTool: BrowserTool {
 
     private(set) var didExecute = false
     private(set) var receivedArguments: JSONValue?
+    private(set) var receivedContext: BrowserToolCallContext?
     private let result: BrowserToolResult
 
     init(name: String, result: BrowserToolResult = .success([:])) {
@@ -150,6 +169,7 @@ private final class SpyBrowserTool: BrowserTool {
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         didExecute = true
         receivedArguments = arguments
+        receivedContext = context
         return result
     }
 }

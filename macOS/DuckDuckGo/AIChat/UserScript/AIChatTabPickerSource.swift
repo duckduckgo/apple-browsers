@@ -54,28 +54,22 @@ enum AIChatTabPickerSource {
         }
     }
 
-    /// The tab collection that owns `tabID`, or nil when no open window holds it.
-    static func tabCollectionViewModel(containingTabWithID tabID: TabIdentifier,
+    /// An opaque handle for the window a call is scoped to.
+    ///
+    /// A tab id is not enough: pinned tabs are shared, so the same id appears in every window and
+    /// "the window holding this tab" is ambiguous. The origin collection is resolved once from the
+    /// sending web view, then carried through the call as this token.
+    static func windowToken(forCollection collection: TabCollectionViewModel) -> String {
+        String(UInt(bitPattern: ObjectIdentifier(collection).hashValue))
+    }
+
+    static func tabCollectionViewModel(forWindowToken token: String,
                                        in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
-        windowControllersManager.allTabCollectionViewModels
-            .first { $0.indexInAllTabs(where: { $0.uuid == tabID }) != nil }
+        windowControllersManager.allTabCollectionViewModels.first { windowToken(forCollection: $0) == token }
     }
 
-    /// True when the owner tab lives in a Fire Window. Browser tools refuse there entirely.
-    ///
-    /// A tab we cannot place is treated as non-burner, matching Windows: the tool it belongs to
-    /// will fail its own lookup a moment later anyway, and assuming burner would break ordinary
-    /// calls whenever a tab is briefly unresolvable.
-    static func isBurner(ownerTabID: TabIdentifier,
-                         in windowControllersManager: WindowControllersManagerProtocol) -> Bool {
-        tabCollectionViewModel(containingTabWithID: ownerTabID, in: windowControllersManager)?.isBurner ?? false
-    }
-
-    /// The Duck.ai owner tab for `webView`.
-    ///
-    /// A sidebar or detached Duck.ai window belongs to the tab it was opened from; a Duck.ai
-    /// loaded as an ordinary tab owns itself. Browser-tool sessions and scoping are keyed on this,
-    /// so a sidebar and its host tab share one session.
+    /// The Duck.ai owner tab for `webView` — the host tab for a sidebar or detached window, the
+    /// chat's own tab otherwise. Sessions are keyed on it, so a sidebar and its host tab share one.
     static func ownerTabID(for webView: WKWebView?,
                            in windowControllersManager: WindowControllersManagerProtocol) -> TabIdentifier? {
         guard let webView else { return nil }

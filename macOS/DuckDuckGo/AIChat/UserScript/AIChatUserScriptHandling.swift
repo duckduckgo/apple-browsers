@@ -1218,8 +1218,8 @@ extension AIChatUserScriptHandler {
 
     /// MCP `tools/list`.
     ///
-    /// A listing failure is reported as a top-level `error` token, unlike `tools/call`, which
-    /// carries failures inside the MCP result envelope.
+    /// A listing failure is a top-level `error` token, unlike `tools/call`, which carries failures
+    /// inside the MCP result envelope.
     @MainActor
     func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable? {
         guard let ownerTabID = ownerTabID(for: message),
@@ -1227,6 +1227,13 @@ extension AIChatUserScriptHandler {
               session.isInitialized else {
             return BrowserToolsListResponse(failure: .notInitialized)
         }
+
+        // A Fire window advertises nothing, exactly as a disabled feature does. Listing the tools
+        // and then refusing every call would be a pair no other state produces, telling the front
+        // end it is in a Fire window.
+        let isBurner = AIChatTabPickerSource.originTabCollectionViewModel(for: message.messageWebView,
+                                                                          in: windowControllersManager)?.isBurner ?? true
+        guard !isBurner else { return BrowserToolsListResponse(tools: []) }
 
         return BrowserToolsListResponse(tools: browserTools.catalog.enabledTools.map { $0.descriptor() })
     }
@@ -1250,9 +1257,12 @@ extension AIChatUserScriptHandler {
             return InvokeBrowserToolResponse(callId: request.callId, result: .failure(.notInitialized))
         }
 
+        let originCollection = AIChatTabPickerSource.originTabCollectionViewModel(for: message.messageWebView,
+                                                                                  in: windowControllersManager)
         let context = BrowserToolCallContext(
             ownerTabID: ownerTabID,
-            isBurner: AIChatTabPickerSource.isBurner(ownerTabID: ownerTabID, in: windowControllersManager),
+            ownerWindowToken: originCollection.map(AIChatTabPickerSource.windowToken(forCollection:)),
+            isBurner: originCollection?.isBurner ?? true,
             supportsElicitationForm: session.supportsElicitationForm
         )
 

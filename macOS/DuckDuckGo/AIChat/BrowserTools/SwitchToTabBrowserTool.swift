@@ -69,18 +69,18 @@ final class SwitchToTabBrowserTool: BrowserTool {
             return .failure(.invalidArguments)
         }
 
-        // Scoped to the window the chat lives in, mirroring the tool's own description. A tab in
-        // another window is reported as missing rather than switched to, so a chat cannot move the
-        // user's attention to a window they were not working in.
-        guard let ownerCollection = AIChatTabPickerSource.tabCollectionViewModel(containingTabWithID: context.ownerTabID,
-                                                                                in: windowControllersManager),
-              ownerCollection.indexInAllTabs(where: { $0.uuid == targetTabID }) != nil else {
+        // Scoped to the window the chat lives in: a tab elsewhere is reported missing rather than
+        // switched to, so a chat cannot pull the user to a window they were not working in.
+        // Selection happens inside that collection rather than by id, because a shared pinned tab
+        // resolves in every window and would otherwise raise the wrong one.
+        guard let token = context.ownerWindowToken,
+              let collection = AIChatTabPickerSource.tabCollectionViewModel(forWindowToken: token,
+                                                                           in: windowControllersManager),
+              let index = collection.indexInAllTabs(where: { $0.uuid == targetTabID }),
+              let tab = collection.selectTab(at: index) else {
             return .failure(.notFound)
         }
-
-        guard let tab = windowControllersManager.focusTab(byUUID: targetTabID) else {
-            return .failure(.notFound)
-        }
+        windowControllersManager.windowController(for: collection)?.window?.makeKeyAndOrderFront(nil)
 
         return .success([
             "tabId": .string(targetTabID),

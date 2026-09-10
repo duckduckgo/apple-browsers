@@ -145,6 +145,29 @@ final class URLParameterTests: XCTestCase {
         XCTAssertFalse(linkCleaner.urlParametersRemoved)
     }
 
+    func testWhenParameterNameReachesLengthLimitThenOnlyExactMatchesAreRemoved() throws {
+        let config = MockPrivacyConfiguration()
+        config.featureSettings = ["parameters": ["track"]]
+        let linkCleaner = LinkCleaner(privacyManager: MockPrivacyConfigurationManager(privacyConfig: config))
+        let testCases = [
+            (query: "track=value&safe=1", expected: "safe=1", removed: true),
+            (query: "track&safe=1", expected: "safe=1", removed: true),
+            (query: "tracks=value&safe=1", expected: "tracks=value&safe=1", removed: false),
+            (query: "tracks&safe=1", expected: "tracks&safe=1", removed: false),
+            (query: "safe&track=value", expected: "safe", removed: true),
+            (query: "&track=&", expected: "&", removed: true)
+        ]
+
+        for testCase in testCases {
+            let url = try XCTUnwrap(URL(string: "https://example.com/?\(testCase.query)"))
+
+            let result = linkCleaner.cleanTrackingParameters(initiator: nil, url: url)
+
+            XCTAssertEqual(result?.absoluteString, "https://example.com/?\(testCase.expected)")
+            XCTAssertEqual(linkCleaner.urlParametersRemoved, testCase.removed)
+        }
+    }
+
     func testURLParamStrippingSupportsLargeTrackingParameterValue() throws {
         let largeValue = String(repeating: "a", count: 1_000_000)
         let url = try XCTUnwrap(URL(string: "https://example.com/?safe=1&utm_source=\(largeValue)#fragment"))
@@ -176,6 +199,31 @@ final class URLParameterTests: XCTestCase {
 
         XCTAssertEqual(result?.absoluteString, "https://example.com/?\(largeName)#fragment")
         XCTAssertTrue(linkCleaner.urlParametersRemoved)
+    }
+
+    func testWhenURLIsBridgedFromNSURLThenLargeQueryItemsAreCleaned() throws {
+        let config = MockPrivacyConfiguration()
+        config.featureSettings = ["parameters": ["track"]]
+        let linkCleaner = LinkCleaner(privacyManager: MockPrivacyConfigurationManager(privacyConfig: config))
+        let largeItem = String(repeating: "a", count: 1_000_000)
+        let testCases = [
+            (query: "\(largeItem)&track=x", expected: largeItem, removed: true),
+            (query: "\(largeItem)=x&track=x", expected: "\(largeItem)=x", removed: true),
+            (query: "track=\(largeItem)&safe=1", expected: "safe=1", removed: true),
+            (query: largeItem, expected: largeItem, removed: false)
+        ]
+
+        for testCase in testCases {
+            let input = "https://example.com/?\(testCase.query)#fragment"
+            // WebKit URLs can retain Cocoa string storage, unlike URLs built from native Swift strings.
+            let string = try input.withCString { try XCTUnwrap(NSString(utf8String: $0)) }
+            let url = try XCTUnwrap(NSURL(string: string as String)) as URL
+
+            let result = linkCleaner.cleanTrackingParameters(initiator: nil, url: url)
+
+            XCTAssertEqual(result?.absoluteString, "https://example.com/?\(testCase.expected)#fragment")
+            XCTAssertEqual(linkCleaner.urlParametersRemoved, testCase.removed)
+        }
     }
 
     func testURLParamStrippingPreservesRelativeURLAndBaseURL() throws {

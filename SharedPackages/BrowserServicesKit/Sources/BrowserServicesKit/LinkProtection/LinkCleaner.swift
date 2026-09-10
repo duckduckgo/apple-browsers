@@ -128,46 +128,40 @@ private struct PercentEncodedQueryFilter {
     }
 
     func filter(url: URL) -> URL? {
-        let source = url.relativeString
-        let bytes = source.utf8
+        var source = url.relativeString
+        // Acquire Cocoa-backed UTF-8 storage once instead of looking up its pointer for every byte.
+        return source.withUTF8 { bytes in
+            let fragmentStart = bytes.firstIndex(of: ASCII.numberSign) ?? bytes.endIndex
+            guard let questionMark = bytes[..<fragmentStart].firstIndex(of: ASCII.questionMark) else {
+                return nil
+            }
 
-        let fragmentStart = bytes.firstIndex(of: ASCII.numberSign) ?? bytes.endIndex
-        guard let questionMark = bytes[..<fragmentStart].firstIndex(of: ASCII.questionMark) else {
-            return nil
+            let queryRange = (questionMark + 1)..<fragmentStart
+            guard !queryRange.isEmpty,
+                  let inspection = inspectQuery(in: bytes, range: queryRange) else { return nil }
+
+            let cleanedURLString = rebuildURLString(bytes: bytes, queryRange: queryRange, inspection: inspection)
+            if cleanedURLString.isEmpty {
+                return URLComponents().url(relativeTo: url.baseURL)
+            }
+            return URL(string: cleanedURLString, relativeTo: url.baseURL)
         }
-
-        let queryStart = bytes.index(after: questionMark)
-        let queryRange = queryStart..<fragmentStart
-        guard !queryRange.isEmpty,
-              let inspection = inspectQuery(in: source, bytes: bytes, range: queryRange) else { return nil }
-
-        let cleanedURLString = rebuildURLString(
-            source,
-            bytes: bytes,
-            queryRange: queryRange,
-            inspection: inspection
-        )
-        if cleanedURLString.isEmpty {
-            return URLComponents().url(relativeTo: url.baseURL)
-        }
-        return URL(string: cleanedURLString, relativeTo: url.baseURL)
     }
 
     private func inspectQuery(
-        in source: String,
-        bytes: String.UTF8View,
-        range: Range<String.Index>
+        in bytes: UnsafeBufferPointer<UInt8>,
+        range: Range<Int>
     ) -> QueryInspection? {
         var didRemoveParameters = false
         var preservedItemCount = 0
         var preservedItemByteCount = 0
 
         forEachQueryItem(in: bytes, range: range) { itemRange in
-            if isTrackingParameter(in: source, bytes: bytes, itemRange: itemRange) {
+            if isTrackingParameter(in: bytes, itemRange: itemRange) {
                 didRemoveParameters = true
             } else {
                 preservedItemCount += 1
-                preservedItemByteCount += bytes.distance(from: itemRange.lowerBound, to: itemRange.upperBound)
+                preservedItemByteCount += itemRange.count
             }
         }
 
@@ -179,76 +173,76 @@ private struct PercentEncodedQueryFilter {
     }
 
     private func rebuildURLString(
-        _ source: String,
-        bytes: String.UTF8View,
-        queryRange: Range<String.Index>,
+        bytes: UnsafeBufferPointer<UInt8>,
+        queryRange: Range<Int>,
         inspection: QueryInspection
     ) -> String {
-        let questionMark = bytes.index(before: queryRange.lowerBound)
+        let questionMark = queryRange.lowerBound - 1
         let fragmentStart = queryRange.upperBound
-        let prefixByteCount = bytes.distance(from: bytes.startIndex, to: questionMark)
-        let fragmentByteCount = bytes.distance(from: fragmentStart, to: bytes.endIndex)
+        let fragmentByteCount = bytes.count - fragmentStart
         let separatorByteCount = max(inspection.preservedItemCount - 1, 0)
         let queryByteCount = inspection.preservedItemCount > 0
             ? 1 + inspection.preservedItemByteCount + separatorByteCount
             : 0
+        let capacity = questionMark + queryByteCount + fragmentByteCount
 
-        var result = String()
-        result.reserveCapacity(prefixByteCount + queryByteCount + fragmentByteCount)
-        result.append(contentsOf: source[..<questionMark])
+        // Copy directly into the final string so large surviving items need no temporary strings.
+        return String(unsafeUninitializedCapacity: capacity) { output in
+            var written = 0
 
-        if inspection.preservedItemCount > 0 {
-            result.append("?")
-            var didAppendItem = false
-
-            forEachQueryItem(in: bytes, range: queryRange) { itemRange in
-                guard !isTrackingParameter(in: source, bytes: bytes, itemRange: itemRange) else {
-                    return
-                }
-
-                if didAppendItem {
-                    result.append("&")
-                }
-                result.append(contentsOf: source[itemRange])
-                didAppendItem = true
+            func append(_ range: Range<Int>) {
+                written = output[written...].initialize(fromContentsOf: bytes[range])
             }
-        }
 
-        result.append(contentsOf: source[fragmentStart...])
-        return result
+            append(bytes.startIndex..<questionMark)
+
+            if inspection.preservedItemCount > 0 {
+                output[written] = ASCII.questionMark
+                written += 1
+                var didAppendItem = false
+
+                forEachQueryItem(in: bytes, range: queryRange) { itemRange in
+                    guard !isTrackingParameter(in: bytes, itemRange: itemRange) else {
+                        return
+                    }
+
+                    if didAppendItem {
+                        output[written] = ASCII.ampersand
+                        written += 1
+                    }
+                    append(itemRange)
+                    didAppendItem = true
+                }
+            }
+
+            append(fragmentStart..<bytes.endIndex)
+            return written
+        }
     }
 
     private func forEachQueryItem(
-        in bytes: String.UTF8View,
-        range: Range<String.Index>,
-        perform action: (Range<String.Index>) -> Void
+        in bytes: UnsafeBufferPointer<UInt8>,
+        range: Range<Int>,
+        perform action: (Range<Int>) -> Void
     ) {
         var itemStart = range.lowerBound
-        var index = range.lowerBound
-
-        while index != range.upperBound {
-            if bytes[index] == ASCII.ampersand {
-                action(itemStart..<index)
-                itemStart = bytes.index(after: index)
-            }
-            index = bytes.index(after: index)
+        for index in range where bytes[index] == ASCII.ampersand {
+            action(itemStart..<index)
+            itemStart = index + 1
         }
-
         action(itemStart..<range.upperBound)
     }
 
     private func isTrackingParameter(
-        in source: String,
-        bytes: String.UTF8View,
-        itemRange: Range<String.Index>
+        in bytes: UnsafeBufferPointer<UInt8>,
+        itemRange: Range<Int>
     ) -> Bool {
-        let nameEnd = bytes[itemRange].firstIndex(of: ASCII.equalsSign) ?? itemRange.upperBound
-        // A name longer than every configured name can't match, and rejecting it here keeps the
-        // temporary String bounded by configuration rather than by page-controlled input.
-        let nameBytes = bytes[itemRange.lowerBound..<nameEnd]
-        guard nameBytes.dropFirst(maximumParameterNameByteCount).isEmpty else {
+        // Include the byte after the longest possible name so '=' at that boundary still matches.
+        // Searching the whole item first can rescan megabytes of a name that cannot match.
+        let nameEnd = bytes[itemRange].prefix(maximumParameterNameByteCount + 1).firstIndex(of: ASCII.equalsSign) ?? itemRange.upperBound
+        guard nameEnd - itemRange.lowerBound <= maximumParameterNameByteCount else {
             return false
         }
-        return parameterNames.contains(String(source[itemRange.lowerBound..<nameEnd]))
+        return parameterNames.contains(String(decoding: bytes[itemRange.lowerBound..<nameEnd], as: UTF8.self))
     }
 }

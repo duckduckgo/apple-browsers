@@ -46,7 +46,7 @@ final class PromoServiceTests: XCTestCase {
     private func makeService(
         promos: [Promo],
         initialExternalActivation: Bool = false,
-        isOnboardingCompletedProvider: @escaping () -> Bool = { true },
+        canPresentPromo: @escaping (Bool) async -> Bool = { _ in true },
         evaluationDeferralWindow: TimeInterval = 0,
         registrationFallbackTimeout: TimeInterval = 0,
         externalActivationWindow: TimeInterval = 0,
@@ -57,13 +57,54 @@ final class PromoServiceTests: XCTestCase {
             historyStore: historyStore,
             triggerPublisher: triggerSubject.eraseToAnyPublisher(),
             initialExternalActivation: initialExternalActivation,
-            isOnboardingCompletedProvider: isOnboardingCompletedProvider,
+            canPresentPromo: canPresentPromo,
             stateQueue: testQueue,
             evaluationDeferralWindow: evaluationDeferralWindow,
             registrationFallbackTimeout: registrationFallbackTimeout,
             externalActivationWindow: externalActivationWindow,
             dateProvider: dateProvider
         )
+    }
+
+    @MainActor
+    func testPresentationDeniedLeavesHistoryUntouchedAndLaterTriggerCanShow() async {
+        for restoring in [false, true] {
+            let id = restoring ? "denied-restoration" : "denied-trigger"
+            var record = PromoHistoryRecord(id: id)
+            record.lastShown = restoring ? Date() : nil
+            historyStore.save(record)
+            let initialSaveCount = historyStore.saveCallCount
+            let delegate = MockPromoDelegate()
+            delegate.setShowResult(.actioned)
+            var allowed = false
+            let denied = expectation(description: "presentation checked on main actor")
+            denied.assertForOverFulfill = false
+            let completed = expectation(description: "later trigger completes promo")
+            let service = makeService(promos: [PromoTestHelpers.makePromo(id: id, delegate: delegate)], canPresentPromo: { _ in
+                await MainActor.run {
+                    if !allowed { denied.fulfill() }
+                    return allowed
+                }
+            })
+            service.historyPublisher(for: id)
+                .compactMap { $0 }
+                .filter { $0.actioned }
+                .sink { _ in completed.fulfill() }
+                .store(in: &cancellables)
+
+            service.applicationDidBecomeActive()
+            if !restoring { triggerSubject.send(.appLaunched) }
+            await fulfillment(of: [denied], timeout: timeout)
+            XCTAssertEqual(delegate.showCallCount, 0)
+            XCTAssertEqual(historyStore.saveCallCount, initialSaveCount)
+            XCTAssertEqual(historyStore.record(for: id).lastShown, record.lastShown)
+
+            allowed = true
+            triggerSubject.send(.appLaunched)
+            triggerSubject.send(.appLaunched)
+            await fulfillment(of: [completed], timeout: timeout)
+            XCTAssertEqual(delegate.showCallCount, 1)
+        }
     }
 
     // MARK: - Rule evaluation
@@ -221,7 +262,7 @@ final class PromoServiceTests: XCTestCase {
         let promo = PromoTestHelpers.makePromo(id: "onboarding-gated-internal", delegate: delegate)
         let promoService = makeService(
             promos: [promo],
-            isOnboardingCompletedProvider: { isOnboardingCompleted }
+            canPresentPromo: { isRestoring in isRestoring || isOnboardingCompleted }
         )
 
         let shownExpectation = XCTestExpectation(description: "promo hidden after onboarding completes")
@@ -269,7 +310,7 @@ final class PromoServiceTests: XCTestCase {
         let promo = PromoTestHelpers.makePromo(id: "onboarding-gated-external", delegate: externalDelegate)
         let promoService = makeService(
             promos: [promo],
-            isOnboardingCompletedProvider: { false }
+            canPresentPromo: { _ in false }
         )
 
         let shownExpectation = XCTestExpectation(description: "external promo visible while onboarding incomplete")

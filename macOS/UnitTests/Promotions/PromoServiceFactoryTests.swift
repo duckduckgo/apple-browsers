@@ -17,7 +17,8 @@
 //
 
 @_spi(Testing) import Persistence
-import PrivacyConfig
+import FeatureFlags_macOS
+@testable import PrivacyConfig
 import PrivacyConfigTestsUtils
 import RemoteMessagingTestsUtils
 import XCTest
@@ -36,6 +37,29 @@ final class PromoServiceFactoryTests: XCTestCase {
     override func tearDown() {
         dependencies = nil
         super.tearDown()
+    }
+
+    @MainActor
+    func testOnboardingPresentationEligibility() throws {
+        let cohorts: [FeatureFlag.OnboardingNonBlockingCohort?] = [nil, .control, .treatment]
+        let tabs: [Tab?] = [nil, Tab(content: .onboarding), Tab(content: .newtab),
+                            Tab(content: .url(URL(string: "https://example.com")!, source: .ui))]
+        for completed in [false, true] {
+            let dependencies = makeDependencies(isOnboardingCompleted: completed)
+            let flags = try XCTUnwrap(dependencies.featureFlagger as? MockFeatureFlagger)
+            let windows = try XCTUnwrap(dependencies.windowControllersManager as? WindowControllersManagerMock)
+            for cohort in cohorts {
+                flags.resolveCohortStub = cohort
+                for (index, tab) in tabs.enumerated() {
+                    windows.selectedTabOverride = tab
+                    for restoring in [false, true] {
+                        let expected = cohort == .treatment ? index != 1 : completed || restoring
+                        XCTAssertEqual(PromoServiceFactory.canPresentPromo(isRestoring: restoring, dependencies: dependencies), expected,
+                                       "cohort=\(String(describing: cohort)), completed=\(completed), tab=\(index), restoring=\(restoring)")
+                    }
+                }
+            }
+        }
     }
 
     func testFactoryCreatesRMFPromosWithCorrectConfiguration() async {
@@ -150,7 +174,7 @@ final class PromoServiceFactoryTests: XCTestCase {
 
 extension PromoServiceFactoryTests {
     @MainActor
-    private func makeDependencies() -> PromoDependencies {
+    private func makeDependencies(isOnboardingCompleted: Bool = true) -> PromoDependencies {
         let activeRemoteMessageModel = ActiveRemoteMessageModel(
             remoteMessagingStore: MockRemoteMessagingStore(),
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
@@ -172,7 +196,7 @@ extension PromoServiceFactoryTests {
             keyValueStore: InMemoryThrowingKeyValueStore(),
             isExternallyActivated: false,
             isNewUserProvider: { false },
-            isOnboardingCompletedProvider: { true },
+            isOnboardingCompletedProvider: { isOnboardingCompleted },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
             sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),

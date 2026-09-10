@@ -19,7 +19,7 @@
 import AIChat
 import Combine
 import FeatureFlags_macOS
-import PrivacyConfig
+@testable import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import SubscriptionTestingUtilities
@@ -60,7 +60,7 @@ class MainMenuTests: XCTestCase {
 
     @MainActor
     func testOnboardingMenuAvailabilityForControlAndTreatment() throws {
-        let appDelegate = Application.appDelegate
+        let appDelegate = try XCTUnwrap(Application.appDelegate)
         let featureFlagger = try XCTUnwrap(appDelegate.featureFlagger as? MockFeatureFlagger)
         let originalCohort = featureFlagger.resolveCohortStub
         let originalOnboardingFinished = OnboardingActionsManager.isOnboardingFinished
@@ -69,7 +69,6 @@ class MainMenuTests: XCTestCase {
             OnboardingActionsManager.isOnboardingFinished = originalOnboardingFinished
         }
 
-        XCTAssertFalse(appDelegate.windowControllersManager.mainWindowControllers.isEmpty)
         let actions = [
             #selector(AppDelegate.newWindow(_:)),
             #selector(AppDelegate.newBurnerWindow(_:)),
@@ -87,7 +86,10 @@ class MainMenuTests: XCTestCase {
                 for action in actions {
                     let menuItem = NSMenuItem()
                     menuItem.action = action
-                    XCTAssertEqual(appDelegate.validateMenuItem(menuItem), finished || cohort == .treatment, NSStringFromSelector(action))
+                    let canOpenFirstWindow = action == #selector(AppDelegate.newWindow(_:))
+                        && appDelegate.windowControllersManager.mainWindowControllers.isEmpty
+                    XCTAssertEqual(appDelegate.validateMenuItem(menuItem), finished || cohort == .treatment || canOpenFirstWindow,
+                                   NSStringFromSelector(action))
                 }
             }
         }

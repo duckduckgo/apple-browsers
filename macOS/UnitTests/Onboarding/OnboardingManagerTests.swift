@@ -23,7 +23,7 @@ import Onboarding
 @_spi(Testing) import Persistence
 import PixelExperimentKit
 import PixelKit
-import PrivacyConfig
+@testable import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import SwiftUI

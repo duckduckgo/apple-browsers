@@ -49,11 +49,21 @@ struct PromoServiceFactory {
             historyStore: historyStore,
             triggerPublisher: PromoTrigger.triggerPublisher,
             initialExternalActivation: dependencies.isExternallyActivated,
-            isOnboardingCompletedProvider: dependencies.isOnboardingCompletedProvider,
+            canPresentPromo: { isRestoring in
+                await canPresentPromo(isRestoring: isRestoring, dependencies: dependencies)
+            },
             stateQueue: stateQueue,
             dateProvider: dateProvider,
             resetDebugDate: resetDebugDate
         )
+    }
+
+    @MainActor
+    static func canPresentPromo(isRestoring: Bool, dependencies: PromoDependencies) -> Bool {
+        if OnboardingNonBlockingExperiment(featureFlagger: dependencies.featureFlagger).isNonBlocking {
+            return dependencies.windowControllersManager.selectedTab?.content != .onboarding
+        }
+        return isRestoring || dependencies.isOnboardingCompletedProvider()
     }
 
     @MainActor

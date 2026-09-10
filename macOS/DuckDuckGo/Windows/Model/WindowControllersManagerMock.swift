@@ -49,7 +49,9 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
         }
     }
     var selectedWindowIndex: Int
+    var selectedTabOverride: Tab?
     var selectedTab: Tab? {
+        if let selectedTabOverride { return selectedTabOverride }
         // Matches the real WindowControllersManager: no window means nil, not a crash.
         guard allTabCollectionViewModels.indices.contains(selectedWindowIndex) else { return nil }
         return allTabCollectionViewModels[selectedWindowIndex].selectedTab

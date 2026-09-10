@@ -39,6 +39,8 @@ extension Pixel {
     
     public enum Event {
 
+        case newPixelTest
+
         case appInstall
         case appLaunch
         /// Fires when the app launches as a result of tapping an http/https link outside the DDG browser.
@@ -2107,6 +2109,7 @@ extension Pixel.Event {
 
     public var name: String {
         switch self {
+        case .newPixelTest: return "m_new_pixel_test"
         case .appInstall: return "m_install"
         case .appLaunch: return "ml"
         case .appLaunchFromExternalLink: return "m_app-launch_tapped-external-link"

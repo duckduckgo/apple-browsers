@@ -187,6 +187,8 @@ public class StatisticsLoader {
                 Logger.general.error("Install pixel failed with error: \(error.localizedDescription, privacy: .public)")
             }
         })
+
+        PixelKit.fire(event: Pixel.Event.newPixelTest, frequency: .standard)
     }
 
     public func refreshSearchRetentionAtb(completion: @escaping Completion = {}) {

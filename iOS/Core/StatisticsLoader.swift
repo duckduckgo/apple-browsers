@@ -188,7 +188,7 @@ public class StatisticsLoader {
             }
         })
 
-        PixelKit.fire(event: Pixel.Event.newPixelTest, frequency: .standard)
+        PixelKit.fire(Pixel.Event.newPixelTest, frequency: .standard)
     }
 
     public func refreshSearchRetentionAtb(completion: @escaping Completion = {}) {

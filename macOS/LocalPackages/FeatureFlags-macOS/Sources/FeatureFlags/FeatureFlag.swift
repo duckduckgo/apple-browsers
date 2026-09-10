@@ -510,7 +510,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218374779115683?focus=true
     case syncCanUseExchangeV2Point1
 
-    /// TODO: Add feature flag Asana link.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218374779115690?focus=true
     case syncCanSendExchangeChannelSecret
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064249?focus=true

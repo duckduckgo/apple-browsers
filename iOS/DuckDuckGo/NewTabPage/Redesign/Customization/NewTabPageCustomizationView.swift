@@ -31,7 +31,7 @@ struct NewTabPageCustomizationView: View {
         static let rowHeight: CGFloat = 52
         static let rowSpacing: CGFloat = 12
         static let headerHeight: CGFloat = 68
-        static let closeButtonSize: CGFloat = 40
+        static let closeButtonIconPadding: CGFloat = 4
     }
 
     @ObservedObject var model: NewTabPageCustomizationModel
@@ -63,10 +63,14 @@ struct NewTabPageCustomizationView: View {
 
             HStack {
                 Spacer()
-                CircularCloseButton(action: onClose)
-                    .frame(width: Metrics.closeButtonSize, height: Metrics.closeButtonSize)
+                Button(action: onClose) {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                        .padding(Metrics.closeButtonIconPadding)
+                }
+                .buttonStyle(CloseButtonStyle())
+                .accessibilityLabel(UserText.keyCommandClose)
             }
-            .padding(.horizontal, Metrics.contentInset)
+            .padding(.horizontal, Metrics.contentInset - CloseButtonStyle.Constant.padding)
         }
         .frame(height: Metrics.headerHeight)
     }
@@ -145,44 +149,6 @@ struct NewTabPageCustomizationView: View {
             RoundedRectangle(cornerRadius: Metrics.groupCornerRadius)
                 .fill(Color(designSystemColor: .surface))
         )
-    }
-}
-
-/// The sheet's close control, drawn with the same button the page uses to open the sheet.
-private struct CircularCloseButton: UIViewRepresentable {
-
-    let action: () -> Void
-
-    func makeUIView(context: Context) -> CircularButton {
-        let button = CircularButton()
-        button.isShadowHidden = true
-        button.setImage(DesignSystemImages.Glyphs.Size24.close, for: .normal)
-        button.setColors(foreground: UIColor(designSystemColor: .icons),
-                         background: UIColor(designSystemColor: .controlsFillPrimary))
-        button.accessibilityLabel = UserText.keyCommandClose
-        button.addTarget(context.coordinator, action: #selector(Coordinator.buttonTapped), for: .touchUpInside)
-        return button
-    }
-
-    func updateUIView(_ uiView: CircularButton, context: Context) {
-        context.coordinator.action = action
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(action: action)
-    }
-
-    final class Coordinator {
-
-        var action: () -> Void
-
-        init(action: @escaping () -> Void) {
-            self.action = action
-        }
-
-        @objc func buttonTapped() {
-            action()
-        }
     }
 }
 

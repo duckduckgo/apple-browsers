@@ -468,7 +468,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
             in: frame,
             webView: sut.webView
         )
-        XCTAssertEqual(bridgeDecision, .allow(permissionTypes: [.camera]), file: file, line: line)
+        XCTAssertEqual(bridgeDecision, .allow, file: file, line: line)
 
         sut.webView(sut.webView,
                     requestMediaCapturePermissionFor: origin,

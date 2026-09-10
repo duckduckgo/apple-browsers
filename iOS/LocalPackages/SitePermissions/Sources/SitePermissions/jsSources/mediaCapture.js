@@ -188,11 +188,7 @@
         }
 
         return callThen(bridgePromise, reply => {
-            if (reply?.decision === "bypass") {
-                return apply(nativeGetUserMedia, this, [capturedConstraints]);
-            }
-            if (reply?.decision === "allow" && reply.video === video && reply.audio === audio) {
-                // A successful getUserMedia call must include every requested media type.
+            if (reply && (reply.decision === "allow" || reply.decision === "bypass")) {
                 return apply(nativeGetUserMedia, this, [capturedConstraints]);
             }
             throw permissionDenied();

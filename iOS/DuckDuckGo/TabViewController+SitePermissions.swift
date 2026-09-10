@@ -26,7 +26,6 @@ import Core
 import FeatureFlags_iOS
 import Foundation
 import MetricBuilder
-import os.log
 import PrivacyConfig
 import SitePermissions
 import SwiftUI
@@ -465,13 +464,6 @@ extension TabViewController {
                  initiatedByFrame frame: WKFrameInfo,
                  type: WKMediaCaptureType,
                  decisionHandler: @escaping (WKPermissionDecision) -> Void) {
-#if DEBUG
-        let decisionHandler: (WKPermissionDecision) -> Void = { decision in
-            let result = decision == .grant ? "grant" : decision == .deny ? "deny" : "prompt"
-            Logger.general.debug("SitePermissionsMedia: WebKit type=\(type.rawValue) decision=\(result, privacy: .public)")
-            decisionHandler(decision)
-        }
-#endif
         if origin.host.isDuckAIHost {
             guard type == .microphone || type == .cameraAndMicrophone else {
                 decisionHandler(.prompt)
@@ -1303,13 +1295,6 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
                                 requestID: String,
                                 in frame: WKFrameInfo,
                                 webView: WKWebView) async -> MediaCaptureBridgeDecision {
-#if DEBUG
-        Logger.general.debug("""
-            SitePermissionsMedia: bridge request=\(requestID, privacy: .public) \
-            types=\(permissionTypes.map(\.rawValue).sorted(), privacy: .public) \
-            enabled=\(self.isMediaCapturePermissionHandlingEnabled) mainFrame=\(frame.isMainFrame)
-            """)
-#endif
         guard featureFlagger.isFeatureOn(.sitePermissions) else {
             sitePermissionsState.discardPreapprovals()
             return .bypass
@@ -1332,11 +1317,10 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
               let topLevelSite = currentSitePermissionKey(),
               let dependencies = sitePermissionsDependenciesProvider(),
               let coordinator = makeSitePermissionsCoordinatorIfNeeded(dependencies: dependencies) else {
-#if DEBUG
-            Logger.general.debug("SitePermissionsMedia: preflight rejected request=\(requestID, privacy: .public)")
-#endif
             return .deny
         }
+        sitePermissionsState.handledBridgeRequestIDs.insert(requestID)
+
         let context = SitePermissionRequestContext(
             tabID: tabModel.uid,
             topLevelSite: topLevelSite,
@@ -1344,7 +1328,6 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
             webContentProcessGeneration: sitePermissionsState.webContentProcessGeneration,
             navigationGeneration: sitePermissionsState.navigationGeneration
         )
-        sitePermissionsState.handledBridgeRequestIDs.insert(requestID)
 
         return await withCheckedContinuation { continuation in
             sitePermissionsState.pendingBridgeRequests[requestID] = SitePermissionsState.PendingBridgeRequest(
@@ -1355,49 +1338,19 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
                 webViewID: ObjectIdentifier(webView),
                 continuation: continuation
             )
-            let requestableTypes = coordinator.requestablePermissionTypes(
-                for: SitePermissionRequest(context: context, permissionTypes: permissionTypes)
-            )
-#if DEBUG
-            Logger.general.debug("""
-                SitePermissionsMedia: preflight request=\(requestID, privacy: .public) \
-                requestable=\(requestableTypes.map(\.rawValue).sorted(), privacy: .public)
-                """)
-            for permissionType in permissionTypes.sorted(by: { $0.rawValue < $1.rawValue }) {
-                let stored = dependencies.store.decision(for: permissionType, at: topLevelSite)?.rawValue ?? "none"
-                let global = dependencies.store.globalDefault(for: permissionType).rawValue
-                Logger.general.debug("""
-                    SitePermissionsMedia: setting request=\(requestID, privacy: .public) \
-                    type=\(permissionType.rawValue, privacy: .public) stored=\(stored, privacy: .public) global=\(global, privacy: .public)
-                    """)
-            }
-#endif
-            guard !requestableTypes.isEmpty else {
-                resolveMediaCaptureBridgeRequest(requestID, resolution: .deny(systemBlocks: []), grantedPermissionTypes: [])
-                return
-            }
             coordinator.request(
-                SitePermissionRequest(context: context, permissionTypes: requestableTypes),
+                SitePermissionRequest(context: context, permissionTypes: permissionTypes),
                 promptHandler: sitePermissionsPromptHandler(),
                 completion: { [weak self] resolution in
-                    self?.resolveMediaCaptureBridgeRequest(requestID, resolution: resolution, grantedPermissionTypes: requestableTypes)
+                    self?.resolveMediaCaptureBridgeRequest(requestID, resolution: resolution)
                 }
             )
         }
     }
 
     private func resolveMediaCaptureBridgeRequest(_ requestID: String,
-                                                  resolution: SitePermissionResolution,
-                                                  grantedPermissionTypes: Set<SitePermissionType>) {
+                                                  resolution: SitePermissionResolution) {
         guard let pendingRequest = sitePermissionsState.pendingBridgeRequests[requestID] else { return }
-#if DEBUG
-        Logger.general.debug("""
-            SitePermissionsMedia: resolution request=\(requestID, privacy: .public) \
-            result=\(String(describing: resolution), privacy: .public) \
-            requested=\(pendingRequest.permissionTypes.map(\.rawValue).sorted(), privacy: .public) \
-            evaluated=\(grantedPermissionTypes.map(\.rawValue).sorted(), privacy: .public)
-            """)
-#endif
         guard featureFlagger.isFeatureOn(.sitePermissions) else {
             sitePermissionsState.pendingBridgeRequests[requestID] = nil
             sitePermissionsState.handledBridgeRequestIDs.remove(requestID)
@@ -1411,17 +1364,11 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
             return
         }
 
-        // Record the remaining permission, but getUserMedia must either provide every requested
-        // track or reject. A partial grant must not start capture or leave a native preapproval.
         guard resolution == .grant,
-              grantedPermissionTypes == pendingRequest.permissionTypes,
               currentSitePermissionContext(tabID: pendingRequest.context.tabID,
                                            requestingFrameID: pendingRequest.context.requestingFrameID) == pendingRequest.context,
               let webView,
               ObjectIdentifier(webView) == pendingRequest.webViewID else {
-#if DEBUG
-            Logger.general.debug("SitePermissionsMedia: bridge deny request=\(requestID, privacy: .public)")
-#endif
             sitePermissionsState.pendingBridgeRequests[requestID] = nil
             sitePermissionsState.handledBridgeRequestIDs.remove(requestID)
             pendingRequest.continuation.resume(returning: .deny)
@@ -1439,10 +1386,7 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
             navigationGeneration: pendingRequest.context.navigationGeneration,
             createdAtUptime: sitePermissionsUptimeProvider()
         ))
-#if DEBUG
-        Logger.general.debug("SitePermissionsMedia: bridge allow request=\(requestID, privacy: .public)")
-#endif
-        pendingRequest.continuation.resume(returning: .allow(permissionTypes: pendingRequest.permissionTypes))
+        pendingRequest.continuation.resume(returning: .allow)
     }
 
     private func isSupportedMediaCapturePermissionTypes(_ permissionTypes: Set<SitePermissionType>) -> Bool {

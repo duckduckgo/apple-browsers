@@ -249,14 +249,6 @@ public final class SitePermissionsCoordinator {
         }
     }
 
-    /// Filters site-level denials before prompting. System blocks still need recovery UI.
-    public func requestablePermissionTypes(for request: SitePermissionRequest) -> Set<SitePermissionType> {
-        guard !isClosed, isValid(request.context) else { return [] }
-        return request.permissionTypes.filter { permissionType in
-            disposition(for: SitePermissionRequest(context: request.context, permissionTypes: [permissionType])) != .deny
-        }
-    }
-
     /// Returns the synchronous Permissions API state using the same precedence as a real request.
     /// This intentionally has no queueing, prompting, persistence, or management-state effects.
     public func queryState(for permissionType: SitePermissionType,
@@ -297,8 +289,8 @@ public final class SitePermissionsCoordinator {
                     continue
                 }
                 if store.globalDefault(for: permissionType) == .deny {
-                    // Preflight can prompt for the remaining permission separately, but a combined
-                    // getUserMedia call still cannot succeed if either requested device is blocked.
+                    // WebKit resolves cameraAndMicrophone with one decision: granting either grants both.
+                    // A bundled request must not bypass a global block by prompting for the other type.
                     return .deny
                 }
                 disposition = .prompt

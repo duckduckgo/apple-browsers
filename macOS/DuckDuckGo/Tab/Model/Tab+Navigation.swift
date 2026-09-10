@@ -96,9 +96,6 @@ extension Tab: NavigationResponder {
 
             .weak(nullable: self.networkProtection),
 
-            // Internal Feedback Form
-            .weak(nullable: self.internalFeedbackForm),
-
             // Tab Suspension
             .weak(nullable: self.tabSuspension),
 

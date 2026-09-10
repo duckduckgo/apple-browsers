@@ -825,6 +825,48 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(decisions, [.deny, .deny, .grant])
     }
 
+    func testWhenPermissionIsRevokedThenOnlyItsOutstandingPreapprovalsAreDiscarded() async throws {
+        let sut = makeSUT()
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.allowOnce) }
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
+        for captureType: WKMediaCaptureType in [.camera, .microphone] {
+            let decision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: captureType)
+            XCTAssertEqual(decision, .allow)
+        }
+
+        sut.revokeSitePermissions([.camera], for: site)
+
+        var decisions = [WKPermissionDecision]()
+        for captureType: WKMediaCaptureType in [.camera, .microphone] {
+            requestPermission(on: sut, originHost: site.host, captureType: captureType,
+                              decisionHandler: { decisions.append($0) })
+        }
+        XCTAssertEqual(decisions, [.deny, .grant])
+    }
+
+    func testWhenPermissionIsRevokedWhilePromptingThenBridgeCompletesWithDenial() async throws {
+        let sut = makeSUT()
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
+        var responder: ((SitePermissionPromptDecision) -> Void)?
+        let prompted = expectation(description: "Permission prompt is presented")
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in
+            responder = completion
+            prompted.fulfill()
+        }
+        let request = makeBridgeRequestTask(on: sut, originHost: site.host, captureType: .camera)
+        await fulfillment(of: [prompted], timeout: 1)
+
+        sut.revokeSitePermissions([.camera], for: site)
+        let decision = await request.value
+        XCTAssertEqual(decision, .deny)
+        responder?(.allowOnce)
+
+        var nativeDecision: WKPermissionDecision?
+        requestPermission(on: sut, originHost: site.host, captureType: .camera,
+                          decisionHandler: { nativeDecision = $0 })
+        XCTAssertEqual(nativeDecision, .deny)
+    }
+
     func testMainFramePreapprovalCannotBeConsumedBySameOriginSubframe() async {
         let sut = makeSUT()
         sut.sitePermissionsPromptHandlerOverride = { _, completion in

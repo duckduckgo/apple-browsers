@@ -1701,8 +1701,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// The settings toggles only cover users who touch a setting; this sizes the enabled base.
     @MainActor
     private func fireDailyPromptBarStatePixel() {
-        guard featureFlagger.isFeatureOn(.promptBar) else { return }
-
         PixelKit.fire(PromptBarPixel.state(shortcutEnabled: promptBarPreferences.isKeyboardShortcutEnabled,
                                            menuBarIconEnabled: promptBarPreferences.isMenuBarIconVisible),
                       frequency: .daily)
@@ -2531,11 +2529,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Must run before `setUpPromptBarMenuBarVisibility()`, which hands the icon's click to the coordinator.
     @MainActor
     private func setUpPromptBar() {
-        guard featureFlagger.isFeatureOn(.promptBar) else {
-            promptBarCoordinator = nil
-            return
-        }
-
         let promptSubmitter = PromptBarPromptSubmitter(aiChatTabOpener: aiChatTabOpener,
                                                        windowControllersManager: windowControllersManager)
         let content = PromptBarContentFactory.makeContent(promptSubmitter: promptSubmitter,
@@ -2544,7 +2537,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                           preferences: aiChatPreferencesPersistor)
         let coordinator = PromptBarCoordinator(
-            featureFlagger: featureFlagger,
             preferences: promptBarPreferences,
             shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
             presenter: PromptBarPresenter(content: content)
@@ -2555,13 +2547,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setUpPromptBarMenuBarVisibility() {
-        guard featureFlagger.isFeatureOn(.promptBar) else {
-            promptBarMenuBarController?.hide()
-            promptBarMenuBarController = nil
-            promptBarMenuBarCancellable = nil
-            return
-        }
-
         if promptBarMenuBarController == nil {
             promptBarMenuBarController = PromptBarMenuBarController()
         }

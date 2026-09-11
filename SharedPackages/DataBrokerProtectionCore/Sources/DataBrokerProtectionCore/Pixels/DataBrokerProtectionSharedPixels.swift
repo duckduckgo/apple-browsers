@@ -100,10 +100,11 @@ public enum DataBrokerProtectionSharedPixels {
         public static let removedAtParamKey = "removed_at"
         public static let isAuthenticated = "isAuthenticated"
         public static let isFreeScan = "free_scan"
+        public static let isSilentFailure = "isSilentFailure"
     }
 
     case httpError(error: Error, code: Int, dataBroker: String, version: String, isFreeScan: Bool?)
-    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String, stepType: StepType?, dataBrokerParent: String?, isFreeScan: Bool?)
+    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String, stepType: StepType?, dataBrokerParent: String?, isFreeScan: Bool?, isSilentFailure: Bool)
     case otherError(error: Error, dataBroker: String, version: String, isFreeScan: Bool?)
     case databaseError(error: Error, functionOccurredIn: String)
     case cocoaError(error: Error, functionOccurredIn: String)
@@ -356,13 +357,14 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
                           Consts.dataBrokerParamKey: dataBroker,
                           Consts.dataBrokerVersionKey: version]
             return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
-        case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent, let isFreeScan):
+        case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent, let isFreeScan, let isSilentFailure):
             let params = ["actionID": actionId,
                           "message": message,
                           Consts.dataBrokerParamKey: dataBroker,
                           Consts.dataBrokerVersionKey: version,
                           Consts.stepTypeKey: stepType?.rawValue ?? "unknown",
-                          Consts.parentKey: dataBrokerParent ?? ""]
+                          Consts.parentKey: dataBrokerParent ?? "",
+                          Consts.isSilentFailure: isSilentFailure.description]
             return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .otherError(let error, let dataBroker, let version, let isFreeScan):
             let params = ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
@@ -771,7 +773,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
             case .secureVaultDatabaseRecreated:
                 pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount, withAdditionalParameters: parameters)
             case .httpError(let error, _, _, _, _),
-                    .actionFailedError(let error, _, _, _, _, _, _, _),
+                    .actionFailedError(let error, _, _, _, _, _, _, _, _),
                     .otherError(let error, _, _, _):
                 pixelKit.fire(DebugEvent(event, error: error).prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount)
             case .databaseError(let error, _),

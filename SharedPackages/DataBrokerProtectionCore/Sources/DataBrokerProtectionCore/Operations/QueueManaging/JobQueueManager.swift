@@ -401,7 +401,8 @@ extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
                                                  version: version,
                                                  stepType: identifier?.stepType,
                                                  dataBrokerParent: dataBrokerParent,
-                                                 isFreeScan: isFreeScan))
+                                                 isFreeScan: isFreeScan,
+                                                 isSilentFailure: false))
         default:
             pixelHandler.fire(.otherError(error: error, dataBroker: brokerURL, version: version, isFreeScan: isFreeScan))
         }

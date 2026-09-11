@@ -195,10 +195,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var isFireWindowProvider: (() -> Bool)?
 
-    /// Surface that opened this chat, consumed once at load and retained for the conversation's pixels.
+    /// Surface that opened this chat, consumed once per document and retained for its pixels.
     private var conversationSource: AIChatConversationSource?
-    private var didConsumeConversationSource = false
     private let conversationSourceHandler: AIChatConversationSourceHandler
+
+    /// Document the source was captured for, fragment stripped, so a real navigation re-captures
+    /// while the homepage's in-place `#chat` toggle keeps what that document captured.
+    private var didCaptureConversationSource = false
+    private var conversationSourceDocument: URL?
+    private var loadedOnDuckDuckGoHomepage = false
 
     /// Whether page context with content is currently attached to this chat — set by the native
     /// auto-attach push and updated by the frontend's add/remove toggle. Read at prompt submit for
@@ -268,15 +273,41 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
-        // Consume exactly once, at load, before the user can submit a prompt. Guarded by a flag (not
-        // by `conversationSource == nil`) so a chat that loaded with an empty mailbox can't later
-        // steal a different chat's pending source on a subsequent config fetch.
-        if !didConsumeConversationSource {
-            didConsumeConversationSource = true
-            conversationSource = conversationSourceHandler.consumeData()
-        }
+        captureConversationSource(for: await message.messageWebView?.url)
         let isFireWindow = isFireWindowProvider?() ?? false
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+    }
+
+    /// duckduckgo.com fetches this config on every document load, so keying the capture to the
+    /// document is what keeps a source tied to one conversation: leaving the chat drops the source,
+    /// while the homepage's same-document `#chat` toggle keeps what that document captured.
+    private func captureConversationSource(for url: URL?) {
+        let document = url?.strippingFragment
+        guard !didCaptureConversationSource || document != conversationSourceDocument else { return }
+        didCaptureConversationSource = true
+        conversationSourceDocument = document
+
+        // Only a chat can claim a stamp, and only if this conversation has none yet: a stamp is set
+        // just before a chat opens, so letting an ordinary page — or a conversation that already
+        // knows its source — consume it would take it from the chat it was meant for.
+        guard let url, !url.isDuckAIURL, !url.isDuckAIChatFragment else {
+            if conversationSource == nil {
+                conversationSource = conversationSourceHandler.consumeData()
+            }
+            loadedOnDuckDuckGoHomepage = false
+            return
+        }
+
+        // Not a chat, so whatever opened the last one no longer describes what happens here.
+        conversationSource = nil
+        loadedOnDuckDuckGoHomepage = url.isDuckDuckGoHomepage
+    }
+
+    /// The homepage switches to Duck.ai in place, so nothing native ever stamps a source for it;
+    /// infer one from what this document loaded as, and only when nothing else claimed the chat.
+    private func resolveHomepageConversationSourceIfNeeded() {
+        guard conversationSource == nil, loadedOnDuckDuckGoHomepage else { return }
+        conversationSource = .duckduckgoHomepage
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -1094,6 +1125,7 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             pageContextConsumedSubject.send()
             // Selections were consumed by the prompt; clear the pull-store so a later init doesn't resurrect them.
             messageHandling.clearSelectionContexts()
+            resolveHomepageConversationSourceIfNeeded()
             pixelFiring?.fire(
                 AIChatPixel.aiChatMetricStartNewConversation(source: pixelConversationSource,
                                                              hasPageContext: hasAttachedPageContext),
@@ -1169,4 +1201,15 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         freeTrialConversionService.markDuckAIActivated()
     }
 
+}
+
+private extension URL {
+
+    /// Two URLs differing only by fragment are the same document, which is how the homepage's
+    /// `#chat` toggle is told apart from a navigation that starts a different conversation.
+    var strippingFragment: URL {
+        guard fragment != nil, var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return self }
+        components.fragment = nil
+        return components.url ?? self
+    }
 }

@@ -112,6 +112,10 @@ public enum AIChatConversationSource: String, CaseIterable {
 
     case settings = "settings"
 
+    /// Inferred rather than stamped: no native code opens this one, so it is deduced from the tab
+    /// having loaded on the bare homepage with nothing else claiming the chat.
+    case duckduckgoHomepage = "duckduckgo-homepage"
+
     /// Named for the attribution gap it measures, not "direct": the app cannot tell deliberate
     /// direct navigation from an entry point nobody has instrumented yet.
     case unattributed = "unattributed"
@@ -138,6 +142,13 @@ public final class AIChatConversationSourceHandler: AIChatConsumableDataHandling
     public init() {}
 
     public func setData(_ data: DataType) {
+        self.data = data
+    }
+
+    /// For a source deduced from a navigation rather than from a deliberate action, so it can never
+    /// displace one a real surface staged moments earlier for the same chat.
+    public func setDataIfAbsent(_ data: DataType) {
+        guard self.data == nil else { return }
         self.data = data
     }
 

@@ -44,6 +44,7 @@ final class AIChatTabExtension {
     private weak var webView: WKWebView?
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
+    private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
     private let bootstrapRefresher: DuckAiNativeStorageBootstrapScriptRefresher?
     private let fireModeStorageProvider: () -> DuckAiFireModeStorage
 
@@ -62,12 +63,14 @@ final class AIChatTabExtension {
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
          burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry? = NSApp.delegateTyped.burnerDuckAiStorageRegistry,
+         aiChatConversationSourceHandler: AIChatConversationSourceHandler = NSApp.delegateTyped.aiChatConversationSourceHandler,
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
         self.isLoadedInSidebar = isLoadedInSidebar
         self.isTabBurner = isTabBurner
         self.burnerMode = burnerMode
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
+        self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
         let debugSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
         self.fireModeStorageProvider = { [burnerMode, weak burnerDuckAiStorageRegistry] in
             .resolve(isFireMode: burnerMode.isBurner,
@@ -275,6 +278,7 @@ extension AIChatTabExtension: NavigationResponder {
 
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
         refreshNativeStorageBootstrapIfNeeded(for: navigationAction)
+        stampHomepageConversationSourceIfNeeded(for: navigationAction)
 
         // Only handle sidebar, user-initiated, cross-document navigations; otherwise let them proceed normally
         guard isLoadedInSidebar,
@@ -313,6 +317,40 @@ extension AIChatTabExtension: NavigationResponder {
     func navigationDidFinish(_ navigation: Navigation) {
         if navigation.url.isDuckAIURL {
             featureDiscovery.setWasUsedBefore(.aiChat)
+        }
+    }
+
+    /// The duckduckgo.com homepage opens Duck.ai by navigating there itself, so nothing else records
+    /// a source for it. Restricted to web-originated navigations: a typed URL, bookmark, restored
+    /// session or native surface is not the homepage handing over, and each of those either records
+    /// its own source or is meant to stay unattributed.
+    private func stampHomepageConversationSourceIfNeeded(for navigationAction: NavigationAction) {
+        guard !isLoadedInSidebar,
+              navigationAction.isForMainFrame,
+              navigationAction.url.isDuckAIURL,
+              navigationAction.sourceFrame.url.isDuckDuckGoHomepage
+        else { return }
+
+        guard navigationAction.navigationType.isWebOriginated else {
+            Logger.aiChat.debug("Duck.ai opened from the homepage by \(navigationAction.navigationType.debugDescription, privacy: .public) — not the homepage handing over")
+            return
+        }
+
+        aiChatConversationSourceHandler.setDataIfAbsent(.duckduckgoHomepage)
+    }
+}
+
+private extension NavigationType {
+
+    /// Started by the page itself rather than by the browser, which is what separates the homepage
+    /// handing over to Duck.ai from the user typing or bookmarking a chat URL.
+    var isWebOriginated: Bool {
+        switch self {
+        case .linkActivated, .formSubmitted, .formResubmitted, .other:
+            return true
+        case .backForward, .reload, .redirect, .sessionRestoration, .alternateHtmlLoad,
+             .sameDocumentNavigation, .custom:
+            return false
         }
     }
 }

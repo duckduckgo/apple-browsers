@@ -364,6 +364,22 @@ final class URLExtensionTests: XCTestCase {
         XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckDuckGoHomepage)
     }
 
+    // MARK: - Duck.ai Chat Fragment Tests
+
+    func testIsDuckAIChatFragment() {
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/#chat")!.isDuckAIChatFragment)
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/#chat/abc123")!.isDuckAIChatFragment)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/")!.isDuckAIChatFragment)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/#settings")!.isDuckAIChatFragment)
+    }
+
+    /// The fragment is invisible to the path/query predicates, which is why it is checked separately.
+    func testChatFragmentIsInvisibleToTheOtherPredicates() {
+        let url = URL(string: "https://duckduckgo.com/#chat")!
+        XCTAssertTrue(url.isDuckDuckGoHomepage)
+        XCTAssertFalse(url.isDuckAIURL)
+    }
+
     // MARK: - AIChatTabMetadata.shouldExcludeFromTabPicker
 
     func testShouldExcludeFromTabPickerCoversAllThreeRules() {

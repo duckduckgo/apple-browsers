@@ -480,7 +480,7 @@
     "aiChatConversationSource": {
         "key": "source",
         "type": "string",
-        "description": "The user-facing surface that opened the Duck.ai conversation this prompt was submitted in. Recorded just before the chat opens and consumed once when it loads, so for an ongoing chat it describes how that chat was originally opened, not where this particular prompt came from. Values name the specific control that was used, down to the individual menu item, so a voice, image-generation or resumed-chat start stays attributable to the surface it came from (e.g. 'new-tab-page-voice', 'main-menu-image', 'omnibar-recent-chat'). The 'contextual-*' values are page actions on the current page or selection; 'address-bar-context-menu' is the right-click menu on the address-bar Duck.ai button and is unrelated to them. 'unattributed' means no surface was recorded \u2014 direct navigation to duck.ai, a session restored at startup, a bookmark or external link, or an entry point not yet instrumented \u2014 so it measures the attribution gap rather than naming a real entry point. Mirrors AIChatConversationSource in SharedPackages/AIChat.",
+        "description": "The user-facing surface that opened the Duck.ai conversation this prompt was submitted in. Recorded just before the chat opens and consumed once when it loads, so for an ongoing chat it describes how that chat was originally opened, not where this particular prompt came from. Values name the specific control that was used, down to the individual menu item, so a voice, image-generation or resumed-chat start stays attributable to the surface it came from (e.g. 'new-tab-page-voice', 'main-menu-image', 'omnibar-recent-chat'). The 'contextual-*' values are page actions on the current page or selection; 'address-bar-context-menu' is the right-click menu on the address-bar Duck.ai button and is unrelated to them. 'duckduckgo-homepage' is a conversation the duckduckgo.com homepage started itself, through its own search/Duck.ai toggle: unlike every other value it is inferred rather than recorded, from the tab having been on the bare homepage when the page loaded with no native surface claiming the chat, so it also covers a second chat started later in such a tab. 'unattributed' means no surface was recorded \u2014 direct navigation to duck.ai, a session restored at startup, a bookmark or external link, or an entry point not yet instrumented \u2014 so it measures the attribution gap rather than naming a real entry point. Mirrors AIChatConversationSource in SharedPackages/AIChat.",
         "enum": [
             "tab-bar-button",
             "ask-about-page",
@@ -519,6 +519,7 @@
             "serp",
             "sidebar-handoff",
             "settings",
+            "duckduckgo-homepage",
             "unattributed"
         ]
     }

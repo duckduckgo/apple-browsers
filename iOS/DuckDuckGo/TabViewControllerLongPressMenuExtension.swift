@@ -39,10 +39,12 @@ extension TabViewController {
         var tabActions = [UIMenuElement]()
 
         let newTabTitle = isFireTab ? UserText.actionNewFireTabForUrl : UserText.actionNewTabForUrl
-        tabActions.append(UIAction(title: newTabTitle,
+        let newTabAction = UIAction(title: newTabTitle,
                                    image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
             self?.onNewTabAction(url: url)
-        })
+        }
+        newTabAction.accessibilityIdentifier = "Browser.LinkMenu.OpenInNewTab"
+        tabActions.append(newTabAction)
 
         tabActions.append(UIAction(title: UserText.actionNewBackgroundTabForUrl,
                                    image: DesignSystemImages.Glyphs.Size16.openIn) { [weak self] _ in

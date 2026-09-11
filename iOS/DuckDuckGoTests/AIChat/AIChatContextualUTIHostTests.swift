@@ -130,34 +130,64 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
         sut.clearAttachedContext()
 
-        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
+        XCTAssertNil(sut.chipViewModel.state)
         XCTAssertNil(sut.attachedContextURL)
     }
 
-    func test_showAttachAffordanceKeepsPlaceholderHiddenWithoutClearingDeliveredAttachment() {
+    func test_setSuggestedContext_showsTheOfferWithoutAttachingIt() {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
-        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString), initialAttachmentDeliveryState: .delivered)
+        makeSUT()
 
-        sut.showAttachAffordance()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
 
-        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
-        XCTAssertFalse(sut.chipViewModel.isVisible)
-        XCTAssertEqual(sut.attachedContextURL, url)
+        XCTAssertEqualState(sut.chipViewModel.state, .suggested(title: "Page A", favicon: nil))
+        XCTAssertNil(sut.attachedContextURL)
         XCTAssertNil(sut.chipViewModel.pendingAttachedContextData)
     }
 
-    func test_showAttachAffordanceDoesNotOverridePendingAttachment() {
+    func test_clearSuggestedContext_removesTheOffer() {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
-        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString), initialAttachmentDeliveryState: .pendingSubmit)
+        makeSUT()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
 
-        sut.showAttachAffordance()
+        sut.clearSuggestedContext()
 
-        XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page A", favicon: nil))
-        XCTAssertTrue(sut.chipViewModel.isVisible)
-        XCTAssertEqual(sut.attachedContextURL, url)
-        XCTAssertEqual(sut.chipViewModel.pendingAttachedContextData?.url, url.absoluteString)
+        XCTAssertNil(sut.chipViewModel.state)
+    }
+
+    func test_chipTapOnASuggestion_forwardsAcceptanceNotAnAttachRequest() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
+        var acceptCallCount = 0
+        var attachCallCount = 0
+        sut.onSuggestionAccepted = { acceptCallCount += 1 }
+        sut.onAttachRequested = { attachCallCount += 1 }
+
+        sut.chipViewModel.tapToAttach()
+
+        XCTAssertEqual(acceptCallCount, 1)
+        XCTAssertEqual(attachCallCount, 0)
+    }
+
+    func test_chipRemoveOnASuggestion_forwardsDismissalNotARemoval() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
+        var dismissCallCount = 0
+        var removeCallCount = 0
+        sut.onSuggestionDismissed = { dismissCallCount += 1 }
+        sut.onRemoveRequested = { removeCallCount += 1 }
+
+        sut.chipViewModel.tapToRemove()
+
+        XCTAssertEqual(dismissCallCount, 1)
+        XCTAssertEqual(removeCallCount, 0)
+        XCTAssertNil(sut.chipViewModel.state)
     }
 
     func test_setAttachedContextWithSameURLAfterDelivered_makesContextPendingAgain() {
@@ -193,7 +223,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
         sut.prepareForNewChat()
 
-        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
+        XCTAssertNil(sut.chipViewModel.state)
         XCTAssertNil(sut.attachedContextURL)
     }
 
@@ -339,17 +369,19 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 }
 
 private func XCTAssertEqualState(
-    _ actual: AIChatContextChipView.State,
+    _ actual: AIChatContextChipView.State?,
     _ expected: AIChatContextChipView.State,
     file: StaticString = #filePath,
     line: UInt = #line
 ) {
     switch (actual, expected) {
-    case (.placeholder, .placeholder):
-        return
+    case let (.suggested(actualTitle, _), .suggested(expectedTitle, _)):
+        XCTAssertEqual(actualTitle, expectedTitle, file: file, line: line)
     case let (.attached(actualTitle, _), .attached(expectedTitle, _)):
         XCTAssertEqual(actualTitle, expectedTitle, file: file, line: line)
+    case (.loading, .loading):
+        return
     default:
-        XCTFail("Expected \(expected), got \(actual)", file: file, line: line)
+        XCTFail("Expected \(expected), got \(String(describing: actual))", file: file, line: line)
     }
 }

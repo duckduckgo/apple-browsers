@@ -415,7 +415,10 @@ final class AIChatContextualChatSessionState {
         isDocumentChipLoading = false
         isProcessingNavigation = false
         pendingSignalsOnlyCollection = false
-        suggestedContext = nil
+        if suggestedContext != nil {
+            suggestedContext = nil
+            emit(.deliverPageContext(nil, targets: .utiSuggestedContext))
+        }
         suggestionsResolveTask?.cancel()
         suggestionsTimeoutTask?.cancel()
         suggestions = []
@@ -616,7 +619,9 @@ final class AIChatContextualChatSessionState {
             if let context {
                 let payload = signalsOnlyPayload(from: context.contextData)
                 emit(.deliverPageContext(payload, targets: .frontendBridge))
-                if shouldOfferPageContext(for: URL(string: context.contextData.url)), !suppressesAutoAttachForSelectionEntry {
+                if context.contextData.hasAttachedPage,
+                   shouldOfferPageContext(for: URL(string: context.contextData.url)),
+                   !suppressesAutoAttachForSelectionEntry {
                     handleOfferedContext(context)
                 }
             }

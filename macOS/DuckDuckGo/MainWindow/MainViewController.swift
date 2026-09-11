@@ -452,9 +452,6 @@ final class MainViewController: NSViewController {
         updateReloadMenuItem()
         updateStopMenuItem()
         browserTabViewController.windowDidBecomeKey()
-        if !featureFlagger.isFeatureOn(.promoQueue) {
-            showSetAsDefaultAndAddToDockIfNeeded()
-        }
         showWinBackOfferIfNeeded()
     }
 
@@ -968,34 +965,6 @@ final class MainViewController: NSViewController {
             .sink { [weak self] in
                 self?.hideBanner()
             }
-    }
-
-    /// **ENTRY POINT for Default Browser & Dock Prompts**
-    ///
-    /// This is called when a main window becomes key (see `windowDidBecomeKey()`).
-    /// It triggers the prompt system to evaluate if any prompt should be shown.
-    ///
-    /// **Flow:**
-    /// 1. Calls `DefaultBrowserAndDockPromptPresenter.tryToShowPrompt()`
-    /// 2. Presenter asks `DefaultBrowserAndDockPromptCoordinator.getPromptType()` to determine eligibility
-    /// 3. Coordinator checks: onboarding status, default browser/dock status, and timing rules
-    /// 4. If eligible, shows one of three prompt types:
-    ///    - **Popover**: Small popup anchored to address bar (first prompt, shown once)
-    ///    - **Banner**: Persistent bar at top of window (shown after popover, can repeat)
-    ///    - **Inactive User Modal**: Sheet for users who haven't used the app in 7+ days
-    ///
-    /// **See also:**
-    /// - `DefaultBrowserAndDockPromptPresenter.tryToShowPrompt()` - orchestrates prompt display
-    /// - `DefaultBrowserAndDockPromptCoordinator.getPromptType()` - determines which prompt to show
-    /// - `DefaultBrowserAndDockPromptTypeDecider` - implements timing logic
-    @objc private func showSetAsDefaultAndAddToDockIfNeeded() {
-        guard !isInPopUpWindow else { return }
-
-        defaultBrowserAndDockPromptPresenting.tryToShowPrompt(
-            popoverAnchorProvider: getSourceViewToShowSetAsDefaultAndAddToDockPopover,
-            bannerViewHandler: showMessageBanner,
-            inactiveUserModalWindowProvider: getSourceWindowToShowInactiveUserModal
-        )
     }
 
     func getSourceViewToShowSetAsDefaultAndAddToDockPopover() -> NSView? {

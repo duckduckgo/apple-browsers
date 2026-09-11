@@ -25,7 +25,7 @@ import History
 import HistoryView
 import Onboarding
 @_spi(Testing) import Persistence
-import PrivacyConfig
+@testable import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyDashboard
 import SharedTestUtilities
@@ -542,7 +542,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     @MainActor
     func testWhenNonBlockingIsDisabledThenDismissingUpsellClearsLastDialog() {
-        featureFlagger.featuresStub[FeatureFlag.onboardingAsync.rawValue] = false
+        featureFlagger.resolveCohortStub = FeatureFlag.OnboardingNonBlockingCohort.control
         presentDialog(.subscriptionUpsell)
         let presentationsBefore = factory.makeViewCallCount
 
@@ -556,7 +556,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     @MainActor
     func testWhenUpsellXCompletesFirstThenNonBlockingDismissalStillRuns() {
-        featureFlagger.featuresStub[FeatureFlag.onboardingAsync.rawValue] = true
+        featureFlagger.resolveCohortStub = FeatureFlag.OnboardingNonBlockingCohort.treatment
         dialogProvider.state = .ongoing
         dialogProvider.isContextualOnboardingCompleted = false
         presentDialog(.subscriptionUpsell)

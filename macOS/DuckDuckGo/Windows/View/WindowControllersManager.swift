@@ -25,6 +25,7 @@ import ConcurrencyExtensions
 import FoundationExtensions
 import History
 import os.log
+import PixelKit
 import PrivacyConfig
 import WebKit
 
@@ -707,6 +708,12 @@ extension WindowControllersManager: OnboardingNavigating {
 #endif
                 self.recordOnboardingSkipInPlace()
             }
+    }
+
+    @MainActor
+    func recordBrowsingBeforeOnboardingCompletion() {
+        guard onboardingSkipInPlaceHandler != nil, !OnboardingActionsManager.isOnboardingFinished else { return }
+        PixelKit.fire(GeneralPixel.onboardingBrowsingBeforeCompletion, frequency: .uniqueByName)
     }
 
     @MainActor

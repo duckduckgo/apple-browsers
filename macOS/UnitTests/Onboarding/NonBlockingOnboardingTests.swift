@@ -17,7 +17,7 @@
 //
 
 import FeatureFlags_macOS
-import PrivacyConfig
+@testable import PrivacyConfig
 @_spi(Testing) import Persistence
 import XCTest
 
@@ -25,20 +25,19 @@ import XCTest
 
 final class NonBlockingOnboardingTests: XCTestCase {
 
-    func testNonBlockingDependsOnTheFeatureFlag() {
+    func testNonBlockingDependsOnTheTreatmentCohort() {
         let flags = MockFeatureFlagger()
         let onboarding = NonBlockingOnboarding(featureFlagger: flags)
         XCTAssertFalse(onboarding.isNonBlocking)
 
-        flags.enabledFeatureFlags = [.onboardingAsync]
+        flags.resolveCohortStub = FeatureFlag.OnboardingNonBlockingCohort.treatment
         XCTAssertTrue(onboarding.isNonBlocking)
     }
 
     @MainActor
     func testContextualInitializationSurvivesResumeAndPreservesProgressAndDismissal() {
         let store = MockKeyValueFileStore()
-        let flags = MockFeatureFlagger()
-        flags.enabledFeatureFlags = [.onboardingAsync]
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
         let onboarding = NonBlockingOnboarding(featureFlagger: flags)
         let updater = MockContextualOnboardingState()
         onboarding.initializeContextualOnboarding(updater, persistor: NonBlockingOnboardingPersistor(keyValueStore: store))

@@ -28,7 +28,6 @@ struct PreferencesWebsitePermissionDetailView: View {
         static let searchWidth: CGFloat = 173
         static let searchHeight: CGFloat = 28
         static let searchCornerRadius: CGFloat = 7
-        static let loadingRowHeight: CGFloat = 56
         static let backButtonSize: CGFloat = 32
         static let messageTopPadding: CGFloat = 4
         static let messageBottomPadding: CGFloat = 8
@@ -77,9 +76,7 @@ struct PreferencesWebsitePermissionDetailView: View {
                 searchField
             }
 
-            if model.viewState.isLoading {
-                loadingState
-            } else if model.viewState.isEmpty {
+            if model.viewState.isEmpty {
                 emptyState
             } else if model.viewState.hasNoResults {
                 noResultsState
@@ -90,14 +87,6 @@ struct PreferencesWebsitePermissionDetailView: View {
             }
         }
         .padding(.bottom, 16)
-    }
-
-    private var loadingState: some View {
-        PreferencesWebsitePermissionListContainer {
-            ProgressView()
-                .frame(maxWidth: .infinity, minHeight: Constants.loadingRowHeight)
-        }
-        .accessibilityIdentifier("WebsitePermissions.Detail.Loading")
     }
 
     private var searchField: some View {

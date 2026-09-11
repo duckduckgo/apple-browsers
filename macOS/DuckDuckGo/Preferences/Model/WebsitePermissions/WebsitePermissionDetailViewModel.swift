@@ -31,11 +31,11 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
     private var permissionsCancellable: AnyCancellable?
 
     init(
-        category: WebsitePermissionCategory,
+        initialState: WebsitePermissionDetailViewState?,
         permissionManager: PermissionManagerProtocol,
         featureFlagger: FeatureFlagger
     ) {
-        viewState = WebsitePermissionDetailViewState(category: category)
+        viewState = initialState ?? .init()
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
     }
@@ -48,7 +48,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
             setupObserver()
 
         case .setSearchQuery(let query):
-            viewState.setSearchQuery(query)
+            viewState.searchQuery = query
 
         case .changeDecision(let rowID, let decision):
             changeDecision(decision, for: rowID)
@@ -96,46 +96,12 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
     }
 
     private func updateState(entries: [WebsitePermissionEntry]) {
-        let category = viewState.category
-        let sites = entries
-            .filter {
-                category.contains($0.permissionType) && $0.permissionType.isUserEditable(forDomain: $0.domain, featureFlagger: featureFlagger)
-            }
-            .map(makeSiteRow)
-            .sorted(by: isOrderedBefore)
-
         viewState = WebsitePermissionDetailViewState(
-            category: category,
+            category: viewState.category,
             searchQuery: viewState.searchQuery,
-            sites: sites,
-            isLoading: false
+            entries: entries,
+            featureFlagger: featureFlagger
         )
-    }
-
-    private func makeSiteRow(from entry: WebsitePermissionEntry) -> WebsitePermissionDetailViewState.SiteRow {
-        .init(
-            domain: entry.domain,
-            permissionType: entry.permissionType,
-            decision: entry.displayedDecision,
-            permissionTitle: permissionTitle(for: entry.permissionType),
-            availableDecisions: entry.permissionType.editableDecisions
-        )
-    }
-
-    private func permissionTitle(for permissionType: PermissionType) -> String? {
-        guard permissionType.isExternalScheme else { return nil }
-        return String(format: UserText.websitePermissionsExternalAppFormat, permissionType.localizedDescription)
-    }
-
-    private func isOrderedBefore(
-        _ first: WebsitePermissionDetailViewState.SiteRow,
-        _ second: WebsitePermissionDetailViewState.SiteRow
-    ) -> Bool {
-        let domainComparison = first.domain.localizedCaseInsensitiveCompare(second.domain)
-        if domainComparison != .orderedSame {
-            return domainComparison == .orderedAscending
-        }
-        return first.permissionType.rawValue < second.permissionType.rawValue
     }
 
     private func row(matchingID id: WebsitePermissionDetailViewState.SiteRow.ID) -> WebsitePermissionDetailViewState.SiteRow? {

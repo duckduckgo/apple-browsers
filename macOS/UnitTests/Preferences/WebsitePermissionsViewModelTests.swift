@@ -321,6 +321,21 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
 
     // MARK: - Detail
 
+    func testWhenOpeningDetailAfterPermissionsLoadThenDetailIsPrepopulated() throws {
+        let model = createSUT(entries: [
+            WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .allow, lastModified: nil),
+            WebsitePermissionEntry(domain: "location.com", permissionType: .geolocation, decision: .allow, lastModified: nil),
+        ])
+        waitForViewStateUpdate(model) {
+            model.send(action: .onAppear)
+        }
+
+        model.send(action: .openDetail(.camera))
+        let detailModel = try XCTUnwrap(model.viewState.detailModel)
+
+        XCTAssertEqual(detailModel.viewState.sites.map(\.domain), ["example.com"])
+    }
+
     func testWhenOpeningAndClosingDetailThenViewStateTracksNavigation() {
         let model = createSUT()
 

@@ -32,6 +32,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
     private let permissionManager: PermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
     private var permissionsCancellable: AnyCancellable?
+    private var latestEntries = [WebsitePermissionEntry]()
 
     init(permissionManager: PermissionManagerProtocol, featureFlagger: FeatureFlagger) {
         self.permissionManager = permissionManager
@@ -56,7 +57,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
 
         case .openDetail(let category):
             viewState.detailModel = WebsitePermissionDetailViewModel(
-                category: category,
+                initialState: makeDetailInitialState(for: category),
                 permissionManager: permissionManager,
                 featureFlagger: featureFlagger
             )
@@ -76,13 +77,15 @@ final class WebsitePermissionsViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] entries, _ in
                 guard let self else { return }
+                latestEntries = entries
                 let editableEntries = entries.filter {
                     $0.permissionType.isUserEditable(forDomain: $0.domain, featureFlagger: self.featureFlagger)
                 }
                 viewState = WebsitePermissionsViewState(
                     recents: makeRecentRows(from: editableEntries),
                     rows: makeRows(from: editableEntries),
-                    detailModel: viewState.detailModel)
+                    detailModel: viewState.detailModel
+                )
             }
     }
 
@@ -94,6 +97,14 @@ final class WebsitePermissionsViewModel: ObservableObject {
             .sorted(by: isOrderedBefore)
             .prefix(Constants.maximumRecentRows)
             .map(makeRecentRow)
+    }
+
+    private func makeDetailInitialState(for category: WebsitePermissionCategory) -> WebsitePermissionDetailViewState {
+        WebsitePermissionDetailViewState(
+            category: category,
+            entries: latestEntries,
+            featureFlagger: featureFlagger
+        )
     }
 
     private func isOrderedBefore(_ first: WebsitePermissionEntry, _ second: WebsitePermissionEntry) -> Bool {

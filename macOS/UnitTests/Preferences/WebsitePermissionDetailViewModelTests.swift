@@ -39,20 +39,31 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenDetailIsCreatedThenItRemainsLoadingUntilPermissionsArePublished() {
+    func testWhenDetailIsCreatedWithInitialStateThenItUsesTheInitialStateCategory() {
         let model = WebsitePermissionDetailViewModel(
-            category: .camera,
+            initialState: WebsitePermissionDetailViewState(category: .camera),
             permissionManager: permissionManager,
             featureFlagger: featureFlagger
         )
 
-        XCTAssertTrue(model.viewState.isLoading)
+        XCTAssertEqual(model.viewState.category, .camera)
+        XCTAssertTrue(model.viewState.isEmpty)
+    }
 
-        waitForDetailStateUpdate(model) {
-            model.send(action: .onAppear)
-        }
+    func testWhenDetailIsCreatedWithPopulatedInitialStateThenItIsPrepopulated() {
+        let model = WebsitePermissionDetailViewModel(
+            initialState: WebsitePermissionDetailViewState(
+                category: .camera,
+                entries: [
+                    WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .allow, lastModified: nil),
+                ],
+                featureFlagger: featureFlagger
+            ),
+            permissionManager: permissionManager,
+            featureFlagger: featureFlagger
+        )
 
-        XCTAssertFalse(model.viewState.isLoading)
+        XCTAssertEqual(model.viewState.sites.map(\.domain), ["example.com"])
     }
 
     func testWhenBuildingDetailSitesThenOnlyCategoryEntriesAreIncludedAndSorted() {
@@ -205,7 +216,11 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
     ) -> WebsitePermissionDetailViewModel {
         permissionManager.setPersistedPermissions(entries)
         let model = WebsitePermissionDetailViewModel(
-            category: category,
+            initialState: WebsitePermissionDetailViewState(
+                category: category,
+                entries: entries,
+                featureFlagger: featureFlagger
+            ),
             permissionManager: permissionManager,
             featureFlagger: featureFlagger
         )

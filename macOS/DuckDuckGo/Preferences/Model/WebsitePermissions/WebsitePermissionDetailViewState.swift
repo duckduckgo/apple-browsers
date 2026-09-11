@@ -18,34 +18,62 @@
 
 import Common
 import Foundation
+import PrivacyConfig
 
 struct WebsitePermissionDetailViewState: Equatable {
-    let category: WebsitePermissionCategory
-    private(set) var searchQuery: String
-    let sites: [SiteRow]
-    private(set) var visibleSites: [SiteRow]
-    private(set) var isLoading: Bool
-
-    init(category: WebsitePermissionCategory, searchQuery: String = "", sites: [SiteRow] = [], isLoading: Bool = true) {
-        self.category = category
-        self.searchQuery = searchQuery
-        self.sites = sites
-        self.isLoading = isLoading
-        self.visibleSites = []
-        self.visibleSites = filteredSites(from: sites, matching: searchQuery)
+    var category: WebsitePermissionCategory = .notifications
+    var searchQuery = ""
+    var sites: [SiteRow] = []
+    var visibleSites: [SiteRow] {
+        filteredSites(from: sites, matching: searchQuery)
     }
-
     var isEmpty: Bool {
         sites.isEmpty
     }
-
     var hasNoResults: Bool {
         !sites.isEmpty && visibleSites.isEmpty
     }
 
-    mutating func setSearchQuery(_ query: String) {
-        searchQuery = query
-        visibleSites = filteredSites(from: sites, matching: query)
+    init(
+        category: WebsitePermissionCategory = .notifications,
+        searchQuery: String = "",
+        sites: [SiteRow] = []
+    ) {
+        self.category = category
+        self.searchQuery = searchQuery
+        self.sites = sites
+    }
+
+    init(
+        category: WebsitePermissionCategory,
+        searchQuery: String = "",
+        entries: [WebsitePermissionEntry],
+        featureFlagger: FeatureFlagger
+    ) {
+        let sites = entries
+            .filter {
+                category.contains($0.permissionType) && $0.permissionType.isUserEditable(forDomain: $0.domain, featureFlagger: featureFlagger)
+            }
+            .map { entry in
+                SiteRow(
+                    domain: entry.domain,
+                    permissionType: entry.permissionType,
+                    decision: entry.displayedDecision,
+                    permissionTitle: entry.permissionType.isExternalScheme
+                        ? String(format: UserText.websitePermissionsExternalAppFormat, entry.permissionType.localizedDescription)
+                        : nil,
+                    availableDecisions: entry.permissionType.editableDecisions
+                )
+            }
+            .sorted {
+                let domainComparison = $0.domain.localizedCaseInsensitiveCompare($1.domain)
+                if domainComparison != .orderedSame {
+                    return domainComparison == .orderedAscending
+                }
+                return $0.permissionType.rawValue < $1.permissionType.rawValue
+            }
+
+        self.init(category: category, searchQuery: searchQuery, sites: sites)
     }
 
     private func filteredSites(from sites: [SiteRow], matching query: String) -> [SiteRow] {

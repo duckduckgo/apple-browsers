@@ -197,9 +197,22 @@ extension PromoServiceFactoryTests {
                 onboardingStateUpdater: MockOnboardingStateUpdater(),
                 autoconsentStats: MockAutoconsentStats()
             ),
+            duckPlayerOverlayObserver: {
+                let featureFlagger = MockFeatureFlagger()
+                return DuckPlayerOverlayObserver(
+                    duckPlayer: DuckPlayer(
+                        preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
+                        privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                        internalUserDecider: featureFlagger.internalUserDecider
+                    ),
+                    windowControllersManager: windowControllersManager,
+                    featureFlagger: featureFlagger
+                )
+            }(),
             updateController: nil,
             updateNotificationBridge: nil,
-            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator()
+            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
+            quitSurveyPromoObserver: QuitSurveyPromoObserver()
         )
     }
 }

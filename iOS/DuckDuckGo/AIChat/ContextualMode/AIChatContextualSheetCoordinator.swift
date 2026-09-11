@@ -216,6 +216,10 @@ final class AIChatContextualSheetCoordinator {
         isWebUTIEnabled && featureFlagger.isFeatureOn(.aiChatContextualUnifiedToggleInput)
     }
 
+    private var isPagePlaceholderEnabled: Bool {
+        featureFlagger.isFeatureOn(.contextualPagePlaceholder)
+    }
+
     /// A chat about to start brings a keyboard up with it; one that already exists does not.
     private var sheetContextualInputStart: ContextualInputStart {
         guard sessionState.hasActiveChat else { return .expandedPreSubmit }
@@ -325,6 +329,10 @@ final class AIChatContextualSheetCoordinator {
         sessionState.refreshAutoAttachSetting()
         sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
         clearStaleManualContextIfNeeded()
+        // Before collecting: the offer needs `hasActiveChat`, which a restore is what establishes.
+        if let restoreURL {
+            sessionState.restoreChat(with: restoreURL)
+        }
 
         startObservingContextUpdates()
         if attachingPage {
@@ -333,7 +341,7 @@ final class AIChatContextualSheetCoordinator {
             }
             requestManualPageContextAttach()
         } else {
-            collectContextForNewSession(skippingAutoAttach: skippingAutoAttach)
+            collectContextForNewSession(skippingAutoAttach: skippingAutoAttach, isColdRestore: restoreURL != nil)
         }
 
         stopSessionTimer()
@@ -341,7 +349,7 @@ final class AIChatContextualSheetCoordinator {
         if let sheetViewController {
             presentExistingSheet(sheetViewController, from: presentingViewController)
         } else {
-            presentNewSheet(from: presentingViewController, restoreURL: restoreURL)
+            presentNewSheet(from: presentingViewController)
         }
     }
 
@@ -513,7 +521,7 @@ final class AIChatContextualSheetCoordinator {
         if let sheetViewController {
             presentExistingSheet(sheetViewController, from: presentingViewController)
         } else {
-            presentNewSheet(from: presentingViewController, restoreURL: nil, opensOntoSubmittedChat: true)
+            presentNewSheet(from: presentingViewController, opensOntoSubmittedChat: true)
         }
     }
 
@@ -551,7 +559,7 @@ final class AIChatContextualSheetCoordinator {
         }
     }
 
-    private func collectContextForNewSession(skippingAutoAttach: Bool = false) {
+    private func collectContextForNewSession(skippingAutoAttach: Bool = false, isColdRestore: Bool = false) {
         if !skippingAutoAttach {
             sessionState.allowAutoAttachAgain()
         }
@@ -571,13 +579,22 @@ final class AIChatContextualSheetCoordinator {
                 sessionState.beginLoadingSuggestions()
             }
             pageContextHandler.triggerContextCollection(trigger: .auto)
-        } else if currentPageURL != nil, shouldCollectSignalsOnly {
+        } else if currentPageURL != nil, shouldCollectSignalsOnly(forColdRestore: isColdRestore) {
             sessionState.markPendingSignalsOnlyCollection()
             pageContextHandler.triggerContextCollection(trigger: .tabContent)
-        } else {
-            // No collection attempted — still measure the current page's attachability.
+        } else if !offerPageContextIfNeeded(trigger: .auto) {
             pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
         }
+    }
+
+    @discardableResult
+    private func offerPageContextIfNeeded(trigger: PageContextExtractionTrigger) -> Bool {
+        guard isPagePlaceholderEnabled,
+              isActivelyObservingContext,
+              sessionState.shouldOfferPageContext(for: currentPageURL) else {
+            return false
+        }
+        return pageContextHandler.triggerContextCollection(trigger: trigger)
     }
 
     private func makeChipsViewController() -> AIChatContextualInputViewController {
@@ -690,9 +707,11 @@ final class AIChatContextualSheetCoordinator {
             }
         } else if sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
             sessionState.notifyFrontendOfMultiContextNavigation()
-            sessionState.clearProcessingNavigationFlag()
-            pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
-        } else if shouldCollectSignalsOnly {
+            if !offerPageContextIfNeeded(trigger: .navigation) {
+                sessionState.clearProcessingNavigationFlag()
+                pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
+            }
+        } else if shouldCollectSignalsOnly() {
             startSignalsOnlyCollection()
         } else {
             sessionState.clearProcessingNavigationFlag()
@@ -705,15 +724,15 @@ final class AIChatContextualSheetCoordinator {
         sheetViewController != nil
     }
 
-    private var shouldCollectSignalsOnly: Bool {
+    private func shouldCollectSignalsOnly(forColdRestore: Bool = false) -> Bool {
         featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
-            && !sessionState.hasActiveChat
+            && (forColdRestore || !sessionState.hasActiveChat)
             && !sessionState.shouldAutoCollectContext
             && !sessionState.shouldSuspendSuggestionsRefresh
     }
 
     private func startSignalsOnlyCollection() {
-        guard shouldCollectSignalsOnly else { return }
+        guard shouldCollectSignalsOnly() else { return }
         sessionState.markPendingSignalsOnlyCollection()
         if !pageContextHandler.triggerContextCollection(trigger: .tabContent) {
             sessionState.clearProcessingNavigationFlag()
@@ -722,7 +741,7 @@ final class AIChatContextualSheetCoordinator {
 
     private func removeAttachedContext() {
         sessionState.downgradeToPlaceholder()
-        guard currentPageURL != nil, shouldCollectSignalsOnly else {
+        guard currentPageURL != nil, shouldCollectSignalsOnly() else {
             pageContextHandler.clear()
             return
         }
@@ -762,12 +781,8 @@ private extension AIChatContextualSheetCoordinator {
         isSheetPresented = true
     }
 
-    func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?, opensOntoSubmittedChat: Bool = false) {
+    func presentNewSheet(from presentingVC: UIViewController, opensOntoSubmittedChat: Bool = false) {
         guard presentingVC.presentedViewController == nil, floatingInputViewController == nil else { return }
-
-        if let restoreURL {
-            sessionState.restoreChat(with: restoreURL)
-        }
 
         let suggestionsReader = makeSuggestionsReaderIfEnabled()
         let persistentUTIHost = isImmediateContextualUTIEnabled
@@ -831,6 +846,16 @@ private extension AIChatContextualSheetCoordinator {
         host.onRemoveRequested = { [weak self] in
             guard let self else { return }
             self.removeAttachedContext()
+        }
+        host.onSuggestionAccepted = { [weak self] in
+            self?.sessionState.acceptSuggestedContext()
+        }
+        host.onSuggestionDismissed = { [weak self] in
+            self?.sessionState.dismissSuggestedContext()
+        }
+        // A host built mid-session (collapse, expand) inherits the offer already on screen.
+        if let suggestion = sessionState.suggestedContext {
+            host.setSuggestedContext(suggestion)
         }
         host.onPromptSubmitted = { [weak self] in
             guard let self else { return }
@@ -954,8 +979,12 @@ private extension AIChatContextualSheetCoordinator {
             deliverToUTIChip(context, host: host)
         }
 
-        if let host = persistentUTIHost, targets.contains(.utiAttachAffordance) {
-            host.showAttachAffordance()
+        if let host = persistentUTIHost, targets.contains(.utiSuggestedContext) {
+            if let suggestion = sessionState.suggestedContext {
+                host.setSuggestedContext(suggestion)
+            } else {
+                host.clearSuggestedContext()
+            }
         }
 
         if targets.contains(.frontendBridge) {
@@ -1110,7 +1139,7 @@ private extension AIChatContextualSheetCoordinator {
         persistentUTIHost?.prepareForNewChat()
         refreshSelectionChips()
 
-        if shouldCollectSignalsOnly {
+        if shouldCollectSignalsOnly() {
             Logger.aiChat.debug("[PageContext] New chat - collecting signals-only")
             sessionState.markPendingSignalsOnlyCollection()
             pageContextHandler.triggerContextCollection(trigger: .tabContent)

@@ -48,6 +48,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     var onAttachRequested: (() -> Void)?
     var onRemoveRequested: (() -> Void)?
+    /// The user accepted the offer to attach the page they navigated to.
+    var onSuggestionAccepted: (() -> Void)?
+    var onSuggestionDismissed: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
@@ -119,6 +122,12 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         chipViewModel.onRemoveActionRequested = { [weak self] in
             self?.onRemoveRequested?()
         }
+        chipViewModel.onSuggestionAccepted = { [weak self] in
+            self?.onSuggestionAccepted?()
+        }
+        chipViewModel.onSuggestionDismissed = { [weak self] in
+            self?.onSuggestionDismissed?()
+        }
 
         Logger.contextualUTI.debug("UTIHost init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
 
@@ -166,6 +175,14 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         chipViewModel.clearAttached()
     }
 
+    func setSuggestedContext(_ context: AIChatPageContext) {
+        chipViewModel.setSuggested(context)
+    }
+
+    func clearSuggestedContext() {
+        chipViewModel.clearSuggested()
+    }
+
     /// One chip per attached selection, alongside the page-context chip. An empty list removes them all.
     func setSelectionChips(_ items: [(id: String, title: String, favicon: UIImage?)], onRemove: @escaping (String) -> Void) {
         coordinator.viewController.setSelectionContextChips(items, onRemove: onRemove)
@@ -188,10 +205,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     func clearRejectionBanner() {
         coordinator.clearRejectionBanner()
-    }
-
-    func showAttachAffordance() {
-        chipViewModel.showAttachAffordance()
     }
 
     /// Routes UTI-submitted prompts through the contextual chat's JS message channel (same as the FE).

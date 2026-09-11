@@ -324,6 +324,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Context-aware page suggestions shown in the iOS contextual Duck.ai sheet
     case contextualSuggestedPrompts
 
+    /// Offers the page navigated to as an attachment, in an active contextual chat with auto-attach off
+    case contextualPagePlaceholder
+
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 
@@ -856,6 +859,9 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the Cookie Pop-ups Blocked promo.
     case cookiePopupsBlockedPromo
+
+    /// Kill switch for observing the Duck Player ("Watch in Duck Player?") overlay.
+    case duckPlayerOverlayPromo
 
     /// Kill switch for the "Update available" promo.
     case updateAvailablePromo

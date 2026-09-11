@@ -23,6 +23,7 @@ import PrivacyConfig
 import Common
 import FoundationExtensions
 import FeatureFlags_iOS
+import UIKit
 
 public final class LaunchOptionsHandler {
 
@@ -210,6 +211,10 @@ extension LaunchOptionsHandler {
         featureFlagOverrideStore: KeyValueStoring,
         configRolloutStore: UserDefaults
     ) {
+        if isUITesting && environment["UITEST_DISABLE_ANIMATIONS"] == "1" {
+            UIView.setAnimationsEnabled(false)
+        }
+
         let shouldClearAllDefaults = arguments.contains("-clearAllDefaults")
         let shouldBackdateInstallDate = arguments.contains("-backdateInstallDate")
         if shouldClearAllDefaults || shouldBackdateInstallDate {

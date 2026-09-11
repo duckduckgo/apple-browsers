@@ -1,5 +1,5 @@
 //
-//  AppLaunchUITests.swift
+//  UITestCase.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -18,11 +18,11 @@
 //
 
 import XCTest
-import UITestingSupport
 
-final class AppLaunchUITests: XCTestCase {
+class UITestCase: XCTestCase {
 
-    private let app = XCUIApplication()
+    let app = XCUIApplication()
+
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
@@ -31,6 +31,8 @@ final class AppLaunchUITests: XCTestCase {
             "-clearAllDefaults",
             "isRunningUITests",
             "-isOnboardingCompleted", "true",
+            // Match the toolbar variant used by Maestro during migration.
+            "-ff.floatingUIAugust2026", "false",
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_US",
         ]
@@ -41,14 +43,5 @@ final class AppLaunchUITests: XCTestCase {
     override func tearDownWithError() throws {
         app.terminate()
         try super.tearDownWithError()
-    }
-
-    func testAppLaunchesIntoBrowser() {
-        let searchEntry = app.descendants(matching: .any)["searchEntry"]
-
-        XCTAssertTrue(
-            searchEntry.waitForExistence(timeout: UITestTimeouts.navigation),
-            "Browser UI did not appear after launch."
-        )
     }
 }

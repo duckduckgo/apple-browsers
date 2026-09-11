@@ -7968,7 +7968,12 @@ extension MainViewController {
         if !themeColorManager.updateThemeColor() {
             updateStatusBarBackgroundColor()
         }
-        refreshSettledFloatingGlassAppearance()
+        // Rebuilding the glass detaches its controls and can dismiss an opening button menu.
+        // Unrelated trait changes must preserve that hierarchy.
+        if traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle
+            || traitCollection.accessibilityContrast != previousTraitCollection?.accessibilityContrast {
+            refreshSettledFloatingGlassAppearance()
+        }
         updateFindInPage()
 
         revealChromeIfPinned()

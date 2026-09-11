@@ -145,6 +145,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712841283
     case privacyProOnboardingPromotion
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218354517064977
+    case performanceOptimizedPaywalls
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213569392605475
     case subscriptionPromoForReinstallers
 
@@ -700,6 +703,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(MaliciousSiteProtectionSubfeature.scamProtection))
         case .privacyProOnboardingPromotion:
             Config(source: .remoteReleasable(PrivacyProSubfeature.privacyProOnboardingPromotion))
+        case .performanceOptimizedPaywalls:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.performanceOptimizedPaywalls))
         case .subscriptionPromoForReinstallers:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForReinstallers))
         case .subscriptionExpirationReminderNotification:

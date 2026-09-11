@@ -23,6 +23,7 @@ import DDGSync
 import Core
 import PrivacyConfig
 import FeatureFlags_iOS
+import PixelKit
 
 protocol DataImportSummaryViewModelDelegate: AnyObject {
     func dataImportSummaryViewModelDidRequestLaunchSync(_ viewModel: DataImportSummaryViewModel, source: String?)
@@ -252,14 +253,14 @@ final class DataImportSummaryViewModel: ObservableObject {
     func fireSyncButtonShownPixel() {
         guard !isImportHubFlow else { return }
 
-        Pixel.fire(pixel: .importResultSyncButtonShown, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+        PixelKit.fire(Pixel.Event.importResultSyncButtonShown, options: .parameters([PixelParameters.source: importScreen.rawValue]))
     }
 
     func fireSyncPromoDisplayedPixel() {
-        Pixel.fire(.syncPromoDisplayed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.dataImport.rawValue])
+        PixelKit.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": SyncPromoManager.Touchpoint.dataImport.rawValue]))
 
         if isImportHubFlow {
-            Pixel.fire(pixel: .importHubResultSyncPromoShown, withAdditionalParameters: importHubPixelParameters)
+            PixelKit.fire(Pixel.Event.importHubResultSyncPromoShown, options: .parameters(importHubPixelParameters))
         }
     }
     
@@ -271,21 +272,21 @@ final class DataImportSummaryViewModel: ObservableObject {
                 var parameters = importHubPixelContext.parameters
                 parameters[PixelParameters.savedCredentials] = successBucket
                 parameters[PixelParameters.skippedCredentials] = skippedBucket
-                Pixel.fire(pixel: .importHubResultPasswordsSuccess, withAdditionalParameters: parameters)
+                PixelKit.fire(Pixel.Event.importHubResultPasswordsSuccess, options: .parameters(parameters))
             } else {
-                Pixel.fire(pixel: .importResultPasswordsSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
+                PixelKit.fire(Pixel.Event.importResultPasswordsSuccess, options: .parameters([PixelParameters.source: importScreen.rawValue,
                                                                                             PixelParameters.savedCredentials: successBucket,
-                                                                                            PixelParameters.skippedCredentials: skippedBucket])
+                                                                                            PixelParameters.skippedCredentials: skippedBucket]))
             }
         }
         if let bookmarks = bookmarksSummary {
             if let importHubPixelContext {
                 var parameters = importHubPixelContext.parameters
                 parameters[PixelParameters.bookmarkCount] = "\(bookmarks.successful)"
-                Pixel.fire(pixel: .importHubResultBookmarksSuccess, withAdditionalParameters: parameters)
+                PixelKit.fire(Pixel.Event.importHubResultBookmarksSuccess, options: .parameters(parameters))
             } else {
-                Pixel.fire(pixel: .importResultBookmarksSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
-                                                                                            PixelParameters.bookmarkCount: "\(bookmarks.successful)"])
+                PixelKit.fire(Pixel.Event.importResultBookmarksSuccess, options: .parameters([PixelParameters.source: importScreen.rawValue,
+                                                                                            PixelParameters.bookmarkCount: "\(bookmarks.successful)"]))
             }
         }
         if let creditCards = creditCardsSummary {
@@ -295,11 +296,11 @@ final class DataImportSummaryViewModel: ObservableObject {
                 var parameters = importHubPixelContext.parameters
                 parameters[PixelParameters.savedCreditCards] = successBucket
                 parameters[PixelParameters.skippedCreditCards] = skippedBucket
-                Pixel.fire(pixel: .importHubResultCreditCardsSuccess, withAdditionalParameters: parameters)
+                PixelKit.fire(Pixel.Event.importHubResultCreditCardsSuccess, options: .parameters(parameters))
             } else {
-                Pixel.fire(pixel: .importResultCreditCardsSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
+                PixelKit.fire(Pixel.Event.importResultCreditCardsSuccess, options: .parameters([PixelParameters.source: importScreen.rawValue,
                                                                                               PixelParameters.savedCreditCards: successBucket,
-                                                                                              PixelParameters.skippedCreditCards: skippedBucket])
+                                                                                              PixelParameters.skippedCreditCards: skippedBucket]))
             }
         }
     }
@@ -310,7 +311,7 @@ final class DataImportSummaryViewModel: ObservableObject {
 
     func doneTapped() {
         if let importHubPixelContext {
-            Pixel.fire(pixel: .importHubResultDoneTapped, withAdditionalParameters: importHubPixelContext.parameters)
+            PixelKit.fire(Pixel.Event.importHubResultDoneTapped, options: .parameters(importHubPixelContext.parameters))
         }
 
         delegate?.dataImportSummaryViewModelComplete(self)
@@ -318,7 +319,7 @@ final class DataImportSummaryViewModel: ObservableObject {
 
     func dismissSyncPromo() {
         if let importHubPixelContext {
-            Pixel.fire(pixel: .importHubResultSyncPromoDismissed, withAdditionalParameters: importHubPixelContext.parameters)
+            PixelKit.fire(Pixel.Event.importHubResultSyncPromoDismissed, options: .parameters(importHubPixelContext.parameters))
         }
         syncPromoManager.dismissPromoFor(.dataImport, reason: .userTapped)
         dismiss()
@@ -330,7 +331,7 @@ final class DataImportSummaryViewModel: ObservableObject {
 
     func handleContinueImportAction(_ action: ContinueImportAction, for dataType: ContinueImportDataType) {
         if isImportHubFlow {
-            Pixel.fire(pixel: continueImportPixel(for: action, dataType: dataType), withAdditionalParameters: importHubPixelParameters)
+            PixelKit.fire(continueImportPixel(for: action, dataType: dataType), options: .parameters(importHubPixelParameters))
         }
 
         switch action {
@@ -347,15 +348,15 @@ final class DataImportSummaryViewModel: ObservableObject {
         delegate?.dataImportSummaryViewModelDidRequestLaunchSync(self, source: source)
 
         if !isImportHubFlow {
-            Pixel.fire(pixel: .importResultSyncButtonTapped, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+            PixelKit.fire(Pixel.Event.importResultSyncButtonTapped, options: .parameters([PixelParameters.source: importScreen.rawValue]))
         }
 
         if fromSyncPromo, let importHubPixelContext {
-            Pixel.fire(pixel: .importHubResultSyncPromoTapped, withAdditionalParameters: importHubPixelContext.parameters)
+            PixelKit.fire(Pixel.Event.importHubResultSyncPromoTapped, options: .parameters(importHubPixelContext.parameters))
         }
         
         if featureFlagger.isFeatureOn(.dataImportSummarySyncPromotion) {
-            Pixel.fire(.syncPromoConfirmed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.dataImport.rawValue])
+            PixelKit.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": SyncPromoManager.Touchpoint.dataImport.rawValue]))
         }
     }
 

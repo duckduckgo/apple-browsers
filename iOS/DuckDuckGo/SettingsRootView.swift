@@ -19,6 +19,7 @@
 
 import SwiftUI
 import UIKit
+import BrowserServicesKit
 import DataBrokerProtection_iOS
 import DesignResourcesKit
 import Subscription
@@ -150,6 +151,12 @@ struct SettingsRootView: View {
 
     @ViewBuilder func subscriptionFlowNavigationDestination(redirectURLComponents: URLComponents?,
                                                             landingURL: URL? = nil) -> some View {
+        let featureFlagger = viewModel.featureFlagger
+        let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
+            privacyConfigurationManager: viewModel.userScriptsDependencies.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        )
+        let subscriptionDebugSettings = SubscriptionDebugSettingsUserDefaultsPersistor(keyValueStore: viewModel.keyValueStore)
         SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
                                                              landingURL: landingURL,
                                                              navigationCoordinator: subscriptionNavigationCoordinator,
@@ -161,7 +168,12 @@ struct SettingsRootView: View {
                                                              internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                              dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
                                                              wideEvent: AppDependencyProvider.shared.wideEvent,
-                                                             featureFlagger: viewModel.featureFlagger)
+                                                             featureFlagger: featureFlagger,
+                                                             isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
+                                                             performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
+                                                             onboardingKeyValueStore: viewModel.keyValueStore,
+                                                             meetsPIRLocaleRequirement: { viewModel.meetsLocaleRequirement },
+                                                             onRequestDuckAIChat: viewModel.onRequestOnboardingDuckAIChat)
     }
 
     @ViewBuilder func subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
@@ -271,7 +283,7 @@ struct SettingsRootView: View {
             CookiePopUpProtectionView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {
-                let model = SubscriptionSettingsViewModel(userScriptsDependencies: viewModel.userScriptsDependencies)
+                let model = SubscriptionSettingsViewModel(onboardingKeyValueStore: viewModel.keyValueStore, userScriptsDependencies: viewModel.userScriptsDependencies)
                 SubscriptionSettingsViewV2(configuration: configuration, viewModel: model, settingsViewModel: viewModel)
                     .environmentObject(subscriptionNavigationCoordinator)
             }

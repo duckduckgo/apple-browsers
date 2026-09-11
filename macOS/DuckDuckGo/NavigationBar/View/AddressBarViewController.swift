@@ -1728,3 +1728,9 @@ fileprivate extension NSView {
     }
 
 }
+
+extension NSUserInterfaceItemIdentifier {
+    /// Tags the update-notification toast's content view controller so the address bar's
+    /// `childWindows` observer can allow-list its window instead of treating it as a competing panel.
+    static let updateNotificationPopover = NSUserInterfaceItemIdentifier("updateNotificationPopover")
+}

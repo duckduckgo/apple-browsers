@@ -25,6 +25,7 @@ import Subscription
 import PrivacyConfig
 import DataBrokerProtection_iOS
 import PixelKit
+import WideEvent
 import FeatureFlags_iOS
 
 final class SubscriptionEmailViewModel: ObservableObject {
@@ -180,9 +181,9 @@ final class SubscriptionEmailViewModel: ObservableObject {
         
         // Feature Callback
         subFeature.onSetSubscription = {
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseEmailSuccess,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-            UniquePixel.fire(pixel: .subscriptionActivated)
+            PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseEmailSuccess,
+                          frequency: .legacyDailyAndCount)
+            PixelKit.fire(Pixel.Event.subscriptionActivated, frequency: .uniqueByName)
             DispatchQueue.main.async {
                 self.state.subscriptionActive = true
             }
@@ -202,16 +203,16 @@ final class SubscriptionEmailViewModel: ObservableObject {
             DispatchQueue.main.async {
                 switch feature {
                 case .networkProtection:
-                    UniquePixel.fire(pixel: .subscriptionWelcomeVPN)
+                    PixelKit.fire(Pixel.Event.subscriptionWelcomeVPN, frequency: .uniqueByName)
                     self.state.selectedFeature = .netP
                 case .dataBrokerProtection:
-                    UniquePixel.fire(pixel: .subscriptionWelcomePersonalInformationRemoval)
+                    PixelKit.fire(Pixel.Event.subscriptionWelcomePersonalInformationRemoval, frequency: .uniqueByName)
                     self.state.selectedFeature = .dbp
                 case .identityTheftRestoration, .identityTheftRestorationGlobal:
-                    UniquePixel.fire(pixel: .subscriptionWelcomeIdentityRestoration)
+                    PixelKit.fire(Pixel.Event.subscriptionWelcomeIdentityRestoration, frequency: .uniqueByName)
                     self.state.selectedFeature = .itr
                 case .paidAIChat:
-                    UniquePixel.fire(pixel: .subscriptionWelcomeAIChat)
+                    PixelKit.fire(Pixel.Event.subscriptionWelcomeAIChat, frequency: .uniqueByName)
                     self.urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
                 case .unknown:
                     break

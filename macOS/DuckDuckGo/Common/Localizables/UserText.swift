@@ -991,7 +991,7 @@ struct UserText {
     static let aiChatUsageWarningsDismissAccessibilityLabel = NSLocalizedString("aichat.usageWarnings.dismiss.accessibility", value: "Dismiss", comment: "Accessibility label for the close button on the Duck.ai usage card")
     static let aiChatUsageWarningsModelPickerAccessibilityLabel = NSLocalizedString("aichat.usageWarnings.model-picker.accessibility", value: "Choose a model", comment: "Accessibility label for the chevron on the Duck.ai usage card, which opens the model picker")
     static func aiChatCreateImageModelSwitchTitle(_ modelShortName: String) -> String {
-        let message = NotLocalizedString(
+        let message = NSLocalizedString(
             "aichat.createImage.modelSwitch.title",
             value: "Now using %@",
             comment: "Title of the Duck.ai input card shown after switching to an image-capable model. Parameter is the new model's short name."
@@ -999,7 +999,7 @@ struct UserText {
         return String(format: message, modelShortName)
     }
     static func aiChatCreateImageModelSwitchSubtitle(_ modelShortName: String) -> String {
-        let message = NotLocalizedString(
+        let message = NSLocalizedString(
             "aichat.createImage.modelSwitch.subtitle",
             value: "%@ doesn't support image creation.",
             comment: "Subtitle explaining why Duck.ai switched models. Parameter is the previous model's short name."
@@ -1007,10 +1007,10 @@ struct UserText {
         return String(format: message, modelShortName)
     }
     static func aiChatCreateImageModelSwitchPrivacySubtitle(_ modelShortName: String) -> String {
-        let message = NotLocalizedString(
+        let message = NSLocalizedString(
             "aichat.createImage.modelSwitch.privacy.subtitle",
-            value: "%@ can't create images. Its extra privacy protections won't apply until you switch back.",
-            comment: "Subtitle shown after switching away from an OSS model for image creation. Parameter is the previous model's short name."
+            value: "%@ can't create images. Zero Provider Visibility won't apply until you switch back.",
+            comment: "Subtitle shown after switching away from a Zero Provider Visibility model for image creation. Parameter is the previous model's short name."
         )
         return String(format: message, modelShortName)
     }
@@ -1507,10 +1507,10 @@ struct UserText {
         return String(format: message, peerName)
     }
 
-    // Confirmation shown when closing the Sync setup dialog while a device is still being connected (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
-    static let syncCloseSetupConfirmationTitleV2 = NotLocalizedString("sync.close-setup-v2.confirmation.title", value: "Are you sure you want to close this window?", comment: "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
-    static let syncCloseSetupConfirmationMessageV2 = NotLocalizedString("sync.close-setup-v2.confirmation.message", value: "Closing this window will stop connecting Sync & Backup.", comment: "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
-    static let syncCloseSetupConfirmationActionV2 = NotLocalizedString("sync.close-setup-v2.confirmation.action", value: "Close", comment: "Button that confirms closing the Sync setup dialog before the devices finished connecting (V2)")
+    // Confirmation shown when closing the Sync setup dialog while a device is still being connected (V2 — simplifiedSyncSetupV2).
+    static let syncCloseSetupConfirmationTitleV2 = NSLocalizedString("sync.close-setup-v2.confirmation.title", value: "Are you sure you want to close this window?", comment: "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
+    static let syncCloseSetupConfirmationMessageV2 = NSLocalizedString("sync.close-setup-v2.confirmation.message", value: "Closing this window will stop connecting Sync & Backup.", comment: "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
+    static let syncCloseSetupConfirmationActionV2 = NSLocalizedString("sync.close-setup-v2.confirmation.action", value: "Close", comment: "Button that confirms closing the Sync setup dialog before the devices finished connecting (V2)")
     static let syncBookmarkPausedAlertTitle = NSLocalizedString("alert.sync-bookmarks-paused-title", value: "Bookmark Sync is Paused", comment: "Title for alert shown when sync bookmarks paused for too many items")
     static let syncBookmarkPausedAlertDescription = NSLocalizedString("alert.sync-bookmarks-paused-description", value: "You've reached the maximum number of bookmarks. Please delete some bookmarks to resume sync.", comment: "Description for alert shown when sync bookmarks paused for too many items")
     static let syncCredentialsPausedAlertTitle = NSLocalizedString("alert.sync-credentials-paused-title", value: "Password Sync is Paused", comment: "Title for alert shown when sync credentials paused for too many items")
@@ -1555,6 +1555,9 @@ struct UserText {
     static let appearance = NSLocalizedString("preferences.appearance", value: "Appearance", comment: "Title of the option to show the Appearance preferences")
     static let dataClearing = NSLocalizedString("preferences.data-clearing", value: "Data Clearing", comment: "Title of the option to show the Data Clearing preferences")
     static let websitePermissions = NotLocalizedString("preferences.website-permissions", value: "Website Permissions", comment: "Title of the option to show Website Permissions")
+    static let websitePermissionsRecentsSection = NotLocalizedString("preferences.website-permissions.recents", value: "Recents", comment: "Section header above the most recently changed website permissions")
+    static let websitePermissionsExternalAppFormat = NotLocalizedString("preferences.website-permissions.external-app.format", value: "Open “%@”", comment: "Label for an external app permission row, %@ is the app name such as Mail")
+    static let websitePermissionsRemovePermission = NotLocalizedString("preferences.website-permissions.remove", value: "Remove", comment: "Accessibility label for the button that removes a saved website permission")
     static let webTrackingProtection = NSLocalizedString("preferences.web-tracking-protection", value: "Web Tracking Protection", comment: "Title of the option to show the Web Tracking Protection preferences")
     static let threatProtection = NSLocalizedString("preferences.threat-protection", value: "Threat Protection", comment: "Title of the option to show the Threat Protection preferences")
     static let threatProtectionCaption = NSLocalizedString("preferences.threat-protection.caption", value: "DuckDuckGo's enhanced protections stop common threats while keeping your connection secure.", comment: "Caption of the option to show the Threat Protection preferences")

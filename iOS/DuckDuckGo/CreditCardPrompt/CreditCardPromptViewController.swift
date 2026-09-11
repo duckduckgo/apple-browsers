@@ -21,6 +21,7 @@ import UIKit
 import BrowserServicesKit
 import Core
 import SwiftUI
+import PixelKit
 
 class CreditCardPromptViewController: UIViewController {
     
@@ -64,7 +65,7 @@ class CreditCardPromptViewController: UIViewController {
 
 extension CreditCardPromptViewController: UISheetPresentationControllerDelegate {
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        Pixel.fire(pixel: .autofillCardsFillCardManualInlineDismissed)
+        PixelKit.fire(Pixel.Event.autofillCardsFillCardManualInlineDismissed)
 
         self.completion?(nil)
     }

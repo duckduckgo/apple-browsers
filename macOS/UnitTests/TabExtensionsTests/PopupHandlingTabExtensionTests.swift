@@ -2111,9 +2111,13 @@ class MockPopupBlockingConfiguration: PopupBlockingConfiguration {
 }
 
 class TestPermissionManager: PermissionManagerProtocol {
+    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> {
+        Empty().eraseToAnyPublisher()
+    }
+
     var persistedPermissions: [String: [PermissionType: PersistedPermissionDecision]] = [:]
 
-    var permissionPublisher: AnyPublisher<(domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision), Never> {
+    var permissionPublisher: AnyPublisher<PublishedPermission, Never> {
         return Empty().eraseToAnyPublisher()
     }
 
@@ -2138,7 +2142,10 @@ class TestPermissionManager: PermissionManagerProtocol {
         return persistedPermissions[domain]?[permissionType]
     }
 
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
+    func setPermission(_ decision: PersistedPermissionDecision,
+                       forDomain domain: String,
+                       permissionType: PermissionType,
+                       lastModified: Date = Date()) {
         if persistedPermissions[domain] == nil {
             persistedPermissions[domain] = [:]
         }

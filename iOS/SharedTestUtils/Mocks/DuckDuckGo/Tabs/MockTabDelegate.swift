@@ -35,6 +35,23 @@ import Combine
 @testable import Core
 
 final class MockTabDelegate: TabDelegate {
+    var shouldRequestAppRatingPrompt = false
+
+    private(set) var didLoadPageForAppRatingPromptCallCount = 0
+    private(set) var didRequestAppRatingPromptCallCount = 0
+
+    func tabDidLoadPageForAppRatingPrompt(_ tab: TabViewController) {
+        didLoadPageForAppRatingPromptCallCount += 1
+    }
+
+    func tabShouldRequestAppRatingPrompt(_ tab: TabViewController) -> Bool {
+        shouldRequestAppRatingPrompt
+    }
+
+    func tabDidRequestAppRatingPrompt(_ tab: TabViewController) {
+        didRequestAppRatingPromptCallCount += 1
+    }
+
     private(set) var didRequestLoadQueryCalled = false
     private(set) var capturedQuery: String?
     private(set) var didRequestLoadURLCalled = false
@@ -186,10 +203,11 @@ extension TabViewController {
         contextualOnboardingLogic: ContextualOnboardingLogic = ContextualOnboardingLogicMock(),
         contextualOnboardingPixelReporter: OnboardingCustomInteractionPixelReporting = OnboardingPixelReporterMock(),
         featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
-        link: Link = Link(title: nil, url: .ddg)
+        link: Link = Link(title: nil, url: .ddg),
+        fireTab: Bool = false
     ) -> TabViewController {
         let tab = TabViewController.loadFromStoryboard(
-            model: .init(link: link),
+            model: .init(link: link, fireTab: fireTab),
             privacyConfigurationManager: PrivacyConfigurationManagerMock(),
             appSettings: AppSettingsMock(),
             bookmarksDatabase: CoreDataDatabase.bookmarksMock,

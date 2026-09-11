@@ -20,6 +20,7 @@
 import Foundation
 import BrowserServicesKit
 import Core
+import PixelKit
 
 protocol CreditCardPromptViewModelDelegate: AnyObject {
     func creditCardPromptViewModel(_ viewModel: CreditCardPromptViewModel, didSelectCreditCard creditCard: SecureVaultModels.CreditCard)
@@ -46,17 +47,17 @@ final class CreditCardPromptViewModel {
     init(creditCards: [SecureVaultModels.CreditCard], usageProvider: AutofillUsageProvider = AutofillUsageStore()) {
         self.cards = creditCards.sorted(by: { $0.created > $1.created }).asCardRowViewModels
         self.usageProvider = usageProvider
-        Pixel.fire(pixel: .autofillCardsFillCardManualInlineDisplayed)
+        PixelKit.fire(Pixel.Event.autofillCardsFillCardManualInlineDisplayed)
     }
     
     func selected(card: CreditCardRowViewModel) {
         delegate?.creditCardPromptViewModel(self, didSelectCreditCard: card.creditCard)
         let parameters = usageProvider.formattedFillDate.flatMap { [PixelParameters.lastUsed: $0] } ?? [:]
-        Pixel.fire(pixel: .autofillCardsFillCardManualInlineConfirmed, withAdditionalParameters: parameters)
+        PixelKit.fire(Pixel.Event.autofillCardsFillCardManualInlineConfirmed, options: .parameters(parameters))
     }
     
     func cancelButtonPressed() {
         delegate?.creditCardPromptViewModelCancel(self)
-        Pixel.fire(pixel: .autofillCardsFillCardManualInlineDismissed)
+        PixelKit.fire(Pixel.Event.autofillCardsFillCardManualInlineDismissed)
     }
 }

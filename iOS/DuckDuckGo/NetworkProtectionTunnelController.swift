@@ -27,6 +27,7 @@ import NetworkExtension
 import VPN
 import Subscription
 import PixelKit
+import WideEvent
 import FeatureFlags_iOS
 
 enum VPNConfigurationRemovalReason: String {
@@ -47,7 +48,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
     private let snoozeTimingStore = NetworkProtectionSnoozeTimingStore(userDefaults: .networkProtectionGroupDefaults)
     private let notificationCenter: NotificationCenter = .default
     private var previousStatus: NEVPNStatus = .invalid
-    private let persistentPixel: PersistentPixelFiring
+    private let pixelFiring: (any PixelKitFiring)?
     private let settings: VPNSettings
     private lazy var startupMonitor = VPNStartupMonitor()
     private var cancellables = Set<AnyCancellable>()
@@ -69,6 +70,12 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
     private let configurationDeniedSubject = PassthroughSubject<Void, Never>()
     var configurationDeniedPublisher: AnyPublisher<Void, Never> {
         configurationDeniedSubject.eraseToAnyPublisher()
+    }
+
+    /// Signals that a VPN configuration was newly created and installed for the first time.
+    private let configurationInstalledSubject = PassthroughSubject<Void, Never>()
+    var configurationInstalledPublisher: AnyPublisher<Void, Never> {
+        configurationInstalledSubject.eraseToAnyPublisher()
     }
 
     // Wide Event
@@ -176,14 +183,14 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
 
     init(tokenHandler: any SubscriptionTokenHandling,
          featureFlagger: FeatureFlagger,
-         persistentPixel: PersistentPixelFiring,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          settings: VPNSettings,
          wideEvent: WideEventManaging,
          freeTrialConversionService: FreeTrialConversionInstrumentationService
     ) {
 
         self.featureFlagger = featureFlagger
-        self.persistentPixel = persistentPixel
+        self.pixelFiring = pixelFiring
         self.settings = settings
         self.tokenHandler = tokenHandler
         self.wideEvent = wideEvent
@@ -208,23 +215,13 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
     private func start(with entryContext: VPNConnectionWideEventData.EntryContext?) async {
         setupAndStartConnectionWideEvent(entryContext: entryContext)
         controllerErrorSubject.send(nil)
-        persistentPixel.fire(
-            pixel: .networkProtectionControllerStartAttempt,
-            error: nil,
-            includedParameters: [.appVersion],
-            withAdditionalParameters: [:],
-            onComplete: { _ in })
+        pixelFiring?.fire(Pixel.Event.networkProtectionControllerStartAttempt, options: .withRetry)
 
         do {
             try await startWithError()
             completeAndCleanupConnectionWideEvent()
 
-            persistentPixel.fire(
-                pixel: .networkProtectionControllerStartSuccess,
-                error: nil,
-                includedParameters: [.appVersion],
-                withAdditionalParameters: [:],
-                onComplete: { _ in })
+            pixelFiring?.fire(Pixel.Event.networkProtectionControllerStartSuccess, options: .withRetry)
         } catch {
             if let message = userFacingControllerErrorMessage(for: error) {
                 controllerErrorSubject.send(message)
@@ -236,12 +233,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
                 return
             }
 
-            persistentPixel.fire(
-                pixel: .networkProtectionControllerStartFailure,
-                error: error,
-                includedParameters: [.appVersion],
-                withAdditionalParameters: [:],
-                onComplete: { _ in })
+            pixelFiring?.fire(Pixel.Event.networkProtectionControllerStartFailure.withError(error), options: .withRetry)
 
             #if DEBUG
             errorStore.lastErrorMessage = error.localizedDescription
@@ -314,14 +306,13 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         do {
             try await tunnelManager?.removeFromPreferences()
 
-            DailyPixel.fireDailyAndCount(pixel: .networkProtectionVPNConfigurationRemoved,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                         withAdditionalParameters: [PixelParameters.reason: reason.rawValue])
+            PixelKit.fire(Pixel.Event.networkProtectionVPNConfigurationRemoved,
+                          frequency: .legacyDailyAndCount,
+                          options: .parameters([PixelParameters.reason: reason.rawValue]))
         } catch {
-            DailyPixel.fireDailyAndCount(pixel: .networkProtectionVPNConfigurationRemovalFailed,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                         error: error,
-                                         withAdditionalParameters: [PixelParameters.reason: reason.rawValue])
+            PixelKit.fire(Pixel.Event.networkProtectionVPNConfigurationRemovalFailed.withError(error),
+                          frequency: .legacyDailyAndCount,
+                          options: .parameters([PixelParameters.reason: reason.rawValue]))
         }
     }
 
@@ -421,17 +412,23 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
             self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
             try tunnelManager.connection.startVPNTunnel(options: options)
             try await startupMonitor.waitForStartSuccess(tunnelManager)
-            UniquePixel.fire(pixel: .networkProtectionNewUser, includedParameters: [.appVersion]) { error in
-                guard error != nil else { return }
-                UserDefaults.networkProtectionGroupDefaults.vpnFirstEnabled = Pixel.Event.networkProtectionNewUser.lastFireDate(
-                    uniquePixelStorage: UniquePixel.storage
+            // Off the tunnel-start path on purpose: the legacy call reported through a completion, so
+            // awaiting it here would fold the pixel's round trip into `tunnelStartDuration`.
+            Task {
+                let result = try? await PixelKit.fireAsync(Pixel.Event.networkProtectionNewUser, frequency: .uniqueByName)
+                // Only seed `vpnFirstEnabled` when nothing was sent, which is the once-ever pixel
+                // reporting it already fired. A fresh send has no earlier date to read.
+                guard result != .sent else { return }
+                UserDefaults.networkProtectionGroupDefaults.vpnFirstEnabled = try? PixelKit.pixelLastFireDate(
+                    event: Pixel.Event.networkProtectionNewUser,
+                    frequency: .uniqueByName
                 )
             }
             self.connectionWideEventData?.tunnelStartDuration?.complete()
             freeTrialConversionService.markVPNActivated()
         } catch {
             completeAtStepWithFailure(.tunnelStart, with: error, description: error.contextualizedDescription())
-            Pixel.fire(pixel: .networkProtectionActivationRequestFailed, error: error)
+            PixelKit.fire(Pixel.Event.networkProtectionActivationRequestFailed.withError(error))
             throw StartError.startVPNFailed(error)
         }
     }
@@ -442,9 +439,10 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
             let tunnelManager = NETunnelProviderManager()
             try await setupAndSave(tunnelManager)
             internalManager = tunnelManager
+            configurationInstalledSubject.send()
             return tunnelManager
         }
-        
+
         connectionWideEventData?.isSetup = .no
         try await setupAndSave(tunnelManager)
         return tunnelManager
@@ -482,6 +480,8 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         // runs on every connect, regardless of whether the user ever opens VPN settings.
         settings.resetEnforceRoutesIfUnavailable(
             strictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRoutingToggle))
+
+        settings.sessionHealthTelemetryEnabled = featureFlagger.isFeatureOn(.vpnSessionHealthTelemetry)
 
         tunnelManager.applyDuckDuckGoConfiguration(from: settings)
     }
@@ -551,6 +551,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
                 .setSelectedLocation,
                 .setDNSSettings,
                 .setShowInMenuBar,
+                .setSessionHealthTelemetryEnabled,
                 .setDisableRekeying:
             // Intentional no-op as this is handled by the extension or applied on the next connect
             break

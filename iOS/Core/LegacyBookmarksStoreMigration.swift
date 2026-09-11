@@ -20,6 +20,7 @@
 import Foundation
 import CoreData
 import Bookmarks
+import PixelKit
 
 public class LegacyBookmarksStoreMigration {
 
@@ -50,7 +51,7 @@ public class LegacyBookmarksStoreMigration {
             do {
                 try BookmarkUtils.prepareLegacyFoldersStructure(in: context)
             } catch {
-                Pixel.fire(pixel: .debugBookmarksInitialStructureQueryFailed, error: error)
+                PixelKit.fire(Pixel.Event.debugBookmarksInitialStructureQueryFailed.withError(error))
                 throw BookmarksDatabaseError.couldNotPrepareBookmarksDBStructure(error)
             }
 
@@ -87,7 +88,7 @@ public class LegacyBookmarksStoreMigration {
 
         // Do not migrate more than once
         guard BookmarkUtils.fetchRootFolder(destination) == nil else {
-            Pixel.fire(pixel: .bookmarksMigrationAlreadyPerformed)
+            PixelKit.fire(Pixel.Event.bookmarksMigrationAlreadyPerformed)
             return
         }
 
@@ -96,7 +97,7 @@ public class LegacyBookmarksStoreMigration {
         guard let newRoot = BookmarkUtils.fetchRootFolder(destination),
               let newFavoritesRoot = BookmarkUtils.fetchFavoritesFolder(withUUID: FavoritesFolderID.unified.rawValue, in: destination),
               let newMobileFavoritesRoot = BookmarkUtils.fetchFavoritesFolder(withUUID: FavoritesFolderID.mobile.rawValue, in: destination) else {
-            Pixel.fire(pixel: .bookmarksMigrationCouldNotPrepareDatabase)
+            PixelKit.fire(Pixel.Event.bookmarksMigrationCouldNotPrepareDatabase)
             let error = NSError(domain: "BookmarksMigration", code: -1, userInfo: [NSLocalizedDescriptionKey: "Could not prepare database structure for migration"])
             throw BookmarksDatabaseError.couldNotWriteToBookmarksDB(error)
         }

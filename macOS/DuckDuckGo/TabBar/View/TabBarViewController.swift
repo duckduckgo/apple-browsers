@@ -935,6 +935,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             canToggleSidebar = true
         } else if aiChatMenuConfig.shouldOpenAIChatInSidebar, case .url = tab.content {
             canToggleSidebar = true
+        } else if aiChatMenuConfig.shouldOpenAIChatInSidebar, case .onboarding = tab.content,
+                  NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
+            canToggleSidebar = true
         }
 
         return canToggleSidebar
@@ -950,7 +953,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private var isDuckAIChromeButtonsEnabled: Bool {
         guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return false }
-        return tab.content != .onboarding
+        return tab.content != .onboarding || NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
     }
 
     private func updateDuckAIChromeSegmentedControlState() {
@@ -2687,7 +2690,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         if let tabID = tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.uuid {
             aiChatCoordinator?.closeFloatingWindow(for: tabID)
         }
-        tabCollectionViewModel.remove(at: tabIndex)
+        tabCollectionViewModel.close(at: tabIndex)
     }
 
     private func shouldWarnBeforeClosingFloatingAIChat(tabID: String) -> Bool {
@@ -2745,7 +2748,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     private func closeTab(for tabID: String) {
         aiChatCoordinator?.closeFloatingWindow(for: tabID)
         guard let tabIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == tabID }) else { return }
-        tabCollectionViewModel.remove(at: tabIndex)
+        tabCollectionViewModel.close(at: tabIndex)
     }
 
     func tabBarViewItemCloseOtherAction(_ tabBarViewItem: TabBarViewItem) {

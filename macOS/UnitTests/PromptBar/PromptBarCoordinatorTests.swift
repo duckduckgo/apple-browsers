@@ -17,8 +17,6 @@
 //
 
 import Carbon.HIToolbox
-import FeatureFlags_macOS
-import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -84,32 +82,20 @@ final class PromptBarCoordinatorTests: XCTestCase {
 
     // Doubles are built here, not passed as defaults: defaults are evaluated nonisolated.
     private func makeCoordinator(
-        isFeatureOn: Bool = true,
         persistor: MockPromptBarPreferencesPersistor = MockPromptBarPreferencesPersistor(),
         isDuckAIAvailable: Bool = true
     ) -> (PromptBarCoordinator, PromptBarPreferences, MockGlobalShortcutRegistrar, MockPromptBarPresenter) {
         let registrar = MockGlobalShortcutRegistrar()
         let presenter = MockPromptBarPresenter()
-        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.promptBar.rawValue: isFeatureOn])
 
         let configuration = MockAIChatConfig()
         configuration.shouldDisplayAnyAIChatFeature = isDuckAIAvailable
 
         let preferences = PromptBarPreferences(persistor: persistor, aiChatMenuConfiguration: configuration)
-        let coordinator = PromptBarCoordinator(featureFlagger: featureFlagger,
-                                               preferences: preferences,
+        let coordinator = PromptBarCoordinator(preferences: preferences,
                                                shortcutRegistrar: registrar,
                                                presenter: presenter)
         return (coordinator, preferences, registrar, presenter)
-    }
-
-    func testWhenFeatureFlagIsOffThenNoShortcutIsRegistered() {
-        let (coordinator, _, registrar, _) = makeCoordinator(isFeatureOn: false, persistor: .optedIn)
-
-        coordinator.start()
-
-        XCTAssertEqual(registrar.registerCallCount, 0)
-        XCTAssertNil(registrar.registeredShortcut)
     }
 
     func testWhenPreferencesAreAtTheirDefaultsThenNoShortcutIsRegistered() {
@@ -209,13 +195,5 @@ final class PromptBarCoordinatorTests: XCTestCase {
         await Task { @MainActor in }.value
 
         XCTAssertEqual(presenter.toggleSources, [.keyboardShortcut])
-    }
-
-    func testWhenFeatureFlagIsOffThenTogglingDoesNothing() {
-        let (coordinator, _, _, presenter) = makeCoordinator(isFeatureOn: false)
-
-        coordinator.togglePromptBar(source: .keyboardShortcut)
-
-        XCTAssertEqual(presenter.toggleCallCount, 0)
     }
 }

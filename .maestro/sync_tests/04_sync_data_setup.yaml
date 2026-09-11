@@ -51,7 +51,7 @@ name: 04_sync_data_setup
 - runFlow:
     file: ../shared/set_internal_user_from_settings.yaml
 
-    # Set Dev environment
+# Set Dev environment
 - runFlow:
     file: ../shared/set_sync_dev_environment.yaml
 
@@ -81,5 +81,5 @@ name: 04_sync_data_setup
     file: ../shared/remove_local_credit_cards.yaml
 
 # Maestro seems to get stuck without an additional step here
-- assertVisible: 
+- assertVisible:
     id: searchEntry

@@ -120,6 +120,28 @@ private extension SubscriptionOnboardingOrderConfirmationViewModel {
     }
 }
 
+// MARK: - Debug Menu
+
+extension SubscriptionOnboardingOrderConfirmationViewModel {
+    /// Debug-menu ONLY: starts already in the state a `lengthInDays`-day trial would produce, skipping the
+    /// subscription fetch entirely.
+    static func forcingFreeTrial(lengthInDays: Int, onNext: @escaping () -> Void = {}) -> SubscriptionOnboardingOrderConfirmationViewModel {
+        let viewModel = SubscriptionOnboardingOrderConfirmationViewModel(onNext: onNext)
+        guard drawableTrialLengths.contains(lengthInDays) else {
+            viewModel.state = .paid
+            return viewModel
+        }
+        let now = Date()
+        let billingStartDate = Calendar.current.date(byAdding: .day, value: lengthInDays, to: now) ?? now
+        viewModel.state = .freeTrial(SubscriptionOnboardingFreeTrialCalendarCardModel(freeTrialStartDate: now,
+                                                                                       billingStartDate: billingStartDate,
+                                                                                       trialLength: lengthInDays,
+                                                                                       now: now,
+                                                                                       calendar: .current))
+        return viewModel
+    }
+}
+
 #if DEBUG
 
 private struct UnresolvedSubscriptionProvider: SubscriptionOnboardingSubscriptionProviding {

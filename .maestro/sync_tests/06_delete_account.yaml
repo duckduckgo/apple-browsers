@@ -15,7 +15,7 @@ name: 06_delete_account
 - runFlow:
     file: ../shared/set_internal_user_from_settings.yaml
 
-    # Set Dev environment
+# Set Dev environment
 - runFlow:
     file: ../shared/set_sync_dev_environment.yaml
 
@@ -27,17 +27,10 @@ name: 06_delete_account
 - runFlow:
     file: ../shared/sync_delete.yaml
 
-# Try to login and check for error
+# Try to login with the now-deleted account's recovery code and check for error
 - assertVisible: Sync With Another Device
 - tapOn: Sync With Another Device
-# Authenticate only if prompted — the auth session may still be valid from account creation.
-- runFlow:
-    when:
-      visible: Passcode field
-    commands:
-      - tapOn: Passcode field
-      - inputText: "0000"
-      - pressKey: Enter
+# Authenticate only if prompted — the auth session may still be valid from a recent step.
 - runFlow:
     when:
       visible: Unlock device to set up Sync & Backup
@@ -49,9 +42,18 @@ name: 06_delete_account
       visible: Allows you to upload photographs and videos
     commands:
         - tapOn: "Allow"
-- assertVisible: Scan QR Code
-- tapOn: Manually Enter Code
-- tapOn: Paste
+- extendedWaitUntil:
+    visible: Enter Code
+    timeout: 30000
+- tapOn: Enter Code
+# The scan tab requests camera permission when its intro animation ends; dismiss the
+# prompt if it raced in before we switched tabs.
+- runFlow:
+    when:
+      visible: Allows you to upload photographs and videos
+    commands:
+        - tapOn: "Allow"
+- tapOn: Paste Sync Code
 - assertVisible: Sync failed.
 - assertVisible: Please try again.
 - tapOn: Got It

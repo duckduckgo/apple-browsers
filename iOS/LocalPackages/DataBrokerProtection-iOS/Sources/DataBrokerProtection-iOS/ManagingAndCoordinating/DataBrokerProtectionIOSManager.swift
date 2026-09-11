@@ -22,7 +22,7 @@ import Combine
 import Common
 import FoundationExtensions
 import BrowserServicesKit
-import PixelKit
+import WideEvent
 import os.log
 import Subscription
 import UserNotifications
@@ -89,6 +89,7 @@ public class DBPIOSInterface {
 
     public protocol AuthenticationDelegate: AnyObject {
         func isUserAuthenticated() async -> Bool
+        func isUserEligibleForFreeTrial() -> Bool
     }
 
     public protocol RunPrerequisitesDelegate: AnyObject, AuthenticationDelegate {
@@ -657,6 +658,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.UserEventsDelegate {
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.AuthenticationDelegate {
     public func isUserAuthenticated() async -> Bool {
         await authenticationManager.isUserAuthenticated
+    }
+
+    public func isUserEligibleForFreeTrial() -> Bool {
+        authenticationManager.isUserEligibleForFreeTrial
     }
 }
 

@@ -22,7 +22,7 @@ import Common
 import FoundationExtensions
 import os.log
 import Networking
-import PixelKit
+import WideEvent
 
 public enum AuthVersion: String {
     // case v1 // removed
@@ -159,6 +159,16 @@ extension SubscriptionManager {
     @discardableResult
     public func getSubscription() async throws -> DuckDuckGoSubscription? {
         try await getSubscription(forceRefresh: false)
+    }
+
+    /// Whether the current subscription has an active free-trial offer. `false` on any fetch failure.
+    public func isOnFreeTrial() async -> Bool {
+        (try? await getSubscription())?.hasActiveTrialOffer ?? false
+    }
+
+    /// Whether the current subscription is active. `false` on any fetch failure.
+    public func isActiveSubscription() async -> Bool {
+        (try? await getSubscription())?.isActive ?? false
     }
 
     public func signOut(notifyUI: Bool) async {

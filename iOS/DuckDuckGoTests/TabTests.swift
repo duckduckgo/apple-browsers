@@ -198,6 +198,24 @@ class TabTests: XCTestCase {
         XCTAssertFalse(tab.isAITab)
     }
 
+    func testWhenTabHasDuckDuckGoSearchURLThenTypeIsSerp() {
+        let tab = Tab(link: Link(title: "Search", url: URL(string: "https://duckduckgo.com/?q=cats")!))
+
+        XCTAssertEqual(tab.type, .serp)
+    }
+
+    func testWhenTabHasRegularWebURLThenTypeIsWeb() {
+        let tab = Tab(link: Link(title: "Example", url: Constants.url))
+
+        XCTAssertEqual(tab.type, .web)
+    }
+
+    func testWhenTabHasDuckAIURLThenTypeIsAIChat() {
+        let tab = Tab(link: Link(title: "AI Chat", url: URL(string: "https://duck.ai/chat")!))
+
+        XCTAssertEqual(tab.type, .aiChat)
+    }
+
     func testWhenAIChatTabEncodedThenDecodesWithCorrectType() {
         // Given - Tab with Duck AI URL
         let aiURL = URL(string: "https://duck.ai/chat")!

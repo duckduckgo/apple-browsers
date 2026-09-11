@@ -99,6 +99,7 @@ struct SettingsState {
     var voiceSearchEnabled: Bool
     var speechRecognitionAvailable: Bool // Returns if the device has speech recognition available
     var loginsEnabled: Bool
+    var sitePermissionsEnabled: Bool
     
     // Network Protection properties
     var networkProtectionConnected: Bool
@@ -158,6 +159,7 @@ struct SettingsState {
             voiceSearchEnabled: false,
             speechRecognitionAvailable: false,
             loginsEnabled: false,
+            sitePermissionsEnabled: false,
             networkProtectionConnected: false,
             subscription: Subscription(hasAppStoreProductsAvailable: false,
                                        isSignedIn: false,

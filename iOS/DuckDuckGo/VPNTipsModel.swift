@@ -25,6 +25,7 @@ import Core
 import VPN
 import os.log
 import TipKit
+import PixelKit
 
 public final class VPNTipsModel: ObservableObject {
 
@@ -132,13 +133,11 @@ public final class VPNTipsModel: ObservableObject {
     func handleGeoswitchingTipInvalidated(_ reason: Tip.InvalidationReason) {
         switch reason {
         case .actionPerformed:
-            Pixel.fire(pixel: .networkProtectionGeoswitchingTipActioned,
-                       withAdditionalParameters: [:],
-                       includedParameters: [.appVersion])
+            PixelKit.fire(Pixel.Event.networkProtectionGeoswitchingTipActioned,
+                          options: .parameters([:]))
         default:
-            Pixel.fire(pixel: .networkProtectionGeoswitchingTipDismissed,
-                       withAdditionalParameters: [:],
-                       includedParameters: [.appVersion])
+            PixelKit.fire(Pixel.Event.networkProtectionGeoswitchingTipDismissed,
+                          options: .parameters([:]))
         }
     }
 
@@ -146,13 +145,11 @@ public final class VPNTipsModel: ObservableObject {
     func handleSnoozeTipInvalidated(_ reason: Tip.InvalidationReason) {
         switch reason {
         case .actionPerformed:
-            Pixel.fire(pixel: .networkProtectionSnoozeTipActioned,
-                       withAdditionalParameters: [:],
-                       includedParameters: [.appVersion])
+            PixelKit.fire(Pixel.Event.networkProtectionSnoozeTipActioned,
+                          options: .parameters([:]))
         default:
-            Pixel.fire(pixel: .networkProtectionSnoozeTipDismissed,
-                       withAdditionalParameters: [:],
-                       includedParameters: [.appVersion])
+            PixelKit.fire(Pixel.Event.networkProtectionSnoozeTipDismissed,
+                          options: .parameters([:]))
         }
     }
 
@@ -160,13 +157,11 @@ public final class VPNTipsModel: ObservableObject {
     func handleWidgetTipInvalidated(_ reason: Tip.InvalidationReason) {
         switch reason {
         case .actionPerformed:
-            Pixel.fire(pixel: .networkProtectionWidgetTipActioned,
-                       withAdditionalParameters: [:],
-                       includedParameters: [.appVersion])
+            PixelKit.fire(Pixel.Event.networkProtectionWidgetTipActioned,
+                          options: .parameters([:]))
         default:
-            Pixel.fire(pixel: .networkProtectionWidgetTipDismissed,
-                       withAdditionalParameters: [:],
-                       includedParameters: [.appVersion])
+            PixelKit.fire(Pixel.Event.networkProtectionWidgetTipDismissed,
+                          options: .parameters([:]))
         }
     }
 
@@ -198,42 +193,36 @@ public final class VPNTipsModel: ObservableObject {
     func handleStatusViewDisappear() {
 
         if case .available = geoswitchingTip.status {
-            Pixel.fire(pixel: .networkProtectionGeoswitchingTipIgnored,
-                       withAdditionalParameters: [:],
-                       includedParameters: [.appVersion])
+            PixelKit.fire(Pixel.Event.networkProtectionGeoswitchingTipIgnored,
+                          options: .parameters([:]))
         }
 
         if case .available = snoozeTip.status {
-            Pixel.fire(pixel: .networkProtectionSnoozeTipIgnored,
-                       withAdditionalParameters: [:],
-                       includedParameters: [.appVersion])
+            PixelKit.fire(Pixel.Event.networkProtectionSnoozeTipIgnored,
+                          options: .parameters([:]))
         }
 
         if case .available = widgetTip.status {
-            Pixel.fire(pixel: .networkProtectionWidgetTipIgnored,
-                       withAdditionalParameters: [:],
-                       includedParameters: [.appVersion])
+            PixelKit.fire(Pixel.Event.networkProtectionWidgetTipIgnored,
+                          options: .parameters([:]))
         }
     }
 
     @available(iOS 18.0, *)
     func handleGeoswitchingTipShown() {
-        Pixel.fire(pixel: .networkProtectionGeoswitchingTipShown,
-                   withAdditionalParameters: [:],
-                   includedParameters: [.appVersion])
+        PixelKit.fire(Pixel.Event.networkProtectionGeoswitchingTipShown,
+                      options: .parameters([:]))
     }
 
     @available(iOS 18.0, *)
     func handleSnoozeTipShown() {
-        Pixel.fire(pixel: .networkProtectionSnoozeTipShown,
-                   withAdditionalParameters: [:],
-                   includedParameters: [.appVersion])
+        PixelKit.fire(Pixel.Event.networkProtectionSnoozeTipShown,
+                      options: .parameters([:]))
     }
 
     @available(iOS 18.0, *)
     func handleWidgetTipShown() {
-        Pixel.fire(pixel: .networkProtectionWidgetTipShown,
-                   withAdditionalParameters: [:],
-                   includedParameters: [.appVersion])
+        PixelKit.fire(Pixel.Event.networkProtectionWidgetTipShown,
+                      options: .parameters([:]))
     }
 }

@@ -24,6 +24,7 @@ import DuckUI
 import MetricBuilder
 import RemoteMessaging
 import Core
+import PixelKit
 
 struct HomeMessageView: View {
 
@@ -165,7 +166,7 @@ struct HomeMessageView: View {
                         PixelParameters.sheetResult: "\(result)"
                     ]
                     additionalParameters = viewModel.onAttachAdditionalParameters?(.messageID(viewModel.messageId), additionalParameters) ?? additionalParameters
-                    Pixel.fire(pixel: .remoteMessageSheet, withAdditionalParameters: additionalParameters)
+                    PixelKit.fire(Pixel.Event.remoteMessageSheet, options: .parameters(additionalParameters))
                 }
                 .modifier(ActivityViewPresentationModifier())
             }

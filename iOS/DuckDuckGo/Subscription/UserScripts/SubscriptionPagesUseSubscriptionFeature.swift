@@ -29,6 +29,7 @@ import Core
 import os.log
 import Networking
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
@@ -117,6 +118,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     var onBackToSettings: (() -> Void)? { get set }
     var onFeatureSelected: ((SubscriptionEntitlement) -> Void)? { get set }
     var onActivateSubscription: (() -> Void)? { get set }
+    var onPurchaseCompleted: (() -> Void)? { get set }
 
     func with(broker: UserScriptMessageBroker)
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler?
@@ -221,6 +223,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     var onBackToSettings: (() -> Void)?
     var onFeatureSelected: ((SubscriptionEntitlement) -> Void)?
     var onActivateSubscription: (() -> Void)?
+    var onPurchaseCompleted: (() -> Void)?
 
     struct FeatureSelection: Codable {
         let productFeature: SubscriptionEntitlement
@@ -427,11 +430,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     // swiftlint:disable:next cyclomatic_complexity
     func subscriptionSelected(params: Any, original: WKScriptMessage) async -> Encodable? {
 
-        DailyPixel.fireDailyAndCount(
-            pixel: .subscriptionPurchaseAttempt,
-            pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-            withAdditionalParameters: subscriptionAttributionOrigin.map { [AttributionParameter.origin: $0] } ?? [:]
-        )
+        PixelKit.fire(Pixel.Event.subscriptionPurchaseAttempt,
+                      frequency: .legacyDailyAndCount,
+                      options: .parameters(subscriptionAttributionOrigin.map { [AttributionParameter.origin: $0] } ?? [:]))
         setTransactionError(nil)
         setTransactionStatus(.purchasing)
         resetSubscriptionFlow()
@@ -469,7 +470,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
             Logger.subscription.log("Subscription already active")
             setTransactionError(.activeSubscriptionAlreadyPresent)
-            Pixel.fire(pixel: .subscriptionRestoreAfterPurchaseAttempt)
+            PixelKit.fire(Pixel.Event.subscriptionRestoreAfterPurchaseAttempt)
             setTransactionStatus(.idle)
             return nil
         }
@@ -580,9 +581,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
                                                                        additionalParams: subscriptionParameters) {
         case .success:
             Logger.subscription.log("Subscription purchase completed successfully")
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseSuccess,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-            UniquePixel.fire(pixel: .subscriptionActivated)
+            PixelKit.fire(Pixel.Event.subscriptionPurchaseSuccess,
+                          frequency: .legacyDailyAndCount)
+            PixelKit.fire(Pixel.Event.subscriptionActivated, frequency: .uniqueByName)
             Pixel.fireAttribution(pixel: .subscriptionSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, freeTrial: freeTrialEligible, subscriptionDataReporter: subscriptionDataReporter)
             fireFreemiumUpsellPixel()
             setTransactionStatus(.idle)
@@ -598,6 +599,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             if let preference = pendingScheduleNotification, let scheduler = expirationReminderScheduler {
                 await scheduler.scheduleReminder(daysBeforeCancel: preference.daysBeforeCancel)
             }
+            onPurchaseCompleted?()
 
         case .failure(let error):
             Logger.subscription.error("App store complete subscription purchase error: \(error, privacy: .public)")
@@ -714,7 +716,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func activateSubscription(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Activating Subscription")
-        Pixel.fire(pixel: .subscriptionRestorePurchaseOfferPageEntry, debounce: 2)
+        PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseOfferPageEntry, frequency: .debounce(seconds: 2))
         onActivateSubscription?()
         return nil
     }
@@ -797,13 +799,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func subscriptionsMonthlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        Pixel.fire(pixel: .subscriptionOfferMonthlyPriceClick)
+        PixelKit.fire(Pixel.Event.subscriptionOfferMonthlyPriceClick)
         return nil
     }
 
     func subscriptionsYearlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        Pixel.fire(pixel: .subscriptionOfferYearlyPriceClick)
+        PixelKit.fire(Pixel.Event.subscriptionOfferYearlyPriceClick)
         return nil
     }
 
@@ -815,19 +817,19 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func subscriptionsAddEmailSuccess(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .subscriptionAddEmailSuccess)
+        PixelKit.fire(Pixel.Event.subscriptionAddEmailSuccess, frequency: .uniqueByName)
         return nil
     }
 
     func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.debug("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .subscriptionWelcomeAddDevice)
+        PixelKit.fire(Pixel.Event.subscriptionWelcomeAddDevice, frequency: .uniqueByName)
         return nil
     }
 
     func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .subscriptionWelcomeFAQClick)
+        PixelKit.fire(Pixel.Event.subscriptionWelcomeFAQClick, frequency: .uniqueByName)
         return nil
     }
 
@@ -890,6 +892,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         onSetSubscription = nil
         onActivateSubscription = nil
         onBackToSettings = nil
+        onPurchaseCompleted = nil
     }
 
     private func fireFreemiumUpsellPixel() {
@@ -995,9 +998,9 @@ extension Pixel {
         if let freeTrial {
             parameters[AttributionParameters.freeTrial] = String(freeTrial)
         }
-        Self.fire(
-            pixel: pixel,
-            withAdditionalParameters: subscriptionDataReporter?.mergeRandomizedParameters(for: .origin(origin), with: parameters) ?? parameters
+        PixelKit.fire(
+            pixel,
+            options: .parameters(subscriptionDataReporter?.mergeRandomizedParameters(for: .origin(origin), with: parameters) ?? parameters)
         )
     }
 

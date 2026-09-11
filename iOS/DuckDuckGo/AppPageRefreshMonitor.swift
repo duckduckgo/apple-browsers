@@ -32,12 +32,12 @@ extension PageRefreshMonitor {
         switch numberOfRefreshes {
         case 2:
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .refresh2X, etag: tdsEtag, fireDebugExperiment: { parameters in
-                UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
+                PixelKit.fire(Pixel.Event.debugBreakageExperiment, frequency: .uniqueByName, options: .parameters(parameters))
             })
         case 3:
-            Pixel.fire(pixel: .pageRefreshThreeTimesWithin20Seconds)
+            PixelKit.fire(Pixel.Event.pageRefreshThreeTimesWithin20Seconds)
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .refresh3X, etag: tdsEtag, fireDebugExperiment: { parameters in
-                UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
+                PixelKit.fire(Pixel.Event.debugBreakageExperiment, frequency: .uniqueByName, options: .parameters(parameters))
             })
         default:
             return

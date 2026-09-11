@@ -24,6 +24,7 @@ import NetworkExtension
 import Networking
 import os.log
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Subscription
 import VPN
@@ -518,10 +519,17 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         NetworkProtectionLastVersionRunStore(userDefaults: defaults).lastExtensionVersionRun = AppVersion.shared.versionAndBuildNumber
         let settings = VPNSettings(defaults: defaults) // Note, settings here is not yet populated with the startup options
         let buildType = StandardApplicationBuildType()
-        self.wideEvent = WideEvent(
+
+        let wideEvent = WideEvent(
             useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
             featureFlagProvider: WideEventFeatureFlagProvider(settings: settings)
         )
+        self.wideEvent = wideEvent
+
+        let sessionHealth = DefaultVPNSessionHealthInstrumentation(
+            wideEvent: wideEvent,
+            extensionType: { Self.isAppex ? .app : .system }(),
+            isTelemetryEnabled: { settings.sessionHealthTelemetryEnabled })
 
         // MARK: - Subscription configuration
 
@@ -602,7 +610,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                    wideEvent: wideEvent,
                    entitlementCheck: entitlementsCheck,
                    loopDetector: loopDetector,
-                   heartbeatStore: heartbeatStore)
+                   heartbeatStore: heartbeatStore,
+                   sessionHealth: sessionHealth)
 
         setupPixels()
         Logger.networkProtection.log("[+] MacPacketTunnelProvider Initialised")

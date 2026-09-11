@@ -25,6 +25,7 @@ import Foundation
 import Navigation
 import Persistence
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Subscription
 import UserScript
@@ -117,15 +118,6 @@ public protocol UpdateController: UpdateControllerObjC {
     /// **Usage**: Displayed in Settings to show "Last checked: X" information.
     /// Used for rate limiting automatic checks (typically 24-hour intervals).
     var lastUpdateCheckDate: Date? { get }
-
-    /// Timestamp when update notification was last shown to user.
-    ///
-    /// **Rate Limiting**: Notifications are throttled to once per 7 days to avoid spam.
-    /// Resets when new update becomes available or user manually triggers check.
-    ///
-    /// **Usage**: Controls frequency of system notifications about available updates.
-    /// Prevents showing the same update notification repeatedly.
-    var lastUpdateNotificationShownDate: Date { get set }
 
     // MARK: - Update Progress Tracking
 
@@ -293,15 +285,9 @@ extension UpdateController {
         latestUpdate == nil
     }
 
-    private var isUpdateNotificationAllowed: Bool {
-        Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
-    }
-
     public func showUpdateNotificationIfNeeded(isOnboardingFinished: () -> Bool) {
-        guard let latestUpdate, hasPendingUpdate, isOnboardingFinished(), isUpdateNotificationAllowed else { return }
+        guard let latestUpdate, hasPendingUpdate, isOnboardingFinished() else { return }
 
         notificationPresenter.showUpdateNotification(for: latestUpdate.type, areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
-
-        lastUpdateNotificationShownDate = Date()
     }
 }

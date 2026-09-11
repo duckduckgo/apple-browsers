@@ -42,6 +42,7 @@ struct PromoDependencies {
     let syncBookmarksAdapter: SyncBookmarksAdapter?
     let pinningManager: PinningManager
     let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate
+    let duckPlayerOverlayObserver: DuckPlayerOverlayObserver
     let updateController: (any UpdateController)?
     let updateNotificationBridge: UpdateNotificationPromoBridge?
     let brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator

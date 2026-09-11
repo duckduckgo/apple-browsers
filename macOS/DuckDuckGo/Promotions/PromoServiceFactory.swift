@@ -75,7 +75,8 @@ struct PromoServiceFactory {
             cookiePopupProtectionOptIn(dependencies: dependencies),
             syncFavicons(dependencies: dependencies),
             bookmarkToolbar(dependencies: dependencies),
-            autoplayDiscoverability(dependencies: dependencies)
+            autoplayDiscoverability(dependencies: dependencies),
+            duckPlayerOverlay(delegate: dependencies.duckPlayerOverlayObserver)
         ]
 
         if let browserUpdatedPromo = browserUpdated(dependencies: dependencies) {

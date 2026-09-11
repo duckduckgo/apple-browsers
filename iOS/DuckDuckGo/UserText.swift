@@ -1832,6 +1832,13 @@ public struct UserText {
 
     // Customize Section
     public static let settingsCustomizeSection = NSLocalizedString("settings.customize", value: "Customize", comment: "Settings title for the customize section")
+
+    // MARK: - New Tab Page customization
+
+    public static let newTabPageCustomizationTitle = NotLocalizedString("new-tab-page.customization.title", value: "Customize Your Start", comment: "Title of the sheet for customizing the New Tab Page")
+    public static let newTabPageCustomizationMessages = NotLocalizedString("new-tab-page.customization.messages", value: "Messages", comment: "Name of the New Tab Page section showing messages, in the customization sheet")
+    public static let newTabPageCustomizationAlwaysShowKeyboard = NotLocalizedString("new-tab-page.customization.always-show-keyboard", value: "Always Show Keyboard", comment: "Setting to always show the keyboard when a new tab is opened")
+    public static let newTabPageCustomizationAllSettings = NotLocalizedString("new-tab-page.customization.all-settings", value: "All Settings", comment: "Opens the app settings from the New Tab Page customization sheet")
     public static let settingsKeyboard = NSLocalizedString("settings.keyboard", value: "Keyboard", comment: "Settings screen cell for Keyboard")
     public static let settingsPreviews = NSLocalizedString("settings.previews", value: "Long-Press Previews", comment: "Settings screen cell for long press previews")
     public static let settingsAutocompleteLabel = NSLocalizedString("settings.autocomplete", value: "Search Suggestions", comment: "Settings screen cell for autocomplete")

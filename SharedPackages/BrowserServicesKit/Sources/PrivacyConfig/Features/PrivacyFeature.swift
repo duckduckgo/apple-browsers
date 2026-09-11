@@ -857,6 +857,9 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     /// Kill switch for the Cookie Pop-ups Blocked promo.
     case cookiePopupsBlockedPromo
 
+    /// Kill switch for observing the Duck Player ("Watch in Duck Player?") overlay.
+    case duckPlayerOverlayPromo
+
     /// Kill switch for the "Update available" promo.
     case updateAvailablePromo
 

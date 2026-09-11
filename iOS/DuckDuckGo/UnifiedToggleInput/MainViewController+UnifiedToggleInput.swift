@@ -1007,6 +1007,7 @@ extension MainViewController {
         contentVC.onDismissRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             if coordinator.isOmnibarSession {
+                self.onExperimentalAddressBarCancelPressed()
                 if let tab = self.tabManager.currentTabsModel.currentTab, tab.link == nil {
                     self.ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
                 }

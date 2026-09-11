@@ -2255,6 +2255,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 isPairingV2CodeEnabled: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanShowV2ConnectCode)
                 },
+                canUseExchangeV2Point1: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanUseExchangeV2Point1)
+                },
                 canWriteUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanWriteUnifiedDeviceList)
                 },

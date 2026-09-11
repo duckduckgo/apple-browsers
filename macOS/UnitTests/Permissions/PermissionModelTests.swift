@@ -356,7 +356,7 @@ final class PermissionModelTests: XCTestCase {
         wait(for: [queryExpectation], timeout: 1)
 
         self.permissionManagerMock.setPermission(.allow, forDomain: URL.duckDuckGo.host!, permissionType: .geolocation)
-        permissionManagerMock.permissionSubject.send((URL.duckDuckGo.host!, .geolocation, .allow))
+        permissionManagerMock.permissionSubject.send((URL.duckDuckGo.host!, .geolocation, .decisionChanged(.allow)))
 
         withExtendedLifetime(c) {
             waitForExpectations(timeout: 1)
@@ -383,7 +383,7 @@ final class PermissionModelTests: XCTestCase {
         wait(for: [queryExpectation], timeout: 1)
 
         self.permissionManagerMock.setPermission(.deny, forDomain: URL.duckDuckGo.host!, permissionType: .geolocation)
-        permissionManagerMock.permissionSubject.send((URL.duckDuckGo.host!, .geolocation, .deny))
+        permissionManagerMock.permissionSubject.send((URL.duckDuckGo.host!, .geolocation, .decisionChanged(.deny)))
 
         withExtendedLifetime(c) {
             waitForExpectations(timeout: 1)
@@ -811,7 +811,7 @@ final class PermissionModelTests: XCTestCase {
         }
 
         permissionManagerMock.setPermission(.deny, forDomain: URL.duckDuckGo.host!, permissionType: .camera)
-        permissionManagerMock.permissionSubject.send( (URL.duckDuckGo.host!, .camera, .deny) )
+        permissionManagerMock.permissionSubject.send( (URL.duckDuckGo.host!, .camera, .decisionChanged(.deny)) )
 
         waitForExpectations(timeout: 1)
     }
@@ -861,7 +861,7 @@ final class PermissionModelTests: XCTestCase {
         }
 
         permissionManagerMock.setPermission(.ask, forDomain: URL.duckDuckGo.host!, permissionType: .camera)
-        permissionManagerMock.permissionSubject.send( (URL.duckDuckGo.host!, .camera, .ask) )
+        permissionManagerMock.permissionSubject.send( (URL.duckDuckGo.host!, .camera, .decisionChanged(.ask)) )
     }
 
     func testWhenPermissionIsRemovedThenMatchingTabsRevokeAccess() {

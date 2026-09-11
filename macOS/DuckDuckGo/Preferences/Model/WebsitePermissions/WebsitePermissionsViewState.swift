@@ -77,9 +77,7 @@ extension WebsitePermissionsViewState {
 }
 
 extension WebsitePermissionsViewState {
-    /// A single recently changed website permission. Display strings and the dropdown's options are
-    /// resolved when the row is built, since `PermissionType.localizedDescription` consults
-    /// `NSWorkspace` to name the handling app for external schemes.
+    /// Precomputes display values because external-app names require NSWorkspace lookups.
     struct RecentRow: Identifiable, Equatable {
         let domain: String
         let permissionType: PermissionType

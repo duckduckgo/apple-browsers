@@ -543,8 +543,9 @@ final class PermissionCenterViewModel: ObservableObject {
             otherPermissions.append(.autoplayPolicy)
         }
 
+        let nativeVoiceFlowEnabled = featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow)
         otherPermissions.removeAll {
-            !$0.isUserEditable(forDomain: domain, featureFlagger: featureFlagger)
+            !$0.isUserEditable(forDomain: domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled)
         }
 
         return (externalSchemePermissions, otherPermissions)

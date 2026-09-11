@@ -95,7 +95,7 @@ final class PermissionManagerMock: PermissionManagerProtocol {
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = nil
         savedLastModified[domain.droppingWwwPrefix(), default: [:]][permissionType] = nil
         publishPersistedPermissions()
-        permissionSubject.send((domain.droppingWwwPrefix(), permissionType, nil))
+        permissionSubject.send((domain.droppingWwwPrefix(), permissionType, .removed))
     }
 
     var burnPermissionsCalled = false
@@ -195,7 +195,7 @@ extension PermissionManagerMock: PermissionManagerDebugging {
         savedLastModified = [:]
         publishPersistedPermissions()
         for permission in removedPermissions {
-            permissionSubject.send((permission.domain, permission.type, nil))
+            permissionSubject.send((permission.domain, permission.type, .removed))
         }
         return removedPermissions.count
     }

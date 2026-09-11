@@ -273,9 +273,9 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     private func configureButtons() {
         configureAccessibility(fireButton, label: "Close all tabs and clear data", identifier: "Browser.Toolbar.Button.Fire")
         configureAccessibility(duckChatButton, label: UserText.duckAiFeatureName, identifier: "TabSwitcher.Button.DuckChat")
-        configureAccessibility(plusButton, label: UserText.keyCommandNewTab)
-        configureAccessibility(doneIconButton, label: UserText.navigationTitleDone)
-        configureAccessibility(doneTextButton, label: UserText.navigationTitleDone)
+        configureAccessibility(plusButton, label: UserText.keyCommandNewTab, identifier: "TabSwitcher.Button.NewTab")
+        configureAccessibility(doneIconButton, label: UserText.navigationTitleDone, identifier: "TabSwitcher.Button.Done")
+        configureAccessibility(doneTextButton, label: UserText.navigationTitleDone, identifier: "TabSwitcher.Button.Done")
         configureAccessibility(editButton, label: UserText.actionGenericEdit)
         configureAccessibility(selectAllButton, label: UserText.selectAllTabs)
         configureAccessibility(deselectAllButton, label: UserText.deselectAllTabs)

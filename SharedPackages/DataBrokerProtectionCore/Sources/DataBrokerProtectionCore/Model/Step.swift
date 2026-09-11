@@ -100,6 +100,9 @@ public struct Step: Codable, Sendable {
             case .expectation:
                 let action = try JSONDecoder().decode(ExpectationAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
+            case .executeScript:
+                let action = try JSONDecoder().decode(ExecuteScriptAction.self, from: jsonData).with(json: jsonData)
+                actionList.append(action)
             case .getCaptchaInfo:
                 let action = try JSONDecoder().decode(GetCaptchaInfoAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
@@ -157,6 +160,8 @@ extension Array where Element == Action {
                 try container.encode(clickAction)
             } else if let expectationAction = action as? ExpectationAction {
                 try container.encode(expectationAction)
+            } else if let executeScriptAction = action as? ExecuteScriptAction {
+                try container.encode(executeScriptAction)
             } else if let conditionAction = action as? ConditionAction {
                 try container.encode(conditionAction)
             } else {

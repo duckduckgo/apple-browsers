@@ -22,6 +22,61 @@ import DataBrokerProtectionCoreTestsUtils
 
 final class ActionRequestEncodingTests: XCTestCase {
 
+    func testWhenBrokerJSONContainsExecuteScriptAction_thenActionRequestPreservesRawPayload() throws {
+        let stepJSON = """
+            {
+                "stepType": "scan",
+                "actions": [
+                    {
+                        "actionType": "executeScript",
+                        "id": "execute-script-1",
+                        "script": "document.body.dataset.result = 'ok';",
+                        "someNewField": "hello-world"
+                    }
+                ]
+            }
+            """
+        let step = try JSONDecoder().decode(Step.self, from: Data(stepJSON.utf8))
+        let action = try XCTUnwrap(step.actions.first)
+
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil, [:])))
+        let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
+
+        XCTAssertEqual(rawActionPayload["actionType"] as? String, "executeScript")
+        XCTAssertEqual(rawActionPayload["id"] as? String, "execute-script-1")
+        XCTAssertEqual(rawActionPayload["script"] as? String, "document.body.dataset.result = 'ok';")
+        XCTAssertEqual(rawActionPayload["someNewField"] as? String, "hello-world")
+    }
+
+    func testWhenExecuteScriptActionDoesNotContainRawJSON_thenActionRequestEncodingFallsBackToTypedAction() throws {
+        let action = ExecuteScriptAction(id: "execute-script-1",
+                                         actionType: .executeScript,
+                                         script: "document.body.dataset.result = 'ok';")
+
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil, [:])))
+        let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
+
+        XCTAssertEqual(rawActionPayload["actionType"] as? String, "executeScript")
+        XCTAssertEqual(rawActionPayload["id"] as? String, "execute-script-1")
+        XCTAssertEqual(rawActionPayload["script"] as? String, "document.body.dataset.result = 'ok';")
+    }
+
+    func testWhenStepContainsExecuteScriptActionWithoutRawJSON_thenEncodingFallsBackToTypedAction() throws {
+        let action = ExecuteScriptAction(id: "execute-script-1",
+                                         actionType: .executeScript,
+                                         script: "document.body.dataset.result = 'ok';")
+        let step = Step(type: .scan, actions: [action])
+
+        let encodedStep = try JSONEncoder().encode(step)
+        let rawStep = try XCTUnwrap(try JSONSerialization.jsonObject(with: encodedStep) as? [String: Any])
+        let rawActions = try XCTUnwrap(rawStep["actions"] as? [[String: Any]])
+        let rawAction = try XCTUnwrap(rawActions.first)
+
+        XCTAssertEqual(rawAction["actionType"] as? String, "executeScript")
+        XCTAssertEqual(rawAction["id"] as? String, "execute-script-1")
+        XCTAssertEqual(rawAction["script"] as? String, "document.body.dataset.result = 'ok';")
+    }
+
     func testWhenActionContainsRawJSON_thenEncodingUsesRawActionPayload() throws {
         let stepJSON = """
             {

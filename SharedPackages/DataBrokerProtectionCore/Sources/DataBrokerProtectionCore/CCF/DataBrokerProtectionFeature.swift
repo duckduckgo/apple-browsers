@@ -132,7 +132,7 @@ public class DataBrokerProtectionFeature: Subfeature {
             await delegate?.captchaInformation(captchaInfo: captchaInfo)
         case .solveCaptcha(let response):
             await delegate?.solveCaptcha(with: response)
-        case .fillForm, .click, .expectation:
+        case .fillForm, .click, .expectation, .executeScript:
             await delegate?.success(actionId: success.actionID, actionType: success.actionType)
         case .conditionSuccess(let response):
             await delegate?.conditionSuccess(actions: response.actions)

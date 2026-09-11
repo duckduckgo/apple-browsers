@@ -369,7 +369,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// pre-submit contextual sheet on iPhone.
     case contextualFloatingInput
 
-    /// Enables Recent Chats in the iOS address-bar Duck.ai menu.
+    /// Enables Chats in the iOS address-bar and macOS tab-bar Duck.ai menus.
     case addressBarRecentChats
 
     /// Makes the address-bar Duck.ai menu page-aware

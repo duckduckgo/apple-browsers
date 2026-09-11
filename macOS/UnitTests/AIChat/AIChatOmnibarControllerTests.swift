@@ -113,6 +113,16 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     // MARK: - URL Navigation Tests
 
+    func testViewAllChatsOpensChatHistory() {
+        controller.viewAllChats()
+
+        guard case .chatHistory? = mockTabOpener.lastTrigger else {
+            XCTFail("Expected chat history trigger")
+            return
+        }
+        XCTAssertEqual(mockTabOpener.lastBehavior, .newTab(selected: true))
+    }
+
     func testWhenValidURLIsSubmitted_ThenDelegateReceivesNavigationRequest() {
         // Given
         controller.updateText("apple.com")

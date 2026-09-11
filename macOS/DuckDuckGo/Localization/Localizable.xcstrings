@@ -717,6 +717,18 @@
         }
       }
     },
+    "action.title.chats" : {
+      "comment" : "Open Duck.ai chat history from the tab-bar menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chats"
+          }
+        }
+      }
+    },
     "Activate to select" : {
       "localizations" : {
         "de" : {

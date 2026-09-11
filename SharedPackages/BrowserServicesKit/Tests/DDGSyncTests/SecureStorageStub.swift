@@ -29,6 +29,7 @@ class SecureStorageStub: SecureStoring {
     var mockWriteError: SyncError?
     var persistScopedPasswordCalls: [Data] = []
     var persistScopedPasswordCalled: (() -> Void)?
+    var protectedKeysCalls = 0
 
     func persistAccount(_ account: SyncAccount) throws {
         if let mockWriteError {
@@ -78,6 +79,14 @@ class SecureStorageStub: SecureStoring {
             throw mockWriteError
         }
         theProtectedKeysData = data
+    }
+
+    func protectedKeys() throws -> Data? {
+        protectedKeysCalls += 1
+        if let mockReadError {
+            throw mockReadError
+        }
+        return theProtectedKeysData
     }
 
     func removeProtectedKeys() throws {

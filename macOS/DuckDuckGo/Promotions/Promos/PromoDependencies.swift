@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import BrowserServicesKit
 import DDGSync
 import Foundation
@@ -42,5 +43,7 @@ struct PromoDependencies {
     let pinningManager: PinningManager
     let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate
     let duckPlayerOverlayObserver: DuckPlayerOverlayObserver
+    let updateController: (any UpdateController)?
+    let updateNotificationBridge: UpdateNotificationPromoBridge?
     let brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator
 }

@@ -209,6 +209,8 @@ extension PromoServiceFactoryTests {
                     featureFlagger: featureFlagger
                 )
             }(),
+            updateController: nil,
+            updateNotificationBridge: nil,
             brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator()
         )
     }

@@ -298,7 +298,8 @@ final class WindowsManager {
             fireWindowOpenTrigger: fireWindowOpenTrigger,
             fireViewModel: fireCoordinator.fireViewModel,
             themeManager: NSApp.delegateTyped.themeManager,
-            featureFlagger: NSApp.delegateTyped.featureFlagger
+            featureFlagger: NSApp.delegateTyped.featureFlagger,
+            windowControllersManager: NSApp.delegateTyped.windowControllersManager
         )
     }
 

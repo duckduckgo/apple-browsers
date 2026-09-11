@@ -72,6 +72,12 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         configurationDeniedSubject.eraseToAnyPublisher()
     }
 
+    /// Signals that a VPN configuration was newly created and installed for the first time.
+    private let configurationInstalledSubject = PassthroughSubject<Void, Never>()
+    var configurationInstalledPublisher: AnyPublisher<Void, Never> {
+        configurationInstalledSubject.eraseToAnyPublisher()
+    }
+
     // Wide Event
     private let wideEvent: WideEventManaging
     private var connectionWideEventData: VPNConnectionWideEventData?
@@ -433,9 +439,10 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
             let tunnelManager = NETunnelProviderManager()
             try await setupAndSave(tunnelManager)
             internalManager = tunnelManager
+            configurationInstalledSubject.send()
             return tunnelManager
         }
-        
+
         connectionWideEventData?.isSetup = .no
         try await setupAndSave(tunnelManager)
         return tunnelManager
@@ -473,6 +480,8 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         // runs on every connect, regardless of whether the user ever opens VPN settings.
         settings.resetEnforceRoutesIfUnavailable(
             strictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRoutingToggle))
+
+        settings.sessionHealthTelemetryEnabled = featureFlagger.isFeatureOn(.vpnSessionHealthTelemetry)
 
         tunnelManager.applyDuckDuckGoConfiguration(from: settings)
     }
@@ -542,6 +551,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
                 .setSelectedLocation,
                 .setDNSSettings,
                 .setShowInMenuBar,
+                .setSessionHealthTelemetryEnabled,
                 .setDisableRekeying:
             // Intentional no-op as this is handled by the extension or applied on the next connect
             break

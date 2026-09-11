@@ -1107,6 +1107,177 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     // MARK: - Helper Functions
 
+    @MainActor
+    func testSkippedNonBlockingPrioritizesDefaultAndDockInBothOrderingModes() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        OnboardingActionsManager.isOnboardingFinished = true
+        for advanced in [false, true] {
+            persistor = MockNewTabPageNextStepsCardsPersistor()
+            let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+            flags.enabledFeatureFlags = advanced ? [.nextStepsListAdvancedCardOrdering] : []
+            var skipped = false
+            let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                          featureFlagger: flags, isAppStoreBuild: false,
+                                          didSkipOnboarding: { skipped })
+            skipped = true
+            NotificationCenter.default.post(name: NonBlockingOnboardingPersistor.outcomeDidChange, object: nil)
+
+            if advanced { triggerNewTabPageView(on: provider) }
+            XCTAssertEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
+            provider.dismiss(.defaultApp)
+            XCTAssertFalse(provider.cards.contains(.defaultApp))
+            XCTAssertEqual(provider.cards.first, .addAppToDockMac)
+            provider.dismiss(.addAppToDockMac)
+        }
+    }
+
+    @MainActor
+    func testUnfinishedNonBlockingPrioritizesEligibleDefaultAndDockInBothOrderingModes() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        OnboardingActionsManager.isOnboardingFinished = false
+
+        for advanced in [false, true] {
+            persistor = MockNewTabPageNextStepsCardsPersistor()
+            let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+            flags.enabledFeatureFlags = advanced ? [.nextStepsListAdvancedCardOrdering] : []
+            let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                          featureFlagger: flags, isAppStoreBuild: false)
+            if advanced { triggerNewTabPageView(on: provider) }
+            XCTAssertEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
+
+            provider.dismiss(.defaultApp)
+            XCTAssertFalse(provider.cards.contains(.defaultApp))
+            XCTAssertEqual(provider.cards.first, .addAppToDockMac)
+            provider.dismiss(.addAppToDockMac)
+            XCTAssertFalse(provider.cards.contains(.addAppToDockMac))
+        }
+    }
+
+    @MainActor
+    func testNonBlockingSetupCardsRotateWithoutBeingPromotedAgain() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        OnboardingActionsManager.isOnboardingFinished = false
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        flags.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                      featureFlagger: flags, isAppStoreBuild: false)
+        triggerNewTabPageView(on: provider)
+        let initialStack = provider.cards
+        persistor.setTimesShown(5, for: .defaultApp)
+
+        NotificationCenter.default.post(name: NonBlockingOnboardingPersistor.outcomeDidChange, object: nil)
+        XCTAssertEqual(provider.cards, initialStack, "Outcome changes must not rotate the visible stack")
+        triggerNewTabPageView(on: provider)
+        XCTAssertEqual(provider.cards.first, .addAppToDockMac)
+        XCTAssertEqual(persistor.orderedCardIDs?.last, .defaultApp)
+        XCTAssertEqual(provider.cards.count, 3)
+
+        persistor.setTimesShown(5, for: .addAppToDockMac)
+        triggerNewTabPageView(on: provider)
+        XCTAssertFalse(provider.cards.contains(.defaultApp))
+        XCTAssertFalse(provider.cards.contains(.addAppToDockMac))
+        XCTAssertEqual(persistor.orderedCardIDs?.last, .addAppToDockMac)
+        XCTAssertEqual(persistor.dailyVisibleStack, provider.cards)
+    }
+
+    @MainActor
+    func testStandardOrderingStopsPromotingSetupCardsAfterFiveViewsWithoutHidingThem() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        OnboardingActionsManager.isOnboardingFinished = false
+        legacyPersistor.isFirstSession = true
+        persistor.setTimesShown(5, for: .defaultApp)
+        persistor.setTimesShown(5, for: .addAppToDockMac)
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                      featureFlagger: flags, isFirstSession: true, isAppStoreBuild: false)
+
+        XCTAssertNotEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
+        XCTAssertTrue(provider.cards.contains(.defaultApp))
+        XCTAssertTrue(provider.cards.contains(.addAppToDockMac))
+    }
+
+    @MainActor
+    func testAdvancedLevelSwapPreservesOnlyUnexhaustedSetupPriority() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        OnboardingActionsManager.isOnboardingFinished = false
+        appearancePreferences = createAppearancePrefs(demonstrationDays: 2, lastDemonstrated: Date())
+        persistor.firstCardLevel = .level1
+        persistor.visibleStackDayIdentifier = 1
+        persistor.dailyVisibleStack = [.defaultApp, .personalizeBrowser, .emailProtection]
+        persistor.setTimesShown(5, for: .defaultApp)
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        flags.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                      featureFlagger: flags, isAppStoreBuild: false)
+        triggerNewTabPageView(on: provider)
+
+        XCTAssertEqual(persistor.firstCardLevel, .level2)
+        XCTAssertEqual(provider.cards.first, .addAppToDockMac)
+        XCTAssertEqual(provider.cards.count, 3)
+        XCTAssertEqual(persistor.dailyVisibleStack, provider.cards)
+    }
+
+    @MainActor
+    func testLateNonBlockingPriorityReconcilesSavedStackOnNextAppearance() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        OnboardingActionsManager.isOnboardingFinished = true
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        flags.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        var skipped = false
+        let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                      featureFlagger: flags, isAppStoreBuild: false, didSkipOnboarding: { skipped })
+        triggerNewTabPageView(on: provider)
+        let savedStack = provider.cards
+
+        skipped = true
+        NotificationCenter.default.post(name: NonBlockingOnboardingPersistor.outcomeDidChange, object: nil)
+        XCTAssertEqual(provider.cards, savedStack)
+        triggerNewTabPageView(on: provider)
+        XCTAssertEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
+        XCTAssertEqual(provider.cards.count, 3)
+        XCTAssertEqual(persistor.dailyVisibleStack, provider.cards)
+        XCTAssertEqual(Array((persistor.orderedCardIDs ?? []).prefix(3)), provider.cards)
+    }
+
+    @MainActor
+    func testUnfinishedNonBlockingDoesNotShowAlreadyCompletedSetupCards() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        OnboardingActionsManager.isOnboardingFinished = false
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        let provider = createProvider(defaultBrowserIsDefault: true, dockStatus: true,
+                                      featureFlagger: flags, isAppStoreBuild: false)
+        XCTAssertFalse(provider.cards.contains(.defaultApp))
+        XCTAssertFalse(provider.cards.contains(.addAppToDockMac))
+    }
+
+    @MainActor
+    func testCompletedNonBlockingAndUnfinishedBlockingUseNormalPriority() {
+        let wasFinished = OnboardingActionsManager.isOnboardingFinished
+        defer { OnboardingActionsManager.isOnboardingFinished = wasFinished }
+        legacyPersistor.isFirstSession = true
+        for isNonBlocking in [false, true] {
+            OnboardingActionsManager.isOnboardingFinished = isNonBlocking
+            let flags = MockFeatureFlagger(resolveCohortStub: isNonBlocking ? FeatureFlag.OnboardingNonBlockingCohort.treatment : FeatureFlag.OnboardingNonBlockingCohort.control)
+            let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                          featureFlagger: flags, isFirstSession: true, isAppStoreBuild: false)
+            XCTAssertNotEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
+        }
+    }
+
+    @MainActor
+    func testSkippedBlockingOnboardingDoesNotGetCardPriority() {
+        let provider = createProvider(defaultBrowserIsDefault: false, dockStatus: false,
+                                      isAppStoreBuild: false, didSkipOnboarding: { true })
+        XCTAssertNotEqual(Array(provider.cards.prefix(2)), [.defaultApp, .addAppToDockMac])
+    }
+
     private func createProvider(
         defaultBrowserIsDefault: Bool? = nil,
         dataImportDidImport: Bool? = nil,
@@ -1123,7 +1294,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         featureFlagger: MockFeatureFlagger? = nil,
         adBlockingAvailability: MockAdBlockingAvailability? = nil,
         isFirstSession: Bool? = nil,
-        isAppStoreBuild: Bool? = nil
+        isAppStoreBuild: Bool? = nil,
+        didSkipOnboarding: @escaping () -> Bool = { false }
     ) -> NewTabPageNextStepsSingleCardProvider {
         let testDefaultBrowserProvider: CapturingDefaultBrowserProvider = {
             if let value = defaultBrowserIsDefault {
@@ -1227,7 +1399,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             syncService: testSyncService,
             adBlockingAvailability: testAdBlockingAvailability,
             applicationBuildType: testApplicationBuildType,
-            scheduler: .immediate
+            scheduler: .immediate,
+            didSkipOnboarding: didSkipOnboarding
         )
     }
 

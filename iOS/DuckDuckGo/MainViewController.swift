@@ -112,6 +112,9 @@ class MainViewController: UIViewController {
     private static let shakeIgnoreIntervalAfterForeground: TimeInterval = 1.0
 
     override var preferredStatusBarStyle: UIStatusBarStyle {
+        if viewCoordinator?.isVoiceModeStatusBackgroundActive == true {
+            return .lightContent
+        }
         return ThemeManager.shared.currentTheme.statusBarStyle
     }
 
@@ -445,7 +448,8 @@ class MainViewController: UIViewController {
     private var pageBackgroundColorObservation: NSKeyValueObservation?
 
     private func observePageBackgroundColor(for tab: TabViewController) {
-        pageBackgroundColorObservation = tab.webView.observe(\.underPageBackgroundColor, options: [.initial, .new]) { [weak self] _, _ in
+        pageBackgroundColorObservation = tab.webView.observe(\.underPageBackgroundColor, options: [.initial, .new]) { [weak self, weak tab] _, _ in
+            tab?.pullToRefreshViewAdapter?.webViewUnderPageBackgroundDidChange()
             self?.refreshSettledFloatingGlassAppearance()
         }
     }
@@ -1270,13 +1274,13 @@ class MainViewController: UIViewController {
 
     private func refreshAIChatChromeChip() {
         let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
-        // iPhone-only: iPad's tabs-bar chip already indicates sheet state, so avoid a duplicate.
-        if UIDevice.current.userInterfaceIdiom == .phone {
+        if UIDevice.current.userInterfaceIdiom == .phone || isChromeMenuButtonAvailable {
             omniBar.barView.updateAIChatButtonForContextualChat(hasContextualSession: hasContextualSession)
         }
-        refreshDuckAIAddressBarMenu()
+        refreshDuckAIAddressBarMenu(type: duckAIAddressBarMenuType(for: currentTab))
         guard let tabsBarController else { return }
         tabsBarController.updateAIChatChipState(isContextualSheetPresented: isSheetPresented)
+        tabsBarController.updateAIChatMenuButtonForContextualChat(hasContextualSession: hasContextualSession)
     }
 
     func startAddFavoriteFlow() {
@@ -1341,7 +1345,16 @@ class MainViewController: UIViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidHide),
                                                name: UIResponder.keyboardDidHideNotification, object: nil)
     }
-
+    
+    private func duckAIAddressBarMenuType(for tab: TabViewController?) -> DuckAIAddressBarMenuType {
+        guard let tab else { return .webPage }
+        return DuckAIAddressBarMenuType.resolve(
+            isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatContextualAddressBarMenu),
+            isShowingDocument: tab.isShowingDocument,
+            tabType: tab.tabType,
+            searchQuery: tab.url?.searchQuery
+        )
+    }
 
     var keyboardShowing = false
     // Set at keyboardWillChangeFrame time (before keyboardDidShow) so the web-keyboard scroll guard
@@ -2959,7 +2972,7 @@ class MainViewController: UIViewController {
     func refreshOmniBar() {
         updateOmniBarLoadingState()
         bindAIChatChromeChipToCurrentTab()
-        refreshDuckAIAddressBarMenu()
+        refreshDuckAIAddressBarMenu(type: duckAIAddressBarMenuType(for: currentTab))
         viewCoordinator.omniBar.refreshFireMode(fireMode: isCurrentTabFireTab())
         // A fresh NTP has no `TabViewController` yet; drive UTI from the tab model so fire-mode still applies.
         unifiedToggleInputCoordinator?.updateIsFireTab(isCurrentTabFireTab())
@@ -3937,6 +3950,11 @@ class MainViewController: UIViewController {
 
     private func makeDataBrokerProtectionSubscriptionFlowViewController(redirectURLComponents: URLComponents?) -> UIViewController {
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
+        let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
+            privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        )
+        let subscriptionDebugSettings = SubscriptionDebugSettingsUserDefaultsPersistor(keyValueStore: keyValueStore)
         let viewController = UIHostingController(rootView: SubscriptionContainerViewFactory.makePurchaseFlowV2(
             redirectURLComponents: redirectURLComponents,
             navigationCoordinator: subscriptionNavigationCoordinator,
@@ -3948,10 +3966,26 @@ class MainViewController: UIViewController {
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
             wideEvent: AppDependencyProvider.shared.wideEvent,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
+            performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
+            onboardingKeyValueStore: keyValueStore,
+            meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
+                dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
+            },
+            onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
         ))
         viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
         return viewController
+    }
+
+    /// Dismisses whatever's presented, then opens Duck.ai chat from the subscription onboarding flow.
+    /// - Returns: Always `true`; a `weak self` caller sees `false` only once `self` is deallocated.
+    func requestOnboardingDuckAIChat(modelID: String?) -> Bool {
+        dismiss(animated: true) {
+            self.openAIChat(source: .onboarding, flowType: .mobileAppOnboarding, modelId: modelID)
+        }
+        return true
     }
 
     private func subscribeToSettingsDeeplinkNotifications() {
@@ -4334,6 +4368,7 @@ class MainViewController: UIViewController {
                     images: [AIChatNativePrompt.NativePromptImage]? = nil,
                     files: [AIChatNativePrompt.NativePromptFile]? = nil,
                     reportsNewTab: Bool? = nil,
+                    forcesNewTab: Bool = false,
                     fromDeepLink: Bool = false) {
 
         // A query means the user asked something and a response is what they are waiting for;
@@ -4352,6 +4387,7 @@ class MainViewController: UIViewController {
             images: images,
             files: files,
             reportsNewTab: reportsNewTab,
+            forcesNewTab: forcesNewTab,
             fromDeepLink: fromDeepLink
         )
     }
@@ -4466,16 +4502,17 @@ class MainViewController: UIViewController {
                                  images: [AIChatNativePrompt.NativePromptImage]? = nil,
                                  files: [AIChatNativePrompt.NativePromptFile]? = nil,
                                  reportsNewTab: Bool? = nil,
+                                 forcesNewTab: Bool = false,
                                  fromDeepLink: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
             return
         }
 
-        // Deep links cross unconditionally; everything else defers to `AIBoundaryNavigationDecision` so the chat→chat-stays-in-place matrix lives in one place. NTP/empty stays in-place via `link != nil`.
+        // Deep links and callers that force it cross unconditionally; everything else defers to `AIBoundaryNavigationDecision` so the chat→chat-stays-in-place matrix lives in one place. NTP/empty stays in-place via `link != nil`.
         let shouldOpenInNewTab: Bool = {
             guard let currentTab, currentTab.tabModel.link != nil else { return false }
-            if fromDeepLink { return true }
+            if fromDeepLink || forcesNewTab { return true }
             return AIBoundaryNavigationDecision.forProgrammaticNavigation(
                 currentIsAI: currentTab.isAITab,
                 currentHasContent: true,
@@ -5452,6 +5489,9 @@ extension MainViewController: OmniBarDelegate {
 
             case .fire:
                 browsingMenu.highlightFireButton()
+
+            case .openBookmarks:
+                break
             }
         }
 

@@ -116,6 +116,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // DuckAI Cells
     private static let duckAIVoiceCellBackground = DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater90)
+    private static let duckAIVoiceModeBackground = DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater100)
 
     // Highlight
     private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
@@ -363,6 +364,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .fireModeCardBackground: return fireModeCardBackground
         case .fireModeFieldBackground: return fireModeFieldBackground
         case .duckAIVoiceCellBackground: return duckAIVoiceCellBackground
+        case .duckAIVoiceModeBackground: return duckAIVoiceModeBackground
         case .confettiMandarinFill:
             return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin50)
         case .confettiMandarinStroke:

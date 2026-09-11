@@ -620,6 +620,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
     case canUseExchangeV2Point1
+    case canSendExchangeChannelSecret
     case canWriteUnifiedDeviceList
     case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList

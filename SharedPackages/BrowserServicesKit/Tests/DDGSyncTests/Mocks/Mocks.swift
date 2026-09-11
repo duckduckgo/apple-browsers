@@ -323,6 +323,7 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var isPairingV2ScanningEnabled: () -> Bool = { true }
     var isPairingV2CodeEnabled: () -> Bool = { true }
     var canUseExchangeV2Point1: () -> Bool = { false }
+    var canSendExchangeChannelSecret: () -> Bool = { true }
     var canWriteUnifiedDeviceList: () -> Bool = { false }
     var canUsePatchEndpointForLegacyDeviceRename: () -> Bool = { true }
     var canReadUnifiedDeviceList: () -> Bool = { false }
@@ -331,6 +332,7 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
         isPairingV2ScanningEnabled: { [weak self] in self?.isPairingV2ScanningEnabled() == true },
         isPairingV2CodeEnabled: { [weak self] in self?.isPairingV2CodeEnabled() == true },
         canUseExchangeV2Point1: { [weak self] in self?.canUseExchangeV2Point1() == true },
+        canSendExchangeChannelSecret: { [weak self] in self?.canSendExchangeChannelSecret() == true },
         canWriteUnifiedDeviceList: { [weak self] in self?.canWriteUnifiedDeviceList() == true },
         canUsePatchEndpointForLegacyDeviceRename: { [weak self] in self?.canUsePatchEndpointForLegacyDeviceRename() == true },
         canReadUnifiedDeviceList: { [weak self] in self?.canReadUnifiedDeviceList() == true }
@@ -407,24 +409,30 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
 
 final class PairingV2MessageExchangingMock: PairingV2MessageExchanging {
     var openChannelCalls: [String] = []
+    var openChannelAuthorizationSecrets: [String?] = []
     var openChannelHandler: ((String) async throws -> Void)?
     var sendCalls: [(messages: [PairingV2EncryptedMessage], channelID: String)] = []
+    var sendAuthorizationSecrets: [String?] = []
     var sendHandler: (([PairingV2EncryptedMessage], String) async throws -> Void)?
     var sendError: Error?
     var fetchMessagesCalls: [(channelID: String, sequence: Int)] = []
+    var fetchMessagesAuthorizationSecrets: [String?] = []
     var fetchMessagesHandler: ((String, Int) async throws -> [PairingV2SequencedMessage])?
     var fetchMessagesStub: [PairingV2SequencedMessage] = []
     var fetchMessagesError: Error?
     var closeChannelCalls: [String] = []
+    var closeChannelAuthorizationSecrets: [String?] = []
     var closeChannelHandler: ((String) async throws -> Void)?
 
-    func openChannel(_ channelID: String) async throws {
+    func openChannel(_ channelID: String, authorizationSecret: String?) async throws {
         openChannelCalls.append(channelID)
+        openChannelAuthorizationSecrets.append(authorizationSecret)
         try await openChannelHandler?(channelID)
     }
 
-    func send(_ messages: [PairingV2EncryptedMessage], to channelID: String) async throws {
+    func send(_ messages: [PairingV2EncryptedMessage], to channelID: String, authorizationSecret: String?) async throws {
         sendCalls.append((messages: messages, channelID: channelID))
+        sendAuthorizationSecrets.append(authorizationSecret)
         if let sendError {
             throw sendError
         }
@@ -433,8 +441,9 @@ final class PairingV2MessageExchangingMock: PairingV2MessageExchanging {
         }
     }
 
-    func fetchMessages(from channelID: String, after sequence: Int) async throws -> [PairingV2SequencedMessage] {
+    func fetchMessages(from channelID: String, after sequence: Int, authorizationSecret: String?) async throws -> [PairingV2SequencedMessage] {
         fetchMessagesCalls.append((channelID: channelID, sequence: sequence))
+        fetchMessagesAuthorizationSecrets.append(authorizationSecret)
         if let fetchMessagesError {
             throw fetchMessagesError
         }
@@ -444,8 +453,9 @@ final class PairingV2MessageExchangingMock: PairingV2MessageExchanging {
         return fetchMessagesStub
     }
 
-    func closeChannel(_ channelID: String) async throws {
+    func closeChannel(_ channelID: String, authorizationSecret: String?) async throws {
         closeChannelCalls.append(channelID)
+        closeChannelAuthorizationSecrets.append(authorizationSecret)
         try await closeChannelHandler?(channelID)
     }
 }

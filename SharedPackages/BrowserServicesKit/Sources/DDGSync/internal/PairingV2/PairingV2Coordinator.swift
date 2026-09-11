@@ -46,15 +46,19 @@ final class PairingV2Coordinator {
     private let deviceType: String
     private let localKind: PairingV2DeviceKind
     private let flags: PairingV2RolloutFlags
+    private let shouldAuthenticateExchangeEndpoints: Bool
     private let makeKeyPair: () throws -> PairingV2KeyPair
+    private let makeChannelSecret: () throws -> String
     private weak var confirmationDelegate: PairingV2ConfirmationDelegate?
 
     private var stateMachine = PairingV2StateMachine()
     private var entryRole: PairingV2EntryRole?
     private var localKeyPair: PairingV2KeyPair?
+    private var localChannelSecret: String?
     private var peerChannelID: String?
     private var peerPublicKey: String?
     private var lastProcessedSequence = 0
+    private var hasOpenedLocalChannel = false
     private var hasClosedLocalChannel = false
     private(set) var completedRegisteredDevices: [RegisteredDevice]?
     private(set) var pendingRecoveryKey: SyncCode.RecoveryKey?
@@ -66,8 +70,10 @@ final class PairingV2Coordinator {
          deviceType: String,
          localKind: PairingV2DeviceKind = .ddg,
          flags: PairingV2RolloutFlags,
+         shouldAuthenticateExchangeEndpoints: Bool,
          confirmationDelegate: PairingV2ConfirmationDelegate? = nil,
-         makeKeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() }) {
+         makeKeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() },
+         makeChannelSecret: @escaping () throws -> String = { try PairingV2ChannelSecretFactory.makeSecret() }) {
         self.syncService = syncService
         self.messageExchanger = messageExchanger
         self.messageCrypto = messageCrypto
@@ -75,8 +81,10 @@ final class PairingV2Coordinator {
         self.deviceType = deviceType
         self.localKind = localKind
         self.flags = flags
+        self.shouldAuthenticateExchangeEndpoints = shouldAuthenticateExchangeEndpoints
         self.confirmationDelegate = confirmationDelegate
         self.makeKeyPair = makeKeyPair
+        self.makeChannelSecret = makeChannelSecret
     }
 
     var state: PairingV2State {
@@ -121,7 +129,9 @@ final class PairingV2Coordinator {
             messages = try await performRelayOperation(
                 at: failureStage(presenter: .presenterPollOwnChannel, scanner: .scannerPollOwnChannel)
             ) {
-                try await messageExchanger.fetchMessages(from: channelID, after: lastProcessedSequence)
+                try await messageExchanger.fetchMessages(from: channelID,
+                                                          after: lastProcessedSequence,
+                                                          authorizationSecret: localChannelSecret)
             }
         } catch let operationFailure as PairingV2OperationFailure {
             if let stateMachineError = operationFailure.context.kind?.stateMachineError {
@@ -167,27 +177,31 @@ final class PairingV2Coordinator {
     }
 
     private func closeLocalChannel() async {
-        guard !hasClosedLocalChannel else {
+        guard hasOpenedLocalChannel, !hasClosedLocalChannel else {
             return
         }
         guard let channelID = localKeyPair?.channelID else {
             return
         }
+        let authorizationSecret = localChannelSecret
         hasClosedLocalChannel = true
-        try? await messageExchanger.closeChannel(channelID)
+        localChannelSecret = nil
+        try? await messageExchanger.closeChannel(channelID, authorizationSecret: authorizationSecret)
     }
 
     private func closeLocalChannelBestEffort() {
-        guard !hasClosedLocalChannel else {
+        guard hasOpenedLocalChannel, !hasClosedLocalChannel else {
             return
         }
         guard let channelID = localKeyPair?.channelID else {
             return
         }
 
+        let authorizationSecret = localChannelSecret
         hasClosedLocalChannel = true
+        localChannelSecret = nil
         Task { [messageExchanger] in
-            try? await messageExchanger.closeChannel(channelID)
+            try? await messageExchanger.closeChannel(channelID, authorizationSecret: authorizationSecret)
         }
     }
 
@@ -262,8 +276,31 @@ final class PairingV2Coordinator {
         switch command {
         case .openV2Channel(let channelID):
             let channelID = try channelID ?? requiredLocalChannelID()
-            try await performRelayOperation(at: relayFailureStage) {
-                try await messageExchanger.openChannel(channelID)
+            let authorizationSecret = try generateChannelSecret()
+
+            do {
+                try await performRelayOperation(at: relayFailureStage) {
+                    try await messageExchanger.openChannel(channelID, authorizationSecret: authorizationSecret)
+                }
+            } catch let operationFailure as PairingV2OperationFailure {
+                // The PUT may have succeeded before its response was lost. Now that the
+                // request has finished, make one cleanup attempt with the same credentials.
+                if operationFailure.context.kind == .networkError {
+                    try? await messageExchanger.closeChannel(
+                        channelID,
+                        authorizationSecret: authorizationSecret
+                    )
+                }
+                throw operationFailure
+            }
+
+            localChannelSecret = authorizationSecret
+            hasOpenedLocalChannel = true
+
+            // If cancelled while channel creation was in flight, clean up now using the secret the server accepted
+            if case .failed(.cancelled) = stateMachine.state {
+                await closeLocalChannel()
+                throw PairingV2Error.cancelled
             }
 
         case .sendHello:
@@ -382,7 +419,9 @@ final class PairingV2Coordinator {
 
         let encryptedMessage = try messageCrypto.encrypt(message, recipientPublicKey: peerPublicKey, senderChannelID: try requiredLocalChannelID())
         try await performRelayOperation(at: failureStage) {
-            try await messageExchanger.send([encryptedMessage], to: peerChannelID)
+            try await messageExchanger.send([encryptedMessage],
+                                            to: peerChannelID,
+                                            authorizationSecret: localChannelSecret)
         }
     }
 
@@ -506,9 +545,11 @@ final class PairingV2Coordinator {
     private func prepareForNewSession(entryRole: PairingV2EntryRole) {
         self.entryRole = entryRole
         localKeyPair = nil
+        localChannelSecret = nil
         peerChannelID = nil
         peerPublicKey = nil
         lastProcessedSequence = 0
+        hasOpenedLocalChannel = false
         hasClosedLocalChannel = false
     }
 
@@ -516,6 +557,21 @@ final class PairingV2Coordinator {
         do {
             return try makeKeyPair()
         } catch {
+            throw PairingV2OperationFailure(generationStage: failureStage, underlyingError: error)
+        }
+    }
+
+    private func generateChannelSecret() throws -> String? {
+        guard shouldAuthenticateExchangeEndpoints else {
+            return nil
+        }
+
+        do {
+            return try makeChannelSecret()
+        } catch {
+            guard let failureStage = failureStage(presenter: .presenterGenerateCode, scanner: .scannerGenerateKeys) else {
+                throw error
+            }
             throw PairingV2OperationFailure(generationStage: failureStage, underlyingError: error)
         }
     }

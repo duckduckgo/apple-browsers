@@ -54,6 +54,31 @@ enum AIChatTabPickerSource {
         }
     }
 
+    /// Opaque handle for the window a call is scoped to. A tab id is not enough — pinned tabs are
+    /// shared, so "the window holding this tab" is ambiguous; this is resolved from the web view.
+    static func windowToken(forCollection collection: TabCollectionViewModel) -> String {
+        String(UInt(bitPattern: ObjectIdentifier(collection).hashValue))
+    }
+
+    static func tabCollectionViewModel(forWindowToken token: String,
+                                       in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
+        windowControllersManager.allTabCollectionViewModels.first { windowToken(forCollection: $0) == token }
+    }
+
+    /// The Duck.ai owner tab for `webView` — the host tab for a sidebar or detached window, the
+    /// chat's own tab otherwise. Sessions are keyed on it, so a sidebar and its host tab share one.
+    static func ownerTabID(for webView: WKWebView?,
+                           in windowControllersManager: WindowControllersManagerProtocol) -> TabIdentifier? {
+        guard let webView else { return nil }
+        if let hostTabID = hostingAIChatViewController(of: webView)?.tabID {
+            return hostTabID
+        }
+        return windowControllersManager.allTabCollectionViewModels
+            .flatMap { ($0.pinnedTabsCollection?.loadedTabs ?? []) + $0.tabCollection.loadedTabs }
+            .first { $0.webView === webView }?
+            .uuid
+    }
+
     private static func hostingAIChatViewController(of webView: WKWebView) -> AIChatViewController? {
         var responder: NSResponder? = webView
         while let current = responder {

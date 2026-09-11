@@ -160,6 +160,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     @MainActor
+    private(set) lazy var quitSurveyPromoObserver = QuitSurveyPromoObserver()
+
+    @MainActor
     private(set) lazy var duckPlayerOverlayObserver: DuckPlayerOverlayObserver = {
         DuckPlayerOverlayObserver(
             duckPlayer: duckPlayer,
@@ -1516,7 +1519,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 duckPlayerOverlayObserver: duckPlayerOverlayObserver,
                 updateController: updateController,
                 updateNotificationBridge: updateNotificationPromoBridge,
-                brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator
+                brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
+                quitSurveyPromoObserver: quitSurveyPromoObserver
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -1899,8 +1903,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 showQuitSurvey: { [weak self] in
                     guard let self else { return }
-                    let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor, featureFlagger: self.featureFlagger, historyCoordinating: self.historyCoordinator, faviconManaging: self.faviconManager)
+                    let presenter = QuitSurveyPresenter(
+                        windowControllersManager: windowControllersManager,
+                        persistor: persistor,
+                        featureFlagger: featureFlagger,
+                        historyCoordinating: historyCoordinator,
+                        faviconManaging: faviconManager
+                    )
+
+                    guard promoService != nil else {
+                        await presenter.showSurvey()
+                        return
+                    }
+
+                    await quitSurveyPromoObserver.reportVisible()
                     await presenter.showSurvey()
+                    await quitSurveyPromoObserver.reportHidden()
                 }
             ),
 

@@ -46,4 +46,5 @@ struct PromoDependencies {
     let updateController: (any UpdateController)?
     let updateNotificationBridge: UpdateNotificationPromoBridge?
     let brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator
+    let quitSurveyPromoObserver: QuitSurveyPromoObserver
 }

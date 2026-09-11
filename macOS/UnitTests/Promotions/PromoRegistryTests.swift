@@ -88,7 +88,8 @@ final class PromoRegistryTests: XCTestCase {
             }(),
             updateController: nil,
             updateNotificationBridge: nil,
-            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator()
+            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
+            quitSurveyPromoObserver: QuitSurveyPromoObserver()
         )
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 

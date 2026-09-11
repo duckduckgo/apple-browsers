@@ -57,7 +57,7 @@ struct PromoServiceFactory {
     }
 
     @MainActor
-    private static func makeAllPromos(dependencies: PromoDependencies) -> [Promo] {
+    static func makeAllPromos(dependencies: PromoDependencies) -> [Promo] {
         var promos: [Promo] = [
             sessionRestore(coordinator: dependencies.sessionRestoreCoordinator),
             updateAvailable(dependencies: dependencies),
@@ -76,6 +76,7 @@ struct PromoServiceFactory {
             syncFavicons(dependencies: dependencies),
             bookmarkToolbar(dependencies: dependencies),
             autoplayDiscoverability(dependencies: dependencies),
+            quitSurvey(observer: dependencies.quitSurveyPromoObserver),
             duckPlayerOverlay(delegate: dependencies.duckPlayerOverlayObserver)
         ]
 

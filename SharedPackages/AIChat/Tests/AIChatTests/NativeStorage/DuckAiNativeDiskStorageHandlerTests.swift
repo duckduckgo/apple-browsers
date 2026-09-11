@@ -244,6 +244,21 @@ final class DuckAiNativeDiskStorageHandlerTests: XCTestCase {
         XCTAssertEqual(recorded.map { Set($0) }, Set(["a", "b"]))
     }
 
+    func testWhenSettingsBlobIsUnreadableThenDeleteChatStillRecordsId() throws {
+        settingsStore.underlyingDict[DuckAiNativeStorageKeyNames.settings.rawValue] = Data("}{ not json".utf8)
+
+        try handler.deleteChat(chatId: "chat-1")
+
+        let recorded = try handler.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue) as? [String]
+        XCTAssertEqual(recorded, ["chat-1"])
+    }
+
+    func testWhenSettingsBlobIsUnreadableThenGetEntryReturnsNil() throws {
+        settingsStore.underlyingDict[DuckAiNativeStorageKeyNames.settings.rawValue] = Data("}{ not json".utf8)
+
+        XCTAssertNil(try handler.getEntry(key: "theme"))
+    }
+
     func testWhenConcurrentDeleteChatsThenNoIdsAreLost() throws {
         let iterations = 100
         let queue1 = DispatchQueue(label: "test.delchat1", qos: .userInitiated)

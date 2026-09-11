@@ -172,7 +172,9 @@ final class MainWindowController: NSWindowController {
             return
         }
 
-        let isNonBlocking = featureFlagger.map { OnboardingNonBlockingExperiment(featureFlagger: $0).isNonBlocking } == true
+        let experiment = featureFlagger.map(OnboardingNonBlockingExperiment.init)
+        experiment?.enroll()
+        let isNonBlocking = experiment?.isNonBlocking == true
         if isNonBlocking, windowControllersManager?.hasOnboardingTab == true {
             return
         }

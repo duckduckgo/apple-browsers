@@ -479,7 +479,7 @@ class OnboardingManagerTests: XCTestCase {
 
         // Then
         XCTAssertTrue(managerWithTreatment.configuration.stepDefinitions.getStarted.options.isEmpty)
-        XCTAssertFalse(featureFlagger.resolvedCohortFlags.contains(FeatureFlag.onboardingChromeExtension.rawValue))
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
     }
 
     func testWhenCohortResolutionReturnsNilThenDoesNotEnrollOrIncludeOption() {
@@ -504,7 +504,7 @@ class OnboardingManagerTests: XCTestCase {
         // First access: not install-eligible → must not enroll
         experimentManager.onboardingStarted(from: navigationDelegate.onboardingSourceTab?.webView)
         XCTAssertTrue(experimentManager.configuration.stepDefinitions.getStarted.options.isEmpty)
-        XCTAssertFalse(featureFlagger.resolvedCohortFlags.contains(FeatureFlag.onboardingChromeExtension.rawValue))
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
 
         // Later access: now install-eligible → must enroll and show treatment option
         chromeExtensionInstaller.canInstallDDGExtension = true

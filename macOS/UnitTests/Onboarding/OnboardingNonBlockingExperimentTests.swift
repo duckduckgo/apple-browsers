@@ -110,11 +110,22 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
-    func testIsNonBlockingResolvesCohort() {
+    func testEnrollAssignsACohort() {
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+
+        OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).enroll()
+
+        XCTAssertTrue(featureFlagger.didCallResolveCohort)
+    }
+
+    /// Reading the mode must never enroll: it is checked on searches, tab updates and prompt eligibility,
+    /// which would otherwise pull existing users into the experiment.
+    func testIsNonBlockingReadsTheAssignedCohortWithoutEnrolling() {
         let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
 
         XCTAssertTrue(OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking)
-        XCTAssertTrue(featureFlagger.didCallResolveCohort)
+        XCTAssertTrue(featureFlagger.didCallAssignedCohort)
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
     }
 
     func testIsNonBlockingDependsOnlyOnTreatment() {

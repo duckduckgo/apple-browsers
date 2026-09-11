@@ -73,11 +73,8 @@ public final class MockFeatureFlagger: FeatureFlagger {
     }
 
     var resolveCohortStub: (any FeatureFlagCohortDescribing)?
-    /// Raw values of the flags passed to `resolveCohort`, for tests that must tell experiments apart.
-    public private(set) var resolvedCohortFlags: [String] = []
     public func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
         didCallResolveCohort = true
-        resolvedCohortFlags.append(featureFlag.rawValue)
         return resolveCohortStub
     }
 

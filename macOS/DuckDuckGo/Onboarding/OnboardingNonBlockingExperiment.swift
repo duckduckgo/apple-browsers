@@ -44,9 +44,16 @@ struct OnboardingNonBlockingExperiment {
         self.featureFlagger = featureFlagger
     }
 
-    /// Assigns a cohort on first read; the framework's rollout and targets decide eligibility.
+    /// Reads the assigned cohort without enrolling, so the many places that ask about the mode
+    /// never pull a user into the experiment.
     var isNonBlocking: Bool {
-        featureFlagger.resolveCohort(for: FeatureFlag.onboardingNonBlocking) as? FeatureFlag.OnboardingNonBlockingCohort == .treatment
+        featureFlagger.assignedCohort(for: FeatureFlag.onboardingNonBlocking) as? FeatureFlag.OnboardingNonBlockingCohort == .treatment
+    }
+
+    /// The only place a cohort is assigned. Call it when onboarding starts, so the experiment
+    /// measures the users who could see it rather than everyone who launches the app.
+    func enroll() {
+        _ = featureFlagger.resolveCohort(for: FeatureFlag.onboardingNonBlocking)
     }
 
     func fireMetric(_ metric: Metric) {

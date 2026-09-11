@@ -180,7 +180,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     let sitePermissionsPixelHandler = SitePermissionsPixelHandler()
 
     @MainActor
-    lazy var sitePermissionsStore = SitePermissionsStore(storage: UserDefaults.app.keyedStoring())
+    var sitePermissionsStore: SitePermissionsStore { sitePermissionsFavicons.store }
+
+    @MainActor
+    lazy var sitePermissionsFavicons = SitePermissionsFaviconStore(
+        store: SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
+        isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.sitePermissions) },
+        fetchFavicon: favicons.fetchFavicon
+    )
 
     @MainActor
     private lazy var sitePermissionsDependencies = SitePermissionsDependencies(

@@ -213,6 +213,7 @@ final class FireExecutorTests: XCTestCase {
                 return self.mockHistoryCleaner
             },
             appSettings: mockAppSettings,
+            sitePermissionsStore: sitePermissionsStore,
             aiChatSyncCleaner: mockAIChatSyncCleaner,
             wideEvent: wideEventMock,
             clearAppSwitcherSnapshots: clearAppSwitcherSnapshots
@@ -657,6 +658,9 @@ final class FireExecutorTests: XCTestCase {
     func testWhenBurningNormalModeDataThenFireproofedSitePermissionsSurvive() async {
         storePermission(for: "protected.example")
         storePermission(for: "cleared.example")
+        var permissionsDidChange = false
+        let subscription = sitePermissionsStore.changesPublisher.sink { permissionsDidChange = true }
+        defer { subscription.cancel() }
         mockFireproofing.isAllowedFireproofDomainHandler = { $0 == "protected.example" }
         let executor = makeFireExecutor()
 
@@ -664,6 +668,7 @@ final class FireExecutorTests: XCTestCase {
 
         XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("protected.example")), .allow)
         XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("cleared.example")))
+        XCTAssertTrue(permissionsDidChange)
     }
 
     func testWhenBurningNormalModeDataThenFireproofedParentDomainProtectsItsSubdomain() async {

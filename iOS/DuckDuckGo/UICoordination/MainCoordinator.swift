@@ -247,6 +247,7 @@ final class MainCoordinator {
                                         privacyConfigurationManager: privacyConfigurationManager,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         privacyStats: privacyStats,
+                                        sitePermissionsStore: tabManager.sitePermissionsStore,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                         fireModeStorageController: contentBlockingService.fireModeStorageController,

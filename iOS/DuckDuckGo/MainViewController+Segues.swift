@@ -553,6 +553,7 @@ extension MainViewController {
 
         settingsViewModel.configureSitePermissions(
             store: tabManager.sitePermissionsStore,
+            favicons: tabManager.sitePermissionsFavicons,
             eventHandler: { [sitePermissionsPixelHandler = tabManager.sitePermissionsPixelHandler] event in
                 sitePermissionsPixelHandler.fire(event)
             },

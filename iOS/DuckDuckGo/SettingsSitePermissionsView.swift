@@ -47,6 +47,7 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
     @Published private var siteRecords = [SitePermissionKey: SitePermissionsStore.SitePermissionRecord]()
 
     private let store: SitePermissionsStore
+    private let favicons: SitePermissionsFaviconStore?
     private let isEnabled: () -> Bool
     private let openSystemSettingsHandler: () -> Void
     private let presentUndoToast: UndoToastPresenter
@@ -54,10 +55,12 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
 
     init(store: SitePermissionsStore,
          isEnabled: @escaping () -> Bool,
+         favicons: SitePermissionsFaviconStore? = nil,
          openSystemSettings: @escaping () -> Void,
          presentUndoToast: @escaping UndoToastPresenter,
          callbacks: Callbacks) {
         self.store = store
+        self.favicons = favicons
         self.isEnabled = isEnabled
         self.openSystemSettingsHandler = openSystemSettings
         self.presentUndoToast = presentUndoToast
@@ -65,9 +68,11 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
         refresh()
     }
 
-    convenience init(store: SitePermissionsStore, isEnabled: @escaping () -> Bool, callbacks: Callbacks) {
+    convenience init(store: SitePermissionsStore, isEnabled: @escaping () -> Bool,
+                     favicons: SitePermissionsFaviconStore? = nil, callbacks: Callbacks) {
         self.init(store: store,
                   isEnabled: isEnabled,
+                  favicons: favicons,
                   openSystemSettings: Self.openSystemSettingsDefault,
                   presentUndoToast: Self.presentUndoToastDefault,
                   callbacks: callbacks)
@@ -77,6 +82,14 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
         guard isEnabled() else { return }
         refresh()
         callbacks.didOpen()
+    }
+
+    func faviconViewModel(for site: SitePermissionKey) -> FaviconViewModel {
+        favicons?.viewModel(for: site) ?? FaviconViewModel(domain: site.host)
+    }
+
+    func loadFavicon(for site: SitePermissionKey) {
+        favicons?.loadFavicon(for: site)
     }
 
     func globalDefault(for permissionType: SitePermissionType) -> GlobalSitePermissionDecision {
@@ -246,8 +259,9 @@ struct SettingsSitePermissionsView: View {
                         NavigationLink(destination: SettingsSitePermissionsSiteView(site: site, viewModel: viewModel)
                             .environmentObject(settingsViewModel)) {
                             HStack(spacing: 12) {
-                                FaviconView(viewModel: FaviconViewModel(domain: site.host))
+                                FaviconView(viewModel: viewModel.faviconViewModel(for: site))
                                     .frame(width: 24, height: 24)
+                                    .onAppear { viewModel.loadFavicon(for: site) }
                                 Text(site.host)
                                     .font(.body)
                                     .foregroundColor(Color(designSystemColor: .textPrimary))

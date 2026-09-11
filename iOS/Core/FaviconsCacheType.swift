@@ -25,6 +25,7 @@ public enum FaviconsCacheType: String {
 
     case tabs
     case fireproof
+    case sitePermissions
 
     public func cacheLocation() -> URL? {
         return baseCacheURL()?.appendingPathComponent(Self.faviconsFolderName)
@@ -36,7 +37,7 @@ public enum FaviconsCacheType: String {
             let groupName = BookmarksDatabase.Constants.bookmarksGroupID
             return FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupName)
 
-        case .tabs:
+        case .tabs, .sitePermissions:
             return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
         }
     }

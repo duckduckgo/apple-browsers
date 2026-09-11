@@ -20,7 +20,7 @@
 import SwiftUI
 
 struct FaviconView: View {
-    let viewModel: FaviconViewModel
+    @ObservedObject var viewModel: FaviconViewModel
     
     var body: some View {
         Image(uiImage: viewModel.image)

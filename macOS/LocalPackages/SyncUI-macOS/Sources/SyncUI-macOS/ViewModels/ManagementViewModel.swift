@@ -78,6 +78,7 @@ public protocol ManagementViewModel: ObservableObject {
     func manageCreditCards()
     func manageIdentities()
 
+    func settingsScreenDidAppear()
     func syncWithAnotherDevicePressed() async
     func syncWithServerPressed() async
     func recoverDataPressed() async

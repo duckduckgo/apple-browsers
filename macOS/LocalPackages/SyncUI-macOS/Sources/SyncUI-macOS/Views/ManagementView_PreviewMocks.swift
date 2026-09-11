@@ -101,6 +101,7 @@ final class PreviewManagementViewModel: ManagementViewModel {
     func manageLogins() {}
     func manageCreditCards() {}
     func manageIdentities() {}
+    func settingsScreenDidAppear() {}
     func syncWithAnotherDevicePressed() async {}
     func syncWithServerPressed() async {}
     func recoverDataPressed() async {}

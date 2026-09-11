@@ -768,9 +768,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         UITraitCollection(userInterfaceStyle: configuration.interfaceStyle).performAsCurrent {
             if #available(iOS 26.0, *) {
                 if configuration.kind == .embedded {
-                    // Flat fill: the chrome underneath is already glass.
-                    view = UIVisualEffectView(effect: nil)
-                    view.backgroundColor = UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground)
+                    // Native regular material, tinted so it still reads as our surface colour.
+                    view = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+                    let tintView = UIView()
+                    tintView.backgroundColor = UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground)
+                    tintView.translatesAutoresizingMaskIntoConstraints = false
+                    view.contentView.addSubview(tintView)
+                    NSLayoutConstraint.activate([
+                        tintView.topAnchor.constraint(equalTo: view.contentView.topAnchor),
+                        tintView.leadingAnchor.constraint(equalTo: view.contentView.leadingAnchor),
+                        tintView.trailingAnchor.constraint(equalTo: view.contentView.trailingAnchor),
+                        tintView.bottomAnchor.constraint(equalTo: view.contentView.bottomAnchor)
+                    ])
                 } else {
                     let effect = UIGlassEffect(style: .regular)
                     if configuration.fireMode {
@@ -783,6 +792,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
         if configuration.kind == .embedded {
             view.overrideUserInterfaceStyle = configuration.interfaceStyle
+            // `cornerConfiguration` only shapes glass effects; a classic UIBlurEffect needs a
+            // manual capsule radius, kept in sync with its height in `applyOmnibarCornerStyle()`.
+            view.clipsToBounds = true
         }
         return view
     }
@@ -925,6 +937,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
             setFieldBackgroundColor(.clear)
             searchAreaContainerView.layoutIfNeeded()
+            // The new glassEffect has no corner radius yet; only layoutSubviews() sets it otherwise.
+            applyOmnibarCornerStyle()
         }
     }
 
@@ -1753,6 +1767,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaContainerView.layer.cornerRadius = cornerRadius
         searchAreaView.layer.cornerRadius = cornerRadius
         activeOutlineView.layer.cornerRadius = cornerRadius + Metrics.activeBorderWidth
+
+        // The embedded field's classic UIBlurEffect ignores `cornerConfiguration`; radius it by hand.
+        if glassEffectConfiguration?.kind == .embedded {
+            glassEffect.layer.cornerRadius = glassEffect.bounds.height / 2
+        }
 
         // The pre-iOS 26 blur fallback needs an explicit capsule radius (iOS 26 uses `.capsule()`).
         if #unavailable(iOS 26.0) {

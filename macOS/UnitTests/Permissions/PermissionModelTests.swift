@@ -816,6 +816,92 @@ final class PermissionModelTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    // MARK: - Category defaults
+
+    func testWhenDefaultIsNeverAllowThenCameraIsDeniedWithoutAQuery() {
+        permissionManagerMock.defaultDecisions = [.camera: .deny]
+        webView.urlValue = URL.duckDuckGo
+
+        var grantedResult: Bool?
+        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (granted: Bool) in
+            grantedResult = granted
+        }
+
+        XCTAssertEqual(grantedResult, false)
+        XCTAssertNil(model.authorizationQuery, "A default denial should not prompt")
+        XCTAssertEqual(model.permissions.camera, .denied)
+    }
+
+    func testWhenDefaultIsNeverAllowThenNothingIsPersistedForTheDomain() {
+        permissionManagerMock.defaultDecisions = [.camera: .deny]
+        webView.urlValue = URL.duckDuckGo
+
+        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+
+        XCTAssertTrue(permissionManagerMock.setPermissionCalls.isEmpty)
+        XCTAssertFalse(permissionManagerMock.hasPermissionPersisted(forDomain: URL.duckDuckGo.host!, permissionType: .camera))
+    }
+
+    func testWhenDefaultIsNeverAllowButSiteIsSetToAskThenAQueryIsCreated() {
+        permissionManagerMock.defaultDecisions = [.camera: .deny]
+        permissionManagerMock.setPermission(.ask, forDomain: URL.duckDuckGo.host!, permissionType: .camera)
+        webView.urlValue = URL.duckDuckGo
+
+        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+
+        XCTAssertNotNil(model.authorizationQuery, "A per-site Ask each time should override the default")
+    }
+
+    func testWhenDefaultIsAskEachTimeThenCameraStillPrompts() {
+        permissionManagerMock.defaultDecisions = [.camera: .ask]
+        webView.urlValue = URL.duckDuckGo
+
+        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+
+        XCTAssertNotNil(model.authorizationQuery)
+    }
+
+    func testWhenDefaultIsNeverAllowThenPopupsAreBlockedWithoutAQuery() {
+        // Pop-ups can't persist a per-site denial, but the category default must still block them,
+        // silently: no query means no "Pop-Up Blocked" popover.
+        permissionManagerMock.defaultDecisions = [.popups: .deny]
+        webView.urlValue = URL.duckDuckGo
+
+        var grantedResult: Bool?
+        model.permissions([.popups], requestedForDomain: URL.duckDuckGo.host!) { (granted: Bool) in
+            grantedResult = granted
+        }
+
+        XCTAssertEqual(grantedResult, false)
+        XCTAssertNil(model.authorizationQuery)
+        XCTAssertEqual(model.permissions.popups, .denied)
+    }
+
+    func testWhenPopupsHaveALegacyPersistedDenialThenTheyStillPrompt() {
+        // Saved pop-up denials predate the default and are treated as Ask each time, as before.
+        permissionManagerMock.setPermission(.deny, forDomain: URL.duckDuckGo.host!, permissionType: .popups)
+        webView.urlValue = URL.duckDuckGo
+
+        model.permissions([.popups], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+
+        XCTAssertNotNil(model.authorizationQuery)
+    }
+
+    func testWhenDefaultIsNeverAllowButSiteIsAlwaysAllowThenPopupIsGranted() {
+        permissionManagerMock.defaultDecisions = [.popups: .deny]
+        permissionManagerMock.setPermission(.allow, forDomain: URL.duckDuckGo.host!, permissionType: .popups)
+        webView.urlValue = URL.duckDuckGo
+
+        var grantedResult: Bool?
+        model.permissions([.popups], requestedForDomain: URL.duckDuckGo.host!) { (granted: Bool) in
+            grantedResult = granted
+        }
+
+        XCTAssertEqual(grantedResult, true)
+    }
+
+    // MARK: -
+
     func testWhenPopupsGrantedPermissionIsStoredAndRevokedThenStoredPermissionIsRemoved() {
         permissionManagerMock.setPermission(.allow, forDomain: URL.duckDuckGo.host!, permissionType: .popups)
         permissionManagerMock.setPermission(.allow, forDomain: URL.duckDuckGo.host!, permissionType: .externalScheme(scheme: "asdf"))

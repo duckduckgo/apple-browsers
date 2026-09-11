@@ -32,6 +32,8 @@ struct PreferencesWebsitePermissionDetailView: View {
         static let backButtonSize: CGFloat = 32
         static let messageTopPadding: CGFloat = 4
         static let messageBottomPadding: CGFloat = 8
+        static let defaultSectionSpacing: CGFloat = 8
+        static let defaultSectionBottomPadding: CGFloat = 12
     }
 
     @ObservedObject var model: WebsitePermissionDetailViewModel
@@ -40,6 +42,7 @@ struct PreferencesWebsitePermissionDetailView: View {
     var body: some View {
         PreferencePane(nil) {
             detailHeader
+            defaultSection
             websitesSection
         }
         .accessibilityIdentifier("WebsitePermissions.Detail")
@@ -67,6 +70,28 @@ struct PreferencesWebsitePermissionDetailView: View {
             TextMenuTitle(model.viewState.category.title)
                 .accessibilityIdentifier("WebsitePermissions.Detail.Title")
         }
+    }
+
+    private var defaultSection: some View {
+        VStack(alignment: .leading, spacing: Constants.defaultSectionSpacing) {
+            TextMenuItemHeader(UserText.websitePermissionsDefaultSection)
+
+            Picker(selection: Binding(
+                get: { model.viewState.defaultDecision },
+                set: { model.send(action: .setDefaultDecision($0)) }
+            ), label: EmptyView()) {
+                ForEach(model.viewState.availableDefaultDecisions, id: \.self) { decision in
+                    Text(decision.websitePermissionsTitle)
+                        .tag(decision)
+                        .accessibilityIdentifier("WebsitePermissions.Detail.Default.\(decision.rawValue)")
+                }
+            }
+            .pickerStyle(.radioGroup)
+            .labelsHidden()
+            .accessibilityLabel(String(format: UserText.websitePermissionsDefaultAccessibilityLabel, model.viewState.category.title))
+            .accessibilityIdentifier("WebsitePermissions.Detail.Default")
+        }
+        .padding(.bottom, Constants.defaultSectionBottomPadding)
     }
 
     private var websitesSection: some View {

@@ -166,10 +166,16 @@ struct PreferencesWebsitePermissionsView: View {
 import PrivacyConfig
 
 @MainActor
-private func previewModel(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {
+private func previewModel(entries: [WebsitePermissionEntry] = [],
+                          defaultDecision: PersistedPermissionDecision = .ask) -> WebsitePermissionsViewModel {
     let permissionManager = PermissionManagerMock()
     permissionManager.setPersistedPermissions(entries)
-    return WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: MockFeatureFlagger())
+    let defaults = WebsitePermissionDefaultsMock(
+        decisions: WebsitePermissionCategory.allCases.reduce(into: [:]) { $0[$1] = defaultDecision }
+    )
+    return WebsitePermissionsViewModel(permissionManager: permissionManager,
+                                       featureFlagger: MockFeatureFlagger(),
+                                       defaults: defaults)
 }
 
 private let previewEntries: [WebsitePermissionEntry] = [

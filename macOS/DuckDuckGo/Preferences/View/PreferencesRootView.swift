@@ -83,6 +83,7 @@ enum Preferences {
             wideEvent: WideEventManaging,
             pinningManager: PinningManager,
             permissionManager: PermissionManagerProtocol,
+            websitePermissionDefaults: WebsitePermissionDefaultsProviding = NSApp.delegateTyped.websitePermissionDefaults,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
@@ -98,7 +99,8 @@ enum Preferences {
             self.aiChatURLSettings = aiChatURLSettings
             self.wideEvent = wideEvent
             self._websitePermissionsModel = StateObject(wrappedValue: WebsitePermissionsViewModel(permissionManager: permissionManager,
-                                                                                                 featureFlagger: featureFlagger))
+                                                                                                 featureFlagger: featureFlagger,
+                                                                                                 defaults: websitePermissionDefaults))
             self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
             self.blackFridayCampaignProvider = blackFridayCampaignProvider
             self.pixelHandler = pixelHandler

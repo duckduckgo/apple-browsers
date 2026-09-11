@@ -26,16 +26,19 @@ import XCTest
 final class WebsitePermissionsViewModelTests: XCTestCase {
     private var permissionManager: PermissionManagerMock!
     private var featureFlagger: MockFeatureFlagger!
+    private var defaults: WebsitePermissionDefaultsMock!
 
     override func setUp() {
         super.setUp()
         permissionManager = PermissionManagerMock()
         featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue: false])
+        defaults = WebsitePermissionDefaultsMock()
     }
 
     override func tearDown() {
         permissionManager = nil
         featureFlagger = nil
+        defaults = nil
         super.tearDown()
     }
 
@@ -106,7 +109,7 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
     private func makeRecentsModel(_ entries: [WebsitePermissionEntry],
                                   permissionManager: PermissionManagerMock) -> WebsitePermissionsViewModel {
         permissionManager.setPersistedPermissions(entries)
-        let model = WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: featureFlagger)
+        let model = WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: featureFlagger, defaults: defaults)
         waitForViewStateUpdate(model) {
             model.send(action: .onAppear)
         }
@@ -349,7 +352,7 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
 
     private func createSUT(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {
         permissionManager.setPersistedPermissions(entries)
-        return WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: featureFlagger)
+        return WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: featureFlagger, defaults: defaults)
     }
 
     private func waitForViewStateUpdate(_ model: WebsitePermissionsViewModel, action: () -> Void) {

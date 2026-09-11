@@ -1016,6 +1016,45 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenPopupsDefaultIsNeverAllow_ThenPopupIsBlockedWithoutQuery() {
+        // GIVEN
+        popupHandlingExtension = createExtension()
+        testPermissionManager.defaultDecisions = [.popups: .deny]
+
+        let popupCreatedExpectation = expectation(description: "Popup not created")
+        popupCreatedExpectation.isInverted = true
+
+        createChildTab = { _, _, _ in
+            popupCreatedExpectation.fulfill() // Shouldn't happen
+            return nil
+        }
+
+        // WHEN - Non-user-initiated popup
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
+        let result = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Blocked synchronously, and no authorization query means no "Pop-Up Blocked" popover
+        XCTAssertNil(result)
+        XCTAssertNil(mockPermissionModel.authorizationQuery)
+        wait(for: [popupCreatedExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenPopupsDefaultIsNeverAllowAndSiteIsSetToAsk_ThenPopupStillPrompts() {
+        // GIVEN
+        popupHandlingExtension = createExtension()
+        testPermissionManager.defaultDecisions = [.popups: .deny]
+        testPermissionManager.setPermission(.ask, forDomain: "example.com", permissionType: .popups)
+
+        // WHEN - Non-user-initiated popup
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - The per-site override brings the prompt back
+        XCTAssertNotNil(mockPermissionModel.authorizationQuery)
+    }
+
+    @MainActor
     func testWhenAlwaysAllowSet_ThenPersistsAcrossNavigations() {
         // GIVEN
         popupHandlingExtension = createExtension()
@@ -2117,6 +2156,9 @@ class TestPermissionManager: PermissionManagerProtocol {
 
     var persistedPermissions: [String: [PermissionType: PersistedPermissionDecision]] = [:]
 
+    /// Category defaults from Settings > Website Permissions, applied when a domain has nothing saved.
+    var defaultDecisions: [WebsitePermissionCategory: PersistedPermissionDecision] = [:]
+
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> {
         return Empty().eraseToAnyPublisher()
     }
@@ -2135,7 +2177,12 @@ class TestPermissionManager: PermissionManagerProtocol {
     }
 
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision {
-        return persistedPermissions[domain]?[permissionType] ?? .ask
+        return persistedPermissions[domain]?[permissionType] ?? defaultDecision(for: permissionType)
+    }
+
+    func defaultDecision(for permissionType: PermissionType) -> PersistedPermissionDecision {
+        guard let category = WebsitePermissionCategory.category(for: permissionType) else { return .ask }
+        return defaultDecisions[category] ?? .ask
     }
 
     func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision? {

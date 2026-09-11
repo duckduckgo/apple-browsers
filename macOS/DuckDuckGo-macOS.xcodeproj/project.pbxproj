@@ -3039,6 +3039,12 @@
 		A5B001010000000000000017 /* WebsitePermissionDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B001010000000000000016 /* WebsitePermissionDetailViewModelTests.swift */; };
 		A5B001010000000000000006 /* WebsitePermissionsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B001010000000000000004 /* WebsitePermissionsViewModelTests.swift */; };
 		A5B001010000000000000018 /* WebsitePermissionDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B001010000000000000016 /* WebsitePermissionDetailViewModelTests.swift */; };
+		A5B00101000000000000001A /* WebsitePermissionDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B001010000000000000019 /* WebsitePermissionDefaults.swift */; };
+		A5B00101000000000000001B /* WebsitePermissionDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B001010000000000000019 /* WebsitePermissionDefaults.swift */; };
+		A5B00101000000000000001D /* WebsitePermissionDefaultsMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000001C /* WebsitePermissionDefaultsMock.swift */; };
+		A5B00101000000000000001E /* WebsitePermissionDefaultsMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000001C /* WebsitePermissionDefaultsMock.swift */; };
+		A5B001010000000000000020 /* WebsitePermissionDefaultsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000001F /* WebsitePermissionDefaultsTests.swift */; };
+		A5B001010000000000000021 /* WebsitePermissionDefaultsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000001F /* WebsitePermissionDefaultsTests.swift */; };
 		A5B001010000000000000008 /* WebsitePermissionDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B001010000000000000007 /* WebsitePermissionDetailViewModel.swift */; };
 		A5B001010000000000000011 /* WebsitePermissionDetailViewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B001010000000000000010 /* WebsitePermissionDetailViewState.swift */; };
 		A5B001010000000000000009 /* WebsitePermissionDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B001010000000000000007 /* WebsitePermissionDetailViewModel.swift */; };
@@ -6471,6 +6477,9 @@
 		A5B001010000000000000001 /* WebsitePermissionsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsitePermissionsViewModel.swift; sourceTree = "<group>"; };
 		A5B001010000000000000004 /* WebsitePermissionsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsitePermissionsViewModelTests.swift; sourceTree = "<group>"; };
 		A5B001010000000000000016 /* WebsitePermissionDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsitePermissionDetailViewModelTests.swift; sourceTree = "<group>"; };
+		A5B001010000000000000019 /* WebsitePermissionDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsitePermissionDefaults.swift; sourceTree = "<group>"; };
+		A5B00101000000000000001C /* WebsitePermissionDefaultsMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsitePermissionDefaultsMock.swift; sourceTree = "<group>"; };
+		A5B00101000000000000001F /* WebsitePermissionDefaultsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsitePermissionDefaultsTests.swift; sourceTree = "<group>"; };
 		A5B001010000000000000007 /* WebsitePermissionDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsitePermissionDetailViewModel.swift; sourceTree = "<group>"; };
 		A5B001010000000000000010 /* WebsitePermissionDetailViewState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsitePermissionDetailViewState.swift; sourceTree = "<group>"; };
 		A5B00101000000000000000A /* WebsitePermissionListComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsitePermissionListComponents.swift; sourceTree = "<group>"; };
@@ -12526,6 +12535,7 @@
 			children = (
 				1DE28D5D2EEADBCF00C07F15 /* SystemPermissionManagerMock.swift */,
 				B6106B9F26A7BE0B0013B453 /* PermissionManagerTests.swift */,
+				A5B00101000000000000001F /* WebsitePermissionDefaultsTests.swift */,
 				1D1B4A452EDF97EF00FE43C9 /* PermissionAuthorizationTypeTests.swift */,
 				B51792B02F7C4F790018ED80 /* PermissionCenterViewModelTests.swift */,
 				B6106BB026A7D8720013B453 /* PermissionStoreTests.swift */,
@@ -12645,6 +12655,8 @@
 				B6DB3CFA26A17CB800D459B7 /* PermissionModel.swift */,
 				B64C84F0269310120048FEBE /* PermissionManager.swift */,
 				845F57282E97FCC900C7F78A /* PermissionManagerMock.swift */,
+				A5B001010000000000000019 /* WebsitePermissionDefaults.swift */,
+				A5B00101000000000000001C /* WebsitePermissionDefaultsMock.swift */,
 				B64C853726944B880048FEBE /* StoredPermission.swift */,
 				F84EEF9CB3E34FACB67C22CA /* WebsitePermissionEntry.swift */,
 				B64C853C26944B940048FEBE /* PermissionStore.swift */,
@@ -15777,6 +15789,8 @@
 				DE1820374EC543D5A398BD90 /* PreferencesWebsitePermissionsView.swift in Sources */,
 				A5B001010000000000000002 /* WebsitePermissionsViewModel.swift in Sources */,
 				A5B001010000000000000008 /* WebsitePermissionDetailViewModel.swift in Sources */,
+				A5B00101000000000000001A /* WebsitePermissionDefaults.swift in Sources */,
+				A5B00101000000000000001D /* WebsitePermissionDefaultsMock.swift in Sources */,
 				A5B001010000000000000011 /* WebsitePermissionDetailViewState.swift in Sources */,
 				A5B00101000000000000000B /* WebsitePermissionListComponents.swift in Sources */,
 				A5B001010000000000000014 /* PreferencesWebsitePermissionListContainer.swift in Sources */,
@@ -17158,6 +17172,7 @@
 				56189B7A2DF8DBEF004A19CC /* RootViewV2Tests.swift in Sources */,
 				A5B001010000000000000006 /* WebsitePermissionsViewModelTests.swift in Sources */,
 				A5B001010000000000000018 /* WebsitePermissionDetailViewModelTests.swift in Sources */,
+				A5B001010000000000000020 /* WebsitePermissionDefaultsTests.swift in Sources */,
 				CCBCF38A2F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift in Sources */,
 				5677A93C2C98414800DA7B0A /* ContextualDialogsManagerTests.swift in Sources */,
 				6A1F0C210001481800DA7B0A /* OnboardingSubscriptionUpsellExperimentTests.swift in Sources */,
@@ -18191,6 +18206,8 @@
 				604AFF29DF594DC4AF18864C /* PreferencesWebsitePermissionsView.swift in Sources */,
 				A5B001010000000000000003 /* WebsitePermissionsViewModel.swift in Sources */,
 				A5B001010000000000000009 /* WebsitePermissionDetailViewModel.swift in Sources */,
+				A5B00101000000000000001B /* WebsitePermissionDefaults.swift in Sources */,
+				A5B00101000000000000001E /* WebsitePermissionDefaultsMock.swift in Sources */,
 				A5B001010000000000000012 /* WebsitePermissionDetailViewState.swift in Sources */,
 				A5B00101000000000000000C /* WebsitePermissionListComponents.swift in Sources */,
 				A5B001010000000000000015 /* PreferencesWebsitePermissionListContainer.swift in Sources */,
@@ -19967,6 +19984,7 @@
 				56189B792DF8DBEF004A19CC /* RootViewV2Tests.swift in Sources */,
 				A5B001010000000000000005 /* WebsitePermissionsViewModelTests.swift in Sources */,
 				A5B001010000000000000017 /* WebsitePermissionDetailViewModelTests.swift in Sources */,
+				A5B001010000000000000021 /* WebsitePermissionDefaultsTests.swift in Sources */,
 				BBC277952FB2367300756A85 /* DuckAiVoiceChatFailureHandlerTests.swift in Sources */,
 				BBC2779F2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift in Sources */,
 				BBC277A22FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift in Sources */,

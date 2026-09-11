@@ -21,13 +21,22 @@ import Foundation
 
 struct WebsitePermissionDetailViewState: Equatable {
     let category: WebsitePermissionCategory
+    /// Behaviour applied to websites with no saved decision of their own.
+    private(set) var defaultDecision: PersistedPermissionDecision
+    /// Same two options for every category, so the radio group never offers a blanket grant.
+    let availableDefaultDecisions: [PersistedPermissionDecision] = WebsitePermissionDefaults.availableDecisions
     private(set) var searchQuery: String
     let sites: [SiteRow]
     private(set) var visibleSites: [SiteRow]
     private(set) var isLoading: Bool
 
-    init(category: WebsitePermissionCategory, searchQuery: String = "", sites: [SiteRow] = [], isLoading: Bool = true) {
+    init(category: WebsitePermissionCategory,
+         defaultDecision: PersistedPermissionDecision = WebsitePermissionDefaults.fallbackDecision,
+         searchQuery: String = "",
+         sites: [SiteRow] = [],
+         isLoading: Bool = true) {
         self.category = category
+        self.defaultDecision = defaultDecision
         self.searchQuery = searchQuery
         self.sites = sites
         self.isLoading = isLoading
@@ -41,6 +50,10 @@ struct WebsitePermissionDetailViewState: Equatable {
 
     var hasNoResults: Bool {
         !sites.isEmpty && visibleSites.isEmpty
+    }
+
+    mutating func setDefaultDecision(_ decision: PersistedPermissionDecision) {
+        defaultDecision = decision
     }
 
     mutating func setSearchQuery(_ query: String) {

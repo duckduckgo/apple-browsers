@@ -43,6 +43,10 @@ protocol PermissionManagerProtocol: AnyObject {
     func hasAnyPermissionPersisted(forDomain domain: String) -> Bool
     func persistedPermissionTypes(forDomain domain: String) -> [PermissionType]
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision
+    /// The default decision applied to `permissionType` when a domain has nothing persisted, as chosen
+    /// in Settings > Website Permissions. `.ask` when the feature flag is off or the type has no
+    /// category in that pane (autoplay).
+    func defaultDecision(for permissionType: PermissionType) -> PersistedPermissionDecision
     /// Returns the underlying persisted decision, ignoring any active `PermissionDecisionOverriding`.
     /// `nil` when nothing is persisted. Use only for cleanup or migration paths that genuinely need
     /// to know the on-disk state; everything else should call `permission(forDomain:permissionType:)`.
@@ -69,6 +73,7 @@ final class PermissionManager: PermissionManagerProtocol {
     private let store: PermissionStore
     private var permissions = [String: [PermissionType: StoredPermission]]()
     private let decisionOverride: PermissionDecisionOverriding?
+    private let defaults: WebsitePermissionDefaultsProviding?
 
     private let permissionSubject = PassthroughSubject<PublishedPermission, Never>()
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { permissionSubject.eraseToAnyPublisher() }
@@ -77,9 +82,12 @@ final class PermissionManager: PermissionManagerProtocol {
         persistedPermissionsSubject.eraseToAnyPublisher()
     }
 
-    init(store: PermissionStore, decisionOverride: PermissionDecisionOverriding? = nil) {
+    init(store: PermissionStore,
+         decisionOverride: PermissionDecisionOverriding? = nil,
+         defaults: WebsitePermissionDefaultsProviding? = nil) {
         self.store = store
         self.decisionOverride = decisionOverride
+        self.defaults = defaults
         loadPermissions()
     }
 
@@ -121,12 +129,22 @@ final class PermissionManager: PermissionManagerProtocol {
         persistedPermissionsSubject.send(entries)
     }
 
+    /// Effective decision for a domain, resolved in order: an active override, the domain's own saved
+    /// decision, then the category default from Settings > Website Permissions.
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision {
         let normalized = domain.droppingWwwPrefix()
         if let override = decisionOverride?.decision(forDomain: normalized, permissionType: permissionType) {
             return override
         }
-        return permissions[normalized]?[permissionType]?.decision ?? .ask
+        if let storedDecision = permissions[normalized]?[permissionType]?.decision {
+            return storedDecision
+        }
+        return defaultDecision(for: permissionType)
+    }
+
+    func defaultDecision(for permissionType: PermissionType) -> PersistedPermissionDecision {
+        guard let defaults, let category = WebsitePermissionCategory.category(for: permissionType) else { return .ask }
+        return defaults.defaultDecision(for: category)
     }
 
     func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision? {

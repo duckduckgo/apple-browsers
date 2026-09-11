@@ -31,11 +31,15 @@ final class WebsitePermissionsViewModel: ObservableObject {
 
     private let permissionManager: PermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
+    private let defaults: WebsitePermissionDefaultsProviding
     private var permissionsCancellable: AnyCancellable?
 
-    init(permissionManager: PermissionManagerProtocol, featureFlagger: FeatureFlagger) {
+    init(permissionManager: PermissionManagerProtocol,
+         featureFlagger: FeatureFlagger,
+         defaults: WebsitePermissionDefaultsProviding) {
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
+        self.defaults = defaults
     }
 
     // MARK: - Public
@@ -58,7 +62,8 @@ final class WebsitePermissionsViewModel: ObservableObject {
             viewState.detailModel = WebsitePermissionDetailViewModel(
                 category: category,
                 permissionManager: permissionManager,
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                defaults: defaults
             )
 
         case .closeDetail:

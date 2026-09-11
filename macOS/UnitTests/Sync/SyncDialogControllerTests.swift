@@ -319,7 +319,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         XCTAssertNil(managementDialogModel.currentDialog)
         XCTAssertEqual(mockKeyValueStore.object(forKey: "sync.authentication-cancelled-prompt.presented-count") as? Int, 1)
-        let fireCount = pixelKitMock.actualFireCalls.filter { $0.pixel.name == "settings_sync_authentication_cancelled_prompt_shown" }.count
+        let fireCount = pixelKitMock.actualFireCalls.filter { $0.pixel.name == "sync_settings_authentication_cancelled_prompt_shown_mac" }.count
         XCTAssertEqual(fireCount, 1)
     }
 
@@ -382,7 +382,7 @@ final class SyncDialogControllerTests: XCTestCase {
             await syncDialogController.syncWithServerPressed()
         }
 
-        let fireCount = pixelKitMock.actualFireCalls.filter { $0.pixel.name == "settings_sync_authentication_cancelled_prompt_shown" }.count
+        let fireCount = pixelKitMock.actualFireCalls.filter { $0.pixel.name == "sync_settings_authentication_cancelled_prompt_shown_mac" }.count
         XCTAssertEqual(fireCount, 2)
     }
 
@@ -1313,7 +1313,7 @@ final class SyncDialogControllerTests: XCTestCase {
         syncDialogController.syncAnotherDevicePromptDidAppear()
 
         XCTAssertTrue(pixelKitMock.actualFireCalls.contains {
-            $0.pixel.name == "settings_sync_another_device_prompt_shown"
+            $0.pixel.name == "sync_settings_another_device_prompt_shown_mac"
         })
     }
 
@@ -1321,7 +1321,7 @@ final class SyncDialogControllerTests: XCTestCase {
         await syncDialogController.syncThisDeviceOnlyFromPrompt()
 
         XCTAssertTrue(pixelKitMock.actualFireCalls.contains {
-            $0.pixel.name == "settings_sync_another_device_prompt_option_tapped"
+            $0.pixel.name == "sync_settings_another_device_prompt_option_tapped_mac"
             && $0.pixel.parameters?["option"] == "this_device_only"
         })
     }
@@ -1342,7 +1342,7 @@ final class SyncDialogControllerTests: XCTestCase {
         syncDialogController.syncWithAnotherDeviceFromPrompt()
 
         XCTAssertFalse(pixelKitMock.actualFireCalls.contains {
-            $0.pixel.name == "settings_sync_another_device_prompt_option_tapped"
+            $0.pixel.name == "sync_settings_another_device_prompt_option_tapped_mac"
         })
     }
 
@@ -1350,7 +1350,7 @@ final class SyncDialogControllerTests: XCTestCase {
         syncDialogController.syncWithAnotherDeviceFromPrompt()
 
         XCTAssertTrue(pixelKitMock.actualFireCalls.contains {
-            $0.pixel.name == "settings_sync_another_device_prompt_option_tapped"
+            $0.pixel.name == "sync_settings_another_device_prompt_option_tapped_mac"
             && $0.pixel.parameters?["option"] == "sync_another_device"
         })
     }
@@ -1963,19 +1963,19 @@ final class SyncDialogControllerTests: XCTestCase {
     func testSyncWithServerPressed_firesBackUpThisDeviceTappedPixel() async {
         await syncDialogController.syncWithServerPressed()
 
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_back_up_this_device_tapped").count, 1)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_back_up_this_device_tapped_mac").count, 1)
     }
 
     func testRecoverDataPressed_firesRecoverSyncedDataTappedPixel() async {
         await syncDialogController.recoverDataPressed()
 
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_recover_synced_data_tapped").count, 1)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_recover_synced_data_tapped_mac").count, 1)
     }
 
     func testEnterRecoveryCodePressed_firesRecoveryConfirmedTappedPixel() {
         syncDialogController.enterRecoveryCodePressed()
 
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_recovery_confirmed_tapped").count, 1)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_recovery_confirmed_tapped_mac").count, 1)
     }
 
     func testAuthenticationCancelledPromptClosePressed_whenRetryOfferedAndRetrySucceeds_firesRetryTappedAndSucceededPixels() async {
@@ -1985,9 +1985,9 @@ final class SyncDialogControllerTests: XCTestCase {
 
         await syncDialogController.authenticationCancelledPromptClosePressed()
 
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_authentication_cancelled_prompt_retry_tapped").count, 1)
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_authentication_cancelled_prompt_retry_succeeded").count, 1)
-        XCTAssertTrue(firedPixelNames(matching: "settings_sync_authentication_cancelled_prompt_dismissed").isEmpty)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_authentication_cancelled_prompt_retry_tapped_mac").count, 1)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_authentication_cancelled_prompt_retry_succeeded_mac").count, 1)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_authentication_cancelled_prompt_dismissed_mac").isEmpty)
     }
 
     func testAuthenticationCancelledPromptClosePressed_whenRetryFails_firesRetryFailedPixel() async {
@@ -1997,8 +1997,8 @@ final class SyncDialogControllerTests: XCTestCase {
 
         await syncDialogController.authenticationCancelledPromptClosePressed()
 
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_authentication_cancelled_prompt_retry_tapped").count, 1)
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_authentication_cancelled_prompt_retry_failed").count, 1)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_authentication_cancelled_prompt_retry_tapped_mac").count, 1)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_authentication_cancelled_prompt_retry_failed_mac").count, 1)
     }
 
     func testAuthenticationCancelledPromptClosePressed_whenRetryNotOffered_firesDismissedPixel() async {
@@ -2009,20 +2009,20 @@ final class SyncDialogControllerTests: XCTestCase {
 
         await syncDialogController.authenticationCancelledPromptClosePressed()
 
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_authentication_cancelled_prompt_dismissed").count, 1)
-        XCTAssertTrue(firedPixelNames(matching: "settings_sync_authentication_cancelled_prompt_retry_tapped").isEmpty)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_authentication_cancelled_prompt_dismissed_mac").count, 1)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_authentication_cancelled_prompt_retry_tapped_mac").isEmpty)
     }
 
     func testSyncSuccessViewDidAppear_firesSuccessScreenShownPixel() {
         syncDialogController.syncSuccessViewDidAppear()
 
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_success_screen_shown").count, 1)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_success_screen_shown_mac").count, 1)
     }
 
     func testSyncSuccessCopyCodePressed_firesCopyCodeTappedPixel() {
         syncDialogController.syncSuccessCopyCodePressed(testRecoveryCode)
 
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_success_screen_copy_code_tapped").count, 1)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_success_screen_copy_code_tapped_mac").count, 1)
     }
 
     func testSyncSuccessDonePressed_firesDoneTappedPixelAndEndsFlow() {
@@ -2030,7 +2030,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         syncDialogController.syncSuccessDonePressed()
 
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_success_screen_done_tapped").count, 1)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_success_screen_done_tapped_mac").count, 1)
         XCTAssertNil(managementDialogModel.currentDialog)
     }
 
@@ -2039,8 +2039,8 @@ final class SyncDialogControllerTests: XCTestCase {
 
         await syncDialogController.presentDeviceDetails(SyncDevice(kind: .current, name: "test", id: "test"))
 
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_this_device_details_screen_shown").count, 1)
-        XCTAssertTrue(firedPixelNames(matching: "settings_sync_other_device_details_screen_shown").isEmpty)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_this_device_details_screen_shown_mac").count, 1)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_other_device_details_screen_shown_mac").isEmpty)
     }
 
     func testPresentDeviceDetails_forOtherDevice_firesOtherDeviceDetailsShownPixel() async {
@@ -2048,8 +2048,8 @@ final class SyncDialogControllerTests: XCTestCase {
 
         await syncDialogController.presentDeviceDetails(SyncDevice(kind: .mobile, name: "test", id: "test"))
 
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_other_device_details_screen_shown").count, 1)
-        XCTAssertTrue(firedPixelNames(matching: "settings_sync_this_device_details_screen_shown").isEmpty)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_other_device_details_screen_shown_mac").count, 1)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_this_device_details_screen_shown_mac").isEmpty)
     }
 
     func testPresentDeviceDetails_whenAuthenticationCancelled_doesNotFireDeviceDetailsShownPixel() async {
@@ -2058,19 +2058,19 @@ final class SyncDialogControllerTests: XCTestCase {
 
         await syncDialogController.presentDeviceDetails(SyncDevice(kind: .current, name: "test", id: "test"))
 
-        XCTAssertTrue(firedPixelNames(matching: "settings_sync_this_device_details_screen_shown").isEmpty)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_this_device_details_screen_shown_mac").isEmpty)
     }
 
     func testPresentRemoveDeviceConfirmation_forOtherDevice_firesRemoveDeviceTappedPixel() {
         syncDialogController.presentRemoveDeviceConfirmation(SyncDevice(kind: .mobile, name: "test", id: "test"))
 
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_other_device_details_remove_device_tapped").count, 1)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_other_device_details_remove_device_tapped_mac").count, 1)
     }
 
     func testPresentRemoveDeviceConfirmation_forCurrentDevice_firesTurnOffSyncTappedPixel() {
         syncDialogController.presentRemoveDeviceConfirmation(SyncDevice(kind: .current, name: "test", id: "test"))
 
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_this_device_details_turn_off_sync_tapped").count, 1)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_this_device_details_turn_off_sync_tapped_mac").count, 1)
     }
 
     func testUpdateDeviceName_whenSucceeds_firesNameUpdatedPixel() async {
@@ -2085,7 +2085,7 @@ final class SyncDialogControllerTests: XCTestCase {
         syncDialogController.updateDeviceName("New Name")
 
         await fulfillment(of: [expectation], timeout: 5)
-        XCTAssertEqual(firedPixelNames(matching: "settings_sync_this_device_details_name_updated").count, 1)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_this_device_details_name_updated_mac").count, 1)
     }
 
     func testUpdateDeviceName_whenFails_doesNotFireNameUpdatedPixel() async {
@@ -2100,7 +2100,7 @@ final class SyncDialogControllerTests: XCTestCase {
         syncDialogController.updateDeviceName("New Name")
 
         await fulfillment(of: [expectation], timeout: 5)
-        XCTAssertTrue(firedPixelNames(matching: "settings_sync_this_device_details_name_updated").isEmpty)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_this_device_details_name_updated_mac").isEmpty)
     }
 
     private func firedPixelNames(matching name: String) -> [String] {

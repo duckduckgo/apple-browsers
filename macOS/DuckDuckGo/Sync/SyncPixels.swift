@@ -53,6 +53,7 @@ enum SyncFeatureUsagePixels: PixelKit.Event {
 }
 
 enum SyncSettingsPixelKitEvent: PixelKit.Event {
+    var namePrefix: PixelKitNamePrefix { .none }
 
     enum ParameterKey {
         static let syncPromptOption = "option"
@@ -87,26 +88,26 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
 
     var name: String {
         switch self {
-        case .settingsScreenShown: return "settings_sync_open"
-        case .backUpThisDeviceTapped: return "settings_sync_back_up_this_device_tapped"
-        case .recoverSyncedDataTapped: return "settings_sync_recover_synced_data_tapped"
-        case .recoveryConfirmedTapped: return "settings_sync_recovery_confirmed_tapped"
-        case .anotherDevicePromptShown: return "settings_sync_another_device_prompt_shown"
-        case .anotherDevicePromptOptionTapped: return "settings_sync_another_device_prompt_option_tapped"
-        case .authenticationCancelledPromptShown: return "settings_sync_authentication_cancelled_prompt_shown"
-        case .authenticationCancelledPromptRetryTapped: return "settings_sync_authentication_cancelled_prompt_retry_tapped"
-        case .authenticationCancelledPromptDismissed: return "settings_sync_authentication_cancelled_prompt_dismissed"
-        case .authenticationCancelledPromptRetrySucceeded: return "settings_sync_authentication_cancelled_prompt_retry_succeeded"
-        case .authenticationCancelledPromptRetryFailed: return "settings_sync_authentication_cancelled_prompt_retry_failed"
-        case .successScreenShown: return "settings_sync_success_screen_shown"
-        case .successScreenCopyCodeTapped: return "settings_sync_success_screen_copy_code_tapped"
-        case .successScreenDownloadRecoveryPDFTapped: return "settings_sync_success_screen_download_recovery_pdf_tapped"
-        case .successScreenDoneTapped: return "settings_sync_success_screen_done_tapped"
-        case .thisDeviceDetailsScreenShown: return "settings_sync_this_device_details_screen_shown"
-        case .thisDeviceDetailsNameUpdated: return "settings_sync_this_device_details_name_updated"
-        case .thisDeviceDetailsTurnOffSyncTapped: return "settings_sync_this_device_details_turn_off_sync_tapped"
-        case .otherDeviceDetailsScreenShown: return "settings_sync_other_device_details_screen_shown"
-        case .otherDeviceDetailsRemoveDeviceTapped: return "settings_sync_other_device_details_remove_device_tapped"
+        case .settingsScreenShown: return "sync_settings_open_mac"
+        case .backUpThisDeviceTapped: return "sync_settings_back_up_this_device_tapped_mac"
+        case .recoverSyncedDataTapped: return "sync_settings_recover_synced_data_tapped_mac"
+        case .recoveryConfirmedTapped: return "sync_settings_recovery_confirmed_tapped_mac"
+        case .anotherDevicePromptShown: return "sync_settings_another_device_prompt_shown_mac"
+        case .anotherDevicePromptOptionTapped: return "sync_settings_another_device_prompt_option_tapped_mac"
+        case .authenticationCancelledPromptShown: return "sync_settings_authentication_cancelled_prompt_shown_mac"
+        case .authenticationCancelledPromptRetryTapped: return "sync_settings_authentication_cancelled_prompt_retry_tapped_mac"
+        case .authenticationCancelledPromptDismissed: return "sync_settings_authentication_cancelled_prompt_dismissed_mac"
+        case .authenticationCancelledPromptRetrySucceeded: return "sync_settings_authentication_cancelled_prompt_retry_succeeded_mac"
+        case .authenticationCancelledPromptRetryFailed: return "sync_settings_authentication_cancelled_prompt_retry_failed_mac"
+        case .successScreenShown: return "sync_settings_success_screen_shown_mac"
+        case .successScreenCopyCodeTapped: return "sync_settings_success_screen_copy_code_tapped_mac"
+        case .successScreenDownloadRecoveryPDFTapped: return "sync_settings_success_screen_download_recovery_pdf_tapped_mac"
+        case .successScreenDoneTapped: return "sync_settings_success_screen_done_tapped_mac"
+        case .thisDeviceDetailsScreenShown: return "sync_settings_this_device_details_screen_shown_mac"
+        case .thisDeviceDetailsNameUpdated: return "sync_settings_this_device_details_name_updated_mac"
+        case .thisDeviceDetailsTurnOffSyncTapped: return "sync_settings_this_device_details_turn_off_sync_tapped_mac"
+        case .otherDeviceDetailsScreenShown: return "sync_settings_other_device_details_screen_shown_mac"
+        case .otherDeviceDetailsRemoveDeviceTapped: return "sync_settings_other_device_details_remove_device_tapped_mac"
         }
     }
 

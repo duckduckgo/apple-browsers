@@ -453,7 +453,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         syncPreferences.settingsScreenDidAppear()
 
-        let fireCall = pixelKitMock.actualFireCalls.first { $0.pixel.name == "settings_sync_open" }
+        let fireCall = pixelKitMock.actualFireCalls.first { $0.pixel.name == "sync_settings_open_mac" }
         XCTAssertEqual(fireCall?.pixel.parameters?["is_enabled"], "0")
     }
 
@@ -463,7 +463,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         syncPreferences.settingsScreenDidAppear()
 
-        let fireCall = pixelKitMock.actualFireCalls.first { $0.pixel.name == "settings_sync_open" }
+        let fireCall = pixelKitMock.actualFireCalls.first { $0.pixel.name == "sync_settings_open_mac" }
         XCTAssertEqual(fireCall?.pixel.parameters?["is_enabled"], "1")
     }
 

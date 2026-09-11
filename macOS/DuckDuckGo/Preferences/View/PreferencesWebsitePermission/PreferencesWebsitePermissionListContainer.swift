@@ -1,5 +1,5 @@
 //
-//  WebsitePermissionEntry.swift
+//  PreferencesWebsitePermissionListContainer.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,19 +16,16 @@
 //  limitations under the License.
 //
 
-import Foundation
+import DesignResourcesKit
+import SwiftUI
 
-struct WebsitePermissionEntry: Equatable {
-    let domain: String
-    let permissionType: PermissionType
-    let decision: PersistedPermissionDecision
-    /// When the user last explicitly set this decision, or `nil` for older entries.
-    var lastModified: Date?
-}
+struct PreferencesWebsitePermissionListContainer<Content>: View where Content: View {
+    @ViewBuilder let content: () -> Content
 
-extension WebsitePermissionEntry {
-    /// Unsupported saved denials behave as Always Ask, as they do in Permission Center.
-    var displayedDecision: PersistedPermissionDecision {
-        decision == .deny && !permissionType.canPersistDeniedDecision ? .ask : decision
+    var body: some View {
+        content()
+            .frame(maxWidth: .infinity)
+            .background(Color(designSystemColor: .containerFillSecondary))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }

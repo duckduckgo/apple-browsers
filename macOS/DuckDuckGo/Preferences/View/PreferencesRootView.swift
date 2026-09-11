@@ -125,6 +125,7 @@ enum Preferences {
                             Spacer()
                         }
                     }
+                    .id(websitePermissionsModel.viewState.detailModel?.viewState.category)
                     .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
                     .accessibilityIdentifier("Settings.ScrollView")
                     // `onReceive`, not `onChange`: a deep-linked request lands before this view's first body
@@ -138,11 +139,15 @@ enum Preferences {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(colorsProvider.settingsBackgroundColor))
             .environment(\.designSystemPalette, themeManager.designColorPalette)
+            .onChange(of: model.selectedPane) { selectedPane in
+                guard selectedPane != .websitePermissions else { return }
+                websitePermissionsModel.send(action: .closeDetail)
+            }
         }
 
         private func scroll(_ proxy: ScrollViewProxy, to anchor: PreferencesScrollAnchor) {
             DispatchQueue.main.async {
-                proxy.scrollTo(anchor, anchor: nil)
+                proxy.scrollTo(anchor, anchor: .top)
                 model.resetScrollRequest()
             }
         }
@@ -218,6 +223,7 @@ enum Preferences {
             .frame(maxWidth: Const.paneContentWidth, maxHeight: .infinity, alignment: .topLeading)
             .padding(.vertical, Const.panePaddingVertical)
             .padding(.horizontal, Const.panePaddingHorizontal)
+            .id(PreferencesScrollAnchor.top)
         }
 
         private func makePurchaseSubscriptionViewModel() -> PreferencesPurchaseSubscriptionModel {

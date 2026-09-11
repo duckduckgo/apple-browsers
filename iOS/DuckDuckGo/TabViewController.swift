@@ -515,6 +515,15 @@ class TabViewController: UIViewController {
     var isAITab: Bool {
         tabModel.isAITab
     }
+    
+    var tabType: TabType {
+        tabModel.type
+    }
+
+    var isShowingDocument: Bool {
+        guard featureFlagger.isFeatureOn(.aiChatPdfPageContext), let url else { return false }
+        return DocumentPageContextProvider.isSupportedDocument(mimeType: lastMainFramePageContextMIMEType(for: url), url: url)
+    }
 
     /// The tab's chat identity: written on commit and on settled same-document URL rewrites.
     /// Seeded from the stored link so a recreated controller's reload isn't a chat change.
@@ -869,7 +878,11 @@ class TabViewController: UIViewController {
         self.pixelFiring = pixelFiring
         self.tabTerminationErrorPageInstrumentation = tabTerminationErrorPageInstrumentation
             ?? DefaultTabTerminationErrorPageInstrumentation(pixelFiring: pixelFiring)
-        self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
+        let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
+            privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
+            featureFlagger: featureFlagger)
+        self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger,
+                                                          performanceOptimizedPaywalls: performanceOptimizedPaywallsProvider) {
             return AppDependencyProvider.shared.subscriptionManager.isSubscriptionPurchaseEligible
         }
         
@@ -1868,8 +1881,7 @@ class TabViewController: UIViewController {
     }
     
     private func showError(message: String) {
-        webView.isHidden = true
-        error.isHidden = false
+        setNativeErrorPageVisible(true)
         setErrorInfoImage()
         errorHeader.text = defaultErrorHeaderText
         errorMessage.text = formattedErrorMessage(message)
@@ -1889,8 +1901,7 @@ class TabViewController: UIViewController {
     }
 
     private func hideErrorMessage() {
-        error.isHidden = true
-        webView.isHidden = false
+        setNativeErrorPageVisible(false)
         setErrorInfoImage()
         errorHeader.text = defaultErrorHeaderText
         errorActionButton.isHidden = true
@@ -1900,8 +1911,7 @@ class TabViewController: UIViewController {
 
     private func showSafariRedirectLoopError(for url: URL) {
         actionableErrorPage = .safariRedirectLoop(url)
-        webView.isHidden = true
-        error.isHidden = false
+        setNativeErrorPageVisible(true)
         setErrorInfoImage(resource: .shieldAlert96)
         errorHeader.text = UserText.generalPageProblemTitle
         errorMessage.text = UserText.generalPageProblemMessage
@@ -1915,8 +1925,7 @@ class TabViewController: UIViewController {
 
     func showTabTerminationErrorPage() {
         actionableErrorPage = .tabTermination
-        webView.isHidden = true
-        error.isHidden = false
+        setNativeErrorPageVisible(true)
         setErrorInfoImage(resource: .webAlert128, size: CGSize(width: 128, height: 96))
         errorHeader.text = UserText.tabTerminationErrorPageTitle
         errorMessage.text = UserText.tabTerminationErrorPageMessage
@@ -1928,6 +1937,12 @@ class TabViewController: UIViewController {
         hideProgressIndicator()
         webpageDidFailToLoad(preservePrivacyInfo: true)
         tabTerminationErrorPageInstrumentation.errorPageShown()
+    }
+
+    private func setNativeErrorPageVisible(_ isVisible: Bool) {
+        webView.isHidden = isVisible
+        error.isHidden = !isVisible
+        pullToRefreshViewAdapter?.setNativeErrorPageVisible(isVisible)
     }
 
     private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy,

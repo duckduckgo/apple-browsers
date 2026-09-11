@@ -21,20 +21,17 @@ import Foundation
 import ObjectiveC
 import os.log
 import SharedTestUtilities
+@_exported import UITestingSupport
 import XCTest
 
 /// Helper values for the UI tests
 enum UITests {
     /// Timeout constants for different test requirements
     enum Timeouts {
-        /// Mostly, we use timeouts to wait for element existence. This is about 3x longer than needed, for CI resilience
-        static let elementExistence: Double = 5.0
-        /// The fire animation time has environmental dependencies, so we want to wait for completion so we don't try to type into it
-        static let fireAnimation: Double = 30.0
-        /// Navigation timeout for page loads and network requests
-        static let navigation: Double = 30.0
-        /// Local test server timeout for localhost connections
-        static let localTestServer: Double = 15.0
+        static let elementExistence = UITestTimeouts.elementExistence
+        static let fireAnimation = UITestTimeouts.fireAnimation
+        static let navigation = UITestTimeouts.navigation
+        static let localTestServer = UITestTimeouts.localTestServer
     }
 
     /// A page simple enough to test favorite, bookmark, and history storage

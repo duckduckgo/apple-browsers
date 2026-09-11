@@ -39,12 +39,45 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
         XCTAssertIdentical(controller.collectionView.delegate, controller)
         XCTAssertIdentical(controller.collectionView.dataSource, controller)
         XCTAssertEqual(controller.buttonsStack.spacing, TabsBarViewController.Constants.stackSpacing)
-        XCTAssertEqual(controller.buttonsStack.arrangedSubviews.count, 3)
+        XCTAssertEqual(controller.buttonsStack.arrangedSubviews.count, 4)
         XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[0], controller.aiChatChip)
-        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[1], controller.fireButton)
+        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[1], controller.aiChatMenuButton)
+        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[2], controller.fireButton)
         // addTabButton is positioned manually outside buttonsStack, see recomputeItemSize()/TabsBarLayout.
         XCTAssertFalse(controller.buttonsStack.arrangedSubviews.contains(controller.addTabButton))
         XCTAssertIdentical(controller.addTabButton.superview, controller.view)
+    }
+
+    // MARK: - Duck.ai chrome controls
+
+    @MainActor
+    func testAIChatMenuButtonIsTheDuckAIPill() throws {
+        let controller = TabsBarViewController.create()
+        controller.loadViewIfNeeded()
+
+        let configuration = try XCTUnwrap(controller.aiChatMenuButton.configuration)
+        XCTAssertEqual(configuration.title, UserText.actionOpenAIChat)
+        let icon = try XCTUnwrap(configuration.image)
+        XCTAssertEqual(icon.size, CGSize(width: 16, height: 16))
+        XCTAssertEqual(icon.renderingMode, .alwaysTemplate)
+        XCTAssertEqual(configuration.background.cornerRadius, TabsBarViewController.Constants.aiChatMenuButtonCornerRadius)
+        XCTAssertEqual(controller.aiChatMenuButton.accessibilityLabel, UserText.accessibilityLabelOpenAIChat)
+    }
+
+    @MainActor
+    func testWhenContextualSessionIsActiveThenAIChatMenuButtonSwapsToTheDownGlyph() throws {
+        let controller = TabsBarViewController.create()
+        controller.loadViewIfNeeded()
+        let closedGlyph = try XCTUnwrap(controller.aiChatMenuButton.configuration?.image?.pngData())
+
+        controller.updateAIChatMenuButtonForContextualChat(hasContextualSession: true)
+
+        let openGlyph = try XCTUnwrap(controller.aiChatMenuButton.configuration?.image?.pngData())
+        XCTAssertNotEqual(openGlyph, closedGlyph)
+
+        controller.updateAIChatMenuButtonForContextualChat(hasContextualSession: false)
+
+        XCTAssertEqual(try XCTUnwrap(controller.aiChatMenuButton.configuration?.image?.pngData()), closedGlyph)
     }
 
     @MainActor

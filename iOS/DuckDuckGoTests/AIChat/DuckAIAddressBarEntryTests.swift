@@ -25,12 +25,14 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
     private func resolve(isContextualModeAvailable: Bool = true,
                          isFloatingInputAvailable: Bool = true,
                          isHomeTab: Bool = false,
+                         isChatHistoryAvailable: Bool = true,
                          hasChatToReopen: Bool = false,
                          isContextualSurfacePresented: Bool = false) -> DuckAIAddressBarEntry {
         DuckAIAddressBarEntry.resolve(
             isContextualModeAvailable: isContextualModeAvailable,
             isFloatingInputAvailable: isFloatingInputAvailable,
             isHomeTab: isHomeTab,
+            isChatHistoryAvailable: isChatHistoryAvailable,
             hasChatToReopen: hasChatToReopen,
             isContextualSurfacePresented: isContextualSurfacePresented
         )
@@ -53,6 +55,34 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
         XCTAssertEqual(resolve(isFloatingInputAvailable: false), .contextualSheet)
     }
 
+    // MARK: - iPad chrome menu button
+
+    func testIPadChromeMenuButtonShowsTheMenuWithoutTheFloatingInput() {
+        let entry = DuckAIAddressBarEntry.resolve(
+            isContextualModeAvailable: true,
+            isFloatingInputAvailable: false,
+            isIPadChromeMenuButtonAvailable: true,
+            isHomeTab: false,
+            isChatHistoryAvailable: false,
+            hasChatToReopen: false,
+            isContextualSurfacePresented: false
+        )
+        XCTAssertEqual(entry, .menu)
+    }
+
+    func testIPadChromeMenuButtonStillReopensAChatDirectly() {
+        let entry = DuckAIAddressBarEntry.resolve(
+            isContextualModeAvailable: true,
+            isFloatingInputAvailable: false,
+            isIPadChromeMenuButtonAvailable: true,
+            isHomeTab: false,
+            isChatHistoryAvailable: false,
+            hasChatToReopen: true,
+            isContextualSurfacePresented: false
+        )
+        XCTAssertEqual(entry, .contextualSheet)
+    }
+
     // MARK: - Dismissal
 
     func testAPresentedSurfaceIsDismissedRatherThanReopened() {
@@ -65,8 +95,22 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
 
     // MARK: - Legacy
 
-    func testHomeTabOpensDuckAiDirectly() {
-        XCTAssertEqual(resolve(isHomeTab: true), .legacyDuckAI)
+    func testHomeTabOffersMenuWithAndWithoutContextualOrFloatingInput() {
+        for contextualMode in [false, true] {
+            for floatingInput in [false, true] {
+                XCTAssertEqual(resolve(isContextualModeAvailable: contextualMode,
+                                       isFloatingInputAvailable: floatingInput,
+                                       isHomeTab: true), .menu)
+            }
+        }
+    }
+
+    func testHomeTabWithoutHistoryOpensDuckAiDirectly() {
+        XCTAssertEqual(resolve(isHomeTab: true, isChatHistoryAvailable: false), .legacyDuckAI)
+    }
+
+    func testWebPageMenuDoesNotRequireHistory() {
+        XCTAssertEqual(resolve(isChatHistoryAvailable: false), .menu)
     }
 
     func testWithoutContextualModeOpensDuckAiDirectly() {
@@ -74,11 +118,11 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
     }
 
     func testHomeTabWinsOverAnActiveChat() {
-        XCTAssertEqual(resolve(isHomeTab: true, hasChatToReopen: true), .legacyDuckAI)
+        XCTAssertEqual(resolve(isHomeTab: true, hasChatToReopen: true), .menu)
     }
 
     func testHomeTabWinsOverAPresentedSurface() {
-        XCTAssertEqual(resolve(isHomeTab: true, isContextualSurfacePresented: true), .legacyDuckAI)
+        XCTAssertEqual(resolve(isHomeTab: true, isContextualSurfacePresented: true), .menu)
     }
 
     // MARK: - Contextual glyph
@@ -117,8 +161,7 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
         XCTAssertFalse(showsGlyph(isContextualModeAvailable: false, hasChatToReopen: true))
     }
 
-    /// Matches `resolve`, which sends the home tab to `.legacyDuckAI`: the glyph must not promise a
-    /// contextual session the tap will not open.
+    /// Home-tab actions never restore a contextual session.
     func testHomeTabNeverShowsTheGlyph() {
         XCTAssertFalse(showsGlyph(isHomeTab: true, hasChatToReopen: true))
         XCTAssertFalse(showsGlyph(isHomeTab: true, isContextualSurfacePresented: true))

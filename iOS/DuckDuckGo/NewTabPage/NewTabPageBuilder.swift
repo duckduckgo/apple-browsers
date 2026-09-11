@@ -44,6 +44,8 @@ struct NewTabPageBuilder {
     let internalUserCommands: URLBasedDebugCommands
     let floatingUIManager: FloatingUIManaging
     let redesignFeature: NewTabPageRedesignFeatureProviding
+    let toggleModeStorage: ToggleModeStoring
+    let voiceSearchHelper: VoiceSearchHelperProtocol
 
     /// `daxDialogFactory` is supplied per page rather than stored.
     func makeNewTabPage(tab: Tab,
@@ -61,9 +63,33 @@ struct NewTabPageBuilder {
     }
 
     private func makeRedesignedNewTabPage() -> any NewTabPage {
-        RedesignedNewTabPageViewController(blocks: [
-            SwiftUIBlock(id: "daxLogo", rootView: NewTabPageDaxLogoView())
+        // The callbacks are created before their owning page; keep the back-reference weak.
+        weak var newTabPage: RedesignedNewTabPageViewController?
+        let searchInputView = NewTabPageSearchInputView(
+            isModeToggleShown: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            isAIChatEnabled: aiChatSettings.isAIChatEnabled,
+            isVoiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
+            initialTextEntryMode: initialTextEntryMode,
+            onActivate: { textEntryMode in
+                newTabPage?.beginSearch(textEntryMode: textEntryMode)
+            },
+            onVoiceSearch: { textEntryMode in
+                newTabPage?.beginVoiceSearch(textEntryMode: textEntryMode)
+            })
+
+        let page = RedesignedNewTabPageViewController(blocks: [
+            SwiftUIBlock(id: .welcome, rootView: NewTabPageWelcomeView()),
+            SwiftUIBlock(id: .searchInput, rootView: searchInputView)
         ])
+        newTabPage = page
+        return page
+    }
+
+    // Must match the address bar's home-tab mode resolution.
+    private var initialTextEntryMode: TextEntryMode {
+        aiChatSettings.defaultOmnibarMode
+            .resolvedTextEntryMode { toggleModeStorage.restore() }
+            .displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
     }
 
     private func makeCurrentNewTabPage(tab: Tab,

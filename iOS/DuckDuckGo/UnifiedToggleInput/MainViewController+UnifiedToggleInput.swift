@@ -1121,7 +1121,9 @@ extension MainViewController {
             contentSnapshot: stationaryContentSnapshot,
             additionalAnimations: { [weak self, weak coordinator] in
                 guard let self, let coordinator else { return }
-                coordinator.viewController.applyOmnibarEditingDismissPose()
+                if !self.viewCoordinator.usesInlineNewTabPageInput {
+                    coordinator.viewController.applyOmnibarEditingDismissPose()
+                }
                 self.viewCoordinator.superview.layoutIfNeeded()
                 if !keepsFocusedContentStationary {
                     coordinator.pushContentInsets()
@@ -1195,6 +1197,8 @@ extension MainViewController {
         coordinator.clearText()
         reconcileToolbarVisibilityForCurrentTab()
         reconcileFloatingLayoutAfterUTIExit()
+        // The unified input dismisses on its own path, apart from `dismissOmniBar`.
+        updateAddressBarSuppressionForNewTabPage()
         completion?()
     }
 
@@ -1293,6 +1297,8 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
               currentTab?.isAITab != true else {
             return .allowDefault
         }
+        // Reveal before unified input measures the bar for its transition.
+        revealAddressBarForEditing()
         if tapped {
             onExperimentalAddressBarTapped()
         }

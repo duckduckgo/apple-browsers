@@ -22,6 +22,8 @@ import UIKit
 extension MainViewController {
 
     func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {
+        defer { updateAddressBarSuppressionForNewTabPage() }
+
         switch intent {
         case .showCollapsed:
             handleShowCollapsedIntent(animationStyle: intent.animationStyle(layoutTarget: viewCoordinator.superview))
@@ -215,6 +217,9 @@ private extension MainViewController {
             animations: { [weak self] in
                 guard let self else { return }
                 coordinator.viewController.applyOmnibarEditingShowPose()
+                if self.viewCoordinator.usesInlineNewTabPageInput {
+                    self.viewCoordinator.unifiedToggleInputContainer.alpha = 1
+                }
                 if coordinator.cardPosition == .bottom {
                     self.applyBottomOmnibarVisibility(.active)
                     if self.isFloatingUIEnabled {
@@ -255,9 +260,10 @@ private extension MainViewController {
         // Measure the resting omnibar pill + placeholder text before ownership transfer detaches the
         // omnibar from the toolbar (bottom floating), so the collapsed UTI pose and its text can
         // align to them with no hand-off snap. Measured live first; once detached it reads `nil`.
-        let omnibarPillWindowFrame = coordinator.cardPosition.isBottom ? currentOmnibarPillWindowFrame() : nil
+        let omnibarPillWindowFrame = coordinator.cardPosition.isBottom && !viewCoordinator.usesInlineNewTabPageInput
+            ? currentOmnibarPillWindowFrame() : nil
         coordinator.viewController.omnibarPillWindowFrame = omnibarPillWindowFrame
-        let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
+        let omnibarPlaceholderWindowX = viewCoordinator.usesInlineNewTabPageInput ? nil : currentOmnibarPlaceholderWindowX()
         // Cached so the symmetric dismiss can slide the text back onto the omnibar even though the
         // omnibar is no longer in the toolbar by then.
         coordinator.cacheOmnibarPlaceholderWindowX(omnibarPlaceholderWindowX, windowSize: view.window?.bounds.size)
@@ -281,7 +287,7 @@ private extension MainViewController {
 
         viewCoordinator.focusedStateBackground.alpha = isSeamlessHandoff ? 1 : 0
         unifiedInputContentContainer.alpha = isSeamlessHandoff ? 1 : 0
-        unifiedInputContentContainer.transform = isSeamlessHandoff || UIAccessibility.isReduceMotionEnabled
+        unifiedInputContentContainer.transform = isSeamlessHandoff || viewCoordinator.usesInlineNewTabPageInput || UIAccessibility.isReduceMotionEnabled
             ? .identity
             : CGAffineTransform(scaleX: 0.95, y: 0.95)
 
@@ -295,7 +301,7 @@ private extension MainViewController {
 
         // The container is now laid out at its editing-start frame; pin the collapsed card to the
         // measured pill so frame 0 of the focus animation matches the omnibar exactly (bottom only).
-        if coordinator.cardPosition == .bottom {
+        if coordinator.cardPosition == .bottom, !viewCoordinator.usesInlineNewTabPageInput {
             coordinator.viewController.captureOmnibarMatchedInsets()
         }
 
@@ -314,6 +320,16 @@ private extension MainViewController {
             // focused SwiftUI logo; revealed again on dismiss. (Alpha is already 1 via the seamless
             // handoff above — the focused logo rests at the NTP anchor by construction, no manual swap.)
             newTabPageViewController?.setLogoHidden(true)
+        }
+
+        if viewCoordinator.usesInlineNewTabPageInput {
+            // Lay out the expanded input before fading it in; the hidden chrome is not the animation's source.
+            coordinator.viewController.applyOmnibarEditingShowPose()
+            if let pendingHeight {
+                viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
+            }
+            view.layoutIfNeeded()
+            viewCoordinator.unifiedToggleInputContainer.alpha = 0
         }
 
         animateOmnibarEditingShow(coordinator: coordinator,
@@ -375,8 +391,10 @@ private extension MainViewController {
             } else if !isFavoritesToFavorites {
                 coordinator?.contentViewController.beginDismissFade()
             }
-            let additionalAnimations: () -> Void = {
-                coordinator?.viewController.applyOmnibarEditingDismissPose()
+            let additionalAnimations: () -> Void = { [weak self] in
+                if self?.viewCoordinator.usesInlineNewTabPageInput != true {
+                    coordinator?.viewController.applyOmnibarEditingDismissPose()
+                }
                 if let coordinator, let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }

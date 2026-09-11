@@ -369,6 +369,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// pre-submit contextual sheet on iPhone.
     case contextualFloatingInput
 
+    /// Enables Recent Chats in the iOS address-bar Duck.ai menu.
+    case addressBarRecentChats
+
+    /// Makes the address-bar Duck.ai menu page-aware
+    case contextualAddressBarMenu
+
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
 
@@ -480,6 +486,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Displays the Duck.ai shortcut in the iPad browser chrome (tabs bar).
     case iPadChromeShortcut
 
+    /// Single Duck.ai menu button in the iPad tabs bar.
+    case iPadChromeMenuButton
+
     /// Enables moving the AI Chat native-storage container from the shared App
     /// Group into the app's Application Support directory on iOS. Off keeps the
     /// legacy App Group path.
@@ -580,6 +589,10 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Toggle for the Copy VPN Diagnostics button in VPN settings/status.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
     case showCopyDiagnosticsButton
+
+    /// VPN Session Health Telemetry
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218245909089002?focus=true
+    case sessionHealthTelemetry
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {
@@ -607,6 +620,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
     case canWriteUnifiedDeviceList
+    case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList
     case simplifiedSyncSetupV2
 }
@@ -641,6 +655,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionExpirationReminderNotification
     case subscriptionPromoForExistingUsers
     case monthlyFreeTrialExperiment2
+    case subscriptionOnboardingFreeTrialsSep2026
+    case subscriptionOnboardingPaidSubsSep2026
     case onboardingSubscriptionUpsellExperiment
 }
 
@@ -834,6 +850,12 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the Cookie Pop-ups Blocked promo.
     case cookiePopupsBlockedPromo
+
+    /// Kill switch for the "Update available" promo.
+    case updateAvailablePromo
+
+    /// Kill switch for the "Browser updated" promo.
+    case browserUpdatedPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

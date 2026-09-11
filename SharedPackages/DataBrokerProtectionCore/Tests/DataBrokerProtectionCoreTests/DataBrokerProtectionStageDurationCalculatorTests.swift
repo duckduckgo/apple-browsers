@@ -31,6 +31,23 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         handler.clear()
     }
 
+    func testOptOutFailurePixelDoesNotIncludeEmailServerMessage() {
+        let serverMessage = "INVALID_REQUEST: user@example.com"
+        let error = DataBrokerProtectionError.emailError(.httpError(statusCode: 400, message: serverMessage))
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
+                                                              dataBrokerVersion: "1.1.1",
+                                                              handler: handler,
+                                                              isFreeScan: false,
+                                                              vpnConnectionState: "disconnected",
+                                                              vpnBypassStatus: "no")
+
+        sut.fireOptOutFailure(tries: 1, error: error)
+
+        let errorDetails = handler.lastFiredEvent?.params?[DataBrokerProtectionSharedPixels.Consts.errorDetailsKey]
+        XCTAssertEqual(errorDetails, "Email service error: Email HTTP error 400")
+        XCTAssertFalse(errorDetails?.contains(serverMessage) == true)
+    }
+
     func testWhenErrorIs404_thenWeFireScanNoResultsPixel() {
         let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 

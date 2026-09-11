@@ -921,6 +921,35 @@ final class PixelKitTests: XCTestCase {
                  fireRequest: fireRequest)
     }
 
+    /// `.legacyInitial` and `.uniqueByName` have to share one throttle slot.
+    /// `LegacyPixelStateMigration` seeds the legacy `UniquePixel` state into `uniqueByName`, so a
+    /// `.legacyInitial` pixel reading a slot of its own would miss that state and re-fire every
+    /// once-ever pixel for every migrated user on upgrade. Asserted through the public read API so
+    /// the test fails if the two are ever repointed apart, rather than moving with them.
+    func testLegacyInitialSharesTheUniqueByNameThrottleSlot() throws {
+        let pixelKit = makePixelKit()
+
+        pixelKit.fire(TestEventV2.testEvent, frequency: .legacyInitial)
+
+        XCTAssertNotNil(try pixelKit.pixelLastFireDate(event: TestEventV2.testEvent, frequency: .uniqueByName),
+                        "LegacyPixelStateMigration seeds `uniqueByName`, so `.legacyInitial` must record there")
+        XCTAssertNotNil(try pixelKit.pixelLastFireDate(event: TestEventV2.testEvent, frequency: .legacyInitial))
+    }
+
+    /// The once-ever contract itself: a second fire is suppressed.
+    func testLegacyInitialFiresOnceEver() {
+        var firedNames = [String]()
+        let pixelKit = makePixelKit { pixelName, _, _, _, _, completion in
+            firedNames.append(pixelName)
+            completion(true, nil)
+        }
+
+        pixelKit.fire(TestEventV2.testEvent, frequency: .legacyInitial)
+        pixelKit.fire(TestEventV2.testEvent, frequency: .legacyInitial)
+
+        XCTAssertEqual(firedNames.count, 1, "\(firedNames)")
+    }
+
     /// `fireAsync` returns `.sent` and resolves once the underlying request reports success.
     func testAsyncFireReturnsSentWhenRequestSucceeds() async throws {
         let pixelKit = makePixelKit()

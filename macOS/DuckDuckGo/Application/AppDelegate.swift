@@ -159,17 +159,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
-    @MainActor private(set) lazy var quickFeedbackService: QuickFeedbackService = {
-        let diagnosticsCollector = QuickFeedbackDiagnosticsCollector(
-            tabAndWindowCountProvider: windowControllersManager,
-            memoryUsageMonitor: memoryUsageMonitor,
-            launchDate: appLaunchDate
-        )
-        return QuickFeedbackService(
-            diagnosticsCollector: diagnosticsCollector,
-            firePublisher: fireCoordinator.fireViewModel.fire.burningDataPublisher
-        )
-    }()
+    @MainActor private(set) lazy var quickFeedbackDiagnosticsCollector = QuickFeedbackDiagnosticsCollector(
+        tabAndWindowCountProvider: windowControllersManager,
+        memoryUsageMonitor: memoryUsageMonitor,
+        launchDate: appLaunchDate
+    )
+
+    @MainActor private(set) lazy var internalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProviding =
+        InternalFeedbackDeviceInfoProvider(diagnosticsCollector: quickFeedbackDiagnosticsCollector)
+
+    @MainActor private(set) lazy var internalFeedbackAttachmentsProvider = InternalFeedbackAttachmentsProvider()
+
+    @MainActor private(set) lazy var quickFeedbackService = QuickFeedbackService(
+        attachmentsProvider: internalFeedbackAttachmentsProvider,
+        firePublisher: fireCoordinator.fireViewModel.fire.burningDataPublisher
+    )
 
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
@@ -323,6 +327,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     public let subscriptionUIHandler: SubscriptionUIHandling
 
     private(set) lazy var sessionRestorePromptCoordinator = SessionRestorePromptCoordinator(pixelFiring: PixelKit.shared)
+    let brokenSitePromptPresentationCoordinator = BrokenSitePromptPresentationCoordinator()
 
     // MARK: - Automation Server
     private var automationServer: AutomationServer?
@@ -460,6 +465,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var didFinishLaunching = false
 
     var updateController: UpdateController?
+    private var updateNotificationPromoBridge: UpdateNotificationPromoBridge?
     let dockCustomization: DockCustomization
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
@@ -1479,7 +1485,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 syncService: syncService,
                 syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
                 pinningManager: pinningManager,
-                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate
+                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate,
+                updateController: updateController,
+                updateNotificationBridge: updateNotificationPromoBridge,
+                brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -1739,28 +1748,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard AppVersion.runType.allowsUpdates else { return }
 
         let buildType = StandardApplicationBuildType()
-        let notificationPresenter = UpdateNotificationPresenter(
-            pixelFiring: PixelKit.shared,
-            shouldSuppressPostUpdateNotification: { [weak self] in
-                let wc = self?.windowControllersManager.lastKeyMainWindowController
-                            ?? self?.windowControllersManager.mainWindowControllers.last
-                return wc?.mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.content == .releaseNotes
-            },
-            showNotificationPopover: { [weak self] popover in
-                guard let wc = self?.windowControllersManager.lastKeyMainWindowController
-                            ?? self?.windowControllersManager.mainWindowControllers.last,
-                      let button = wc.mainViewController.navigationBarViewController.optionsButton else {
-                    return false
-                }
-                let parent = wc.mainViewController
-                guard parent.view.window?.isKeyWindow == true,
-                      (parent.presentedViewControllers ?? []).isEmpty else {
-                    return false
-                }
-                popover.show(onParent: parent, relativeTo: button)
-                return true
-            }
-        )
+        let notificationPresenter = UpdateNotificationPromoBridge()
+        self.updateNotificationPromoBridge = notificationPresenter
 
         if buildType.isAppStoreBuild {
             guard let appStoreFactory = UpdateControllerFactory.self as? any AppStoreUpdateControllerFactory.Type else {
@@ -2252,6 +2241,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let syncService = DDGSync(
             dataProvidersSource: syncDataProviders,
             errorEvents: SyncErrorHandler(),
+            unifiedDeviceListEvents: UnifiedDeviceListPixelHandler(),
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             keyValueStore: keyValueStore,
             environment: environment,
@@ -2267,6 +2257,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 canWriteUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanWriteUnifiedDeviceList)
+                },
+                canUsePatchEndpointForLegacyDeviceRename: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanUsePatchEndpointForLegacyDeviceRename)
                 },
                 canReadUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanReadUnifiedDeviceList)

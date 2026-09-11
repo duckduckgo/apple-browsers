@@ -71,6 +71,8 @@ public actor VPNLeakCheckService {
     private let stunClient: LeakCheckSTUNClient
     private let wideEvent: WideEventManaging
 
+    private let onLeakDetected: (@Sendable () -> Void)?
+
     private var currentCheck: Task<Void, Never>?
     private var currentCheckID: UInt64 = 0
     private var lastCompletionDate: Date?
@@ -96,7 +98,8 @@ public actor VPNLeakCheckService {
         tunnelPathGeneration: @escaping TunnelPathGenerationProvider = { 0 },
         httpClient: LeakCheckHTTPClient,
         stunClient: LeakCheckSTUNClient,
-        wideEvent: WideEventManaging
+        wideEvent: WideEventManaging,
+        onLeakDetected: (@Sendable () -> Void)? = nil
     ) {
         self.configuration = configuration
         self.egressInfo = egressInfo
@@ -104,6 +107,7 @@ public actor VPNLeakCheckService {
         self.tunnelPathGeneration = tunnelPathGeneration
         self.httpClient = httpClient
         self.stunClient = stunClient
+        self.onLeakDetected = onLeakDetected
         self.wideEvent = wideEvent
     }
 
@@ -312,6 +316,10 @@ public actor VPNLeakCheckService {
             "🟢 Leak check complete (trigger: \(trigger.rawValue, privacy: .public), status: \(Self.describeStatus(status), privacy: .public), latency: \(data.latencyMsBucketed ?? 0, privacy: .public)ms, \(Self.describeResults(data), privacy: .public))"
         )
         wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
+
+        if status == .failure {
+            onLeakDetected?()
+        }
     }
 
     private static func describeStatus(_ status: WideEventStatus) -> String {

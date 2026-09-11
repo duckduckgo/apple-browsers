@@ -347,13 +347,13 @@ private extension MainViewController {
             self?.applyUnifiedInputChromeBackground(.standardChrome)
             self?.applyFloatingUIIfNeeded()
             if fadesForFloatingBottom {
-                // Hide UTI before revealing NTP chrome so logo/favorites don't flash under the
-                // still-visible focused content (especially seamless logo/favorites handoff).
-                self?.viewCoordinator.hideUnifiedInputContent()
+                // Lay out favorites while still covered by UTI, so a tall grid's last row doesn't pop in late.
                 self?.newTabPageViewController?.setLogoHidden(false)
                 self?.newTabPageViewController?.setFavoritesHidden(false)
                 self?.newTabPageViewController?.view.setNeedsLayout()
                 self?.newTabPageViewController?.view.layoutIfNeeded()
+                // Hide UTI last so logo/favorites don't flash under the still-visible focused content.
+                self?.viewCoordinator.hideUnifiedInputContent()
             }
             self?.refreshFloatingToolbarBackdrop()
         }

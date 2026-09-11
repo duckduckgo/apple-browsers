@@ -955,7 +955,7 @@
             {
                 "type": "string",
                 "description": "The onboarding step that was completed",
-                "enum": ["vpn", "vpn_widget", "idtr", "duck_ai", "pir"]
+                "enum": ["vpn", "idtr", "duck_ai", "pir"]
             },
             "platform",
             "form_factor"

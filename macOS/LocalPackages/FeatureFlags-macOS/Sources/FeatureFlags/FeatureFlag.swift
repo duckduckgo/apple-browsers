@@ -433,6 +433,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218049727240253?focus=true
     case promoQueueCookiePopupsBlockedPromo
 
+    /// Kill switch for observing the Duck Player ("Watch in Duck Player?") overlay in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218325559999462?focus=true
+    case promoQueueDuckPlayerOverlayPromo
+
     /// Enables the "Update available" promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923084?focus=true
     case promoQueueUpdateAvailablePromo
@@ -837,6 +841,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillToolbarPinningPromo))
         case .promoQueueCookiePopupsBlockedPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.cookiePopupsBlockedPromo))
+        case .promoQueueDuckPlayerOverlayPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.duckPlayerOverlayPromo))
         case .promoQueueUpdateAvailablePromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.updateAvailablePromo))
         case .promoQueueBrowserUpdatedPromo:

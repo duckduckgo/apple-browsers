@@ -159,6 +159,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
+    @MainActor
+    private(set) lazy var duckPlayerOverlayObserver: DuckPlayerOverlayObserver = {
+        DuckPlayerOverlayObserver(
+            duckPlayer: duckPlayer,
+            windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger
+        )
+    }()
+
     @MainActor private(set) lazy var quickFeedbackDiagnosticsCollector = QuickFeedbackDiagnosticsCollector(
         tabAndWindowCountProvider: windowControllersManager,
         memoryUsageMonitor: memoryUsageMonitor,
@@ -1504,6 +1513,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
                 pinningManager: pinningManager,
                 cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate,
+                duckPlayerOverlayObserver: duckPlayerOverlayObserver,
                 updateController: updateController,
                 updateNotificationBridge: updateNotificationPromoBridge,
                 brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator

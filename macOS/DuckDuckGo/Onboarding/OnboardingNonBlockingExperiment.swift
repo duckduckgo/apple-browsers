@@ -75,13 +75,8 @@ struct OnboardingNonBlockingExperiment {
     /// Fires the D1-3 search retention metric, plus a segment recording whether onboarding
     /// had been completed at the time of the search.
     func fireSearchRetention(persistor: NonBlockingOnboardingPersistor = NonBlockingOnboardingPersistor()) {
-        fireDefaultSearchRetention()
-        fireSearchRetentionSegment(persistor: persistor)
-    }
-
-    /// The framework's regular `search` metric, restricted to the D1-3 window.
-    private func fireDefaultSearchRetention() {
         fireSearchRetention(metric: PixelKit.Constants.searchMetricValue)
+        fireSearchRetentionSegment(persistor: persistor)
     }
 
     /// Blocking onboarding cannot be searched past, so control always counts as completed.

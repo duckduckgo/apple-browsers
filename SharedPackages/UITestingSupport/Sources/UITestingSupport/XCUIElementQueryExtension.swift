@@ -15,10 +15,9 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-import OSLog
 import XCTest
 
-extension XCUIElementQuery {
+public extension XCUIElementQuery {
 
     /// Filter elements containing an element where a property contains a specific substring
     /// - Parameters:
@@ -91,7 +90,7 @@ extension XCUIElementQuery {
     ///   - timeout: Maximum time to wait (default: 30 seconds)
     /// - Returns: True if the condition is met within the timeout, false otherwise
     @discardableResult
-    func wait(for predicate: NSPredicate, timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
+    func wait(for predicate: NSPredicate, timeout: TimeInterval = UITestTimeouts.navigation) -> Bool {
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
         let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
         return result == .completed
@@ -106,7 +105,7 @@ extension XCUIElementQuery {
     @discardableResult
     func wait<V: CVarArg & Equatable>(for keyPath: PartialKeyPath<XCUIElementQuery>,
                                       equals value: V,
-                                      timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
+                                      timeout: TimeInterval = UITestTimeouts.navigation) -> Bool {
         return wait(for: NSPredicate.keyPath(keyPath, equalTo: value), timeout: timeout)
     }
 
@@ -119,7 +118,7 @@ extension XCUIElementQuery {
     @discardableResult
     func wait<V: CVarArg & Comparable>(for keyPath: PartialKeyPath<XCUIElementQuery>,
                                        in range: ClosedRange<V>,
-                                       timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
+                                       timeout: TimeInterval = UITestTimeouts.navigation) -> Bool {
         return wait(for: NSPredicate.keyPath(keyPath, in: range), timeout: timeout)
     }
 
@@ -127,7 +126,7 @@ extension XCUIElementQuery {
     @discardableResult
     func wait<V: CVarArg & Comparable>(for keyPath: PartialKeyPath<XCUIElementQuery>,
                                        in range: Range<V>,
-                                       timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
+                                       timeout: TimeInterval = UITestTimeouts.navigation) -> Bool {
         return wait(for: NSPredicate.keyPath(keyPath, in: range), timeout: timeout)
     }
 
@@ -135,7 +134,7 @@ extension XCUIElementQuery {
     @discardableResult
     func wait<V: CVarArg & Comparable>(for keyPath: PartialKeyPath<XCUIElementQuery>,
                                        in range: PartialRangeFrom<V>,
-                                       timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
+                                       timeout: TimeInterval = UITestTimeouts.navigation) -> Bool {
         return wait(for: NSPredicate.keyPath(keyPath, in: range), timeout: timeout)
     }
 
@@ -143,7 +142,7 @@ extension XCUIElementQuery {
     @discardableResult
     func wait<V: CVarArg & Comparable>(for keyPath: PartialKeyPath<XCUIElementQuery>,
                                        in range: PartialRangeUpTo<V>,
-                                       timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
+                                       timeout: TimeInterval = UITestTimeouts.navigation) -> Bool {
         return wait(for: NSPredicate.keyPath(keyPath, in: range), timeout: timeout)
     }
 
@@ -151,7 +150,7 @@ extension XCUIElementQuery {
     @discardableResult
     func wait<V: CVarArg & Comparable>(for keyPath: PartialKeyPath<XCUIElementQuery>,
                                        in range: PartialRangeThrough<V>,
-                                       timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
+                                       timeout: TimeInterval = UITestTimeouts.navigation) -> Bool {
         return wait(for: NSPredicate.keyPath(keyPath, in: range), timeout: timeout)
     }
 }

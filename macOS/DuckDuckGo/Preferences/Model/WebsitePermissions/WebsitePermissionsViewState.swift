@@ -18,6 +18,7 @@
 
 import AppKit
 import Common
+import DesignResourcesKitIcons
 
 struct WebsitePermissionsViewState: Equatable {
     var recents: [RecentRow] = []
@@ -42,9 +43,39 @@ extension WebsitePermissionsViewState {
 
         var id: WebsitePermissionCategory { category }
 
-        var title: String { category.title }
+        var title: String {
+            switch category {
+            case .notifications:
+                return UserText.permissionNotification
+            case .location:
+                return UserText.permissionGeolocation
+            case .camera:
+                return UserText.permissionCamera
+            case .microphone:
+                return UserText.permissionMicrophone
+            case .externalApps:
+                return UserText.permissionCenterExternalApps
+            case .popups:
+                return UserText.permissionPopups
+            }
+        }
 
-        var icon: NSImage { category.icon }
+        var icon: NSImage {
+            switch category {
+            case .notifications:
+                return DesignSystemImages.Glyphs.Size16.permissionsNotification
+            case .location:
+                return DesignSystemImages.Glyphs.Size16.permissionsLocation
+            case .camera:
+                return DesignSystemImages.Glyphs.Size16.permissionCamera
+            case .microphone:
+                return DesignSystemImages.Glyphs.Size16.permissionMicrophone
+            case .externalApps:
+                return DesignSystemImages.Glyphs.Size16.openIn
+            case .popups:
+                return DesignSystemImages.Glyphs.Size16.popupBlocked
+            }
+        }
 
         var accessibilityIdentifier: String {
             "WebsitePermissions.\(category)"
@@ -53,9 +84,7 @@ extension WebsitePermissionsViewState {
 }
 
 extension WebsitePermissionsViewState {
-    /// A single recently changed website permission. Display strings and the dropdown's options are
-    /// resolved when the row is built, since `PermissionType.localizedDescription` consults
-    /// `NSWorkspace` to name the handling app for external schemes.
+    /// Precomputes display values because external-app names require NSWorkspace lookups.
     struct RecentRow: Identifiable, Equatable {
         let domain: String
         let permissionType: PermissionType

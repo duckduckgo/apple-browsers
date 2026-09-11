@@ -29,6 +29,9 @@ struct PreferencesWebsitePermissionsView: View {
         static let iconSize: CGFloat = 16
         static let chevronSize: CGFloat = 12
         static let countSeparatorSize: CGFloat = 3
+        static let faviconSize: CGFloat = 16
+        static let removeButtonSize: CGFloat = 16
+        static let minimumDropdownWidth: CGFloat = 124
     }
 
     @ObservedObject

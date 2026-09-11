@@ -17,6 +17,7 @@
 //
 
 import Combine
+import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
 
@@ -34,6 +35,10 @@ final class WebsitePermissionsViewModel: ObservableObject {
     private var permissionsCancellable: AnyCancellable?
     private var latestEntries = [WebsitePermissionEntry]()
 
+    private var nativeVoiceFlowEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow)
+    }
+
     init(permissionManager: PermissionManagerProtocol, featureFlagger: FeatureFlagger) {
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
@@ -47,12 +52,12 @@ final class WebsitePermissionsViewModel: ObservableObject {
             setupObserver()
 
         case .changeRecentDecision(let row, let decision):
-            guard row.permissionType.isUserEditable(forDomain: row.domain, featureFlagger: featureFlagger),
+            guard row.permissionType.isUserEditable(forDomain: row.domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled),
                   decision != row.decision else { return }
             permissionManager.setPermission(decision, forDomain: row.domain, permissionType: row.permissionType)
 
         case .removeRecent(let row):
-            guard row.permissionType.isUserEditable(forDomain: row.domain, featureFlagger: featureFlagger) else { return }
+            guard row.permissionType.isUserEditable(forDomain: row.domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled) else { return }
             permissionManager.removePermission(forDomain: row.domain, permissionType: row.permissionType)
 
         case .openDetail(let category):
@@ -79,7 +84,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
                 guard let self else { return }
                 latestEntries = entries
                 let editableEntries = entries.filter {
-                    $0.permissionType.isUserEditable(forDomain: $0.domain, featureFlagger: self.featureFlagger)
+                    $0.permissionType.isUserEditable(forDomain: $0.domain, nativeVoiceFlowEnabled: self.nativeVoiceFlowEnabled)
                 }
                 viewState = WebsitePermissionsViewState(
                     recents: makeRecentRows(from: editableEntries),

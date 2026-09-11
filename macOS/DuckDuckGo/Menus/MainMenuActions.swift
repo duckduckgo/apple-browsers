@@ -848,6 +848,7 @@ extension AppDelegate {
 
     @objc func resetOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
+        NonBlockingOnboardingPersistor().reset()
     }
 
     @objc func resetHomePageSettingsOnboarding(_ sender: Any?) {
@@ -1127,7 +1128,7 @@ extension MainViewController {
                 showFloatingAIChatShortcutCloseConfirmation(at: index, currentEvent: currentEvent) { [weak self] in
                     guard let self else { return }
                     self.aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
-                    self.tabCollectionViewModel.remove(at: index)
+                    self.tabCollectionViewModel.close(at: index)
                 }
                 return
             }
@@ -1138,13 +1139,13 @@ extension MainViewController {
                         showPinnedTabCloseConfirmation(atPinnedIndex: pinnedIndex, currentEvent: currentEvent) { [weak self] in
                             guard let self else { return }
                             self.aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
-                            self.tabCollectionViewModel.remove(at: .pinned(pinnedIndex))
+                            self.tabCollectionViewModel.close(at: .pinned(pinnedIndex))
                         }
                         return
                     }
 
                     aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
-                    tabCollectionViewModel.remove(at: index)
+                    tabCollectionViewModel.close(at: index)
                     return
                 }
 
@@ -1164,7 +1165,7 @@ extension MainViewController {
         }
 
         aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
-        tabCollectionViewModel.remove(at: index)
+        tabCollectionViewModel.close(at: index)
     }
 
     @MainActor
@@ -2072,7 +2073,7 @@ extension AppDelegate: NSMenuItemValidation {
 
     @MainActor
     private var isUserInteractionAllowed: Bool {
-        OnboardingActionsManager.isOnboardingFinished
+        OnboardingActionsManager.isOnboardingFinished || NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
     }
 
     private var areTherePasswords: Bool {

@@ -691,6 +691,10 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
 
 final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
+    private func makeBarView(isFloatingUIEnabled: Bool) -> DefaultOmniBarView {
+        DefaultOmniBarView(isFloatingUIEnabled: isFloatingUIEnabled, supportsButtonMenusInGlass: true)
+    }
+
     private func firstGlassView(in view: UIView) -> UIVisualEffectView? {
         if let glassView = view as? UIVisualEffectView {
             return glassView
@@ -710,8 +714,16 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         return view.subviews.lazy.compactMap(floatingContentHost(in:)).first
     }
 
+    func testWhenButtonMenusDoNotSupportGlassThenFloatingFieldIsOpaque() throws {
+        let barView = DefaultOmniBarView(isFloatingUIEnabled: true, supportsButtonMenusInGlass: false)
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+
+        XCTAssertNil(firstGlassView(in: searchContainer))
+        XCTAssertFalse(searchContainer.backgroundColor == .clear)
+    }
+
     func testWhenFloatingMinimalChromeBarEnabledThenLeadingAndTrailingGlassGroupsAreAddedAndRemoved() {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 700, height: 60)
 
         // The address bar field already carries its own glass; enabling adds the two button groups.
@@ -725,7 +737,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenFloatingUIDisabledThenMinimalChromeBarAddsNoGlassGroups() {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        let barView = makeBarView(isFloatingUIEnabled: false)
         barView.frame = CGRect(x: 0, y: 0, width: 700, height: 60)
 
         let baseline = glassViewCount(in: barView)
@@ -735,7 +747,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenFloatingBarResizesThenFieldGlassMatchesItsContainerBounds() {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: 60)
         barView.layoutIfNeeded()
 
@@ -755,7 +767,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenFloatingFieldIsAtBottomThenContentIsHostedInsideUntintedGlass() throws {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
         barView.isUsingSmallTopSpacing = true
         barView.layoutIfNeeded()
@@ -772,7 +784,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenShieldAndLoupeShareTheIconSlotThenTheyShareACentre() throws {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.isUsingSmallTopSpacing = true
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
@@ -800,7 +812,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenEmbeddedFieldIsTallerThanItsControlsThenTheRowStaysCentred() throws {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.isUsingSmallTopSpacing = true
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
@@ -820,7 +832,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenEmbeddedFieldLaysOutThenIconSlotsAreInsetFromTheCapsuleEnds() throws {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.isUsingSmallTopSpacing = true
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
@@ -858,7 +870,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenNonFloatingIPadSearchAreaExpandsThenModeToggleDoesNotOverlapBottomControls() throws {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        let barView = makeBarView(isFloatingUIEnabled: false)
         barView.frame = CGRect(x: 0, y: 0, width: 1024, height: DefaultOmniBarView.expectedHeight)
         barView.setLayoutMode(.expandedPad)
         barView.isModeToggleHidden = false
@@ -873,7 +885,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenFieldIsEmbeddedAtBottomThenItFillsTheFullSlotHeight() throws {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.isUsingSmallTopSpacing = true
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
         barView.layoutIfNeeded()
@@ -892,7 +904,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         let toolbar = BrowserToolbarView(frame: CGRect(x: 0, y: 0, width: 390, height: 200))
         toolbar.overrideUserInterfaceStyle = .light
         toolbar.setFloatingStyleEnabled(true)
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.isUsingSmallTopSpacing = true
         toolbar.setOmnibarView(barView, height: barView.expectedHeight)
 
@@ -908,7 +920,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenFloatingFieldMovesBetweenTopAndBottomThenContentRemainsInsideCurrentGlass() throws {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
         barView.layoutIfNeeded()
 
@@ -935,7 +947,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenBottomFloatingFieldLeavesFireModeThenContentReturnsToGlass() throws {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
         barView.isUsingSmallTopSpacing = true
 
@@ -953,7 +965,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenGlassAppearanceIsUnchangedThenMakingGlassPreservesGlassView() throws {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
         barView.layoutIfNeeded()
         let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
@@ -964,7 +976,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenMaterialAppearanceRefreshesThenGlassViewIsRebuilt() throws {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
         barView.isUsingSmallTopSpacing = true
         barView.layoutIfNeeded()
@@ -976,7 +988,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenFireModeChangesThenGlassViewIsRebuilt() throws {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
         barView.layoutIfNeeded()
         let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
@@ -987,7 +999,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenBottomFloatingBarTemporarilyHasZeroHeightThenCornerRadiusRemainsRounded() {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: 0)
         barView.isUsingSmallTopSpacing = true
 
@@ -997,21 +1009,21 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenBottomFloatingFieldThenExpectedHeightIsTheFortyEightPointPill() {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.isUsingSmallTopSpacing = true
 
         XCTAssertEqual(barView.expectedHeight, 48)
     }
 
     func testWhenTopFloatingFieldThenExpectedHeightStaysAtTheStandardBarHeight() {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.isUsingSmallTopSpacing = false
 
         XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
     }
 
     func testWhenTopFloatingFieldThenInputIsFortyEightPointsHighWithTwoPointInternalSpacing() throws {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
         barView.isUsingSmallTopSpacing = false
 
@@ -1035,7 +1047,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenTopFloatingLandscapeChromeThenInputHeightStaysUnchanged() {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
         barView.isUsingSmallTopSpacing = false
         barView.isExpandedPhoneLayout = true
@@ -1048,7 +1060,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenTopFloatingLandscapeEditingThenCompactModeKeepsInputHeightUnchanged() {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
         barView.isUsingSmallTopSpacing = false
         barView.isExpandedPhoneLayout = true
@@ -1061,7 +1073,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenBottomFloatingLandscapeEditingThenCompactModeKeepsInputHeightUnchanged() {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
         barView.isUsingSmallTopSpacing = true
         barView.isExpandedPhoneLayout = true
@@ -1074,7 +1086,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenNonFloatingTopFieldThenInputHeightStaysUnchanged() {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        let barView = makeBarView(isFloatingUIEnabled: false)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
         barView.isUsingSmallTopSpacing = false
 
@@ -1085,7 +1097,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenBottomFloatingLandscapeChromeThenExpectedHeightStaysAtTheStandardBarHeight() {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.isUsingSmallTopSpacing = true
         barView.setLayoutMode(.expandedPhone, animated: false)
 
@@ -1093,7 +1105,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
     }
 
     func testWhenBottomFloatingPadChromeThenExpectedHeightStaysAtTheStandardBarHeight() {
-        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
         barView.isUsingSmallTopSpacing = true
         barView.setLayoutMode(.expandedPad, animated: false)
 

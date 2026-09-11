@@ -430,6 +430,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218049727240253?focus=true
     case promoQueueCookiePopupsBlockedPromo
 
+    /// Enables the "Update available" promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923084?focus=true
+    case promoQueueUpdateAvailablePromo
+
+    /// Enables the "Browser updated" promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923091?focus=true
+    case promoQueueBrowserUpdatedPromo
+
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
@@ -502,17 +510,15 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064249?focus=true
     case syncCanWriteUnifiedDeviceList
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217684925915706?focus=true
+    case syncCanUsePatchEndpointForLegacyDeviceRename
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064261?focus=true
     case syncCanReadUnifiedDeviceList
 
     /// Gates the Simplified Sync Setup follow-up screens.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217243916693082?focus=true
     case simplifiedSyncSetupV2
-
-    /// Gates the macOS Prompt Bar: a system-wide Duck.ai entry point opened via a global
-    /// keyboard shortcut or a menu bar icon, plus its rows on the AI Features settings screen.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216850216210288?focus=true
-    case promptBar
 
     /// Gates the bookmarks "Sort by name permanently" action, which permanently reorders the target
     /// folder's direct children alphabetically and persists the new order.
@@ -522,6 +528,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Gates reading the Duck.ai usage-limit snapshot from native storage on Duck.ai input activation,
     /// and the warnings that will be built on top of it. Internal-only while the UI is in development.
     case aiChatUsageWarnings
+
+    /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
+    case onboardingAsync
 
 }
 
@@ -604,7 +613,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .networkProtectionAppStoreSysexMessage:
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.appStoreSystemExtensionMessage), category: .vpn)
         case .vpnSessionHealthTelemetry:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.sessionHealthTelemetry), category: .vpn)
+            Config(defaultValue: .enabled, source: .remoteReleasable(NetworkProtectionSubfeature.sessionHealthTelemetry), category: .vpn)
         case .vpnStrictRoutingToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle), category: .vpn)
         case .autoUpdateInDEBUG:
@@ -817,6 +826,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillToolbarPinningPromo))
         case .promoQueueCookiePopupsBlockedPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.cookiePopupsBlockedPromo))
+        case .promoQueueUpdateAvailablePromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.updateAvailablePromo))
+        case .promoQueueBrowserUpdatedPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.browserUpdatedPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:
@@ -864,16 +877,20 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
         case .syncCanWriteUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canWriteUnifiedDeviceList), category: .sync)
+        case .syncCanUsePatchEndpointForLegacyDeviceRename:
+            Config(defaultValue: .enabled,
+                   source: .remoteReleasable(SyncSubfeature.canUsePatchEndpointForLegacyDeviceRename),
+                   category: .sync)
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList), category: .sync)
         case .simplifiedSyncSetupV2:
             Config(source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2), category: .sync)
-        case .promptBar:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.promptBar), category: .duckAI)
         case .bookmarksReorderByName:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
+        case .onboardingAsync:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))
         }
     }
 

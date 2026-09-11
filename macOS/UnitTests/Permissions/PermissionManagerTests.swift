@@ -136,7 +136,7 @@ final class PermissionManagerTests: XCTestCase {
         let c = manager.permissionPublisher.sink { value in
             XCTAssertEqual(value.domain, PermissionEntity.entity1.domain)
             XCTAssertEqual(value.permissionType, PermissionEntity.entity1.type)
-            XCTAssertEqual(value.decision, .allow)
+            XCTAssertEqual(value.change, .decisionChanged(.allow))
             e.fulfill()
         }
 
@@ -153,7 +153,7 @@ final class PermissionManagerTests: XCTestCase {
         let c = manager.permissionPublisher.sink { value in
             XCTAssertEqual(value.domain, PermissionEntity.entity1.domain)
             XCTAssertEqual(value.permissionType, PermissionEntity.entity1.type)
-            XCTAssertEqual(value.decision, .deny)
+            XCTAssertEqual(value.change, .decisionChanged(.deny))
             e.fulfill()
         }
 
@@ -174,7 +174,7 @@ final class PermissionManagerTests: XCTestCase {
         let c = manager.permissionPublisher.sink { value in
             XCTAssertEqual(value.domain, PermissionEntity.entity1.domain)
             XCTAssertEqual(value.permissionType, PermissionEntity.entity1.type)
-            XCTAssertEqual(value.decision, .deny)
+            XCTAssertEqual(value.change, .decisionChanged(.deny))
             e.fulfill()
         }
 
@@ -193,7 +193,7 @@ final class PermissionManagerTests: XCTestCase {
         let c = manager.permissionPublisher.sink { value in
             XCTAssertEqual(value.domain, PermissionEntity.entity2.domain.droppingWwwPrefix())
             XCTAssertEqual(value.permissionType, PermissionEntity.entity2.type)
-            XCTAssertEqual(value.decision, .ask)
+            XCTAssertEqual(value.change, .decisionChanged(.ask))
             e.fulfill()
         }
 
@@ -335,7 +335,7 @@ final class PermissionManagerTests: XCTestCase {
         XCTAssertEqual(receivedChanges.count, 1)
         XCTAssertEqual(receivedChanges.first?.domain, PermissionEntity.entity1.domain)
         XCTAssertEqual(receivedChanges.first?.permissionType, PermissionEntity.entity1.type)
-        XCTAssertNil(receivedChanges.first?.decision)
+        XCTAssertEqual(receivedChanges.first?.change, .removed)
         withExtendedLifetime((cancellable, changesCancellable)) {}
     }
 
@@ -352,7 +352,7 @@ final class PermissionManagerTests: XCTestCase {
         XCTAssertEqual(snapshots.last, [])
         XCTAssertTrue(manager.persistedPermissionTypes.isEmpty)
         XCTAssertEqual(changes.count, 2)
-        XCTAssertTrue(changes.allSatisfy { $0.decision == nil })
+        XCTAssertTrue(changes.allSatisfy { $0.change == .removed })
         var replayedEntries: [WebsitePermissionEntry]?
         let replayCancellable = manager.persistedPermissionsPublisher.sink { replayedEntries = $0 }
         XCTAssertEqual(replayedEntries, [])

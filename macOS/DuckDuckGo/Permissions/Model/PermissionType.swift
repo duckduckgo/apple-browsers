@@ -75,6 +75,12 @@ enum PermissionType: Hashable {
 
 extension PermissionType {
 
+    /// Duck.ai's native voice flow overrides microphone decisions at read time, so permission
+    /// editors hide that row while the override is active. The saved decision is kept for rollback.
+    func isUserEditable(forDomain domain: String, nativeVoiceFlowEnabled: Bool) -> Bool {
+        !(self == .microphone && domain == URL.duckAi.host && nativeVoiceFlowEnabled)
+    }
+
     static var permissionsUpdatedExternally: [PermissionType] {
         return [.camera, .microphone, .geolocation, .notification]
     }

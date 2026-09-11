@@ -478,6 +478,9 @@
 /* Title for the image generation tool in the unified input tools menu */
 "aichat.toolbar.tools.imagegeneration.title" = "Kép létrehozása";
 
+/* Subtitle for the image generation tool in the unified input tools menu, shown when the chat is already under way on a model that cannot generate images */
+"aichat.toolbar.tools.imagegeneration.unavailable.subtitle" = "Nem érhető el a kiválasztott modellhez";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Válaszok keresése az interneten";
 
@@ -576,9 +579,6 @@
 
 /* Title for sync error alert */
 "alert.sync-error" = "Szinkronizálási és biztonsági mentési hiba";
-
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Beállítások szinkronizálása";
 
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Kérjük, próbáld újra.";
@@ -5200,17 +5200,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-figyelmeztetés";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Helyreállítási kód a vágólapra másolva";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Szerveradatok törlése";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "A biztonsági mentés törölve lesz a szerverről. A rendszer minden eszközt leválaszt a szinkronizálásról, de semmi sem lesz törölve az eszközökről.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Szerveradatok törlése?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Szinkronizálás";
@@ -5301,9 +5292,6 @@
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Új eszköz hozzáadva!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup engedélyezve";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Helyreállítási kód másolva";
@@ -5851,3 +5839,14 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mit szeretnél importálni?";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "A(z) %@ nem tud képeket létrehozni. A nulla szolgáltatói láthatóság nem érvényesül, amíg vissza nem váltasz.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ nem támogatja a képgenerálást.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Most a(z) %@ van használatban";
+
+/* Address bar Duck.ai menu option that opens the full chat history */
+"duckai.address.bar.menu.all.chats" = "Összes csevegés";

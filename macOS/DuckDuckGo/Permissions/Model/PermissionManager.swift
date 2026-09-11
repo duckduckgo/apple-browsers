@@ -32,9 +32,14 @@ protocol PermissionDecisionOverriding: AnyObject {
     func decision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision?
 }
 
+enum PermissionChange: Equatable {
+    case decisionChanged(PersistedPermissionDecision)
+    case removed
+}
+
 protocol PermissionManagerProtocol: AnyObject {
 
-    typealias PublishedPermission = (domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision)
+    typealias PublishedPermission = (domain: String, permissionType: PermissionType, change: PermissionChange)
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { get }
     var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> { get }
 
@@ -46,7 +51,7 @@ protocol PermissionManagerProtocol: AnyObject {
     /// `nil` when nothing is persisted. Use only for cleanup or migration paths that genuinely need
     /// to know the on-disk state; everything else should call `permission(forDomain:permissionType:)`.
     func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision?
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType)
+    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType, lastModified: Date)
 
     func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
     func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
@@ -55,6 +60,12 @@ protocol PermissionManagerProtocol: AnyObject {
     func removePermission(forDomain domain: String, permissionType: PermissionType)
 
     var persistedPermissionTypes: Set<PermissionType> { get }
+}
+
+extension PermissionManagerProtocol {
+    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
+        setPermission(decision, forDomain: domain, permissionType: permissionType, lastModified: Date())
+    }
 }
 
 final class PermissionManager: PermissionManagerProtocol {
@@ -98,7 +109,10 @@ final class PermissionManager: PermissionManagerProtocol {
     private func publishPersistedPermissions() {
         let entries = permissions.flatMap { domain, permissions in
             permissions.map { permissionType, storedPermission in
-                WebsitePermissionEntry(domain: domain, permissionType: permissionType, decision: storedPermission.decision)
+                WebsitePermissionEntry(domain: domain,
+                                       permissionType: permissionType,
+                                       decision: storedPermission.decision,
+                                       lastModified: storedPermission.lastModified)
             }
         }.sorted {
             if $0.domain == $1.domain {
@@ -137,7 +151,12 @@ final class PermissionManager: PermissionManagerProtocol {
         return Array(domainPermissions.keys)
     }
 
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
+    func setPermission(
+        _ decision: PersistedPermissionDecision,
+        forDomain domain: String,
+        permissionType: PermissionType,
+        lastModified: Date = Date()
+    ) {
 
         let storedPermission: StoredPermission
         let domain = domain.droppingWwwPrefix()
@@ -149,15 +168,21 @@ final class PermissionManager: PermissionManagerProtocol {
         guard currentDecision != decision || !isAlreadyPersisted else { return }
 
         defer {
-            self.permissionSubject.send( (domain, permissionType, decision) )
+            self.permissionSubject.send((domain, permissionType, .decisionChanged(decision)))
         }
         if var oldValue = permissions[domain]?[permissionType] {
             oldValue.decision = decision
+            oldValue.lastModified = lastModified
             storedPermission = oldValue
-            store.update(objectWithId: oldValue.id, decision: decision)
+            store.update(objectWithId: oldValue.id, decision: decision, lastModified: lastModified)
         } else {
             do {
-                storedPermission = try store.add(domain: domain, permissionType: permissionType, decision: decision)
+                storedPermission = try store.add(
+                    domain: domain,
+                    permissionType: permissionType,
+                    decision: decision,
+                    lastModified: lastModified
+                )
             } catch {
                 Logger.general.error("PermissionStore: Failed to store permission")
                 return
@@ -220,7 +245,7 @@ final class PermissionManager: PermissionManagerProtocol {
         store.remove(objectWithId: storedPermission.id)
 
         // Notify subscribers
-        permissionSubject.send((domain, permissionType, .ask))
+        permissionSubject.send((domain, permissionType, .removed))
     }
 
 }
@@ -247,7 +272,8 @@ extension PermissionManager: PermissionManagerDebugging {
                                         permissionType: row.permissionType,
                                         allow: row.allow,
                                         isRemoved: row.isRemoved,
-                                        effectiveDecision: effectiveDecision)
+                                        effectiveDecision: effectiveDecision,
+                                        lastModified: row.lastModified)
         }
     }
 
@@ -277,8 +303,9 @@ extension PermissionManager: PermissionManagerDebugging {
             permissionsByType.keys.map { (domain: domain, type: $0) }
         }
         permissions.removeAll()
+        publishPersistedPermissions()
         for permission in removedPermissions {
-            permissionSubject.send((permission.domain, permission.type, .ask))
+            permissionSubject.send((permission.domain, permission.type, .removed))
         }
         store.clear(except: [])
         return count

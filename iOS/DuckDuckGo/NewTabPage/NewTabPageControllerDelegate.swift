@@ -35,10 +35,13 @@ protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: any NewTabPage)
     func newTabPageDidScroll(_ controller: any NewTabPage)
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction)
+
+    func newTabPageDidRequestSettings(_ controller: any NewTabPage)
 }
 
 extension NewTabPageControllerDelegate {
     func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: any NewTabPage) { }
     func newTabPageDidScroll(_ controller: any NewTabPage) { }
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction) { }
+    func newTabPageDidRequestSettings(_ controller: any NewTabPage) { }
 }

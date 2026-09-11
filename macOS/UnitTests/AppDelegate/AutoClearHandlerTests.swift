@@ -18,7 +18,10 @@
 
 import AppKit
 import Combine
+import Common
 import Foundation
+import History
+@_spi(Testing) import PixelKit
 @_spi(Testing) import WideEvent
 import PrivacyConfig
 import PrivacyConfigTestsUtils
@@ -52,6 +55,7 @@ final class MockAppStateRestorationManager: AppStateRestorationManaging {
 @MainActor
 class AutoClearHandlerTests: XCTestCase {
 
+    private var burnOnExitCalls: [Bool] = []
     var handler: AutoClearHandler!
     var dataClearingPreferences: DataClearingPreferences!
     var startupPreferences: StartupPreferences!
@@ -61,6 +65,7 @@ class AutoClearHandlerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        burnOnExitCalls = []
         let persistor = MockFireButtonPreferencesPersistor()
         dataClearingPreferences = DataClearingPreferences(
             persistor: persistor,
@@ -83,8 +88,9 @@ class AutoClearHandlerTests: XCTestCase {
             appearancePreferences: appearancePreferences
         )
 
-        fireViewModel = FireViewModel(tld: Application.appDelegate.tld,
-                                      visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider())
+        let fire = AutoClearFireMock()
+        fire.onBurnAll = { [weak self] isBurnOnExit in self?.burnOnExitCalls.append(isBurnOnExit) }
+        fireViewModel = FireViewModel(fire: fire)
         mockStateRestoration = MockAppStateRestorationManager()
         mockAlertPresenter = MockAutoClearAlertPresenter()
         handler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
@@ -107,16 +113,16 @@ class AutoClearHandlerTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenBurningEnabledAndNoWarningRequiredThenAsyncTaskIsReturned() {
+    func testWhenBurningEnabledAndNoWarningRequiredThenAsyncTaskIsReturned() async {
         dataClearingPreferences.isAutoClearEnabled = true
         dataClearingPreferences.isWarnBeforeClearingEnabled = false
 
         let query = handler.shouldTerminate(isAsync: false)
 
         switch query {
-        case .async:
-            // Expected: async task for burning
-            break
+        case .async(let task):
+            _ = await task.value
+            XCTAssertEqual(burnOnExitCalls, [true])
         case .sync:
             XCTFail("Expected async query for auto-clear, got sync")
         }
@@ -138,7 +144,7 @@ class AutoClearHandlerTests: XCTestCase {
         }
     }
 
-    func testWhenBurningEnabledWithWarningAndUserChoosesClearAndQuitThenAsyncTaskIsReturned() {
+    func testWhenBurningEnabledWithWarningAndUserChoosesClearAndQuitThenAsyncTaskIsReturned() async {
         dataClearingPreferences.isAutoClearEnabled = true
         dataClearingPreferences.isWarnBeforeClearingEnabled = true
         mockAlertPresenter.responseToReturn = .alertFirstButtonReturn // Clear and Quit
@@ -147,9 +153,9 @@ class AutoClearHandlerTests: XCTestCase {
 
         XCTAssertTrue(mockAlertPresenter.confirmAutoClearCalled)
         switch query {
-        case .async:
-            // Expected: async task for burning
-            break
+        case .async(let task):
+            _ = await task.value
+            XCTAssertEqual(burnOnExitCalls, [true])
         case .sync:
             XCTFail("Expected async query for clear and quit, got sync")
         }
@@ -165,8 +171,7 @@ class AutoClearHandlerTests: XCTestCase {
         XCTAssertTrue(mockAlertPresenter.confirmAutoClearCalled)
         switch query {
         case .sync(.next):
-            // Expected: skip clearing and proceed to next decider
-            break
+            XCTAssertTrue(burnOnExitCalls.isEmpty)
         case .sync(.cancel):
             XCTFail("Expected .sync(.next), got .sync(.cancel)")
         case .async:
@@ -184,8 +189,7 @@ class AutoClearHandlerTests: XCTestCase {
         XCTAssertTrue(mockAlertPresenter.confirmAutoClearCalled)
         switch query {
         case .sync(.cancel):
-            // Expected: cancel termination
-            break
+            XCTAssertTrue(burnOnExitCalls.isEmpty)
         case .sync(.next):
             XCTFail("Expected .sync(.cancel), got .sync(.next)")
         case .async:
@@ -198,6 +202,7 @@ class AutoClearHandlerTests: XCTestCase {
         handler.resetTheCorrectTerminationFlag()
 
         XCTAssertTrue(handler.burnOnStartIfNeeded())
+        XCTAssertEqual(burnOnExitCalls, [false])
     }
 
     func testWhenBurningDisabledThenBurnOnStartNotTriggered() {
@@ -274,5 +279,47 @@ final class MockVisualizeFireAnimationDecider: VisualizeFireSettingsDecider {
 
     var shouldShowFireAnimation: Bool {
         return true
+    }
+}
+
+private final class AutoClearFireMock: FireProtocol {
+    var burningData: Fire.BurningData? { nil }
+    let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
+    let visualizeFireAnimationDecider: VisualizeFireSettingsDecider = MockVisualizeFireAnimationDecider()
+    var burningDataPublisher: AnyPublisher<Fire.BurningData?, Never> { Just(nil).eraseToAnyPublisher() }
+    var onBurnAll: ((Bool) -> Void)?
+
+    func fireAnimationDidStart() {}
+    func fireAnimationDidFinish() {}
+
+    @MainActor
+    func burnAll(isBurnOnExit: Bool, opening url: URL, includeCookiesAndSiteData: Bool,
+                 includeChatHistory: Bool, isAutoClear: Bool, dataClearingWideEventService: DataClearingWideEventService?,
+                 completion: (@MainActor () -> Void)?) {
+        onBurnAll?(isBurnOnExit)
+        completion?()
+    }
+
+    @MainActor
+    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool,
+                    includeChatHistory: Bool, dataClearingWideEventService: DataClearingWideEventService?,
+                    completion: (@MainActor () -> Void)?) {
+        XCTFail("Unexpected entity burn")
+        completion?()
+    }
+
+    @MainActor
+    func burnVisits(_ visits: [Visit], except fireproofDomains: DomainFireproofStatusProviding,
+                    isToday: Bool, closeWindows: Bool, clearSiteData: Bool, clearChatHistory: Bool,
+                    urlToOpenIfWindowsAreClosed url: URL?, dataClearingWideEventService: DataClearingWideEventService?,
+                    completion: (@MainActor () -> Void)?) {
+        XCTFail("Unexpected visits burn")
+        completion?()
+    }
+
+    @MainActor
+    func burnChatHistory() async -> Result<Void, Error> {
+        XCTFail("Unexpected chat burn")
+        return .success(())
     }
 }

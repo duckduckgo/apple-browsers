@@ -543,15 +543,9 @@ final class PermissionCenterViewModel: ObservableObject {
             otherPermissions.append(.autoplayPolicy)
         }
 
-        // On duck.ai with the voice-chat flag on, `DuckAiVoiceChatPermissionOverride` forces
-        // `.microphone` to `.allow` at read time. A regular editable row here would read the
-        // masked `.allow` through the override and let the user make a change that's silently
-        // re-masked, so drop it. The OS-denied remediation surface lives in
-        // `SystemDisabledPermissionInfoView`, anchored to the address-bar shield — not in the
-        // Permission Center. With the flag off, the override returns nil and the real
-        // persisted decision (if any) is the user's actual state, so the row stays.
-        if featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow), domain == URL.duckAi.host {
-            otherPermissions.removeAll { $0 == .microphone }
+        let nativeVoiceFlowEnabled = featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow)
+        otherPermissions.removeAll {
+            !$0.isUserEditable(forDomain: domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled)
         }
 
         return (externalSchemePermissions, otherPermissions)

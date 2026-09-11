@@ -31,6 +31,7 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
 
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding
 
+    var didChangeKeyWindowController = PassthroughSubject<MainWindowController?, Never>()
     var didRegisterWindowController = PassthroughSubject<(MainWindowController), Never>()
     var didUnregisterWindowController = PassthroughSubject<(MainWindowController), Never>()
 

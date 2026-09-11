@@ -478,6 +478,9 @@
 /* Title for the image generation tool in the unified input tools menu */
 "aichat.toolbar.tools.imagegeneration.title" = "Създаване на изображение";
 
+/* Subtitle for the image generation tool in the unified input tools menu, shown when the chat is already under way on a model that cannot generate images */
+"aichat.toolbar.tools.imagegeneration.unavailable.subtitle" = "Не се предлага за избрания модел";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Извличане на отговори от мрежата";
 
@@ -576,9 +579,6 @@
 
 /* Title for sync error alert */
 "alert.sync-error" = "Грешка при синхронизиране и архивиране";
-
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Настройки за синхронизиране";
 
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Моля, опитайте отново.";
@@ -5200,17 +5200,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Известие за SwiftUI";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Кодът за възстановяване и копиран в клипборда";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Изтриване на данните от сървъра";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Резервното копие ще бъде изтрито от сървъра. Синхронизацията на всички устройства ще бъде изключена, но от устройствата няма да бъде изтрито нищо.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Изтриване на данните от сървъра?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Синхронизиране сега";
@@ -5301,9 +5292,6 @@
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Новото устройство е добавено!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Функцията Sync & Backup е активирана";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Кодът за възстановяване е копиран";
@@ -5851,3 +5839,14 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Какво искате да импортирате?";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ не може да създава изображения. Нулевата видимост за доставчика няма да се прилага, докато не превключиш обратно.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ не поддържа създаване на изображения.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Сега се използва %@";
+
+/* Address bar Duck.ai menu option that opens the full chat history */
+"duckai.address.bar.menu.all.chats" = "Всички чатове";

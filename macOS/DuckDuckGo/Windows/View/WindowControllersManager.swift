@@ -25,7 +25,9 @@ import ConcurrencyExtensions
 import FoundationExtensions
 import History
 import os.log
+import PixelKit
 import PrivacyConfig
+import WebKit
 
 @MainActor
 protocol WindowControllersManagerProtocol: AnyObject {
@@ -39,6 +41,7 @@ protocol WindowControllersManagerProtocol: AnyObject {
 
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding { get }
 
+    var didChangeKeyWindowController: PassthroughSubject<MainWindowController?, Never> { get }
     var didRegisterWindowController: PassthroughSubject<(MainWindowController), Never> { get }
     var didUnregisterWindowController: PassthroughSubject<(MainWindowController), Never> { get }
 
@@ -127,6 +130,13 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     /// `TabsPreferences` reference is needed to compute `shouldSwitchToNewTabWhenOpened`.
     weak var tabsPreferences: TabsPreferences?
 
+    private weak var onboardingTab: Tab?
+    private var onboardingTabCancellable: AnyCancellable?
+
+    /// Records a skip that leaves the tab where it is. Cleared once used, so the same onboarding
+    /// session is only ever recorded once.
+    private var onboardingSkipInPlaceHandler: (@MainActor () -> Void)?
+
     /// Tracks which tabs currently host an active Duck.ai voice session, so voice entry points
     /// can focus an existing tab instead of opening a new one. Lazy so the tracker can capture
     /// `self` (the `WindowControllersManager` is its source of truth for tab membership).
@@ -166,6 +176,8 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     }
 
     func unregister(_ windowController: MainWindowController) {
+        recordOnboardingSkipIfWindowHostsOnboarding(windowController)
+
         pinnedTabsManagerProvider.cacheClosedWindowPinnedTabsIfNeeded(pinnedTabsManager: windowController.mainViewController.tabCollectionViewModel.pinnedTabsManager)
 
         guard let idx = mainWindowControllers.firstIndex(of: windowController) else {
@@ -174,6 +186,19 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         }
         mainWindowControllers.remove(at: idx)
         didUnregisterWindowController.send(windowController)
+    }
+
+    /// Closing the window that hosts onboarding disposes of onboarding just as deliberately as
+    /// closing its tab, so it counts as a skip. Quit cleanup detaches tracking before closing windows.
+    @MainActor
+    private func recordOnboardingSkipIfWindowHostsOnboarding(_ windowController: MainWindowController) {
+        guard let onboardingTab else { return }
+        guard windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: onboardingTab) != nil else { return }
+
+#if DEBUG
+        Logger.general.debug("Onboarding window close: owner=\(onboardingTab.uuid, privacy: .public)")
+#endif
+        recordOnboardingSkipInPlace()
     }
 
     func updateIsInInitialState() {
@@ -649,17 +674,111 @@ extension WindowControllersManager: OnboardingNavigating {
     }
 
     @MainActor
+    var hasOnboardingTab: Bool { onboardingTab != nil }
+
+    /// Captures the onboarding tab before the user can switch tabs while it loads.
+    @MainActor
+    func setOnboardingTab(_ tab: Tab?) {
+        onboardingTabCancellable = nil
+        onboardingSkipInPlaceHandler = nil
+        onboardingTab?.onClose = nil
+        onboardingTab = tab
+    }
+
+    @MainActor
+    func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Void,
+                               onSkipInPlace: @escaping @MainActor () -> Void) {
+        guard let onboardingTab else { return }
+
+        onboardingSkipInPlaceHandler = onSkipInPlace
+
+        onboardingTab.onClose = { [weak self, weak onboardingTab] in
+            guard let self, let onboardingTab, self.onboardingTab === onboardingTab else { return }
+            self.clearOnboardingTracking()
+            onClose(onboardingTab)
+        }
+
+        onboardingTabCancellable = onboardingTab.$content
+            .filter { if case .onboarding = $0 { false } else { true } }
+            .first()
+            .sink { [weak self, weak onboardingTab] _ in
+                guard let self, let onboardingTab, self.onboardingTab === onboardingTab else { return }
+#if DEBUG
+                Logger.general.debug("Onboarding content exit: owner=\(onboardingTab.uuid, privacy: .public)")
+#endif
+                self.recordOnboardingSkipInPlace()
+            }
+    }
+
+    @MainActor
+    func recordBrowsingBeforeOnboardingCompletion() {
+        guard onboardingSkipInPlaceHandler != nil, !OnboardingActionsManager.isOnboardingFinished else { return }
+        PixelKit.fire(GeneralPixel.onboardingBrowsingBeforeCompletion, frequency: .uniqueByName)
+    }
+
+    @MainActor
+    private func recordOnboardingSkipInPlace() {
+        guard let handler = onboardingSkipInPlaceHandler else { return }
+        clearOnboardingTracking()
+        handler()
+    }
+
+    // Let `.first()` finish the content subscription instead of cancelling it during delivery.
+    @MainActor
+    private func clearOnboardingTracking() {
+        onboardingSkipInPlaceHandler = nil
+        onboardingTab?.onClose = nil
+        onboardingTab = nil
+    }
+
+    /// Resolve the sender, never the selected tab: the user may have switched tabs or windows.
+    func onboardingTab(for webView: WKWebView?) -> Tab? {
+        guard let webView else { return nil }
+        for windowController in mainWindowControllers {
+            let viewModel = windowController.mainViewController.tabCollectionViewModel
+            let tabs = viewModel.tabCollection.tabs + (viewModel.pinnedTabsManager?.tabCollection.tabs ?? [])
+            for case .loaded(let tab) in tabs where tab.webView === webView {
+                guard case .onboarding = tab.content else { return nil }
+                return tab
+            }
+        }
+        return nil
+    }
+
+    func replaceOnboardingTab(_ source: Tab, with tab: Tab) -> Bool {
+        guard onboardingTab(for: source.webView) === source else { return false }
+        if onboardingTab === source {
+            setOnboardingTab(nil)
+        }
+        return replaceTab(source, with: tab)
+    }
+
+    /// Replaces the onboarding tab, falling back to the selected tab when none is tracked
+    /// (the non-async flow keeps the UI locked, so the two are the same tab there).
+    @MainActor
     func replaceTabWith(_ tab: Tab) {
-        guard let tabToRemove = selectedTab else { return }
-        guard let mainWindowController else { return }
-        guard let index = mainWindowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tabToRemove) else { return }
+        // Capture before clearing — `setOnboardingTab(nil)` drops the reference this needs.
+        guard let tabToRemove = onboardingTab ?? selectedTab else { return }
+        setOnboardingTab(nil)
+        replaceTab(tabToRemove, with: tab)
+    }
+
+    @MainActor
+    @discardableResult
+    private func replaceTab(_ tabToRemove: Tab, with tab: Tab) -> Bool {
+        // Resolve the window that actually holds the tab, not whichever one is key — otherwise the
+        // index lookup below searches the wrong collection and silently gives up.
+        guard let windowController = windowController(containing: tabToRemove) ?? mainWindowController else { return false }
+        guard let index = windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tabToRemove) else { return false }
         var tabToAppend = tab
-        if mainWindowController.mainViewController.isBurner {
-            let burnerMode = mainWindowController.mainViewController.tabCollectionViewModel.burnerMode
+        if windowController.mainViewController.isBurner {
+            let burnerMode = windowController.mainViewController.tabCollectionViewModel.burnerMode
             tabToAppend = Tab(content: tab.content, burnerMode: burnerMode)
         }
-        mainWindowController.mainViewController.tabCollectionViewModel.append(tab: tabToAppend)
-        mainWindowController.mainViewController.tabCollectionViewModel.remove(at: index)
+        // Append before remove: the tab count must never hit zero, or the window closes.
+        windowController.mainViewController.tabCollectionViewModel.append(tab: tabToAppend)
+        windowController.mainViewController.tabCollectionViewModel.remove(at: index)
+        return true
     }
 
     @MainActor

@@ -44,23 +44,12 @@ struct OnboardingNonBlockingExperiment {
         self.featureFlagger = featureFlagger
     }
 
+    /// Assigns a cohort on first read; the framework's rollout and targets decide eligibility.
     var isNonBlocking: Bool {
-        cohort == .treatment
-    }
-
-    /// Assigns a cohort via `resolveCohort`. Caller must only invoke for eligible new installs.
-    func enroll(buildType: ApplicationBuildType = StandardApplicationBuildType()) {
-        guard !buildType.isDebugBuild, !buildType.isReviewBuild, !buildType.isAlphaBuild else { return }
-        _ = featureFlagger.resolveCohort(for: FeatureFlag.onboardingNonBlocking)
-    }
-
-    /// Already-assigned cohort, or `nil` when not enrolled. Never assigns.
-    var cohort: FeatureFlag.OnboardingNonBlockingCohort? {
-        featureFlagger.assignedCohort(for: FeatureFlag.onboardingNonBlocking) as? FeatureFlag.OnboardingNonBlockingCohort
+        featureFlagger.resolveCohort(for: FeatureFlag.onboardingNonBlocking) as? FeatureFlag.OnboardingNonBlockingCohort == .treatment
     }
 
     func fireMetric(_ metric: Metric) {
-        guard cohort != nil else { return }
         for window in metric.conversionWindows {
             PixelKit.fireExperimentPixel(
                 for: Self.subfeatureID,

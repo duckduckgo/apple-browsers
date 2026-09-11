@@ -110,47 +110,11 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
-    func testEnrollCallsResolveCohort() {
-        let cohort = FeatureFlag.OnboardingNonBlockingCohort.treatment
-        let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
-        let experiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
+    func testIsNonBlockingResolvesCohort() {
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
 
-        experiment.enroll(buildType: ApplicationBuildTypeMock())
-
-        XCTAssertEqual(experiment.cohort, cohort)
+        XCTAssertTrue(OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).isNonBlocking)
         XCTAssertTrue(featureFlagger.didCallResolveCohort)
-    }
-
-    func testInternalBuildsDoNotEnrollEvenWithTheFunctionalFlagEnabled() {
-        for keyPath in [\ApplicationBuildTypeMock.isDebugBuild, \.isReviewBuild, \.isAlphaBuild] {
-            let buildType = ApplicationBuildTypeMock()
-            buildType[keyPath: keyPath] = true
-            let flags = MockFeatureFlagger()
-            flags.enabledFeatureFlags = [.onboardingAsync]
-            let experiment = OnboardingNonBlockingExperiment(featureFlagger: flags)
-
-            experiment.enroll(buildType: buildType)
-
-            XCTAssertFalse(flags.didCallResolveCohort)
-            XCTAssertFalse(NonBlockingOnboarding(featureFlagger: flags).isNonBlocking)
-        }
-    }
-
-    func testCohortReadsAssignedCohortWithoutResolving() {
-        let cohort = FeatureFlag.OnboardingNonBlockingCohort.control
-        let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
-        let experiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
-
-        XCTAssertEqual(experiment.cohort, cohort)
-        XCTAssertTrue(featureFlagger.didCallAssignedCohort)
-        XCTAssertFalse(featureFlagger.didCallResolveCohort)
-    }
-
-    func testCohortIsNilWhenNotAssigned() {
-        let featureFlagger = MockFeatureFlagger()
-        let experiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
-
-        XCTAssertNil(experiment.cohort)
     }
 
     func testIsNonBlockingDependsOnlyOnTreatment() {

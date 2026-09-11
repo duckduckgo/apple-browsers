@@ -252,7 +252,7 @@ public class DDGSync: DDGSyncing {
             throw SyncError.accountNotFound
         }
 
-        let wasDeviceInfoMigrationRunning = deviceInfoMigrationTask != nil
+        let wasDeviceInfoMigrationRunning = deviceInfoUpdateState.isMigrationRunning
         do {
             let result = try await dependencies.account.fetchDevicesForAccount(account)
             fireUnifiedReadObservations(result.unifiedReadObservations, for: account)
@@ -267,9 +267,9 @@ public class DDGSync: DDGSyncing {
 
     public func updateDeviceName(_ name: String) async throws -> [RegisteredDevice] {
         let isUnifiedWriteEnabled = dependencies.syncFeatureFlags.canWriteUnifiedDeviceList()
-        isDeviceRenameInProgress = true
-        defer { isDeviceRenameInProgress = false }
-        await cancelDeviceInfoUpdatesAndWait()
+        deviceInfoUpdateState.setRenameInProgress(true)
+        defer { deviceInfoUpdateState.setRenameInProgress(false) }
+        await deviceInfoUpdateState.cancelAllAndWait()
 
         guard let account = try dependencies.secureStore.account() else {
             throw SyncError.accountNotFound
@@ -363,27 +363,6 @@ public class DDGSync: DDGSyncing {
             throw SyncError.accountNotFound
         }
         return deviceInfoMigrationCoordinator.hasCompletedMigration(for: account)
-    }
-
-    public func runDeviceInfoMigrationForDebug() async throws {
-        guard let account = try dependencies.secureStore.account() else {
-            throw SyncError.accountNotFound
-        }
-
-        // Let an automatic migration finish before starting the explicit debug run.
-        if let migrationTask = deviceInfoMigrationTask,
-           let migrationTaskID = deviceInfoMigrationTaskID {
-            await migrationTask.value
-            clearCompletedDeviceInfoMigrationTask(withID: migrationTaskID)
-        }
-
-        scheduleDeviceInfoMigration(for: account)
-        let migrationTask = deviceInfoMigrationTask
-        let migrationTaskID = deviceInfoMigrationTaskID
-        await migrationTask?.value
-        if let migrationTaskID {
-            clearCompletedDeviceInfoMigrationTask(withID: migrationTaskID)
-        }
     }
 
     public func resetDeviceInfoMigrationForDebug() {
@@ -542,13 +521,7 @@ public class DDGSync: DDGSyncing {
 
             var didRemoveAccount = false
             do {
-                deviceInfoMigrationTask?.cancel()
-                deviceInfoMigrationTask = nil
-                deviceInfoMigrationTaskID = nil
-                currentDeviceInfoRepairTask?.cancel()
-                currentDeviceInfoRepairTask = nil
-                currentDeviceInfoRepairTaskID = nil
-                hasAttemptedCurrentDeviceInfoRepair = false
+                deviceInfoUpdateState.cancelAll()
                 try dependencies.secureStore.removeAccount()
                 clearAccountInfoKeyCache(for: storedAccount)
                 deviceInfoMigrationCoordinator.reset()
@@ -732,19 +705,9 @@ public class DDGSync: DDGSyncing {
     }
 
     private func scheduleDeviceInfoMigration(for account: SyncAccount) {
-        guard deviceInfoMigrationTask == nil else {
-            return
-        }
         let deviceInfoMigrationCoordinator = deviceInfoMigrationCoordinator
-        let taskID = UUID()
-        deviceInfoMigrationTaskID = taskID
-        let task = Task {
+        deviceInfoUpdateState.scheduleMigration {
             await deviceInfoMigrationCoordinator.migrateCurrentDeviceIfNeeded(for: account)
-        }
-        deviceInfoMigrationTask = task
-        Task { [weak self] in
-            await task.value
-            self?.clearCompletedDeviceInfoMigrationTask(withID: taskID)
         }
     }
 
@@ -790,57 +753,14 @@ public class DDGSync: DDGSyncing {
         guard dependencies.syncFeatureFlags.canWriteUnifiedDeviceList(),
               let currentAccount = try? dependencies.secureStore.account(),
               currentAccount.userId == account.userId,
-              currentAccount.deviceId == account.deviceId,
-              deviceInfoMigrationTask == nil,
-              currentDeviceInfoRepairTask == nil,
-              !isDeviceRenameInProgress,
-              !hasAttemptedCurrentDeviceInfoRepair else {
+              currentAccount.deviceId == account.deviceId else {
             return
         }
-        Logger.sync.debug("Sync-UnifiedDevices: scheduling current device_info repair")
         let deviceInfoMigrationCoordinator = deviceInfoMigrationCoordinator
-        let taskID = UUID()
-        currentDeviceInfoRepairTaskID = taskID
-        // A failed best-effort repair retries on a later app launch, not on every device-list poll.
-        hasAttemptedCurrentDeviceInfoRepair = true
-        let task = Task {
+        deviceInfoUpdateState.scheduleRepair {
+            Logger.sync.debug("Sync-UnifiedDevices: scheduling current device_info repair")
             await deviceInfoMigrationCoordinator.repairCurrentDeviceInfo(for: currentAccount)
         }
-        currentDeviceInfoRepairTask = task
-        Task { [weak self] in
-            await task.value
-            self?.clearCompletedCurrentDeviceInfoRepairTask(withID: taskID)
-        }
-    }
-
-    private func clearCompletedDeviceInfoMigrationTask(withID taskID: UUID) {
-        guard deviceInfoMigrationTaskID == taskID else {
-            return
-        }
-        deviceInfoMigrationTask = nil
-        deviceInfoMigrationTaskID = nil
-    }
-
-    private func clearCompletedCurrentDeviceInfoRepairTask(withID taskID: UUID) {
-        guard currentDeviceInfoRepairTaskID == taskID else {
-            return
-        }
-        currentDeviceInfoRepairTask = nil
-        currentDeviceInfoRepairTaskID = nil
-    }
-
-    private func cancelDeviceInfoUpdatesAndWait() async {
-        let deviceInfoMigrationTask = deviceInfoMigrationTask
-        let currentDeviceInfoRepairTask = currentDeviceInfoRepairTask
-        deviceInfoMigrationTask?.cancel()
-        currentDeviceInfoRepairTask?.cancel()
-        await deviceInfoMigrationTask?.value
-        await currentDeviceInfoRepairTask?.value
-        self.deviceInfoMigrationTask = nil
-        deviceInfoMigrationTaskID = nil
-        self.currentDeviceInfoRepairTask = nil
-        currentDeviceInfoRepairTaskID = nil
-        hasAttemptedCurrentDeviceInfoRepair = false
     }
 
     private func persistRecoveredThirdPartyScopedPasswordIfAvailable(from accessCredentials: [AccessCredential]?, account: SyncAccount) {
@@ -904,13 +824,7 @@ public class DDGSync: DDGSyncing {
 
     private func removeAccount(reason: SyncError.AccountRemovedReason) throws {
         let account = try? dependencies.secureStore.account()
-        deviceInfoMigrationTask?.cancel()
-        deviceInfoMigrationTask = nil
-        deviceInfoMigrationTaskID = nil
-        currentDeviceInfoRepairTask?.cancel()
-        currentDeviceInfoRepairTask = nil
-        currentDeviceInfoRepairTaskID = nil
-        hasAttemptedCurrentDeviceInfoRepair = false
+        deviceInfoUpdateState.cancelAll()
         dependencies.scheduler.isEnabled = false
         startSyncCancellable?.cancel()
         syncQueueCancellable?.cancel()
@@ -976,10 +890,111 @@ public class DDGSync: DDGSyncing {
     private var syncQueueCancellable: AnyCancellable?
     private var syncDidFinishCancellable: AnyCancellable?
     private var syncQueueRequestErrorCancellable: AnyCancellable?
-    private var deviceInfoMigrationTask: Task<Void, Never>?
-    private var deviceInfoMigrationTaskID: UUID?
-    private var currentDeviceInfoRepairTask: Task<Void, Never>?
-    private var currentDeviceInfoRepairTaskID: UUID?
-    private var isDeviceRenameInProgress = false
-    private var hasAttemptedCurrentDeviceInfoRepair = false
+    private let deviceInfoUpdateState = DeviceInfoUpdateState()
+}
+
+private final class DeviceInfoUpdateState {
+
+    // Completion can overlap with rename or account removal, so task handles are read and replaced under one lock.
+    private struct TrackedTask {
+        let id: UUID
+        let task: Task<Void, Never>
+    }
+
+    private let lock = NSLock()
+    private var migrationTask: TrackedTask?
+    private var repairTask: TrackedTask?
+    private var isRenameInProgress = false
+    private var hasAttemptedRepair = false
+
+    var isMigrationRunning: Bool {
+        lock.withLock { migrationTask != nil }
+    }
+
+    func setRenameInProgress(_ isInProgress: Bool) {
+        lock.withLock {
+            isRenameInProgress = isInProgress
+        }
+    }
+
+    func scheduleMigration(_ operation: @escaping () async -> Void) {
+        lock.withLock {
+            guard migrationTask == nil else {
+                return
+            }
+
+            let taskID = UUID()
+            migrationTask = TrackedTask(id: taskID, task: Task { [weak self] in
+                await operation()
+                self?.clearMigrationTask(withID: taskID)
+            })
+        }
+    }
+
+    func scheduleRepair(_ operation: @escaping () async -> Void) {
+        lock.withLock {
+            guard migrationTask == nil,
+                  repairTask == nil,
+                  !isRenameInProgress,
+                  !hasAttemptedRepair else {
+                return
+            }
+
+            // A failed best-effort repair retries on a later app launch, not on every device-list poll.
+            hasAttemptedRepair = true
+            let taskID = UUID()
+            repairTask = TrackedTask(id: taskID, task: Task { [weak self] in
+                await operation()
+                self?.clearRepairTask(withID: taskID)
+            })
+        }
+    }
+
+    func cancelAll() {
+        let tasks = lock.withLock { () -> (migration: TrackedTask?, repair: TrackedTask?) in
+            let tasks = (migration: migrationTask, repair: repairTask)
+            migrationTask = nil
+            repairTask = nil
+            hasAttemptedRepair = false
+            return tasks
+        }
+        tasks.migration?.task.cancel()
+        tasks.repair?.task.cancel()
+    }
+
+    func cancelAllAndWait() async {
+        let tasks = lock.withLock { (migration: migrationTask, repair: repairTask) }
+        tasks.migration?.task.cancel()
+        tasks.repair?.task.cancel()
+        await tasks.migration?.task.value
+        await tasks.repair?.task.value
+
+        lock.withLock {
+            if migrationTask?.id == tasks.migration?.id {
+                migrationTask = nil
+            }
+            if repairTask?.id == tasks.repair?.id {
+                repairTask = nil
+            }
+            hasAttemptedRepair = false
+        }
+    }
+
+    private func clearMigrationTask(withID taskID: UUID) {
+        lock.withLock {
+            guard migrationTask?.id == taskID else {
+                return
+            }
+            migrationTask = nil
+        }
+    }
+
+    private func clearRepairTask(withID taskID: UUID) {
+        lock.withLock {
+            guard repairTask?.id == taskID else {
+                return
+            }
+            repairTask = nil
+        }
+    }
 }

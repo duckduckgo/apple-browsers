@@ -28,6 +28,7 @@ extension SubscriptionDebugViewController {
     enum OnboardingRows: Int, CaseIterable {
         case resetProgress
         case expireSetupCard
+        case simulatePostCheckoutFlowStarted
     }
 
     /// Launches the flow using whatever's currently set in "Onboarding — Configure Mock Flow" below
@@ -73,6 +74,9 @@ extension SubscriptionDebugViewController {
             cell.accessoryType = .none
         case .expireSetupCard:
             cell.textLabel?.text = "Age Setup Card Past 14 Days"
+            cell.accessoryType = .none
+        case .simulatePostCheckoutFlowStarted:
+            cell.textLabel?.text = "Simulate Post-Checkout Flow Started"
             cell.accessoryType = .none
         case .none:
             break
@@ -176,6 +180,7 @@ extension SubscriptionDebugViewController {
         switch OnboardingRows(rawValue: indexPath.row) {
         case .resetProgress: resetOnboardingProgress()
         case .expireSetupCard: expireSetupCardWindow()
+        case .simulatePostCheckoutFlowStarted: simulatePostCheckoutFlowStarted()
         case .none: break
         }
     }
@@ -400,6 +405,16 @@ extension SubscriptionDebugViewController {
         var store = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
         store.cardFirstShownDate = Date().addingTimeInterval(-TimeInterval.days(15))
         showAlert(title: "Setup card aged past 14 days")
+    }
+
+    private func simulatePostCheckoutFlowStarted() {
+        guard let keyValueStore else {
+            showAlert(title: "Failed to simulate flow start")
+            return
+        }
+        var store = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
+        store.postCheckoutFlowStartedAt = Date()
+        showAlert(title: "Post-checkout flow start simulated")
     }
 }
 

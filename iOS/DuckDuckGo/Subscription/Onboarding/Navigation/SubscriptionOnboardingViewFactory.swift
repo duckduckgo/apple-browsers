@@ -39,12 +39,13 @@ struct SubscriptionOnboardingViewFactory {
 
     /// The PIR screen launched from the summary's checklist row.
     func pirLaunchScreen() -> AnyView {
-        AnyView(
+        let closePIR = { flow.isPresentingPIR = false }
+        return AnyView(
             SubscriptionOnboardingProtectionOverviewView(
                 content: .pir,
                 title: flow.title(for: .pir),
-                navigationButton: .close { flow.isPresentingPIR = false },
-                onLaunch: PIRDestinationView(content: flow.pirScreen()))
+                navigationButton: .close(closePIR),
+                onLaunch: PIRDestinationView(content: flow.pirScreen(), onClose: closePIR))
                 .subscriptionOnboardingNavigationContainer())
     }
 
@@ -160,11 +161,11 @@ extension SubscriptionOnboardingViewFactory {
 
 // MARK: - PIR destination
 
-/// The pushed PIR screen's default back button, with its icon swapped to an X.
+/// The pushed PIR screen's default back button, with its icon swapped to an X. Closes the whole PIR
+/// sheet directly.
 private struct PIRDestinationView<Content: View>: View {
     let content: Content
-
-    @Environment(\.dismiss) private var dismiss
+    let onClose: () -> Void
 
     var body: some View {
         content
@@ -172,7 +173,7 @@ private struct PIRDestinationView<Content: View>: View {
             .navigationBarBackground(Color(designSystemColor: .background))
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { dismiss() }) {
+                    Button(action: onClose) {
                         Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
                     }
                     .accessibilityLabel(UserText.subscriptionOnboardingCloseButtonAccessibilityLabel)

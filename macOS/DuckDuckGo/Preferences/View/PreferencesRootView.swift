@@ -125,6 +125,8 @@ enum Preferences {
                             Spacer()
                         }
                     }
+                    // Navigation starts with a fresh scroll position; permission updates keep the same identity.
+                    .id(websitePermissionsModel.viewState.detailModel?.viewState.category)
                     .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
                     .accessibilityIdentifier("Settings.ScrollView")
                     // `onReceive`, not `onChange`: a deep-linked request lands before this view's first body
@@ -209,7 +211,7 @@ enum Preferences {
                 case .duckPlayer:
                     DuckPlayerView(model: model.duckPlayerPreferences)
                 case .websitePermissions:
-                    PreferencesWebsitePermissionsView(model: websitePermissionsModel, onDetailNavigation: model.scrollToTop)
+                    PreferencesWebsitePermissionsView(model: websitePermissionsModel)
                 case .otherPlatforms:
                     // Opens a new tab
                     Spacer()

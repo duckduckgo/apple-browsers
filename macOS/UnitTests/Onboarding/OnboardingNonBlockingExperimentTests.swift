@@ -113,21 +113,9 @@ final class OnboardingNonBlockingExperimentTests: XCTestCase {
     func testEnrollAssignsACohort() {
         let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
 
-        OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).enroll(buildType: ApplicationBuildTypeMock())
+        OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).enroll()
 
         XCTAssertTrue(featureFlagger.didCallResolveCohort)
-    }
-
-    func testInternalBuildsDoNotEnroll() {
-        for keyPath in [\ApplicationBuildTypeMock.isDebugBuild, \.isReviewBuild, \.isAlphaBuild] {
-            let buildType = ApplicationBuildTypeMock()
-            buildType[keyPath: keyPath] = true
-            let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
-
-            OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).enroll(buildType: buildType)
-
-            XCTAssertFalse(featureFlagger.didCallResolveCohort)
-        }
     }
 
     /// Reading the mode must never enroll: it is checked on searches, tab updates and prompt eligibility,

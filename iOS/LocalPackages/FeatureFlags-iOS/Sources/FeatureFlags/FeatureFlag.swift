@@ -525,10 +525,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/task/1217334233390728
     case monthlyFreeTrialExperiment2
 
-    /// Moves the iPad tabs bar up into the system window controls row (iOS 26+ resizable windows).
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217015452646368?focus=true
-    case iPadTabsBarInWindowControlsRow
-    
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1216352541195038?focus=true
     case nativeAIPromptEditing
 
@@ -907,8 +903,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
         case .simplifiedSyncSetupV2:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
-        case .iPadTabsBarInWindowControlsRow:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
         case .nativeAIPromptEditing:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .nativePromoCards:

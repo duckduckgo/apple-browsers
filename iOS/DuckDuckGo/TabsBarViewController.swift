@@ -623,7 +623,7 @@ class TabsBarViewController: UIViewController {
     // Recalculate after resizing because reserved window control width changes.
     private func updateWindowControlsInsetIfNeeded() {
         let margin: CGFloat
-        if WindowControlsRowLayout.sharesRow(in: view, isEnabled: WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)) {
+        if WindowControlsRowLayout.sharesRow(in: view, isEnabled: WindowControlsRowLayout.isEnabled()) {
             let clearsWindowControls = WindowControlsRowLayout.leadingInset(in: view) + Constants.windowControlsTabGap
             margin = max(Constants.firstTabLeadingMargin, clearsWindowControls)
         } else {

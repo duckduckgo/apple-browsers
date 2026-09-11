@@ -50,7 +50,7 @@ class MainViewFactory {
     }
 
     var isWindowControlsRowEnabled: Bool {
-        WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)
+        WindowControlsRowLayout.isEnabled()
     }
 
     private init(parentController: UIViewController,
@@ -110,9 +110,9 @@ class MainViewFactory {
 /// Uses corner adapted layout regions because UIKit does not expose window control frames.
 enum WindowControlsRowLayout {
 
-    static func isEnabled(featureFlagger: FeatureFlagger?) -> Bool {
-        guard #available(iOS 26, *), UIDevice.current.userInterfaceIdiom == .pad, let featureFlagger else { return false }
-        return featureFlagger.isFeatureOn(.iPadTabsBarInWindowControlsRow)
+    static func isEnabled() -> Bool {
+        guard #available(iOS 26, *) else { return false }
+        return UIDevice.current.userInterfaceIdiom == .pad
     }
 
     /// Returns false in full screen because horizontal adaptation also reserves display corner space.

@@ -88,6 +88,7 @@ struct PreferencesWebsitePermissionsView: View {
         PreferencesWebsitePermissionSiteRowView(
             domain: row.domain,
             faviconURL: row.faviconURL,
+            permissionType: row.permissionType,
             permissionTitle: row.permissionTitle,
             decision: row.decision,
             availableDecisions: row.availableDecisions,

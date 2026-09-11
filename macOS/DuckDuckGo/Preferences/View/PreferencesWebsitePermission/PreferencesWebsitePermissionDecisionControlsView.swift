@@ -30,6 +30,8 @@ struct PreferencesWebsitePermissionDecisionControlsView: View {
     let availableDecisions: [PersistedPermissionDecision]
     let accessibilityIdentifier: String
     let domain: String
+    let permissionType: PermissionType
+    let permissionTitle: String?
     let onDecisionChanged: (PersistedPermissionDecision) -> Void
     let onRemove: () -> Void
 
@@ -52,7 +54,8 @@ struct PreferencesWebsitePermissionDecisionControlsView: View {
         .labelsHidden()
         .fixedSize()
         .frame(minWidth: Constants.minimumDropdownWidth)
-        .accessibilityLabel(String(format: UserText.websitePermissionsDecisionAccessibilityLabel, domain))
+        .accessibilityLabel(
+            String(format: UserText.websitePermissionsDecisionAccessibilityLabel, domain) + ", " + permissionAccessibilityDescription)
         .accessibilityIdentifier("\(accessibilityIdentifier).Decision")
     }
 
@@ -66,7 +69,15 @@ struct PreferencesWebsitePermissionDecisionControlsView: View {
                 .foregroundColor(Color(designSystemColor: .iconsTertiary))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(String(format: UserText.websitePermissionsRemovePermissionAccessibilityLabel, domain))
+        .accessibilityLabel(
+            String(format: UserText.websitePermissionsRemovePermissionAccessibilityLabel, domain) + ", " + permissionAccessibilityDescription)
         .accessibilityIdentifier("\(accessibilityIdentifier).Remove")
+    }
+
+    private var permissionAccessibilityDescription: String {
+        if case .externalScheme(let scheme) = permissionType {
+            return [permissionTitle, "\(scheme)://"].compactMap { $0 }.joined(separator: ", ")
+        }
+        return permissionTitle ?? permissionType.localizedDescription
     }
 }

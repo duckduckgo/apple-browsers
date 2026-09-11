@@ -45,6 +45,7 @@ struct PreferencesWebsitePermissionDomainGroupView: View {
             PreferencesWebsitePermissionSiteRowView(
                 domain: row.domain,
                 faviconURL: row.faviconURL,
+                permissionType: row.permissionType,
                 permissionTitle: row.permissionTitle,
                 decision: row.decision,
                 availableDecisions: row.availableDecisions,
@@ -95,6 +96,8 @@ struct PreferencesWebsitePermissionDomainGroupView: View {
                 availableDecisions: row.availableDecisions,
                 accessibilityIdentifier: row.accessibilityIdentifier,
                 domain: row.domain,
+                permissionType: row.permissionType,
+                permissionTitle: row.permissionTitle,
                 onDecisionChanged: { onDecisionChanged(row.id, $0) },
                 onRemove: { onRemove(row.id) }
             )

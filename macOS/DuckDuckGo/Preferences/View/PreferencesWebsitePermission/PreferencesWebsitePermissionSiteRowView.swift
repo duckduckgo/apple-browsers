@@ -30,6 +30,7 @@ struct PreferencesWebsitePermissionSiteRowView: View {
 
     let domain: String
     let faviconURL: URL?
+    let permissionType: PermissionType
     let permissionTitle: String?
     let decision: PersistedPermissionDecision
     let availableDecisions: [PersistedPermissionDecision]
@@ -61,6 +62,8 @@ struct PreferencesWebsitePermissionSiteRowView: View {
                 availableDecisions: availableDecisions,
                 accessibilityIdentifier: accessibilityIdentifier,
                 domain: domain,
+                permissionType: permissionType,
+                permissionTitle: permissionTitle,
                 onDecisionChanged: onDecisionChanged,
                 onRemove: onRemove
             )

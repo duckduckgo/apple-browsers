@@ -72,19 +72,32 @@ struct OnboardingNonBlockingExperiment {
 
     static let searchRetentionWindow: ClosedRange<Int> = 1...3
 
-    /// Fires the D1-3 search retention metric and the segment matching the current onboarding state.
-    /// Blocking onboarding cannot be searched past, so control always counts as completed.
-    /// The framework handles enrollment, window and once-per-window checks.
+    /// Fires the D1-3 search retention metric, plus a segment recording whether onboarding
+    /// had been completed at the time of the search.
     func fireSearchRetention(persistor: NonBlockingOnboardingPersistor = NonBlockingOnboardingPersistor()) {
+        fireDefaultSearchRetention()
+        fireSearchRetentionSegment(persistor: persistor)
+    }
+
+    /// The framework's regular `search` metric, restricted to the D1-3 window.
+    private func fireDefaultSearchRetention() {
+        fireSearchRetention(metric: PixelKit.Constants.searchMetricValue)
+    }
+
+    /// Blocking onboarding cannot be searched past, so control always counts as completed.
+    private func fireSearchRetentionSegment(persistor: NonBlockingOnboardingPersistor) {
         let isCompleted = !isNonBlocking || persistor.outcome == .completed
         let segment: SearchRetentionSegment = isCompleted ? .onboardingCompleted : .onboardingNotCompleted
-        for metric in [PixelKit.Constants.searchMetricValue, segment.rawValue] {
-            PixelKit.fireExperimentPixelIfThresholdReached(
-                for: Self.subfeatureID,
-                metric: metric,
-                conversionWindowDays: Self.searchRetentionWindow,
-                threshold: 1
-            )
-        }
+        fireSearchRetention(metric: segment.rawValue)
+    }
+
+    /// Counted once per window by the framework, matching its automatic search retention metrics.
+    private func fireSearchRetention(metric: String) {
+        PixelKit.fireExperimentPixelIfThresholdReached(
+            for: Self.subfeatureID,
+            metric: metric,
+            conversionWindowDays: Self.searchRetentionWindow,
+            threshold: 1
+        )
     }
 }

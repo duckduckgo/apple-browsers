@@ -22,21 +22,25 @@ struct ExecuteScriptAction: Action {
     let id: String
     let actionType: ActionType
     let script: String
+    let failSilently: Bool
     let json: Data?
 
     enum CodingKeys: String, CodingKey {
         case id
         case actionType
         case script
+        case failSilently
     }
 
     init(id: String,
          actionType: ActionType,
          script: String,
+         failSilently: Bool = false,
          json: Data? = nil) {
         self.id = id
         self.actionType = actionType
         self.script = script
+        self.failSilently = failSilently
         self.json = json
     }
 
@@ -45,6 +49,7 @@ struct ExecuteScriptAction: Action {
         id = try container.decode(String.self, forKey: .id)
         actionType = try container.decode(ActionType.self, forKey: .actionType)
         script = try container.decode(String.self, forKey: .script)
+        failSilently = try container.decodeIfPresent(Bool.self, forKey: .failSilently) ?? false
         json = nil
     }
 
@@ -53,12 +58,14 @@ struct ExecuteScriptAction: Action {
         try container.encode(id, forKey: .id)
         try container.encode(actionType, forKey: .actionType)
         try container.encode(script, forKey: .script)
+        try container.encode(failSilently, forKey: .failSilently)
     }
 
     func with(json: Data?) -> ExecuteScriptAction {
         ExecuteScriptAction(id: id,
                             actionType: actionType,
                             script: script,
+                            failSilently: failSilently,
                             json: json)
     }
 }

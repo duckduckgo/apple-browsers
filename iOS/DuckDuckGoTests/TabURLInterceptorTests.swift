@@ -33,16 +33,18 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         pir: "/subscriptions/v2/pir")
 
     var urlInterceptor: TabURLInterceptorDefault!
+    private var performanceOptimizedPaywallsProvider: MockPerformanceOptimizedPaywallsProvider!
 
     override func setUp() {
         super.setUp()
         mockInternalUserStoring.isInternalUser = false
         let featureFlagger = MockFeatureFlagger(
             internalUserDecider: DefaultInternalUserDecider(store: mockInternalUserStoring))
+        performanceOptimizedPaywallsProvider = MockPerformanceOptimizedPaywallsProvider(
+            isEnabled: false,
+            paths: performanceOptimizedPaywallPaths)
         urlInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger,
-                                                  performanceOptimizedPaywalls: MockPerformanceOptimizedPaywallsProvider(
-                                                    isEnabled: false,
-                                                    paths: performanceOptimizedPaywallPaths),
+                                                  performanceOptimizedPaywalls: performanceOptimizedPaywallsProvider,
                                                   canPurchase: { true })
     }
     
@@ -59,6 +61,13 @@ class TabURLInterceptorDefaultTests: XCTestCase {
     func testAllowsNavigationForUninterceptedDuckDuckGoPath() {
         let url = URL(string: "https://duckduckgo.com/about")!
         XCTAssertTrue(urlInterceptor.allowsNavigatingTo(url: url))
+    }
+
+    func testUninterceptedDuckDuckGoPathDoesNotReadPerformanceOptimizedPaywallPaths() {
+        let url = URL(string: "https://duckduckgo.com/?q=privacy")!
+
+        XCTAssertTrue(urlInterceptor.allowsNavigatingTo(url: url))
+        XCTAssertEqual(performanceOptimizedPaywallsProvider.pathsAccessCount, 0)
     }
     
     func testNotificationForInterceptedSubscriptionPath() {
@@ -266,7 +275,18 @@ class TabURLInterceptorDefaultTests: XCTestCase {
     }
 }
 
-private struct MockPerformanceOptimizedPaywallsProvider: PerformanceOptimizedPaywallsProviding {
+private final class MockPerformanceOptimizedPaywallsProvider: PerformanceOptimizedPaywallsProviding {
     let isEnabled: Bool
-    let paths: SubscriptionURL.PerformanceOptimizedPaywallPaths
+    private let configuredPaths: SubscriptionURL.PerformanceOptimizedPaywallPaths
+    private(set) var pathsAccessCount = 0
+
+    var paths: SubscriptionURL.PerformanceOptimizedPaywallPaths {
+        pathsAccessCount += 1
+        return configuredPaths
+    }
+
+    init(isEnabled: Bool, paths: SubscriptionURL.PerformanceOptimizedPaywallPaths) {
+        self.isEnabled = isEnabled
+        self.configuredPaths = paths
+    }
 }

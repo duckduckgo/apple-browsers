@@ -72,6 +72,10 @@ extension TabURLInterceptorDefault {
             return components
         }
 
+        guard components.path.hasPrefix("\(SubscriptionPurchaseFlowPath.purchase.rawValue)/") else {
+            return nil
+        }
+
         return performanceOptimizedPaywalls.paths.purchaseRedirectComponents(from: components)
             ?? SubscriptionURL.PerformanceOptimizedPaywallPaths.default.purchaseRedirectComponents(from: components)
     }

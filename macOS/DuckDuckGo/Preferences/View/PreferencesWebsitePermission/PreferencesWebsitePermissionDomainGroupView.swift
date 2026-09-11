@@ -86,11 +86,7 @@ struct PreferencesWebsitePermissionDomainGroupView: View {
 
     private func permissionRow(_ row: WebsitePermissionDetailViewState.SiteRow) -> some View {
         HStack(spacing: Constants.permissionLabelSpacing) {
-            Text(row.subRowTitle)
-                .font(.system(size: 13))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .lineLimit(1)
-                .truncationMode(.middle)
+            permissionLabel(row)
 
             Spacer(minLength: Constants.permissionLabelSpacing)
 
@@ -105,5 +101,20 @@ struct PreferencesWebsitePermissionDomainGroupView: View {
         }
         .frame(height: Constants.permissionHeight)
         .accessibilityIdentifier(row.accessibilityIdentifier)
+    }
+
+    @ViewBuilder
+    private func permissionLabel(_ row: WebsitePermissionDetailViewState.SiteRow) -> some View {
+        let label = Text(row.subRowTitle)
+            .font(.system(size: 13))
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+            .lineLimit(1)
+            .truncationMode(.middle)
+
+        if case .externalScheme(let scheme) = row.permissionType {
+            label.help(Text(verbatim: "\(scheme)://"))
+        } else {
+            label
+        }
     }
 }

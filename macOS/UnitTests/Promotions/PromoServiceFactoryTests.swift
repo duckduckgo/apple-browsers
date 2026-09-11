@@ -197,6 +197,8 @@ extension PromoServiceFactoryTests {
                 onboardingStateUpdater: MockOnboardingStateUpdater(),
                 autoconsentStats: MockAutoconsentStats()
             ),
+            updateController: nil,
+            updateNotificationBridge: nil,
             brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator()
         )
     }

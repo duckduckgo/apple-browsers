@@ -32,9 +32,14 @@ protocol PermissionDecisionOverriding: AnyObject {
     func decision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision?
 }
 
+enum PermissionChange: Equatable {
+    case decisionChanged(PersistedPermissionDecision)
+    case removed
+}
+
 protocol PermissionManagerProtocol: AnyObject {
 
-    typealias PublishedPermission = (domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision)
+    typealias PublishedPermission = (domain: String, permissionType: PermissionType, change: PermissionChange)
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { get }
     var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> { get }
 
@@ -104,7 +109,10 @@ final class PermissionManager: PermissionManagerProtocol {
     private func publishPersistedPermissions() {
         let entries = permissions.flatMap { domain, permissions in
             permissions.map { permissionType, storedPermission in
-                WebsitePermissionEntry(domain: domain, permissionType: permissionType, decision: storedPermission.decision)
+                WebsitePermissionEntry(domain: domain,
+                                       permissionType: permissionType,
+                                       decision: storedPermission.decision,
+                                       lastModified: storedPermission.lastModified)
             }
         }.sorted {
             if $0.domain == $1.domain {
@@ -160,7 +168,7 @@ final class PermissionManager: PermissionManagerProtocol {
         guard currentDecision != decision || !isAlreadyPersisted else { return }
 
         defer {
-            self.permissionSubject.send( (domain, permissionType, decision) )
+            self.permissionSubject.send((domain, permissionType, .decisionChanged(decision)))
         }
         if var oldValue = permissions[domain]?[permissionType] {
             oldValue.decision = decision
@@ -237,7 +245,7 @@ final class PermissionManager: PermissionManagerProtocol {
         store.remove(objectWithId: storedPermission.id)
 
         // Notify subscribers
-        permissionSubject.send((domain, permissionType, .ask))
+        permissionSubject.send((domain, permissionType, .removed))
     }
 
 }
@@ -295,8 +303,9 @@ extension PermissionManager: PermissionManagerDebugging {
             permissionsByType.keys.map { (domain: domain, type: $0) }
         }
         permissions.removeAll()
+        publishPersistedPermissions()
         for permission in removedPermissions {
-            permissionSubject.send((permission.domain, permission.type, .ask))
+            permissionSubject.send((permission.domain, permission.type, .removed))
         }
         store.clear(except: [])
         return count

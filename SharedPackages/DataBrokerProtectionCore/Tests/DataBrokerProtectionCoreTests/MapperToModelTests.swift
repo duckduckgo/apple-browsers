@@ -22,6 +22,18 @@ import DataBrokerProtectionCoreTestsUtils
 
 final class MapperToModelTests: XCTestCase {
 
+    private enum LegacyEmailError: Codable, Equatable {
+        case httpError(statusCode: Int)
+    }
+
+    private enum LegacyDataBrokerProtectionError: Codable, Equatable {
+        case emailError(LegacyEmailError?)
+    }
+
+    private enum LegacyHistoryEventType: Codable, Equatable {
+        case error(error: LegacyDataBrokerProtectionError)
+    }
+
     private var sut = MapperToModel(mechanism: { _ in Data() })
     private var jsonDecoder: JSONDecoder!
     private var jsonEncoder: JSONEncoder!
@@ -29,6 +41,32 @@ final class MapperToModelTests: XCTestCase {
     override func setUpWithError() throws {
         jsonDecoder = JSONDecoder()
         jsonEncoder = JSONEncoder()
+    }
+
+    func testMapToModel_decodesLegacyHTTPEmailErrorHistoryEvent() throws {
+        let legacyEventData = Data(
+            #"{"error":{"error":{"emailError":{"_0":{"httpError":{"statusCode":400}}}}}}"#.utf8
+        )
+        let scanEvent = ScanHistoryEventDB(brokerId: 1,
+                                           profileQueryId: 2,
+                                           event: legacyEventData,
+                                           timestamp: Date())
+
+        let result = try sut.mapToModel(scanEvent)
+
+        XCTAssertEqual(result.type, .error(error: .emailError(.httpError(statusCode: 400, message: nil))))
+    }
+
+    func testMapToDB_encodesHTTPEmailErrorHistoryEventReadableByLegacyModel() throws {
+        let historyEvent = HistoryEvent(brokerId: 1,
+                                        profileQueryId: 2,
+                                        type: .error(error: .emailError(.httpError(statusCode: 400,
+                                                                                   message: "INVALID_REQUEST"))))
+
+        let encodedEvent = try MapperToDB(mechanism: { $0 }).mapToDB(historyEvent, brokerId: 1, profileQueryId: 2)
+        let legacyEvent = try jsonDecoder.decode(LegacyHistoryEventType.self, from: encodedEvent.event)
+
+        XCTAssertEqual(legacyEvent, .error(error: .emailError(.httpError(statusCode: 400))))
     }
 
     func testMapToModel_validData() throws {

@@ -2117,7 +2117,7 @@ class TestPermissionManager: PermissionManagerProtocol {
 
     var persistedPermissions: [String: [PermissionType: PersistedPermissionDecision]] = [:]
 
-    var permissionPublisher: AnyPublisher<(domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision), Never> {
+    var permissionPublisher: AnyPublisher<PublishedPermission, Never> {
         return Empty().eraseToAnyPublisher()
     }
 

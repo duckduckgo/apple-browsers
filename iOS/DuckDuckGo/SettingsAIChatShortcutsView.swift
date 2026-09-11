@@ -55,6 +55,16 @@ enum DuckAIChromeShortcutVisibility {
             && (isDuckAIButtonVisible || isContextualSheetButtonVisible)
     }
 
+    static func isChromeMenuButtonAvailable(isIPad: Bool, featureFlagger: FeatureFlagger) -> Bool {
+        isIPad
+            && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
+            && featureFlagger.isFeatureOn(.aiChatChromeMenuButtonIPad)
+    }
+
+    static func isChromeMenuButtonVisible(featureFlagger: FeatureFlagger, isTabBarShortcutEnabled: Bool) -> Bool {
+        isChromeMenuButtonAvailable(isIPad: true, featureFlagger: featureFlagger) && isTabBarShortcutEnabled
+    }
+
     /// On iPad with the chrome shortcut in play, the in-address-bar Duck.ai button only
     /// shows at narrow widths where the tabs bar (and chrome pill) is hidden. It mirrors the
     /// master "Tab Bar" toggle — shown whenever the shortcut is on, hidden only once both

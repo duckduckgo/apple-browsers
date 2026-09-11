@@ -1,7 +1,7 @@
 //
-//  CriticalPathsTests.swift
+//  CriticalPathsV2Tests.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,37 +17,49 @@
 //
 
 import XCTest
-import JavaScriptCore
 
-extension XCUIElement {
-    /// Timeout constants for different test requirements
-    enum Timeouts {
-        /// Mostly, we use timeouts to wait for element existence. This is about 3x longer than needed, for CI resilience
-        static let elementExistence: Double = 5.0
+final class CriticalPathsV2Tests: XCTestCase {
+
+    private enum Timeouts {
+        static let syncOperation: Double = 30.0
     }
 
-    @discardableResult
-    func assertExists(with timeout: TimeInterval = Timeouts.elementExistence) -> XCUIElement {
-        XCTAssertTrue(waitForExistence(timeout: timeout), "UI element didn't become available in a reasonable timeframe.")
-        return self
+    private enum Identifiers {
+        static let syncThisDeviceToggle = "SyncSettings.syncThisDeviceToggle"
+        static let currentDeviceRow = "SyncSettings.deviceRow.current"
+        static let mobileDeviceRow = "SyncSettings.deviceRow.mobile"
+        static let successCopyCodeButton = "SyncSuccessCopyCodeButton"
+        static let successDoneButton = "SyncSuccessDoneButton"
     }
-}
 
-final class CriticalPathsTests: XCTestCase {
-
-    var isCI: Bool {
-        !(ProcessInfo.processInfo.environment["CI"]?.isEmpty ?? true)
+    private enum Titles {
+        static let syncAndBackupPane = "Sync & Backup"
+        static let beginSync = "Keep DuckDuckGo in sync!"
+        static let myDevices = "My Devices"
+        static let syncWithAnotherDevice = "Sync With Another Device"
+        static let syncThisDeviceOnly = "Sync This Device Only"
+        static let recoveryCode = "I Have a Recovery Code"
+        static let getStarted = "Get Started"
+        static let enterCodeTab = "Enter Code"
+        static let pasteCode = "Paste Code"
+        static let paste = "Paste"
+        static let deviceDetails = "Details..."
+        static let turnOffSync = "Turn Off Sync & Backup"
+        static let removeDevice = "Remove Device"
+        static let turnOffAndDeleteServerData = "Turn Off and Delete Server Data"
+        static let deleteServerData = "Delete Server Data"
+        static let shareFavorites = "Share Favorites Across Devices"
+        static let syncFailed = "Sync failed."
+        static let gotIt = "Got It"
     }
 
     var app: XCUIApplication!
     var debugMenuBarItem: XCUIElement!
-    var internaluserstateMenuItem: XCUIElement!
 
     override func setUp() {
-        // Launch App
         app = XCUIApplication(bundleIdentifier: "com.duckduckgo.macos.browser.review")
         app.launchEnvironment["UITEST_MODE"] = "1"
-        app.launchEnvironment["FEATURE_FLAGS"] = "simplifiedSyncSetupV2=false"
+        app.launchEnvironment["FEATURE_FLAGS"] = "simplifiedSyncSetupV2=true"
         app.launch()
         ensureMainWindowOpen()
         selectDevelopmentEnvironment()
@@ -59,6 +71,118 @@ final class CriticalPathsTests: XCTestCase {
         app.typeKey(",", modifierFlags: [.command, .option, .shift])
     }
 
+    // MARK: - Tests
+
+    func testCanCreateSyncAccount() throws {
+        openSyncSettings()
+
+        createAccountForThisDeviceOnly()
+        assertSyncIsEnabled()
+
+        deleteServerData()
+        assertSyncIsDisabled()
+    }
+
+    func testCanRecoverSyncAccount() throws {
+        openSyncSettings()
+
+        createAccountForThisDeviceOnly(copyingRecoveryCode: true)
+        assertSyncIsEnabled()
+
+        turnOffSync()
+        assertSyncIsDisabled()
+
+        recoverSyncedData()
+        assertSyncIsEnabled()
+
+        deleteServerData()
+        assertSyncIsDisabled()
+    }
+
+    func testCanRemoveData() {
+        openSyncSettings()
+
+        createAccountForThisDeviceOnly(copyingRecoveryCode: true)
+        assertSyncIsEnabled()
+
+        deleteServerData()
+        assertSyncIsDisabled()
+
+        pasteCodeOnConnectScreen()
+
+        let settingsWindow = syncSettingsWindow()
+        let alertSheet = settingsWindow.sheets.sheets["alert"]
+        alertSheet.staticTexts[Titles.syncFailed].assertExists(with: Timeouts.syncOperation)
+        alertSheet.buttons[Titles.gotIt].assertExists().click()
+    }
+
+    func testCanLoginToExistingSyncAccount() {
+        guard let code = ProcessInfo.processInfo.environment["CODE"] else {
+            XCTFail("CODE not set")
+            return
+        }
+
+        openSyncSettings()
+        copyToClipboard(code: code)
+
+        logIn()
+
+        logOut()
+    }
+
+    func testCanSyncData() {
+        guard let code = ProcessInfo.processInfo.environment["CODE"] else {
+            XCTFail("CODE not set")
+            return
+        }
+
+        addBookmarksAndFavorites()
+        addLogin()
+        addCreditCard()
+        addIdentity()
+
+        copyToClipboard(code: code)
+
+        let bookmarksWindow = bookmarkManagerWindow()
+        bookmarksWindow.splitGroups.children(matching: .popUpButton).element.click()
+        bookmarksWindow.menuItems["Settings"].click()
+        logIn()
+
+        let settingsWindow = syncSettingsWindow()
+        XCTAssertFalse(settingsWindow.checkBoxes[Titles.shareFavorites].value as! Bool)
+
+        logOut()
+
+        checkFavoriteNonUnified()
+
+        ensureSyncSettingsWindowOpen()
+        settingsWindow.popUpButtons["Settings"].click()
+        settingsWindow.menuItems["Bookmarks"].click()
+        bookmarksWindow.staticTexts["www.spreadprivacy.com"].rightClick()
+        bookmarksWindow.menus.menuItems["ContextualMenu.deleteBookmark"].click()
+        bookmarksWindow.staticTexts["www.duckduckgo.com"].rightClick()
+        bookmarksWindow.menus.menuItems["ContextualMenu.deleteBookmark"].click()
+
+        bookmarksWindow.splitGroups.children(matching: .popUpButton).element.click()
+        bookmarksWindow.menuItems["Settings"].click()
+        logIn()
+
+        settingsWindow.checkBoxes[Titles.shareFavorites].click()
+        XCTAssertTrue(settingsWindow.checkBoxes[Titles.shareFavorites].value as! Bool)
+
+        checkBookmarks()
+        checkUnifiedFavorites()
+        checkLogins()
+        checkCreditCards()
+        checkIdentities()
+
+        app.typeKey(",", modifierFlags: [.command])
+        XCTAssertTrue(settingsWindow.checkBoxes[Titles.shareFavorites].value as! Bool)
+        settingsWindow.checkBoxes[Titles.shareFavorites].click()
+    }
+
+    // MARK: - App and window helpers
+
     private func ensureMainWindowOpen() {
         if app.windows.firstMatch.exists {
             return
@@ -69,7 +193,7 @@ final class CriticalPathsTests: XCTestCase {
     }
 
     private func syncSettingsWindow() -> XCUIElement {
-        let settingsWindow = app.windows.containing(.button, identifier: "Sync & Backup").firstMatch
+        let settingsWindow = app.windows.containing(.button, identifier: Titles.syncAndBackupPane).firstMatch
         XCTAssertTrue(settingsWindow.waitForExistence(timeout: XCUIElement.Timeouts.elementExistence), "Settings window is not visible")
         return settingsWindow
     }
@@ -81,7 +205,7 @@ final class CriticalPathsTests: XCTestCase {
     }
 
     private func ensureSyncSettingsWindowOpen() {
-        let settingsWindow = app.windows.containing(.button, identifier: "Sync & Backup").firstMatch
+        let settingsWindow = app.windows.containing(.button, identifier: Titles.syncAndBackupPane).firstMatch
         guard !settingsWindow.exists else { return }
         app.typeKey(",", modifierFlags: [.command])
         XCTAssertTrue(settingsWindow.waitForExistence(timeout: XCUIElement.Timeouts.elementExistence), "Settings window is not visible")
@@ -116,224 +240,111 @@ final class CriticalPathsTests: XCTestCase {
         app.menuItems["MainMenu.resetSecureVaultData"].click()
     }
 
-    func testCanCreateSyncAccount() throws {
-        // Go to Sync Set up
-        accessSettings()
-        let settingsWindow = syncSettingsWindow()
-        settingsWindow.buttons["Sync & Backup"].click()
+    // MARK: - Sync setup helpers
 
-        // Create Account
-        let sheetsQuery = settingsWindow.sheets
-        settingsWindow/*@START_MENU_TOKEN@*/.buttons["Sync and Back Up This Device"]/*[[".groups",".scrollViews.buttons[\"Sync and Back Up This Device\"]",".buttons[\"Sync and Back Up This Device\"]"],[[[-1,2],[-1,1],[-1,0,1]],[[-1,2],[-1,1]]],[0]]@END_MENU_TOKEN@*/.click()
-        sheetsQuery.buttons["Turn On Sync & Backup"].click()
-        _ = sheetsQuery.buttons["Next"].waitForExistence(timeout: 5)
-        sheetsQuery.buttons["Next"].click()
-        sheetsQuery.buttons["Done"].click()
-        let syncEnabledElement = settingsWindow.staticTexts["Sync Enabled"]
-        XCTAssertTrue(syncEnabledElement.exists, "Sync Enabled text is not visible")
-
-        // Clean Up
-        settingsWindow.swipeUp()
-        settingsWindow/*@START_MENU_TOKEN@*/.buttons["Turn Off and Delete Server Data…"]/*[[".groups",".scrollViews.buttons[\"Turn Off and Delete Server Data…\"]",".buttons[\"Turn Off and Delete Server Data…\"]"],[[[-1,2],[-1,1],[-1,0,1]],[[-1,2],[-1,1]]],[0]]@END_MENU_TOKEN@*/.click()
-        sheetsQuery.buttons["Delete Data"].click()
-        let beginSync = settingsWindow.staticTexts["Begin Syncing"]
-        beginSync.click()
-        XCTAssertTrue(beginSync.exists, "Begin Syncing text is not visible")
+    private func element(_ identifier: String, in container: XCUIElement) -> XCUIElement {
+        container.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
-    func testCanRecoverSyncAccount() throws {
-        // Go to Sync Set up
+    private func openSyncSettings() {
         accessSettings()
         let settingsWindow = syncSettingsWindow()
-        settingsWindow.buttons["Sync & Backup"].click()
-
-        // Create Account
-        let sheetsQuery = settingsWindow.sheets
-        settingsWindow.buttons["Sync and Back Up This Device"].click()
-        sheetsQuery.buttons["Turn On Sync & Backup"].click()
-        sheetsQuery.buttons["Copy Code"].click()
-        sheetsQuery.buttons["Next"].click()
-        sheetsQuery.buttons["Done"].click()
-        let syncEnabledElement = settingsWindow.staticTexts["Sync Enabled"]
-        XCTAssertTrue(syncEnabledElement.exists, "Sync Enabled text is not visible")
-
-        // Log out
-        settingsWindow.buttons["Turn Off Sync…"].click()
-        sheetsQuery.buttons["Turn Off"].click()
-
-        // Recover Account
-        settingsWindow.buttons["Recover Synced Data"].click()
-        sheetsQuery.buttons["Get Started"].click()
-        sheetsQuery.buttons["Paste"].click()
-        sheetsQuery.buttons["Next"].click()
-        sheetsQuery.buttons["Done"].click()
-        XCTAssertTrue(syncEnabledElement.exists, "Sync Enabled text is not visible")
-
-        // Clean Up
-        settingsWindow.swipeUp()
-        settingsWindow.buttons["Turn Off and Delete Server Data…"].click()
-        sheetsQuery.buttons["Delete Data"].click()
-        let beginSync = settingsWindow.staticTexts["Begin Syncing"]
-        beginSync.click()
-        XCTAssertTrue(beginSync.exists, "Begin Sync text is not visible")
-
+        settingsWindow.buttons[Titles.syncAndBackupPane].click()
     }
 
-    func testCanRemoveData() {
-
-        // Go to Sync Set up
-        accessSettings()
-
+    private func createAccountForThisDeviceOnly(copyingRecoveryCode: Bool = false) {
         let settingsWindow = syncSettingsWindow()
-        settingsWindow.buttons["Sync & Backup"].click()
-
-        // Create Account
         let sheetsQuery = settingsWindow.sheets
-        settingsWindow.buttons["Sync and Back Up This Device"].click()
-        sheetsQuery.buttons["Turn On Sync & Backup"].click()
-        sheetsQuery.buttons["Copy Code"].click()
-        sheetsQuery.buttons["Next"].click()
-        sheetsQuery.buttons["Done"].click()
-        let syncEnabledElement = settingsWindow.staticTexts["Sync Enabled"]
-        XCTAssertTrue(syncEnabledElement.exists, "Sync Enabled text is not visible")
 
-        // Delete Data
-        settingsWindow.swipeUp()
-        settingsWindow.buttons["Turn Off and Delete Server Data…"].click()
-        sheetsQuery.buttons["Delete Data"].click()
-        let beginSync = settingsWindow.staticTexts["Begin Syncing"]
-        beginSync.click()
-        XCTAssertTrue(beginSync.exists, "Begyn Sync text is not visible")
+        element(Identifiers.syncThisDeviceToggle, in: settingsWindow).assertExists().click()
+        sheetsQuery.buttons[Titles.syncThisDeviceOnly].assertExists().click()
 
-        // Log In and check error
-        settingsWindow.buttons["Sync With Another Device"].click()
-        let settingsSheetsQuery = settingsWindow.sheets
-        settingsSheetsQuery.buttons["Enter Code"].click()
-        settingsSheetsQuery.buttons["Paste"].click()
-        let alertSheet = sheetsQuery.sheets["alert"]
-        alertSheet.staticTexts["Sync failed."].assertExists()
-        alertSheet.buttons["Got It"].assertExists().click()
-
-    }
-
-    func testCanLoginToExistingSyncAccount() {
-        guard let code = ProcessInfo.processInfo.environment["CODE"] else {
-            XCTFail("CODE not set")
-            return
+        let doneButton = sheetsQuery.buttons[Identifiers.successDoneButton]
+        doneButton.assertExists(with: Timeouts.syncOperation)
+        if copyingRecoveryCode {
+            sheetsQuery.buttons[Identifiers.successCopyCodeButton].assertExists().click()
         }
-
-        // Go to Sync Set up
-        accessSettings()
-        let settingsWindow = syncSettingsWindow()
-        settingsWindow.buttons["Sync & Backup"].click()
-
-        // Copy code to clipboard
-        copyToClipboard(code: code)
-
-        // Log In
-        logIn()
-
-        // Clean Up
-        logOut()
+        doneButton.click()
     }
 
-    func testCanSyncData() {
-        guard let code = ProcessInfo.processInfo.environment["CODE"] else {
-            XCTFail("CODE not set")
-            return
-        }
-
-        // Add Bookmarks and Favorite
-        addBookmarksAndFavorites()
-
-        // Add Login
-        addLogin()
-
-        // Add Credit Card
-        addCreditCard()
-
-        // Add Identity
-        addIdentity()
-
-        // Copy code to clipboard
-        copyToClipboard(code: code)
-
-        // Log In
-        let bookmarksWindow = bookmarkManagerWindow()
-        bookmarksWindow.splitGroups.children(matching: .popUpButton).element.click()
-        bookmarksWindow.menuItems["Settings"].click()
-        logIn()
-
-        // Ensure Unify Favorites not checked
+    private func recoverSyncedData() {
         let settingsWindow = syncSettingsWindow()
-        XCTAssertFalse(settingsWindow.checkBoxes["Unify Favorites Across Devices"].value as! Bool)
+        let sheetsQuery = settingsWindow.sheets
 
-        // Log Out
-        logOut()
+        settingsWindow.buttons[Titles.recoveryCode].assertExists().click()
+        sheetsQuery.buttons[Titles.getStarted].assertExists().click()
+        sheetsQuery.buttons[Titles.paste].assertExists(with: Timeouts.syncOperation).click()
 
-        // Check Favorites not unified
-        checkFavoriteNonUnified()
+        sheetsQuery.buttons[Identifiers.successDoneButton].assertExists(with: Timeouts.syncOperation).click()
+    }
 
-        // Remove Bookmarks
-        ensureSyncSettingsWindowOpen()
-        settingsWindow.popUpButtons["Settings"].click()
-        settingsWindow.menuItems["Bookmarks"].click()
-        bookmarksWindow.staticTexts["www.spreadprivacy.com"].rightClick()
-        bookmarksWindow.menus.menuItems["ContextualMenu.deleteBookmark"].click()
-        bookmarksWindow.staticTexts["www.duckduckgo.com"].rightClick()
-        bookmarksWindow.menus.menuItems["ContextualMenu.deleteBookmark"].click()
+    private func pasteCodeOnConnectScreen() {
+        let settingsWindow = syncSettingsWindow()
+        let sheetsQuery = settingsWindow.sheets
 
-        // Log In
-        bookmarksWindow.splitGroups.children(matching: .popUpButton).element.click()
-        bookmarksWindow.menuItems["Settings"].click()
-        logIn()
-
-        // Toggle Unified Favorite
-        settingsWindow.checkBoxes["Unify Favorites Across Devices"].click()
-        XCTAssertTrue(settingsWindow.checkBoxes["Unify Favorites Across Devices"].value as! Bool)
-
-        // Check Bookmarks
-        checkBookmarks()
-
-        // Check Unified favorites
-        checkUnifiedFavorites()
-
-        // Check Logins
-        checkLogins()
-
-        // Check Credit Cards
-        checkCreditCards()
-
-        // Check Identities
-        checkIdentities()
-
-        // Switch Unified Favorite back off
-        app.typeKey(",", modifierFlags: [.command])
-        XCTAssertTrue(settingsWindow.checkBoxes["Unify Favorites Across Devices"].value as! Bool)
-        settingsWindow.checkBoxes["Unify Favorites Across Devices"].click()
+        settingsWindow.buttons[Titles.syncWithAnotherDevice].assertExists().click()
+        sheetsQuery.buttons[Titles.enterCodeTab].assertExists(with: Timeouts.syncOperation).click()
+        sheetsQuery.buttons[Titles.pasteCode].assertExists().click()
     }
 
     private func logIn() {
         let settingsWindow = syncSettingsWindow()
-        settingsWindow.buttons["Sync & Backup"].click()
-        settingsWindow.buttons["Sync With Another Device"].click()
-        let settingsSheetsQuery = settingsWindow.sheets
-        settingsSheetsQuery.buttons["Enter Code"].click()
-        settingsSheetsQuery.buttons["Paste"].click()
-        settingsSheetsQuery.buttons["Next"].click()
-        settingsSheetsQuery.buttons["Done"].click()
-        let secondDevice = settingsWindow.images["SyncSettings.syncedDevice.mobile"]
-        XCTAssertTrue(secondDevice.exists, "Original Device not visible")
+        settingsWindow.buttons[Titles.syncAndBackupPane].click()
+
+        pasteCodeOnConnectScreen()
+
+        settingsWindow.sheets.buttons[Identifiers.successDoneButton].assertExists(with: Timeouts.syncOperation).click()
+
+        element(Identifiers.mobileDeviceRow, in: settingsWindow).assertExists(with: Timeouts.syncOperation)
     }
 
     private func logOut() {
+        turnOffSync()
+        assertSyncIsDisabled()
+    }
+
+    private func turnOffSync() {
         let settingsWindow = syncSettingsWindow()
-        let settingsSheetsQuery = settingsWindow.sheets
-        settingsWindow.buttons["Turn Off Sync…"].click()
-        settingsSheetsQuery.buttons["Turn Off"].click()
-        let beginSync = settingsWindow.staticTexts["Begin Syncing"]
-        beginSync.click()
-        XCTAssertTrue(beginSync.exists, "Begyn Sync text is not visible")
+        let sheetsQuery = settingsWindow.sheets
+
+        openCurrentDeviceDetails()
+        sheetsQuery.buttons[Titles.turnOffSync].assertExists().click()
+        sheetsQuery.buttons[Titles.removeDevice].assertExists().click()
+    }
+
+    private func deleteServerData() {
+        let settingsWindow = syncSettingsWindow()
+        let sheetsQuery = settingsWindow.sheets
+
+        settingsWindow.swipeUp()
+        settingsWindow.buttons[Titles.turnOffAndDeleteServerData].assertExists().click()
+        sheetsQuery.buttons[Titles.deleteServerData].assertExists().click()
+    }
+
+    private func openCurrentDeviceDetails() {
+        let settingsWindow = syncSettingsWindow()
+        let deviceRow = element(Identifiers.currentDeviceRow, in: settingsWindow)
+        deviceRow.assertExists(with: Timeouts.syncOperation)
+        deviceRow.hover()
+
+        let detailsButton = settingsWindow.buttons[Titles.deviceDetails]
+        if detailsButton.waitForExistence(timeout: 1.0) {
+            detailsButton.click()
+        } else {
+            deviceRow.coordinate(withNormalizedOffset: CGVector(dx: 1.0, dy: 0.5))
+                .withOffset(CGVector(dx: -45.0, dy: 0.0))
+                .click()
+        }
+
+        settingsWindow.sheets.buttons[Titles.turnOffSync].assertExists()
+    }
+
+    private func assertSyncIsEnabled() {
+        syncSettingsWindow().staticTexts[Titles.myDevices].assertExists(with: Timeouts.syncOperation)
+    }
+
+    private func assertSyncIsDisabled() {
+        syncSettingsWindow().staticTexts[Titles.beginSync].assertExists(with: Timeouts.syncOperation)
     }
 
     private func copyToClipboard(code: String) {
@@ -341,6 +352,8 @@ final class CriticalPathsTests: XCTestCase {
         pasteboard.declareTypes([.string], owner: nil)
         pasteboard.setString(code, forType: .string)
     }
+
+    // MARK: - Data helpers
 
     private func addBookmarksAndFavorites() {
         app.menuItems["MainMenu.manageBookmarksMenuItem"].click()
@@ -453,8 +466,8 @@ final class CriticalPathsTests: XCTestCase {
         if bookmarksWindow.sheets.buttons["Not Now"].exists {
             bookmarksWindow.sheets.buttons["Not Now"].click()
         }
-        let duckduckgoBookmark =  bookmarksWindow.staticTexts["www.duckduckgo.com"]
-        let stackOverflow =  bookmarksWindow.staticTexts["Stack Overflow - Where Developers Learn, Share, & Build Careers"]
+        let duckduckgoBookmark = bookmarksWindow.staticTexts["www.duckduckgo.com"]
+        let stackOverflow = bookmarksWindow.staticTexts["Stack Overflow - Where Developers Learn, Share, & Build Careers"]
         let privacySimplified = bookmarksWindow.staticTexts["DuckDuckGo — Privacy, simplified."]
         let wolfram = bookmarksWindow.staticTexts["Wolfram|Alpha: Computational Intelligence"]
         let news = bookmarksWindow.staticTexts["news"]

@@ -64,6 +64,7 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         )
 
         XCTAssertEqual(model.viewState.sites.map(\.domain), ["example.com"])
+        XCTAssertEqual(model.viewState.visibleSites.map(\.domain), ["example.com"])
     }
 
     func testWhenBuildingDetailSitesThenOnlyCategoryEntriesAreIncludedAndSorted() {
@@ -127,6 +128,11 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
 
         XCTAssertTrue(sut.viewState.visibleSites.isEmpty)
         XCTAssertTrue(sut.viewState.hasNoResults)
+
+        for query in ["", " \n\t "] {
+            sut.send(action: .setSearchQuery(query))
+            XCTAssertEqual(sut.viewState.visibleSites, sut.viewState.sites)
+        }
     }
 
     func testWhenPermissionsUpdateThenDetailPreservesItsSearchQuery() {
@@ -134,6 +140,7 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
             category: .notifications,
             entries: [
                 WebsitePermissionEntry(domain: "example.com", permissionType: .notification, decision: .allow, lastModified: nil),
+                WebsitePermissionEntry(domain: "unrelated.com", permissionType: .notification, decision: .allow, lastModified: nil),
             ]
         )
         sut.send(action: .setSearchQuery("example"))
@@ -144,6 +151,28 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
 
         XCTAssertEqual(sut.viewState.searchQuery, "example")
         XCTAssertEqual(sut.viewState.visibleSites.map(\.domain), ["another.example", "example.com"])
+    }
+
+    func testWhenSearchingExternalAppsThenOnlyMatchingRowsAreVisible() {
+        let sut = makeExternalAppsSUT()
+        let cases: [(query: String, expectedIDs: [String])] = [
+            ("  TASK MANAGER  ", ["example.com|external_asanadesktop", "example.com|external_asanadesktoptest", "other.example|external_asanadesktop"]),
+            ("asanadesktoptest", ["example.com|external_asanadesktoptest"]),
+            ("  ASANADESKTOPTEST://  ", ["example.com|external_asanadesktoptest"]),
+            ("Open", []),
+        ]
+
+        for (query, expectedIDs) in cases {
+            sut.send(action: .setSearchQuery(query))
+
+            XCTAssertEqual(sut.viewState.visibleSites.map(\.id), expectedIDs, query)
+        }
+    }
+
+    func testWhenInitialStateHasASearchQueryThenVisibleSitesAreFilteredBeforeAppearing() {
+        let sut = makeExternalAppsSUT(searchQuery: "asanadesktoptest://")
+
+        XCTAssertEqual(sut.viewState.visibleSites.map(\.id), ["example.com|external_asanadesktoptest"])
     }
 
     func testWhenDetailDecisionChangesThenPermissionManagerUpdatesTheCurrentRow() throws {
@@ -276,6 +305,28 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
 
         XCTAssertEqual(sut.viewState.visibleGroups.map(\.domain), ["discord.com"])
         XCTAssertEqual(sut.viewState.visibleGroups.first?.rows.count, 2)
+    }
+
+    private func makeExternalAppsSUT(searchQuery: String = "") -> WebsitePermissionDetailViewModel {
+        let sites = [
+            ("example.com", "asanadesktop", "Tâsk Manager"),
+            ("example.com", "asanadesktoptest", "Tâsk Manager"),
+            ("example.com", "orbitdesk", "Orbit"),
+            ("other.example", "asanadesktop", "Tâsk Manager"),
+        ].map { domain, scheme, appName in
+            WebsitePermissionDetailViewState.SiteRow(
+                domain: domain,
+                permissionType: .externalScheme(scheme: scheme),
+                decision: .allow,
+                externalAppName: appName,
+                availableDecisions: [.ask, .allow, .deny]
+            )
+        }
+        return WebsitePermissionDetailViewModel(
+            initialState: .init(category: .externalApps, searchQuery: searchQuery, sites: sites),
+            permissionManager: permissionManager,
+            featureFlagger: featureFlagger
+        )
     }
 
     private func makeSUT(

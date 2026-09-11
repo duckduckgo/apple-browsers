@@ -24,9 +24,7 @@ struct WebsitePermissionDetailViewState: Equatable {
     var category: WebsitePermissionCategory = .notifications
     var searchQuery = ""
     var sites: [SiteRow] = []
-    var visibleSites: [SiteRow] {
-        filteredSites(from: sites, matching: searchQuery)
-    }
+    var visibleSites: [SiteRow] = []
     var visibleGroups: [SiteGroup] {
         groupedByDomain(visibleSites)
     }
@@ -45,6 +43,7 @@ struct WebsitePermissionDetailViewState: Equatable {
         self.category = category
         self.searchQuery = searchQuery
         self.sites = sites
+        self.visibleSites = sites
     }
 
     init(
@@ -62,9 +61,7 @@ struct WebsitePermissionDetailViewState: Equatable {
                     domain: entry.domain,
                     permissionType: entry.permissionType,
                     decision: entry.displayedDecision,
-                    permissionTitle: entry.permissionType.isExternalScheme
-                        ? String(format: UserText.websitePermissionsExternalAppFormat, entry.permissionType.localizedDescription)
-                        : nil,
+                    externalAppName: entry.permissionType.isExternalScheme ? entry.permissionType.localizedDescription : nil,
                     availableDecisions: entry.permissionType.editableDecisions
                 )
             }
@@ -90,18 +87,6 @@ struct WebsitePermissionDetailViewState: Equatable {
             }
         }
     }
-
-    private func filteredSites(from sites: [SiteRow], matching query: String) -> [SiteRow] {
-        let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !normalizedQuery.isEmpty else { return sites }
-
-        let foldedQuery = normalizedQuery.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
-        return sites.filter {
-            $0.domain
-                .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
-                .contains(foldedQuery)
-        }
-    }
 }
 
 extension WebsitePermissionDetailViewState {
@@ -109,8 +94,12 @@ extension WebsitePermissionDetailViewState {
         let domain: String
         let permissionType: PermissionType
         let decision: PersistedPermissionDecision
-        let permissionTitle: String?
+        let externalAppName: String?
         let availableDecisions: [PersistedPermissionDecision]
+
+        var permissionTitle: String? {
+            externalAppName.map { String(format: UserText.websitePermissionsExternalAppFormat, $0) }
+        }
 
         var id: String {
             "\(domain)|\(permissionType.rawValue)"

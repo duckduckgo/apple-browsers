@@ -38,6 +38,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
         viewState = initialState ?? .init()
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
+        viewState.visibleSites = filteredSites(from: viewState.sites, matching: viewState.searchQuery)
     }
 
     // MARK: - Public
@@ -48,7 +49,10 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
             setupObserver()
 
         case .setSearchQuery(let query):
-            viewState.searchQuery = query
+            var state = viewState
+            state.searchQuery = query
+            state.visibleSites = filteredSites(from: state.sites, matching: query)
+            viewState = state
 
         case .changeDecision(let rowID, let decision):
             changeDecision(decision, for: rowID)
@@ -96,12 +100,41 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
     }
 
     private func updateState(entries: [WebsitePermissionEntry]) {
-        viewState = WebsitePermissionDetailViewState(
+        var state = WebsitePermissionDetailViewState(
             category: viewState.category,
             searchQuery: viewState.searchQuery,
             entries: entries,
             featureFlagger: featureFlagger
         )
+        state.visibleSites = filteredSites(from: state.sites, matching: state.searchQuery)
+        viewState = state
+    }
+
+    private func filteredSites(
+        from sites: [WebsitePermissionDetailViewState.SiteRow],
+        matching query: String
+    ) -> [WebsitePermissionDetailViewState.SiteRow] {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuery.isEmpty else { return sites }
+
+        let foldedQuery = foldedForSearch(trimmedQuery)
+        return sites.filter { site in
+            searchableValues(for: site).contains { value in
+                foldedForSearch(value).contains(foldedQuery)
+            }
+        }
+    }
+
+    private func searchableValues(for site: WebsitePermissionDetailViewState.SiteRow) -> [String] {
+        guard case .externalScheme(let scheme) = site.permissionType else {
+            return [site.domain]
+        }
+
+        return [site.domain, "\(scheme)://", site.externalAppName].compactMap { $0 }
+    }
+
+    private func foldedForSearch(_ text: String) -> String {
+        text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
     }
 
     private func row(matchingID id: WebsitePermissionDetailViewState.SiteRow.ID) -> WebsitePermissionDetailViewState.SiteRow? {

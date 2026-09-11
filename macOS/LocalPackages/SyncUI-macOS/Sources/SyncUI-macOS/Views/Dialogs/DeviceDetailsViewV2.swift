@@ -47,8 +47,9 @@ struct DeviceDetailsViewV2: View {
     }
 
     private var title: String {
-        guard device.isCurrent, !trimmedDeviceName.isEmpty else { return device.name }
-        return trimmedDeviceName
+        guard device.isCurrent else { return device.name }
+        let name = trimmedDeviceName.isEmpty ? device.name : trimmedDeviceName
+        return "\(name) (\(UserText.thisDevice))"
     }
 
     var body: some View {

@@ -27,6 +27,7 @@ import PreviewSnapshots
 
 struct SyncWithAnotherDeviceViewV2: View {
 
+    @Environment(\.colorScheme) private var parentColorScheme
     @EnvironmentObject private var model: ManagementDialogModel
     @EnvironmentObject private var recoveryCodeModel: RecoveryCodeViewModel
 
@@ -208,6 +209,11 @@ struct SyncWithAnotherDeviceViewV2: View {
                     ? UserText.syncWithAnotherDeviceScanStep3V2
                     : UserText.syncWithAnotherDeviceEnterStep3V2
             )
+
+            InstructionStepV2(
+                number: 4,
+                prefix: UserText.syncWithAnotherDeviceStep4V2
+            )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -332,6 +338,7 @@ struct SyncWithAnotherDeviceViewV2: View {
         .multilineTextAlignment(.leading)
         .frame(width: 240, alignment: .leading)
         .padding(16)
+        .environment(\.colorScheme, parentColorScheme)
     }
 
     private func shareContent(_ sharedText: String) {
@@ -414,8 +421,8 @@ private enum PairingTabV2: Hashable {
 }
 
 private enum Metrics {
-    static let scanOptionsPanelHeight: CGFloat = 489
-    static let enterOptionsPanelHeight: CGFloat = 393
+    static let scanOptionsPanelHeight: CGFloat = 515
+    static let enterOptionsPanelHeight: CGFloat = 419
     static let exampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ"
 }
 

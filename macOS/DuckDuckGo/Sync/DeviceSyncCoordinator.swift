@@ -119,8 +119,8 @@ extension DeviceSyncCoordinator: SyncDeviceFlowLaunching {
 }
 
 extension DeviceSyncCoordinator: SyncSettingsViewHandling {
-    func saveRecoveryPDF() {
-        dialogController.saveRecoveryPDF()
+    func saveRecoveryPDF(requiresAuthentication: Bool) {
+        dialogController.saveRecoveryPDF(requiresAuthentication: requiresAuthentication)
     }
 
     var devicesPublisher: AnyPublisher<[SyncDevice], Never> {

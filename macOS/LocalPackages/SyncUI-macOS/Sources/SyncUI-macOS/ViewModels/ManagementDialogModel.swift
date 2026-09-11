@@ -28,7 +28,7 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func removeDeviceConfirmed(_ device: SyncDevice)
     func deleteAccount()
     func recoveryCodePasted(_ code: String, fromRecoveryScreen: Bool)
-    func saveRecoveryPDF()
+    func saveRecoveryPDF(requiresAuthentication: Bool)
     func recoveryCodeNextPressed()
     func turnOnSync()
     func enterRecoveryCodePressed()
@@ -42,6 +42,7 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func shouldEndFlow(from dialog: ManagementDialogKind) async -> Bool
     func switchAccountsCancelled()
     func enterCodeViewDidAppear()
+    func authenticationCancelledPromptClosePressed() async
     func didEndFlow()
 }
 
@@ -59,6 +60,7 @@ public final class ManagementDialogModel: ObservableObject {
     @Published public var isSimplifiedSyncSetupV2Enabled: Bool = false
     @Published public var isConnectingThisDeviceOnly: Bool = false
     @Published public var isConnectingAnotherDevice: Bool = false
+    @Published public var authenticationCancelledPromptOffersRetry: Bool = false
 
     public var thisDeviceName: String?
 

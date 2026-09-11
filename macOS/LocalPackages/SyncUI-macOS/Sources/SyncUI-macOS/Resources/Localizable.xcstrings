@@ -4632,7 +4632,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Sync & Backup is end-to-end encrypted. macOS will ask for an authentication method."
+            "value" : "You need to authenticate to turn on Sync & Backup. macOS will ask for an authentication method."
           }
         },
         "es" : {
@@ -4692,7 +4692,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Authenticate to enable Sync & Backup"
+            "value" : "Please give it another try!"
           }
         },
         "es" : {
@@ -4735,6 +4735,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Пройдите аутентификацию, чтобы включить Sync & Backup"
+          }
+        }
+      }
+    },
+    "preferences.sync.authentication-cancelled-v2.try-again-button" : {
+      "comment" : "Button to retry device authentication from the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Again"
           }
         }
       }
@@ -6779,6 +6791,18 @@
         }
       }
     },
+    "preferences.sync.success-v2.copied-code-button" : {
+      "comment" : "Confirmation shown on the copy button after copying the recovery code in the Sync success dialog (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copied"
+          }
+        }
+      }
+    },
     "preferences.sync.success-v2.copy-code-button" : {
       "comment" : "Button to copy the recovery code in the Sync success dialog (V2)",
       "extractionState" : "extracted_with_value",
@@ -7752,7 +7776,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "DuckDuckGo"
+            "value" : "DuckDuckGo App"
           }
         },
         "es" : {
@@ -7812,7 +7836,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "On your phone, open"
+            "value" : "On your phone, open the"
           }
         },
         "es" : {
@@ -8155,6 +8179,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Перейди в"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.step-4" : {
+      "comment" : "Fourth pairing instruction, reminding the user to keep the dialog open (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t close this window while connecting"
           }
         }
       }

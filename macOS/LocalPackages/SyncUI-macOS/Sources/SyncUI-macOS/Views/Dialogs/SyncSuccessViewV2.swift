@@ -17,6 +17,7 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
 import SwiftUIExtensions
 
@@ -25,6 +26,8 @@ struct SyncSuccessViewV2: View {
     @EnvironmentObject private var model: ManagementDialogModel
 
     let code: String
+
+    @State private var showCopyConfirmation = false
 
     private var title: String {
         UserText.syncSuccessTitleV2(
@@ -61,7 +64,7 @@ struct SyncSuccessViewV2: View {
             Button(UserText.done) {
                 model.endFlow()
             }
-            .buttonStyle(DismissActionButtonStyle(showsBorder: true, stateColors: .themedDismissButton))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
             .accessibilityIdentifier("SyncSuccessDoneButton")
         }
     }
@@ -90,22 +93,32 @@ struct SyncSuccessViewV2: View {
                 HStack(spacing: 8) {
                     Button {
                         model.delegate?.copyCode(code)
+                        showCopyConfirmation = true
                     } label: {
-                        Text(UserText.syncSuccessCopyCodeButtonV2)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 2)
+                        HStack(spacing: 6) {
+                            if showCopyConfirmation {
+                                Image(nsImage: DesignSystemImages.Glyphs.Size16.check)
+                            }
+                            Text(showCopyConfirmation ? UserText.syncSuccessCopiedCodeButtonV2 : UserText.syncSuccessCopyCodeButtonV2)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 2)
                     }
-                    .buttonStyle(DismissActionButtonStyle(pillShape: true, showsBorder: true))
+                    .buttonStyle(DismissActionButtonStyle(pillShape: true,
+                                                          showsBorder: true,
+                                                          stateColors: .themedDismissButton))
                     .accessibilityIdentifier("SyncSuccessCopyCodeButton")
 
                     Button {
-                        model.delegate?.saveRecoveryPDF()
+                        model.delegate?.saveRecoveryPDF(requiresAuthentication: false)
                     } label: {
                         Text(UserText.syncSuccessDownloadPDFButtonV2)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 2)
                     }
-                    .buttonStyle(DismissActionButtonStyle(pillShape: true, showsBorder: true))
+                    .buttonStyle(DismissActionButtonStyle(pillShape: true,
+                                                          showsBorder: true,
+                                                          stateColors: .themedDismissButton))
                     .accessibilityIdentifier("SyncSuccessDownloadPDFButton")
                 }
                 .padding(.top, 12)

@@ -212,19 +212,13 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         await start(with: entryContext)
     }
 
-    /// Starts the VPN without the extension's notification-permission request for this start.
-    func start(suppressNotificationAuthorizationRequest: Bool) async {
-        await start(with: nil, suppressNotificationAuthorizationRequest: suppressNotificationAuthorizationRequest)
-    }
-
-    private func start(with entryContext: VPNConnectionWideEventData.EntryContext?,
-                       suppressNotificationAuthorizationRequest: Bool = false) async {
+    private func start(with entryContext: VPNConnectionWideEventData.EntryContext?) async {
         setupAndStartConnectionWideEvent(entryContext: entryContext)
         controllerErrorSubject.send(nil)
         pixelFiring?.fire(Pixel.Event.networkProtectionControllerStartAttempt, options: .withRetry)
 
         do {
-            try await startWithError(suppressNotificationAuthorizationRequest: suppressNotificationAuthorizationRequest)
+            try await startWithError()
             completeAndCleanupConnectionWideEvent()
 
             pixelFiring?.fire(Pixel.Event.networkProtectionControllerStartSuccess, options: .withRetry)
@@ -359,7 +353,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         }
     }
 
-    private func startWithError(suppressNotificationAuthorizationRequest: Bool = false) async throws {
+    private func startWithError() async throws {
         let tunnelManager: NETunnelProviderManager
 
         do {
@@ -375,12 +369,12 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         case .invalid:
             clearInternalManager()
             resetControllerStartWideEventMeasurement()
-            try await startWithError(suppressNotificationAuthorizationRequest: suppressNotificationAuthorizationRequest)
+            try await startWithError()
         case .connected:
             Logger.networkProtection.error("Start requested while already connected - stopping VPN to allow recovery")
             await stop()
         default:
-            try await start(tunnelManager, suppressNotificationAuthorizationRequest: suppressNotificationAuthorizationRequest)
+            try await start(tunnelManager)
         }
     }
 
@@ -388,8 +382,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         internalManager = nil
     }
 
-    private func start(_ tunnelManager: NETunnelProviderManager,
-                       suppressNotificationAuthorizationRequest: Bool = false) async throws {
+    private func start(_ tunnelManager: NETunnelProviderManager) async throws {
         var options = [String: NSObject]()
 
         if Self.shouldSimulateFailure {
@@ -398,10 +391,8 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         }
 
         options["activationAttemptId"] = UUID().uuidString as NSString
-        if suppressNotificationAuthorizationRequest {
-            options[NetworkProtectionOptionKey.suppressNotificationAuthorizationRequest] = true as NSNumber
-        }
 
+        
         do {
             self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
             try await tokenHandler.getToken()

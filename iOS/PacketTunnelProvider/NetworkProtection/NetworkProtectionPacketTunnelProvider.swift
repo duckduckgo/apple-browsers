@@ -45,7 +45,6 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     private let configurationStore = ConfigurationStore()
     private let configurationManager: ConfigurationManager
     private let wideEvent: WideEventManaging
-    private let unNotificationPresenter: NetworkProtectionUNNotificationPresenter
 
     // MARK: - PacketTunnelProvider.Event reporting
 
@@ -581,13 +580,13 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         let errorStore = NetworkProtectionTunnelErrorStore()
         let notificationsPresenter = NetworkProtectionUNNotificationPresenter()
-        self.unNotificationPresenter = notificationsPresenter
 
         let notificationsPresenterDecorator = VPNNotificationsPresenterTogglableDecorator(
             settings: settings,
             defaults: .networkProtectionGroupDefaults,
             wrappee: notificationsPresenter
         )
+        notificationsPresenter.requestAuthorization()
         super.init(notificationsPresenter: notificationsPresenterDecorator,
                    tunnelHealthStore: NetworkProtectionTunnelHealthStore(),
                    controllerErrorStore: errorStore,
@@ -610,17 +609,6 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     deinit {
         memoryPressureSource?.cancel()
         memoryPressureSource = nil
-    }
-
-    // MARK: - Tunnel Start
-
-    /// Requests notification authorization on every start unless this start's options suppress it.
-    @MainActor
-    public override func startTunnel(options: [String: NSObject]? = nil) async throws {
-        unNotificationPresenter.isAuthorizationRequestSuppressed =
-            options?[NetworkProtectionOptionKey.suppressNotificationAuthorizationRequest] as? Bool == true
-        unNotificationPresenter.requestAuthorization()
-        try await super.startTunnel(options: options)
     }
 
     private var memoryPressureSource: DispatchSourceMemoryPressure?

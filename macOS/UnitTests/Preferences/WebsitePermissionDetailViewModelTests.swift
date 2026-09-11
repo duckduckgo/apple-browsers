@@ -42,21 +42,34 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenDetailIsCreatedThenItRemainsLoadingUntilPermissionsArePublished() {
+    func testWhenDetailIsCreatedWithInitialStateThenItUsesTheInitialStateCategory() {
         let model = WebsitePermissionDetailViewModel(
-            category: .camera,
+            initialState: WebsitePermissionDetailViewState(category: .camera),
             permissionManager: permissionManager,
             featureFlagger: featureFlagger,
             defaults: defaults
         )
 
-        XCTAssertTrue(model.viewState.isLoading)
+        XCTAssertEqual(model.viewState.category, .camera)
+        XCTAssertTrue(model.viewState.isEmpty)
+    }
 
-        waitForDetailStateUpdate(model) {
-            model.send(action: .onAppear)
-        }
+    func testWhenDetailIsCreatedWithPopulatedInitialStateThenItIsPrepopulated() {
+        let model = WebsitePermissionDetailViewModel(
+            initialState: WebsitePermissionDetailViewState(
+                category: .camera,
+                entries: [
+                    WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .allow, lastModified: nil),
+                ],
+                featureFlagger: featureFlagger
+            ),
+            permissionManager: permissionManager,
+            featureFlagger: featureFlagger,
+            defaults: defaults
+        )
 
-        XCTAssertFalse(model.viewState.isLoading)
+        XCTAssertEqual(model.viewState.sites.map(\.domain), ["example.com"])
+        XCTAssertEqual(model.viewState.visibleSites.map(\.domain), ["example.com"])
     }
 
     func testWhenBuildingDetailSitesThenOnlyCategoryEntriesAreIncludedAndSorted() {
@@ -120,6 +133,11 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
 
         XCTAssertTrue(sut.viewState.visibleSites.isEmpty)
         XCTAssertTrue(sut.viewState.hasNoResults)
+
+        for query in ["", " \n\t "] {
+            sut.send(action: .setSearchQuery(query))
+            XCTAssertEqual(sut.viewState.visibleSites, sut.viewState.sites)
+        }
     }
 
     func testWhenPermissionsUpdateThenDetailPreservesItsSearchQuery() {
@@ -127,6 +145,7 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
             category: .notifications,
             entries: [
                 WebsitePermissionEntry(domain: "example.com", permissionType: .notification, decision: .allow, lastModified: nil),
+                WebsitePermissionEntry(domain: "unrelated.com", permissionType: .notification, decision: .allow, lastModified: nil),
             ]
         )
         sut.send(action: .setSearchQuery("example"))
@@ -137,6 +156,28 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
 
         XCTAssertEqual(sut.viewState.searchQuery, "example")
         XCTAssertEqual(sut.viewState.visibleSites.map(\.domain), ["another.example", "example.com"])
+    }
+
+    func testWhenSearchingExternalAppsThenOnlyMatchingRowsAreVisible() {
+        let sut = makeExternalAppsSUT()
+        let cases: [(query: String, expectedIDs: [String])] = [
+            ("  TASK MANAGER  ", ["example.com|external_asanadesktop", "example.com|external_asanadesktoptest", "other.example|external_asanadesktop"]),
+            ("asanadesktoptest", ["example.com|external_asanadesktoptest"]),
+            ("  ASANADESKTOPTEST://  ", ["example.com|external_asanadesktoptest"]),
+            ("Open", []),
+        ]
+
+        for (query, expectedIDs) in cases {
+            sut.send(action: .setSearchQuery(query))
+
+            XCTAssertEqual(sut.viewState.visibleSites.map(\.id), expectedIDs, query)
+        }
+    }
+
+    func testWhenInitialStateHasASearchQueryThenVisibleSitesAreFilteredBeforeAppearing() {
+        let sut = makeExternalAppsSUT(searchQuery: "asanadesktoptest://")
+
+        XCTAssertEqual(sut.viewState.visibleSites.map(\.id), ["example.com|external_asanadesktoptest"])
     }
 
     func testWhenDetailDecisionChangesThenPermissionManagerUpdatesTheCurrentRow() throws {
@@ -205,18 +246,17 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
 
     // MARK: - Default control
 
-    func testWhenDetailIsCreatedThenStateCarriesTheCategoryDefaultBeforeLoading() {
+    func testWhenDetailIsCreatedThenStateCarriesTheCategoryDefaultBeforeTheFirstUpdate() {
         defaults = WebsitePermissionDefaultsMock(decisions: [.camera: .deny])
 
         let model = WebsitePermissionDetailViewModel(
-            category: .camera,
+            initialState: WebsitePermissionDetailViewState(category: .camera),
             permissionManager: permissionManager,
             featureFlagger: featureFlagger,
             defaults: defaults
         )
 
-        XCTAssertTrue(model.viewState.isLoading)
-        XCTAssertEqual(model.viewState.defaultDecision, .deny, "The radio group should not flicker while loading")
+        XCTAssertEqual(model.viewState.defaultDecision, .deny, "The radio group should not flicker before the first update")
         XCTAssertEqual(model.viewState.availableDefaultDecisions, [.ask, .deny])
     }
 
@@ -287,13 +327,110 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         XCTAssertEqual(PersistedPermissionDecision.deny.websitePermissionsTitle, UserText.permissionCenterNeverAllow)
     }
 
+    // MARK: - Domain grouping
+
+    func testWhenExternalAppsShareADomainThenTheyAreGroupedUnderASingleDomainHeader() {
+        let sut = makeSUT(
+            category: .externalApps,
+            entries: [
+                WebsitePermissionEntry(domain: "discord.com", permissionType: .externalScheme(scheme: "zoommtg"), decision: .deny, lastModified: nil),
+                WebsitePermissionEntry(domain: "discord.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: nil),
+                WebsitePermissionEntry(domain: "facebook.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: nil),
+            ]
+        )
+
+        XCTAssertEqual(sut.viewState.visibleGroups.map(\.domain), ["discord.com", "facebook.com"])
+        XCTAssertEqual(sut.viewState.visibleGroups.map { $0.rows.count }, [2, 1])
+        XCTAssertEqual(sut.viewState.visibleGroups.first?.rows.map(\.id), ["discord.com|external_mailto", "discord.com|external_zoommtg"])
+    }
+
+    func testWhenExternalAppsAreGroupedThenEveryGroupShowsADomainHeader() {
+        let sut = makeSUT(
+            category: .externalApps,
+            entries: [
+                WebsitePermissionEntry(domain: "discord.com", permissionType: .externalScheme(scheme: "zoommtg"), decision: .deny, lastModified: nil),
+                WebsitePermissionEntry(domain: "discord.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: nil),
+                WebsitePermissionEntry(domain: "facebook.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: nil),
+            ]
+        )
+
+        XCTAssertEqual(sut.viewState.visibleGroups.map(\.showsDomainHeader), [true, true])
+    }
+
+    func testWhenACategoryStoresOnePermissionPerDomainThenGroupsAreShownInline() {
+        let sut = makeSUT(
+            category: .camera,
+            entries: [
+                WebsitePermissionEntry(domain: "alpha.com", permissionType: .camera, decision: .allow, lastModified: nil),
+                WebsitePermissionEntry(domain: "zebra.com", permissionType: .camera, decision: .ask, lastModified: nil),
+            ]
+        )
+
+        XCTAssertEqual(sut.viewState.visibleGroups.map(\.domain), ["alpha.com", "zebra.com"])
+        XCTAssertEqual(sut.viewState.visibleGroups.map(\.showsDomainHeader), [false, false])
+    }
+
+    func testWhenARowHasNoPermissionTitleThenItsSubRowTitleNamesThePermission() {
+        let sut = makeSUT(
+            category: .camera,
+            entries: [
+                WebsitePermissionEntry(domain: "alpha.com", permissionType: .camera, decision: .allow, lastModified: nil),
+            ]
+        )
+
+        XCTAssertEqual(sut.viewState.visibleGroups.first?.rows.first?.subRowTitle, UserText.permissionCamera)
+    }
+
+    func testWhenSearchingThenOnlyMatchingDomainsAreGrouped() {
+        let sut = makeSUT(
+            category: .externalApps,
+            entries: [
+                WebsitePermissionEntry(domain: "discord.com", permissionType: .externalScheme(scheme: "zoommtg"), decision: .deny, lastModified: nil),
+                WebsitePermissionEntry(domain: "discord.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: nil),
+                WebsitePermissionEntry(domain: "facebook.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: nil),
+            ]
+        )
+
+        sut.send(action: .setSearchQuery("discord"))
+
+        XCTAssertEqual(sut.viewState.visibleGroups.map(\.domain), ["discord.com"])
+        XCTAssertEqual(sut.viewState.visibleGroups.first?.rows.count, 2)
+    }
+
+    private func makeExternalAppsSUT(searchQuery: String = "") -> WebsitePermissionDetailViewModel {
+        let sites = [
+            ("example.com", "asanadesktop", "Tâsk Manager"),
+            ("example.com", "asanadesktoptest", "Tâsk Manager"),
+            ("example.com", "orbitdesk", "Orbit"),
+            ("other.example", "asanadesktop", "Tâsk Manager"),
+        ].map { domain, scheme, appName in
+            WebsitePermissionDetailViewState.SiteRow(
+                domain: domain,
+                permissionType: .externalScheme(scheme: scheme),
+                decision: .allow,
+                externalAppName: appName,
+                availableDecisions: [.ask, .allow, .deny]
+            )
+        }
+        return WebsitePermissionDetailViewModel(
+            initialState: .init(category: .externalApps, searchQuery: searchQuery, sites: sites),
+            permissionManager: permissionManager,
+            featureFlagger: featureFlagger,
+            defaults: defaults
+        )
+    }
+
     private func makeSUT(
         category: WebsitePermissionCategory,
         entries: [WebsitePermissionEntry]
     ) -> WebsitePermissionDetailViewModel {
         permissionManager.setPersistedPermissions(entries)
         let model = WebsitePermissionDetailViewModel(
-            category: category,
+            initialState: WebsitePermissionDetailViewState(
+                category: category,
+                entries: entries,
+                featureFlagger: featureFlagger
+            ),
             permissionManager: permissionManager,
             featureFlagger: featureFlagger,
             defaults: defaults

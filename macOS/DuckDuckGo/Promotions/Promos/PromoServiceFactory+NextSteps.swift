@@ -28,7 +28,9 @@ extension PromoServiceFactory {
         context: .newTabPage,
         coexistingPromoIDs: [PromoServiceFactory.bookmarkToolbarPromoID,
                              PromoServiceFactory.syncFaviconsPromoID,
-                             PromoServiceFactory.autofillToolbarPinningPromoID],
+                             PromoServiceFactory.autofillToolbarPinningPromoID,
+                             PromoServiceFactory.browserUpdatedPromoID,
+                             PromoServiceFactory.updateAvailablePromoID],
         delegate: nil
     )
 }

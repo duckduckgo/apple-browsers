@@ -32,20 +32,19 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
     private var permissionsCancellable: AnyCancellable?
 
     init(
-        category: WebsitePermissionCategory,
+        initialState: WebsitePermissionDetailViewState?,
         permissionManager: PermissionManagerProtocol,
         featureFlagger: FeatureFlagger,
         defaults: WebsitePermissionDefaultsProviding
     ) {
-        // Seed the default from storage so the radio group renders its real selection while the
-        // website list is still loading.
-        viewState = WebsitePermissionDetailViewState(
-            category: category,
-            defaultDecision: defaults.defaultDecision(for: category)
-        )
+        viewState = initialState ?? .init()
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
         self.defaults = defaults
+        // Seed the default from storage so the radio group renders its real selection before the
+        // permission observer delivers its first update.
+        viewState.defaultDecision = defaults.defaultDecision(for: viewState.category)
+        viewState.visibleSites = filteredSites(from: viewState.sites, matching: viewState.searchQuery)
     }
 
     // MARK: - Public
@@ -59,7 +58,10 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
             changeDefaultDecision(decision)
 
         case .setSearchQuery(let query):
-            viewState.setSearchQuery(query)
+            var state = viewState
+            state.searchQuery = query
+            state.visibleSites = filteredSites(from: state.sites, matching: query)
+            viewState = state
 
         case .changeDecision(let rowID, let decision):
             changeDecision(decision, for: rowID)
@@ -83,7 +85,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
         defaults.setDefaultDecision(decision, for: category)
 
         // Read back rather than trusting the request: the write is a no-op while the feature flag is off.
-        viewState.setDefaultDecision(defaults.defaultDecision(for: category))
+        viewState.defaultDecision = defaults.defaultDecision(for: category)
     }
 
     private func changeDecision(_ decision: PersistedPermissionDecision, for rowID: WebsitePermissionDetailViewState.SiteRow.ID) {
@@ -124,46 +126,42 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
     private func updateState(entries: [WebsitePermissionEntry],
                              defaultDecisions: [WebsitePermissionCategory: PersistedPermissionDecision]) {
         let category = viewState.category
-        let sites = entries
-            .filter {
-                category.contains($0.permissionType) && $0.permissionType.isUserEditable(forDomain: $0.domain, featureFlagger: featureFlagger)
-            }
-            .map(makeSiteRow)
-            .sorted(by: isOrderedBefore)
-
-        viewState = WebsitePermissionDetailViewState(
+        var state = WebsitePermissionDetailViewState(
             category: category,
             defaultDecision: defaultDecisions[category] ?? WebsitePermissionDefaults.fallbackDecision,
             searchQuery: viewState.searchQuery,
-            sites: sites,
-            isLoading: false
+            entries: entries,
+            featureFlagger: featureFlagger
         )
+        state.visibleSites = filteredSites(from: state.sites, matching: state.searchQuery)
+        viewState = state
     }
 
-    private func makeSiteRow(from entry: WebsitePermissionEntry) -> WebsitePermissionDetailViewState.SiteRow {
-        .init(
-            domain: entry.domain,
-            permissionType: entry.permissionType,
-            decision: entry.displayedDecision,
-            permissionTitle: permissionTitle(for: entry.permissionType),
-            availableDecisions: entry.permissionType.editableDecisions
-        )
-    }
+    private func filteredSites(
+        from sites: [WebsitePermissionDetailViewState.SiteRow],
+        matching query: String
+    ) -> [WebsitePermissionDetailViewState.SiteRow] {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuery.isEmpty else { return sites }
 
-    private func permissionTitle(for permissionType: PermissionType) -> String? {
-        guard permissionType.isExternalScheme else { return nil }
-        return String(format: UserText.websitePermissionsExternalAppFormat, permissionType.localizedDescription)
-    }
-
-    private func isOrderedBefore(
-        _ first: WebsitePermissionDetailViewState.SiteRow,
-        _ second: WebsitePermissionDetailViewState.SiteRow
-    ) -> Bool {
-        let domainComparison = first.domain.localizedCaseInsensitiveCompare(second.domain)
-        if domainComparison != .orderedSame {
-            return domainComparison == .orderedAscending
+        let foldedQuery = foldedForSearch(trimmedQuery)
+        return sites.filter { site in
+            searchableValues(for: site).contains { value in
+                foldedForSearch(value).contains(foldedQuery)
+            }
         }
-        return first.permissionType.rawValue < second.permissionType.rawValue
+    }
+
+    private func searchableValues(for site: WebsitePermissionDetailViewState.SiteRow) -> [String] {
+        guard case .externalScheme(let scheme) = site.permissionType else {
+            return [site.domain]
+        }
+
+        return [site.domain, "\(scheme)://", site.externalAppName].compactMap { $0 }
+    }
+
+    private func foldedForSearch(_ text: String) -> String {
+        text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
     }
 
     private func row(matchingID id: WebsitePermissionDetailViewState.SiteRow.ID) -> WebsitePermissionDetailViewState.SiteRow? {

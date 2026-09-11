@@ -31,13 +31,25 @@ enum DuckAIAddressBarMenuFactory {
             && featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats)
     }
 
-    /// Groups New Chat and, on web tabs, Ask About Page above a separator, with Chats below.
+    /// Groups New Chat and, on non-home tabs, the page-context action above a separator, with Chats
+    /// below.
     static func makeActions(featureFlagger: FeatureFlagger,
                             userInterfaceIdiom: UIUserInterfaceIdiom,
                             isHomeTab: Bool,
+                            type: DuckAIAddressBarMenuType,
                             onNewChat: @escaping () -> Void,
-                            onAskAboutPage: @escaping () -> Void,
+                            onContextAction: @escaping () -> Void,
                             onRecentChats: @escaping () -> Void) -> [UIMenuElement] {
+        let contextActionTitle: String = {
+            switch type {
+            case .webPage:
+                UserText.aiChatAttachmentOptionAskAboutPage
+            case .search:
+                UserText.aiChatAttachmentOptionContinueInDuckAi
+            case .document:
+                UserText.aiChatAttachmentOptionAskAboutDocument
+            }
+        }()
         var chatActions: [UIMenuElement] = [
             UIAction(title: UserText.duckAiAddressBarMenuNewChat,
                      image: DesignSystemImages.Glyphs.Size16.compose) { _ in
@@ -45,13 +57,15 @@ enum DuckAIAddressBarMenuFactory {
             }
         ]
         if !isHomeTab {
-            chatActions.append(UIAction(title: UserText.aiChatAttachmentOptionAskAboutPage,
+            chatActions.append(UIAction(title: contextActionTitle,
                                         image: DesignSystemImages.Glyphs.Size16.chevronCircleDown) { _ in
-                onAskAboutPage()
+                onContextAction()
             })
         }
         var groups: [UIMenuElement] = [UIMenu(title: "", options: .displayInline, children: chatActions)]
-        if isChatHistoryAvailable(featureFlagger: featureFlagger, userInterfaceIdiom: userInterfaceIdiom) {
+        let showsRecentChats = featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats)
+            && (userInterfaceIdiom == .pad || featureFlagger.isFeatureOn(.aiChatNativeChatHistory))
+        if showsRecentChats {
             groups.append(UIMenu(title: "", options: .displayInline, children: [
                 UIAction(title: UserText.actionChats,
                          image: DesignSystemImages.Glyphs.Size16.chats) { _ in

@@ -29,6 +29,9 @@ struct PreferencesWebsitePermissionsView: View {
         static let iconSize: CGFloat = 16
         static let chevronSize: CGFloat = 12
         static let countSeparatorSize: CGFloat = 3
+        static let faviconSize: CGFloat = 16
+        static let removeButtonSize: CGFloat = 16
+        static let minimumDropdownWidth: CGFloat = 124
     }
 
     @ObservedObject
@@ -82,9 +85,10 @@ struct PreferencesWebsitePermissionsView: View {
     }
 
     private func recentRow(_ row: WebsitePermissionsViewState.RecentRow) -> some View {
-        WebsitePermissionSiteRow(
+        PreferencesWebsitePermissionSiteRowView(
             domain: row.domain,
             faviconURL: row.faviconURL,
+            permissionType: row.permissionType,
             permissionTitle: row.permissionTitle,
             decision: row.decision,
             availableDecisions: row.availableDecisions,

@@ -28,7 +28,6 @@ struct PreferencesWebsitePermissionDetailView: View {
         static let searchWidth: CGFloat = 173
         static let searchHeight: CGFloat = 28
         static let searchCornerRadius: CGFloat = 7
-        static let loadingRowHeight: CGFloat = 56
         static let backButtonSize: CGFloat = 32
         static let messageTopPadding: CGFloat = 4
         static let messageBottomPadding: CGFloat = 8
@@ -102,9 +101,7 @@ struct PreferencesWebsitePermissionDetailView: View {
                 searchField
             }
 
-            if model.viewState.isLoading {
-                loadingState
-            } else if model.viewState.isEmpty {
+            if model.viewState.isEmpty {
                 emptyState
             } else if model.viewState.hasNoResults {
                 noResultsState
@@ -115,14 +112,6 @@ struct PreferencesWebsitePermissionDetailView: View {
             }
         }
         .padding(.bottom, 16)
-    }
-
-    private var loadingState: some View {
-        PreferencesWebsitePermissionListContainer {
-            ProgressView()
-                .frame(maxWidth: .infinity, minHeight: Constants.loadingRowHeight)
-        }
-        .accessibilityIdentifier("WebsitePermissions.Detail.Loading")
     }
 
     private var searchField: some View {
@@ -171,20 +160,17 @@ struct PreferencesWebsitePermissionDetailView: View {
     }
 
     private var siteRows: some View {
-        VStack(spacing: 0) {
-            ForEach(Array(model.viewState.visibleSites.enumerated()), id: \.element.id) { index, row in
-                WebsitePermissionSiteRow(
-                    domain: row.domain,
-                    faviconURL: row.faviconURL,
-                    permissionTitle: row.permissionTitle,
-                    decision: row.decision,
-                    availableDecisions: row.availableDecisions,
-                    accessibilityIdentifier: row.accessibilityIdentifier,
-                    onDecisionChanged: { model.send(action: .changeDecision(rowID: row.id, decision: $0)) },
-                    onRemove: { model.send(action: .remove(rowID: row.id)) }
+        let groups = model.viewState.visibleGroups
+
+        return VStack(spacing: 0) {
+            ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
+                PreferencesWebsitePermissionDomainGroupView(
+                    group: group,
+                    onDecisionChanged: { model.send(action: .changeDecision(rowID: $0, decision: $1)) },
+                    onRemove: { model.send(action: .remove(rowID: $0)) }
                 )
 
-                if index < model.viewState.visibleSites.count - 1 {
+                if index < groups.count - 1 {
                     WebsitePermissionListSeparator()
                 }
             }

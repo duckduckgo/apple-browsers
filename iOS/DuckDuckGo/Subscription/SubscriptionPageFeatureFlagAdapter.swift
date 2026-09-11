@@ -42,3 +42,25 @@ struct SubscriptionPageFeatureFlagAdapter: SubscriptionPageFeatureFlagProviding 
         }
     }
 }
+
+private struct PerformanceOptimizedPaywallsFeatureFlagger: PerformanceOptimizedPaywallsFeatureFlagging {
+    private let featureFlagger: FeatureFlagger
+
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
+    }
+
+    var isPerformanceOptimizedPaywallsEnabled: Bool {
+        featureFlagger.isFeatureOn(.performanceOptimizedPaywalls)
+    }
+}
+
+extension DefaultPerformanceOptimizedPaywallsProvider {
+
+    init(privacyConfigurationManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
+        self.init(
+            privacyConfigurationManager: privacyConfigurationManager,
+            featureFlagger: PerformanceOptimizedPaywallsFeatureFlagger(featureFlagger: featureFlagger)
+        )
+    }
+}

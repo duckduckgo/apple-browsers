@@ -106,9 +106,9 @@ final class PermissionModel {
             guard let permissionManager else { return }
 
             self?.permissionManager(permissionManager,
-                                    didChangePermanentDecisionFor: value.permissionType,
+                                    didChangePermission: value.permissionType,
                                     forDomain: value.domain,
-                                    to: value.decision)
+                                    change: value.change)
         }.store(in: &cancellables)
     }
 
@@ -227,32 +227,30 @@ final class PermissionModel {
     }
 
     private func permissionManager(_: PermissionManagerProtocol,
-                                   didChangePermanentDecisionFor permissionType: PermissionType,
+                                   didChangePermission permissionType: PermissionType,
                                    forDomain domain: String,
-                                   to decision: PersistedPermissionDecision?) {
-
-        // If Always Allow/Deny for the current host: Grant/Revoke the permission
+                                   change: PermissionChange) {
         guard currentDomain?.droppingWwwPrefix() == domain else { return }
 
-        guard let decision else {
+        switch change {
+        case .removed:
             removePermissionFromCurrentPage(permissionType)
-            return
-        }
-
-        // If decision changed to "allow", remove from removedPermissions so updatePermissions() can track it again
-        if decision == .allow {
-            removedPermissions.remove(permissionType)
-        }
-
-        switch (decision, self.permissions[permissionType]) {
-        case (.deny, .some):
-            self.revoke(permissionType)
-            fallthrough
-        case (.allow, .requested):
-            while let query = self.authorizationQueries.first(where: { $0.permissions == [permissionType] }) {
-                query.handleDecision(grant: decision == .allow)
+        case .decisionChanged(let decision):
+            // Allow updatePermissions() to track the permission again when access is restored.
+            if decision == .allow {
+                removedPermissions.remove(permissionType)
             }
-        default: break
+
+            switch (decision, self.permissions[permissionType]) {
+            case (.deny, .some):
+                self.revoke(permissionType)
+                fallthrough
+            case (.allow, .requested):
+                while let query = self.authorizationQueries.first(where: { $0.permissions == [permissionType] }) {
+                    query.handleDecision(grant: decision == .allow)
+                }
+            default: break
+            }
         }
     }
 

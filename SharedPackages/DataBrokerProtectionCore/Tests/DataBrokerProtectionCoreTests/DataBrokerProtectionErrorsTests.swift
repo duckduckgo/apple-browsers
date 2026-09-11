@@ -58,6 +58,15 @@ final class DataBrokerProtectionErrorsTests: XCTestCase {
         XCTAssertEqual(error.localizedDescription, "Email service error: Unable to find email")
     }
 
+    func testHTTPEmailErrorDescription_exposesServerMessageOnlyForDebugging() {
+        let serverMessage = "INVALID_REQUEST: Invalid dataBroker parameter"
+        let error = DataBrokerProtectionError.emailError(.httpError(statusCode: 400, message: serverMessage))
+
+        XCTAssertEqual(error.localizedDescription, "Email service error: Email HTTP error 400")
+        XCTAssertFalse(error.localizedDescription.contains(serverMessage))
+        XCTAssertEqual(error.debugDescription, "Email service error: Email HTTP error 400: \(serverMessage)")
+    }
+
     func testLocalizedDescriptionWhenEmailErrorUnknownStatus_doesNotExposeEmail() {
         let email = "user@example.com"
         let error = DataBrokerProtectionError.emailError(.unknownStatusReceived(email: email))

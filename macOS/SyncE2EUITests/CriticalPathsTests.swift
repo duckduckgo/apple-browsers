@@ -47,6 +47,7 @@ final class CriticalPathsTests: XCTestCase {
         // Launch App
         app = XCUIApplication(bundleIdentifier: "com.duckduckgo.macos.browser.review")
         app.launchEnvironment["UITEST_MODE"] = "1"
+        app.launchEnvironment["FEATURE_FLAGS"] = "simplifiedSyncSetupV2=false"
         app.launch()
         ensureMainWindowOpen()
         selectDevelopmentEnvironment()
@@ -77,6 +78,13 @@ final class CriticalPathsTests: XCTestCase {
         let bookmarksWindow = app.windows.containing(.button, identifier: "BookmarkManagementDetailViewController.newBookmarkButton").firstMatch
         XCTAssertTrue(bookmarksWindow.waitForExistence(timeout: XCUIElement.Timeouts.elementExistence), "Bookmarks window is not visible")
         return bookmarksWindow
+    }
+
+    private func ensureSyncSettingsWindowOpen() {
+        let settingsWindow = app.windows.containing(.button, identifier: "Sync & Backup").firstMatch
+        guard !settingsWindow.exists else { return }
+        app.typeKey(",", modifierFlags: [.command])
+        XCTAssertTrue(settingsWindow.waitForExistence(timeout: XCUIElement.Timeouts.elementExistence), "Settings window is not visible")
     }
 
     private func accessSettings() {
@@ -267,6 +275,7 @@ final class CriticalPathsTests: XCTestCase {
         checkFavoriteNonUnified()
 
         // Remove Bookmarks
+        ensureSyncSettingsWindowOpen()
         settingsWindow.popUpButtons["Settings"].click()
         settingsWindow.menuItems["Bookmarks"].click()
         bookmarksWindow.staticTexts["www.spreadprivacy.com"].rightClick()
@@ -433,7 +442,7 @@ final class CriticalPathsTests: XCTestCase {
         let spreadPrivacy = newTabPage.staticTexts["www.spreadprivacy.com"]
         spreadPrivacy.assertExists()
         XCTAssertFalse(gitHub.exists)
-        app.typeKey("w", modifierFlags: [.command])
+        newTabPage.typeKey("w", modifierFlags: [.command])
     }
 
     private func checkBookmarks() {
@@ -471,7 +480,7 @@ final class CriticalPathsTests: XCTestCase {
         let spreadPrivacy = newTabPage.staticTexts["www.spreadprivacy.com"]
         gitHub.assertExists()
         spreadPrivacy.assertExists()
-        app.typeKey("w", modifierFlags: [.command])
+        newTabPage.typeKey("w", modifierFlags: [.command])
     }
 
     private func checkLogins() {

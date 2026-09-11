@@ -135,20 +135,17 @@ struct PreferencesWebsitePermissionDetailView: View {
     }
 
     private var siteRows: some View {
-        VStack(spacing: 0) {
-            ForEach(Array(model.viewState.visibleSites.enumerated()), id: \.element.id) { index, row in
-                WebsitePermissionSiteRow(
-                    domain: row.domain,
-                    faviconURL: row.faviconURL,
-                    permissionTitle: row.permissionTitle,
-                    decision: row.decision,
-                    availableDecisions: row.availableDecisions,
-                    accessibilityIdentifier: row.accessibilityIdentifier,
-                    onDecisionChanged: { model.send(action: .changeDecision(rowID: row.id, decision: $0)) },
-                    onRemove: { model.send(action: .remove(rowID: row.id)) }
+        let groups = model.viewState.visibleGroups
+
+        return VStack(spacing: 0) {
+            ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
+                PreferencesWebsitePermissionDomainGroupView(
+                    group: group,
+                    onDecisionChanged: { model.send(action: .changeDecision(rowID: $0, decision: $1)) },
+                    onRemove: { model.send(action: .remove(rowID: $0)) }
                 )
 
-                if index < model.viewState.visibleSites.count - 1 {
+                if index < groups.count - 1 {
                     WebsitePermissionListSeparator()
                 }
             }

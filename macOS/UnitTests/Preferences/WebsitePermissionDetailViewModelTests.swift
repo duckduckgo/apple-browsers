@@ -210,6 +210,74 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         XCTAssertEqual(sut.viewState.sites.map(\.domain), ["duck.ai"])
     }
 
+    func testWhenExternalAppsShareADomainThenTheyAreGroupedUnderASingleDomainHeader() {
+        let sut = makeSUT(
+            category: .externalApps,
+            entries: [
+                WebsitePermissionEntry(domain: "discord.com", permissionType: .externalScheme(scheme: "zoommtg"), decision: .deny, lastModified: nil),
+                WebsitePermissionEntry(domain: "discord.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: nil),
+                WebsitePermissionEntry(domain: "facebook.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: nil),
+            ]
+        )
+
+        XCTAssertEqual(sut.viewState.visibleGroups.map(\.domain), ["discord.com", "facebook.com"])
+        XCTAssertEqual(sut.viewState.visibleGroups.map { $0.rows.count }, [2, 1])
+        XCTAssertEqual(sut.viewState.visibleGroups.first?.rows.map(\.id), ["discord.com|external_mailto", "discord.com|external_zoommtg"])
+    }
+
+    func testWhenExternalAppsAreGroupedThenEveryGroupShowsADomainHeader() {
+        let sut = makeSUT(
+            category: .externalApps,
+            entries: [
+                WebsitePermissionEntry(domain: "discord.com", permissionType: .externalScheme(scheme: "zoommtg"), decision: .deny, lastModified: nil),
+                WebsitePermissionEntry(domain: "discord.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: nil),
+                WebsitePermissionEntry(domain: "facebook.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: nil),
+            ]
+        )
+
+        XCTAssertEqual(sut.viewState.visibleGroups.map(\.showsDomainHeader), [true, true])
+    }
+
+    func testWhenACategoryStoresOnePermissionPerDomainThenGroupsAreShownInline() {
+        let sut = makeSUT(
+            category: .camera,
+            entries: [
+                WebsitePermissionEntry(domain: "alpha.com", permissionType: .camera, decision: .allow, lastModified: nil),
+                WebsitePermissionEntry(domain: "zebra.com", permissionType: .camera, decision: .ask, lastModified: nil),
+            ]
+        )
+
+        XCTAssertEqual(sut.viewState.visibleGroups.map(\.domain), ["alpha.com", "zebra.com"])
+        XCTAssertEqual(sut.viewState.visibleGroups.map(\.showsDomainHeader), [false, false])
+    }
+
+    func testWhenARowHasNoPermissionTitleThenItsSubRowTitleNamesThePermission() {
+        let sut = makeSUT(
+            category: .camera,
+            entries: [
+                WebsitePermissionEntry(domain: "alpha.com", permissionType: .camera, decision: .allow, lastModified: nil),
+            ]
+        )
+
+        XCTAssertEqual(sut.viewState.visibleGroups.first?.rows.first?.subRowTitle, UserText.permissionCamera)
+    }
+
+    func testWhenSearchingThenOnlyMatchingDomainsAreGrouped() {
+        let sut = makeSUT(
+            category: .externalApps,
+            entries: [
+                WebsitePermissionEntry(domain: "discord.com", permissionType: .externalScheme(scheme: "zoommtg"), decision: .deny, lastModified: nil),
+                WebsitePermissionEntry(domain: "discord.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: nil),
+                WebsitePermissionEntry(domain: "facebook.com", permissionType: .externalScheme(scheme: "mailto"), decision: .allow, lastModified: nil),
+            ]
+        )
+
+        sut.send(action: .setSearchQuery("discord"))
+
+        XCTAssertEqual(sut.viewState.visibleGroups.map(\.domain), ["discord.com"])
+        XCTAssertEqual(sut.viewState.visibleGroups.first?.rows.count, 2)
+    }
+
     private func makeSUT(
         category: WebsitePermissionCategory,
         entries: [WebsitePermissionEntry]

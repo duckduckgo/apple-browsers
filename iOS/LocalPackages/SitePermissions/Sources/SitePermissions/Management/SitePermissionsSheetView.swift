@@ -27,10 +27,23 @@ import UIKit
 public struct SitePermissionsSheetView: View {
 
     private enum Constants {
+        static let horizontalPadding: CGFloat = 16
+        static let headerSpacing: CGFloat = 12
+        static let bottomPadding: CGFloat = 12
+        static let closeButtonSize: CGFloat = 24
+        static let closeButtonTapTarget: CGFloat = 44
         static let rowHorizontalInset: CGFloat = 16
         static let rowVerticalInset: CGFloat = 14
         static let iconSpacing: CGFloat = 16
         static let copySpacing: CGFloat = 8
+    }
+
+    private struct SheetCloseButtonStyle: ButtonStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            CloseButtonStyle().makeBody(configuration: configuration)
+                .frame(width: Constants.closeButtonTapTarget, height: Constants.closeButtonTapTarget)
+                .contentShape(Rectangle())
+        }
     }
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -57,9 +70,22 @@ public struct SitePermissionsSheetView: View {
     }
 
     private var sheetContent: some View {
-        VStack(alignment: .leading, spacing: SheetMetrics.contentSpacing) {
+        VStack(alignment: .leading, spacing: Constants.headerSpacing) {
             header
 
+            permissionSections
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, Constants.horizontalPadding)
+        .padding(.top, SheetMetrics.contentSpacing)
+        .padding(.bottom, Constants.bottomPadding)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("SitePermissions.Sheet")
+    }
+
+    private var permissionSections: some View {
+        VStack(alignment: .leading, spacing: SheetMetrics.contentSpacing) {
             if !viewModel.rows.isEmpty {
                 VStack(alignment: .leading, spacing: Constants.copySpacing) {
                     permissionRows
@@ -84,31 +110,25 @@ public struct SitePermissionsSheetView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .fixedSize(horizontal: false, vertical: true)
-        .padding(.horizontal, SheetMetrics.contentHorizontalPadding)
-        .padding(.top, SheetMetrics.contentSpacing)
-        .padding(.bottom, SheetMetrics.contentBottomPadding)
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("SitePermissions.Sheet")
     }
 
     private var header: some View {
         HStack(spacing: 12) {
             Text(viewModel.title)
-                .daxBodyBold()
+                .font(.subheadline.weight(.semibold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .lineLimit(1)
                 .truncationMode(.middle)
+                .frame(maxWidth: .infinity, minHeight: 20, alignment: .leading)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("SitePermissions.Sheet.Title")
 
-            Spacer(minLength: 0)
-
             Button(action: viewModel.dismiss) {
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
             }
-            .buttonStyle(CloseButtonStyle())
+            .buttonStyle(SheetCloseButtonStyle())
+            // Align the visible circle with the card edge while keeping the larger tap target.
+            .padding(.trailing, -(Constants.closeButtonTapTarget - Constants.closeButtonSize) / 2)
             .accessibilityLabel(UserText.PermissionManagement.close)
             .accessibilityIdentifier("SitePermissions.Sheet.Close")
         }
@@ -137,7 +157,7 @@ public struct SitePermissionsSheetView: View {
                                    visual: .image(permissionIcon(for: row).renderingMode(.template)),
                                    size: .size24,
                                    spacing: Constants.iconSpacing),
-                title: CardItemText(row.title, font: .bodyRegular)
+                title: CardItemText(row.title, font: CardItemFont(.body))
             )
             .foregroundColor(iconColor(for: row))
             .padding(.vertical, Constants.rowVerticalInset)
@@ -164,7 +184,7 @@ public struct SitePermissionsSheetView: View {
                         }
                         Text(row.stateText)
                     }
-                    .daxBodyRegular()
+                    .font(.body)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     Image(systemName: "chevron.up.chevron.down")
                         .foregroundColor(Color(designSystemColor: .iconsTertiary))
@@ -184,7 +204,7 @@ public struct SitePermissionsSheetView: View {
 
     private var reloadCaption: some View {
         Text(UserText.PermissionManagement.reloadCaption)
-            .daxFootnoteRegular()
+            .font(.footnote)
             .foregroundColor(Color(designSystemColor: .textSecondary))
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, Constants.rowHorizontalInset)
@@ -219,13 +239,13 @@ public struct SitePermissionsSheetView: View {
         if includesRemove {
             items.append(CardItem(
                 title: CardItemText(UserText.PermissionManagement.removePermissions,
-                                    font: .bodyRegular,
+                                    font: CardItemFont(.body),
                                     color: Color(designSystemColor: .accentPrimary))))
         }
         if includesSystemSettings {
             items.append(CardItem(
                 title: CardItemText(UserText.PermissionManagement.goToSystemSettings,
-                                    font: .bodyRegular,
+                                    font: CardItemFont(.body),
                                     color: Color(designSystemColor: .accentPrimary)),
                 trailing: .custom(Image(uiImage: DesignSystemImages.Glyphs.Size24.openIn)
                     .renderingMode(.template)
@@ -238,7 +258,7 @@ public struct SitePermissionsSheetView: View {
     private var reminder: some View {
         if let reminderText = viewModel.reminderText {
             Text(reminderText)
-                .daxFootnoteRegular()
+                .font(.footnote)
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, Constants.rowHorizontalInset)

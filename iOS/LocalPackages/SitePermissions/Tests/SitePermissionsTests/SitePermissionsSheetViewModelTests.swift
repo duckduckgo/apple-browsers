@@ -104,6 +104,30 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         XCTAssertEqual(microphone.accessibilityValue, "Ask Each Time, in use")
     }
 
+    func testSheetTextResizesWithDynamicTypeInAllThreeStates() throws {
+        let harness = try Harness()
+        let snapshots = [
+            harness.snapshot(stored: [.location: .ask]),
+            harness.snapshot(stored: [.location: .allow], systemStates: [.location: .denied], systemBlocked: [.location]),
+            harness.snapshot(systemStates: [.location: .denied], systemBlocked: [.location])
+        ]
+
+        for snapshot in snapshots {
+            let viewModel = harness.makeViewModel(snapshot: snapshot)
+            let sheet = SitePermissionsSheetView(viewModel: viewModel)
+            let host = UIHostingController(rootView: sheet.environment(\.dynamicTypeSize, .large))
+            let proposedSize = CGSize(width: 393, height: 2000)
+            let standardHeight = host.sizeThatFits(in: proposedSize).height
+
+            host.rootView = sheet.environment(\.dynamicTypeSize, .accessibility3)
+            let accessibleHeight = host.sizeThatFits(in: proposedSize).height
+
+            XCTAssertGreaterThan(standardHeight, 0)
+            XCTAssertGreaterThan(accessibleHeight, standardHeight, "Text must grow in state \(viewModel.state)")
+            XCTAssertLessThan(accessibleHeight, proposedSize.height, "The content should fit without being clipped")
+        }
+    }
+
     func testIconAndAccessibilityStatesCoverInactiveInUseAndPaused() throws {
         let harness = try Harness()
         let sut = harness.makeViewModel(snapshot: harness.snapshot(

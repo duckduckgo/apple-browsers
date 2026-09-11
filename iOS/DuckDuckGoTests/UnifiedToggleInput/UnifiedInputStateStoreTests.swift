@@ -216,6 +216,34 @@ final class UnifiedInputStateStoreTests: XCTestCase {
         XCTAssertEqual(store.state(for: "tab-eager").selectedModelID, "gpt-5")
     }
 
+    func test_observingTabsModel_doesNotSeedToolFromLastUsed() {
+        var picked = TabInputState()
+        picked.selectedTool = .imageGeneration
+        let store = UnifiedInputStateStore(preferences: preferences, toggleModeStorage: toggleStorage)
+        store.recordUserChoice(picked, for: "tab-old", isNewChatContext: true)
+        let tabsModel = TabsModel(desktop: false)
+        let tab = Tab(uid: "tab-fresh", fireTab: false)
+        store.observeTabsModel(tabsModel)
+        tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+
+        XCTAssertNil(store.state(for: "tab-fresh").selectedTool,
+                     "a never-submitted tool selection must not leak into new tabs")
+    }
+
+    func test_observingTabsModel_seedsToolFromTabPersistedSelection() {
+        let store = UnifiedInputStateStore(preferences: preferences, toggleModeStorage: toggleStorage)
+        let tabsModel = TabsModel(desktop: false)
+        let tab = Tab(
+            uid: "persisted-tool",
+            fireTab: false,
+            unifiedInputState: UnifiedInputTabState(selectedTool: .imageGeneration)
+        )
+        store.observeTabsModel(tabsModel)
+        tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+
+        XCTAssertEqual(store.state(for: "persisted-tool").selectedTool, .imageGeneration)
+    }
+
     func test_observingTabsModel_evictsRemovedTabs() {
         let tabsModel = TabsModel(desktop: false)
         let tab = Tab(uid: "tab-evict", fireTab: false)

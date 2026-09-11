@@ -57,6 +57,12 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case voiceSessionStarted
     case voiceSessionEnded
 
+    /// Posted by the FE when the voice-mode background is shown / removed. Unlike
+    /// `voiceSessionStarted`/`Ended` (mic lifecycle), these bracket the visible surface so native
+    /// chrome can sync to it. `voiceModeOpened` includes `{ backgroundColor: "#RRGGBB" }`.
+    case voiceModeOpened
+    case voiceModeClosed
+
     /// Posted by the FE when the user creates a new chat — e.g. taps "Start new chat" in the
     /// duck.ai sidebar, or any other FE entry point. Native uses this as the single source of
     /// truth to reset host UI state (unified input, attachments) for the new chat.

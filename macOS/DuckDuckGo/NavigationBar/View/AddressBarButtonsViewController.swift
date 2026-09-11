@@ -1494,7 +1494,7 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatMenuConfig.shouldDisplayAddressBarShortcut
         && !isChromeSidebarFeatureEnabled
         && !shouldSkipShowingAnyAIChatButton()
-        && tabViewModel?.tab.content != .onboarding
+        && (tabViewModel?.tab.content != .onboarding || NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking)
     }
 
     private func shouldShowAskAIChatButton() -> Bool {

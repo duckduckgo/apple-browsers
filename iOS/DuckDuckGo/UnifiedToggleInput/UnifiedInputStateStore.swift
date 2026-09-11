@@ -136,6 +136,8 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         knownUIDs = currentUIDs
     }
 
+    // A tool is per-composition intent, never seeded from last-used: only submission clears
+    // the last-used tool, so a never-submitted selection would leak into every new tab.
     private func seededState(from inputState: UnifiedInputTabState) -> TabInputState {
         TabInputState(
             text: "",
@@ -143,7 +145,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
             attachments: [],
             selectedModelID: inputState.selectedModelID ?? trackedLastUsed.selectedModelID,
             selectedReasoningMode: inputState.selectedReasoningMode ?? trackedLastUsed.selectedReasoningMode,
-            selectedTool: inputState.selectedTool ?? trackedLastUsed.selectedTool
+            selectedTool: inputState.selectedTool
         )
     }
 
@@ -154,7 +156,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
             attachments: [],
             selectedModelID: trackedLastUsed.selectedModelID,
             selectedReasoningMode: trackedLastUsed.selectedReasoningMode,
-            selectedTool: trackedLastUsed.selectedTool
+            selectedTool: nil
         )
     }
 }

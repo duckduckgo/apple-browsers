@@ -202,7 +202,7 @@ extension Tab: WKWebExtensionTab {
 
     func close(for context: WKWebExtensionContext) async throws {
         if let index = tabCollectionViewModel?.indexInAllTabs(of: self) {
-            tabCollectionViewModel?.remove(at: index)
+            tabCollectionViewModel?.close(at: index)
         } else {
             throw WebExtensionTabError.tabNotFound
         }

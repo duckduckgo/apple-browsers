@@ -331,7 +331,7 @@ final class AIChatContextualSheetCoordinator {
         }
 
         startObservingContextUpdates()
-        collectContextForNewSession(skippingAutoAttach: skippingAutoAttach)
+        collectContextForNewSession(skippingAutoAttach: skippingAutoAttach, isColdRestore: restoreURL != nil)
 
         stopSessionTimer()
 
@@ -548,7 +548,7 @@ final class AIChatContextualSheetCoordinator {
         }
     }
 
-    private func collectContextForNewSession(skippingAutoAttach: Bool = false) {
+    private func collectContextForNewSession(skippingAutoAttach: Bool = false, isColdRestore: Bool = false) {
         if !skippingAutoAttach {
             sessionState.allowAutoAttachAgain()
         }
@@ -568,7 +568,7 @@ final class AIChatContextualSheetCoordinator {
                 sessionState.beginLoadingSuggestions()
             }
             pageContextHandler.triggerContextCollection(trigger: .auto)
-        } else if currentPageURL != nil, shouldCollectSignalsOnly {
+        } else if currentPageURL != nil, shouldCollectSignalsOnly(forColdRestore: isColdRestore) {
             sessionState.markPendingSignalsOnlyCollection()
             pageContextHandler.triggerContextCollection(trigger: .tabContent)
         } else if !offerPageContextIfNeeded(trigger: .auto) {
@@ -700,7 +700,7 @@ final class AIChatContextualSheetCoordinator {
                 sessionState.clearProcessingNavigationFlag()
                 pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
             }
-        } else if shouldCollectSignalsOnly {
+        } else if shouldCollectSignalsOnly() {
             startSignalsOnlyCollection()
         } else {
             sessionState.clearProcessingNavigationFlag()
@@ -713,15 +713,15 @@ final class AIChatContextualSheetCoordinator {
         sheetViewController != nil
     }
 
-    private var shouldCollectSignalsOnly: Bool {
+    private func shouldCollectSignalsOnly(forColdRestore: Bool = false) -> Bool {
         featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
-            && !sessionState.hasActiveChat
+            && (forColdRestore || !sessionState.hasActiveChat)
             && !sessionState.shouldAutoCollectContext
             && !sessionState.shouldSuspendSuggestionsRefresh
     }
 
     private func startSignalsOnlyCollection() {
-        guard shouldCollectSignalsOnly else { return }
+        guard shouldCollectSignalsOnly() else { return }
         sessionState.markPendingSignalsOnlyCollection()
         if !pageContextHandler.triggerContextCollection(trigger: .tabContent) {
             sessionState.clearProcessingNavigationFlag()
@@ -730,7 +730,7 @@ final class AIChatContextualSheetCoordinator {
 
     private func removeAttachedContext() {
         sessionState.downgradeToPlaceholder()
-        guard currentPageURL != nil, shouldCollectSignalsOnly else {
+        guard currentPageURL != nil, shouldCollectSignalsOnly() else {
             pageContextHandler.clear()
             return
         }
@@ -1127,7 +1127,7 @@ private extension AIChatContextualSheetCoordinator {
         persistentUTIHost?.prepareForNewChat()
         refreshSelectionChips()
 
-        if shouldCollectSignalsOnly {
+        if shouldCollectSignalsOnly() {
             Logger.aiChat.debug("[PageContext] New chat - collecting signals-only")
             sessionState.markPendingSignalsOnlyCollection()
             pageContextHandler.triggerContextCollection(trigger: .tabContent)

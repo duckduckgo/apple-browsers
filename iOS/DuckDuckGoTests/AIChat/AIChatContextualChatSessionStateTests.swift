@@ -2288,6 +2288,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     /// Auto-attach off, UTI active, chat under way: the conditions the offer shares with auto-attach.
     private func arrangeOfferConditions() {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualPagePlaceholder]
         mockSettings.isAutomaticContextAttachmentEnabled = false
         sessionState.updateUnifiedToggleInputActive(true)
         sessionState.beginChatForUTISubmission()

@@ -145,6 +145,8 @@ final class AIChatContextualChatSessionState {
     /// URL included in the last submitted prompt with no navigation since; used to spot a stale auto-attach echo.
     private var deliveredContextURLWithNoNavigationSince: URL?
 
+    private var declinedOfferURL: URL?
+
     @Published private(set) var viewState = SheetViewState(
         content: .nativeInput,
         isExpandButtonEnabled: true,
@@ -333,7 +335,8 @@ final class AIChatContextualChatSessionState {
     }
 
     func dismissSuggestedContext() {
-        guard suggestedContext != nil else { return }
+        guard let context = suggestedContext else { return }
+        declinedOfferURL = URL(string: context.contextData.url)
         suggestedContext = nil
         Logger.aiChat.debug("[SessionState] Suggested context dismissed")
     }
@@ -405,6 +408,7 @@ final class AIChatContextualChatSessionState {
         chipState = .placeholder
         contextualChatURL = nil
         deliveredContextURLWithNoNavigationSince = nil
+        declinedOfferURL = nil
         userDowngradedToPlaceholder = false
         isManualAttachInProgress = false
         isManualAttachFromFrontend = false
@@ -484,6 +488,7 @@ final class AIChatContextualChatSessionState {
         // A real navigation means any subsequent context update is fresh, even if it later
         // resolves to a URL that was already submitted (e.g. the user navigated away and back).
         deliveredContextURLWithNoNavigationSince = nil
+        declinedOfferURL = nil
         // Clear the offer on the chip too, or it lingers stale after navigation.
         if suggestedContext != nil {
             suggestedContext = nil
@@ -531,10 +536,17 @@ final class AIChatContextualChatSessionState {
     }
 
     func shouldOfferPageContext(for pageURL: URL? = nil) -> Bool {
-        !shouldAutoCollectContext
+        featureFlagger.isFeatureOn(.contextualPagePlaceholder)
+            && !shouldAutoCollectContext
             && isUnifiedToggleInputActive
             && hasActiveChat
+            && !hasDeclinedOffer(for: pageURL)
             && shouldCollectPage(for: pageURL)
+    }
+
+    private func hasDeclinedOffer(for pageURL: URL?) -> Bool {
+        guard let declinedOfferURL, let pageURL else { return false }
+        return declinedOfferURL.equals(pageURL, by: .sameDocument)
     }
 
     /// Sends a null context as a navigation signal.
@@ -604,6 +616,9 @@ final class AIChatContextualChatSessionState {
             if let context {
                 let payload = signalsOnlyPayload(from: context.contextData)
                 emit(.deliverPageContext(payload, targets: .frontendBridge))
+                if shouldOfferPageContext(for: URL(string: context.contextData.url)), !suppressesAutoAttachForSelectionEntry {
+                    handleOfferedContext(context)
+                }
             }
             return
         }
@@ -634,7 +649,7 @@ final class AIChatContextualChatSessionState {
             handleManualAttach(context)
         } else if shouldAutoCollectContext, !suppressesAutoAttachForSelectionEntry {
             handleAutoAttach(context)
-        } else if shouldOfferPageContext(), !suppressesAutoAttachForSelectionEntry {
+        } else if shouldOfferPageContext(for: URL(string: context.contextData.url)), !suppressesAutoAttachForSelectionEntry {
             handleOfferedContext(context)
         } else {
             Logger.aiChat.debug("[SessionState] Context updated without chip change (auto-attach OFF)")
@@ -669,8 +684,9 @@ final class AIChatContextualChatSessionState {
     }
 
     /// Clears manual context when reopening on a different page.
-    /// Auto-attach-off manual context remains sticky while the sheet is open, including across
-    /// navigation and same-page reopen, but it should not leak into another page's sheet session.
+    /// Auto-attach-off manual context stays sticky while the sheet is open — across same-page reopen and
+    /// navigation that still yields context — but an empty collect on navigation clears it (mirroring
+    /// auto-attach on), and it should not leak into another page's sheet session.
     func clearManualContextIfStale(for currentPageURL: URL?) -> Bool {
         guard !shouldAutoCollectContext,
               case .attached(let context) = chipState,

@@ -50,6 +50,7 @@ public final class AIChatContextChipView: UIView {
 
         static let removeButtonSize: CGFloat = 32
         static let removeButtonTrailing: CGFloat = 10
+        static let removeButtonHitTarget: CGFloat = 44
 
         static let contentSpacing: CGFloat = 8
     }
@@ -132,8 +133,9 @@ public final class AIChatContextChipView: UIView {
         return label
     }()
 
-    private lazy var removeButton: UIButton = {
-        let button = UIButton(type: .system)
+    private lazy var removeButton: ExpandedHitTargetButton = {
+        let button = ExpandedHitTargetButton(type: .system)
+        button.minimumHitTarget = Constants.removeButtonHitTarget
         button.setImage(DesignSystemImages.Glyphs.Size16.close.withRenderingMode(.alwaysTemplate), for: .normal)
         button.tintColor = UIColor(designSystemColor: .textSecondary)
         button.addTarget(self, action: #selector(removeButtonTapped), for: .touchUpInside)
@@ -201,7 +203,13 @@ public final class AIChatContextChipView: UIView {
 
     /// Without this the recogniser, which spans the pill, would swallow taps on the remove button.
     func shouldReceiveChipTap(at point: CGPoint) -> Bool {
-        !removeButton.convert(removeButton.bounds, to: self).contains(point)
+        !removeButtonHitRect.contains(point)
+    }
+
+    private var removeButtonHitRect: CGRect {
+        let frame = removeButton.convert(removeButton.bounds, to: self)
+        let outset = max(0, (Constants.removeButtonHitTarget - frame.width) / 2)
+        return frame.insetBy(dx: -outset, dy: -outset)
     }
 
     /// VoiceOver activation mirrors a tap, so the offer can be accepted without sighted pointing.
@@ -445,6 +453,19 @@ extension AIChatContextChipView {
            let currentState {
             updateUI(for: currentState)
         }
+    }
+}
+
+// MARK: - Expanded Hit Target
+
+private final class ExpandedHitTargetButton: UIButton {
+
+    var minimumHitTarget: CGFloat = 0
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let dx = min(0, (bounds.width - minimumHitTarget) / 2)
+        let dy = min(0, (bounds.height - minimumHitTarget) / 2)
+        return bounds.insetBy(dx: dx, dy: dy).contains(point)
     }
 }
 #endif

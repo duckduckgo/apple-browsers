@@ -48,6 +48,11 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
     @MainActor
     func confirmDeleteAiChat(chatId: String, title: String, sourceWindow: NSWindow?) async -> Bool
 
+    /// Presents the same confirmation the Duck.ai menu's "Delete All Chats..." item shows and,
+    /// when confirmed, deletes every chat. Returns whether the user went ahead.
+    @MainActor
+    func confirmDeleteAllAiChats(sourceWindow: NSWindow?) async -> Bool
+
     /// Removes a history-based suggestion identified by its exact URL. Fire-and-forget.
     @MainActor
     func removeSuggestion(_ url: String)

@@ -42,6 +42,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case showSubscriptionUpsell = "omnibar_showSubscriptionUpsell"
         case showSubscriptionUpgrade = "omnibar_showSubscriptionUpgrade"
         case confirmDeleteAiChat = "omnibar_confirmDeleteAiChat"
+        case confirmDeleteAllAiChats = "omnibar_confirmDeleteAllAiChats"
         case removeSuggestion = "omnibar_removeSuggestion"
         case setImageGenerationActive = "omnibar_setImageGenerationActive"
         case dismissCreateImageModelSwitch = "omnibar_dismissCreateImageModelSwitch"
@@ -131,6 +132,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.showSubscriptionUpsell.rawValue: { [weak self] in try await self?.showSubscriptionUpsell(params: $0, original: $1) },
             MessageName.showSubscriptionUpgrade.rawValue: { [weak self] in try await self?.showSubscriptionUpgrade(params: $0, original: $1) },
             MessageName.confirmDeleteAiChat.rawValue: { [weak self] in try await self?.confirmDeleteAiChat(params: $0, original: $1) },
+            MessageName.confirmDeleteAllAiChats.rawValue: { [weak self] in try await self?.confirmDeleteAllAiChats(params: $0, original: $1) },
             MessageName.removeSuggestion.rawValue: { [weak self] in try await self?.removeSuggestion(params: $0, original: $1) },
             MessageName.setImageGenerationActive.rawValue: { [weak self] in try await self?.setImageGenerationActive(params: $0, original: $1) },
             MessageName.dismissCreateImageModelSwitch.rawValue: { [weak self] in try await self?.dismissCreateImageModelSwitch(params: $0, original: $1) }
@@ -434,6 +436,12 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         }
         let confirmed = await actionHandler.confirmDeleteAiChat(chatId: action.chatId, title: action.title, sourceWindow: original.webView?.window)
         return NewTabPageDataModel.ConfirmDeleteAiChatResponse(action: confirmed ? .delete : .none)
+    }
+
+    @MainActor
+    private func confirmDeleteAllAiChats(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        let confirmed = await actionHandler.confirmDeleteAllAiChats(sourceWindow: original.webView?.window)
+        return NewTabPageDataModel.ConfirmDeleteAllAiChatsResponse(action: confirmed ? .delete : .none)
     }
 
     @MainActor

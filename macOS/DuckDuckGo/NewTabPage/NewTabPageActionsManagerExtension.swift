@@ -123,7 +123,18 @@ extension NewTabPageActionsManager {
                 privacyConfig: contentBlocking.privacyConfigurationManager,
                 nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
                 featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-            ))
+            )),
+            // Only `deleteAllChats` is used: the chats rail's fire button runs the Duck.ai menu's
+            // own bulk delete (clean history, record the sync clear, reload open Duck.ai tabs)
+            // rather than a second copy of it. The other actions in here are unused.
+            deleteAllChatsAction: AIChatMenu.Actions.makeDefault(
+                conversationSources: .mainMenu,
+                remoteSettings: AIChatRemoteSettings(),
+                tabOpener: NSApp.delegateTyped.aiChatTabOpener,
+                historyCleaner: NSApp.delegateTyped.aiChatHistoryCleaner,
+                windowControllersManager: windowControllersManager,
+                aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner }
+            ).deleteAllChats
         )
         let omnibarModelsProvider = NewTabPageOmnibarModelsProvider(featureFlagger: featureFlagger)
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
@@ -158,7 +169,8 @@ extension NewTabPageActionsManager {
                 ),
                 historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
             ),
-            searchPreferences: NSApp.delegateTyped.searchPreferences
+            searchPreferences: NSApp.delegateTyped.searchPreferences,
+            historyCleaner: NSApp.delegateTyped.aiChatHistoryCleaner
         )
         omnibarConfigProvider.configure(aiChatsProvider: aiChatsProvider)
         let stateProvider = NewTabPageStateProvider(

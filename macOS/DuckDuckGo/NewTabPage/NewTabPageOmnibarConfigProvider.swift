@@ -204,7 +204,10 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     var isAIChatRecentChatsEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
+        // POC: forced on so the Duck.ai chats side panel populates in a demo build without
+        // flipping .aiChatNtpRecentChats by hand. Revert to
+        // `featureFlagger.isFeatureOn(.aiChatNtpRecentChats)` before this goes anywhere real.
+        true
     }
 
     var isAIChatToolsEnabled: Bool {

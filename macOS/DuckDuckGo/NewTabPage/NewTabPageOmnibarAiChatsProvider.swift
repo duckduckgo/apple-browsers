@@ -29,6 +29,9 @@ final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding 
     private let featureFlagger: FeatureFlagger
     private let suggestionsReader: AIChatSuggestionsReading
     private let searchPreferences: SearchPreferences
+    /// POC: reads every stored chat, bypassing the suggestions reader's 7-day window and
+    /// result cap so the chats rail can show a full history.
+    private let historyCleaner: AIChatHistoryCleaning
     private var cancellables = Set<AnyCancellable>()
     @Published private var hasExcessChats = false
 
@@ -39,10 +42,12 @@ final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding 
     init(featureFlagger: FeatureFlagger,
          configProvider: NewTabPageOmnibarConfigProviding,
          suggestionsReader: AIChatSuggestionsReading,
-         searchPreferences: SearchPreferences) {
+         searchPreferences: SearchPreferences,
+         historyCleaner: AIChatHistoryCleaning) {
         self.featureFlagger = featureFlagger
         self.suggestionsReader = suggestionsReader
         self.searchPreferences = searchPreferences
+        self.historyCleaner = historyCleaner
 
         // configProvider is not stored — Combine keeps the publisher pipeline alive
         // as long as the cancellables are retained. If configProvider is deallocated,
@@ -71,35 +76,40 @@ final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding 
 
     @MainActor
     func aiChats(query: String?) async -> NewTabPageDataModel.AiChatsData {
-        guard featureFlagger.isFeatureOn(.aiChatNtpRecentChats) else {
-            return .empty
-        }
-        guard searchPreferences.showAutocompleteSuggestions else {
-            return .empty
-        }
+        // POC: three things dropped here so the chats rail can show a real, full history in a
+        // demo build. Restore all of it before this goes anywhere real:
+        //  - the .aiChatNtpRecentChats and showAutocompleteSuggestions guards;
+        //  - the suggestions reader, whose unqueried path only returns pinned chats plus the
+        //    last 7 days, and which caps results at maxHistoryCount (5 on macOS);
+        //  - hasExcessChats, which drove the "View all chats" footer and is now always false.
         let effectiveQuery = query
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .flatMap { $0.isEmpty ? nil : $0 }
-        let maxCount = suggestionsReader.maxHistoryCount
-        let (pinned, recent) = await suggestionsReader.fetchSuggestions(query: effectiveQuery, maxChats: maxCount + 1)
-        let totalFetched = pinned.count + recent.count
-        hasExcessChats = totalFetched > maxCount
-        let viewModel = AIChatSuggestionsViewModel(maxSuggestions: maxCount)
-        viewModel.setChats(pinned: pinned, recent: recent)
-        let chats = viewModel.filteredSuggestions.map { $0.asNewTabPageAiChat }
-        return NewTabPageDataModel.AiChatsData(chats: chats)
+
+        let all = historyCleaner.allChats()
+        let matching = effectiveQuery.map { query in
+            all.filter { $0.title.localizedCaseInsensitiveContains(query) }
+        } ?? all
+
+        // Pinned first, then most recently edited, matching ChatHistoryReader's ordering.
+        let sorted = matching.sorted { lhs, rhs in
+            if lhs.pinned != rhs.pinned { return lhs.pinned }
+            return (lhs.lastEdit ?? "") > (rhs.lastEdit ?? "")
+        }
+
+        hasExcessChats = false
+        return NewTabPageDataModel.AiChatsData(chats: sorted.map(\.asNewTabPageAiChat))
     }
 
 }
 
-private extension AIChatSuggestion {
+private extension DuckAiChat {
     var asNewTabPageAiChat: NewTabPageDataModel.AiChat {
         NewTabPageDataModel.AiChat(
             chatId: chatId,
             title: title,
-            pinned: isPinned,
-            lastEdit: Self.formatISO8601Date(timestamp),
-            firstUserMessageContent: firstUserMessageContent,
+            pinned: pinned,
+            lastEdit: lastEdit,
             model: model
         )
     }

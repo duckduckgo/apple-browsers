@@ -25,6 +25,7 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     var submitChatHandler: ((String, NewTabPageDataModel.OpenTarget, String?, [NewTabPageDataModel.SubmitChatImage]?, String?, [String]?, String?, [NewTabPageDataModel.OmnibarPageContext]?, [NewTabPageDataModel.OmnibarPromptFile]?) -> Void)?
     var openAiChatHandler: ((String, Bool, NewTabPageDataModel.OpenAiChatTrigger, NewTabPageDataModel.OpenTarget) -> Void)?
     var confirmDeleteAiChatHandler: ((String, String, NSWindow?) async -> Bool)?
+    var confirmDeleteAllAiChatsHandler: ((NSWindow?) async -> Bool)?
     var removeSuggestionHandler: ((String) -> Void)?
     var openCustomizeResponsesHandler: (() -> Void)?
     var setCustomizeResponsesActiveHandler: ((Bool) -> Void)?
@@ -65,6 +66,11 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     @MainActor
     func confirmDeleteAiChat(chatId: String, title: String, sourceWindow: NSWindow?) async -> Bool {
         await confirmDeleteAiChatHandler?(chatId, title, sourceWindow) ?? false
+    }
+
+    @MainActor
+    func confirmDeleteAllAiChats(sourceWindow: NSWindow?) async -> Bool {
+        await confirmDeleteAllAiChatsHandler?(sourceWindow) ?? false
     }
 
     @MainActor

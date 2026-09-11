@@ -39,6 +39,10 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     /// Deletion-flow pixels fire at `.dailyAndCount`, matching the address-bar delete pixels.
     private let fireDailyCountPixel: (PixelKit.Event) -> Void
     private let presentDeleteConfirmation: @MainActor (String, NSWindow?) async -> Bool
+    private let presentDeleteAllConfirmation: @MainActor (NSWindow?) async -> Bool
+    /// Supplied by the caller so the rail's fire button runs exactly the same bulk delete as the
+    /// Duck.ai menu's "Delete All Chats..." item, rather than a second copy of that logic.
+    private let deleteAllChatsAction: () async -> Void
 
     /// Called after the Customize Responses modal closes or the toggle is set, so the NTP config
     /// (sub-label + toggle state) is re-pushed to open New Tab Pages.
@@ -56,7 +60,9 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
          isCommandPressed: @escaping () -> Bool = { NSApp?.isCommandPressed ?? false },
          firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) },
          fireDailyCountPixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) },
-         presentDeleteConfirmation: @escaping @MainActor (String, NSWindow?) async -> Bool = NewTabPageOmnibarActionsHandler.presentNativeDeleteConfirmation) {
+         presentDeleteConfirmation: @escaping @MainActor (String, NSWindow?) async -> Bool = NewTabPageOmnibarActionsHandler.presentNativeDeleteConfirmation,
+         presentDeleteAllConfirmation: @escaping @MainActor (NSWindow?) async -> Bool = NewTabPageOmnibarActionsHandler.presentNativeDeleteAllConfirmation,
+         deleteAllChatsAction: @escaping () async -> Void = {}) {
         self.promptHandler = promptHandler
         self.windowControllersManager = windowControllersManager
         self.tabsPreferences = tabsPreferences
@@ -67,6 +73,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         self.firePixel = firePixel
         self.fireDailyCountPixel = fireDailyCountPixel
         self.presentDeleteConfirmation = presentDeleteConfirmation
+        self.presentDeleteAllConfirmation = presentDeleteAllConfirmation
+        self.deleteAllChatsAction = deleteAllChatsAction
     }
 
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
@@ -318,6 +326,18 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     }
 
     @MainActor
+    func confirmDeleteAllAiChats(sourceWindow: NSWindow?) async -> Bool {
+        guard await presentDeleteAllConfirmation(sourceWindow) else { return false }
+
+        // POC: the Duck.ai menu also fires FireButtonPixel.fireStarted/fireStartedInSession/burn
+        // here. Deliberately not fired from an unshipped surface - it would put burn events in the
+        // data with no way to tell them apart from the real fire button. Add them alongside a
+        // proper NTP pixel if this ever becomes a real feature.
+        await deleteAllChatsAction()
+        return true
+    }
+
+    @MainActor
     func removeSuggestion(_ url: String) {
         guard let url = URL(string: url) else {
             Logger.newTabPageOmnibar.error("removeSuggestion: invalid URL string")
@@ -325,6 +345,24 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
         fireDailyCountPixel(NewTabPagePixel.ntpAutocompleteResultDeleted)
         historyCoordinator.removeUrlEntry(url, completion: nil)
+    }
+
+    /// Bridges the Duck.ai menu's "Delete All Chats..." dialog to async. `confirmed` fires before
+    /// the dialog dismisses, so the flag is always set by the time `show`'s completion runs.
+    @MainActor
+    static func presentNativeDeleteAllConfirmation(sourceWindow: NSWindow?) async -> Bool {
+        final class Outcome {
+            var confirmed = false
+        }
+        let outcome = Outcome()
+
+        return await withCheckedContinuation { continuation in
+            var dialog = AIChatDeleteChatsDialog()
+            dialog.confirmed = { outcome.confirmed = true }
+            dialog.show(in: sourceWindow) {
+                continuation.resume(returning: outcome.confirmed)
+            }
+        }
     }
 
     /// Same dialog as the address-bar delete flow: a sheet on `sourceWindow`, or app-modal when nil.

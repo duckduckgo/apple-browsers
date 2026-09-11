@@ -580,6 +580,16 @@ public extension NewTabPageDataModel {
         let action: Action
     }
 
+    // MARK: - omnibar_confirmDeleteAllAiChats
+
+    struct ConfirmDeleteAllAiChatsResponse: Codable, Equatable {
+        enum Action: String, Codable {
+            case delete
+            case none
+        }
+        let action: Action
+    }
+
     // MARK: - omnibar_removeSuggestion
 
     struct RemoveSuggestionAction: Codable, Equatable {

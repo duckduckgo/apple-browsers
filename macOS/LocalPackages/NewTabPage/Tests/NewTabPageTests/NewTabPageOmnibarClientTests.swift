@@ -1028,6 +1028,33 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(config.enableSearchSuggestionDeletion, false)
     }
 
+    // MARK: - confirmDeleteAllAiChats
+
+    @MainActor
+    func testConfirmDeleteAllAiChatsWhenConfirmedReturnsDeleteAction() async throws {
+        var called = false
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.confirmDeleteAllAiChatsHandler = { _ in
+            called = true
+            return true
+        }
+
+        let response: NewTabPageDataModel.ConfirmDeleteAllAiChatsResponse =
+            try await messageHelper.handleMessage(named: .confirmDeleteAllAiChats, parameters: [String: String]())
+
+        XCTAssertEqual(response.action, .delete)
+        XCTAssertTrue(called)
+    }
+
+    @MainActor
+    func testConfirmDeleteAllAiChatsWhenCancelledReturnsNoneAction() async throws {
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.confirmDeleteAllAiChatsHandler = { _ in false }
+
+        let response: NewTabPageDataModel.ConfirmDeleteAllAiChatsResponse =
+            try await messageHelper.handleMessage(named: .confirmDeleteAllAiChats, parameters: [String: String]())
+
+        XCTAssertEqual(response.action, .none)
+    }
+
     // MARK: - confirmDeleteAiChat
 
     @MainActor

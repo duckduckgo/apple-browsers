@@ -59,7 +59,12 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.1.0"),
+        // POC: pinned to the compiled branch of duckduckgo/content-scope-scripts#3031 (Duck.ai
+        // chats side panel), head of pr-releases/tom/ntp-duck-ai-chats-side-panel. Pinned by
+        // revision rather than branch because -resolvePackageDependencies will not advance a
+        // branch pin, so a branch reference silently keeps building stale assets.
+        // Restore `exact: "17.1.0"` before this goes anywhere real.
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", revision: "28a86aecfdeb40c8d377659beb1a245ad23ed4f6"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),

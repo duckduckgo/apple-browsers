@@ -37,7 +37,7 @@ final class AIChatTabChatHeaderViewTests: XCTestCase {
     }
 
     func testVoiceSessionActive_hidesCloseButtonChatListPillAndTitle() {
-        header.setVoiceSessionActive(true)
+        header.setVoiceSessionActive(true, backgroundColor: .black)
 
         XCTAssertTrue(header.closeButtonPill.isHidden, "Close button pill must hide while voice session is active")
         XCTAssertTrue(header.chatListButtonPill.isHidden, "Chat-list pill must hide while voice session is active")
@@ -45,7 +45,7 @@ final class AIChatTabChatHeaderViewTests: XCTestCase {
     }
 
     func testVoiceSessionInactive_restoresCloseButtonChatListPillAndTitle() {
-        header.setVoiceSessionActive(true)
+        header.setVoiceSessionActive(true, backgroundColor: .black)
         header.setVoiceSessionActive(false)
 
         XCTAssertFalse(header.closeButtonPill.isHidden, "Close button pill must reappear when voice session ends")

@@ -18,10 +18,17 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import UIKit
 
 /// A New Tab Page built as a vertical stack of independent blocks.
 final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
+
+    private enum Metrics {
+        static let customizeButtonTopMargin: CGFloat = 10
+        static let customizeButtonTrailingMargin: CGFloat = 20
+        static let customizeButtonSize: CGFloat = 44
+    }
 
     weak var delegate: NewTabPageControllerDelegate?
     weak var chromeDelegate: BrowserChromeDelegate?
@@ -42,6 +49,19 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         return stackView
     }()
 
+    private lazy var customizeButton: CircularButton = {
+        let button = CircularButton()
+        button.isShadowHidden = true
+        button.setImage(DesignSystemImages.Glyphs.Size24.options, for: .normal)
+        button.setColors(foreground: UIColor(designSystemColor: .iconsSecondary),
+                         background: UIColor(designSystemColor: .controlsFillPrimary),
+                         pressedForeground: UIColor(designSystemColor: .iconsSecondary),
+                         pressedBackground: UIColor(designSystemColor: .controlsFillTertiary))
+        button.accessibilityLabel = UserText.newTabPageCustomizationTitle
+        button.addTarget(self, action: #selector(customizeButtonTapped), for: .touchUpInside)
+        return button
+    }()
+
     init(blocks: [any NewTabPageBlock]) {
         self.blocks = blocks
         super.init(nibName: nil, bundle: nil)
@@ -60,6 +80,16 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         installBlocks()
     }
 
+    @objc private func customizeButtonTapped() {
+        let customizationViewController = NewTabPageCustomizationViewController()
+        customizationViewController.onAllSettingsSelected = { [weak self] in
+            guard let self else { return }
+            delegate?.newTabPageDidRequestSettings(self)
+        }
+
+        present(customizationViewController, animated: true)
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
@@ -71,9 +101,11 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
     private func addSubviews() {
         view.addSubview(scrollView)
         scrollView.addSubview(blocksStackView)
+        view.addSubview(customizeButton)
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         blocksStackView.translatesAutoresizingMaskIntoConstraints = false
+        customizeButton.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -88,7 +120,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
 
             // Pinning the content width to the visible width leaves block heights as the only
             // thing that can make the page scroll.
-            blocksStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
+            blocksStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+
+            customizeButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor,
+                                                 constant: Metrics.customizeButtonTopMargin),
+            customizeButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+                                                      constant: -Metrics.customizeButtonTrailingMargin),
+            customizeButton.widthAnchor.constraint(equalToConstant: Metrics.customizeButtonSize),
+            customizeButton.heightAnchor.constraint(equalToConstant: Metrics.customizeButtonSize)
         ])
     }
 

@@ -73,7 +73,11 @@ final class PromoRegistryTests: XCTestCase {
                 ),
                 onboardingStateUpdater: MockOnboardingStateUpdater(),
                 autoconsentStats: MockAutoconsentStats()
-            ))
+            ),
+            updateController: nil,
+            updateNotificationBridge: nil,
+            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator()
+        )
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)

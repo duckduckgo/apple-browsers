@@ -139,7 +139,10 @@ public final class SitePermissionsCoordinator {
     private final class PendingRequest {
         let request: SitePermissionRequest
         let promptHandler: PromptHandler
-        let completion: Completion
+        private var completion: Completion?
+        var isCancelled = false
+
+        var hasCompleted: Bool { completion == nil }
 
         init(request: SitePermissionRequest,
              promptHandler: @escaping PromptHandler,
@@ -147,6 +150,12 @@ public final class SitePermissionsCoordinator {
             self.request = request
             self.promptHandler = promptHandler
             self.completion = completion
+        }
+
+        func complete(with resolution: SitePermissionResolution) {
+            let completion = completion
+            self.completion = nil
+            completion?(resolution)
         }
     }
 
@@ -156,10 +165,16 @@ public final class SitePermissionsCoordinator {
     private let authorizationState: AuthorizationStateProvider
     private let requestAuthorization: AuthorizationRequester
     private let recoveryHandler: RecoveryHandler
+    private let cancellationHandler: () -> Void
     private let eventHandler: EventHandler
 
     private var allowOnce = Set<SitePermissionType>()
     private var deniedForPage = Set<SitePermissionType>()
+    private var siteAllowedPermissionTypesThisVisit = Set<SitePermissionType>()
+    private var requestedPermissionTypesThisVisit = Set<SitePermissionType>()
+    private var fireModeManagementOverrides = [SitePermissionType: SitePermissionDecision]()
+    private var fireModeRemovedPermissionTypes = Set<SitePermissionType>()
+    private var currentManagementSite: SitePermissionKey?
     private var queuedRequests = [PendingRequest]()
     private var activeRequest: PendingRequest?
     private var isClosed = false
@@ -174,6 +189,7 @@ public final class SitePermissionsCoordinator {
                             isFireMode: Bool,
                             currentContext: @escaping CurrentContextProvider,
                             recoveryHandler: @escaping RecoveryHandler,
+                            cancellationHandler: @escaping () -> Void = {},
                             eventHandler: @escaping EventHandler = { _ in }) {
         self.init(store: store,
                   isFireMode: isFireMode,
@@ -181,6 +197,7 @@ public final class SitePermissionsCoordinator {
                   authorizationState: systemPermissionClient.authorizationState,
                   requestAuthorization: systemPermissionClient.requestAuthorization,
                   recoveryHandler: recoveryHandler,
+                  cancellationHandler: cancellationHandler,
                   eventHandler: eventHandler)
     }
 
@@ -190,6 +207,7 @@ public final class SitePermissionsCoordinator {
          authorizationState: @escaping AuthorizationStateProvider,
          requestAuthorization: @escaping AuthorizationRequester,
          recoveryHandler: @escaping RecoveryHandler,
+         cancellationHandler: @escaping () -> Void = {},
          eventHandler: @escaping EventHandler = { _ in }) {
         self.store = store
         self.isFireMode = isFireMode
@@ -197,6 +215,7 @@ public final class SitePermissionsCoordinator {
         self.authorizationState = authorizationState
         self.requestAuthorization = requestAuthorization
         self.recoveryHandler = recoveryHandler
+        self.cancellationHandler = cancellationHandler
         self.eventHandler = eventHandler
     }
 
@@ -205,6 +224,11 @@ public final class SitePermissionsCoordinator {
                         completion: @escaping Completion) {
         guard !isClosed, !request.permissionTypes.isEmpty else { return }
         guard isValid(request.context) else { return }
+
+        currentManagementSite = request.context.topLevelSite
+        requestedPermissionTypesThisVisit.formUnion(request.permissionTypes.filter {
+            shouldTrackManagementRequest(for: $0, at: request.context.topLevelSite)
+        })
 
         switch disposition(for: request) {
         case .deny:
@@ -217,7 +241,11 @@ public final class SitePermissionsCoordinator {
     private func disposition(for request: SitePermissionRequest) -> RequestDisposition {
         var disposition = RequestDisposition.allow
         for permissionType in ordered(request.permissionTypes) {
-            switch store.decision(for: permissionType, at: request.context.topLevelSite) {
+            let storedDecision = fireModeRemovedPermissionTypes.contains(permissionType)
+                ? nil
+                : store.decision(for: permissionType, at: request.context.topLevelSite)
+            let decision = isFireMode ? fireModeManagementOverrides[permissionType] ?? storedDecision : storedDecision
+            switch decision {
             case .deny:
                 return .deny
             case .allow:
@@ -238,8 +266,145 @@ public final class SitePermissionsCoordinator {
         return disposition
     }
 
+    private func shouldTrackManagementRequest(for permissionType: SitePermissionType, at site: SitePermissionKey) -> Bool {
+        let storedDecision = fireModeRemovedPermissionTypes.contains(permissionType)
+            ? nil
+            : store.decision(for: permissionType, at: site)
+        let effectiveDecision = isFireMode ? fireModeManagementOverrides[permissionType] ?? storedDecision : storedDecision
+        return effectiveDecision != nil
+            || allowOnce.contains(permissionType)
+            || siteAllowedPermissionTypesThisVisit.contains(permissionType)
+            || store.globalDefault(for: permissionType) != .deny
+    }
+
     public func captureDidEnd(_ permissionTypes: Set<SitePermissionType>) {
         allowOnce.subtract(permissionTypes)
+        siteAllowedPermissionTypesThisVisit.subtract(permissionTypes)
+    }
+
+    public func managementSnapshot(for site: SitePermissionKey) -> SitePermissionsManagementSnapshot {
+        let isCurrentSite = currentManagementSite == site
+        var storedPermissions = store.permissions(for: site)
+        if isFireMode, isCurrentSite {
+            for permissionType in fireModeRemovedPermissionTypes {
+                storedPermissions[permissionType] = nil
+            }
+            for (permissionType, decision) in fireModeManagementOverrides {
+                storedPermissions[permissionType] = decision
+            }
+        }
+        let ephemeralPermissionTypes = isCurrentSite ? allowOnce : []
+        let siteAllowedPermissionTypes = isCurrentSite ? siteAllowedPermissionTypesThisVisit : []
+        let requestedPermissionTypes = isCurrentSite ? requestedPermissionTypesThisVisit : []
+        let currentCaptureStates = isCurrentSite ? captureStates : [:]
+        let systemAuthorizationStates = SitePermissionsManagementSnapshot.cameraAndMicrophoneTypes.reduce(into: [:]) { states, permissionType in
+            states[permissionType] = authorizationState(permissionType)
+        }
+        let systemBlockedPermissionTypes = SitePermissionsManagementSnapshot.cameraAndMicrophoneTypes.filter { permissionType in
+            let isAllowedAtSite: Bool
+            switch storedPermissions[permissionType] {
+            case .allow:
+                isAllowedAtSite = true
+            case .deny:
+                isAllowedAtSite = false
+            case .ask, nil:
+                isAllowedAtSite = siteAllowedPermissionTypes.contains(permissionType)
+                    || ephemeralPermissionTypes.contains(permissionType)
+            }
+            guard isAllowedAtSite else { return false }
+            switch systemAuthorizationStates[permissionType] {
+            case .denied, .restricted, .unavailable:
+                return true
+            case .notDetermined, .authorized, nil:
+                return false
+            }
+        }
+
+        return SitePermissionsManagementSnapshot(
+            site: site,
+            isFireMode: isFireMode,
+            storedPermissions: storedPermissions,
+            ephemeralPermissionTypes: ephemeralPermissionTypes,
+            siteAllowedPermissionTypesThisVisit: siteAllowedPermissionTypes,
+            requestedPermissionTypesThisVisit: requestedPermissionTypes,
+            captureStates: currentCaptureStates,
+            systemAuthorizationStates: systemAuthorizationStates,
+            systemBlockedPermissionTypes: systemBlockedPermissionTypes
+        )
+    }
+
+    public func removeManagementSessionState(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
+        currentManagementSite = site
+        if isFireMode {
+            fireModeRemovedPermissionTypes.formUnion(permissionTypes)
+        }
+        clearManagementSessionState(for: permissionTypes, at: site)
+    }
+
+    public func revokeManagementSessionState(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
+        currentManagementSite = site
+        fireModeRemovedPermissionTypes.subtract(permissionTypes)
+        clearManagementSessionState(for: permissionTypes, at: site)
+    }
+
+    private func clearManagementSessionState(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
+        allowOnce.subtract(permissionTypes)
+        deniedForPage.subtract(permissionTypes)
+        siteAllowedPermissionTypesThisVisit.subtract(permissionTypes)
+        requestedPermissionTypesThisVisit.subtract(permissionTypes)
+        for permissionType in permissionTypes {
+            fireModeManagementOverrides[permissionType] = nil
+        }
+        cancelRequests(for: permissionTypes, at: site)
+    }
+
+    private func cancelRequests(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
+        let isAffected: (PendingRequest) -> Bool = {
+            $0.request.context.topLevelSite == site && !$0.request.permissionTypes.isDisjoint(with: permissionTypes)
+        }
+        var cancelledRequests = queuedRequests.filter(isAffected)
+        queuedRequests.removeAll(where: isAffected)
+        if let activeRequest, !activeRequest.isCancelled, isAffected(activeRequest) {
+            activeRequest.isCancelled = true
+            // Recovery already delivered its decision; keep its FIFO slot until dismissal finishes.
+            if !activeRequest.hasCompleted {
+                self.activeRequest = nil
+            }
+            cancelledRequests.insert(activeRequest, at: 0)
+            cancellationHandler()
+        }
+        cancelledRequests.forEach { $0.complete(with: .deny(systemBlocks: [])) }
+        processNextRequestIfNeeded()
+    }
+
+    public func applyFireModeManagementDecision(_ decision: SitePermissionDecision,
+                                                for permissionType: SitePermissionType,
+                                                at site: SitePermissionKey) {
+        guard isFireMode else { return }
+        currentManagementSite = site
+        fireModeRemovedPermissionTypes.remove(permissionType)
+        fireModeManagementOverrides[permissionType] = decision
+        switch decision {
+        case .ask:
+            allowOnce.remove(permissionType)
+            deniedForPage.remove(permissionType)
+            siteAllowedPermissionTypesThisVisit.remove(permissionType)
+        case .allow:
+            allowOnce.insert(permissionType)
+            deniedForPage.remove(permissionType)
+            siteAllowedPermissionTypesThisVisit.insert(permissionType)
+        case .deny:
+            allowOnce.remove(permissionType)
+            deniedForPage.insert(permissionType)
+            siteAllowedPermissionTypesThisVisit.remove(permissionType)
+        }
+    }
+
+    /// Restores persistent decisions hidden by a Fire-mode removal without restoring ephemeral grants.
+    public func restoreFireModeManagementState(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
+        guard isFireMode else { return }
+        currentManagementSite = site
+        fireModeRemovedPermissionTypes.subtract(permissionTypes)
     }
 
     public func captureState(for permissionType: SitePermissionType) -> SitePermissionCaptureState {
@@ -353,10 +518,12 @@ public final class SitePermissionsCoordinator {
         switch decision {
         case .denyOnce:
             allowOnce.subtract(permissionTypes)
+            siteAllowedPermissionTypesThisVisit.subtract(permissionTypes)
             deniedForPage.formUnion(permissionTypes)
             finish(pendingRequest, with: .deny(systemBlocks: []))
         case .neverAllow:
             allowOnce.subtract(permissionTypes)
+            siteAllowedPermissionTypesThisVisit.subtract(permissionTypes)
             if isFireMode {
                 deniedForPage.formUnion(permissionTypes)
             } else {
@@ -365,6 +532,7 @@ public final class SitePermissionsCoordinator {
             finish(pendingRequest, with: .deny(systemBlocks: []))
         case .allowOnce, .allowWhileUsingSite:
             deniedForPage.subtract(permissionTypes)
+            siteAllowedPermissionTypesThisVisit.formUnion(permissionTypes)
             if decision == .allowWhileUsingSite, !isFireMode {
                 persist(.allow, for: pendingRequest.request)
             }
@@ -447,9 +615,13 @@ public final class SitePermissionsCoordinator {
 
         if case .deny(let systemBlocks) = resolution,
            let recovery = recovery(for: systemBlocks) {
-            pendingRequest.completion(resolution)
+            pendingRequest.complete(with: resolution)
             // Completion releases the bridge context; page resets invalidate the active request.
             guard activeRequest === pendingRequest else { return }
+            guard !pendingRequest.isCancelled else {
+                finishRecovery(for: pendingRequest)
+                return
+            }
 
             recoveryHandler(recovery) { [weak self, weak pendingRequest] in
                 guard let self, let pendingRequest else { return }
@@ -459,7 +631,7 @@ public final class SitePermissionsCoordinator {
         }
 
         activeRequest = nil
-        pendingRequest.completion(resolution)
+        pendingRequest.complete(with: resolution)
         processNextRequestIfNeeded()
     }
 
@@ -498,12 +670,17 @@ public final class SitePermissionsCoordinator {
     private func resetPageState() {
         allowOnce.removeAll()
         deniedForPage.removeAll()
+        siteAllowedPermissionTypesThisVisit.removeAll()
+        requestedPermissionTypesThisVisit.removeAll()
+        fireModeManagementOverrides.removeAll()
+        fireModeRemovedPermissionTypes.removeAll()
+        currentManagementSite = nil
         queuedRequests.removeAll()
         activeRequest = nil
     }
 
     private func isActiveAndValid(_ pendingRequest: PendingRequest) -> Bool {
-        activeRequest === pendingRequest && isValid(pendingRequest)
+        activeRequest === pendingRequest && !pendingRequest.isCancelled && isValid(pendingRequest)
     }
 
     private func isValid(_ pendingRequest: PendingRequest) -> Bool {

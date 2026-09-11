@@ -18,7 +18,8 @@
 
 import AIChat
 import Combine
-import PrivacyConfig
+import FeatureFlags_macOS
+@testable import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import SubscriptionTestingUtilities
@@ -55,6 +56,43 @@ class MainMenuTests: XCTestCase {
         lastSessionMenuItem = nil
         lastTabMenuItem = nil
         manager = nil
+    }
+
+    @MainActor
+    func testOnboardingMenuAvailabilityForBlockingAndNonBlocking() throws {
+        let appDelegate = try XCTUnwrap(Application.appDelegate)
+        let featureFlagger = try XCTUnwrap(appDelegate.featureFlagger as? MockFeatureFlagger)
+        let originalFeatures = featureFlagger.featuresStub
+        let originalOnboardingFinished = OnboardingActionsManager.isOnboardingFinished
+        defer {
+            featureFlagger.featuresStub = originalFeatures
+            OnboardingActionsManager.isOnboardingFinished = originalOnboardingFinished
+        }
+
+        let actions = [
+            #selector(AppDelegate.newWindow(_:)),
+            #selector(AppDelegate.newBurnerWindow(_:)),
+            #selector(AppDelegate.newAIChat(_:)),
+            #selector(AppDelegate.openFile(_:)),
+            #selector(AppDelegate.openLocation(_:)),
+            #selector(AppDelegate.openPreferences),
+            #selector(AppDelegate.showManageBookmarks(_:)),
+            #selector(AppDelegate.openImportBrowserDataWindow(_:))
+        ]
+        for isNonBlocking in [false, true] {
+            featureFlagger.enabledFeatureFlags = isNonBlocking ? [.onboardingAsync] : []
+            for finished in [false, true] {
+                OnboardingActionsManager.isOnboardingFinished = finished
+                for action in actions {
+                    let menuItem = NSMenuItem()
+                    menuItem.action = action
+                    let canOpenFirstWindow = action == #selector(AppDelegate.newWindow(_:))
+                        && appDelegate.windowControllersManager.mainWindowControllers.isEmpty
+                    XCTAssertEqual(appDelegate.validateMenuItem(menuItem), finished || isNonBlocking || canOpenFirstWindow,
+                                   NSStringFromSelector(action))
+                }
+            }
+        }
     }
 
     func testWhenIsInInitialState_AndCanRestoreState_ThenLastSessionMenuItemHasShortcut() {

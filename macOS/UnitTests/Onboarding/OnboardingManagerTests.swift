@@ -801,8 +801,7 @@ class OnboardingManagerTests: XCTestCase {
 
     func testOnboardingStarted_NonBlockingEnabled_TakesNonBlockingBranch() {
         // Given
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.onboardingAsync]
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
         let managerWithTreatment = makeNonBlockingManager(featureFlagger: featureFlagger)
 
         // When
@@ -848,8 +847,7 @@ class OnboardingManagerTests: XCTestCase {
             for outcome in [NonBlockingOnboardingPersistor.Outcome.completed, .skipped] {
                 OnboardingActionsManager.isOnboardingFinished = false
                 navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
-                let flags = MockFeatureFlagger()
-                flags.enabledFeatureFlags = [.onboardingAsync]
+                let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
                 let manager = makeNonBlockingManager(featureFlagger: flags)
                 contextualOnboardingState.state = state
 
@@ -869,8 +867,7 @@ class OnboardingManagerTests: XCTestCase {
             OnboardingActionsManager.isOnboardingFinished = false
             navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
             let source = navigationDelegate.onboardingSourceTab!.webView
-            let flags = MockFeatureFlagger()
-            flags.enabledFeatureFlags = [.onboardingAsync]
+            let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
             let store = MockKeyValueFileStore()
             let early = makeNonBlockingManager(featureFlagger: flags,
                                                 onboardingPersistor: NonBlockingOnboardingPersistor(keyValueStore: store))
@@ -907,8 +904,7 @@ class OnboardingManagerTests: XCTestCase {
             let source = sourceTab.webView
             navigationDelegate.replaceTabCalled = false
             navigationDelegate.updatePreventUserInteractionCalled = false
-            let flags = MockFeatureFlagger()
-            flags.enabledFeatureFlags = [.onboardingAsync]
+            let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
             let store = MockKeyValueFileStore()
             store.shouldThrowOnSet = true
             let early = makeNonBlockingManager(featureFlagger: flags,
@@ -949,33 +945,29 @@ class OnboardingManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testBlockingOnboardingCanExitAfterAnOutcomeRecordedInEitherMode() {
-        for isNonBlocking in [false, true] {
-            for action in ["browse", "settings"] {
-                OnboardingActionsManager.isOnboardingFinished = false
-                let flags = MockFeatureFlagger()
-                flags.enabledFeatureFlags = isNonBlocking ? [.onboardingAsync] : []
-                let persistor = NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
-                let manager = makeNonBlockingManager(featureFlagger: flags, onboardingPersistor: persistor)
-                navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
-                let source = navigationDelegate.onboardingSourceTab!.webView
-                manager.skipOnboarding(from: source)
+    func testBlockingOnboardingCanExitAfterAnOutcomeRecorded() {
+        for action in ["browse", "settings"] {
+            OnboardingActionsManager.isOnboardingFinished = false
+            let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.control)
+            let persistor = NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
+            let manager = makeNonBlockingManager(featureFlagger: flags, onboardingPersistor: persistor)
+            navigationDelegate.onboardingSourceTab = Tab(content: .onboarding)
+            let source = navigationDelegate.onboardingSourceTab!.webView
+            manager.skipOnboarding(from: source)
 
-                flags.enabledFeatureFlags = []
-                manager.onboardingStarted(from: source)
-                XCTAssertEqual(navigationDelegate.preventUserInteraction, true)
-                navigationDelegate.replaceTabCalled = false
+            manager.onboardingStarted(from: source)
+            XCTAssertEqual(navigationDelegate.preventUserInteraction, true)
+            navigationDelegate.replaceTabCalled = false
 
-                switch action {
-                case "settings": manager.goToSettings(from: source)
-                default: manager.goToAddressBar(from: source)
-                }
-
-                XCTAssertTrue(navigationDelegate.replaceTabCalled, action)
-                XCTAssertEqual(navigationDelegate.preventUserInteraction, false, action)
-                // Only the experiment persists an outcome.
-                XCTAssertEqual(persistor.outcome, isNonBlocking ? .skipped : nil)
+            switch action {
+            case "settings": manager.goToSettings(from: source)
+            default: manager.goToAddressBar(from: source)
             }
+
+            XCTAssertTrue(navigationDelegate.replaceTabCalled, action)
+            XCTAssertEqual(navigationDelegate.preventUserInteraction, false, action)
+            // Only the experiment persists an outcome.
+            XCTAssertNil(persistor.outcome)
         }
     }
 
@@ -983,8 +975,7 @@ class OnboardingManagerTests: XCTestCase {
     func testLiveOnboardingCanExitWithAnAlreadyRecordedOutcome() {
         for outcome in [NonBlockingOnboardingPersistor.Outcome.skipped, .completed] {
             for action in ["browse", "settings"] {
-                let flags = MockFeatureFlagger()
-                flags.enabledFeatureFlags = [.onboardingAsync]
+                let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
                 let store = MockKeyValueFileStore()
                 let persistor = NonBlockingOnboardingPersistor(keyValueStore: store)
                 persistor.record(outcome)
@@ -1031,8 +1022,7 @@ class OnboardingManagerTests: XCTestCase {
 
     @MainActor
     func testSameManagerCanFinishNewOnboardingAfterResetWithoutQuitting() {
-        let flags = MockFeatureFlagger()
-        flags.enabledFeatureFlags = [.onboardingAsync]
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
         let persistor = NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
         let manager = makeNonBlockingManager(featureFlagger: flags, onboardingPersistor: persistor)
         let oldSource = navigationDelegate.onboardingSourceTab!.webView
@@ -1054,8 +1044,7 @@ class OnboardingManagerTests: XCTestCase {
 
     @MainActor
     func testMessageFromBrowsingTabCannotRecordAnOutcomeOrReplaceTabs() {
-        let flags = MockFeatureFlagger()
-        flags.enabledFeatureFlags = [.onboardingAsync]
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
         let persistor = NonBlockingOnboardingPersistor(keyValueStore: MockKeyValueFileStore())
         let manager = makeNonBlockingManager(featureFlagger: flags, onboardingPersistor: persistor)
         let browsingTab = Tab(content: .newtab)
@@ -1068,8 +1057,7 @@ class OnboardingManagerTests: XCTestCase {
 
     @MainActor
     func testNonBlockingHandlersAreAvailableBeforeThePageInitializes() {
-        let flags = MockFeatureFlagger()
-        flags.enabledFeatureFlags = [.onboardingAsync]
+        let flags = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
         let managerUnderTest = makeNonBlockingManager(featureFlagger: flags)
         contextualOnboardingState.state = .notStarted
 

@@ -62,10 +62,10 @@ class MainMenuTests: XCTestCase {
     func testOnboardingMenuAvailabilityForBlockingAndNonBlocking() throws {
         let appDelegate = try XCTUnwrap(Application.appDelegate)
         let featureFlagger = try XCTUnwrap(appDelegate.featureFlagger as? MockFeatureFlagger)
-        let originalFeatures = featureFlagger.featuresStub
+        let originalCohort = featureFlagger.resolveCohortStub
         let originalOnboardingFinished = OnboardingActionsManager.isOnboardingFinished
         defer {
-            featureFlagger.featuresStub = originalFeatures
+            featureFlagger.resolveCohortStub = originalCohort
             OnboardingActionsManager.isOnboardingFinished = originalOnboardingFinished
         }
 
@@ -80,7 +80,7 @@ class MainMenuTests: XCTestCase {
             #selector(AppDelegate.openImportBrowserDataWindow(_:))
         ]
         for isNonBlocking in [false, true] {
-            featureFlagger.enabledFeatureFlags = isNonBlocking ? [.onboardingAsync] : []
+            featureFlagger.resolveCohortStub = isNonBlocking ? FeatureFlag.OnboardingNonBlockingCohort.treatment : FeatureFlag.OnboardingNonBlockingCohort.control
             for finished in [false, true] {
                 OnboardingActionsManager.isOnboardingFinished = finished
                 for action in actions {

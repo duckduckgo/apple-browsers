@@ -21,7 +21,6 @@ import Core
 import Foundation
 import Persistence
 
-/// Which sections of the New Tab Page the user has chosen to see.
 protocol NewTabPageCustomizationPersisting {
 
     var isFavoritesSectionVisible: Bool { get set }

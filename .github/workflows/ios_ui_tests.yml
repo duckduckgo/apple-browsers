@@ -1,0 +1,80 @@
+name: iOS - UI Tests
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: iOS
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * 1-5' # 2AM UTC to not clash with macOS tests run at 3AM
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.github/workflows/ios_ui_tests.yml'
+      - '.xcode-version'
+      - 'SharedPackages/**'
+      - 'iOS/**'
+
+concurrency:
+  # When this workflow is called by another workflow (e.g. code freeze), `github.workflow` contains the name of the calling workflow,
+  # and the value of `${{ github.workflow }}-${{ github.ref }}` would be the same for PR Checks and UI Tests, which would prevent them
+  # from being run concurrently. We're adding a suffix here to tell PR Checks and UI Tests apart and allow for running the two
+  # side by side in the code freeze workflow.
+  group: ${{ github.workflow }}-${{ github.ref }}-ios-ui-tests
+  cancel-in-progress: true
+
+jobs:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should_run_pr_checks.yml
+
+  ui-tests:
+    name: UI Tests
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
+    runs-on: ['image:osx-tahoe-26', 'size:large']
+    timeout-minutes: 45
+
+    steps:
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.10.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+    - name: Check out the code
+      uses: actions/checkout@v6
+      with:
+        submodules: recursive
+
+    - name: Print macOS version
+      run: sw_vers
+
+    - name: Select Xcode
+      uses: ./.github/actions/select-xcode-version
+
+    - name: Select iOS Simulator
+      id: select-simulator
+      uses: ./.github/actions/select-ios-simulator
+      with:
+        preferred-versions: "26.5"
+
+    - name: Run UI test
+      run: |
+        echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
+        echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
+
+        set -o pipefail && xcodebuild test \
+          -scheme "iOS UI Tests" \
+          -destination "${{ steps.select-simulator.outputs.destination }}" \
+          -derivedDataPath "DerivedData" \
+          -skipPackagePluginValidation \
+          -skipMacroValidation \
+          -test-iterations 2 \
+          -retry-tests-on-failure \
+          -test-repetition-relaunch-enabled YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+          | xcbeautify

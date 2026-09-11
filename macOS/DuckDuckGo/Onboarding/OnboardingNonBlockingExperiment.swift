@@ -52,7 +52,10 @@ struct OnboardingNonBlockingExperiment {
 
     /// The only place a cohort is assigned. Call it when onboarding starts, so the experiment
     /// measures the users who could see it rather than everyone who launches the app.
-    func enroll() {
+    /// Internal builds never enrol, so staff are not silently assigned a cohort; use the feature
+    /// flag overrides menu to pick one.
+    func enroll(buildType: ApplicationBuildType = StandardApplicationBuildType()) {
+        guard !buildType.isDebugBuild, !buildType.isReviewBuild, !buildType.isAlphaBuild else { return }
         _ = featureFlagger.resolveCohort(for: FeatureFlag.onboardingNonBlocking)
     }
 

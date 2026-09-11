@@ -167,13 +167,26 @@ final class MainWindowController: NSWindowController {
         startOnboardingIfNeeded()
     }
 
+    /// Automation runs and overridden onboarding would enrol without being real first runs, and a
+    /// reinstalling user is not a new user.
+    private var isEligibleForNonBlockingExperiment: Bool {
+        let launchOptions = LaunchOptionsHandler()
+        guard !launchOptions.isAutomationSession,
+              case .notOverridden = launchOptions.onboardingStatus else { return false }
+
+        let reinstallDetector = DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore)
+        return !reinstallDetector.isReinstallingUser
+    }
+
     private func startOnboardingIfNeeded() {
         guard shouldShowOnboarding, let selectedTab = mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab else {
             return
         }
 
         let experiment = featureFlagger.map(OnboardingNonBlockingExperiment.init)
-        experiment?.enroll()
+        if isEligibleForNonBlockingExperiment {
+            experiment?.enroll()
+        }
         let isNonBlocking = experiment?.isNonBlocking == true
         if isNonBlocking, windowControllersManager?.hasOnboardingTab == true {
             return

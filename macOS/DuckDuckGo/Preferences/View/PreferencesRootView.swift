@@ -125,7 +125,6 @@ enum Preferences {
                             Spacer()
                         }
                     }
-                    // Navigation starts with a fresh scroll position; permission updates keep the same identity.
                     .id(websitePermissionsModel.viewState.detailModel?.viewState.category)
                     .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
                     .accessibilityIdentifier("Settings.ScrollView")

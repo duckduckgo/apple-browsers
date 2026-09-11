@@ -89,6 +89,7 @@ class MainViewCoordinator {
     private var standardStatusBackgroundColor: UIColor?
     private var statusBackgroundPresentation: StatusBackgroundPresentation = .standard
     private var statusBackgroundPresentationBeforeOmnibarEditing: StatusBackgroundPresentation?
+    private var voiceModeBackgroundColor: UIColor?
     private(set) var isNavigationChromeHidden = false
     private var isNavBarContainerBottomKeyboardBased = false
     private(set) var isOmnibarInToolbar = false
@@ -201,8 +202,13 @@ class MainViewCoordinator {
         navigationBarContainer.isHidden = false
         navigationBarContainer.alpha = 1
         navigationBarContainer.isUserInteractionEnabled = true
+
         let surfaceOwnedElsewhere = isNavigationChromeHidden || isUnifiedToggleInputVisible
         navigationBarCollectionView.alpha = surfaceOwnedElsewhere ? 0 : 1
+        navigationBarCollectionView.isUserInteractionEnabled = !surfaceOwnedElsewhere
+        if !surfaceOwnedElsewhere {
+            navigationBarContainer.bringSubviewToFront(navigationBarCollectionView)
+        }
     }
 
     func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {
@@ -344,9 +350,7 @@ class MainViewCoordinator {
         guard addressBarPosition.isBottom else { return }
 
         if isUnifiedToggleInputVisible {
-            navigationBarContainer.isHidden = false
-            navigationBarContainer.alpha = 1
-            navigationBarContainer.isUserInteractionEnabled = true
+            applyOmnibarHostedInNavigationContainerPose()
             setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
             return
         }
@@ -695,6 +699,19 @@ class MainViewCoordinator {
         applyResolvedStatusBackgroundColor()
     }
 
+    /// Repaints the status strip with the voice-mode background colour while the voice surface is on
+    /// screen (pass `nil` to restore the standard chrome), so the top strip matches the voice header.
+    func setVoiceMode(backgroundColor: UIColor?) {
+        guard voiceModeBackgroundColor != backgroundColor else { return }
+        voiceModeBackgroundColor = backgroundColor
+        applyResolvedStatusBackgroundColor()
+    }
+
+    /// True while the navy voice strip is painted behind the status bar, so the VC can light its icons.
+    var isVoiceModeStatusBackgroundActive: Bool {
+        voiceModeBackgroundColor != nil
+    }
+
     @MainActor
     func showUnifiedInputContent() {
         unifiedInputContentContainer.isHidden = false
@@ -847,7 +864,7 @@ class MainViewCoordinator {
             case .aiTabSearchChromeHidden:
                 return UIColor(designSystemColor: .panel)
             case .aiTabChatChromeHidden:
-                return UIColor(designSystemColor: .surfaceCanvas)
+                return chatChromeHiddenStatusBackgroundColor()
             }
         }
 
@@ -857,8 +874,14 @@ class MainViewCoordinator {
         case .omnibarEditing, .aiTabSearchChromeHidden:
             return UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:
-            return UIColor(designSystemColor: .surfaceCanvas)
+            return chatChromeHiddenStatusBackgroundColor()
         }
+    }
+
+    /// Voice sessions paint the top strip with the FE-provided voice colour; regular chat chrome-hidden
+    /// keeps the standard canvas tone.
+    private func chatChromeHiddenStatusBackgroundColor() -> UIColor {
+        voiceModeBackgroundColor ?? UIColor(designSystemColor: .surfaceCanvas)
     }
 
     private func showFocusedStateBackground() {

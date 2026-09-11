@@ -639,12 +639,11 @@ extension MainViewFactory {
         coordinator.constraints.toolbarHeight = toolbar.constrainAttribute(.height, to: initialToolbarHeight)
 
         if #available(iOS 26.0, *), isFloatingUIEnabled {
-            let horizontalGuide = superview.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
             let verticalGuide = superview.layoutGuide(for: .safeArea(cornerAdaptation: .vertical))
             coordinator.constraints.toolbarBottom = toolbar.bottomAnchor.constraint(equalTo: verticalGuide.bottomAnchor)
             NSLayoutConstraint.activate([
-                toolbar.leadingAnchor.constraint(equalTo: horizontalGuide.leadingAnchor),
-                toolbar.trailingAnchor.constraint(equalTo: horizontalGuide.trailingAnchor),
+                toolbar.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+                toolbar.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
                 coordinator.constraints.toolbarHeight,
                 coordinator.constraints.toolbarBottom,
             ])

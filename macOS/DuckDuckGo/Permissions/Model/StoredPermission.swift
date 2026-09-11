@@ -25,6 +25,17 @@ enum PersistedPermissionDecision {
     case allow
     case ask
 
+    var localizedTitle: String {
+        switch self {
+        case .ask:
+            return UserText.permissionCenterAlwaysAsk
+        case .allow:
+            return UserText.permissionCenterAlwaysAllow
+        case .deny:
+            return UserText.permissionCenterNeverAllow
+        }
+    }
+
     init(allow: Bool, isRemoved: Bool) {
         switch (allow, isRemoved) {
         case (_, true):
@@ -49,6 +60,9 @@ enum PersistedPermissionDecision {
 struct StoredPermission: Equatable {
     let id: NSManagedObjectID
     var decision: PersistedPermissionDecision
+    /// When the user last explicitly set this decision. `nil` for permissions persisted before this
+    /// attribute existed, which keeps them out of recency-ordered UI rather than dating them to now.
+    var lastModified: Date?
 }
 
 struct PermissionEntity: Equatable {
@@ -71,7 +85,11 @@ struct PermissionEntity: Equatable {
             return nil
         }
 
-        self.permission = StoredPermission(id: managedObject.objectID, decision: managedObject.decision)
+        self.permission = StoredPermission(
+            id: managedObject.objectID,
+            decision: managedObject.decision,
+            lastModified: managedObject.lastModified
+        )
         self.domain = domain
         self.type = permissionType
     }

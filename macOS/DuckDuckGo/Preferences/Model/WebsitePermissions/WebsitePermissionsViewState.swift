@@ -17,10 +17,16 @@
 //
 
 import AppKit
+import Common
 import DesignResourcesKitIcons
 
 struct WebsitePermissionsViewState: Equatable {
+    var recents: [RecentRow] = []
     var rows: [Row] = []
+
+    var hasRecents: Bool {
+        !recents.isEmpty
+    }
 }
 
 extension WebsitePermissionsViewState {
@@ -66,6 +72,29 @@ extension WebsitePermissionsViewState {
 
         var accessibilityIdentifier: String {
             "WebsitePermissions.\(category)"
+        }
+    }
+}
+
+extension WebsitePermissionsViewState {
+    /// Precomputes display values because external-app names require NSWorkspace lookups.
+    struct RecentRow: Identifiable, Equatable {
+        let domain: String
+        let permissionType: PermissionType
+        let decision: PersistedPermissionDecision
+        let permissionTitle: String
+        let availableDecisions: [PersistedPermissionDecision]
+
+        var id: String {
+            "\(domain)|\(permissionType.rawValue)"
+        }
+
+        var faviconURL: URL? {
+            URL(string: "\(URL.NavigationalScheme.https.separated())\(domain)")
+        }
+
+        var accessibilityIdentifier: String {
+            "WebsitePermissions.Recent.\(id)"
         }
     }
 }

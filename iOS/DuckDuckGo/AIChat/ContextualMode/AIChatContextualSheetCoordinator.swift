@@ -95,6 +95,7 @@ final class AIChatContextualSheetCoordinator {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
+    private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
     private let isFireTab: Bool
     static let contextualContextCollectionTimeout: TimeInterval = 5
 
@@ -243,6 +244,7 @@ final class AIChatContextualSheetCoordinator {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
          selectionJourneyScopeID: String = UUID().uuidString,
          selectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting? = nil) {
@@ -260,6 +262,7 @@ final class AIChatContextualSheetCoordinator {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.debugSettings = debugSettings
+        self.onboardingActivationRecorder = onboardingActivationRecorder
         self.pixelHandler = pixelHandler
         self.selectionJourneyInstrumentation = selectionJourneyInstrumentation ?? DefaultDuckAISelectionJourneyInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
@@ -315,7 +318,8 @@ final class AIChatContextualSheetCoordinator {
     ///   selection. The page is not attached on top of it; its signals are still collected.
     func presentSheet(from presentingViewController: UIViewController,
                       restoreURL: URL? = nil,
-                      skippingAutoAttach: Bool = false) async {
+                      skippingAutoAttach: Bool = false,
+                      attachingPage: Bool = false) async {
         let restoreURL = await vettedRestoreURL(restoreURL)
         await discardActiveChatIfDeleted()
         sessionState.refreshAutoAttachSetting()
@@ -323,7 +327,14 @@ final class AIChatContextualSheetCoordinator {
         clearStaleManualContextIfNeeded()
 
         startObservingContextUpdates()
-        collectContextForNewSession(skippingAutoAttach: skippingAutoAttach)
+        if attachingPage {
+            if sessionState.showsSuggestionsStartSurface {
+                sessionState.beginLoadingSuggestions()
+            }
+            requestManualPageContextAttach()
+        } else {
+            collectContextForNewSession(skippingAutoAttach: skippingAutoAttach)
+        }
 
         stopSessionTimer()
 
@@ -1008,6 +1019,7 @@ private extension AIChatContextualSheetCoordinator {
                 return await self.collectFreshContextAndWait(timeout: Self.contextualContextCollectionTimeout)
             },
             pixelHandler: pixelHandler,
+            onboardingActivationRecorder: onboardingActivationRecorder,
             utiHostInstaller: { [weak self] contextualChatViewController in
                 guard let self else { return nil }
                 guard self.isWebUTIEnabled else { return nil }

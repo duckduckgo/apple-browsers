@@ -40,7 +40,6 @@ import PrivacyConfig
 
 final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
-    private static let persistentPixel: PersistentPixelFiring = PersistentPixel()
     private var cancellables = Set<AnyCancellable>()
     private let subscriptionManager: (any SubscriptionManager)?
     private let configurationStore = ConfigurationStore()
@@ -57,10 +56,6 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             PixelKit.fire(Pixel.Event.networkProtectionActiveUser,
                           frequency: .legacyDailyNoSuffix,
                           options: .parameters([PixelParameters.vpnCohort: PixelKit.cohort(from: defaults.vpnFirstEnabled)]))
-
-            persistentPixel.sendQueuedPixels { error in
-                Logger.networkProtection.error("Failed to send queued pixels, with error: \(error)")
-            }
         case .connectionTesterStatusChange(let status, let server):
             switch status {
             case .failed(let duration):
@@ -494,14 +489,20 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         let loopDetector = ConnectionFailureLoopDetector(store: loopDetectorStore)
 
-        self.wideEvent = WideEvent(useMockRequests: {
+        let wideEvent = WideEvent(useMockRequests: {
 #if DEBUG || REVIEW || ALPHA
             true
 #else
             false
 #endif
         }(),
-                                   featureFlagProvider: WideEventFeatureFlagProvider(featureFlagger: featureFlagger))
+                                  featureFlagProvider: WideEventFeatureFlagProvider(featureFlagger: featureFlagger))
+        self.wideEvent = wideEvent
+
+        let sessionHealth = DefaultVPNSessionHealthInstrumentation(
+            wideEvent: wideEvent,
+            extensionType: .app,
+            isTelemetryEnabled: { settings.sessionHealthTelemetryEnabled })
 
         // Align Subscription environment to the VPN environment
         var subscriptionEnvironment = SubscriptionEnvironment.default
@@ -605,8 +606,10 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    defaults: .networkProtectionGroupDefaults,
                    wideEvent: wideEvent,
                    entitlementCheck: entitlementsCheck,
-                   loopDetector: loopDetector)
+                   loopDetector: loopDetector,
+                   sessionHealth: sessionHealth)
         startMonitoringMemoryPressureEvents()
+
         observeServerChanges()
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
     }
@@ -706,7 +709,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         do {
             let vpnFileStoreDirectory = try Self.vpnFileStoreDirectory()
             let pixelKitStore = Self.setupPixelKit(vpnFileStoreDirectory: vpnFileStoreDirectory)
-            let legacyStores = Self.configureDailyPixelFileStore(vpnFileStoreDirectory: vpnFileStoreDirectory)
+            let legacyStores = Self.configureLegacyPixelFileStores(vpnFileStoreDirectory: vpnFileStoreDirectory)
 
             // One-off migration from Pixel to PixelKit
             let destination: ThrowingKeyValueStoring = pixelKitStore ?? UserDefaults.networkProtectionGroupDefaults
@@ -782,7 +785,9 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         return directory
     }
 
-    private static func configureDailyPixelFileStore(vpnFileStoreDirectory: URL?) -> (daily: KeyValueFileStore?, unique: KeyValueFileStore?) {
+    /// Reads the tunnel process's own legacy daily/once-ever pixel file stores, for `LegacyPixelStateMigration`
+    /// to copy into PixelKit. Nothing fires through these any more, so this only ever reads them.
+    private static func configureLegacyPixelFileStores(vpnFileStoreDirectory: URL?) -> (daily: KeyValueFileStore?, unique: KeyValueFileStore?) {
         guard let vpnFileStoreDirectory else { return (daily: nil, unique: nil) }
 
         let dailyPixelFileStore = try? KeyValueFileStore(
@@ -790,18 +795,12 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             name: "daily-pixel",
             writeOptions: [.atomic, .noFileProtection]
         )
-        if let dailyPixelFileStore {
-            DailyPixel.storage = dailyPixelFileStore
-        }
 
         let uniquePixelFileStore = try? KeyValueFileStore(
             location: vpnFileStoreDirectory,
             name: "unique-pixel",
             writeOptions: [.atomic, .noFileProtection]
         )
-        if let uniquePixelFileStore {
-            UniquePixel.storage = uniquePixelFileStore
-        }
 
         return (daily: dailyPixelFileStore, unique: uniquePixelFileStore)
     }

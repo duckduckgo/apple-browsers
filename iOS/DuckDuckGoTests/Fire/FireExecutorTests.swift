@@ -655,15 +655,20 @@ final class FireExecutorTests: XCTestCase {
     // MARK: - Site Permissions Fire Worker Tests
 
     func testWhenBurningNormalModeDataThenFireproofedSitePermissionsSurvive() async {
-        storePermission(for: "protected.example")
-        storePermission(for: "cleared.example")
+        for permissionType in SitePermissionType.allCases {
+            storePermission(for: "protected.example", type: permissionType)
+            storePermission(for: "cleared.example", type: permissionType, decision: .deny)
+        }
         mockFireproofing.isAllowedFireproofDomainHandler = { $0 == "protected.example" }
         let executor = makeFireExecutor()
 
         await executor.burn(request: makeFireRequest(options: .data, scope: .normalMode), applicationState: .unknown)
 
-        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("protected.example")), .allow)
-        XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("cleared.example")))
+        for permissionType in SitePermissionType.allCases {
+            XCTAssertEqual(sitePermissionsStore.decision(for: permissionType, at: makeSitePermissionKey("protected.example")), .allow)
+            XCTAssertNil(sitePermissionsStore.decision(for: permissionType, at: makeSitePermissionKey("cleared.example")))
+        }
+        XCTAssertEqual(sitePermissionsStore.storedSites, [makeSitePermissionKey("protected.example")])
     }
 
     func testWhenBurningNormalModeDataThenFireproofedParentDomainProtectsItsSubdomain() async {
@@ -698,6 +703,7 @@ final class FireExecutorTests: XCTestCase {
     func testWhenBurningNormalModeDataThenGlobalPermissionDefaultsArePreserved() async {
         storePermission(for: "cleared.example")
         sitePermissionsStore.setGlobalDefault(.deny, for: .camera)
+        sitePermissionsStore.setGlobalDefault(.ask, for: .microphone)
         sitePermissionsStore.setGlobalDefault(.deny, for: .location)
         let defaultsKey = "site-permissions-global-defaults"
         let defaultsBeforeBurn = UserDefaults.app.object(forKey: defaultsKey) as? [String: String]
@@ -710,6 +716,9 @@ final class FireExecutorTests: XCTestCase {
 
     func testWhenBurningFireModeDataThenSitePermissionsRemainUnchanged() async {
         storePermission(for: "preserved.example")
+        storePermission(for: "preserved.example", type: .microphone, decision: .deny)
+        sitePermissionsStore.resetDecision(for: .location, at: makeSitePermissionKey("preserved.example"))
+        let original = sitePermissionsStore.permissions(for: makeSitePermissionKey("preserved.example"))
         sitePermissionsStore.setGlobalDefault(.deny, for: .microphone)
         mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
         FireModeCapability.resolve(using: mockFeatureFlagger)
@@ -717,19 +726,22 @@ final class FireExecutorTests: XCTestCase {
 
         await executor.burn(request: makeFireRequest(options: .data, scope: .fireMode), applicationState: .unknown)
 
-        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("preserved.example")), .allow)
+        XCTAssertEqual(sitePermissionsStore.permissions(for: makeSitePermissionKey("preserved.example")), original)
         XCTAssertEqual(sitePermissionsStore.globalDefault(for: .microphone), .deny)
     }
 
     func testWhenBurningFireModeTabDataThenSitePermissionsRemainUnchanged() async {
         storePermission(for: "preserved.example")
+        storePermission(for: "preserved.example", type: .microphone, decision: .deny)
+        sitePermissionsStore.resetDecision(for: .location, at: makeSitePermissionKey("preserved.example"))
+        let original = sitePermissionsStore.permissions(for: makeSitePermissionKey("preserved.example"))
         mockHistoryManager.tabHistoryResult = [URL(string: "https://preserved.example")!]
         let executor = makeFireExecutor()
         let tabViewModel = TabViewModel(tab: Tab(uid: "fire-tab-uid", fireTab: true), historyManager: mockHistoryManager)
 
         await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
 
-        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("preserved.example")), .allow)
+        XCTAssertEqual(sitePermissionsStore.permissions(for: makeSitePermissionKey("preserved.example")), original)
     }
 
     func testWhenSitePermissionsFeatureIsOffThenBurnStillClearsSitePermissions() async {

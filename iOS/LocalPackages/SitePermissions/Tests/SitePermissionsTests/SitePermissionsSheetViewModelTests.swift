@@ -232,6 +232,10 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         XCTAssertEqual(removal?.permissionTypes, [.camera, .microphone, .location])
         XCTAssertFalse(removal?.snapshot.isEmpty ?? true)
         XCTAssertEqual(dismissal, .clean)
+
+        harness.store.restore(try XCTUnwrap(removal).snapshot)
+
+        XCTAssertEqual(harness.store.permissions(for: harness.site), [.camera: .allow, .microphone: .deny, .location: .ask])
     }
 
     func testRemoveRevokesAllManagedTypesSoOtherMatchingTabsStopCapture() throws {

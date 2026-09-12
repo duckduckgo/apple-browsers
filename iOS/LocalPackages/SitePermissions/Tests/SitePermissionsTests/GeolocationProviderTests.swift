@@ -425,6 +425,166 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertFalse(harness.provider.isLocationActive)
     }
 
+    func testWhenLocationIsDeniedOrRemovedThenReallowDoesNotRestartRevokedWatch() async throws {
+        for removePermission in [false, true] {
+            var permissionCoordinator: SitePermissionsCoordinator?
+            let harness = try Harness(
+                requestPermission: { context, completion in
+                    permissionCoordinator?.request(
+                        SitePermissionRequest(context: context, permissionTypes: [.location]),
+                        promptHandler: { _, _ in XCTFail("Saved Allow must not prompt") },
+                        completion: completion
+                    )
+                },
+                queryPermission: { context in
+                    permissionCoordinator?.queryState(for: .location, context: context) ?? .denied
+                }
+            )
+            let context = harness.context
+            let store = SitePermissionsStore(storage: MockKeyValueStore().keyedStoring())
+            store.setPersistentDecision(.allow, for: .location, at: context.topLevelSite)
+            let coordinator = SitePermissionsCoordinator(
+                store: store,
+                systemPermissionClient: harness.systemPermissionClient,
+                isFireMode: false,
+                currentContext: { tabID, frameID in
+                    tabID == context.tabID && frameID == context.requestingFrameID ? context : nil
+                },
+                recoveryHandler: { _, completion in completion() }
+            )
+            permissionCoordinator = coordinator
+            harness.provider.locationActivityHandler = coordinator.updateGeolocationCaptureState
+            var oldResults = [GeolocationPositionResult]()
+            harness.provider.startWatch(withID: "old", context: context) {
+                oldResults.append($0)
+                return true
+            }
+            await waitUntil { harness.provider.isLocationActive }
+            let firstLocation = CLLocation(latitude: 37.3317, longitude: -122.0301)
+            harness.send([firstLocation])
+
+            if removePermission {
+                _ = store.removePermissions(for: context.topLevelSite)
+                coordinator.removeManagementSessionState(for: [.location], at: context.topLevelSite)
+            } else {
+                store.setPersistentDecision(.deny, for: .location, at: context.topLevelSite)
+                coordinator.revokeManagementSessionState(for: [.location], at: context.topLevelSite)
+            }
+            harness.provider.revokeActivePermission()
+            let expected = [GeolocationPositionResult.success(.init(location: firstLocation)),
+                            .failure(.init(code: .permissionDenied, message: "Location permission was denied"))]
+            XCTAssertEqual(oldResults, expected)
+            XCTAssertFalse(harness.provider.isLocationActive)
+            XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 1)
+
+            store.setPersistentDecision(.allow, for: .location, at: context.topLevelSite)
+            harness.provider.refreshPermissionStatuses()
+            harness.send([CLLocation(latitude: 48.8566, longitude: 2.3522)])
+            XCTAssertEqual(oldResults, expected)
+            XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 1)
+
+            var newResults = [GeolocationPositionResult]()
+            harness.provider.startWatch(withID: "new", context: context) {
+                newResults.append($0)
+                return true
+            }
+            await waitUntil { harness.provider.isLocationActive }
+            let nextLocation = CLLocation(latitude: 51.5072, longitude: -0.1276)
+            harness.send([nextLocation])
+            XCTAssertEqual(newResults, [.success(.init(location: nextLocation))])
+            XCTAssertEqual(oldResults, expected)
+            XCTAssertEqual(store.decision(for: .location, at: context.topLevelSite), .allow)
+            harness.provider.close()
+        }
+    }
+
+    func testWhenPageIsCancelledOrClosedThenOverlappingRequestsIgnoreLatePermissionResponses() async throws {
+        for closeTab in [false, true] {
+            var permissionCompletions = [(SitePermissionResolution) -> Void]()
+            let harness = try Harness(requestPermission: { _, completion in
+                permissionCompletions.append(completion)
+            })
+            var watchResults = [GeolocationPositionResult]()
+            harness.provider.startWatch(withID: "pending", context: harness.context) {
+                watchResults.append($0)
+                return true
+            }
+            let first = Task { await harness.provider.requestCurrentPosition(context: harness.context) }
+            let second = Task { await harness.provider.requestCurrentPosition(context: harness.context) }
+            await waitUntil { permissionCompletions.count == 3 }
+
+            if closeTab {
+                harness.provider.close()
+            } else {
+                harness.provider.cancelPageActivity()
+            }
+            for completion in permissionCompletions {
+                completion(.grant)
+            }
+            let firstResult = await first.value
+            let secondResult = await second.value
+            let unavailable = GeolocationPositionResult.failure(.init(code: .positionUnavailable, message: "Location is unavailable"))
+            XCTAssertEqual(firstResult, unavailable)
+            XCTAssertEqual(secondResult, unavailable)
+            XCTAssertTrue(watchResults.isEmpty, "A document that no longer exists cannot receive watch callbacks")
+            XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 0)
+            XCTAssertNil(harness.provider.currentContext(tabID: harness.context.tabID,
+                                                         requestingFrameID: harness.context.requestingFrameID))
+
+            if !closeTab {
+                let nextContext = SitePermissionRequestContext(tabID: harness.context.tabID,
+                                                                topLevelSite: try XCTUnwrap(SitePermissionKey(storedHost: "other.example")),
+                                                                requestingFrameID: 43,
+                                                                webContentProcessGeneration: 1,
+                                                                navigationGeneration: 2)
+                harness.provider.startWatch(withID: "next-page", context: nextContext) { _ in true }
+                XCTAssertEqual(permissionCompletions.count, 4)
+                permissionCompletions[0](.grant)
+                XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 0)
+                permissionCompletions[3](.grant)
+                XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 1)
+                harness.provider.close()
+            }
+        }
+    }
+
+    func testWhenOneTabClosesThenAnotherTabsWatchContinuesUsingSharedLocationManager() throws {
+        let harness = try Harness()
+        let secondProvider = GeolocationProvider(
+            systemPermissionClient: harness.systemPermissionClient,
+            contextProvider: { _ in nil },
+            requestPermission: { _, completion in completion(.grant) },
+            queryPermission: { _ in .granted }
+        )
+        let secondContext = SitePermissionRequestContext(tabID: "second-tab",
+                                                        topLevelSite: harness.context.topLevelSite,
+                                                        requestingFrameID: 42,
+                                                        webContentProcessGeneration: 1,
+                                                        navigationGeneration: 1)
+        var firstResults = [GeolocationPositionResult]()
+        var secondResults = [GeolocationPositionResult]()
+        harness.provider.startWatch(withID: "watch", context: harness.context) {
+            firstResults.append($0)
+            return true
+        }
+        secondProvider.startWatch(withID: "watch", context: secondContext) {
+            secondResults.append($0)
+            return true
+        }
+        let firstLocation = CLLocation(latitude: 37.3317, longitude: -122.0301)
+        harness.send([firstLocation])
+
+        harness.provider.close()
+        XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 0)
+        let nextLocation = CLLocation(latitude: 51.5072, longitude: -0.1276)
+        harness.send([nextLocation])
+        XCTAssertEqual(firstResults, [.success(.init(location: firstLocation))])
+        XCTAssertEqual(secondResults, [.success(.init(location: firstLocation)), .success(.init(location: nextLocation))])
+        XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 1)
+        secondProvider.close()
+        XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 1)
+    }
+
     func testAccuracyDemandTracksAuthorizedOneShotsAndWatches() async throws {
         let harness = try Harness()
         harness.provider.startWatch(withID: "standard", context: harness.context) { _ in true }

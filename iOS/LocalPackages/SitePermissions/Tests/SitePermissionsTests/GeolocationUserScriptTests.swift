@@ -314,6 +314,41 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertEqual(queryPayload["state"] as? String, "denied")
     }
 
+    func testWhenRegistrationBelongsToAnotherTabOrPreviousPageThenRequestNeverReachesDelegate() async throws {
+        let delegate = TestGeolocationUserScriptDelegate()
+        let script = GeolocationUserScript(delegate: delegate)
+        script.activationHandler = { _ in true }
+        let webView = WKWebView()
+        let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
+        let controller = WKUserContentController()
+        let registration = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: registrationBody()).scriptMessage
+        _ = await script.userContentController(controller, didReceive: registration)
+
+        var body = registrationBody()
+        body["kind"] = "getCurrentPosition"
+        let validRequest = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
+        _ = await script.userContentController(controller, didReceive: validRequest)
+        XCTAssertEqual(delegate.positionRequestCount, 1)
+
+        let otherWebView = WKWebView()
+        let otherFrame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: otherWebView)
+        let otherTabRequest = MockWKScriptMessageObject(webView: otherWebView, frameInfo: otherFrame, body: body).scriptMessage
+        let otherTabResponse = await script.userContentController(controller, didReceive: otherTabRequest)
+        XCTAssertEqual((otherTabResponse.0 as? [String: Any])?["code"] as? Int,
+                       GeolocationPositionError.Code.permissionDenied.rawValue)
+        XCTAssertEqual(delegate.positionRequestCount, 1)
+
+        script.cancelAllWatches()
+        let staleResponse = await script.userContentController(controller, didReceive: validRequest)
+        XCTAssertEqual((staleResponse.0 as? [String: Any])?["code"] as? Int,
+                       GeolocationPositionError.Code.permissionDenied.rawValue)
+        XCTAssertEqual(delegate.positionRequestCount, 1)
+
+        _ = await script.userContentController(controller, didReceive: registration)
+        _ = await script.userContentController(controller, didReceive: validRequest)
+        XCTAssertEqual(delegate.positionRequestCount, 2, "The new page must authenticate before requesting permission")
+    }
+
     func testPermissionStatusRegistryClearsOnPageReset() async throws {
         let delegate = TestGeolocationUserScriptDelegate()
         let script = GeolocationUserScript(delegate: delegate)
@@ -433,12 +468,14 @@ final class GeolocationUserScriptTests: XCTestCase {
 private final class TestGeolocationUserScriptDelegate: GeolocationUserScriptDelegate {
 
     private(set) var cancelledPermissionStatusIDs = [String]()
+    private(set) var positionRequestCount = 0
 
     func geolocationUserScript(_ userScript: GeolocationUserScript,
                                getCurrentPositionWith options: GeolocationRequestOptions,
                                constraints: GeolocationRequestConstraints,
                                in frame: GeolocationFrame) async -> GeolocationPositionResult {
-        .failure(.init(code: .positionUnavailable, message: "Unavailable"))
+        positionRequestCount += 1
+        return .failure(.init(code: .positionUnavailable, message: "Unavailable"))
     }
 
     func geolocationUserScript(_ userScript: GeolocationUserScript,

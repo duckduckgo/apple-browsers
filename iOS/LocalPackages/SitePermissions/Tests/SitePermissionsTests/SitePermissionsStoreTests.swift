@@ -141,7 +141,8 @@ final class SitePermissionsStoreTests: XCTestCase {
 
     func testWhenPermissionIsRemovedAndUndoneThenExactRecordIsRestored() throws {
         let keyValueStore = MockKeyValueStore()
-        let original = ["example.com": ["camera": "allow", "future-permission": "future-decision"]]
+        let original = ["example.com": ["camera": "allow", "microphone": "deny", "geolocation": "ask",
+                                         "future-permission": "future-decision"]]
         keyValueStore.set(original, forKey: SitePermissionsStorageKeyNames.perSitePermissions.rawValue)
         let store = makeStore(keyValueStore: keyValueStore)
         let site = try makeSite("https://example.com")

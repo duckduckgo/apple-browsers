@@ -96,6 +96,53 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
         XCTAssertEqual(changes.count, 1)
     }
 
+    func testWhenSiteDecisionChangesThenOtherPermissionTypesAndGlobalDefaultsRemainUnchanged() throws {
+        for changedType in SitePermissionType.allCases {
+            for decision in [SitePermissionDecision.ask, .deny] {
+                let store = makeStore()
+                let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+                for permissionType in SitePermissionType.allCases {
+                    store.setPersistentDecision(.allow, for: permissionType, at: site)
+                    store.setGlobalDefault(.deny, for: permissionType)
+                }
+                let sut = makeSUT(store: store)
+
+                sut.siteDecisionBinding(for: changedType, at: site).wrappedValue = decision
+
+                for permissionType in SitePermissionType.allCases {
+                    let expected: SitePermissionDecision = permissionType == changedType ? decision : .allow
+                    XCTAssertEqual(store.decision(for: permissionType, at: site), expected, "\(changedType), \(decision), \(permissionType)")
+                    XCTAssertEqual(sut.siteDecision(for: permissionType, at: site), expected)
+                    XCTAssertEqual(store.globalDefault(for: permissionType), .deny)
+                }
+            }
+        }
+    }
+
+    func testWhenGlobalDefaultChangesThenOtherPermissionTypesAndSiteDecisionsRemainUnchanged() throws {
+        for changedType in SitePermissionType.allCases {
+            for decision in GlobalSitePermissionDecision.allCases {
+                let store = makeStore()
+                let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+                let previous: GlobalSitePermissionDecision = decision == .ask ? .deny : .ask
+                for permissionType in SitePermissionType.allCases {
+                    store.setPersistentDecision(.allow, for: permissionType, at: site)
+                    store.setGlobalDefault(previous, for: permissionType)
+                }
+                let sut = makeSUT(store: store)
+
+                sut.globalDefaultBinding(for: changedType).wrappedValue = decision
+
+                for permissionType in SitePermissionType.allCases {
+                    let expected = permissionType == changedType ? decision : previous
+                    XCTAssertEqual(store.globalDefault(for: permissionType), expected, "\(changedType), \(decision), \(permissionType)")
+                    XCTAssertEqual(sut.globalDefault(for: permissionType), expected)
+                    XCTAssertEqual(store.decision(for: permissionType, at: site), .allow)
+                }
+            }
+        }
+    }
+
     func testWhenFeatureIsDisabledWhileSettingsIsOpenThenActionsDoNotMutateOrReportEvents() throws {
         let store = makeStore()
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
@@ -245,6 +292,9 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
         let store = makeStore()
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
         store.setPersistentDecision(.allow, for: .camera, at: site)
+        store.setPersistentDecision(.deny, for: .microphone, at: site)
+        store.resetDecision(for: .location, at: site)
+        let original = store.permissions(for: site)
         var presentedMessage: String?
         var undo: (() -> Void)?
         var removedCount = 0
@@ -261,7 +311,7 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
 
         sut.removePermissions(for: site)
 
-        XCTAssertNil(store.decision(for: .camera, at: site))
+        XCTAssertTrue(store.permissions(for: site).isEmpty)
         XCTAssertEqual(presentedMessage, "Permissions removed for example.com")
         XCTAssertEqual(removedCount, 1)
         XCTAssertEqual(revocations.first?.0, site)
@@ -269,7 +319,7 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
 
         try XCTUnwrap(undo)()
 
-        XCTAssertEqual(store.decision(for: .camera, at: site), .allow)
+        XCTAssertEqual(store.permissions(for: site), original)
         XCTAssertEqual(sut.storedSites, [site])
         XCTAssertEqual(undoCount, 1)
     }
@@ -324,8 +374,15 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
         let first = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://one.example")!))
         let second = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://two.example")!))
         store.setGlobalDefault(.deny, for: .camera)
+        store.setGlobalDefault(.ask, for: .microphone)
+        store.setGlobalDefault(.deny, for: .location)
+        let originalDefaults = SitePermissionType.allCases.map { store.globalDefault(for: $0) }
         store.setPersistentDecision(.allow, for: .camera, at: first)
         store.setPersistentDecision(.deny, for: .microphone, at: second)
+        store.resetDecision(for: .location, at: first)
+        store.setPersistentDecision(.allow, for: .location, at: second)
+        let originalFirst = store.permissions(for: first)
+        let originalSecond = store.permissions(for: second)
         var presentedMessage: String?
         var undo: (() -> Void)?
         var removedAllCount = 0
@@ -344,7 +401,7 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
         sut.removeAllSitePermissions()
 
         XCTAssertTrue(sut.storedSites.isEmpty)
-        XCTAssertEqual(store.globalDefault(for: .camera), .deny)
+        XCTAssertEqual(SitePermissionType.allCases.map { store.globalDefault(for: $0) }, originalDefaults)
         XCTAssertEqual(presentedMessage, "Permissions removed for all sites")
         XCTAssertEqual(removedAllCount, 1)
         XCTAssertEqual(revokedSites, [first, second])
@@ -352,7 +409,9 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
         try XCTUnwrap(undo)()
 
         XCTAssertEqual(Set(sut.storedSites), [first, second])
-        XCTAssertEqual(store.globalDefault(for: .camera), .deny)
+        XCTAssertEqual(store.permissions(for: first), originalFirst)
+        XCTAssertEqual(store.permissions(for: second), originalSecond)
+        XCTAssertEqual(SitePermissionType.allCases.map { store.globalDefault(for: $0) }, originalDefaults)
     }
 
     func testOpenAndSystemSettingsActionsUseInjectedCallbacks() {

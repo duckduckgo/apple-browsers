@@ -35,7 +35,7 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
             captureStates: [.microphone: .active]
         )
 
-        XCTAssertEqual(snapshot.relevantPermissionTypes, [.camera, .microphone])
+        XCTAssertEqual(snapshot.relevantPermissionTypes, [.camera, .microphone, .location])
         XCTAssertTrue(snapshot.showsMenuEntry)
 
         let sut = harness.makeViewModel(snapshot: snapshot)

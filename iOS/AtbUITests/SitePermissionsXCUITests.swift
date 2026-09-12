@@ -438,6 +438,8 @@ final class SitePermissionsXCUITests: XCTestCase {
             format: "identifier IN %@", ["alert.forget-data.confirm", "Fire.Confirmation.Button.Delete"])).firstMatch
         tap(confirm)
         XCTAssertTrue(confirm.waitForNonExistence(timeout: timeout))
+        // Fire does not always focus the search field; enter editing before dismissing it.
+        tap(element("searchEntry"))
         tap(element("UnifiedToggleInput.Button.Dismiss"))
         openPermissionSettings()
         XCTAssertTrue(element("Settings.SitePermissions.Site.\(fireproofHost)").exists)

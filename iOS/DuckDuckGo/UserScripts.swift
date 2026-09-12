@@ -68,6 +68,7 @@ final class UserScripts: UserScriptsProvider {
     private(set) var selectionFrameScript: SelectionFrameUserScript
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
     private(set) var mediaCaptureUserScript: MediaCaptureUserScript?
+    private(set) var geolocationUserScript: GeolocationUserScript?
     private(set) var printingSubfeature = PrintingSubfeature()
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
 
@@ -76,9 +77,11 @@ final class UserScripts: UserScriptsProvider {
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         sitePermissionsEnabled: Bool? = nil,
          mediaCaptureUserScript: MediaCaptureUserScript? = nil,
          internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProviding = AppDependencyProvider.shared.internalFeedbackAttachmentsProvider,
          internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider = AppDependencyProvider.shared.internalFeedbackTabCountProvider,
+         geolocationUserScript: GeolocationUserScript? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
@@ -86,6 +89,8 @@ final class UserScripts: UserScriptsProvider {
 
         selectionFrameScript = SelectionFrameUserScript()
         self.mediaCaptureUserScript = mediaCaptureUserScript
+        let isSitePermissionsEnabled = sitePermissionsEnabled ?? featureFlagger.isFeatureOn(.sitePermissions)
+        self.geolocationUserScript = isSitePermissionsEnabled ? geolocationUserScript : nil
 
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
@@ -202,6 +207,7 @@ final class UserScripts: UserScriptsProvider {
             findInPageScript,
             fullScreenVideoScript,
             mediaCaptureUserScript,
+            geolocationUserScript,
             autofillUserScript,
             loginFormDetectionScript,
             contentScopeUserScript,

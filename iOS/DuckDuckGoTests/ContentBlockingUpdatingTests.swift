@@ -23,6 +23,7 @@ import Core
 import TrackerRadarKit
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
+@testable import SitePermissions
 @testable import DuckDuckGo
 
 class FireproofingMock: Fireproofing {
@@ -86,6 +87,149 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             waitForExpectations(timeout: 5, handler: nil)
             updating.stopUpdates()
         }
+    }
+
+    func testWhenGeolocationScriptsDoNotMatchFlagThenNavigationWaitsIncludingSERP() {
+        for isSERP in [false, true] {
+            for isEnabled in [false, true] {
+                XCTAssertTrue(TabViewController.shouldWaitForContentBlockingAssets(
+                    assetsInstalled: true,
+                    contentBlockingEnabled: false,
+                    sitePermissionsEnabled: isEnabled,
+                    geolocationScriptInstalled: !isEnabled,
+                    isDuckDuckGoSearch: isSERP
+                ))
+                XCTAssertFalse(TabViewController.shouldWaitForContentBlockingAssets(
+                    assetsInstalled: true,
+                    contentBlockingEnabled: true,
+                    sitePermissionsEnabled: isEnabled,
+                    geolocationScriptInstalled: isEnabled,
+                    isDuckDuckGoSearch: isSERP
+                ))
+            }
+        }
+        XCTAssertFalse(TabViewController.shouldWaitForContentBlockingAssets(
+            assetsInstalled: false,
+            contentBlockingEnabled: true,
+            sitePermissionsEnabled: false,
+            geolocationScriptInstalled: false,
+            isDuckDuckGoSearch: true
+        ))
+        XCTAssertTrue(TabViewController.shouldWaitForContentBlockingAssets(
+            assetsInstalled: false,
+            contentBlockingEnabled: false,
+            sitePermissionsEnabled: true,
+            geolocationScriptInstalled: false,
+            isDuckDuckGoSearch: true
+        ))
+    }
+
+    @MainActor
+    func testWhenFlagChangesWithoutContentUpdateThenNextDocumentUsesMatchingGeolocationAPI() async throws {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+        let tab = TabViewController.fake(featureFlagger: flagger,
+                                        contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
+        defer { tab.prepareForDataClearing() }
+        let controller = try XCTUnwrap(tab.webView.configuration.userContentController as? UserContentController)
+        let navigationDelegate = MockWKNavigationDelegate()
+        tab.webView.navigationDelegate = navigationDelegate
+
+        for isEnabled in [true, false, true] {
+            let installed = expectation(description: "Scripts installed with flag \(isEnabled)")
+            let subscription = controller.$contentBlockingAssets
+                .compactMap { $0?.userScripts as? UserScripts }
+                .filter { ($0.geolocationUserScript != nil) == isEnabled }
+                .first()
+                .sink { _ in installed.fulfill() }
+            flagger.enabledFeatureFlags = isEnabled ? [.sitePermissions] : []
+            flagger.triggerUpdate()
+            if controller.contentBlockingAssets == nil {
+                rulesManager.updatesSubject.send(Self.testUpdate())
+            }
+            await fulfillment(of: [installed], timeout: 10)
+            subscription.cancel()
+
+            let loaded = expectation(description: "New document loaded")
+            navigationDelegate.didFinishNavigation = { _, _ in loaded.fulfill() }
+            tab.webView.loadHTMLString("<html><body>Geolocation rollback</body></html>", baseURL: nil)
+            await fulfillment(of: [loaded], timeout: 10)
+            let hasShim: Bool? = try await tab.webView.evaluateJavaScript("typeof window.__ddgSitePermissionsGeolocation !== 'undefined'")
+            XCTAssertEqual(hasShim, isEnabled)
+        }
+    }
+
+    @MainActor
+    func testWhenFlagChangesThenPreviousReloadNotificationIsNotReplayed() async {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+        let tab = TabViewController.fake(featureFlagger: flagger,
+                                        contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
+        defer { tab.prepareForDataClearing() }
+        let initial = expectation(description: "Content update includes reload notification")
+        let refreshed = expectation(description: "Flag refresh omits old notification")
+        var updates = [ContentBlockerRulesManager.UpdateEvent]()
+        let subscription = tab.makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: MediaCaptureUserScript())
+            .sink { content in
+                updates.append(content.rulesUpdate)
+                if updates.count == 1 { initial.fulfill() }
+                if updates.count == 2 { refreshed.fulfill() }
+            }
+        let update = ContentBlockerRulesManager.UpdateEvent(rules: Self.testRules(),
+                                                           changes: ["test": .unprotectedSites],
+                                                           completionTokens: ["real-update"])
+        rulesManager.updatesSubject.send(update)
+        await fulfillment(of: [initial], timeout: 3)
+        flagger.enabledFeatureFlags = []
+        flagger.triggerUpdate()
+        await fulfillment(of: [refreshed], timeout: 3)
+        subscription.cancel()
+        XCTAssertEqual(updates[0].changes["test"], .unprotectedSites)
+        XCTAssertEqual(updates[0].completionTokens, ["real-update"])
+        XCTAssertTrue(updates[1].changes.isEmpty)
+        XCTAssertTrue(updates[1].completionTokens.isEmpty)
+    }
+
+    @MainActor
+    func testGeolocationUserScriptRegistrationFollowsSitePermissionsFlag() {
+        let sourceProvider = makeScriptSourceProvider()
+
+        let disabledScripts = UserScripts(
+            with: sourceProvider,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [])
+        )
+        XCTAssertNil(disabledScripts.geolocationUserScript)
+        XCTAssertFalse(disabledScripts.userScripts.contains { $0 is GeolocationUserScript })
+
+        let geolocationUserScript = GeolocationUserScript()
+        let enabledScripts = UserScripts(
+            with: sourceProvider,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]),
+            geolocationUserScript: geolocationUserScript
+        )
+        XCTAssertTrue(enabledScripts.geolocationUserScript === geolocationUserScript)
+        XCTAssertTrue(enabledScripts.userScripts.contains { ($0 as? GeolocationUserScript) === geolocationUserScript })
+
+        let tabEnabledWithDifferentGlobalFlag = UserScripts(
+            with: sourceProvider,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+            sitePermissionsEnabled: true,
+            geolocationUserScript: geolocationUserScript
+        )
+        XCTAssertTrue(tabEnabledWithDifferentGlobalFlag.geolocationUserScript === geolocationUserScript)
+
+        let tabDisabledWithDifferentGlobalFlag = UserScripts(
+            with: sourceProvider,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]),
+            sitePermissionsEnabled: false,
+            geolocationUserScript: geolocationUserScript
+        )
+        XCTAssertNil(tabDisabledWithDifferentGlobalFlag.geolocationUserScript)
+
+        let nonTabScripts = UserScripts(
+            with: sourceProvider,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+        )
+        XCTAssertNil(nonTabScripts.geolocationUserScript)
+        XCTAssertFalse(nonTabScripts.userScripts.contains { $0 is GeolocationUserScript })
     }
 
     func testWhenRuleListIsRecompiledThenUpdatesAreReceived() {
@@ -286,6 +430,18 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     // MARK: - Test data
+
+    private func makeScriptSourceProvider() -> DefaultScriptSourceProvider {
+        DefaultScriptSourceProvider(dependencies: .init(appSettings: appSettings,
+                                                         sync: MockDDGSyncing(),
+                                                         privacyConfigurationManager: configManager,
+                                                         contentBlockingManager: rulesManager,
+                                                         fireproofing: FireproofingMock(),
+                                                         contentScopeExperimentsManager: MockContentScopeExperimentManager(),
+                                                         internalUserDecider: MockInternalUserDecider(),
+                                                         syncErrorHandler: CapturingAdapterErrorHandler(),
+                                                         webExtensionAvailability: nil))
+    }
 
     static let tracker = KnownTracker(domain: "tracker.com",
                                defaultAction: .block,

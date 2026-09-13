@@ -23,6 +23,7 @@ public enum SitePermissionDialogAction: Hashable, Sendable {
     case allowOnce
     case allowWhileUsingSite
     case neverAllow
+    case dismissed
 
     public var promptDecision: SitePermissionPromptDecision {
         switch self {
@@ -32,6 +33,8 @@ public enum SitePermissionDialogAction: Hashable, Sendable {
             return .allowWhileUsingSite
         case .neverAllow:
             return .neverAllow
+        case .dismissed:
+            return .denyOnce
         }
     }
 
@@ -43,6 +46,8 @@ public enum SitePermissionDialogAction: Hashable, Sendable {
             return .allowAlways
         case .neverAllow:
             return .never
+        case .dismissed:
+            return .dismissed
         }
     }
 }

@@ -128,6 +128,8 @@ final public class UserContentController: WKUserContentController {
     @MainActor
     private var assetsPublisherCancellables: Set<AnyCancellable>?
     @MainActor
+    private var contentBlockingAssetsTask: Task<Void, Never>?
+    @MainActor
     private let scriptMessageHandler = PermanentScriptMessageHandler()
 
     /// if earlyAccessHandlers (WKScriptMessageHandlers) are provided they are installed without waiting for contentBlockingAssets to be loaded if.
@@ -140,19 +142,18 @@ final public class UserContentController: WKUserContentController {
 
         // Install initial WKScriptMessageHandlers if any. Currently, no WKUserScript are provided at initialization.
         installUserScripts([], handlers: earlyAccessHandlers)
-        // 1. receive UserContentControllerNewContent from assetsPublisher
-        // 2. prepare ContentBlockingAssets(content: userContentControllerNewContent) asynchronously
-        // 3. receive the ContentBlockingAssets from contentBlockingAssetsPublisher and install
-        let contentBlockingAssetsPublisher = PassthroughSubject<ContentBlockingAssets, Never>()
+        // Build and install in source order, preserving each update's incremental changes.
         assetsPublisherCancellables = [
-            contentBlockingAssetsPublisher.receive(on: DispatchQueue.main).sink { [weak self] contentBlockingAssets in
-                self?.installContentBlockingAssets(contentBlockingAssets)
-            },
-            assetsPublisher.sink { [selfDescr=self.debugDescription] content in
-                Logger.contentBlocking.debug("\(selfDescr): 📚 received content blocking assets")
-                Task.detached {
+            assetsPublisher.receive(on: DispatchQueue.main).sink { [weak self] content in
+                guard let self else { return }
+                Logger.contentBlocking.debug("\(self.debugDescription): 📚 received content blocking assets")
+                let previousTask = self.contentBlockingAssetsTask
+                self.contentBlockingAssetsTask = Task { [weak self] in
+                    await previousTask?.value
+                    guard !Task.isCancelled, self?.assetsPublisherCancellables != nil else { return }
                     let contentBlockingAssets = await ContentBlockingAssets(content: content)
-                    contentBlockingAssetsPublisher.send(contentBlockingAssets)
+                    guard !Task.isCancelled else { return }
+                    self?.installContentBlockingAssets(contentBlockingAssets)
                 }
             }
         ]
@@ -289,6 +290,8 @@ final public class UserContentController: WKUserContentController {
 
         self.scriptMessageHandler.clear()
         self.assetsPublisherCancellables = nil
+        self.contentBlockingAssetsTask?.cancel()
+        self.contentBlockingAssetsTask = nil
 
         self.removeAllContentRuleLists()
     }
@@ -377,7 +380,7 @@ public extension UserContentController {
 }
 
 /// Script Message Handler only added once per UserScriptController for all the Message Names (to avoid race conditions for re-added User Scripts)
-private class PermanentScriptMessageHandler: NSObject, WKScriptMessageHandler, WKScriptMessageHandlerWithReply {
+final class PermanentScriptMessageHandler: NSObject, WKScriptMessageHandler, WKScriptMessageHandlerWithReply {
 
     private struct WeakScriptMessageHandlerBox {
         weak var handler: WKScriptMessageHandler?
@@ -418,15 +421,18 @@ private class PermanentScriptMessageHandler: NSObject, WKScriptMessageHandler, W
 
     public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         guard let box = self.registeredMessageHandlers[message.messageName] else {
-            assertionFailure("no registered message handler for \(message.messageName)")
+            replyHandler(nil, "Script message handler is unavailable")
             return
         }
         guard let handler = box.handler else {
-            assertionFailure("handler for \(message.messageName) has been unregistered")
+            replyHandler(nil, "Script message handler is unavailable")
             return
         }
-        assert(handler is WKScriptMessageHandlerWithReply)
-        (handler as? WKScriptMessageHandlerWithReply)?.userContentController(userContentController, didReceive: message, replyHandler: replyHandler)
+        guard let handler = handler as? WKScriptMessageHandlerWithReply else {
+            replyHandler(nil, "Script message handler does not support replies")
+            return
+        }
+        handler.userContentController(userContentController, didReceive: message, replyHandler: replyHandler)
     }
 
 }

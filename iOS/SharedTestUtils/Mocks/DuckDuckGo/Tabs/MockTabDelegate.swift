@@ -203,6 +203,7 @@ extension TabViewController {
         contextualOnboardingLogic: ContextualOnboardingLogic = ContextualOnboardingLogicMock(),
         contextualOnboardingPixelReporter: OnboardingCustomInteractionPixelReporting = OnboardingPixelReporterMock(),
         featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
+        contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never> = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
         link: Link = Link(title: nil, url: .ddg),
         fireTab: Bool = false
     ) -> TabViewController {
@@ -214,7 +215,7 @@ extension TabViewController {
             historyManager: MockHistoryManager(),
             syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false),
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
+            contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             contextualOnboardingPresenter: contextualOnboardingPresenter,
             contextualOnboardingLogic: contextualOnboardingLogic,

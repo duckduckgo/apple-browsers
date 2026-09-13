@@ -130,6 +130,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
         for (captureType, expectedPermissionTypes) in scenarios {
             let sut = makeSUT()
+            let tabDelegate = MockTabDelegate()
+            sut.delegate = tabDelegate
             var receivedPrompt: SitePermissionPrompt?
             sut.sitePermissionsPromptHandlerOverride = { prompt, completion in
                 receivedPrompt = prompt
@@ -143,6 +145,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             XCTAssertEqual(receivedPrompt?.site.host, "top-level.example", "capture type: \(captureType)")
             XCTAssertEqual(receivedPrompt?.permissionTypes, expectedPermissionTypes, "capture type: \(captureType)")
             XCTAssertEqual(decision, .deny, "capture type: \(captureType)")
+            XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
         }
     }
 
@@ -170,6 +173,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                         completion(true)
                     })
                     defer { sut.closeSitePermissions() }
+                    let tabDelegate = MockTabDelegate()
+                    sut.delegate = tabDelegate
                     var prompts = [SitePermissionPrompt]()
                     sut.sitePermissionsPromptHandlerOverride = { prompt, completion in
                         prompts.append(prompt)
@@ -192,6 +197,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                         requestPermission(on: sut, originHost: site.host, captureType: captureType) { nativeDecisions.append($0) }
                     }
                     XCTAssertEqual(nativeDecisions, [.deny, .deny, .deny])
+                    XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
 
                     let separateDecision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: remainingCaptureType)
                     XCTAssertEqual(separateDecision, .allow)
@@ -199,6 +205,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                     XCTAssertEqual(requestedMediaTypes, isRemainingTypeAllowed ? [] : [remainingType == .camera ? .video : .audio])
                     requestPermission(on: sut, originHost: site.host, captureType: remainingCaptureType) { XCTAssertEqual($0, .grant) }
                     requestPermission(on: sut, originHost: site.host, captureType: remainingCaptureType) { XCTAssertEqual($0, .deny) }
+                    XCTAssertEqual(tabDelegate.grantedSitePermissions, [[remainingType]])
                 }
             }
         }
@@ -305,6 +312,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
     func testFlagOffPreservesLegacyRoutingForReplacedWebView() throws {
         let sut = makeSUT(featureEnabled: false)
+        let tabDelegate = MockTabDelegate()
+        sut.delegate = tabDelegate
         let staleWebView = WKWebView()
         var decisions = [WKPermissionDecision]()
 
@@ -323,6 +332,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         }
 
         XCTAssertEqual(decisions, [.prompt, .grant])
+        XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
     }
 
     func testDisabledLaunchInstallsBridgeButRemoteActivationStillBypasses() async {
@@ -575,6 +585,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
     func testNavigationDrainsPendingRequestExactlyOnceAndIgnoresStaleCallbacks() async {
         let sut = makeSUT()
+        let tabDelegate = MockTabDelegate()
+        sut.delegate = tabDelegate
         var promptCompletion: ((SitePermissionPromptDecision) -> Void)?
         let promptExpectation = expectation(description: "Site prompt presented")
         sut.sitePermissionsPromptHandlerOverride = { _, completion in
@@ -594,6 +606,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(decision, .deny)
 
         promptCompletion?(.allowOnce)
+        XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
+        XCTAssertEqual(tabDelegate.sitePermissionAnimationCancellationCount, 1)
     }
 
     func testFailedProvisionalNavigationReenablesRequestsForCommittedPage() async {
@@ -1073,6 +1087,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let sut = makeSUT(systemPermissionClient: systemPermissionClient,
                               committedURL: URL(string: "https://www.example.com/page")!,
                               eventHandler: { events.append($0) })
+            let tabDelegate = MockTabDelegate()
+            sut.delegate = tabDelegate
             let userScript = GeolocationUserScript(installImmediately: true)
             sut.configureSitePermissionsGeolocation(with: userScript)
             let delegate = try XCTUnwrap(userScript.delegate)
@@ -1113,6 +1129,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             }
             XCTAssertEqual(locationManager.startUpdatingCallCount, 1, "isMainFrame: \(isMainFrame)")
 
+            XCTAssertEqual(tabDelegate.grantedSitePermissions, [[.location]])
+            let cancellationCount = tabDelegate.sitePermissionAnimationCancellationCount
 
             let location = CLLocation(latitude: 52.2297, longitude: 21.0122)
             locationManager.send(location)
@@ -1121,6 +1139,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                 XCTFail("Expected a successful geolocation result; isMainFrame: \(isMainFrame)")
                 return
             }
+            XCTAssertEqual(tabDelegate.grantedSitePermissions, [[.location]])
+            XCTAssertEqual(tabDelegate.sitePermissionAnimationCancellationCount, cancellationCount)
             XCTAssertEqual(position.coordinates.latitude, location.coordinate.latitude)
             XCTAssertEqual(position.coordinates.longitude, location.coordinate.longitude)
             XCTAssertEqual(locationManager.stopUpdatingCallCount, 1, "isMainFrame: \(isMainFrame)")
@@ -1433,6 +1453,41 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         }
     }
 
+    func testDismissingPermissionDialogDeniesWithoutPersistingOrPromptingAgain() async throws {
+        var events = [SitePermissionsEvent]()
+        let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+        let promptPresented = expectation(description: "Site prompt presented")
+        let sut = makeSUT(store: store, eventHandler: { event in
+            events.append(event)
+            if event == .permissionDialogImpression(type: .camera) {
+                promptPresented.fulfill()
+            }
+        })
+        defer { sut.closeSitePermissions() }
+
+        let request = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+        await fulfillment(of: [promptPresented], timeout: 1)
+        let dialog = try XCTUnwrap(sut.children.compactMap {
+            ($0 as? UIHostingController<SitePermissionDialogView>)?.rootView
+        }.first)
+
+        dialog.onAction(.dismissed)
+
+        let decision = await request.value
+        XCTAssertEqual(decision, .deny)
+        XCTAssertFalse(sut.children.contains { $0 is UIHostingController<SitePermissionDialogView> })
+        XCTAssertFalse(sut.isSitePermissionsManagementAvailable)
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
+        XCTAssertTrue(store.permissions(for: site).isEmpty)
+
+        let repeatedDecision = await requestPermissionThroughBridge(on: sut, originHost: "top-level.example", captureType: .camera)
+        XCTAssertEqual(repeatedDecision, .deny)
+        XCTAssertEqual(events, [
+            .permissionDialogImpression(type: .camera),
+            .permissionDialogClick(type: .camera, selection: .dismissed)
+        ])
+    }
+
     func testPermissionDialogFiresImpressionAndClickEventsAndRoutesSelectedAction() async throws {
         var events = [SitePermissionsEvent]()
         var decisions = [WKPermissionDecision]()
@@ -1584,6 +1639,52 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertFalse(sut.children.contains { $0 is UIHostingController<PermissionReminderDialogView> })
     }
 
+    func testWhenPageLifecycleEndsThenPermissionAnimationIsCancelled() async {
+        let scenarios: [(String, (TabViewController) -> Void)] = [
+            ("close", { $0.closeSitePermissions() }),
+            ("data clearing", { $0.prepareSitePermissionsForDataClearing() }),
+            ("web view replacement", { $0.sitePermissionsDidAttachWebView(replacingWebView: true) }),
+            ("process termination", { $0.sitePermissionsWebContentProcessDidTerminate($0.webView) }),
+            ("tab disappearance", { $0.setSitePermissionsGeolocationActive(false) })
+        ]
+        for (name, endLifecycle) in scenarios {
+            let sut = makeSUT()
+            let tabDelegate = MockTabDelegate()
+            sut.delegate = tabDelegate
+            sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.allowOnce) }
+            let decision = await requestPermissionThroughBridge(on: sut, originHost: "top-level.example", captureType: .camera)
+            XCTAssertEqual(decision, .allow)
+            requestPermission(on: sut, originHost: "top-level.example", captureType: .camera) { decision in
+                XCTAssertEqual(decision, .grant)
+            }
+
+            endLifecycle(sut)
+
+            XCTAssertGreaterThan(tabDelegate.sitePermissionAnimationCancellationCount, 0, name)
+            XCTAssertEqual(tabDelegate.grantedSitePermissions, [[.camera]], name)
+        }
+    }
+
+    func testWhenNativeMediaGrantIsAcceptedThenEachPermissionTypeAnimates() async {
+        let scenarios: [(WKMediaCaptureType, Set<SitePermissionType>)] = [
+            (.camera, [.camera]), (.microphone, [.microphone]), (.cameraAndMicrophone, [.camera, .microphone])
+        ]
+        for (captureType, expectedTypes) in scenarios {
+            let sut = makeSUT()
+            let tabDelegate = MockTabDelegate()
+            sut.delegate = tabDelegate
+            sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.allowOnce) }
+            let decision = await requestPermissionThroughBridge(on: sut, originHost: "top-level.example", captureType: captureType)
+            XCTAssertEqual(decision, .allow)
+            XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
+
+            requestPermission(on: sut, originHost: "top-level.example", captureType: captureType) { decision in
+                XCTAssertEqual(decision, .grant)
+            }
+            XCTAssertEqual(tabDelegate.grantedSitePermissions, [expectedTypes])
+        }
+    }
+
     func testSitePromptPrecedesSystemPromptAndPreapprovalIsConsumedOnce() async {
         enum TimelineEntry: Equatable {
             case sitePrompt
@@ -1602,6 +1703,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                 completion(true)
             }
         )
+        let tabDelegate = MockTabDelegate()
+        sut.delegate = tabDelegate
         sut.sitePermissionsPromptHandlerOverride = { _, completion in
             timeline.append(.sitePrompt)
             promptCompletion = completion
@@ -1618,6 +1721,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let bridgeDecision = await bridgeRequest.value
 
         XCTAssertEqual(bridgeDecision, .allow)
+        XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
         XCTAssertEqual(timeline, [.sitePrompt, .systemPrompt])
 
         var decisions = [WKPermissionDecision]()
@@ -1631,6 +1735,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                           decisionHandler: { decisions.append($0) })
 
         XCTAssertEqual(decisions, [.grant, .deny])
+        XCTAssertEqual(tabDelegate.grantedSitePermissions, [[.camera]])
     }
 
     func testPreapprovalIsBoundToTrustedFrameOriginAndCaptureType() async {
@@ -1733,6 +1838,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     func testUnusedPreapprovalExpiresBeforeNativeDelegateCanConsumeIt() async {
         var uptime: TimeInterval = 100
         let sut = makeSUT()
+        let tabDelegate = MockTabDelegate()
+        sut.delegate = tabDelegate
         sut.sitePermissionsUptimeProvider = { uptime }
         sut.sitePermissionsPromptHandlerOverride = { _, completion in
             completion(.allowOnce)
@@ -1751,6 +1858,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                           decisionHandler: { decisions.append($0) })
 
         XCTAssertEqual(decisions, [.deny])
+        XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
     }
 
     private func makeSUT(featureEnabled: Bool = true,

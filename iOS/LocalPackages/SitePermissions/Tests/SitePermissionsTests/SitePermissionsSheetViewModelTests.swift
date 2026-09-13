@@ -25,7 +25,7 @@ import XCTest
 @MainActor
 final class SitePermissionsSheetViewModelTests: XCTestCase {
 
-    func testRowMembershipIsStoredUnionActiveSessionAndRequestedButExcludesLocation() throws {
+    func testRowMembershipIsStoredUnionActiveSessionAndRequestedForAllManagedTypes() throws {
         let harness = try Harness()
         harness.store.resetDecision(for: .camera, at: harness.site)
         let snapshot = harness.snapshot(
@@ -39,7 +39,7 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         XCTAssertTrue(snapshot.showsMenuEntry)
 
         let sut = harness.makeViewModel(snapshot: snapshot)
-        XCTAssertEqual(sut.rows.map(\.permissionType), [.camera, .microphone])
+        XCTAssertEqual(sut.rows.map(\.permissionType), [.location, .camera, .microphone])
     }
 
     func testRequestedOnlyAddsSheetRowButDoesNotMakeMenuEntryVisible() throws {
@@ -57,21 +57,24 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
     func testAllThreeSheetStatesAreRepresentable() throws {
         let harness = try Harness()
 
-        let permissionsOnly = harness.makeViewModel(snapshot: harness.snapshot(stored: [.camera: .ask]))
+        let permissionsOnly = harness.makeViewModel(snapshot: harness.snapshot(stored: [.location: .ask]))
         XCTAssertEqual(permissionsOnly.state, .permissionsOnly)
         XCTAssertNil(permissionsOnly.reminderText)
+        XCTAssertEqual(permissionsOnly.rows.map(\.permissionType), [.location])
+        XCTAssertEqual(permissionsOnly.rows.first?.title, "Location")
 
         let permissionsAndReminder = harness.makeViewModel(snapshot: harness.snapshot(
-            stored: [.camera: .allow],
-            systemStates: [.camera: .denied],
-            systemBlocked: [.camera]
+            stored: [.location: .allow],
+            systemStates: [.location: .denied],
+            systemBlocked: [.location]
         ))
         XCTAssertEqual(permissionsAndReminder.state, .permissionsAndReminder)
-        XCTAssertEqual(permissionsAndReminder.systemSettingsPermissionTypes, [.camera])
+        XCTAssertEqual(permissionsAndReminder.rows.map(\.permissionType), [.location])
+        XCTAssertEqual(permissionsAndReminder.systemSettingsPermissionTypes, [.location])
 
         let reminderOnly = harness.makeViewModel(snapshot: harness.snapshot(
-            systemStates: [.microphone: .restricted],
-            systemBlocked: [.microphone]
+            systemStates: [.location: .restricted],
+            systemBlocked: [.location]
         ))
         XCTAssertEqual(reminderOnly.state, .reminderOnly)
         XCTAssertTrue(reminderOnly.rows.isEmpty)
@@ -81,21 +84,48 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         _ = SitePermissionsSheetView(viewModel: reminderOnly).body
     }
 
-    func testPickerUsesThreeNormalOptionsAndReplacesAskWithCheckedAllowThisTimeForEphemeralGrant() throws {
+    func testWhenEphemeralGrantIsActiveThenPickerShowsAskEachTimeAndInUseState() throws {
         let harness = try Harness()
         let sut = harness.makeViewModel(snapshot: harness.snapshot(
-            stored: [.camera: .ask],
-            ephemeral: [.microphone]
+            stored: [.location: .ask],
+            ephemeral: [.microphone],
+            captureStates: [.microphone: .active]
         ))
 
-        let camera = try XCTUnwrap(sut.rows.first { $0.permissionType == .camera })
-        XCTAssertEqual(camera.options, [.askEachTime, .alwaysAllow, .neverAllow])
-        XCTAssertEqual(camera.selectedOption, .askEachTime)
+        let location = try XCTUnwrap(sut.rows.first { $0.permissionType == .location })
+        XCTAssertEqual(location.options, [.askEachTime, .alwaysAllow, .neverAllow])
+        XCTAssertEqual(location.selectedOption, .askEachTime)
 
         let microphone = try XCTUnwrap(sut.rows.first { $0.permissionType == .microphone })
-        XCTAssertEqual(microphone.options, [.allowThisTime, .alwaysAllow, .neverAllow])
-        XCTAssertEqual(microphone.selectedOption, .allowThisTime)
-        XCTAssertFalse(microphone.options.contains(.askEachTime))
+        XCTAssertEqual(microphone.options, [.askEachTime, .alwaysAllow, .neverAllow])
+        XCTAssertEqual(microphone.selectedOption, .askEachTime)
+        XCTAssertEqual(microphone.stateText, "Ask Each Time")
+        XCTAssertEqual(microphone.iconState, .inUse)
+        XCTAssertEqual(microphone.accessibilityValue, "Ask Each Time, in use")
+    }
+
+    func testSheetTextResizesWithDynamicTypeInAllThreeStates() throws {
+        let harness = try Harness()
+        let snapshots = [
+            harness.snapshot(stored: [.location: .ask]),
+            harness.snapshot(stored: [.location: .allow], systemStates: [.location: .denied], systemBlocked: [.location]),
+            harness.snapshot(systemStates: [.location: .denied], systemBlocked: [.location])
+        ]
+
+        for snapshot in snapshots {
+            let viewModel = harness.makeViewModel(snapshot: snapshot)
+            let sheet = SitePermissionsSheetView(viewModel: viewModel)
+            let host = UIHostingController(rootView: sheet.environment(\.dynamicTypeSize, .large))
+            let proposedSize = CGSize(width: 393, height: 2000)
+            let standardHeight = host.sizeThatFits(in: proposedSize).height
+
+            host.rootView = sheet.environment(\.dynamicTypeSize, .accessibility3)
+            let accessibleHeight = host.sizeThatFits(in: proposedSize).height
+
+            XCTAssertGreaterThan(standardHeight, 0)
+            XCTAssertGreaterThan(accessibleHeight, standardHeight, "Text must grow in state \(viewModel.state)")
+            XCTAssertLessThan(accessibleHeight, proposedSize.height, "The content should fit without being clipped")
+        }
     }
 
     func testIconAndAccessibilityStatesCoverInactiveInUseAndPaused() throws {
@@ -117,30 +147,34 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         let denied = harness.makeViewModel(snapshot: harness.snapshot(stored: [.microphone: .deny]))
         XCTAssertEqual(denied.rows.first?.iconState, .blocked)
         XCTAssertEqual(denied.rows.first?.accessibilityValue, "Never Allow")
+
+        let location = harness.makeViewModel(snapshot: harness.snapshot(stored: [.location: .allow]))
+        XCTAssertEqual(location.rows.first?.iconState, .solid)
+        XCTAssertEqual(location.rows.first?.title, "Location")
     }
 
     func testDenyWritesStoreBeforeImmediateRevocationAndReportsTypedChange() throws {
         let harness = try Harness()
-        harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
+        harness.store.setPersistentDecision(.allow, for: .location, at: harness.site)
         var order = [String]()
         var changes = [SitePermissionDecisionChange]()
         let sut = harness.makeViewModel(
-            snapshot: harness.snapshot(stored: [.camera: .allow], captureStates: [.camera: .active]),
+            snapshot: harness.snapshot(stored: [.location: .allow], captureStates: [.location: .active]),
             onDecisionChanged: {
                 order.append("change")
                 changes.append($0)
             },
             revokePermissions: { permissionTypes in
-                XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .deny)
-                XCTAssertEqual(permissionTypes, [.camera])
+                XCTAssertEqual(harness.store.decision(for: .location, at: harness.site), .deny)
+                XCTAssertEqual(permissionTypes, [.location])
                 order.append("revoke")
             }
         )
 
-        sut.select(.neverAllow, for: .camera)
+        sut.select(.neverAllow, for: .location)
 
-        XCTAssertEqual(order, ["revoke", "change"])
-        XCTAssertEqual(changes, [SitePermissionDecisionChange(permissionType: .camera, from: .allow, to: .deny)])
+        XCTAssertEqual(order, ["change", "revoke"])
+        XCTAssertEqual(changes, [SitePermissionDecisionChange(permissionType: .location, from: .allow, to: .deny)])
         XCTAssertEqual(sut.rows.first?.selectedOption, .neverAllow)
     }
 
@@ -159,19 +193,19 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
 
     func testGrantAndAskWriteWithoutRevoking() throws {
         let harness = try Harness()
-        harness.store.resetDecision(for: .camera, at: harness.site)
+        harness.store.resetDecision(for: .location, at: harness.site)
         var revoked = [Set<SitePermissionType>]()
         let sut = harness.makeViewModel(
-            snapshot: harness.snapshot(stored: [.camera: .ask], captureStates: [.camera: .active]),
+            snapshot: harness.snapshot(stored: [.location: .ask], captureStates: [.location: .active]),
             revokePermissions: { revoked.append($0) }
         )
 
-        sut.select(.alwaysAllow, for: .camera)
-        XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .allow)
+        sut.select(.alwaysAllow, for: .location)
+        XCTAssertEqual(harness.store.decision(for: .location, at: harness.site), .allow)
         XCTAssertTrue(revoked.isEmpty)
 
-        sut.select(.askEachTime, for: .camera)
-        XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .ask)
+        sut.select(.askEachTime, for: .location)
+        XCTAssertEqual(harness.store.decision(for: .location, at: harness.site), .ask)
         XCTAssertTrue(revoked.isEmpty)
     }
 
@@ -191,16 +225,17 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         XCTAssertEqual(change, SitePermissionDecisionChange(permissionType: .camera, from: .allow, to: .deny))
     }
 
-    func testRemoveWritesStoreBeforeRevokingManagedTypesThenReportsSnapshotAndDismissesCleanly() throws {
+    func testRemoveWritesStoreAndReportsSnapshotBeforeRevokingManagedTypesAndDismissingCleanly() throws {
         let harness = try Harness()
         harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
         harness.store.setPersistentDecision(.deny, for: .microphone, at: harness.site)
+        harness.store.resetDecision(for: .location, at: harness.site)
         var order = [String]()
         var removal: SitePermissionsRemoval?
         var dismissal: SitePermissionsSheetDismissal?
         let sut = harness.makeViewModel(
             snapshot: harness.snapshot(
-                stored: [.camera: .allow, .microphone: .deny],
+                stored: [.camera: .allow, .microphone: .deny, .location: .ask],
                 captureStates: [.camera: .active, .microphone: .paused]
             ),
             onRemovePermissions: {
@@ -213,20 +248,24 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
             },
             revokePermissions: {
                 XCTAssertTrue(harness.store.permissions(for: harness.site).isEmpty)
-                XCTAssertEqual($0, [.camera, .microphone])
+                XCTAssertEqual($0, [.camera, .microphone, .location])
                 order.append("revoke")
             }
         )
 
         sut.removePermissions()
 
-        XCTAssertEqual(order, ["revoke", "remove", "dismiss"])
-        XCTAssertEqual(removal?.permissionTypes, [.camera, .microphone])
+        XCTAssertEqual(order, ["remove", "revoke", "dismiss"])
+        XCTAssertEqual(removal?.permissionTypes, [.camera, .microphone, .location])
         XCTAssertFalse(removal?.snapshot.isEmpty ?? true)
         XCTAssertEqual(dismissal, .clean)
+
+        harness.store.restore(try XCTUnwrap(removal).snapshot)
+
+        XCTAssertEqual(harness.store.permissions(for: harness.site), [.camera: .allow, .microphone: .deny, .location: .ask])
     }
 
-    func testRemoveRevokesBothManagedTypesSoOtherMatchingTabsStopCapture() throws {
+    func testRemoveRevokesAllManagedTypesSoOtherMatchingTabsStopCapture() throws {
         let harness = try Harness()
         harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
         var revokedPermissionTypes = Set<SitePermissionType>()
@@ -237,7 +276,7 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
 
         sut.removePermissions()
 
-        XCTAssertEqual(revokedPermissionTypes, [.camera, .microphone])
+        XCTAssertEqual(revokedPermissionTypes, [.camera, .microphone, .location])
     }
 
     func testDismissalReportsDirtyOnlyWhenPickerWasOpenedWithoutACommittedSelection() throws {
@@ -262,23 +301,43 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         XCTAssertEqual(cleanDismissal, .clean)
     }
 
+    func testWhenPickerChangeIsCommittedThenReloadCaptionStateLastsUntilDismissal() throws {
+        let harness = try Harness()
+        let sut = harness.makeViewModel(snapshot: harness.snapshot(stored: [.camera: .ask]))
+
+        XCTAssertFalse(sut.hasCommittedChanges)
+        sut.beginEditing()
+        XCTAssertFalse(sut.hasCommittedChanges)
+        sut.select(.askEachTime, for: .camera)
+        XCTAssertFalse(sut.hasCommittedChanges)
+
+        sut.select(.alwaysAllow, for: .camera)
+        XCTAssertTrue(sut.hasCommittedChanges)
+        sut.refresh(with: harness.snapshot(captureStates: [.camera: .active]))
+        XCTAssertTrue(sut.hasCommittedChanges)
+
+        sut.dismiss()
+        XCTAssertFalse(sut.hasCommittedChanges)
+        XCTAssertFalse(harness.makeViewModel(snapshot: harness.snapshot()).hasCommittedChanges)
+    }
+
     func testSystemSettingsActionCarriesOnlyBlockedTypes() throws {
         let harness = try Harness()
         var openedTypes = Set<SitePermissionType>()
         let sut = harness.makeViewModel(
             snapshot: harness.snapshot(
-                stored: [.camera: .allow, .microphone: .allow],
-                systemStates: [.camera: .denied, .microphone: .authorized],
-                systemBlocked: [.camera]
+                stored: [.location: .allow],
+                systemStates: [.location: .denied],
+                systemBlocked: [.location]
             ),
             onOpenSystemSettings: { openedTypes = $0 }
         )
 
         sut.openSystemSettings()
 
-        XCTAssertEqual(openedTypes, [.camera])
+        XCTAssertEqual(openedTypes, [.location])
         XCTAssertEqual(sut.reminderText,
-                       "DuckDuckGo needs to access your camera, if you want to use related features on this site.")
+                       "DuckDuckGo needs to access your location, if you want to use related features on this site.")
     }
 }
 

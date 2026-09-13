@@ -26,9 +26,11 @@ public struct PermissionReminderDialogView: View {
     private enum Constants {
         static let cardWidth: CGFloat = 288
         static let contentHorizontalPadding: CGFloat = 8
+        static let contentTopPadding: CGFloat = 8
+        static let contentSpacing: CGFloat = 10
         static let copySpacing: CGFloat = 8
         static let actionsTopPadding: CGFloat = 24
-        static let buttonSpacing: CGFloat = 8
+        static let buttonSpacing: CGFloat = 10
     }
 
     private let viewModel: PermissionReminderDialogViewModel
@@ -44,11 +46,12 @@ public struct PermissionReminderDialogView: View {
 
     public var body: some View {
         PermissionDialogCard(width: Constants.cardWidth,
-                             accessibilityIdentifier: "SitePermissions.Reminder") {
-            VStack(spacing: 0) {
+                             accessibilityIdentifier: "SitePermissions.Reminder",
+                             onDismiss: { onAction(.cancel) }) {
+            VStack(spacing: Constants.contentSpacing) {
                 VStack(alignment: .leading, spacing: Constants.copySpacing) {
                     Text(viewModel.title)
-                        .daxBodyBold()
+                        .font(.headline)
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
@@ -56,12 +59,13 @@ public struct PermissionReminderDialogView: View {
                         .accessibilityIdentifier("SitePermissions.Reminder.Title")
 
                     Text(viewModel.body)
-                        .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .font(.body)
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, Constants.contentHorizontalPadding)
+                .padding(.top, Constants.contentTopPadding)
 
                 VStack(spacing: Constants.buttonSpacing) {
                     ForEach(viewModel.actions) { item in
@@ -80,16 +84,20 @@ public struct PermissionReminderDialogView: View {
     private func actionButton(for item: PermissionReminderDialogViewModel.ActionItem) -> some View {
         switch item.style {
         case .primary:
-            Button(item.title) {
+            Button {
                 onAction(item.action)
+            } label: {
+                PermissionDialogButtonLabel(title: item.title)
             }
-            .buttonStyle(PrimaryButtonStyle())
+            .buttonStyle(PrimaryButtonStyle(isFreeform: true))
             .accessibilityIdentifier(accessibilityIdentifier(for: item.action))
         case .secondary:
-            Button(item.title) {
+            Button {
                 onAction(item.action)
+            } label: {
+                PermissionDialogButtonLabel(title: item.title)
             }
-            .buttonStyle(SecondaryFillButtonStyle())
+            .buttonStyle(SecondaryFillButtonStyle(isFreeform: true))
             .accessibilityIdentifier(accessibilityIdentifier(for: item.action))
         }
     }

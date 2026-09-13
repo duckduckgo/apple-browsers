@@ -176,6 +176,17 @@ final class BrowsingMenuBuilderTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenOnlyLocationIsStoredThenSitePermissionsEntryIsShownInBothMenus() throws {
+        let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+        let sut = makeTabViewController(featureEnabled: true, storedDecision: nil, store: store)
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: XCTUnwrap(sut.webView.url)))
+        store.setPersistentDecision(.allow, for: .location, at: site)
+
+        XCTAssertNil(sut.sitePermissionsState.coordinator)
+        assertSitePermissionsEntry(isPresent: true, on: sut)
+    }
+
+    @MainActor
     func testSitePermissionsEntryIsShownForExplicitAskInLegacyAndSheetMenus() {
         assertSitePermissionsEntry(isPresent: true, featureEnabled: true, storedDecision: .ask)
     }

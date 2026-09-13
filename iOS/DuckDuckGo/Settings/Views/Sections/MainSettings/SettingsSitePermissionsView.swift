@@ -40,13 +40,14 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
 
     typealias UndoToastPresenter = (_ message: String, _ undo: @escaping () -> Void) -> Void
 
-    static let supportedPermissionTypes: [SitePermissionType] = [.camera, .microphone]
+    static let supportedPermissionTypes: [SitePermissionType] = [.location, .camera, .microphone]
 
     @Published private(set) var storedSites = [SitePermissionKey]()
     @Published private var globalDefaults = [SitePermissionType: GlobalSitePermissionDecision]()
     @Published private var siteRecords = [SitePermissionKey: SitePermissionsStore.SitePermissionRecord]()
 
     private let store: SitePermissionsStore
+    private let favicons: SitePermissionsFaviconStore?
     private let isEnabled: () -> Bool
     private let openSystemSettingsHandler: () -> Void
     private let presentUndoToast: UndoToastPresenter
@@ -54,10 +55,12 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
 
     init(store: SitePermissionsStore,
          isEnabled: @escaping () -> Bool,
+         favicons: SitePermissionsFaviconStore? = nil,
          openSystemSettings: @escaping () -> Void,
          presentUndoToast: @escaping UndoToastPresenter,
          callbacks: Callbacks) {
         self.store = store
+        self.favicons = favicons
         self.isEnabled = isEnabled
         self.openSystemSettingsHandler = openSystemSettings
         self.presentUndoToast = presentUndoToast
@@ -65,9 +68,11 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
         refresh()
     }
 
-    convenience init(store: SitePermissionsStore, isEnabled: @escaping () -> Bool, callbacks: Callbacks) {
+    convenience init(store: SitePermissionsStore, isEnabled: @escaping () -> Bool,
+                     favicons: SitePermissionsFaviconStore? = nil, callbacks: Callbacks) {
         self.init(store: store,
                   isEnabled: isEnabled,
+                  favicons: favicons,
                   openSystemSettings: Self.openSystemSettingsDefault,
                   presentUndoToast: Self.presentUndoToastDefault,
                   callbacks: callbacks)
@@ -77,6 +82,14 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
         guard isEnabled() else { return }
         refresh()
         callbacks.didOpen()
+    }
+
+    func faviconViewModel(for site: SitePermissionKey) -> FaviconViewModel {
+        favicons?.viewModel(for: site) ?? FaviconViewModel(domain: site.host)
+    }
+
+    func loadFavicon(for site: SitePermissionKey) {
+        favicons?.loadFavicon(for: site)
     }
 
     func globalDefault(for permissionType: SitePermissionType) -> GlobalSitePermissionDecision {
@@ -185,10 +198,12 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
     }
 
     private static func presentUndoToastDefault(message: String, undo: @escaping () -> Void) {
-        ActionMessageView.present(message: message,
-                                  actionTitle: UserText.actionGenericUndo,
-                                  presentationLocation: .withoutBottomBar,
-                                  onAction: undo)
+        let messageView = ActionMessageView.presentTracked(message: message,
+                                                           actionTitle: UserText.actionGenericUndo,
+                                                           presentationLocation: .withoutBottomBar,
+                                                           onAction: undo)
+        messageView?.accessibilityIdentifier = "SitePermissions.Toast"
+        messageView?.actionButton.accessibilityIdentifier = "SitePermissions.Toast.Undo"
     }
 }
 
@@ -215,6 +230,7 @@ struct SettingsSitePermissionsView: View {
                         Picker(permissionType.settingsTitle, selection: viewModel.globalDefaultBinding(for: permissionType)) {
                             ForEach(GlobalSitePermissionDecision.allCases, id: \.self) { decision in
                                 Text(decision.settingsTitle).tag(decision)
+                                    .accessibilityIdentifier("Settings.SitePermissions.Global.\(permissionType.rawValue).\(decision.rawValue)")
                             }
                         }
                         .pickerStyle(.inline)
@@ -224,7 +240,7 @@ struct SettingsSitePermissionsView: View {
                 }
             } header: {
                 Text(UserText.sitePermissions)
-                    .font(.body.weight(.semibold))
+                    .font(.headline)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .textCase(nil)
             } footer: {
@@ -235,6 +251,7 @@ struct SettingsSitePermissionsView: View {
                         return .handled
                     })
             }
+            .sitePermissionsRowInsets()
 
             if !viewModel.storedSites.isEmpty {
                 Section {
@@ -242,28 +259,32 @@ struct SettingsSitePermissionsView: View {
                         NavigationLink(destination: SettingsSitePermissionsSiteView(site: site, viewModel: viewModel)
                             .environmentObject(settingsViewModel)) {
                             HStack(spacing: 12) {
-                                FaviconView(viewModel: FaviconViewModel(domain: site.host))
+                                FaviconView(viewModel: viewModel.faviconViewModel(for: site))
                                     .frame(width: 24, height: 24)
+                                    .onAppear { viewModel.loadFavicon(for: site) }
                                 Text(site.host)
-                                    .daxBodyRegular()
+                                    .font(.body)
                                     .foregroundColor(Color(designSystemColor: .textPrimary))
                             }
                         }
                         .accessibilityIdentifier("Settings.SitePermissions.Site.\(site.host)")
                         .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(UserText.actionDelete, role: .destructive) {
+                            Button(role: .destructive) {
                                 viewModel.removePermissions(for: site)
+                            } label: {
+                                Image(uiImage: DesignSystemImages.Glyphs.Size24.trash)
                             }
+                            .accessibilityLabel(UserText.actionDelete)
                         }
                     }
                 } header: {
                     Text(UserText.settingsSitePermissionsManageSites)
-                        .font(.body.weight(.semibold))
+                        .font(.headline)
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                         .textCase(nil)
-                        .padding(.top, 12)
                 }
+                .sitePermissionsRowInsets()
 
                 Section {
                     Button(UserText.settingsSitePermissionsRemoveAll) {
@@ -273,9 +294,10 @@ struct SettingsSitePermissionsView: View {
                     .accessibilityIdentifier("Settings.SitePermissions.RemoveAll")
                     .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 }
+                .sitePermissionsRowInsets()
             }
         }
-        .sitePermissionsSectionSpacing()
+        .sitePermissionsListLayout()
         .animation(reduceMotion ? nil : .default, value: viewModel.storedSites)
         .applySettingsListModifiers(title: UserText.sitePermissions, displayMode: .inline, viewModel: settingsViewModel)
         .disabled(!settingsViewModel.state.sitePermissionsEnabled)
@@ -314,6 +336,7 @@ private struct SettingsSitePermissionsSiteView: View {
                         Picker(permissionType.settingsTitle, selection: viewModel.siteDecisionBinding(for: permissionType, at: site)) {
                             ForEach(SitePermissionDecision.allCases, id: \.self) { decision in
                                 Text(decision.settingsTitle).tag(decision)
+                                    .accessibilityIdentifier("Settings.SitePermissions.Site.\(permissionType.rawValue).\(decision.rawValue)")
                             }
                         }
                         .pickerStyle(.inline)
@@ -323,10 +346,11 @@ private struct SettingsSitePermissionsSiteView: View {
                 }
             } header: {
                 Text(String(format: UserText.settingsSitePermissionsSiteHeaderFormat, site.host))
-                    .font(.body.weight(.semibold))
+                    .font(.headline)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .textCase(nil)
             }
+            .sitePermissionsRowInsets()
 
             Section {
                 Button(UserText.settingsSitePermissionsRemoveSite) {
@@ -337,8 +361,9 @@ private struct SettingsSitePermissionsSiteView: View {
                 .accessibilityIdentifier("Settings.SitePermissions.RemoveSite")
                 .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
+            .sitePermissionsRowInsets()
         }
-        .sitePermissionsSectionSpacing()
+        .sitePermissionsListLayout()
         .applySettingsListModifiers(title: site.host, displayMode: .inline, viewModel: settingsViewModel)
         .disabled(!settingsViewModel.state.sitePermissionsEnabled)
     }
@@ -358,7 +383,7 @@ private struct SettingsSitePermissionRow<MenuContent: View>: View {
                 .frame(width: 24, height: 24)
                 .accessibilityHidden(true)
             Text(permissionType.settingsTitle)
-                .daxBodyRegular()
+                .font(.body)
                 .accessibilityHidden(true)
             Spacer(minLength: 16)
             Menu(content: menuContent) {
@@ -369,7 +394,7 @@ private struct SettingsSitePermissionRow<MenuContent: View>: View {
                         }
                         Text(selection)
                     }
-                    .daxBodyRegular()
+                    .font(.body)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.footnote.weight(.bold))
@@ -387,9 +412,21 @@ private struct SettingsSitePermissionRow<MenuContent: View>: View {
 
 private extension List {
     @ViewBuilder
-    func sitePermissionsSectionSpacing() -> some View {
+    func sitePermissionsListLayout() -> some View {
         if #available(iOS 17, *) {
             listSectionSpacing(24)
+                .contentMargins(.horizontal, 16, for: .scrollContent)
+        } else {
+            self
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func sitePermissionsRowInsets() -> some View {
+        if #available(iOS 26, *) {
+            listRowInsets(.horizontal, 16)
         } else {
             self
         }
@@ -426,7 +463,7 @@ private extension SitePermissionType {
     var settingsIcon: Image {
         switch self {
         case .camera:
-            return Image(systemName: "video")
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.video)
         case .microphone:
             return Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)
         case .location:

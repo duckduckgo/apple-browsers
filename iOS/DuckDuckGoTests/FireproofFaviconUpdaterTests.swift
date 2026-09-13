@@ -230,6 +230,9 @@ class FireproofFaviconUpdaterTests: XCTestCase, TabNotifying, FaviconManaging {
     func removeTabFavicon(forCacheKey key: String) {}
     @discardableResult
     func removeTabFavicons(forDomains domains: [String]) -> Result<Void, Error> { .success(()) }
+    func fetchFavicon(forDomain domain: String, completion: @escaping (UIImage?) -> Void) {
+        completion(image)
+    }
     func loadFavicon(forDomain domain: String?, fromURL url: URL?, intoCache targetCacheType: FaviconsCacheType, fromCache: FaviconsCacheType?, queue: DispatchQueue?, completion: ((UIImage?) -> Void)?) {
         if let domain = domain {
             loadFaviconDomain = domain

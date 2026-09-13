@@ -114,7 +114,7 @@ struct SettingsMainSettingsView: View {
                 AnyView(NavigationLink(destination: SettingsSitePermissionsView(viewModel: viewModel.sitePermissionsSettingsViewModel).environmentObject(viewModel)) {
                     SettingsCellView(label: UserText.sitePermissions,
                                      image: Image(uiImage: DesignSystemImages.Color.Size24.websitePermissions))
-                })
+                }.accessibilityIdentifier("Settings.SitePermissions"))
             }
         }
 

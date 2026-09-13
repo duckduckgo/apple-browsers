@@ -22,6 +22,7 @@ import os.log
 import ObjectiveC
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import SitePermissions
 
 class BrowserChromeButton: UIButton {
 
@@ -321,6 +322,7 @@ extension UIButton {
         let state = menuAlertState
         let isChangingVisibility = state.isVisible != isVisible
         state.isVisible = isVisible
+        cancelSitePermissionAnimation()
         state.cancelAnimation()
         setMenuAlertIconTransform(.identity)
 
@@ -359,6 +361,114 @@ extension UIButton {
         }
 
         shrinkAnimator.startAnimation()
+    }
+
+    func animateSitePermissionGranted(_ permissionTypes: [SitePermissionType], reduceMotion: Bool = UIAccessibility.isReduceMotionEnabled) {
+        cancelSitePermissionAnimation()
+        guard let permissionType = permissionTypes.first else { return }
+        // Account for each glyph's padding and proportions, using location as the visual size reference.
+        let (image, badgeSize, horizontalOffset): (UIImage, CGFloat, CGFloat) = switch permissionType {
+        case .camera: (DesignSystemImages.Glyphs.Size16.permissionCameraSolid, 15, 8)
+        case .microphone: (DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid, 13, 6.5)
+        case .location: (DesignSystemImages.Glyphs.Size16.locationSolid, 11, 6.5)
+        }
+
+        let state = menuAlertState
+        state.cancelAnimation()
+        setMenuAlertIconTransform(.identity)
+        setMenuAlertImage(DesignSystemImages.Glyphs.Size24.menuHamburger)
+        setMenuAlertDotHidden(true)
+        layoutIfNeeded()
+        guard let menuImageView = imageView else { return }
+
+        let badge = UIImageView(image: image)
+        badge.translatesAutoresizingMaskIntoConstraints = false
+        badge.isUserInteractionEnabled = false
+        badge.accessibilityElementsHidden = true
+        badge.tintColor = UIColor(designSystemColor: .buttonsDeleteGhostText)
+        addSubview(badge)
+        NSLayoutConstraint.activate([
+            badge.centerXAnchor.constraint(equalTo: menuImageView.centerXAnchor, constant: horizontalOffset),
+            badge.centerYAnchor.constraint(equalTo: menuImageView.centerYAnchor, constant: 4),
+            badge.widthAnchor.constraint(equalToConstant: badgeSize),
+            badge.heightAnchor.constraint(equalToConstant: badgeSize),
+        ])
+        layoutIfNeeded()
+        state.permissionBadge = badge
+
+        let mask = CAShapeLayer()
+        mask.frame = menuImageView.bounds
+        menuImageView.layer.mask = mask
+        state.permissionMask = mask
+        setPermissionMenuBars(shortened: true, duration: reduceMotion ? 0 : 0.15)
+
+        badge.alpha = 0
+        badge.transform = reduceMotion ? .identity : CGAffineTransform(scaleX: 0.01, y: 0.01)
+        let entrance = UIViewPropertyAnimator(duration: reduceMotion ? 0.15 : 0.45, dampingRatio: 0.35) {
+            badge.alpha = 1
+            badge.transform = .identity
+        }
+        state.permissionAnimator = entrance
+        entrance.startAnimation()
+
+        let dismissal = DispatchWorkItem { [weak self, weak badge] in
+            guard let self, let badge else { return }
+            self.setPermissionMenuBars(shortened: false, duration: reduceMotion ? 0 : 0.15)
+            let exit = UIViewPropertyAnimator(duration: 0.15, curve: .easeOut) {
+                badge.alpha = 0
+            }
+            exit.addCompletion { [weak self] position in
+                guard let self, position == .end else { return }
+                self.cancelSitePermissionAnimation()
+                if permissionTypes.count > 1 {
+                    self.animateSitePermissionGranted(Array(permissionTypes.dropFirst()), reduceMotion: reduceMotion)
+                }
+            }
+            self.menuAlertState.permissionAnimator = exit
+            exit.startAnimation()
+        }
+        state.permissionDismissal = dismissal
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.95, execute: dismissal)
+    }
+
+    func cancelSitePermissionAnimation() {
+        let state = menuAlertState
+        guard let badge = state.permissionBadge else { return }
+        state.permissionDismissal?.cancel()
+        state.permissionDismissal = nil
+        state.permissionAnimator?.stopAnimation(true)
+        state.permissionAnimator = nil
+        imageView?.layer.mask = nil
+        state.permissionMask = nil
+        badge.removeFromSuperview()
+        state.permissionBadge = nil
+        setMenuAlertImage(state.isVisible ? DesignSystemImages.Glyphs.Size24.menuHamburgerAlert : DesignSystemImages.Glyphs.Size24.menuHamburger)
+        setMenuAlertDotHidden(!state.isVisible)
+    }
+
+    private func setPermissionMenuBars(shortened: Bool, duration: TimeInterval) {
+        guard let mask = menuAlertState.permissionMask else { return }
+        // Mask the existing 24 pt glyph so its top bar and left edges stay fixed.
+        func path(shortened: Bool) -> CGPath {
+            let path = UIBezierPath(rect: CGRect(x: 0, y: 0, width: 24, height: 8))
+            for y: CGFloat in [11, 17.5] {
+                path.append(UIBezierPath(roundedRect: CGRect(x: 3, y: y, width: shortened ? 8 : 18, height: 1.5), cornerRadius: 0.75))
+            }
+            return path.cgPath
+        }
+        let newPath = path(shortened: shortened)
+        let animation = CABasicAnimation(keyPath: "path")
+        animation.fromValue = mask.presentation()?.path ?? mask.path ?? path(shortened: false)
+        animation.toValue = newPath
+        animation.duration = duration
+        animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        mask.path = newPath
+        CATransaction.commit()
+        if duration > 0 {
+            mask.add(animation, forKey: "permissionMenuBars")
+        }
     }
 
     private var menuAlertState: MenuAlertButtonState {
@@ -437,6 +547,10 @@ private final class MenuAlertButtonState {
     var isVisible = false
     var shrinkAnimator: UIViewPropertyAnimator?
     var expandAnimator: UIViewPropertyAnimator?
+    var permissionBadge: UIImageView?
+    var permissionMask: CAShapeLayer?
+    var permissionAnimator: UIViewPropertyAnimator?
+    var permissionDismissal: DispatchWorkItem?
 
     func cancelAnimation() {
         shrinkAnimator?.stopAnimation(true)

@@ -36,6 +36,7 @@ protocol FaviconManaging: FaviconProviding, FavoritesFaviconCaching, FaviconStor
     func removeTabFavicon(forCacheKey key: String)
     @discardableResult
     func removeTabFavicons(forDomains domains: [String]) -> Result<Void, Error>
+    func fetchFavicon(forDomain domain: String, completion: @escaping (UIImage?) -> Void)
     func loadFavicon(forDomain domain: String?,
                      fromURL url: URL?,
                      intoCache targetCacheType: FaviconsCacheType,
@@ -70,13 +71,15 @@ public class Favicons: FaviconManaging {
         static let requestModifier = FaviconRequestModifier()
         static let fireproofCache = FaviconsCacheType.fireproof.create()
         static let tabsCache = FaviconsCacheType.tabs.create()
+        static let sitePermissionsCache = FaviconsCacheType.sitePermissions.create()
         static let targetImageSizePoints: CGFloat = 64
         public static let tabsCachePath = "com.onevcat.Kingfisher.ImageCache.tabs"
         public static let maxFaviconSize: CGSize = CGSize(width: 192, height: 192)
         
         public static let caches = [
             FaviconsCacheType.fireproof: fireproofCache,
-            FaviconsCacheType.tabs: tabsCache
+            FaviconsCacheType.tabs: tabsCache,
+            FaviconsCacheType.sitePermissions: sitePermissionsCache
         ]
 
     }
@@ -97,6 +100,7 @@ public class Favicons: FaviconManaging {
         // Prevents the caches being cleaned up
         NotificationCenter.default.removeObserver(Constants.fireproofCache)
         NotificationCenter.default.removeObserver(Constants.tabsCache)
+        NotificationCenter.default.removeObserver(Constants.sitePermissionsCache)
     }
 
     internal func isValidImage(_ image: UIImage, forMaxSize size: CGSize) -> Bool {
@@ -264,6 +268,15 @@ public class Favicons: FaviconManaging {
 
         }
 
+    }
+
+    /// Fetches an image without caching it, so the caller can validate ownership before storing it.
+    public func fetchFavicon(forDomain domain: String, completion: @escaping (UIImage?) -> Void) {
+        loadImageFromNetwork(nil, domain) { image in
+            DispatchQueue.main.async {
+                completion(image.map { self.scaleDownIfNeeded(image: $0, toFit: Constants.maxFaviconSize) })
+            }
+        }
     }
 
     private func scaleDownIfNeeded(image: UIImage, toFit size: CGSize) -> UIImage {

@@ -29,6 +29,7 @@ import PrivacyDashboard
 import Subscription
 import SubscriptionTestingUtilities
 import SpecialErrorPages
+import SitePermissions
 import MaliciousSiteProtection
 @testable import DuckDuckGo
 import Combine
@@ -36,6 +37,16 @@ import Combine
 
 final class MockTabDelegate: TabDelegate {
     var shouldRequestAppRatingPrompt = false
+    private(set) var grantedSitePermissions = [Set<SitePermissionType>]()
+    private(set) var sitePermissionAnimationCancellationCount = 0
+
+    func tab(_ tab: TabViewController, didGrantSitePermissions permissionTypes: Set<SitePermissionType>) {
+        grantedSitePermissions.append(permissionTypes)
+    }
+
+    func tabDidCancelSitePermissionAnimation(_ tab: TabViewController) {
+        sitePermissionAnimationCancellationCount += 1
+    }
 
     private(set) var didLoadPageForAppRatingPromptCallCount = 0
     private(set) var didRequestAppRatingPromptCallCount = 0

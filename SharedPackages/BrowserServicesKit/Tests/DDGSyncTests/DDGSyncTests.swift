@@ -665,19 +665,6 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertEqual(migrationCall.account.deviceId, SyncAccount.mock.deviceId)
     }
 
-    func testWhenDebugMigrationIsResetThenItCanRunAgain() async throws {
-        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
-        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
-        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
-
-        try await syncService.runDeviceInfoMigrationForDebug()
-        syncService.resetDeviceInfoMigrationForDebug()
-        try await syncService.runDeviceInfoMigrationForDebug()
-
-        XCTAssertEqual(migrationCoordinator.calls.count, 2)
-        XCTAssertEqual(migrationCoordinator.resetCallCount, 1)
-    }
-
     func testWhenUnifiedReadObservationsAreReturnedThenTheyFireWithoutRequiringWriteFlag() async throws {
         dependencies.canReadUnifiedDeviceList = { true }
         dependencies.canWriteUnifiedDeviceList = { false }

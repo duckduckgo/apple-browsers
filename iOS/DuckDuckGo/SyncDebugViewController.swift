@@ -66,7 +66,6 @@ class SyncDebugViewController: UITableViewController {
     enum TestActionRows: Int, CaseIterable {
 
         case ensureAccountInfoKey
-        case runMigration
         case resetMigrationMarker
 
     }
@@ -190,8 +189,6 @@ class SyncDebugViewController: UITableViewController {
             switch TestActionRows(rawValue: indexPath.row) {
             case .ensureAccountInfoKey:
                 cell.textLabel?.text = "Ensure/repair account_info key"
-            case .runMigration:
-                cell.textLabel?.text = "Run device_info migration"
             case .resetMigrationMarker:
                 cell.textLabel?.text = "Reset migration marker"
             case .none:
@@ -311,8 +308,6 @@ class SyncDebugViewController: UITableViewController {
             switch TestActionRows(rawValue: indexPath.row) {
             case .ensureAccountInfoKey:
                 ensureAccountInfoKey()
-            case .runMigration:
-                runDeviceInfoMigration()
             case .resetMigrationMarker:
                 confirmResetMigrationMarker()
             case .none:
@@ -442,27 +437,10 @@ class SyncDebugViewController: UITableViewController {
         reloadUnifiedDevicesSection()
     }
 
-    private func runDeviceInfoMigration() {
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-
-            do {
-                try await sync.runDeviceInfoMigrationForDebug()
-                refreshMigrationStatus()
-                let isComplete = try sync.isDeviceInfoMigrationCompleteForDebug()
-                let message = isComplete ? "Migration is complete." : "Migration did not complete. Check the Sync logs for details."
-                showAlert(title: "Device Info Migration", message: message)
-                refreshDevicesForDebug()
-            } catch {
-                showAlert(title: "Unable to Run Migration", message: String(reflecting: error))
-            }
-        }
-    }
-
     private func confirmResetMigrationMarker() {
         let alertController = UIAlertController(
             title: "Reset Migration Marker?",
-            message: "The next migration run will attempt to write device_info again.",
+            message: "Relaunch the app to attempt the device_info migration again.",
             preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         alertController.addAction(UIAlertAction(title: "Reset", style: .destructive) { [weak self] _ in

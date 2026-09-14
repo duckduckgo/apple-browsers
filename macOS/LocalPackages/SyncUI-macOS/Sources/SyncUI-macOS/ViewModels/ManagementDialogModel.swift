@@ -34,6 +34,10 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func enterRecoveryCodePressed()
     func copyCode(_ code: String)
     func syncAnotherDevicePromptDidAppear()
+    func syncSuccessViewDidAppear()
+    func syncSuccessCopyCodePressed(_ code: String)
+    func syncSuccessSaveRecoveryPDFPressed()
+    func syncSuccessDonePressed()
     func syncThisDeviceOnlyFromPrompt() async
     func syncWithAnotherDeviceFromPrompt()
     func openSystemPasswordSettings()

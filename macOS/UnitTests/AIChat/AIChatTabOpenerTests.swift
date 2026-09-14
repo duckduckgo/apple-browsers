@@ -24,6 +24,22 @@ import XCTest
 final class AIChatTabOpenerTests: XCTestCase {
 
     @MainActor
+    func testWhenChatHistoryTriggerThenOpensDuckAIWithSidebarVisible() {
+        let mockManager = WindowControllersManagerMock()
+        let opener = AIChatTabOpener(promptHandler: AIChatPromptHandler.shared, aiChatTabManaging: mockManager)
+
+        opener.openAIChatTab(with: .chatHistory, behavior: .newTab(selected: true))
+
+        XCTAssertEqual(mockManager.openAIChatCalls, [
+            .init(
+                url: URL(string: "https://duck.ai?sidebar=open")!,
+                behavior: .newTab(selected: true),
+                hasPrompt: false
+            )
+        ])
+    }
+
+    @MainActor
     func testOpenSettingsTriggerRequestsOpenSettingsTab() {
         let mockManager = WindowControllersManagerMock()
         let opener = AIChatTabOpener(promptHandler: AIChatPromptHandler.shared, aiChatTabManaging: mockManager)

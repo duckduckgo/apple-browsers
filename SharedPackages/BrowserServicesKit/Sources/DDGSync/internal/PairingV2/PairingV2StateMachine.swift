@@ -297,8 +297,8 @@ struct PairingV2StateMachine {
         case .scannedCode(let scannedCode, let localClient, let flags):
             return handleScannedCode(scannedCode, localClient: localClient, flags: flags)
 
-        case .receivedHello(let message):
-            return handleReceivedHello(message)
+        case .receivedHello:
+            return handleReceivedHello()
 
         case .receivedPeerStatus(let peerStatus):
             return handleReceivedPeerStatus(peerStatus)
@@ -403,11 +403,7 @@ struct PairingV2StateMachine {
         }
     }
 
-    private mutating func handleReceivedHello(_ message: PairingV2HelloMessage) -> [PairingV2Command] {
-        guard Self.supports(version: message.version) else {
-            return fail(with: .unsupportedVersion(message.version))
-        }
-
+    private mutating func handleReceivedHello() -> [PairingV2Command] {
         switch state {
         case .waitingForPeerHello(let session):
             state = .waitingForPeerStatus(session)
@@ -592,10 +588,6 @@ struct PairingV2StateMachine {
             return .thirdParty
         }
         return hostKind
-    }
-
-    private static func supports(version: String) -> Bool {
-        PairingV2ProtocolVersion.supports(version)
     }
 
 }

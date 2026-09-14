@@ -199,8 +199,10 @@ final class SyncConnectionControllerTests: XCTestCase {
         let messageExchanger = PairingV2MessageExchangingMock()
         dependencies.createPairingV2MessageExchangerStub = messageExchanger
 
-        _ = try await controller.startExchangeMode()
+        let pairingInfo = try await controller.startExchangeMode()
+        let payload = try XCTUnwrap(PairingV2QRCodePayload(url: try XCTUnwrap(URL(string: pairingInfo.base64Code))))
 
+        XCTAssertEqual(payload.version, "2")
         XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets.count, 1)
         XCTAssertNotNil(messageExchanger.openChannelAuthorizationSecrets[0])
         await controller.cancel()
@@ -213,8 +215,10 @@ final class SyncConnectionControllerTests: XCTestCase {
         let messageExchanger = PairingV2MessageExchangingMock()
         dependencies.createPairingV2MessageExchangerStub = messageExchanger
 
-        _ = try await controller.startExchangeMode()
+        let pairingInfo = try await controller.startExchangeMode()
+        let payload = try XCTUnwrap(PairingV2QRCodePayload(url: try XCTUnwrap(URL(string: pairingInfo.base64Code))))
 
+        XCTAssertEqual(payload.version, "2.1")
         XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets.count, 1)
         XCTAssertNotNil(messageExchanger.openChannelAuthorizationSecrets[0])
         await controller.cancel()
@@ -232,6 +236,66 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets.count, 1)
         XCTAssertNil(messageExchanger.openChannelAuthorizationSecrets[0])
         await controller.cancel()
+    }
+
+    func test_startExchangeMode_whenVersionFlagChangesDuringChannelCreation_usesSnapshotUntilNextSession() async throws {
+        dependencies.isPairingV2CodeEnabled = { true }
+        dependencies.canSendExchangeChannelSecret = { false }
+        var isV21Enabled = true
+        var versionFlagReadCount = 0
+        dependencies.canUseExchangeV2Point1 = {
+            versionFlagReadCount += 1
+            return isV21Enabled
+        }
+        let exchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = exchanger
+        exchanger.openChannelHandler = { _ in isV21Enabled = false }
+
+        let firstPairingInfo = try await controller.startExchangeMode()
+        let firstPayload = try XCTUnwrap(PairingV2QRCodePayload(url: try XCTUnwrap(URL(string: firstPairingInfo.base64Code))))
+
+        XCTAssertEqual(firstPayload.version, "2.1")
+        XCTAssertEqual(versionFlagReadCount, 1)
+        XCTAssertNotNil(try XCTUnwrap(exchanger.openChannelAuthorizationSecrets.first))
+        await controller.cancel()
+
+        let secondPairingInfo = try await controller.startExchangeMode()
+        let secondPayload = try XCTUnwrap(PairingV2QRCodePayload(url: try XCTUnwrap(URL(string: secondPairingInfo.base64Code))))
+
+        XCTAssertEqual(secondPayload.version, "2")
+        XCTAssertEqual(versionFlagReadCount, 2)
+        XCTAssertNil(try XCTUnwrap(exchanger.openChannelAuthorizationSecrets.last))
+        await controller.cancel()
+    }
+
+    @MainActor
+    func test_syncCodeEntered_whenVersionFlagChangesDuringChannelCreation_helloUsesLocalSnapshot() async throws {
+        dependencies.canSendExchangeChannelSecret = { false }
+        var isV21Enabled = true
+        var versionFlagReadCount = 0
+        dependencies.canUseExchangeV2Point1 = {
+            versionFlagReadCount += 1
+            return isV21Enabled
+        }
+        let exchanger = PairingV2MessageExchangingMock()
+        exchanger.fetchMessagesError = PairingV2Error.cancelled
+        exchanger.openChannelHandler = { _ in isV21Enabled = false }
+        dependencies.createPairingV2MessageExchangerStub = exchanger
+        let peerKeyPair = try makePeerKeyPair()
+        let payload = PairingV2QRCodePayload(version: "2", channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
+        let url = try payload.toURL(baseURL: XCTUnwrap(URL(string: "https://duckduckgo.com")))
+
+        _ = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
+
+        let envelope = try XCTUnwrap(exchanger.sendCalls.first?.messages.first)
+        let message = try PairingV2MessageCrypto().decrypt(envelope, privateKey: peerKeyPair.privateKey)
+        guard case .hello(let hello) = message else {
+            return XCTFail("Expected hello")
+        }
+        XCTAssertEqual(hello.version, "2.1")
+        XCTAssertEqual(envelope.version, "2")
+        XCTAssertEqual(versionFlagReadCount, 1)
+        XCTAssertNotNil(try XCTUnwrap(exchanger.openChannelAuthorizationSecrets.first))
     }
 
     @MainActor

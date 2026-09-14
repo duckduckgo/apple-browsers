@@ -174,6 +174,42 @@
         "triggers": ["other"],
         "parameters": ["appVersion"]
     },
+    "webTelemetry_captcha_datadome_macos": {
+        "description": "Fired once per detection of a DataDome challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": ["appVersion"]
+    },
+    "webTelemetry_captcha_imperva_macos": {
+        "description": "Fired once per detection of an Imperva challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": ["appVersion"]
+    },
+    "webTelemetry_captcha_arkose_macos": {
+        "description": "Fired once per detection of an Arkose Labs (FunCaptcha) challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": ["appVersion"]
+    },
+    "webTelemetry_captcha_geetest_macos": {
+        "description": "Fired once per detection of a GeeTest challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": ["appVersion"]
+    },
+    "webTelemetry_captcha_awswaf_macos": {
+        "description": "Fired once per detection of an AWS WAF challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": ["appVersion"]
+    },
+    "webTelemetry_captcha_perimeterx_macos": {
+        "description": "Fired once per detection of a PerimeterX challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": ["appVersion"]
+    },
     "webTelemetry_captcha_other_macos": {
         "description": "Fired once per detection of a captcha challenge that matches no known provider. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["miasma13"],
@@ -431,6 +467,234 @@
     },
     "webTelemetry_captcha_cloudflare_week_macos": {
         "description": "Weekly bucketed count of page loads where a Cloudflare interstitial challenge was detected. Fired by the eventHub feature at the end of each 7-day period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_captcha_datadome_day_macos": {
+        "description": "Daily bucketed count of page loads where a DataDome challenge was detected. Fired by the eventHub feature at the end of each 1-day period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_captcha_datadome_week_macos": {
+        "description": "Weekly bucketed count of page loads where a DataDome challenge was detected. Fired by the eventHub feature at the end of each 7-day period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_captcha_imperva_day_macos": {
+        "description": "Daily bucketed count of page loads where an Imperva challenge was detected. Fired by the eventHub feature at the end of each 1-day period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_captcha_imperva_week_macos": {
+        "description": "Weekly bucketed count of page loads where an Imperva challenge was detected. Fired by the eventHub feature at the end of each 7-day period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_captcha_arkose_day_macos": {
+        "description": "Daily bucketed count of page loads where an Arkose Labs (FunCaptcha) challenge was detected. Fired by the eventHub feature at the end of each 1-day period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_captcha_arkose_week_macos": {
+        "description": "Weekly bucketed count of page loads where an Arkose Labs (FunCaptcha) challenge was detected. Fired by the eventHub feature at the end of each 7-day period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_captcha_geetest_day_macos": {
+        "description": "Daily bucketed count of page loads where a GeeTest challenge was detected. Fired by the eventHub feature at the end of each 1-day period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_captcha_geetest_week_macos": {
+        "description": "Weekly bucketed count of page loads where a GeeTest challenge was detected. Fired by the eventHub feature at the end of each 7-day period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_captcha_awswaf_day_macos": {
+        "description": "Daily bucketed count of page loads where an AWS WAF challenge was detected. Fired by the eventHub feature at the end of each 1-day period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_captcha_awswaf_week_macos": {
+        "description": "Weekly bucketed count of page loads where an AWS WAF challenge was detected. Fired by the eventHub feature at the end of each 7-day period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_captcha_perimeterx_day_macos": {
+        "description": "Daily bucketed count of page loads where a PerimeterX challenge was detected. Fired by the eventHub feature at the end of each 1-day period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_captcha_perimeterx_week_macos": {
+        "description": "Weekly bucketed count of page loads where a PerimeterX challenge was detected. Fired by the eventHub feature at the end of each 7-day period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "parameters": [

@@ -7439,126 +7439,6 @@
         }
       }
     },
-    "preferences.sync.sync-with-another-device-v2.enter-step-1-detail" : {
-      "comment" : "Emphasized DuckDuckGo product name in the first code entry instruction (V2)",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DuckDuckGo-App"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "DuckDuckGo App"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aplicación DuckDuckGo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Application DuckDuckGo"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App DuckDuckGo"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DuckDuckGo-app"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aplikacja DuckDuckGo"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aplicação DuckDuckGo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Приложение DuckDuckGo"
-          }
-        }
-      }
-    },
-    "preferences.sync.sync-with-another-device-v2.enter-step-1-prefix" : {
-      "comment" : "First part of the first code entry instruction, before the DuckDuckGo product name (V2)",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Öffne ein weiteres"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Open another"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abre otro"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ouvrir un autre"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apri un altro"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open een andere"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otwórz inną"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abre outro"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открой другой"
-          }
-        }
-      }
-    },
     "preferences.sync.sync-with-another-device-v2.enter-step-3" : {
       "comment" : "Third pairing instruction when entering a code from another device (V2)",
       "extractionState" : "extracted_with_value",
@@ -7902,7 +7782,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aplikacja DuckDuckGo"
+            "value" : "Aplikację DuckDuckGo"
           }
         },
         "pt" : {
@@ -7950,7 +7830,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sul telefono, apri"
+            "value" : "Sul telefono, apri l'"
           }
         },
         "nl" : {
@@ -7968,7 +7848,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No teu telemóvel, abre o"
+            "value" : "No teu telemóvel, abre a"
           }
         },
         "ru" : {

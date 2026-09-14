@@ -180,22 +180,12 @@ struct SyncWithAnotherDeviceViewV2: View {
 
     private var instructions: some View {
         VStack(alignment: .leading, spacing: 10) {
-            switch selectedTab {
-            case .scanCode:
-                InstructionStepV2(
-                    number: 1,
-                    prefix: UserText.syncWithAnotherDeviceScanStep1PrefixV2,
-                    detail: UserText.syncWithAnotherDeviceScanStep1DetailV2,
-                    showsAppIcon: true
-                )
-            case .enterCode:
-                InstructionStepV2(
-                    number: 1,
-                    prefix: UserText.syncWithAnotherDeviceEnterStep1PrefixV2,
-                    detail: UserText.syncWithAnotherDeviceEnterStep1DetailV2,
-                    showsAppIcon: true
-                )
-            }
+            InstructionStepV2(
+                number: 1,
+                prefix: UserText.syncWithAnotherDeviceScanStep1PrefixV2,
+                detail: UserText.syncWithAnotherDeviceScanStep1DetailV2,
+                showsAppIcon: true
+            )
 
             InstructionStepV2(
                 number: 2,
@@ -371,6 +361,10 @@ private struct InstructionStepV2: View {
     var detail: String?
     var showsAppIcon: Bool = false
 
+    private var detailSeparator: String {
+        prefix.hasSuffix("'") || prefix.hasSuffix("’") ? "" : " "
+    }
+
     private var text: Text {
         let prefix = Text(prefix)
             .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -380,7 +374,7 @@ private struct InstructionStepV2: View {
         }
 
         return prefix
-            + Text(verbatim: " ")
+            + Text(verbatim: detailSeparator)
             + Text(detail)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
     }

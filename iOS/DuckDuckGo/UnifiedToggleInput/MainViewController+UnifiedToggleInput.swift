@@ -1092,6 +1092,11 @@ extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
+        if viewCoordinator.newTabPageInputPresentation.transition == .inlineInput {
+            dismissInlineNewTabPageInput(coordinator: coordinator, animated: true, completion: completion)
+            return
+        }
+
         let omnibarPlaceholderWindowX = omnibarPlaceholderWindowXForHandoff(coordinator)
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
@@ -1121,9 +1126,7 @@ extension MainViewController {
             contentSnapshot: stationaryContentSnapshot,
             additionalAnimations: { [weak self, weak coordinator] in
                 guard let self, let coordinator else { return }
-                if !self.viewCoordinator.usesInlineNewTabPageInput {
-                    coordinator.viewController.applyOmnibarEditingDismissPose()
-                }
+                coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.superview.layoutIfNeeded()
                 if !keepsFocusedContentStationary {
                     coordinator.pushContentInsets()
@@ -1179,7 +1182,7 @@ extension MainViewController {
         newTabPageViewController?.setFavoritesHidden(false)
     }
 
-    private func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
+    func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         applyUnifiedInputChromeBackground(.standardChrome)
         applyFloatingUIIfNeeded()
@@ -1299,6 +1302,7 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         }
         // Reveal before unified input measures the bar for its transition.
         revealAddressBarForEditing()
+        defer { finishNewTabPageInputHandoff() }
         if tapped {
             onExperimentalAddressBarTapped()
         }

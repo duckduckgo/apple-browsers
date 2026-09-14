@@ -2367,6 +2367,7 @@ class MainViewController: UIViewController {
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
+        isAddressBarHandOffInProgress = false
         clearEscapeHatch()
         updateAddressBarSuppressionForNewTabPage()
     }
@@ -3051,6 +3052,7 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.endEditing()
         deactivateUnifiedToggleInputOmnibarSession(animated: animated)
         refreshOmniBar()
+        finishNewTabPageInputHandoff()
         updateAddressBarSuppressionForNewTabPage()
     }
 
@@ -6012,6 +6014,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onDidBeginEditing() {
+        finishNewTabPageInputHandoff()
         // Omnibar got focus. Lift minimal chrome bar above keyboard.
         dismissFloatingContextualInputIfPresented()
         refreshMinimalChromeBottomAnchor()
@@ -6033,6 +6036,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onDidEndEditing() {
+        finishNewTabPageInputHandoff()
         // Restore the tab's committed mode — the user may have toggled without submitting.
         if let tab = tabManager.currentTabsModel.currentTab {
             viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tab))

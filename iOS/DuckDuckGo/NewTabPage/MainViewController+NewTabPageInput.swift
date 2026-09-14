@@ -22,38 +22,30 @@ import UIKit
 
 extension MainViewController {
 
-    private var isAddressBarSuppressedByNewTabPage: Bool {
-        guard newTabPageViewController?.hasInlineSearchInput == true else { return false }
-
-        let isEditing = viewCoordinator.omniBar.isTextFieldEditing
-            || unifiedToggleInputCoordinator?.isOmnibarSession == true
-        return !isEditing && !isAddressBarHandOffInProgress
-    }
-
     func updateAddressBarSuppressionForNewTabPage() {
-        viewCoordinator.setUsesInlineNewTabPageInput(
-            newTabPageViewController?.hasInlineSearchInput == true && unifiedToggleInputCoordinator != nil)
-        setAddressBarSuppressed(isAddressBarSuppressedByNewTabPage)
+        let hasInlineInput = newTabPageViewController?.hasInlineSearchInput == true
+        let presentation = NewTabPageInputPresentation.resolve(
+            hasInlineInput: hasInlineInput,
+            usesUnifiedInput: unifiedToggleInputCoordinator != nil,
+            isLegacyInputEditing: hasInlineInput && viewCoordinator.omniBar.isTextFieldEditing,
+            isUnifiedInputEditing: unifiedToggleInputCoordinator?.isOmnibarSession == true,
+            isHandingOff: isAddressBarHandOffInProgress)
+        guard viewCoordinator.newTabPageInputPresentation != presentation else { return }
+        viewCoordinator.setNewTabPageInputPresentation(presentation)
+        adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
     }
 
     func revealAddressBarForEditing() {
-        guard viewCoordinator.isAddressBarSuppressed else { return }
+        guard viewCoordinator.newTabPageInputPresentation.hidesNavigationContainer else { return }
         isAddressBarHandOffInProgress = true
-        setAddressBarSuppressed(false)
+        updateAddressBarSuppressionForNewTabPage()
         view.layoutIfNeeded()
-        // Keep layout reconciliation from hiding the bar before becomeFirstResponder or the
-        // unified-input intercept has established the session. Also recover if focus is refused.
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            isAddressBarHandOffInProgress = false
-            updateAddressBarSuppressionForNewTabPage()
-        }
     }
 
-    private func setAddressBarSuppressed(_ suppressed: Bool) {
-        guard viewCoordinator.isAddressBarSuppressed != suppressed else { return }
-        viewCoordinator.setAddressBarSuppressed(suppressed)
-        adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
+    func finishNewTabPageInputHandoff() {
+        guard isAddressBarHandOffInProgress else { return }
+        isAddressBarHandOffInProgress = false
+        updateAddressBarSuppressionForNewTabPage()
     }
 
     func adjustNewTabPageSafeAreaInsets(for addressBarPosition: AddressBarPosition) {
@@ -61,7 +53,7 @@ extension MainViewController {
         switch addressBarPosition {
         case .top:
             // Reserve space for visible floating chrome while allowing content to scroll behind it.
-            let topInset = isFloatingTopContentBehindBar && !viewCoordinator.isAddressBarSuppressed && !viewCoordinator.usesInlineNewTabPageInput
+            let topInset = isFloatingTopContentBehindBar && viewCoordinator.newTabPageInputPresentation.reservesAddressBarSpace
                 ? viewCoordinator.omniBar.barView.expectedHeight * currentBarsVisibility
                 : 0
             newTabPageViewController?.additionalSafeAreaInsets = .init(top: topInset, left: 0, bottom: bottomInset, right: 0)
@@ -84,7 +76,7 @@ extension MainViewController {
     /// lock-step as the bar hides, matching the web view's underflow behaviour. No-op outside
     /// floating top mode.
     func updateFloatingTopNewTabPageInset(for barsVisibilityPercent: CGFloat) {
-        guard isFloatingTopContentBehindBar, !viewCoordinator.isAddressBarSuppressed, !viewCoordinator.usesInlineNewTabPageInput else { return }
+        guard isFloatingTopContentBehindBar, viewCoordinator.newTabPageInputPresentation.reservesAddressBarSpace else { return }
         newTabPageViewController?.additionalSafeAreaInsets.top = viewCoordinator.omniBar.barView.expectedHeight * barsVisibilityPercent
     }
 
@@ -99,6 +91,7 @@ extension MainViewController {
             return
         }
         revealAddressBarForEditing()
+        defer { finishNewTabPageInputHandoff() }
         viewCoordinator.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)
     }
 }

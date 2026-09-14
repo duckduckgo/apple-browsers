@@ -26,6 +26,7 @@ import RemoteMessaging
 import Subscription
 
 /// Builds the New Tab Page shown in a browser tab.
+@MainActor
 struct NewTabPageBuilder {
 
     let favoritesInteractionModel: FavoritesListInteracting

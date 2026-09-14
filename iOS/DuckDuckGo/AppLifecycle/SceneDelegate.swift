@@ -107,7 +107,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     /// Unified style exposes layout regions so browser chrome can share the window controls row.
     @available(iOS 26.0, *)
     func preferredWindowingControlStyle(for windowScene: UIWindowScene) -> UIWindowScene.WindowingControlStyle {
-        WindowControlsRowLayout.isEnabled(featureFlagger: AppDependencyProvider.shared.featureFlagger) ? .unified : .automatic
+        WindowControlsRowLayout.isEnabled() ? .unified : .automatic
     }
 
 }

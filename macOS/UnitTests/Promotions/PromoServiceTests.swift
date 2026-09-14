@@ -1965,6 +1965,35 @@ final class PromoServiceTests: XCTestCase {
         XCTAssertFalse(internalRecord.actioned)
     }
 
+    func testWhenQuitSurveyVisibilityReportCompletes_ThenConflictingPromoIsAlreadyHidden() async {
+        let observer = QuitSurveyPromoObserver()
+        let internalDelegate = MockPromoDelegate(isEligible: true)
+        let externalPromo = PromoTestHelpers.makePromo(id: "quit-survey", context: .global, delegate: observer)
+        let internalPromo = PromoTestHelpers.makePromo(id: "internal-promo", context: .global, delegate: internalDelegate)
+        let promoService = makeService(promos: [externalPromo, internalPromo])
+
+        let internalVisibleExpectation = XCTestExpectation(description: "internal promo visible")
+        promoService.visiblePromosPublisher
+            .filter { promos in
+                promos.contains(where: { $0.id == internalPromo.id })
+            }
+            .first()
+            .sink { _ in internalVisibleExpectation.fulfill() }
+            .store(in: &cancellables)
+
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [internalVisibleExpectation], timeout: timeout)
+
+        await observer.reportVisible()
+
+        XCTAssertEqual(internalDelegate.hideCallCount, 1)
+
+        await observer.reportHidden()
+
+        XCTAssertNotNil(historyStore.record(for: externalPromo.id).lastDismissed)
+    }
+
     func testWhenInternalAndExternalMutuallyCoexist_AndExternalBecomesVisible_ThenInternalIsNotRetracted() async {
         let externalDelegate = MockExternalPromoDelegate(initialVisibility: false)
         let internalDelegate = MockPromoDelegate(isEligible: true)

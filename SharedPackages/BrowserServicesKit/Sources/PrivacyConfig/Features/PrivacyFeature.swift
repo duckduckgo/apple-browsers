@@ -324,6 +324,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Context-aware page suggestions shown in the iOS contextual Duck.ai sheet
     case contextualSuggestedPrompts
 
+    /// Offers the page navigated to as an attachment, in an active contextual chat with auto-attach off
+    case contextualPagePlaceholder
+
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 
@@ -375,7 +378,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// pre-submit contextual sheet on iPhone.
     case contextualFloatingInput
 
-    /// Enables Recent Chats in the iOS address-bar Duck.ai menu.
+    /// Enables Chats in the iOS address-bar and macOS tab-bar Duck.ai menus.
     case addressBarRecentChats
 
     /// Makes the address-bar Duck.ai menu page-aware

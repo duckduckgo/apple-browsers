@@ -892,6 +892,7 @@ extension AppDelegate {
     @objc func resetQuitSurveyWasShown(_ sender: Any?) {
         let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
         persistor.hasQuitAppBefore = false
+        promoService?.undismiss(promoId: PromoServiceFactory.quitSurveyPromoID, clearHistory: true)
     }
 
     @objc func resetTipKit(_ sender: Any?) {

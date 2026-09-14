@@ -208,7 +208,7 @@ public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling, 
         guard let data = try settingsStore.value(for: \.settings) else {
             return [:]
         }
-        guard let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+        guard let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return [:]
         }
         return dict

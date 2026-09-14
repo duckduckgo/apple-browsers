@@ -846,8 +846,6 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
-    case featureEnabled
-
     /// Kill switch for the Bookmark Toolbar ("Show Bookmarks Bar?") promo.
     case bookmarkToolbarPromo
 

@@ -1492,39 +1492,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
-        if featureFlagger.isFeatureOn(.promoQueue) {
-            let subscriptionPromoDelegate = FireWindowSubscriptionPromoDelegate()
-            self.subscriptionPromoDelegate = subscriptionPromoDelegate
-            let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: windowControllersManager)
-            let dependencies = PromoDependencies(
-                keyValueStore: keyValueStore,
-                isExternallyActivated: urlEventHandlerResult.willOpenWindows,
-                isNewUserProvider: { AppDelegate.isNewUser },
-                isOnboardingCompletedProvider: { [featureFlagger, onboardingContextualDialogsManager] in
-                    NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
-                        ? onboardingContextualDialogsManager.state == .onboardingCompleted && !activeDomainPublisher.isActiveTabOnboarding
-                        : OnboardingActionsManager.isOnboardingFinished
-                },
-                activeRemoteMessageModel: activeRemoteMessageModel,
-                defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
-                sessionRestoreCoordinator: sessionRestorePromptCoordinator,
-                subscriptionPromoDelegate: subscriptionPromoDelegate,
-                featureFlagger: featureFlagger,
-                cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-                windowControllersManager: windowControllersManager,
-                syncService: syncService,
-                syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
-                pinningManager: pinningManager,
-                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate,
-                duckPlayerOverlayObserver: duckPlayerOverlayObserver,
-                updateController: updateController,
-                updateNotificationBridge: updateNotificationPromoBridge,
-                brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
-                quitSurveyPromoObserver: quitSurveyPromoObserver
-            )
-            promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
-            NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
-        }
+        let subscriptionPromoDelegate = FireWindowSubscriptionPromoDelegate()
+        self.subscriptionPromoDelegate = subscriptionPromoDelegate
+        let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: windowControllersManager)
+        let dependencies = PromoDependencies(
+            keyValueStore: keyValueStore,
+            isExternallyActivated: urlEventHandlerResult.willOpenWindows,
+            isNewUserProvider: { AppDelegate.isNewUser },
+            isOnboardingCompletedProvider: { [featureFlagger, onboardingContextualDialogsManager] in
+                NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
+                ? onboardingContextualDialogsManager.state == .onboardingCompleted && !activeDomainPublisher.isActiveTabOnboarding
+                : OnboardingActionsManager.isOnboardingFinished
+            },
+            activeRemoteMessageModel: activeRemoteMessageModel,
+            defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
+            sessionRestoreCoordinator: sessionRestorePromptCoordinator,
+            subscriptionPromoDelegate: subscriptionPromoDelegate,
+            featureFlagger: featureFlagger,
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+            windowControllersManager: windowControllersManager,
+            syncService: syncService,
+            syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
+            pinningManager: pinningManager,
+            cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate,
+            duckPlayerOverlayObserver: duckPlayerOverlayObserver,
+            updateController: updateController,
+            updateNotificationBridge: updateNotificationPromoBridge,
+            brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
+            quitSurveyPromoObserver: quitSurveyPromoObserver
+        )
+        promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
+        NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
 
         setUpAutoClearHandler()
         bitwardenManager?.initCommunication()

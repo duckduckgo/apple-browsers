@@ -101,7 +101,7 @@ final class PairingV2MessageCrypto {
         let payload = try encode(message)
         let publicKey = try makePublicKey(fromSPKIBase64URL: recipientPublicKey)
         let compactJWE = try encrypt(payload, recipientPublicKey: publicKey, kid: senderChannelID)
-        return PairingV2EncryptedMessage(payload: compactJWE)
+        return PairingV2EncryptedMessage(version: message.minimumProtocolVersion.rawValue, payload: compactJWE)
     }
 
     /// Decrypts a message with this device's private key, verifying the sender channel ID when given; returns nil for unrecognized message types.

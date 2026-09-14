@@ -19,13 +19,9 @@
 
 import Subscription
 
-/// Steps the completion checklist tracks. `vpnWidget` has no subscription entitlement of its own — it
-/// shares VPN's. `vpnTips` is excluded from the checklist entirely; it piggybacks on `vpnWidget`'s
-/// gating and step number instead of being tracked.
+/// Steps the completion checklist tracks.
 enum SubscriptionOnboardingChecklistItem: String, CaseIterable, Identifiable {
     case vpn
-    case vpnWidget
-    case vpnTips
     case idtr
     case duckAI
     case pir
@@ -33,13 +29,13 @@ enum SubscriptionOnboardingChecklistItem: String, CaseIterable, Identifiable {
     /// Every case gated by its own entitlement, `.pir` further gated by `isPIRAvailable`. Can come back
     /// empty if every case is excluded.
     static func checklist(isPIRAvailable: Bool, entitlement: EntitlementStatus) -> [SubscriptionOnboardingChecklistItem] {
-        let gated = allCases.filter { $0.isEntitled(entitlement) && $0 != .vpnTips }
+        let gated = allCases.filter { $0.isEntitled(entitlement) }
         return isPIRAvailable ? gated : gated.filter { $0 != .pir }
     }
 
     private func isEntitled(_ entitlement: EntitlementStatus) -> Bool {
         switch self {
-        case .vpn, .vpnWidget, .vpnTips: return entitlement.isEnabled(.networkProtection)
+        case .vpn: return entitlement.isEnabled(.networkProtection)
         case .idtr: return entitlement.isEnabled(.identityTheftRestoration) || entitlement.isEnabled(.identityTheftRestorationGlobal)
         case .duckAI: return entitlement.isEnabled(.paidAIChat)
         case .pir: return entitlement.isEnabled(.dataBrokerProtection)
@@ -57,7 +53,6 @@ enum SubscriptionOnboardingChecklistItem: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .vpn: return UserText.subscriptionOnboardingChecklistVPNTitle
-        case .vpnWidget, .vpnTips: return UserText.subscriptionOnboardingChecklistWidgetTitle
         case .idtr: return UserText.subscriptionOnboardingChecklistIDTRTitle
         case .duckAI: return UserText.subscriptionOnboardingChecklistDuckAITitle
         case .pir: return UserText.subscriptionOnboardingChecklistPIRTitle

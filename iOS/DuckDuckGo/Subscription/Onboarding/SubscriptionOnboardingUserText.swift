@@ -133,12 +133,12 @@ extension UserText {
     // MARK: - VPN widget education screen
 
     public static let subscriptionOnboardingVPNWidgetEducationTitle = NotLocalizedString("subscription.onboarding.vpn.widget-education.title", value: "Add the VPN Widget to Your Home Screen", comment: "Title of the VPN widget education screen shown after the VPN is on")
-    public static let subscriptionOnboardingVPNWidgetEducationGotItButton = NotLocalizedString("subscription.onboarding.vpn.widget-education.got-it.button", value: "Got it", comment: "VPN widget education screen button that advances to the VPN tips carousel")
+    public static let subscriptionOnboardingVPNWidgetEducationGotItButton = NotLocalizedString("subscription.onboarding.vpn.widget-education.got-it.button", value: "Got It", comment: "VPN widget education screen button that advances to the VPN tips carousel")
 
     // MARK: - VPN tips screen
 
     public static let subscriptionOnboardingVPNTipsTitle = NotLocalizedString("subscription.onboarding.vpn.tips.title", value: "What to know about using your VPN", comment: "Title of the post-activation VPN tips screen")
-    public static let subscriptionOnboardingVPNTipsDoneButton = NotLocalizedString("subscription.onboarding.vpn.tips.done.button", value: "Got it", comment: "VPN tips screen primary button that returns to the VPN activation screen")
+    public static let subscriptionOnboardingVPNTipsDoneButton = NotLocalizedString("subscription.onboarding.vpn.tips.done.button", value: "Got It", comment: "VPN tips screen primary button that returns to the VPN activation screen")
 
     // MARK: - VPN info sheet
 
@@ -189,22 +189,22 @@ extension UserText {
     // MARK: - PIR info sheet
 
     public static let subscriptionOnboardingPIRInfoTitle = NotLocalizedString("subscription.onboarding.pir.info.title", value: "Personal Information Removal", comment: "Title of the PIR 'Learn More' info sheet")
-    public static let subscriptionOnboardingPIRInfoExplanation = NotLocalizedString("subscription.onboarding.pir.info.explanation", value: "DuckDuckGo finds and removes your personal info from data broker sites, fighting identity theft and spam.", comment: "Explanation under the title on the PIR info sheet")
+    public static let subscriptionOnboardingPIRInfoExplanation = NotLocalizedString("subscription.onboarding.pir.info.explanation", value: "DuckDuckGo finds and removes your personal info from data broker sites, helping to combat identity theft and spam.", comment: "Explanation under the title on the PIR info sheet")
 
     public static let subscriptionOnboardingPIRInfoPlatformsTitle = NotLocalizedString("subscription.onboarding.pir.info.platforms.title", value: "Platforms", comment: "PIR info sheet feature card title: platforms")
-    public static let subscriptionOnboardingPIRInfoPlatformsBody = NotLocalizedString("subscription.onboarding.pir.info.platforms.body", value: "Personal Information Removal is only available on Mac and Windows", comment: "PIR info sheet feature card body: platforms")
-    public static let subscriptionOnboardingPIRInfoScansTitle = NotLocalizedString("subscription.onboarding.pir.info.scans.title", value: "Repeatedly scans over 50 sites that sell your information", comment: "PIR info sheet feature card title: repeated scans")
-    public static let subscriptionOnboardingPIRInfoScansBody = NotLocalizedString("subscription.onboarding.pir.info.scans.body", value: "Find and remove your personal information from over 50 data broker sites around the web. DuckDuckGo re-scans regularly to minimize the risk of your info reappearing.", comment: "PIR info sheet feature card body: repeated scans")
+    public static let subscriptionOnboardingPIRInfoPlatformsBody = NotLocalizedString("subscription.onboarding.pir.info.platforms.body", value: "Personal Information Removal is only available on iOS, Mac and Windows", comment: "PIR info sheet feature card body: platforms")
+    public static let subscriptionOnboardingPIRInfoScansTitle = NotLocalizedString("subscription.onboarding.pir.info.scans.title", value: "Repeatedly scans data broker sites that sell your information", comment: "PIR info sheet feature card title: repeated scans")
+    public static let subscriptionOnboardingPIRInfoScansBody = NotLocalizedString("subscription.onboarding.pir.info.scans.body", value: "Find and remove your personal information from data broker sites around the web. DuckDuckGo re-scans regularly to minimize the risk of your info reappearing.", comment: "PIR info sheet feature card body: repeated scans")
     public static let subscriptionOnboardingPIRInfoOnDeviceTitle = NotLocalizedString("subscription.onboarding.pir.info.on-device.title", value: "Your info stays on your device, not our servers", comment: "PIR info sheet feature card title: info stays on device")
-    public static let subscriptionOnboardingPIRInfoOnDeviceBody = NotLocalizedString("subscription.onboarding.pir.info.on-device.body", value: "Unlike other services, the removal process happens entirely on your device, not remote servers — your device stores the personal information you provide during setup and initiates removal requests.", comment: "PIR info sheet feature card body: info stays on device")
-    public static let subscriptionOnboardingPIRInfoAutomatedTitle = NotLocalizedString("subscription.onboarding.pir.info.automated.title", value: "Totally automated", comment: "PIR info sheet feature card title: totally automated")
-    public static let subscriptionOnboardingPIRInfoAutomatedBody = NotLocalizedString("subscription.onboarding.pir.info.automated.body", value: "Let us handle the time, effort, and complexity typically required to get your details removed. We scan for your info, request its removal, and receive and handle confirmation emails for you.", comment: "PIR info sheet feature card body: totally automated")
-    public static let subscriptionOnboardingPIRInfoMonitorTitle = NotLocalizedString("subscription.onboarding.pir.info.monitor.title", value: "Monitor removal progress in real time", comment: "PIR info sheet feature card title: monitor removal progress")
-    public static let subscriptionOnboardingPIRInfoMonitorBody = NotLocalizedString("subscription.onboarding.pir.info.monitor.body", value: "It can take a while for sites to update, so we made it easy to keep tabs on progress of ongoing removals and see the personal info we've removed in real time on your personal dashboard.", comment: "PIR info sheet feature card body: monitor removal progress")
+    public static let subscriptionOnboardingPIRInfoOnDeviceBody = NotLocalizedString("subscription.onboarding.pir.info.on-device.body", value: "Unlike other services, the automated removal process happens entirely on your device, not remote servers — your device stores the personal information you provide during setup and initiates removal requests.", comment: "PIR info sheet feature card body: info stays on device")
+    public static let subscriptionOnboardingPIRInfoAutomatedTitle = NotLocalizedString("subscription.onboarding.pir.info.automated.title", value: "Automated removals save you time and effort", comment: "PIR info sheet feature card title: totally automated")
+    public static let subscriptionOnboardingPIRInfoAutomatedBody = NotLocalizedString("subscription.onboarding.pir.info.automated.body", value: "We hunt down your personal info on data broker sites that are trying to sell it, and we work to get your details removed by submitting removal requests for you.", comment: "PIR info sheet feature card body: totally automated")
+    public static let subscriptionOnboardingPIRInfoMonitorTitle = NotLocalizedString("subscription.onboarding.pir.info.monitor.title", value: "You monitor removal progress in real time", comment: "PIR info sheet feature card title: monitor removal progress")
+    public static let subscriptionOnboardingPIRInfoMonitorBody = NotLocalizedString("subscription.onboarding.pir.info.monitor.body", value: "It can take a while for sites to update, but your personal dashboard makes it easy to keep tabs on progress of ongoing automated removals in real time and see where any manual follow ups may be needed.", comment: "PIR info sheet feature card body: monitor removal progress")
 
     // MARK: - Order confirmation screen
 
-    public static let subscriptionOnboardingOrderConfirmationTitle = NotLocalizedString("subscription.onboarding.order-confirmation.title", value: "Protections unlocked!", comment: "Order confirmation screen title, shown right after checkout completes")
+    public static let subscriptionOnboardingOrderConfirmationTitle = NotLocalizedString("subscription.onboarding.order-confirmation.title", value: "Protections unlocked", comment: "Order confirmation screen title, shown right after checkout completes")
     public static let subscriptionOnboardingOrderConfirmationExplanation = NotLocalizedString("subscription.onboarding.order-confirmation.explanation", value: "Start using your premium protections today!", comment: "Order confirmation screen subtitle, shown right after checkout completes")
     public static let subscriptionOnboardingOrderConfirmationNextButton = NotLocalizedString("subscription.onboarding.order-confirmation.next.button", value: "Let's go!", comment: "Order confirmation screen primary button that starts the onboarding flow")
 

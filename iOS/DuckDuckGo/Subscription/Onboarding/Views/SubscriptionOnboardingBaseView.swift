@@ -18,7 +18,6 @@
 //
 
 import SwiftUI
-import Common
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
@@ -78,16 +77,23 @@ struct SubscriptionOnboardingFooterButton {
         case push(AnyView)
     }
 
-    let title: String
+    let content: AnyView
     let action: Action
+    var isDisabled: Bool = false
 
     init(_ title: String, action: @escaping () -> Void) {
-        self.title = title
+        self.content = AnyView(Text(title))
+        self.action = .tap(action)
+    }
+
+    init(content: some View, isDisabled: Bool = false, action: @escaping () -> Void) {
+        self.content = AnyView(content)
+        self.isDisabled = isDisabled
         self.action = .tap(action)
     }
 
     init<Destination: View>(_ title: String, push destination: Destination) {
-        self.title = title
+        self.content = AnyView(Text(title))
         self.action = .push(AnyView(destination))
     }
 }
@@ -155,11 +161,6 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
         }
     }
 
-    /// Overlays the footer instead of reserving space below it — `footerBlur`, or always on iPad.
-    private var usesBlurredFooter: Bool {
-        footerBlur || DevicePlatform.isIpad
-    }
-
     @ViewBuilder
     private var pageWithFooter: some View {
         let page = pageContent
@@ -167,7 +168,7 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
             .background { pageBackground }
             .background(pageBackgroundColor.ignoresSafeArea())
 
-        if usesBlurredFooter {
+        if footerBlur {
             page
                 .overlay(alignment: .bottom) { blurredFooterView }
                 .onPreferenceChange(FooterBlockHeightKey.self) { footerBlockHeight = $0 }
@@ -208,7 +209,7 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
         }
         .padding(.top, Metrics.contentVerticalPadding)
         .padding(.horizontal, Metrics.horizontalPadding)
-        .padding(.bottom, usesBlurredFooter ? footerBlockHeight : Metrics.contentVerticalPadding)
+        .padding(.bottom, footerBlur ? footerBlockHeight : Metrics.contentVerticalPadding)
     }
 }
 
@@ -298,17 +299,17 @@ private extension SubscriptionOnboardingBaseView {
     func footerControl(_ button: SubscriptionOnboardingFooterButton) -> some View {
         switch button.action {
         case .tap(let action):
-            Button(button.title, action: action)
+            Button(action: action) { button.content }
+                .disabled(button.isDisabled)
         case .push(let destination):
-            NavigationLink(destination: destination) {
-                Text(button.title)
-            }
+            NavigationLink(destination: destination) { button.content }
+                .disabled(button.isDisabled)
         }
     }
 
     func primaryButton(_ button: SubscriptionOnboardingFooterButton) -> some View {
         footerControl(button)
-            .buttonStyle(PrimaryButtonStyle())
+            .buttonStyle(PrimaryButtonStyle(disabled: button.isDisabled))
     }
 
     /// Backs the design system's translucent secondary fill with an opaque page-color capsule so content
@@ -323,7 +324,7 @@ private extension SubscriptionOnboardingBaseView {
 
 // MARK: - Navigation bar background
 
-private extension View {
+extension View {
     /// Paints the navigation bar with the page color so it matches the flat `surfaceTertiary` page.
     /// `toolbarBackground` is iOS 16+, so on iOS 15 the bar keeps the system default background.
     #warning("Post-iOS15-Drop: drop the fork and apply `toolbarBackground` unconditionally.")

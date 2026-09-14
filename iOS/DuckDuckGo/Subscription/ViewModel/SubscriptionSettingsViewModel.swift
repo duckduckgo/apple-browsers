@@ -28,6 +28,7 @@ import Networking
 import Persistence
 import FeatureFlags_iOS
 import PixelKit
+import AIChat
 
 /// Status for the cancel-downgrade overlay
 enum CancelDowngradeOverlayStatus {
@@ -44,6 +45,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private let featureFlagger: FeatureFlagger
     private let subscriptionFlowsExecuter: SubscriptionFlowsExecuting
     private let onboardingKeyValueStore: ThrowingKeyValueStoring
+    private let aiChatSettings: AIChatSettingsProvider
 
     private var externalAllowedDomains = ["stripe.com"]
 
@@ -202,11 +204,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
          keyValueStorage: KeyValueStoring = SubscriptionSettingsStore(),
          onboardingKeyValueStore: ThrowingKeyValueStoring,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil) {
+         subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
+         aiChatSettings: AIChatSettingsProvider = AIChatSettings()) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
         self.featureFlagger = featureFlagger
         self.onboardingKeyValueStore = onboardingKeyValueStore
+        self.aiChatSettings = aiChatSettings
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,
             wideEvent: AppDependencyProvider.shared.wideEvent)
@@ -242,7 +246,16 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             return
         }
         let entitlement = await subscriptionManager.getAllEntitlementStatus()
-        let progress = SubscriptionOnboardingProgress(persistor: onboardingPersistor, isPIRAvailable: isPIRAvailable, entitlement: entitlement)
+        // Once fully done, a Duck.ai toggle flip in Settings shouldn't resurrect or alter the checklist.
+        let checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable, entitlement: entitlement)
+        let currentPercentage = SubscriptionOnboardingChecklistItem.completionPercentage(completed: onboardingPersistor.completedItems, checklist: checklist)
+        let duckAIChatAvailability: DuckAIChatAvailability = currentPercentage < 100
+            ? (aiChatSettings.isAIChatEnabled ? .enabled : .disabled)
+            : .reconciliationNotNeeded
+        let progress = SubscriptionOnboardingProgress(persistor: onboardingPersistor,
+                                                      isPIRAvailable: isPIRAvailable,
+                                                      entitlement: entitlement,
+                                                      duckAIChatAvailability: duckAIChatAvailability)
         onboardingSetupState = progress.checklist.isEmpty ? .hidden : .setup(progress)
     }
 

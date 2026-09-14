@@ -172,14 +172,14 @@ final class SubscriptionFlowViewModel: ObservableObject {
         didRequestOnboarding = true
     }
 
-    /// Called once the onboarding flow finishes, so this screen dismisses with it.
+    /// Whether this screen should also dismiss now — false if onboarding handed off to Duck.ai chat.
     @MainActor
-    func onboardingFinished() {
+    func onboardingFinished() -> Bool {
         guard !didHandOffToDuckAI else {
             didHandOffToDuckAI = false
-            return
+            return false
         }
-        state.shouldGoBackToSettings = true
+        return true
     }
 
     /// Returns the subscription URL type based on the current flow type

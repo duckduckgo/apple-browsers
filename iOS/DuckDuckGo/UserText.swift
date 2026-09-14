@@ -1824,6 +1824,7 @@ public struct UserText {
     public static let settingsPProDBPSubTitle = NSLocalizedString("settings.subscription.DBP.subtitle", value: "Remove your info from sites that sell it", comment: "Data Broker protection cell subtitle for privacy pro")
     public static let settingsPProITRTitle = NSLocalizedString("settings.subscription.ITR.title", value: "Identity Theft Restoration", comment: "Identity theft restoration cell title for privacy pro")
     public static let settingsPProITRSubTitle = NSLocalizedString("settings.subscription.ITR.subtitle", value: "If your identity is stolen, we'll help restore it", comment: "Identity theft restoration cell subtitle for privacy pro")
+    public static let settingsPProSubscriberOffersTitle = NSLocalizedString("settings.subscription.subscriberOffers.title", value: "Subscriber Offers", comment: "Title of a settings cell in the DuckDuckGo Subscription section. Opens a web page listing exclusive offers from partner companies that are available to subscribers.")
 
     public static let settingsPProActivationPendingDescription = NSLocalizedString("settings.subscription.activation.pending.description", value: "This is taking longer than usual, please check back later.", comment: "Subscription activation pending description")
 

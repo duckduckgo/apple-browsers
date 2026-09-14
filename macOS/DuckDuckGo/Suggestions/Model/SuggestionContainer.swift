@@ -264,6 +264,11 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
             if pane == .paidAIChat && !featureFlagger.isFeatureOn(.paidAIChat) {
                 return nil
             }
+            // Subscriber Offers opens a web page rather than a settings pane, so there is no pane to
+            // suggest navigating to.
+            if pane == .partnershipsHub {
+                return nil
+            }
             // preference panes URLs
             return .init(title: UserText.settings + " → " + pane.displayName, url: .settingsPane(pane))
         }

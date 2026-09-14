@@ -321,12 +321,17 @@ final class PairingV2StateMachineTests: XCTestCase {
         XCTAssertEqual(stateMachine.state, .failed(error))
     }
 
-    func testWhenHelloHasUnsupportedVersionThenFlowAborts() {
-        var stateMachine = PairingV2StateMachine()
-        let commands = stateMachine.handle(.receivedHello(.init(channelId: "peer-channel", publicKey: "public-key", version: "3.0")))
+    func testWhenHelloHasUnrecognizedCapabilityThenStateMachineContinuesToPeerStatus() {
+        for version in ["", "invalid", "1", "3.1", "2.invalid"] {
+            var stateMachine = PairingV2StateMachine()
+            let localClient = makeLocalClient(kind: .ddg, hasAccount: false, isPresenter: true)
+            _ = stateMachine.handle(.presentCodeRequested(localClient: localClient, flags: enabledFlags))
 
-        XCTAssertEqual(commands, [.abort(.unsupportedVersion("3.0"))])
-        XCTAssertEqual(stateMachine.state, .failed(.unsupportedVersion("3.0")))
+            let commands = stateMachine.handle(.receivedHello(.init(channelId: "peer-channel", publicKey: "public-key", version: version)))
+
+            XCTAssertEqual(commands, [.sendRecoveryCodeStatus(.recoveryCodeRequest(kind: .ddg))])
+            XCTAssertEqual(stateMachine.state, .waitingForPeerStatus(.init(localClient: localClient, peerChannelID: nil)))
+        }
     }
 
     func testWhenNativeHostReceivesThirdPartyAvailableThenItRequestsHostConfirmation() {

@@ -21,24 +21,15 @@ import Foundation
 import MetricKit
 import Core
 import Persistence
-import PrivacyConfig
-import FeatureFlags_iOS
 
-/// Owns the MetricKit launch-time subscriber. When enabled, registers it with
-/// `MXMetricManager` and drains any already-available past payloads on start and
-/// on every foreground.
+/// Owns the MetricKit launch-time subscriber. Registers it with `MXMetricManager`
+/// and drains any already-available past payloads on start and on every foreground.
 @available(iOSApplicationExtension, unavailable)
 final class LaunchTimeMetricsService {
 
-    private let subscriber: LaunchTimeMetricsSubscriber?
+    private let subscriber: LaunchTimeMetricsSubscriber
 
-    init(featureFlagger: FeatureFlagger,
-         store: KeyValueStoring = UserDefaults.standard) {
-        guard featureFlagger.isFeatureOn(.launchTimeMetrics) else {
-            self.subscriber = nil
-            return
-        }
-
+    init(store: KeyValueStoring = UserDefaults.standard) {
         let subscriber = LaunchTimeMetricsSubscriber(store: store)
         self.subscriber = subscriber
         MXMetricManager.shared.add(subscriber)
@@ -49,12 +40,10 @@ final class LaunchTimeMetricsService {
     /// to pick up payloads delivered while the app was inactive. The subscriber does the work
     /// off the main thread, and its dedup marker makes repeated calls safe
     func resume() {
-        subscriber?.processPastPayloads()
+        subscriber.processPastPayloads()
     }
 
     deinit {
-        if let subscriber {
-            MXMetricManager.shared.remove(subscriber)
-        }
+        MXMetricManager.shared.remove(subscriber)
     }
 }

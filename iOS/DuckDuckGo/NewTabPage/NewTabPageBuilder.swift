@@ -66,10 +66,14 @@ struct NewTabPageBuilder {
         // The callbacks are created before their owning page; keep the back-reference weak.
         weak var newTabPage: RedesignedNewTabPageViewController?
         let searchInputView = NewTabPageSearchInputView(
-            isModeToggleShown: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-            isAIChatEnabled: aiChatSettings.isAIChatEnabled,
-            isVoiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
-            initialTextEntryMode: initialTextEntryMode,
+            model: NewTabPageSearchInputModel(readSettings: { [aiChatSettings, toggleModeStorage, voiceSearchHelper] in
+                NewTabPageSearchInputModel.Settings(
+                    isModeToggleShown: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+                    isAIChatEnabled: aiChatSettings.isAIChatEnabled,
+                    isVoiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
+                    // Must match the address bar's home-tab mode resolution.
+                    defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })
+            }),
             onActivate: { textEntryMode in
                 newTabPage?.beginSearch(textEntryMode: textEntryMode)
             },
@@ -83,13 +87,6 @@ struct NewTabPageBuilder {
         ])
         newTabPage = page
         return page
-    }
-
-    // Must match the address bar's home-tab mode resolution.
-    private var initialTextEntryMode: TextEntryMode {
-        aiChatSettings.defaultOmnibarMode
-            .resolvedTextEntryMode { toggleModeStorage.restore() }
-            .displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
     }
 
     private func makeCurrentNewTabPage(tab: Tab,

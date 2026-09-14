@@ -24,39 +24,21 @@ import SwiftUI
 /// Resting controls only. The browser's address bar owns every text editing session.
 struct NewTabPageSearchInputView: View {
 
-    let isModeToggleShown: Bool
-    let isAIChatEnabled: Bool
-    let isVoiceSearchEnabled: Bool
+    @ObservedObject var model: NewTabPageSearchInputModel
     let onActivate: (TextEntryMode) -> Void
     let onVoiceSearch: (TextEntryMode) -> Void
 
-    @State private var textEntryMode: TextEntryMode
-
-    init(isModeToggleShown: Bool,
-         isAIChatEnabled: Bool,
-         isVoiceSearchEnabled: Bool,
-         initialTextEntryMode: TextEntryMode,
-         onActivate: @escaping (TextEntryMode) -> Void,
-         onVoiceSearch: @escaping (TextEntryMode) -> Void) {
-        self.isModeToggleShown = isModeToggleShown
-        self.isAIChatEnabled = isAIChatEnabled
-        self.isVoiceSearchEnabled = isVoiceSearchEnabled
-        self.onActivate = onActivate
-        self.onVoiceSearch = onVoiceSearch
-        _textEntryMode = State(initialValue: initialTextEntryMode)
-    }
-
     var body: some View {
         VStack(spacing: 0) {
-            if isModeToggleShown {
-                NewTabPageModeToggle(textEntryMode: $textEntryMode)
+            if model.settings.isModeToggleShown {
+                NewTabPageModeToggle(textEntryMode: $model.textEntryMode)
                     .frame(height: Metrics.toggleHeight)
                     .padding(.top, Metrics.cardPadding)
                     .padding(.horizontal, Metrics.cardPadding)
             }
-            NewTabPageRestingSearchField(textEntryMode: textEntryMode,
-                                        isAIChatButtonShown: isAIChatEnabled && !isModeToggleShown,
-                                        isVoiceSearchEnabled: isVoiceSearchEnabled,
+            NewTabPageRestingSearchField(textEntryMode: model.textEntryMode,
+                                        isAIChatButtonShown: model.settings.isAIChatEnabled && !model.settings.isModeToggleShown,
+                                        isVoiceSearchEnabled: model.settings.isVoiceSearchEnabled,
                                         onActivate: onActivate,
                                         onVoiceSearch: onVoiceSearch)
                 .frame(height: Metrics.fieldHeight)
@@ -181,10 +163,9 @@ private enum Metrics {
 }
 
 #Preview("Toggle shown") {
-    NewTabPageSearchInputView(isModeToggleShown: true,
-                             isAIChatEnabled: true,
-                             isVoiceSearchEnabled: true,
-                             initialTextEntryMode: .search,
+    NewTabPageSearchInputView(model: NewTabPageSearchInputModel(readSettings: {
+        .init(isModeToggleShown: true, isAIChatEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .search)
+    }),
                              onActivate: { _ in },
                              onVoiceSearch: { _ in })
         .padding(.vertical, 40)
@@ -192,10 +173,9 @@ private enum Metrics {
 }
 
 #Preview("Search only") {
-    NewTabPageSearchInputView(isModeToggleShown: false,
-                             isAIChatEnabled: false,
-                             isVoiceSearchEnabled: false,
-                             initialTextEntryMode: .search,
+    NewTabPageSearchInputView(model: NewTabPageSearchInputModel(readSettings: {
+        .init(isModeToggleShown: false, isAIChatEnabled: false, isVoiceSearchEnabled: false, defaultTextEntryMode: .search)
+    }),
                              onActivate: { _ in },
                              onVoiceSearch: { _ in })
         .padding(.vertical, 40)

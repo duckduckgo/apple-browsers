@@ -21,42 +21,30 @@ import Foundation
 import Testing
 import Core
 import SystemSettingsPiPTutorial
-import FeatureFlags_iOS
 @testable import DuckDuckGo
 
 @Suite("System Settings PiP Tutorial - Default Browser", .serialized)
 final class DefaultBrowserPiPTutorialURLProviderTests {
 
-    struct Context {
-        let featureFlags: [FeatureFlag]
-        let videoName: String
+    private static let videoName = "default-browser-tutorial-rebranded"
 
-        static let `default` = Context(featureFlags: [], videoName: "default-browser-tutorial")
-        static let appRebranding = Context(featureFlags: [FeatureFlag.appRebranding], videoName: "default-browser-tutorial-rebranded")
-    }
-
-    @Test(
-        "Check Video Can Be Loaded From the Bundle",
-        arguments: [Context.default, Context.appRebranding]
-    )
-    func whenVideoIsFoundInBundleThenReturnVideoURL(context: Context) throws {
+    @Test("Check Video Can Be Loaded From the Bundle")
+    func whenVideoIsFoundInBundleThenReturnVideoURL() throws {
         // GIVEN
-        let featureFlaggerMock = MockFeatureFlagger(enabledFeatureFlags: context.featureFlags)
-        let sut = DefaultBrowserPiPTutorialURLProvider(featureFlagger: featureFlaggerMock)
+        let sut = DefaultBrowserPiPTutorialURLProvider()
 
         // WHEN
         let result = try sut.pipTutorialURL()
 
         // THEN
-        #expect(result.absoluteString.contains("\(context.videoName).mp4"))
+        #expect(result.absoluteString.contains("\(Self.videoName).mp4"))
     }
 
     @Test("Check Throw Error When Video Cannot Be Loaded From the Bundle")
     func whenVideoIsNotFoundInBundleThenReturnURLNotFoundError() {
         // GIVEN
-        let featureFlaggerMock = MockFeatureFlagger()
         let fakeBundle = Bundle(for: DefaultBrowserPiPTutorialURLProviderTests.self)
-        let sut = DefaultBrowserPiPTutorialURLProvider(featureFlagger: featureFlaggerMock, bundle: fakeBundle)
+        let sut = DefaultBrowserPiPTutorialURLProvider(bundle: fakeBundle)
 
         // WHEN & THEN
         #expect(throws: PiPTutorialURLProviderError.urlNotFound) {
@@ -73,24 +61,19 @@ final class DefaultBrowserPiPTutorialURLProviderTests {
             "it",
             "nl",
             "pt"
-        ],
-        [
-            Context.default,
-            Context.appRebranding
         ]
     )
-    func checkVideosAreFoundForSupportedLocalizations(_ localization: String, context: Context) throws {
+    func checkVideosAreFoundForSupportedLocalizations(_ localization: String) throws {
         // GIVEN
-        let featureFlaggerMock = MockFeatureFlagger(enabledFeatureFlags: context.featureFlags)
         let localizedBundlePath = try #require(Bundle.main.path(forResource: localization, ofType: "lproj"))
         let localizedBundle = try #require(Bundle(path: localizedBundlePath))
-        let sut = DefaultBrowserPiPTutorialURLProvider(featureFlagger: featureFlaggerMock, bundle: localizedBundle)
+        let sut = DefaultBrowserPiPTutorialURLProvider(bundle: localizedBundle)
 
         // WHEN
         let result = try sut.pipTutorialURL()
 
         // THEN
-        #expect(result.absoluteString.contains("\(localization).lproj/\(context.videoName).mp4"))
+        #expect(result.absoluteString.contains("\(localization).lproj/\(Self.videoName).mp4"))
     }
 
 }

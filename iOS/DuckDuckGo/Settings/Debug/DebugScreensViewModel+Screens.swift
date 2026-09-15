@@ -138,8 +138,8 @@ extension DebugScreensViewModel {
             .view(title: "History", { d in
                 HistoryDebugRootView(tabManager: d.tabManager)
             }),
-            .view(title: "Bookmarks", { _ in
-                BookmarksDebugRootView()
+            .view(title: "Bookmarks", accessibilityIdentifier: "Debug.Screen.Bookmarks", { dependencies in
+                BookmarksDebugRootView(bookmarksDatabase: dependencies.bookmarksDatabase)
             }),
             .view(title: "Favorites", { d in
                 FavoritesDebugView(bookmarksDatabase: d.bookmarksDatabase,

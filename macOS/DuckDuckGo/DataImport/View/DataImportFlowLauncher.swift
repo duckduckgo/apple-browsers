@@ -35,30 +35,12 @@ protocol DataImportFlowRelaunching {
     )
 }
 
-/// Protocol for re-launching legacy data import flows from within legacy data import
-///
-/// Provides functionality to initiate data import flows with customizable
-/// presentation options and data type selection.
-protocol LegacyDataImportFlowRelaunching {
-    /// Launches the data import flow with the specified configuration
-    /// - Parameters:
-    ///   - model: The view model containing import data and state
-    ///   - title: The title to display in the import dialog
-    ///   - isDataTypePickerExpanded: Whether the data type picker should start expanded
-    @MainActor
-    func relaunchDataImport(
-        model: LegacyDataImportViewModel,
-        title: String,
-        isDataTypePickerExpanded: Bool
-    )
-}
-
 /// Concrete implementation for launching data import flows.
 ///
 /// Manages the presentation of data import dialogs with support for sync feature
 /// integration and customizable UI configurations. Handles the coordination between
 /// data import functionality and sync features when available.
-final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportFlowRelaunching {
+final class DataImportFlowLauncher: DataImportFlowRelaunching {
     private let pinningManager: PinningManager
 
     init(pinningManager: PinningManager) {
@@ -78,22 +60,6 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
     }
 
     @MainActor
-    func relaunchDataImport(
-        model: LegacyDataImportViewModel,
-        title: String,
-        isDataTypePickerExpanded: Bool
-    ) {
-        LegacyDataImportView(
-            model: model,
-            importFlowLauncher: self,
-            title: title,
-            isDataTypePickerExpanded: isDataTypePickerExpanded,
-            syncFeatureVisibility: syncFeatureVisibility,
-            pinningManager: pinningManager
-        ).show()
-    }
-
-    @MainActor
     func launchDataImport(
         title: String = UserText.importDataTitle,
         isDataTypePickerExpanded: Bool,
@@ -102,19 +68,6 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
         onCancelled: @escaping () -> Void = {},
         completion: (() -> Void)? = nil
     ) {
-        let featureFlagger = NSApp.delegateTyped.featureFlagger
-        guard featureFlagger.isFeatureOn(.dataImportNewExperience) else {
-            let viewModel = LegacyDataImportViewModel(onFinished: onFinished, onCancelled: onCancelled)
-            LegacyDataImportView(
-                model: viewModel,
-                importFlowLauncher: self,
-                title: title,
-                isDataTypePickerExpanded: isDataTypePickerExpanded,
-                syncFeatureVisibility: syncFeatureVisibility,
-                pinningManager: pinningManager
-            ).show(in: window, completion: completion)
-            return
-        }
         let viewModel = DataImportViewModel(
             syncFeatureVisibility: syncFeatureVisibility,
             onFinished: onFinished,

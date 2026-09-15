@@ -100,6 +100,21 @@ final class PairingV2MessageCryptoTests: XCTestCase {
         }
     }
 
+    func testWhenEncryptingByeThenUsesV21EnvelopeAndPreservesKnownAndUnknownReasons() throws {
+        let keyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "channel-1")
+        let crypto = PairingV2MessageCrypto()
+        let reasons: [PairingV2ByeReason] = [.done, .cancelled, .error, .unknown("future_reason")]
+
+        for reason in reasons {
+            let message = PairingV2ApplicationMessage.bye(.init(reason: reason))
+            let encrypted = try crypto.encrypt(message, recipientPublicKey: keyPair.publicKey, senderChannelID: "sender-channel")
+
+            XCTAssertEqual(message.minimumProtocolVersion, .v2Point1)
+            XCTAssertEqual(encrypted.version, "2.1")
+            XCTAssertEqual(try crypto.decrypt(encrypted, privateKey: keyPair.privateKey), message)
+        }
+    }
+
     func testWhenDecryptingUnknownMessageInFutureMinorEnvelopeThenDropsIt() throws {
         let message = try decodeApplicationMessage(#"{"type":"future_message"}"#, envelopeVersion: "2.9")
 

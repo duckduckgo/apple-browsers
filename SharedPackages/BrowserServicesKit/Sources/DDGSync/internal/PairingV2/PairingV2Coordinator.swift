@@ -177,8 +177,10 @@ final class PairingV2Coordinator {
     }
 
     func cancel() async {
-        _ = stateMachine.handle(.failed(.cancelled))
-        await closeLocalChannel()
+        let commands = stateMachine.handle(.failed(.cancelled))
+        await dismissPendingConfirmation()
+        try? await execute(commands)
+        await closeLocalChannel(byeReason: .cancelled)
     }
 
     func completeAccountSwitch(didSucceed: Bool) async throws {
@@ -191,33 +193,58 @@ final class PairingV2Coordinator {
         }
     }
 
-    private func closeLocalChannel() async {
-        guard hasOpenedLocalChannel, !hasClosedLocalChannel else {
+    private func closeLocalChannel(byeReason: PairingV2ByeReason) async {
+        guard let teardown = makeChannelTeardown(byeReason: byeReason) else {
             return
         }
-        guard let channelID = localKeyPair?.channelID else {
-            return
-        }
-        let authorizationSecret = localChannelSecret
-        hasClosedLocalChannel = true
-        localChannelSecret = nil
-        try? await messageExchanger.closeChannel(channelID, authorizationSecret: authorizationSecret)
+        await Self.perform(teardown, using: messageExchanger)
     }
 
-    private func closeLocalChannelBestEffort() {
-        guard hasOpenedLocalChannel, !hasClosedLocalChannel else {
+    private func closeLocalChannelBestEffort(byeReason: PairingV2ByeReason) {
+        guard let teardown = makeChannelTeardown(byeReason: byeReason) else {
             return
         }
+        Task { [messageExchanger] in
+            await Self.perform(teardown, using: messageExchanger)
+        }
+    }
+
+    private func makeChannelTeardown(byeReason: PairingV2ByeReason) -> PairingV2ChannelTeardown? {
+        guard hasOpenedLocalChannel, !hasClosedLocalChannel else {
+            return nil
+        }
         guard let channelID = localKeyPair?.channelID else {
-            return
+            return nil
         }
 
         let authorizationSecret = localChannelSecret
         hasClosedLocalChannel = true
         localChannelSecret = nil
-        Task { [messageExchanger] in
-            try? await messageExchanger.closeChannel(channelID, authorizationSecret: authorizationSecret)
+
+        var bye: PairingV2EncryptedMessage?
+        if supportsBye {
+            if let peerPublicKey, peerChannelID != nil {
+                bye = try? messageCrypto.encrypt(.bye(.init(reason: byeReason)),
+                                                 recipientPublicKey: peerPublicKey,
+                                                 senderChannelID: channelID)
+            }
         }
+
+        return PairingV2ChannelTeardown(localChannelID: channelID,
+                                        peerChannelID: peerChannelID,
+                                        authorizationSecret: authorizationSecret,
+                                        bye: bye)
+    }
+
+    private static func perform(_ teardown: PairingV2ChannelTeardown,
+                                using messageExchanger: PairingV2MessageExchanging) async {
+        if let bye = teardown.bye, let peerChannelID = teardown.peerChannelID {
+            try? await messageExchanger.send([bye],
+                                             to: peerChannelID,
+                                             authorizationSecret: teardown.authorizationSecret)
+        }
+        try? await messageExchanger.closeChannel(teardown.localChannelID,
+                                                 authorizationSecret: teardown.authorizationSecret)
     }
 
     private func handle(_ encryptedMessage: PairingV2EncryptedMessage) async throws {
@@ -269,6 +296,9 @@ final class PairingV2Coordinator {
 
         case .recoveryCodeDone(let message):
             commands = stateMachine.handle(.receivedRecoveryCodeDone(message.reason))
+
+        case .bye(let message):
+            commands = stateMachine.handle(.receivedBye(message.reason))
         }
 
         try await execute(commands)
@@ -320,7 +350,7 @@ final class PairingV2Coordinator {
 
             // If cancelled while channel creation was in flight, clean up now using the secret the server accepted
             if case .failed(.cancelled) = stateMachine.state {
-                await closeLocalChannel()
+                await closeLocalChannel(byeReason: .cancelled)
                 throw PairingV2Error.cancelled
             }
 
@@ -432,10 +462,11 @@ final class PairingV2Coordinator {
 
         case .stopPolling:
             // Do not block successful pairing on relay channel cleanup.
-            closeLocalChannelBestEffort()
+            closeLocalChannelBestEffort(byeReason: .done)
 
-        case .abort:
-            await closeLocalChannel()
+        case .abort(let error):
+            await dismissPendingConfirmation()
+            await closeLocalChannel(byeReason: error == .cancelled ? .cancelled : .error)
         }
     }
 
@@ -556,10 +587,10 @@ final class PairingV2Coordinator {
         do {
             try await execute(stateMachine.handle(.failed(error)))
         } catch let relayFailure as PairingV2OperationFailure {
-            await closeLocalChannel()
+            await closeLocalChannel(byeReason: .error)
             throw relayFailure
         } catch {
-            await closeLocalChannel()
+            await closeLocalChannel(byeReason: .error)
         }
         throw error
     }
@@ -678,6 +709,25 @@ final class PairingV2Coordinator {
     var supportsRecoveryCodeDone: Bool {
         negotiatedVersion >= .v2Point1
     }
+
+    var supportsBye: Bool {
+        negotiatedVersion >= .v2Point1
+    }
+}
+
+private actor PairingV2PendingConfirmation {
+    private(set) var result: PairingV2Event?
+
+    func resolve(_ event: PairingV2Event) {
+        result = event
+    }
+}
+
+private struct PairingV2ChannelTeardown {
+    let localChannelID: String
+    let peerChannelID: String?
+    let authorizationSecret: String?
+    let bye: PairingV2EncryptedMessage?
 }
 
 enum PairingV2EntryRole {

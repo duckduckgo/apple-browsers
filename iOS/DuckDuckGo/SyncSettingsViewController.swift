@@ -99,6 +99,9 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     var pairingInfo: PairingInfo?
     var pairingV2PeerKind: PairingV2DeviceKind?
     var pairingV2JoinerCodeSource: SyncCodeSource?
+    var pairingV2ConfirmationAlert: UIAlertController?
+    var pairingV2ConfirmationContinuation: CheckedContinuation<Bool, Never>?
+    var pairingV2ConfirmationWasDismissedByController = false
     var needsPreservedAccountCleanupBeforeServerOperation = false
     var autoRestorePromptSource: AutoRestorePromptSource?
 

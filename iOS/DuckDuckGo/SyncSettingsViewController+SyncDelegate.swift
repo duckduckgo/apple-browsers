@@ -671,11 +671,21 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         return isConfirmed
     }
 
+    func controllerDismissPairingV2Confirmation() async {
+        guard pairingV2ConfirmationContinuation != nil else {
+            return
+        }
+        pairingV2ConfirmationWasDismissedByController = true
+        resolvePairingV2Confirmation(false, dismissAlert: true)
+    }
+
     private func confirmPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind, setupRole: SyncSetupRole) async -> Bool {
         let peerName = pairingV2DisplayName(for: peerName)
         let message = UserText.syncPairingV2ConfirmationMessage(peerName, isThirdPartyPeer: peerKind == .thirdParty)
         let isConfirmed = await presentPairingV2ConfirmationAlert(message: message)
-        if !isConfirmed {
+        let wasDismissedByController = pairingV2ConfirmationWasDismissedByController
+        pairingV2ConfirmationWasDismissedByController = false
+        if !isConfirmed, !wasDismissedByController {
             sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
             if isPresentingConnectingSheet {
                 viewModel.connectingSheetPhase = nil
@@ -691,17 +701,33 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     private func presentPairingV2ConfirmationAlert(message: String) async -> Bool {
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.syncPairingV2ConfirmationTitle, message: message, preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel) { _ in
-                continuation.resume(returning: false)
+            alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel) { [weak self] _ in
+                self?.resolvePairingV2Confirmation(false)
             })
-            let confirmAction = UIAlertAction(title: UserText.syncPairingV2ConfirmationAction, style: .default) { _ in
-                continuation.resume(returning: true)
+            let confirmAction = UIAlertAction(title: UserText.syncPairingV2ConfirmationAction, style: .default) { [weak self] _ in
+                self?.resolvePairingV2Confirmation(true)
             }
             alert.addAction(confirmAction)
             alert.preferredAction = confirmAction
 
+            pairingV2ConfirmationContinuation = continuation
+            pairingV2ConfirmationAlert = alert
             topmostPresentedViewController().present(alert, animated: true)
         }
+    }
+
+    private func resolvePairingV2Confirmation(_ isConfirmed: Bool, dismissAlert: Bool = false) {
+        guard let continuation = pairingV2ConfirmationContinuation else {
+            return
+        }
+
+        let alert = pairingV2ConfirmationAlert
+        pairingV2ConfirmationContinuation = nil
+        pairingV2ConfirmationAlert = nil
+        if dismissAlert {
+            alert?.dismiss(animated: true)
+        }
+        continuation.resume(returning: isConfirmed)
     }
 
     private func topmostPresentedViewController() -> UIViewController {

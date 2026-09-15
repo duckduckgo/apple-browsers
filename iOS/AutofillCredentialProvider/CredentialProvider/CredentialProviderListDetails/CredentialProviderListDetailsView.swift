@@ -200,7 +200,7 @@ private struct CopyableCell: View {
                             Text(subtitle)
                                 .label4Style(design: isMonospaced ? .monospaced : .default,
                                              foregroundColorLight: ForegroundColor(isSelected: selectedCell == id).color,
-                                             foregroundColorDark: Color(baseColor: .gray30))
+                                             foregroundColorDark: Color(designSystemColor: .textSecondary))
                                 .truncationMode(truncationMode)
                                 .frame(maxHeight: .greatestFiniteMagnitude)
                                 .textSelection(.enabled)
@@ -208,7 +208,7 @@ private struct CopyableCell: View {
                             Text(subtitle)
                                 .label4Style(design: isMonospaced ? .monospaced : .default,
                                              foregroundColorLight: ForegroundColor(isSelected: selectedCell == id).color,
-                                             foregroundColorDark: Color(baseColor: .gray30))
+                                             foregroundColorDark: Color(designSystemColor: .textSecondary))
                                 .truncationMode(truncationMode)
                         }
                     }
@@ -329,9 +329,9 @@ private struct ForegroundColor {
 
     var color: Color {
         if isSelected {
-            return Color(baseColor: .gray90)
+            return Color(designSystemColor: .textPrimary)
         } else {
-            return Color(baseColor: .gray50)
+            return Color(designSystemColor: .textSecondary)
         }
     }
 }

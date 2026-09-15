@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppKitExtensions
 import FeatureFlags_macOS
 import PrivacyConfig
 
@@ -84,11 +85,6 @@ final class FeatureFlagOverridesMenu: NSMenu {
             .map { category in
                 let menuItem = NSMenuItem(title: category.rawValue)
                 menuItem.representedObject = category
-#if compiler(>=6.4)
-                if #available(macOS 27.0, *) {
-                    menuItem.preferredImageVisibility = .visible
-                }
-#endif
                 let submenu = NSMenu(title: category.rawValue)
                 menuItem.submenu = submenu
 
@@ -106,11 +102,6 @@ final class FeatureFlagOverridesMenu: NSMenu {
                             target: self,
                             representedObject: flag
                         )
-#if compiler(>=6.4)
-                        if #available(macOS 27.0, *) {
-                            item.preferredImageVisibility = .visible
-                        }
-#endif
                         return item
                     }
 
@@ -176,7 +167,7 @@ final class FeatureFlagOverridesMenu: NSMenu {
     }
 
     private func updateCategoryItem(_ item: NSMenuItem, category: FeatureFlagCategory) {
-        item.image = icon(for: category)
+        item.withImage(icon(for: category), visibleOnMacOS27: true)
 
         if let submenu = item.submenu {
             update(submenu.items)
@@ -189,7 +180,7 @@ final class FeatureFlagOverridesMenu: NSMenu {
         submenu.addItem(removeOverrideSubmenuItem(for: flag))
         item.submenu = override != nil ? submenu : nil
         item.title = menuItemTitle(for: flag)
-        item.image = icon(for: flag)
+        item.withImage(icon(for: flag), visibleOnMacOS27: true)
     }
 
     private func updateExperimentFeatureItem(_ item: NSMenuItem, flag: FeatureFlag) {
@@ -379,14 +370,9 @@ final class FeatureFlagOverridesMenu: NSMenu {
 
     private func legend(title: String, icon: NSImage) -> NSMenuItem {
         let legendItem = NSMenuItem(title: title)
-        legendItem.image = icon
+        legendItem.withImage(icon, visibleOnMacOS27: true)
         legendItem.isEnabled = false
         legendItem.indentationLevel = 1
-#if compiler(>=6.4)
-        if #available(macOS 27.0, *) {
-            legendItem.preferredImageVisibility = .visible
-        }
-#endif
         return legendItem
     }
 }

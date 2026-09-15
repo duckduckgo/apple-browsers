@@ -118,6 +118,7 @@ enum PairingV2State: Equatable {
     case hostWaitingForConfirmation(PairingV2Session, credentialKind: PairingV2DeviceKind)
     case hostPreparingRecoveryCode(PairingV2Session, credentialKind: PairingV2DeviceKind)
     case hostSendingRecoveryCode(PairingV2Session, credentialKind: PairingV2DeviceKind, recoveryCode: String)
+    case hostWaitingForJoinStatus(PairingV2Session, credentialKind: PairingV2DeviceKind)
     case joinerWaitingForConfirmation(PairingV2Session)
     case joinerWaitingForRecoveryCode(PairingV2Session)
     case joinerLoggingIn(PairingV2Session, recoveryCode: String)
@@ -136,12 +137,13 @@ enum PairingV2Event: Equatable {
     case joinerConfirmationAccepted
     case joinerConfirmationDenied
     case recoveryCodePrepared(String)
-    case recoveryCodeSent
+    case recoveryCodeSent(shouldWaitForJoinStatus: Bool)
     case receivedRecoveryCodeAwaitingConfirmation
     case receivedRecoveryCodeConfirmed
     case receivedRecoveryCodeDenied
     case receivedRecoveryCodeUnavailable
     case receivedRecoveryCode(String)
+    case receivedRecoveryCodeDone(PairingV2RecoveryCodeDoneReason)
     case loginSucceeded
     case failed(PairingV2Error)
 }
@@ -203,6 +205,7 @@ enum PairingV2UnexpectedEvent: Equatable {
     case recoveryCodePreparedWhileNotHosting
     case recoveryCodeMessageReceivedWhileNotJoining(PairingV2RecoveryCodeMessage)
     case recoveryCodeSentWhileNotSending
+    case recoveryCodeDoneWhileNotWaitingForJoinStatus
     case loginSucceededWhileNotLoggingIn
 }
 
@@ -321,8 +324,8 @@ struct PairingV2StateMachine {
         case .recoveryCodePrepared(let recoveryCode):
             return handleRecoveryCodePrepared(recoveryCode)
 
-        case .recoveryCodeSent:
-            return handleRecoveryCodeSent()
+        case .recoveryCodeSent(let shouldWaitForJoinStatus):
+            return handleRecoveryCodeSent(shouldWaitForJoinStatus: shouldWaitForJoinStatus)
 
         case .receivedRecoveryCodeAwaitingConfirmation:
             return handleRecoveryCodeProgress(message: .awaitingConfirmation)
@@ -338,6 +341,9 @@ struct PairingV2StateMachine {
 
         case .receivedRecoveryCode(let recoveryCode):
             return handleReceivedRecoveryCode(recoveryCode)
+
+        case .receivedRecoveryCodeDone:
+            return handleReceivedRecoveryCodeDone()
 
         case .loginSucceeded:
             return handleLoginSucceeded()
@@ -422,6 +428,7 @@ struct PairingV2StateMachine {
         case .hostWaitingForConfirmation,
                 .hostPreparingRecoveryCode,
                 .hostSendingRecoveryCode,
+                .hostWaitingForJoinStatus,
                 .joinerWaitingForConfirmation,
                 .joinerWaitingForRecoveryCode,
                 .joinerLoggingIn:
@@ -548,13 +555,30 @@ struct PairingV2StateMachine {
         }
     }
 
-    private mutating func handleRecoveryCodeSent() -> [PairingV2Command] {
-        guard case .hostSendingRecoveryCode(_, let credentialKind, _) = state else {
+    private mutating func handleRecoveryCodeSent(shouldWaitForJoinStatus: Bool) -> [PairingV2Command] {
+        guard case .hostSendingRecoveryCode(let session, let credentialKind, _) = state else {
             return fail(with: .unexpectedEvent(.recoveryCodeSentWhileNotSending))
+        }
+
+        if shouldWaitForJoinStatus {
+            state = .hostWaitingForJoinStatus(session, credentialKind: credentialKind)
+            return []
         }
 
         state = .completed(.recoveryCodeSent(credentialKind: credentialKind))
         return [.stopPolling]
+    }
+
+    private mutating func handleReceivedRecoveryCodeDone() -> [PairingV2Command] {
+        switch state {
+        case .hostWaitingForJoinStatus(_, let credentialKind):
+            state = .completed(.recoveryCodeSent(credentialKind: credentialKind))
+            return [.stopPolling]
+        case .completed(.recoveryCodeSent):
+            return []
+        default:
+            return fail(with: .unexpectedEvent(.recoveryCodeDoneWhileNotWaitingForJoinStatus))
+        }
     }
 
     private mutating func handleLoginSucceeded() -> [PairingV2Command] {

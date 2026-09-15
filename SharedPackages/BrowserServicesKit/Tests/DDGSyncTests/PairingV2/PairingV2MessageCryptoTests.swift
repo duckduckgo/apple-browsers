@@ -70,6 +70,36 @@ final class PairingV2MessageCryptoTests: XCTestCase {
         }
     }
 
+    func testWhenEncryptingRecoveryCodeDoneThenUsesV21EnvelopeAndRoundTrips() throws {
+        let keyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "channel-1")
+        let crypto = PairingV2MessageCrypto()
+        let message = PairingV2ApplicationMessage.recoveryCodeDone(.init(reason: .success))
+
+        let encrypted = try crypto.encrypt(message, recipientPublicKey: keyPair.publicKey, senderChannelID: "sender-channel")
+
+        XCTAssertEqual(message.minimumProtocolVersion, .v2Point1)
+        XCTAssertEqual(encrypted.version, "2.1")
+        XCTAssertEqual(try crypto.decrypt(encrypted, privateKey: keyPair.privateKey), message)
+    }
+
+    func testWhenDecodingRecoveryCodeDoneThenPreservesKnownAndUnknownReasons() throws {
+        let testCases: [(rawValue: String, reason: PairingV2RecoveryCodeDoneReason)] = [
+            ("success", .success),
+            ("login_failed", .loginFailed),
+            ("scope_rejected", .scopeRejected),
+            ("future_reason", .unknown("future_reason"))
+        ]
+
+        for testCase in testCases {
+            let message = try decodeApplicationMessage(
+                #"{"type":"recovery_code_done","reason":"\#(testCase.rawValue)"}"#,
+                envelopeVersion: "2.1"
+            )
+
+            XCTAssertEqual(message, .recoveryCodeDone(.init(reason: testCase.reason)))
+        }
+    }
+
     func testWhenDecryptingUnknownMessageInFutureMinorEnvelopeThenDropsIt() throws {
         let message = try decodeApplicationMessage(#"{"type":"future_message"}"#, envelopeVersion: "2.9")
 

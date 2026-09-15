@@ -24,13 +24,9 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-/// The fire animation takes part in the burn's dispatch group, so the burn can only finish once the
-/// animation reports that it did. These cover what happens when that report never arrives — which is
-/// what left users with a burn that never ended and a Fire button that did nothing for the rest of the
-/// session.
-///
-/// `fireAnimationDidStart()`/`fireAnimationDidFinish()` stand in for `FireViewModel` here: the Lottie
-/// view is only loaded in the `.normal` run type, so no test can drive the real animation.
+/// The animation takes part in the burn's dispatch group, so these cover the report never arriving —
+/// what left users with a burn that never ended. The hooks are driven directly because the Lottie view
+/// only loads in the `.normal` run type, so no test can drive the real animation.
 final class FireAnimationHandoffTests: XCTestCase {
 
     private var pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock!
@@ -67,8 +63,8 @@ final class FireAnimationHandoffTests: XCTestCase {
         XCTAssertNil(fire.burningData, "A burn nobody reported the animation for still has to release")
     }
 
-    /// Guards the test above against passing for the wrong reason: with a timeout long enough to be out
-    /// of the way, the lost callback does hang the burn, which is the bug being fixed.
+    /// Guards the test above against passing for the wrong reason: with the timeout out of the way,
+    /// the lost callback does hang the burn.
     @MainActor
     func testWhenFireAnimationNeverFinishesAndTheTimeoutIsFarOff_thenTheBurnHangs() {
         let fire = makeFire(fireAnimationTimeout: 30, burnTimeout: 30)
@@ -97,8 +93,7 @@ final class FireAnimationHandoffTests: XCTestCase {
 
     // MARK: - Whole-burn watchdog
 
-    /// With the animation timeout out of the way, the animation holds the group open for the whole test,
-    /// standing in for any other clearing callback that never arrives.
+    /// The animation holds the group open, standing in for any clearing callback that never arrives.
     @MainActor
     func testWhenNothingReleasesTheGroup_thenTheBurnWatchdogReleasesTheBurn() {
         let fire = makeFire(fireAnimationTimeout: 60, burnTimeout: 0.3)
@@ -120,8 +115,8 @@ final class FireAnimationHandoffTests: XCTestCase {
         fire.burnAll { firstBurn.fulfill() }
         wait(for: [firstBurn], timeout: 5)
 
-        // The timed-out animation must not still be holding the previous group, or this burn is dropped
-        // by the re-entry guard and the Fire button stays dead for the rest of the session.
+        // A timed-out animation still holding the previous group would get this burn dropped by the
+        // re-entry guard, leaving the Fire button dead for the rest of the session.
         let secondBurn = expectation(description: "Second burn")
         fire.burnAll { secondBurn.fulfill() }
 
@@ -172,8 +167,7 @@ final class FireAnimationHandoffTests: XCTestCase {
                     burnTimeout: burnTimeout)
     }
 
-    /// Stands in for `FireViewModel`, which reports the animation's start and finish as the burn's
-    /// `burningData` comes and goes.
+    /// Stands in for `FireViewModel`, which reports start and finish as `burningData` comes and goes.
     @MainActor
     private func reportAnimationStarted(on fire: Fire, thenFinish: Bool) {
         fire.burningDataPublisher

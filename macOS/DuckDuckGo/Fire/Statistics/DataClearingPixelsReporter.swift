@@ -51,9 +51,6 @@ final class DataClearingPixelsReporter {
         lastFireTime = now
     }
 
-    /// Reports a burn that was abandoned because its watchdog timeout elapsed before the burn's own
-    /// completion handler ran.
-    ///
     /// Mutually exclusive with a normal completion, so this over `fire_started_macos` is the burn
     /// hang rate, and its daily variant is the number of affected users per day.
     func reportBurnTimedOut(stage: FireDialogPixel.TimeoutParameters.Stage,

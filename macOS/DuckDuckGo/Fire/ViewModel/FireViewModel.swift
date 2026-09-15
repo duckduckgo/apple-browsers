@@ -67,9 +67,8 @@ final class FireViewModel {
     /// Whether either fire animation is on screen.
     @Published private(set) var isAnimationPlaying = false
 
-    /// The two animations are tracked separately because only the burn animation takes part in the
-    /// burn's dispatch group. With a single shared flag, a closing Fire Window's animation could
-    /// swallow the burn animation's stop edge, leaving the burn waiting on a `leave()` that never came.
+    /// Only the burn animation takes part in the burn's dispatch group. With one shared flag a closing
+    /// Fire Window's animation could swallow its stop edge, leaving the burn waiting on a `leave()`.
     private var isBurnAnimationPlaying = false
     private var isFireWindowAnimationPlaying = false
 

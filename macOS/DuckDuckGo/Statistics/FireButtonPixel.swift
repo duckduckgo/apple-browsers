@@ -115,9 +115,7 @@ enum FireButtonPixel: PixelKit.Event {
     struct TimeoutParameters {
         /// What the burn was still waiting on when the watchdog fired.
         enum Stage: String {
-            /// The fire animation never reported that it finished.
             case animation
-            /// One or more data-clearing tasks never reported that they finished.
             case dataClearing = "data_clearing"
         }
 

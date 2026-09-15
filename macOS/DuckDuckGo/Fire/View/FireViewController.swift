@@ -341,10 +341,8 @@ final class FireViewController: NSViewController {
                 // Use the feature flag-aware method to determine if animation should play
                 if burningData.shouldPlayFireAnimation(decider: self.visualizeFireAnimationDecider) {
                     Task {
-                        // `animateFire` declines to play in any window but the one the burn was started
-                        // from, and when another window is already animating. Those windows need the
-                        // dialog fallback too — `isFirePresentationInProgress` has already unhidden the
-                        // container, so without it they show a bare scrim with nothing in it.
+                        // `isFirePresentationInProgress` has already unhidden the container, so a
+                        // window that doesn't animate needs the dialog or it shows a bare scrim.
                         guard await self.animateFire(burningData: burningData) == false else { return }
                         self.presentBurningProgressIndicatorIfKeyWindow()
                     }
@@ -361,8 +359,7 @@ final class FireViewController: NSViewController {
             .store(in: &cancellables)
     }
 
-    /// Shows the "Deleting browsing data…" dialog in the window the burn was started from, and makes
-    /// sure a dialog left visible by a previous burn isn't shown in any other window.
+    /// Other windows hide it, so a dialog left visible by a previous burn isn't shown.
     private func presentBurningProgressIndicatorIfKeyWindow() {
         if isKeyWindowController {
             showBurningProgressIndicator()
@@ -427,10 +424,8 @@ final class FireViewController: NSViewController {
         }
     }
 
-    /// Plays the full-window fire animation, if this is the window that should show it.
-    ///
-    /// - Returns: whether the animation was played. When it wasn't, the caller is responsible for
-    ///   presenting the burn some other way.
+    /// - Returns: whether the animation played. When it didn't, the caller has to present the
+    ///   burn some other way.
     @MainActor
     @discardableResult
     private func animateFire(burningData: Fire.BurningData) async -> Bool {
@@ -481,14 +476,12 @@ final class FireViewController: NSViewController {
         return true
     }
 
-    /// Whether *this* window is the one playing the burn animation.
-    ///
-    /// Deliberately not `fireViewModel.isAnimationPlaying`, which is app-wide: in an all-windows burn
-    /// the first window to close would otherwise release the burn while another window still animates.
+    /// Not `fireViewModel.isAnimationPlaying`, which is app-wide: in an all-windows burn the first
+    /// window to close would otherwise release the burn while another window still animates.
     private var isPlayingBurnAnimation = false
 
-    /// The burn may be closing this window mid-animation, which destroys the animation view and the
-    /// completion callback the burn is waiting on. Report the animation finished before that happens.
+    /// Closing this window mid-animation destroys the callback the burn waits on, so report the
+    /// animation finished before that happens.
     func windowWillClose() {
         guard isPlayingBurnAnimation else { return }
 

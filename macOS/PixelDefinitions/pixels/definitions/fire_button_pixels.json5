@@ -194,5 +194,39 @@
         "triggers": ["user_submitted"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "fire_timed_out_macos": {
+        "description": "Fired when a burn's watchdog timeout elapses before the burn's own completion handler runs, meaning the burn was abandoned rather than finished. Mutually exclusive with a normal completion, so fire_timed_out_macos_count over fire_started_macos_count is the burn hang rate, and fire_timed_out_macos_daily is the number of affected users per day.",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "stage",
+                "type": "string",
+                "description": "What the burn was still waiting on when the watchdog fired: animation = the fire animation never reported completion; data_clearing = one or more data-clearing tasks never reported completion",
+                "enum": ["animation", "data_clearing"]
+            },
+            {
+                "key": "path",
+                "type": "string",
+                "description": "Which burn entry point was running",
+                "enum": ["burn_all", "burn_entity", "burn_visits"]
+            },
+            {
+                "key": "trigger",
+                "type": "string",
+                "description": "Whether the burn was started by the user or by Auto-Clear. Auto-Clear timeouts are the severe case: before this watchdog existed they left the app relaunching into a stuck burn on every start.",
+                "enum": ["manual", "auto_clear"]
+            },
+            {
+                "key": "animation_enabled",
+                "type": "boolean",
+                "description": "Whether the fire animation setting was on for this burn"
+            }
+        ]
     }
 }

@@ -470,6 +470,8 @@ final class MainViewController: NSViewController {
     }
 
     func windowWillClose() {
+        // Before teardown: the animation view a burn is waiting on goes away with the window.
+        fireViewController.windowWillClose()
         navigationBarViewController.windowWillClose()
         closeFloatingAIChatsForCurrentWindow()
         viewEventsCancellables.removeAll()

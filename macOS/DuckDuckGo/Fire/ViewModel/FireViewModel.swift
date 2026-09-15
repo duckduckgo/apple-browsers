@@ -21,6 +21,7 @@ import Common
 import FoundationExtensions
 import BrowserServicesKit
 import FeatureFlags_macOS
+import os.log
 import PrivacyConfig
 import WebKit
 import History
@@ -64,19 +65,57 @@ final class FireViewModel {
 
     let fire: FireProtocol
 
+    /// Whether either fire animation is on screen.
     @Published private(set) var isAnimationPlaying = false
 
-    func setAnimationPlaying(_ isAnimationPlaying: Bool, isFireWindow: Bool) {
-        guard self.isAnimationPlaying != isAnimationPlaying else { return }
-        self.isAnimationPlaying = isAnimationPlaying
+    /// Only the burn animation takes part in the burn's dispatch group. With one shared flag a closing
+    /// Fire Window's animation could swallow its stop edge, leaving the burn waiting on a `leave()`.
+    private var isBurnAnimationPlaying = false
+    private var isFireWindowAnimationPlaying = false
 
-        if !isFireWindow {
+    private enum Animation: Hashable {
+        case burn
+        case fireWindow
+    }
+
+    private let animationTimeout: TimeInterval
+    private var animationTimeouts = [Animation: DispatchWorkItem]()
+
+    func setAnimationPlaying(_ isAnimationPlaying: Bool, isFireWindow: Bool) {
+        if isFireWindow {
+            if isFireWindowAnimationPlaying != isAnimationPlaying {
+                isFireWindowAnimationPlaying = isAnimationPlaying
+                resetTimeout(for: .fireWindow, isPlaying: isAnimationPlaying)
+            }
+        } else if isBurnAnimationPlaying != isAnimationPlaying {
+            isBurnAnimationPlaying = isAnimationPlaying
+            resetTimeout(for: .burn, isPlaying: isAnimationPlaying)
+
             if isAnimationPlaying {
                 fire.fireAnimationDidStart()
             } else {
                 fire.fireAnimationDidFinish()
             }
         }
+
+        let isAnyAnimationPlaying = isBurnAnimationPlaying || isFireWindowAnimationPlaying
+        guard self.isAnimationPlaying != isAnyAnimationPlaying else { return }
+        self.isAnimationPlaying = isAnyAnimationPlaying
+    }
+
+    /// The animation's completion callback dies with the window the burn may close. Reporting the stop
+    /// edge ourselves is what keeps a lost callback from leaving the overlay up, and the animation
+    /// unable to play again, for the rest of the session.
+    private func resetTimeout(for animation: Animation, isPlaying: Bool) {
+        animationTimeouts.removeValue(forKey: animation)?.cancel()
+        guard isPlaying else { return }
+
+        let workItem = DispatchWorkItem { [weak self] in
+            Logger.fire.error("Fire animation never reported finishing")
+            self?.setAnimationPlaying(false, isFireWindow: animation == .fireWindow)
+        }
+        animationTimeouts[animation] = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + animationTimeout, execute: workItem)
     }
 
     /// Publisher that emits true if burning animation or burning process is in progress
@@ -95,13 +134,15 @@ final class FireViewModel {
     }
 
     @MainActor
-    init(fire: FireProtocol) {
+    init(fire: FireProtocol, animationTimeout: TimeInterval = .seconds(4)) {
         self.fire = fire
+        self.animationTimeout = animationTimeout
     }
 
     @MainActor
-    init(tld: TLD, visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
+    init(tld: TLD, visualizeFireAnimationDecider: VisualizeFireSettingsDecider, animationTimeout: TimeInterval = .seconds(4)) {
         fire = Fire(tld: tld, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
+        self.animationTimeout = animationTimeout
     }
 
     var isBurning: Bool {

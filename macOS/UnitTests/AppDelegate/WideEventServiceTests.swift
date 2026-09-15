@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Common
 import FoundationExtensions
 import Foundation
@@ -94,6 +95,41 @@ final class WideEventServiceTests: XCTestCase {
         guard case .unknown = completion?.1 else {
             return XCTFail("Expected the stale refresh to complete as UNKNOWN")
         }
+    }
+
+    // MARK: - Data clearing
+
+    /// A burn that never completed is only ever reported from here, so these two tests are what stop
+    /// `DataClearingWideEventData` silently dropping off the processed list again.
+    func test_sendPendingEvents_staleDataClearingFlowCompletesWithTimeout() async {
+        mockWideEvent.started.append(makeDataClearingData(startedAt: Date()
+            .addingTimeInterval(-DataClearingWideEventData.clearingTimeout - 1)))
+
+        await sut.sendPendingEvents()
+
+        let completion = mockWideEvent.completions.first { $0.0 is DataClearingWideEventData }
+        XCTAssertNotNil(completion, "An abandoned burn must be reconciled on launch")
+        guard case .unknown(let reason) = completion?.1 else {
+            return XCTFail("Expected the abandoned burn to complete as UNKNOWN")
+        }
+        XCTAssertEqual(reason, DataClearingWideEventData.StatusReason.timeout.rawValue)
+    }
+
+    func test_sendPendingEvents_recentDataClearingFlowStaysPending() async {
+        mockWideEvent.started.append(makeDataClearingData(startedAt: Date()))
+
+        await sut.sendPendingEvents()
+
+        XCTAssertFalse(mockWideEvent.completions.contains { $0.0 is DataClearingWideEventData },
+                       "A burn that may still be running must not be reported as abandoned")
+    }
+
+    private func makeDataClearingData(startedAt: Date) -> DataClearingWideEventData {
+        DataClearingWideEventData(
+            trigger: .manual,
+            overallDuration: .init(start: startedAt),
+            contextData: WideEventContextData(name: "funnel_default_macos")
+        )
     }
 
     // MARK: - processSubscriptionPurchasePixels - Happy Path

@@ -46,6 +46,7 @@ actor WideEventService {
         await processSubscriptionPurchaseCompletion(trigger: trigger)
         await processCompletion(DataImportWideEventData.self, trigger: trigger)
         await processCompletion(AuthV2TokenRefreshWideEventData.self, trigger: trigger)
+        await processCompletion(DataClearingWideEventData.self, trigger: trigger)
 
         isProcessing = false
     }

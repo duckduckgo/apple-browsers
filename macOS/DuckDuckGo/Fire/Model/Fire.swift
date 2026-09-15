@@ -198,7 +198,22 @@ final class Fire: FireProtocol {
     let dataClearingPixelsReporter: DataClearingPixelsReporter
     var dataClearingWideEventService: DataClearingWideEventService?
 
+    /// Backstop behind `FireViewModel`'s own timeout, which reports the stop edge and so releases the
+    /// group through the normal path. This only trips if nothing reports at all.
+    let fireAnimationTimeout: TimeInterval
+
+    /// Clearing isn't cancelled when this trips — we only stop waiting on it, so a lost callback
+    /// can't disable data clearing for the rest of the session.
+    let burnTimeout: TimeInterval
+
     private var dispatchGroup: DispatchGroup?
+
+    /// Separate from `dispatchGroup` so a timed-out animation can only leave the group it entered.
+    private var fireAnimationDispatchGroup: DispatchGroup?
+
+    /// So a burn that times out can report which path stalled.
+    private var burnPath: DataClearingWideEventService.BurnPath = .burnAll
+    private var isAutoClearBurn = false
 
     enum BurningData: Equatable {
         case specificDomains(_ domains: Set<String>, closesTabs: Bool, scope: BurningScope)
@@ -351,7 +366,9 @@ final class Fire: FireProtocol {
          aIChatHistoryCleaner: AIChatHistoryCleaning? = nil,
          dataClearingPixelsReporter: DataClearingPixelsReporter = .init(),
          dataClearingWideEventService: DataClearingWideEventService? = nil,
-         tabCleanupPreparer: TabCleanupPreparing = TabCleanupPreparer()
+         tabCleanupPreparer: TabCleanupPreparing = TabCleanupPreparer(),
+         fireAnimationTimeout: TimeInterval = .seconds(8),
+         burnTimeout: TimeInterval = .seconds(30)
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -387,6 +404,8 @@ final class Fire: FireProtocol {
         self.dataClearingPixelsReporter = dataClearingPixelsReporter
         self.dataClearingWideEventService = dataClearingWideEventService
         self.tabCleanupPreparer = tabCleanupPreparer
+        self.fireAnimationTimeout = fireAnimationTimeout
+        self.burnTimeout = burnTimeout
     }
 
     @MainActor
@@ -417,12 +436,16 @@ final class Fire: FireProtocol {
                             includeChatHistory: Bool,
                             dataClearingWideEventService: DataClearingWideEventService?,
                             completion: (@MainActor () -> Void)?) {
-        // Prevent re-entry if burn is already in progress
+        // Callers await this completion, so a dropped burn has to complete rather than hang them.
         guard dispatchGroup == nil, burningData == nil else {
-            assertionFailure("burnEntity called while burn already in progress")
+            pixelAssertionFailure("burnEntity called while burn already in progress")
             completion?()
             return
         }
+
+        // Burns of selected visits come through here too, reported under their own path.
+        burnPath = scope == .visits ? .burnVisits : .burnEntity
+        isAutoClearBurn = false
 
         // Set the wide event service if provided
         self.dataClearingWideEventService = dataClearingWideEventService
@@ -515,20 +538,18 @@ final class Fire: FireProtocol {
                 group.leave()
             }
 
-            await withCheckedContinuation { continuation in
-                group.notify(queue: .main) {
-                    continuation.resume()
-                }
-            }
+            await self.waitForClearingToComplete(group)
 
             await MainActor.run {
                 self.dispatchGroup = nil
+                self.leaveFireAnimationDispatchGroup()
                 // windows are closed by MainViewController.closeWindowIfNeeded
                 self.reopenWindowIfNeeded(customURL: entity.customURLToOpen)
                 self.burningData = nil
             }
 
-            await self.reloadWebExtensions()
+            // A stuck reload mustn't keep Auto-Clear from recording that clearing finished.
+            Task { await self.reloadWebExtensions() }
 
             completion?()
             Logger.fire.debug("Fire finished")
@@ -543,12 +564,15 @@ final class Fire: FireProtocol {
                  isAutoClear: Bool,
                  dataClearingWideEventService: DataClearingWideEventService?,
                  completion: (@MainActor () -> Void)?) {
-        // Prevent re-entry if burn is already in progress
+        // Callers await this completion, so a dropped burn has to complete rather than hang them.
         guard dispatchGroup == nil, burningData == nil else {
-            assertionFailure("burnAll called while burn already in progress")
+            pixelAssertionFailure("burnAll called while burn already in progress")
             completion?()
             return
         }
+
+        burnPath = .burnAll
+        isAutoClearBurn = isAutoClear
 
         // Set the wide event service if provided
         self.dataClearingWideEventService = dataClearingWideEventService
@@ -642,14 +666,11 @@ final class Fire: FireProtocol {
             let zoomLevelsResult = self.burnZoomLevels()
             dataClearingWideEventService?.update(.forgetTextZoom, result: zoomLevelsResult)
 
-            await withCheckedContinuation { continuation in
-                group.notify(queue: .main) {
-                    continuation.resume()
-                }
-            }
+            await self.waitForClearingToComplete(group)
 
             await MainActor.run {
                 self.dispatchGroup = nil
+                self.leaveFireAnimationDispatchGroup()
                 // Only close windows at the end if we didn't close them at the beginning
                 // windows are closed by MainViewController.closeWindowIfNeeded
                 if !isBurnOnExit {
@@ -658,7 +679,8 @@ final class Fire: FireProtocol {
                 self.burningData = nil
             }
 
-            await self.reloadWebExtensions()
+            // A stuck reload mustn't keep Auto-Clear from recording that clearing finished.
+            Task { await self.reloadWebExtensions() }
 
             // Complete wide event tracking for auto-clear flows
             if isAutoClear {
@@ -749,16 +771,59 @@ final class Fire: FireProtocol {
     // MARK: - Fire animation
 
     func fireAnimationDidStart() {
-        assert(dispatchGroup != nil)
+        guard let group = dispatchGroup, fireAnimationDispatchGroup == nil else {
+            // The animation can legitimately report starting after the burn stopped waiting for it.
+            Logger.fire.debug("Fire animation started outside of a burn")
+            return
+        }
+        group.enter()
+        fireAnimationDispatchGroup = group
 
-        dispatchGroup?.enter()
+        // The burn may close the window the animation plays in, destroying the callback we wait on.
+        // Without this timer a lost callback leaves data clearing dead for the rest of the session.
+        DispatchQueue.main.asyncAfter(deadline: .now() + fireAnimationTimeout) { [weak self] in
+            guard let self, fireAnimationDispatchGroup === group else { return }
+
+            Logger.fire.error("Fire animation never reported completion")
+            reportBurnTimedOut(stage: .animation)
+            leaveFireAnimationDispatchGroup()
+        }
     }
 
     func fireAnimationDidFinish() {
-        assert(dispatchGroup != nil)
+        leaveFireAnimationDispatchGroup()
+    }
 
-        dispatchGroup?.leave()
-        dispatchGroup = nil
+    private func leaveFireAnimationDispatchGroup() {
+        guard let group = fireAnimationDispatchGroup else { return }
+
+        fireAnimationDispatchGroup = nil
+        group.leave()
+    }
+
+    // MARK: - Waiting for clearing to finish
+
+    /// Timeboxed because the group carries callbacks we don't control, and one outstanding `enter()`
+    /// means it never notifies — which used to disable data clearing for the rest of the session.
+    /// Not `withTimeout(_:do:)`: its task group can't exit while a child awaits an unresumed continuation.
+    @MainActor
+    private func waitForClearingToComplete(_ group: DispatchGroup) async {
+        let didComplete = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            let resumer = OneTimeResumer(continuation)
+            group.notify(queue: .main) { resumer.resume(true) }
+            DispatchQueue.main.asyncAfter(deadline: .now() + burnTimeout) { resumer.resume(false) }
+        }
+        guard !didComplete else { return }
+
+        Logger.fire.error("Fire timed out waiting for data clearing to complete")
+        reportBurnTimedOut(stage: .dataClearing)
+    }
+
+    private func reportBurnTimedOut(stage: FireDialogPixel.TimeoutParameters.Stage) {
+        dataClearingPixelsReporter.reportBurnTimedOut(stage: stage,
+                                                      path: burnPath,
+                                                      isAutoClear: isAutoClearBurn,
+                                                      animationEnabled: visualizeFireAnimationDecider.shouldShowFireAnimation)
     }
 
     // MARK: - Closing windows
@@ -1274,6 +1339,23 @@ final class Fire: FireProtocol {
             isToday: false
         )
     }
+}
+
+/// Resuming a checked continuation twice traps, and a captured `var` won't do here — each of the
+/// two racing closures would capture its own copy.
+private final class OneTimeResumer<T> {
+
+    private var continuation: CheckedContinuation<T, Never>?
+
+    init(_ continuation: CheckedContinuation<T, Never>) {
+        self.continuation = continuation
+    }
+
+    func resume(_ value: T) {
+        continuation?.resume(returning: value)
+        continuation = nil
+    }
+
 }
 
 extension TabCollection {

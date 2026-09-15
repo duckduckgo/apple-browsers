@@ -50,4 +50,17 @@ final class DataClearingPixelsReporter {
         }
         lastFireTime = now
     }
+
+    /// Mutually exclusive with a normal completion, so this over `fire_started_macos` is the burn
+    /// hang rate, and its daily variant is the number of affected users per day.
+    func reportBurnTimedOut(stage: FireDialogPixel.TimeoutParameters.Stage,
+                            path: DataClearingWideEventService.BurnPath,
+                            isAutoClear: Bool,
+                            animationEnabled: Bool) {
+        pixelFiring?.fire(FireDialogPixel.fireTimedOut(.init(stage: stage,
+                                                             path: path.rawValue,
+                                                             isAutoClear: isAutoClear,
+                                                             animationEnabled: animationEnabled)),
+                          frequency: .dailyAndCount)
+    }
 }

@@ -747,7 +747,7 @@ final class PairingV2StateMachineTests: XCTestCase {
         _ = stateMachine.handle(.recoveryCodePrepared("recovery-code"))
         let commands = stateMachine.handle(.recoveryCodeSent(shouldWaitForJoinStatus: true))
 
-        XCTAssertEqual(commands, [])
+        XCTAssertEqual(commands, [.startJoinStatusDeadline])
         XCTAssertEqual(
             stateMachine.state,
             .hostWaitingForJoinStatus(
@@ -775,6 +775,46 @@ final class PairingV2StateMachineTests: XCTestCase {
             XCTAssertEqual(commands, [.stopPolling])
             XCTAssertEqual(stateMachine.state, .completed(.recoveryCodeSent(credentialKind: .ddg)))
             XCTAssertEqual(stateMachine.handle(.receivedRecoveryCodeDone(reason)), [])
+        }
+    }
+
+    func testWhenJoinStatusDeadlineIsReachedThenHostOutcomeBecomesUnknown() {
+        var stateMachine = makeHostWaitingForJoinStatus()
+
+        XCTAssertEqual(stateMachine.handle(.joinStatusDeadlineReached), [])
+        guard case .hostJoinOutcomeUnknown = stateMachine.state else {
+            XCTFail("Expected unknown host outcome, got \(stateMachine.state)")
+            return
+        }
+    }
+
+    func testWhenRecoveryCodeDoneArrivesAfterJoinStatusDeadlineThenHostCompletes() {
+        var stateMachine = makeHostWaitingForJoinStatus()
+        _ = stateMachine.handle(.joinStatusDeadlineReached)
+
+        XCTAssertEqual(stateMachine.handle(.receivedRecoveryCodeDone(.success)), [.stopPolling])
+        XCTAssertEqual(stateMachine.state, .completed(.recoveryCodeSent(credentialKind: .thirdParty)))
+    }
+
+    func testWhenByeArrivesAfterJoinStatusDeadlineThenHostHandlesReason() {
+        var doneStateMachine = makeHostWaitingForJoinStatus()
+        _ = doneStateMachine.handle(.joinStatusDeadlineReached)
+        let unknownState = doneStateMachine.state
+        XCTAssertEqual(doneStateMachine.handle(.receivedBye(.done)), [])
+        XCTAssertEqual(doneStateMachine.state, unknownState)
+
+        let failureCases: [(reason: PairingV2ByeReason, error: PairingV2Error)] = [
+            (.cancelled, .cancelled),
+            (.error, .peerDisconnected),
+            (.unknown("future_reason"), .peerDisconnected)
+        ]
+
+        for testCase in failureCases {
+            var stateMachine = makeHostWaitingForJoinStatus()
+            _ = stateMachine.handle(.joinStatusDeadlineReached)
+
+            XCTAssertEqual(stateMachine.handle(.receivedBye(testCase.reason)), [.abort(testCase.error)])
+            XCTAssertEqual(stateMachine.state, .failed(testCase.error))
         }
     }
 

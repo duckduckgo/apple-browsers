@@ -32,6 +32,8 @@ extension MainViewController {
             isHandingOff: isAddressBarHandOffInProgress)
         guard viewCoordinator.newTabPageInputPresentation != presentation else { return }
         viewCoordinator.setNewTabPageInputPresentation(presentation)
+        (newTabPageViewController as? NewTabPageInputTransitionSource)?.setSearchInputEditing(
+            !presentation.hidesNavigationContainer)
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
     }
 

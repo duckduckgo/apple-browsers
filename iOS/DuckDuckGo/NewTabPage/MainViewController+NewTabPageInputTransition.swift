@@ -35,7 +35,7 @@ extension MainViewController {
         viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
 
-        // There is no chrome pill to morph from. Start with the editor at its final size.
+        // Lay out the live editor at its destination before translating it from the resting card.
         coordinator.viewController.applyOmnibarEditingShowPose()
         if coordinator.cardPosition.isBottom {
             applyBottomOmnibarVisibility(.active)
@@ -49,10 +49,22 @@ extension MainViewController {
         coordinator.viewController.setTextHorizontalShift(0)
         view.layoutIfNeeded()
         coordinator.pushContentInsets()
-        viewCoordinator.unifiedToggleInputContainer.alpha = 0
+        let inputContainer: UIView = viewCoordinator.unifiedToggleInputContainer
+        inputContainer.transform = .identity
+        let source = (newTabPageViewController as? NewTabPageInputTransitionSource)?.searchInputView
+        if let source, !UIAccessibility.isReduceMotionEnabled {
+            let restingFrame = source.convert(source.bounds, to: view)
+            let editingFrame = coordinator.viewController.inputCardFrame(in: view)
+            inputContainer.transform = CGAffineTransform(translationX: 0, y: restingFrame.midY - editingFrame.midY)
+        }
+        inputContainer.alpha = 0
 
-        let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
-        UIView.animate(withDuration: duration, delay: 0, options: [.curveEaseInOut, .allowUserInteraction], animations: { [weak self] in
+        let duration = UIAccessibility.isReduceMotionEnabled ? 0 : Constants.omnibarTransitionDuration(
+            isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
+        UIView.animate(withDuration: duration,
+                       delay: 0,
+                       options: [.beginFromCurrentState, .curveEaseInOut, .allowUserInteraction], animations: { [weak self] in
+            inputContainer.transform = .identity
             self?.viewCoordinator.unifiedToggleInputContainer.alpha = 1
             self?.viewCoordinator.focusedStateBackground.alpha = 1
             contentContainer.alpha = 1
@@ -64,7 +76,16 @@ extension MainViewController {
     func dismissInlineNewTabPageInput(coordinator: UnifiedToggleInputCoordinator,
                                       animated: Bool,
                                       completion: (() -> Void)? = nil) {
+        let inputContainer: UIView = viewCoordinator.unifiedToggleInputContainer
+        let source = (newTabPageViewController as? NewTabPageInputTransitionSource)?.searchInputView
+        var restingTransform = CGAffineTransform.identity
+        if let source, !UIAccessibility.isReduceMotionEnabled {
+            let restingFrame = source.convert(source.bounds, to: view)
+            let editingFrame = coordinator.viewController.inputCardFrame(in: view)
+            restingTransform = CGAffineTransform(translationX: 0, y: restingFrame.midY - editingFrame.midY)
+        }
         let finish: () -> Void = { [weak self] in
+            inputContainer.transform = .identity
             self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
         }
         guard animated else {
@@ -77,9 +98,11 @@ extension MainViewController {
         viewCoordinator.hideUnifiedToggleInputOmnibar(
             transition: .inlineInput,
             additionalAnimations: { [weak self] in
+                inputContainer.transform = restingTransform
                 self?.viewCoordinator.unifiedInputContentContainer.alpha = 0
             },
             interruptCleanup: { [weak self] in
+                inputContainer.transform = .identity
                 self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 self?.viewCoordinator.unifiedToggleInputContainer.alpha = 1
             },

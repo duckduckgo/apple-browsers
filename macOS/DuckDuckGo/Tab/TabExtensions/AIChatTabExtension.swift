@@ -328,7 +328,7 @@ extension AIChatTabExtension: NavigationResponder {
         guard !isLoadedInSidebar,
               navigationAction.isForMainFrame,
               navigationAction.url.isDuckAIURL,
-              navigationAction.sourceFrame.url.isDuckDuckGoHomepage
+              navigationAction.sourceFrame.url.isBareDuckDuckGoHomepage
         else { return }
 
         guard navigationAction.navigationType.isWebOriginated else {

@@ -92,6 +92,12 @@ extension URL {
         fragment?.lowercased().hasPrefix(DuckDuckGo.chatFragment) == true
     }
 
+    /// The homepage as somewhere a chat can be started *from*, rather than a chat itself: Duck.ai is
+    /// served from homepage-shaped URLs (`?ia=chat`, `#chat`) that `isDuckDuckGoHomepage` accepts.
+    public var isBareDuckDuckGoHomepage: Bool {
+        isDuckDuckGoHomepage && !isDuckAIURL && !isDuckAIChatFragment
+    }
+
     /// Returns `true` if the URL points to Duck AI voice mode (`?mode=voice`).
     public var isDuckAIVoiceMode: Bool {
         guard isDuckAIURL else { return false }

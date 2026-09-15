@@ -300,7 +300,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         // Not a chat, so whatever opened the last one no longer describes what happens here.
         conversationSource = nil
-        loadedOnDuckDuckGoHomepage = url.isDuckDuckGoHomepage
+        loadedOnDuckDuckGoHomepage = url.isBareDuckDuckGoHomepage
     }
 
     /// The homepage switches to Duck.ai in place, so nothing native ever stamps a source for it;

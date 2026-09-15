@@ -380,6 +380,27 @@ final class URLExtensionTests: XCTestCase {
         XCTAssertFalse(url.isDuckAIURL)
     }
 
+    // MARK: - Bare Homepage Tests
+
+    func testIsBareDuckDuckGoHomepage() {
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/")!.isBareDuckDuckGoHomepage)
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/?ia=web")!.isBareDuckDuckGoHomepage)
+    }
+
+    /// A chat is served from homepage-shaped URLs, and must not read as the homepage that opened one.
+    func testIsBareDuckDuckGoHomepageRejectsChats() {
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/?ia=chat")!.isDuckDuckGoHomepage)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?ia=chat")!.isBareDuckDuckGoHomepage)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/#chat")!.isBareDuckDuckGoHomepage)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?ia=chat&chatID=abc123")!.isBareDuckDuckGoHomepage)
+    }
+
+    func testIsBareDuckDuckGoHomepageRejectsSERPAndOtherSites() {
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?q=test")!.isBareDuckDuckGoHomepage)
+        XCTAssertFalse(URL(string: "https://duck.ai/")!.isBareDuckDuckGoHomepage)
+        XCTAssertFalse(URL(string: "https://example.com/")!.isBareDuckDuckGoHomepage)
+    }
+
     // MARK: - AIChatTabMetadata.shouldExcludeFromTabPicker
 
     func testShouldExcludeFromTabPickerCoversAllThreeRules() {

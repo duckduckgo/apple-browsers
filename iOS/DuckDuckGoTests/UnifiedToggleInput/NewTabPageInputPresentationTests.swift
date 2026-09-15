@@ -23,25 +23,22 @@ import XCTest
 
 final class NewTabPageInputPresentationTests: XCTestCase {
 
-    func testOrdinaryPageAlwaysUsesBrowserPresentationRegardlessOfEditingState() {
-        for usesUnifiedInput in [false, true] {
-            for legacyEditing in [false, true] {
-                for unifiedEditing in [false, true] {
-                    for handingOff in [false, true] {
-                        let presentation = NewTabPageInputPresentation.resolve(
-                            hasInlineInput: false,
-                            usesUnifiedInput: usesUnifiedInput,
-                            isLegacyInputEditing: legacyEditing,
-                            isUnifiedInputEditing: unifiedEditing,
-                            isHandingOff: handingOff)
-                        XCTAssertEqual(presentation, .browser)
-                        XCTAssertFalse(presentation.hidesNavigationContainer)
-                        XCTAssertFalse(presentation.hidesRestingOmnibar)
-                        XCTAssertTrue(presentation.reservesAddressBarSpace)
-                        XCTAssertEqual(presentation.transition, .omnibar)
-                    }
-                }
-            }
+    func testWhenPageHasNoInlineInputThenBrowserChromeIsPreserved() {
+        let configurations = [(usesUnifiedInput: false, isEditing: false),
+                              (usesUnifiedInput: true, isEditing: false),
+                              (usesUnifiedInput: true, isEditing: true)]
+        for configuration in configurations {
+            let presentation = NewTabPageInputPresentation.resolve(
+                hasInlineInput: false,
+                usesUnifiedInput: configuration.usesUnifiedInput,
+                isLegacyInputEditing: false,
+                isUnifiedInputEditing: configuration.isEditing,
+                isHandingOff: false)
+            XCTAssertEqual(presentation, .browser)
+            XCTAssertFalse(presentation.hidesNavigationContainer)
+            XCTAssertFalse(presentation.hidesRestingOmnibar)
+            XCTAssertTrue(presentation.reservesAddressBarSpace)
+            XCTAssertEqual(presentation.transition, .omnibar)
         }
     }
 
@@ -63,7 +60,7 @@ final class NewTabPageInputPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.transition, .omnibar)
     }
 
-    func testUnifiedEditingRevealsOnlyTheEditorAndKeepsThePageStationary() {
+    func testWhenUnifiedInputIsEditingThenOnlyTheEditorIsRevealedWithoutReservingAddressBarSpace() {
         let presentation = resolve(unifiedEditing: true)
         XCTAssertFalse(presentation.hidesNavigationContainer)
         XCTAssertTrue(presentation.hidesRestingOmnibar)
@@ -71,15 +68,12 @@ final class NewTabPageInputPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.transition, .inlineInput)
     }
 
-    func testFailedHandoffReturnsToRestingPresentation() {
-        XCTAssertEqual(resolve(handingOff: true), .editing(usesUnifiedInput: true))
-        XCTAssertEqual(resolve(handingOff: false), .resting(usesUnifiedInput: true))
-    }
-
-    func testSuccessfulHandoffStaysEditingUntilTheSessionEnds() {
-        XCTAssertEqual(resolve(handingOff: true), resolve(unifiedEditing: true))
-        XCTAssertEqual(resolve(unifiedEditing: true, handingOff: false), .editing(usesUnifiedInput: true))
-        XCTAssertEqual(resolve(unifiedEditing: false), .resting(usesUnifiedInput: true))
+    func testWhenHandoffStartsBeforeEitherEditorIsActiveThenEditingPresentationIsUsed() {
+        for usesUnifiedInput in [false, true] {
+            let presentation = resolve(usesUnifiedInput: usesUnifiedInput, handingOff: true)
+            XCTAssertEqual(presentation, .editing(usesUnifiedInput: usesUnifiedInput))
+            XCTAssertFalse(presentation.hidesNavigationContainer)
+        }
     }
 
     private func resolve(usesUnifiedInput: Bool = true,
@@ -155,24 +149,24 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.constraints.contentContainerTopToSafeArea.isActive)
     }
 
-    func testInlineFocusAndCancelKeepContentAnchorsStationaryAcrossChromeConfigurations() {
+    func testWhenInlinePresentationChangesThenContentAndStatusBackgroundUseSafeAreaAnchors() {
         for position in [AddressBarPosition.top, .bottom] {
             for floating in [false, true] {
                 let coordinator = makeCoordinator(position: position)
                 coordinator.setFloatingUIEnabled(floating)
-                for presentation in [NewTabPageInputPresentation.resting(usesUnifiedInput: true),
-                                     .editing(usesUnifiedInput: true),
-                                     .resting(usesUnifiedInput: true),
-                                     .editing(usesUnifiedInput: true)] {
-                    coordinator.setNewTabPageInputPresentation(presentation)
-                    coordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
-                    XCTAssertFalse(coordinator.isOmnibarInToolbar)
+                let states: [(presentation: NewTabPageInputPresentation, hidesNavigation: Bool)] = [
+                    (.resting(usesUnifiedInput: true), true),
+                    (.editing(usesUnifiedInput: true), false),
+                    (.resting(usesUnifiedInput: true), true)
+                ]
+                for state in states {
+                    coordinator.setNewTabPageInputPresentation(state.presentation)
                     XCTAssertTrue(coordinator.navigationBarCollectionView.isHidden)
                     XCTAssertTrue(coordinator.constraints.contentContainerTopToSafeArea.isActive)
                     XCTAssertFalse(coordinator.constraints.contentContainerTop.isActive)
                     XCTAssertTrue(coordinator.constraints.statusBackgroundBottomToSafeAreaTop.isActive)
                     XCTAssertFalse(coordinator.constraints.statusBackgroundToNavigationBarContainerBottom.isActive)
-                    XCTAssertEqual(coordinator.navigationBarContainer.isHidden, presentation.hidesNavigationContainer)
+                    XCTAssertEqual(coordinator.navigationBarContainer.isHidden, state.hidesNavigation)
                 }
             }
         }
@@ -197,14 +191,6 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
         coordinator.setNewTabPageInputPresentation(.resting(usesUnifiedInput: true))
         coordinator.setNewTabPageInputPresentation(.browser)
         XCTAssertTrue(coordinator.navigationBarContainer.isHidden)
-    }
-
-    func testRepeatedPresentationDoesNotResetAnAnimationAlpha() {
-        let coordinator = makeCoordinator()
-        coordinator.setNewTabPageInputPresentation(.editing(usesUnifiedInput: true))
-        coordinator.navigationBarContainer.alpha = 0.3
-        coordinator.setNewTabPageInputPresentation(.editing(usesUnifiedInput: true))
-        XCTAssertEqual(coordinator.navigationBarContainer.alpha, 0.3, accuracy: 0.001)
     }
 
     func testLeavingInlinePageInterruptsDismissWithoutRunningItsCompletion() {

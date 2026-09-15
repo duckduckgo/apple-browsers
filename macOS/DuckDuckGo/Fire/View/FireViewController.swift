@@ -359,7 +359,7 @@ final class FireViewController: NSViewController {
             .store(in: &cancellables)
     }
 
-    /// Other windows hide it, so a dialog left visible by a previous burn isn't shown.
+    /// Hidden in every other window, so a dialog left visible by a previous burn isn't shown.
     private func presentBurningProgressIndicatorIfKeyWindow() {
         if isKeyWindowController {
             showBurningProgressIndicator()
@@ -427,7 +427,6 @@ final class FireViewController: NSViewController {
     /// - Returns: whether the animation played. When it didn't, the caller has to present the
     ///   burn some other way.
     @MainActor
-    @discardableResult
     private func animateFire(burningData: Fire.BurningData) async -> Bool {
         // Animate just on the active window, don't animate if animation is already playing on another window
         let lastKeyWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController

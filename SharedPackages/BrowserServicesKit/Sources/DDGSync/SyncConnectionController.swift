@@ -38,9 +38,10 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole)
     func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole: SyncSetupRole)
 
+    @discardableResult
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
                                                     setupRole: SyncSetupRole,
-                                                    shouldPromptBeforeSwitchingAccounts: Bool) async
+                                                    shouldPromptBeforeSwitchingAccounts: Bool) async -> Bool
 
     func controllerDidError(_ error: SyncConnectionError, underlyingError: Error?, setupRole: SyncSetupRole) async
 }
@@ -561,6 +562,15 @@ public class SyncConnectionController: SyncConnectionControlling {
             let completion = try await pollPairingV2UntilFinished(coordinator)
             await handlePairingV2Completion(completion, coordinator: coordinator, setupRole: setupRole)
             return true
+        } catch SyncError.accountAlreadyExists where coordinator.supportsRecoveryCodeDone {
+            let didSwitchAccounts = await handlePairingV2AccountAlreadyExists(coordinator, setupRole: setupRole)
+            do {
+                try await coordinator.completeAccountSwitch(didSucceed: didSwitchAccounts)
+            } catch {
+                await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
+                return false
+            }
+            return didSwitchAccounts
         } catch {
             await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
             return false
@@ -625,7 +635,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         case .pollingDidTimeOut:
             await delegate?.controllerDidError(.pairingV2SessionTimedOut(timeoutStage: timeoutStage(for: coordinator.state)), underlyingError: nil, setupRole: setupRole)
         case .accountAlreadyExists:
-            await handlePairingV2AccountAlreadyExists(coordinator, setupRole: setupRole)
+            _ = await handlePairingV2AccountAlreadyExists(coordinator, setupRole: setupRole)
         default:
             await delegate?.controllerDidError(.transportFailure, underlyingError: error, setupRole: setupRole)
         }
@@ -655,14 +665,16 @@ public class SyncConnectionController: SyncConnectionControlling {
         }
     }
 
-    private func handlePairingV2AccountAlreadyExists(_ coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async {
+    private func handlePairingV2AccountAlreadyExists(_ coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async -> Bool {
         if let recoveryKey = coordinator.pendingRecoveryKey {
-            await delegate?.controllerDidFindTwoAccountsDuringRecovery(
+            return await delegate?.controllerDidFindTwoAccountsDuringRecovery(
                 recoveryKey,
                 setupRole: setupRole,
-                shouldPromptBeforeSwitchingAccounts: false)
+                shouldPromptBeforeSwitchingAccounts: false
+            ) ?? false
         } else {
             await delegate?.controllerDidError(.failedToLogIn, underlyingError: SyncError.accountAlreadyExists, setupRole: setupRole)
+            return false
         }
     }
 

@@ -265,6 +265,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         configureBars()
 
         decorate()
+        configureAccessibilityIdentifiers()
 
         navigationItem.title = isNested ? viewModel.currentFolder?.title : UserText.sectionTitleBookmarks
 
@@ -489,10 +490,12 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             let count = countAllChildrenInFolder(bookmark)
             let message = UserText.deleteBookmarkFolderAlertMessage(numberOfChildren: count)
             let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
-            alertController.addAction(title: UserText.deleteBookmarkFolderAlertDeleteButton, style: .destructive) {
+            let deleteAction = UIAlertAction(title: UserText.deleteBookmarkFolderAlertDeleteButton, style: .destructive) { _ in
                 deleteFolder()
                 completion(true)
             }
+            deleteAction.accessibilityIdentifier = "Bookmarks.Folder.ConfirmDelete"
+            alertController.addAction(deleteAction)
             alertController.addAction(title: UserText.actionCancel, style: .cancel) {
                 completion(true)
             }
@@ -556,6 +559,12 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             self.title = title
         }
         refreshEditButton()
+    }
+
+    private func configureAccessibilityIdentifiers() {
+        tableView.accessibilityIdentifier = "Bookmarks.List"
+        editButton.accessibilityIdentifier = "Bookmarks.Edit"
+        doneButton.accessibilityIdentifier = "Bookmarks.Done"
     }
 
     private func refreshEditButton() {

@@ -649,7 +649,6 @@ extension MainViewController {
             daxGreetingDebugging: self.daxGreetingService))
 
         let closeButton = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
-        closeButton.accessibilityIdentifier = "Debug.Close"
         debug.navigationItem.rightBarButtonItem = closeButton
 
         let controller = UINavigationController(rootViewController: debug)

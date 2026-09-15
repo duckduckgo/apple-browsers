@@ -27,7 +27,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
         didSet {
             guard oldValue != isFavoritesSectionVisible else { return }
             persistor.isFavoritesSectionVisible = isFavoritesSectionVisible
-            pixelFiring?.fire(NewTabPageCustomizationPixel.favoritesToggled)
+            pixelFiring?.fire(NewTabPageCustomizationPixel.favoritesToggled, frequency: .dailyAndCount)
         }
     }
 
@@ -35,7 +35,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
         didSet {
             guard oldValue != isMessagesSectionVisible else { return }
             persistor.isMessagesSectionVisible = isMessagesSectionVisible
-            pixelFiring?.fire(NewTabPageCustomizationPixel.messagesToggled)
+            pixelFiring?.fire(NewTabPageCustomizationPixel.messagesToggled, frequency: .dailyAndCount)
         }
     }
 
@@ -43,7 +43,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
         didSet {
             guard oldValue != isKeyboardShownOnNewTab else { return }
             keyboardSettings.onNewTab = isKeyboardShownOnNewTab
-            pixelFiring?.fire(NewTabPageCustomizationPixel.keyboardToggled)
+            pixelFiring?.fire(NewTabPageCustomizationPixel.keyboardToggled, frequency: .dailyAndCount)
         }
     }
 
@@ -71,7 +71,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
     }
 
     func selectAllSettings() {
-        pixelFiring?.fire(NewTabPageCustomizationPixel.allSettingsOpened)
+        pixelFiring?.fire(NewTabPageCustomizationPixel.allSettingsOpened, frequency: .dailyAndCount)
         onAllSettingsSelected?()
     }
 }

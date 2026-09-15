@@ -10,28 +10,28 @@
         "description": "Fires when the user changes the Favorites section toggle in the New Tab Page customization sheet.",
         "owners": ["dus7"],
         "triggers": ["other"],
-        "suffixes": ["count", "platform", "form_factor"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "new-tab-page_customization_messages_toggled": {
         "description": "Fires when the user changes the Messages section toggle in the New Tab Page customization sheet.",
         "owners": ["dus7"],
         "triggers": ["other"],
-        "suffixes": ["count", "platform", "form_factor"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "new-tab-page_customization_keyboard_toggled": {
         "description": "Fires when the user changes the Always Show Keyboard toggle in the New Tab Page customization sheet.",
         "owners": ["dus7"],
         "triggers": ["other"],
-        "suffixes": ["count", "platform", "form_factor"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "new-tab-page_customization_all_settings_opened": {
         "description": "Fires when the user selects All Settings in the New Tab Page customization sheet.",
         "owners": ["dus7"],
         "triggers": ["other"],
-        "suffixes": ["count", "platform", "form_factor"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     }
 }

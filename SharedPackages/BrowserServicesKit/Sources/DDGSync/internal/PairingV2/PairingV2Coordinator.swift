@@ -181,6 +181,16 @@ final class PairingV2Coordinator {
         await closeLocalChannel()
     }
 
+    func completeAccountSwitch(didSucceed: Bool) async throws {
+        if didSucceed {
+            await reportJoinStatus(.success)
+            try await execute(stateMachine.handle(.loginSucceeded))
+        } else {
+            await reportJoinStatus(.loginFailed)
+            try await execute(stateMachine.handle(.failed(.loginFailed)))
+        }
+    }
+
     private func closeLocalChannel() async {
         guard hasOpenedLocalChannel, !hasClosedLocalChannel else {
             return

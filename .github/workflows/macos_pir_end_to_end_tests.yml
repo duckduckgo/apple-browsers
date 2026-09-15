@@ -80,6 +80,16 @@ jobs:
         ref: main
         path: macOS/pir-fake-broker
 
+    - name: Remove unused Wix Homebrew tap
+      env:
+        HOMEBREW_NO_AUTO_UPDATE: "1"
+      run: |
+        # Remove the tap containing a cask that causes Homebrew updates to fail.
+        installed_taps="$(brew tap)"
+        if grep -Fxq 'wix-incubator/brew' <<< "$installed_taps"; then
+          brew untap --force wix-incubator/brew
+        fi
+
     - name: Update Homebrew
       run: brew update
 

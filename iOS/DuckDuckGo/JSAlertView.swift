@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import DesignResourcesKit
+import PixelKit
 
 private extension UIImage {
     static let highlightedAlertButtonTint = UIImage(resource: .alertButtonHighlightedTint)
@@ -105,7 +106,7 @@ final class JSAlertView: UIView {
             if !self.textFieldBox.isHidden {
                 self.textField.becomeFirstResponder()
             }
-            Pixel.fire(pixel: .jsAlertShown)
+            PixelKit.fire(Pixel.Event.jsAlertShown)
         }
     }
 

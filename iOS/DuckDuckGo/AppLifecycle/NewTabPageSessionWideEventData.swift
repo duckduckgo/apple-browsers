@@ -19,7 +19,7 @@
 
 import Foundation
 import FoundationExtensions
-import PixelKit
+import WideEvent
 
 /// Wide-event payload for the New Tab Page session pixel
 /// (`m_ios_wide_new_tab_page_session`). Captures one New Tab Page visit: which

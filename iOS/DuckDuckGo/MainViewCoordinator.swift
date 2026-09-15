@@ -89,6 +89,7 @@ class MainViewCoordinator {
     private var standardStatusBackgroundColor: UIColor?
     private var statusBackgroundPresentation: StatusBackgroundPresentation = .standard
     private var statusBackgroundPresentationBeforeOmnibarEditing: StatusBackgroundPresentation?
+    private var voiceModeBackgroundColor: UIColor?
     private(set) var isNavigationChromeHidden = false
     private var isNavBarContainerBottomKeyboardBased = false
     private(set) var isOmnibarInToolbar = false
@@ -194,17 +195,33 @@ class MainViewCoordinator {
         return activating
     }
 
+    /// The pose for an omnibar hosted in the nav container. The collection view's alpha belongs to
+    /// this pose: the focus transition zeroes it, so only re-hosting can put it back — and only
+    /// while nothing else owns the surface, since a rotation can rebuild this layout mid-focus.
+    private func applyOmnibarHostedInNavigationContainerPose() {
+        navigationBarContainer.isHidden = false
+        navigationBarContainer.alpha = 1
+        navigationBarContainer.isUserInteractionEnabled = true
+
+        let surfaceOwnedElsewhere = isNavigationChromeHidden || isUnifiedToggleInputVisible
+        navigationBarCollectionView.alpha = surfaceOwnedElsewhere ? 0 : 1
+        navigationBarCollectionView.isUserInteractionEnabled = !surfaceOwnedElsewhere
+        if !surfaceOwnedElsewhere {
+            navigationBarContainer.bringSubviewToFront(navigationBarCollectionView)
+        }
+    }
+
     func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {
         addressBarPosition = position
         applyContentContainerTopAnchorForCurrentState()
+        // Default before any branch runs; only the toolbar-attach path below overrides it, so
+        // readers within this pass can't see a stale value.
+        isOmnibarInToolbar = false
         guard isFloatingUIEnabled else {
             toolbar.setOmnibarView(nil, height: 0)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
-            navigationBarContainer.isHidden = false
-            navigationBarContainer.alpha = 1
-            navigationBarContainer.isUserInteractionEnabled = true
+            applyOmnibarHostedInNavigationContainerPose()
             setContentContainerBottomAnchorMode(requesting: .toolbar)
-            isOmnibarInToolbar = false
             return
         }
 
@@ -215,14 +232,11 @@ class MainViewCoordinator {
             toolbar.setOmnibarView(nil, height: 0)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
             omniBar.barView.makeGlass()
-            navigationBarContainer.isHidden = false
-            navigationBarContainer.alpha = 1
-            navigationBarContainer.isUserInteractionEnabled = true
-            bringFloatingTopNavigationBarToFrontIfNeeded()
+            applyOmnibarHostedInNavigationContainerPose()
+            bringFloatingNavigationBarToFrontIfNeeded()
             // Span content full-bleed to the main view bottom (behind the floating toolbar) so the
             // web scroll edge sits at the screen bottom and content doesn't move when the bars hide.
             setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
-            isOmnibarInToolbar = false
         case .bottom:
             guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
                 isFloatingUIEnabled: isFloatingUIEnabled,
@@ -232,10 +246,7 @@ class MainViewCoordinator {
             ) else {
                 toolbar.setOmnibarView(nil, height: 0)
                 constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
-                navigationBarContainer.isHidden = false
-                navigationBarContainer.alpha = 1
-                navigationBarContainer.isUserInteractionEnabled = true
-                isOmnibarInToolbar = false
+                applyOmnibarHostedInNavigationContainerPose()
                 return
             }
             toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
@@ -339,9 +350,7 @@ class MainViewCoordinator {
         guard addressBarPosition.isBottom else { return }
 
         if isUnifiedToggleInputVisible {
-            navigationBarContainer.isHidden = false
-            navigationBarContainer.alpha = 1
-            navigationBarContainer.isUserInteractionEnabled = true
+            applyOmnibarHostedInNavigationContainerPose()
             setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
             return
         }
@@ -349,9 +358,7 @@ class MainViewCoordinator {
         if isFloatingUIEnabled, isOmnibarInToolbar {
             ensureBottomOmnibarAttachedToToolbarIfNeeded()
         } else {
-            navigationBarContainer.isHidden = false
-            navigationBarContainer.alpha = 1
-            navigationBarContainer.isUserInteractionEnabled = true
+            applyOmnibarHostedInNavigationContainerPose()
         }
 
         if isNavigationChromeHidden {
@@ -393,9 +400,7 @@ class MainViewCoordinator {
         } else {
             toolbar.prepareForOmnibarDetachment()
         }
-        navigationBarContainer.isHidden = false
-        navigationBarContainer.alpha = 1
-        navigationBarContainer.isUserInteractionEnabled = true
+        applyOmnibarHostedInNavigationContainerPose()
         isOmnibarInToolbar = false
     }
 
@@ -449,7 +454,7 @@ class MainViewCoordinator {
         navigationBarContainer.backgroundColor = .clear
 
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
-        bringFloatingTopNavigationBarToFrontIfNeeded()
+        bringFloatingNavigationBarToFrontIfNeeded()
 
         if addressBarPosition == .top {
             setAddressBarBottomActive(false)
@@ -526,10 +531,13 @@ class MainViewCoordinator {
     // MARK: - Omnibar Editing Layout
 
     @MainActor
+    /// `resigningInput` is invoked once the animator owns the container's position. Resigning any
+    /// earlier hands the container to the keyboard's animation, which lands it short of the pill.
     func hideUnifiedToggleInputOmnibar(reattachingOmnibar: Bool = true,
                                        contentSnapshot: UIView? = nil,
                                        additionalAnimations: (() -> Void)? = nil,
                                        interruptCleanup: (() -> Void)? = nil,
+                                       resigningInput: (() -> Void)? = nil,
                                        completion: (() -> Void)? = nil) {
         // Replacement dismiss owns NTP chrome until it finishes. Drop the previous
         // interruptCleanup first — otherwise stopping the in-flight animator restores
@@ -563,6 +571,7 @@ class MainViewCoordinator {
         }
         omnibarDismissAnimator = animator
         animator.startAnimation()
+        resigningInput?()
     }
 
     private func installOmnibarDismissContentSnapshot(_ snapshot: UIView) {
@@ -669,7 +678,7 @@ class MainViewCoordinator {
             omniBar?.barView.setIconContainersAlpha(1)
         }
         restoreContentContainerBottomAnchorAfterUnifiedToggleInput()
-        bringFloatingTopNavigationBarToFrontIfNeeded()
+        bringFloatingNavigationBarToFrontIfNeeded()
     }
 
     private var shouldHostOmnibarInFloatingToolbarAfterUTIExit: Bool {
@@ -690,6 +699,19 @@ class MainViewCoordinator {
         applyResolvedStatusBackgroundColor()
     }
 
+    /// Repaints the status strip with the voice-mode background colour while the voice surface is on
+    /// screen (pass `nil` to restore the standard chrome), so the top strip matches the voice header.
+    func setVoiceMode(backgroundColor: UIColor?) {
+        guard voiceModeBackgroundColor != backgroundColor else { return }
+        voiceModeBackgroundColor = backgroundColor
+        applyResolvedStatusBackgroundColor()
+    }
+
+    /// True while the navy voice strip is painted behind the status bar, so the VC can light its icons.
+    var isVoiceModeStatusBackgroundActive: Bool {
+        voiceModeBackgroundColor != nil
+    }
+
     @MainActor
     func showUnifiedInputContent() {
         unifiedInputContentContainer.isHidden = false
@@ -706,13 +728,13 @@ class MainViewCoordinator {
         hideFocusedStateBackground()
         focusedStateBackground.alpha = 1
         superview.insertSubview(statusBackground, aboveSubview: topSlideContainer)
-        bringFloatingTopNavigationBarToFrontIfNeeded()
+        bringFloatingNavigationBarToFrontIfNeeded()
     }
 
-    /// Keeps the top floating omnibar above full-screen UTI layers so menu and customize long-press
-    /// gestures stay tappable after focus/dismiss cycles.
-    func bringFloatingTopNavigationBarToFrontIfNeeded() {
-        guard isFloatingUIEnabled, addressBarPosition == .top else { return }
+    /// Keeps the floating omnibar above full-screen UTI layers so its gestures stay tappable
+    /// after focus/dismiss cycles. Inverse of `bringSubviewToFront(toolbar)` at the attach sites.
+    func bringFloatingNavigationBarToFrontIfNeeded() {
+        guard isFloatingUIEnabled, !isOmnibarInToolbar else { return }
         superview.bringSubviewToFront(navigationBarContainer)
         applyAITabCollapsedTopSeparatorVisibility()
     }
@@ -842,7 +864,7 @@ class MainViewCoordinator {
             case .aiTabSearchChromeHidden:
                 return UIColor(designSystemColor: .panel)
             case .aiTabChatChromeHidden:
-                return UIColor(designSystemColor: .surfaceCanvas)
+                return chatChromeHiddenStatusBackgroundColor()
             }
         }
 
@@ -852,8 +874,14 @@ class MainViewCoordinator {
         case .omnibarEditing, .aiTabSearchChromeHidden:
             return UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:
-            return UIColor(designSystemColor: .surfaceCanvas)
+            return chatChromeHiddenStatusBackgroundColor()
         }
+    }
+
+    /// Voice sessions paint the top strip with the FE-provided voice colour; regular chat chrome-hidden
+    /// keeps the standard canvas tone.
+    private func chatChromeHiddenStatusBackgroundColor() -> UIColor {
+        voiceModeBackgroundColor ?? UIColor(designSystemColor: .surfaceCanvas)
     }
 
     private func showFocusedStateBackground() {

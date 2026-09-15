@@ -30,9 +30,15 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> {
         permissionSubject.eraseToAnyPublisher()
     }
+    private let persistedPermissionsSubject = CurrentValueSubject<[WebsitePermissionEntry], Never>([])
+    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> {
+        persistedPermissionsSubject.eraseToAnyPublisher()
+    }
 
     var savedPermissions = [String: [PermissionType: PersistedPermissionDecision]]()
-    var setPermissionCalls: [(decision: PersistedPermissionDecision, domain: String, permissionType: PermissionType)] = []
+    /// Mirrors the `lastModified` column so debug entries report what was stamped.
+    var savedLastModified = [String: [PermissionType: Date]]()
+    var setPermissionCalls: [(decision: PersistedPermissionDecision, domain: String, permissionType: PermissionType, lastModified: Date)] = []
 
     /// Stands in for `PermissionDecisionOverriding`: when it returns a decision, that decision is the
     /// effective one and `savedPermissions` is left alone. Nil (the default) means no override.
@@ -74,18 +80,28 @@ final class PermissionManagerMock: PermissionManagerProtocol {
         savedPermissions[domain.droppingWwwPrefix()]?[permissionType]
     }
 
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
-        setPermissionCalls.append((decision: decision, domain: domain, permissionType: permissionType))
+    func setPermission(_ decision: PersistedPermissionDecision,
+                       forDomain domain: String,
+                       permissionType: PermissionType,
+                       lastModified: Date = Date()) {
+        setPermissionCalls.append((decision: decision, domain: domain, permissionType: permissionType, lastModified: lastModified))
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = decision
+        savedLastModified[domain.droppingWwwPrefix(), default: [:]][permissionType] = lastModified
+        publishPersistedPermissions()
     }
 
     func removePermission(forDomain domain: String, permissionType: PermissionType) {
+        guard hasPermissionPersisted(forDomain: domain, permissionType: permissionType) else { return }
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = nil
+        savedLastModified[domain.droppingWwwPrefix(), default: [:]][permissionType] = nil
+        publishPersistedPermissions()
+        permissionSubject.send((domain.droppingWwwPrefix(), permissionType, .removed))
     }
 
     var burnPermissionsCalled = false
     func burnPermissions(except fireproofDomains: FireproofDomains, completion: @MainActor @escaping (Result<Void, Error>) -> Void) {
         savedPermissions = savedPermissions.filter { fireproofDomains.isFireproof(fireproofDomain: $0.key) }
+        publishPersistedPermissions()
         burnPermissionsCalled = true
         MainActor.assumeMainThread {
             completion(.success(()))
@@ -118,6 +134,28 @@ final class PermissionManagerMock: PermissionManagerProtocol {
         lastRequest.completion(decision)
     }
 
+    func setPersistedPermissions(_ entries: [WebsitePermissionEntry]) {
+        savedPermissions = [:]
+        savedLastModified = [:]
+        for entry in entries {
+            savedPermissions[entry.domain, default: [:]][entry.permissionType] = entry.decision
+            savedLastModified[entry.domain, default: [:]][entry.permissionType] = entry.lastModified
+        }
+        publishPersistedPermissions()
+    }
+
+    private func publishPersistedPermissions() {
+        let entries = savedPermissions.flatMap { domain, permissions in
+            permissions.map { permissionType, decision in
+                WebsitePermissionEntry(domain: domain,
+                                       permissionType: permissionType,
+                                       decision: decision,
+                                       lastModified: savedLastModified[domain]?[permissionType])
+            }
+        }
+        persistedPermissionsSubject.send(entries)
+    }
+
 }
 
 extension PermissionManagerMock: PermissionManagerDebugging {
@@ -131,7 +169,8 @@ extension PermissionManagerMock: PermissionManagerDebugging {
                                      permissionType: type.rawValue,
                                      allow: decision == .allow,
                                      isRemoved: decision == .ask,
-                                     effectiveDecision: permission(forDomain: domain, permissionType: type))
+                                     effectiveDecision: permission(forDomain: domain, permissionType: type),
+                                     lastModified: savedLastModified[domain]?[type])
             }
         }
     }
@@ -149,9 +188,16 @@ extension PermissionManagerMock: PermissionManagerDebugging {
 
     func removeAllPermissions() -> Int {
         removeAllPermissionsCalled = true
-        let count = savedPermissions.values.reduce(0) { $0 + $1.count }
+        let removedPermissions = savedPermissions.flatMap { domain, permissionsByType in
+            permissionsByType.keys.map { (domain: domain, type: $0) }
+        }
         savedPermissions = [:]
-        return count
+        savedLastModified = [:]
+        publishPersistedPermissions()
+        for permission in removedPermissions {
+            permissionSubject.send((permission.domain, permission.type, .removed))
+        }
+        return removedPermissions.count
     }
 
 }

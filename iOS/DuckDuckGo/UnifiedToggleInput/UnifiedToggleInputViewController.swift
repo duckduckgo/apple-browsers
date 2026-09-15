@@ -177,6 +177,16 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarSubmitBlockedByRecoveryCard = newValue }
     }
 
+    /// The handler's copy closes the keyboard's own routes into a prompt; the view's greys out the
+    /// controls that would offer one.
+    var isInputBlockedByUsageLimit: Bool = false {
+        didSet {
+            guard isInputBlockedByUsageLimit != oldValue else { return }
+            handler.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit
+            inputBarView.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit
+        }
+    }
+
     var isGenerating: Bool = false {
         didSet {
             guard isGenerating != oldValue else { return }
@@ -383,10 +393,6 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func selectAllText() {
         inputBarView.selectAllText()
-    }
-
-    func moveCaretToStart() {
-        inputBarView.moveCaretToStart()
     }
 
     var placeholderWindowX: CGFloat? { inputBarView.placeholderWindowX }

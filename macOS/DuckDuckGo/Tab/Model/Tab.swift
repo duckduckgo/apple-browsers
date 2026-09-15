@@ -117,6 +117,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     private(set) var userContentController: UserContentController?
     private(set) var specialPagesUserScript: SpecialPagesUserScript?
+    private(set) var onboardingActionsManager: OnboardingActionsManager?
 
     @MainActor
     convenience init(id: String? = nil,
@@ -314,8 +315,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.themeManager = themeManager
 
         self.specialPagesUserScript = SpecialPagesUserScript()
-        specialPagesUserScript?
-            .withAllSubfeatures()
+        self.onboardingActionsManager = specialPagesUserScript?.withAllSubfeatures()
         let configuration = webViewConfiguration ?? WKWebViewConfiguration()
         configuration.applyStandardConfiguration(featureFlagger: featureFlagger,
                                                  contentBlocking: privacyFeatures.contentBlocking,
@@ -385,6 +385,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                                             contentPublisher: _content.projectedValue.eraseToAnyPublisher(),
                                                                             setContent: { tabGetter()?.setContent($0) },
                                                                             closeTab: { tabGetter().map { $0.delegate?.closeTab($0) } },
+                                                                            reportBrokenSite: { sourceWindow in
+                                                                                Application.appDelegate.openReportBrokenSite(entryPoint: .webKitTerminationErrorPage, in: sourceWindow)
+                                                                            },
                                                                             titlePublisher: _title.projectedValue.eraseToAnyPublisher(),
                                                                             errorPublisher: _error.projectedValue.eraseToAnyPublisher(),
                                                                             userScriptsPublisher: userScriptsPublisher,
@@ -603,6 +606,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     }
 
     var contentChangeEnabled = true
+
+    /// Called before an actual tab close, never for moves or internal replacement.
+    var onClose: (@MainActor () -> Void)?
 
     var isLazyLoadingInProgress = false
 
@@ -998,7 +1004,13 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             return
         }
 
-        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
+        let onboarding = NonBlockingOnboarding(featureFlagger: Application.appDelegate.featureFlagger)
+        let updater = Application.appDelegate.onboardingContextualDialogsManager
+        if onboarding.isNonBlocking {
+            onboarding.initializeContextualOnboarding(updater)
+        } else {
+            updater.state = .notStarted
+        }
         setContent(.onboarding)
     }
 
@@ -1497,6 +1509,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     func didStart(_ navigation: Navigation) {
+        if navigation.url.isHttpOrHttps, navigation.navigationAction.navigationType != .alternateHtmlLoad {
+            Application.appDelegate.windowControllersManager.recordBrowsingBeforeOnboardingCompletion()
+        }
         delegate?.tabDidStartNavigation(self)
         permissions.tabDidStartNavigation()
         userInteractionDialog = nil

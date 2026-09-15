@@ -923,6 +923,99 @@
     },
 
     // Subscription Onboarding Flow
+    "subscription_onboarding_step_shown_": {
+        "description": "Fired when an onboarding step is shown. The step name is the pixel's suffix.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "type": "string",
+                "description": "The onboarding step that was shown",
+                "enum": ["intro", "features_summary", "vpn", "vpn_widget", "idtr", "duck_ai", "pir", "completion"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Which entry point launched this onboarding run",
+                "enum": ["post_checkout", "subscription_settings"]
+            }
+        ]
+    },
+    "subscription_onboarding_step_completed_": {
+        "description": "Fired when an onboarding step is completed — the protection it offers was activated. Only activation steps can complete.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [
+            {
+                "type": "string",
+                "description": "The onboarding step that was completed",
+                "enum": ["vpn", "vpn_widget", "idtr", "duck_ai", "pir"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Which entry point launched this onboarding run",
+                "enum": ["post_checkout", "subscription_settings"]
+            }
+        ]
+    },
+    "subscription_onboarding_step_skipped_": {
+        "description": "Fired when the customer leaves an onboarding step via its skip CTA. Only the VPN and Duck.ai steps have one.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [
+            {
+                "type": "string",
+                "description": "The onboarding step that was skipped",
+                "enum": ["vpn", "duck_ai"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Which entry point launched this onboarding run",
+                "enum": ["post_checkout", "subscription_settings"]
+            }
+        ]
+    },
+    "subscription_onboarding_flow_started": {
+        "description": "Fired when the flow starts. The funnel's denominator, and the measurement of how many customers enter with Duck.ai disabled.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Which entry point launched this onboarding run",
+                "enum": ["post_checkout", "subscription_settings"]
+            },
+            {
+                "key": "duck_ai_enabled",
+                "type": "boolean",
+                "description": "Whether Duck.ai was enabled in the app when the customer entered the flow"
+            }
+        ]
+    },
     "subscription_onboarding_connection-info_failure": {
         "description": "Fired when the public IP and geolocation fetch behind the VPN activation screen fails during onboarding.",
         "owners": ["hanyutang-sandra"],
@@ -943,5 +1036,21 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_onboarding_post_purchase_launch_failure": {
+        "description": "Fired when a purchase that should present onboarding fails to launch the flow. By design there is no retry, so this purchase never gets onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "Why the flow never launched",
+                "enum": ["missingPersistor", "emptyChecklist"]
+            }
+        ]
     }
 }

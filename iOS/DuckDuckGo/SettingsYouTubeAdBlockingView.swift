@@ -22,6 +22,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import PixelKit
 
 struct SettingsYouTubeAdBlockingView: View {
 
@@ -51,7 +52,7 @@ struct SettingsYouTubeAdBlockingView: View {
                         viewModel.openDuckPlayerContingencyMessageSite()
                     }.onAppear {
                         if !hasFiredSettingsDisplayedPixel {
-                            Pixel.fire(pixel: .duckPlayerContingencySettingsDisplayed)
+                            PixelKit.fire(Pixel.Event.duckPlayerContingencySettingsDisplayed)
                             hasFiredSettingsDisplayedPixel = true
                         }
                     }
@@ -92,8 +93,8 @@ struct SettingsYouTubeAdBlockingView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onAppear {
-            DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingSettingsOpen,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+            PixelKit.fire(Pixel.Event.webExtensionAdBlockingSettingsOpen,
+                          frequency: .dailyAndStandard)
         }
         .onFirstAppear {
             if viewModel.deepLinkTarget == .duckPlayer,

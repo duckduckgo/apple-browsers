@@ -1,0 +1,192 @@
+{
+    "permission_dialog_impression": {
+        "description": "Fires when the on-site permission dialog is shown.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Permission type requested by the site.",
+                "enum": ["camera", "microphone", "camera_and_microphone", "geolocation"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": ["appVersion"]
+    },
+    "permission_dialog_click": {
+        "description": "Fires when the user selects an option in the on-site permission dialog.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Permission type requested by the site.",
+                "enum": ["camera", "microphone", "camera_and_microphone", "geolocation"]
+            },
+            {
+                "description": "Option selected in the on-site permission dialog.",
+                "enum": ["allow_once", "allow_always", "never"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": ["appVersion"]
+    },
+    "permission_system_prompt_result": {
+        "description": "Fires once for each operating-system permission prompt that completes.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Individual permission type requested from the operating system.",
+                "enum": ["camera", "microphone", "geolocation"]
+            },
+            {
+                "description": "Result returned by the operating-system permission prompt.",
+                "enum": ["granted", "denied"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": ["appVersion"]
+    },
+    "permission_reminder_dialog": {
+        "description": "Fires when the denied-system-permission reminder is shown or used.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Permission type or types covered by the reminder.",
+                "enum": ["camera", "microphone", "camera_and_microphone", "geolocation"]
+            },
+            {
+                "description": "Reminder dialog interaction.",
+                "enum": ["shown", "settings", "cancel"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": ["appVersion"]
+    },
+    "permission_system_settings_opened": {
+        "description": "Fires when the user opens System Settings for a site permission.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Permission type or types for which System Settings is opened.",
+                "enum": ["camera", "microphone", "camera_and_microphone", "geolocation"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": ["appVersion"]
+    },
+    "voice_search_permission_prompt": {
+        "description": "Fires when the Voice Search denied-microphone prompt is shown or used.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Voice Search permission prompt interaction.",
+                "enum": ["shown", "settings", "hide", "cancel"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": ["appVersion"]
+    },
+    "permission_center_opened": {
+        "description": "Fires when the on-site permission management sheet is opened from the browser menu.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "permission_center_changed": {
+        "description": "Fires when a per-site permission decision is changed in the permission management sheet or Settings.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Permission type being changed.",
+                "enum": ["camera", "microphone", "geolocation"]
+            },
+            {
+                "description": "Literal separator.",
+                "enum": ["to"]
+            },
+            {
+                "description": "New permission decision.",
+                "enum": ["ask", "allow", "deny"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "from",
+                "type": "string",
+                "enum": ["ask", "allow", "deny"],
+                "description": "Previous permission decision."
+            }
+        ]
+    },
+    "permission_center_dismissed_dirty": {
+        "description": "Fires when the on-site permission management sheet closes after an edit began but was not committed.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "permission_remove_site": {
+        "description": "Fires when all stored permissions are removed for one site.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "permission_remove_all": {
+        "description": "Fires when all stored site permissions are removed.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "permission_remove_undo": {
+        "description": "Fires when a site-permission removal is undone.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "settings_site_permissions_open": {
+        "description": "Fires when the Site Permissions page is opened in Settings.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "settings_site_permissions_global_changed": {
+        "description": "Fires when a global site-permission default is changed in Settings.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Permission type being changed.",
+                "enum": ["camera", "microphone", "geolocation"]
+            },
+            {
+                "description": "Literal separator.",
+                "enum": ["to"]
+            },
+            {
+                "description": "New global permission decision.",
+                "enum": ["ask", "deny"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": ["appVersion"]
+    }
+}

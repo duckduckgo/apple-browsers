@@ -343,6 +343,9 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var showViewAllAiChatsPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var isAIChatToolsEnabled: Bool = false
     var isImageGenerationEnabled: Bool = false
+    var isUpdatedCreateImageEnabled: Bool = false
+    @MainActor var imageGenerationModelId: String? { nil }
+    @MainActor func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? { nil }
     var isWebSearchEnabled: Bool = false
     var isCustomizeResponsesEnabled: Bool = false
     @MainActor

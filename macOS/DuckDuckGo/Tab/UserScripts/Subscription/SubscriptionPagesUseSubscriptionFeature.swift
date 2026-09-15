@@ -25,6 +25,7 @@ import UserScript
 import Subscription
 import SubscriptionUI
 import PixelKit
+import WideEvent
 import os.log
 import Freemium
 import DataBrokerProtection_macOS

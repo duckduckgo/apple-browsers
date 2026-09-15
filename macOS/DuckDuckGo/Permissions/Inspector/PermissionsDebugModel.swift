@@ -26,6 +26,8 @@ struct PermissionDebugEntry: Equatable {
     let allow: Bool
     let isRemoved: Bool
     let effectiveDecision: PersistedPermissionDecision
+    /// `nil` for rows persisted before the column existed. See `StoredPermission.lastModified`.
+    let lastModified: Date?
 
     var persistedDecision: PersistedPermissionDecision {
         PersistedPermissionDecision(allow: allow, isRemoved: isRemoved)
@@ -44,6 +46,7 @@ struct RawPermissionRow: Equatable {
     let permissionType: String
     let allow: Bool
     let isRemoved: Bool
+    let lastModified: Date?
 }
 
 protocol PermissionManagerDebugging: PermissionManagerProtocol {

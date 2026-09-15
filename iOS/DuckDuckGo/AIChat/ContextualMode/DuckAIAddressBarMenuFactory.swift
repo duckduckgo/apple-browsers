@@ -18,27 +18,61 @@
 //
 
 import DesignResourcesKitIcons
+import FeatureFlags_iOS
+import PrivacyConfig
 import UIKit
 
-/// Builds the address-bar Duck.ai menu offering a fresh chat or a chat about the current page.
+/// Builds the address-bar Duck.ai menu for new chats, page questions, and chat history.
 enum DuckAIAddressBarMenuFactory {
 
-    /// Each action sits in its own inline group so UIKit draws a separator between them.
-    static func makeActions(onNewChat: @escaping () -> Void,
-                            onAskAboutPage: @escaping () -> Void) -> [UIMenuElement] {
-        [
-            UIMenu(title: "", options: .displayInline, children: [
-                UIAction(title: UserText.duckAiAddressBarMenuNewChat,
-                         image: DesignSystemImages.Glyphs.Size16.compose) { _ in
-                    onNewChat()
-                }
-            ]),
-            UIMenu(title: "", options: .displayInline, children: [
-                UIAction(title: UserText.aiChatAttachmentOptionAskAboutPage,
-                         image: DesignSystemImages.Glyphs.Size16.chevronCircleDown) { _ in
-                    onAskAboutPage()
-                }
-            ])
+    static func isChatHistoryAvailable(featureFlagger: FeatureFlagger, userInterfaceIdiom: UIUserInterfaceIdiom) -> Bool {
+        userInterfaceIdiom != .pad
+            && featureFlagger.isFeatureOn(.aiChatNativeChatHistory)
+            && featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats)
+    }
+
+    /// Groups New Chat and, on non-home tabs, the page-context action above a separator, with Chats
+    /// below.
+    static func makeActions(featureFlagger: FeatureFlagger,
+                            userInterfaceIdiom: UIUserInterfaceIdiom,
+                            isHomeTab: Bool,
+                            type: DuckAIAddressBarMenuType,
+                            onNewChat: @escaping () -> Void,
+                            onContextAction: @escaping () -> Void,
+                            onRecentChats: @escaping () -> Void) -> [UIMenuElement] {
+        let contextActionTitle: String = {
+            switch type {
+            case .webPage:
+                UserText.aiChatAttachmentOptionAskAboutPage
+            case .search:
+                UserText.aiChatAttachmentOptionContinueInDuckAi
+            case .document:
+                UserText.aiChatAttachmentOptionAskAboutDocument
+            }
+        }()
+        var chatActions: [UIMenuElement] = [
+            UIAction(title: UserText.duckAiAddressBarMenuNewChat,
+                     image: DesignSystemImages.Glyphs.Size16.compose) { _ in
+                onNewChat()
+            }
         ]
+        if !isHomeTab {
+            chatActions.append(UIAction(title: contextActionTitle,
+                                        image: DesignSystemImages.Glyphs.Size16.chevronCircleDown) { _ in
+                onContextAction()
+            })
+        }
+        var groups: [UIMenuElement] = [UIMenu(title: "", options: .displayInline, children: chatActions)]
+        let showsRecentChats = featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats)
+            && (userInterfaceIdiom == .pad || featureFlagger.isFeatureOn(.aiChatNativeChatHistory))
+        if showsRecentChats {
+            groups.append(UIMenu(title: "", options: .displayInline, children: [
+                UIAction(title: UserText.actionChats,
+                         image: DesignSystemImages.Glyphs.Size16.chats) { _ in
+                    onRecentChats()
+                }
+            ]))
+        }
+        return groups
     }
 }

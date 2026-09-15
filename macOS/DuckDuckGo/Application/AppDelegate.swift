@@ -56,6 +56,7 @@ import os.log
 import Persistence
 import PixelExperimentKit
 import PixelKit
+import WideEvent
 import SERPSettings
 import PrivacyConfig
 import PrivacyStats
@@ -158,17 +159,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
-    @MainActor private(set) lazy var quickFeedbackService: QuickFeedbackService = {
-        let diagnosticsCollector = QuickFeedbackDiagnosticsCollector(
-            tabAndWindowCountProvider: windowControllersManager,
-            memoryUsageMonitor: memoryUsageMonitor,
-            launchDate: appLaunchDate
-        )
-        return QuickFeedbackService(
-            diagnosticsCollector: diagnosticsCollector,
-            firePublisher: fireCoordinator.fireViewModel.fire.burningDataPublisher
+    @MainActor
+    private(set) lazy var quitSurveyPromoObserver = QuitSurveyPromoObserver()
+
+    @MainActor
+    private(set) lazy var duckPlayerOverlayObserver: DuckPlayerOverlayObserver = {
+        DuckPlayerOverlayObserver(
+            duckPlayer: duckPlayer,
+            windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger
         )
     }()
+
+    @MainActor private(set) lazy var quickFeedbackDiagnosticsCollector = QuickFeedbackDiagnosticsCollector(
+        tabAndWindowCountProvider: windowControllersManager,
+        memoryUsageMonitor: memoryUsageMonitor,
+        launchDate: appLaunchDate
+    )
+
+    @MainActor private(set) lazy var internalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProviding =
+        InternalFeedbackDeviceInfoProvider(diagnosticsCollector: quickFeedbackDiagnosticsCollector)
+
+    @MainActor private(set) lazy var internalFeedbackAttachmentsProvider = InternalFeedbackAttachmentsProvider()
+
+    @MainActor private(set) lazy var quickFeedbackService = QuickFeedbackService(
+        attachmentsProvider: internalFeedbackAttachmentsProvider,
+        firePublisher: fireCoordinator.fireViewModel.fire.burningDataPublisher
+    )
 
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
@@ -303,9 +320,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
+
+    @MainActor
+    var isOnboardingReadyForPrompts: Bool {
+        guard onboardingContextualDialogsManager.state == .onboardingCompleted else { return false }
+        if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
+            let isActiveTabOnboarding = windowControllersManager.lastKeyMainWindowController?.activeTab?.content == .onboarding
+            return !isActiveTabOnboarding
+        }
+        return OnboardingActionsManager.isOnboardingFinished
+    }
+
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
     let eventHubIntegration: MacOSEventHubIntegration
     private lazy var webNotificationClickHandler = WebNotificationClickHandler(tabFinder: windowControllersManager)
+    private lazy var onboardingNonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
@@ -322,6 +351,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     public let subscriptionUIHandler: SubscriptionUIHandling
 
     private(set) lazy var sessionRestorePromptCoordinator = SessionRestorePromptCoordinator(pixelFiring: PixelKit.shared)
+    let brokenSitePromptPresentationCoordinator = BrokenSitePromptPresentationCoordinator()
 
     // MARK: - Automation Server
     private var automationServer: AutomationServer?
@@ -459,6 +489,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var didFinishLaunching = false
 
     var updateController: UpdateController?
+    private var updateNotificationPromoBridge: UpdateNotificationPromoBridge?
     let dockCustomization: DockCustomization
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
@@ -1066,7 +1097,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionUpsellExperiment: OnboardingSubscriptionUpsellExperiment(
                 featureFlagger: featureFlagger,
                 subscriptionManager: subscriptionManager
-            )
+            ),
+            isNonBlocking: { [featureFlagger] in NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking }
         )
 
         let onboardingManager = onboardingContextualDialogsManager
@@ -1463,11 +1495,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if featureFlagger.isFeatureOn(.promoQueue) {
             let subscriptionPromoDelegate = FireWindowSubscriptionPromoDelegate()
             self.subscriptionPromoDelegate = subscriptionPromoDelegate
+            let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: windowControllersManager)
             let dependencies = PromoDependencies(
                 keyValueStore: keyValueStore,
                 isExternallyActivated: urlEventHandlerResult.willOpenWindows,
                 isNewUserProvider: { AppDelegate.isNewUser },
-                isOnboardingCompletedProvider: { OnboardingActionsManager.isOnboardingFinished },
+                isOnboardingCompletedProvider: { [featureFlagger, onboardingContextualDialogsManager] in
+                    NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
+                        ? onboardingContextualDialogsManager.state == .onboardingCompleted && !activeDomainPublisher.isActiveTabOnboarding
+                        : OnboardingActionsManager.isOnboardingFinished
+                },
                 activeRemoteMessageModel: activeRemoteMessageModel,
                 defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
                 sessionRestoreCoordinator: sessionRestorePromptCoordinator,
@@ -1478,7 +1515,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 syncService: syncService,
                 syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
                 pinningManager: pinningManager,
-                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate
+                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate,
+                duckPlayerOverlayObserver: duckPlayerOverlayObserver,
+                updateController: updateController,
+                updateNotificationBridge: updateNotificationPromoBridge,
+                brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
+                quitSurveyPromoObserver: quitSurveyPromoObserver
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -1650,6 +1692,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func fireDailyActiveUserPixels() {
         PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily)
         PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily)
+        if defaultBrowserPreferences.isDefault {
+            onboardingNonBlockingExperiment.fireMetric(.setAsDefaultEnabled)
+        }
         PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily)
     }
 
@@ -1674,8 +1719,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// The settings toggles only cover users who touch a setting; this sizes the enabled base.
     @MainActor
     private func fireDailyPromptBarStatePixel() {
-        guard featureFlagger.isFeatureOn(.promptBar) else { return }
-
         PixelKit.fire(PromptBarPixel.state(shortcutEnabled: promptBarPreferences.isKeyboardShortcutEnabled,
                                            menuBarIconEnabled: promptBarPreferences.isMenuBarIconVisible),
                       frequency: .daily)
@@ -1738,28 +1781,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard AppVersion.runType.allowsUpdates else { return }
 
         let buildType = StandardApplicationBuildType()
-        let notificationPresenter = UpdateNotificationPresenter(
-            pixelFiring: PixelKit.shared,
-            shouldSuppressPostUpdateNotification: { [weak self] in
-                let wc = self?.windowControllersManager.lastKeyMainWindowController
-                            ?? self?.windowControllersManager.mainWindowControllers.last
-                return wc?.mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.content == .releaseNotes
-            },
-            showNotificationPopover: { [weak self] popover in
-                guard let wc = self?.windowControllersManager.lastKeyMainWindowController
-                            ?? self?.windowControllersManager.mainWindowControllers.last,
-                      let button = wc.mainViewController.navigationBarViewController.optionsButton else {
-                    return false
-                }
-                let parent = wc.mainViewController
-                guard parent.view.window?.isKeyWindow == true,
-                      (parent.presentedViewControllers ?? []).isEmpty else {
-                    return false
-                }
-                popover.show(onParent: parent, relativeTo: button)
-                return true
-            }
-        )
+        let notificationPresenter = UpdateNotificationPromoBridge()
+        self.updateNotificationPromoBridge = notificationPresenter
 
         if buildType.isAppStoreBuild {
             guard let appStoreFactory = UpdateControllerFactory.self as? any AppStoreUpdateControllerFactory.Type else {
@@ -1771,7 +1794,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 internalUserDecider: internalUserDecider,
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
-                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished }
+                isOnboardingFinished: { [weak self, featureFlagger] in
+                    if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
+                        return self?.isOnboardingReadyForPrompts == true
+                    }
+                    return OnboardingActionsManager.isOnboardingFinished
+                }
             )
         } else {
             assert(buildType.isSparkleBuild)
@@ -1801,7 +1829,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 },
                 wideEvent: wideEvent,
-                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished },
+                isOnboardingFinished: { [weak self, featureFlagger] in
+                    if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
+                        return self?.isOnboardingReadyForPrompts == true
+                    }
+                    return OnboardingActionsManager.isOnboardingFinished
+                },
                 openUpdatesPage: { [windowControllersManager] in
                     windowControllersManager.showTab(with: .releaseNotes)
                 }
@@ -1870,8 +1903,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 showQuitSurvey: { [weak self] in
                     guard let self else { return }
-                    let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor, featureFlagger: self.featureFlagger, historyCoordinating: self.historyCoordinator, faviconManaging: self.faviconManager)
+                    let presenter = QuitSurveyPresenter(
+                        windowControllersManager: windowControllersManager,
+                        persistor: persistor,
+                        featureFlagger: featureFlagger,
+                        historyCoordinating: historyCoordinator,
+                        faviconManaging: faviconManager
+                    )
+
+                    guard promoService != nil else {
+                        await presenter.showSurvey()
+                        return
+                    }
+
+                    await quitSurveyPromoObserver.reportVisible()
                     await presenter.showSurvey()
+                    await quitSurveyPromoObserver.reportHidden()
                 }
             ),
 
@@ -1911,7 +1958,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
 
             // 9. Close windows before quitting while waiting for ⌘Q release
-            .perform {
+            .perform { [windowControllersManager] in
+                windowControllersManager.setOnboardingTab(nil)
                 NSApp.visibleWindows.forEach { $0.close() }
             }
         ]
@@ -2251,6 +2299,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let syncService = DDGSync(
             dataProvidersSource: syncDataProviders,
             errorEvents: SyncErrorHandler(),
+            unifiedDeviceListEvents: UnifiedDeviceListPixelHandler(),
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             keyValueStore: keyValueStore,
             environment: environment,
@@ -2266,6 +2315,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 canWriteUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanWriteUnifiedDeviceList)
+                },
+                canUsePatchEndpointForLegacyDeviceRename: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanUsePatchEndpointForLegacyDeviceRename)
                 },
                 canReadUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanReadUnifiedDeviceList)
@@ -2509,11 +2561,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Must run before `setUpPromptBarMenuBarVisibility()`, which hands the icon's click to the coordinator.
     @MainActor
     private func setUpPromptBar() {
-        guard featureFlagger.isFeatureOn(.promptBar) else {
-            promptBarCoordinator = nil
-            return
-        }
-
         let promptSubmitter = PromptBarPromptSubmitter(aiChatTabOpener: aiChatTabOpener,
                                                        windowControllersManager: windowControllersManager)
         let content = PromptBarContentFactory.makeContent(promptSubmitter: promptSubmitter,
@@ -2522,7 +2569,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                           preferences: aiChatPreferencesPersistor)
         let coordinator = PromptBarCoordinator(
-            featureFlagger: featureFlagger,
             preferences: promptBarPreferences,
             shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
             presenter: PromptBarPresenter(content: content)
@@ -2533,13 +2579,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setUpPromptBarMenuBarVisibility() {
-        guard featureFlagger.isFeatureOn(.promptBar) else {
-            promptBarMenuBarController?.hide()
-            promptBarMenuBarController = nil
-            promptBarMenuBarCancellable = nil
-            return
-        }
-
         if promptBarMenuBarController == nil {
             promptBarMenuBarController = PromptBarMenuBarController()
         }

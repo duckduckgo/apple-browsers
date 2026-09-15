@@ -257,7 +257,6 @@ private final class StubSparkleUpdateController: NSObject, SparkleUpdateControll
     var notificationDotPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var clearsNotificationDotOnMenuOpen = true
     var lastUpdateCheckDate: Date?
-    var lastUpdateNotificationShownDate = Date.distantPast
 
     @Published var updateProgress: UpdateCycleProgress = .updateCycleNotStarted
     var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { $updateProgress }

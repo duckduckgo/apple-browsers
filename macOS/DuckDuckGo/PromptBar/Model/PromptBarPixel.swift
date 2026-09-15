@@ -65,6 +65,18 @@ enum PromptBarPixel: PixelKit.Event {
     /// Event Trigger: User submits a prompt while image generation mode is active
     case imageGenerationSubmitted
 
+    /// Event Trigger: Selecting Create Image switches an unsupported model to an image-capable model.
+    case createImageModelSwitched(fromModelId: String, toModelId: String, fromModelPrivacyPreserving: Bool)
+
+    /// Event Trigger: User dismisses the model-switch notice shown after selecting Create Image.
+    case createImageModelSwitchNoticeDismissed
+
+    /// Event Trigger: Create Image cannot find an accessible image-capable model.
+    case createImageUnavailable
+
+    /// Error monitor: a Create Image prompt is submitted while the selected model is known not to support image generation.
+    case createImageSubmittedWithUnsupportedModel
+
     /// Event Trigger: User activates web search mode via the Tools menu
     case webSearchActivated
 
@@ -149,6 +161,14 @@ enum PromptBarPixel: PixelKit.Event {
             return "aichat_promptbar_image_generation_deactivated"
         case .imageGenerationSubmitted:
             return "aichat_promptbar_image_generation_submitted"
+        case .createImageModelSwitched:
+            return "aichat_promptbar_create_image_model_switched"
+        case .createImageModelSwitchNoticeDismissed:
+            return "aichat_promptbar_create_image_model_switch_notice_dismissed"
+        case .createImageUnavailable:
+            return "aichat_promptbar_create_image_unavailable"
+        case .createImageSubmittedWithUnsupportedModel:
+            return "aichat_promptbar_create_image_submitted_with_unsupported_model"
         case .webSearchActivated:
             return "aichat_promptbar_web_search_activated"
         case .webSearchDeactivated:
@@ -197,6 +217,9 @@ enum PromptBarPixel: PixelKit.Event {
                 .imageGenerationActivated,
                 .imageGenerationDeactivated,
                 .imageGenerationSubmitted,
+                .createImageModelSwitchNoticeDismissed,
+                .createImageUnavailable,
+                .createImageSubmittedWithUnsupportedModel,
                 .webSearchActivated,
                 .webSearchDeactivated,
                 .webSearchSubmitted,
@@ -217,6 +240,13 @@ enum PromptBarPixel: PixelKit.Event {
             return ["fileCount": String(fileCount)]
         case .fileValidationFailed(let reason):
             return ["reason": reason]
+        case .createImageModelSwitched(let fromModelId, let toModelId, let fromModelPrivacyPreserving):
+            return [
+                "from_model_id": fromModelId,
+                "to_model_id": toModelId,
+                "from_model_privacy_preserving": String(fromModelPrivacyPreserving),
+                "entry_point": "tools_menu"
+            ]
         case .dismissedWithoutSubmission(let reason, let hadText):
             return ["reason": reason.rawValue, "had_text": String(hadText)]
         case .state(let shortcutEnabled, let menuBarIconEnabled):

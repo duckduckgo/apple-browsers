@@ -20,7 +20,7 @@
 import Foundation
 import Common
 import FoundationExtensions
-import PixelKit
+import WideEvent
 
 /// Wide-event payload for the post-idle session pixel
 /// (`m_ios_wide_post_idle_session`). Captures the full journey of an

@@ -1198,6 +1198,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // Ahead of the pixel: this card is not a usage message, so closing it must not report
             // a dismissal against whichever usage exposure happens to be open.
             if createImageModelSwitchNotice != nil {
+                omnibarController.pixelHandler.fire(.createImageModelSwitchNoticeDismissed)
                 clearCreateImageModelSwitchNotice()
                 return
             }

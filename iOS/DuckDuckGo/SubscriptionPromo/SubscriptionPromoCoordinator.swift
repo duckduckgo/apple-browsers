@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Core
 import Foundation
+import PixelKit
 import PrivacyConfig
 import Subscription
 import FeatureFlags_iOS
@@ -50,7 +51,7 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
     private let tutorialSettings: TutorialSettings
     private let statisticsStore: StatisticsStore
     private let subscriptionManager: any SubscriptionManager
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
     init(
         daxDialogsSettings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
@@ -58,7 +59,7 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
         statisticsStore: StatisticsStore = StatisticsUserDefaults(),
         subscriptionManager: any SubscriptionManager,
-        pixelFiring: PixelFiring.Type = Pixel.self
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
         self.daxDialogsSettings = daxDialogsSettings
         self.featureFlagger = featureFlagger
@@ -160,7 +161,7 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
     }
 
     private func firePixel(_ event: Pixel.Event) {
-        pixelFiring.fire(event, withAdditionalParameters: pixelParameters)
+        pixelFiring?.fire(event, options: .parameters(pixelParameters))
     }
 
     private func redirectOrigin() -> SubscriptionFunnelOrigin {

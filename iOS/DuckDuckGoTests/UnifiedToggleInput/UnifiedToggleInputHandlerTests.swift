@@ -234,6 +234,21 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    /// The greyed-out button is not the only route into a prompt: the keyboard return key and
+    /// Paste & Go both come through here.
+    func test_submitText_whenInputIsBlockedByUsageLimit_doesNotFirePublisher() {
+        var fired = false
+        sut.textSubmissionPublisher
+            .sink { _ in fired = true }
+            .store(in: &cancellables)
+        sut.isInputBlockedByUsageLimit = true
+
+        sut.submitText("hello")
+        sut.submitAIChatAttachmentOnlyPrompt()
+
+        XCTAssertFalse(fired)
+    }
+
     func test_submitText_emptyString_doesNotFirePublisher() {
         var fired = false
         sut.textSubmissionPublisher

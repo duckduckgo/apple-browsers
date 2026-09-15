@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import WebKit
 
 /**
  *
@@ -44,17 +45,24 @@ final class PullToRefreshViewAdapter: NSObject {
         // Base values for portrait orientation on standard devices
         static let refreshTriggerRatio: CGFloat = 0.3 // % of container height as float
 
-        // Minimum values to ensure usability on very small screens
-        static let minimumPullLimit: CGFloat = 120
         static let minimumTriggerThreshold: CGFloat = 80
+        static let maximumFloatingUITriggerThreshold: CGFloat = 120
+        static let refreshingPullDistance: CGFloat = 80
     }
 
     private var refreshTriggerThreshold: CGFloat {
         let containerHeight = pullableView?.bounds.height ?? UIScreen.main.bounds.height
-        let calculatedThreshold = containerHeight * Constant.refreshTriggerRatio
-        return max(calculatedThreshold, Constant.minimumTriggerThreshold)
+        return Self.refreshTriggerThreshold(containerHeight: containerHeight,
+                                            isFloatingUIEnabled: isFloatingUIEnabled)
     }
 
+    static func refreshTriggerThreshold(containerHeight: CGFloat, isFloatingUIEnabled: Bool) -> CGFloat {
+        let calculatedThreshold = containerHeight * Constant.refreshTriggerRatio
+        let threshold = max(calculatedThreshold, Constant.minimumTriggerThreshold)
+        return isFloatingUIEnabled ? min(threshold, Constant.maximumFloatingUITriggerThreshold) : threshold
+    }
+
+    private let backdropView = UIView()
     private let fakeScrollView = UIScrollView()
     private let refreshControl = UIRefreshControl()
     private var topConstraint: NSLayoutConstraint?
@@ -66,17 +74,65 @@ final class PullToRefreshViewAdapter: NSObject {
     private var didTriggerRefresh = false
     private var didEndRefreshing = false
     private var initialTranslationY: CGFloat = 0
+    private var didBeginGestureAtTop = false
+    private var pullableViewClipsToBoundsBeforePull: Bool?
+    private var pullableViewBackgroundColorBeforePull: UIColor?
+    private var webViewBackgroundColorBeforePull: UIColor?
+    private var refreshBackgroundColorDuringPull: UIColor?
+    private var isNativeErrorPageVisible = false
 
     private weak var scrollView: UIScrollView?
     private weak var pullableView: UIView?
+    private weak var webView: WKWebView?
+    private let isFloatingUIEnabled: Bool
     private let onRefresh: () -> Void
 
     var backgroundColor: UIColor? {
         didSet {
-            fakeScrollView.backgroundColor = backgroundColor ?? UIColor(designSystemColor: .background)
-            // Set refresh control tint color based on background brightness
-            refreshControl.tintColor = determineRefreshControlTintColor(for: backgroundColor)
+            webViewBackgroundDidChange()
         }
+    }
+
+    private var isFloatingRefreshBackgroundActive: Bool {
+        isFloatingUIEnabled && pullableViewClipsToBoundsBeforePull != nil
+    }
+
+    private var pageBackgroundColor: UIColor? {
+        if isFloatingUIEnabled {
+            return isNativeErrorPageVisible ? nil : refreshBackgroundColorDuringPull ?? webView?.underPageBackgroundColor
+        }
+        return backgroundColor
+    }
+
+    static func refreshBackgroundColor(pageBackgroundColor: UIColor?) -> UIColor {
+        pageBackgroundColor ?? UIColor(designSystemColor: .background)
+    }
+
+    static func pullableViewRestingOffset(isRefreshing: Bool, isFloatingUIEnabled: Bool) -> CGFloat {
+        isRefreshing && isFloatingUIEnabled ? Constant.refreshingPullDistance : 0
+    }
+
+    static func applyRefreshBackgroundColor(_ backgroundColor: UIColor, to webView: WKWebView) {
+        webView.backgroundColor = backgroundColor
+        webView.scrollView.backgroundColor = backgroundColor
+        webView.underPageBackgroundColor = backgroundColor
+    }
+
+    func webViewBackgroundDidChange() {
+        applyBackgroundColor()
+        if isFloatingRefreshBackgroundActive {
+            applyFloatingRefreshBackground()
+        }
+    }
+
+    func webViewUnderPageBackgroundDidChange() {
+        applyBackgroundColor()
+    }
+
+    func setNativeErrorPageVisible(_ isVisible: Bool) {
+        guard isFloatingUIEnabled, isNativeErrorPageVisible != isVisible else { return }
+        isNativeErrorPageVisible = isVisible
+        applyBackgroundColor()
     }
 
     private func determineRefreshControlTintColor(for backgroundColor: UIColor?) -> UIColor {
@@ -103,30 +159,65 @@ final class PullToRefreshViewAdapter: NSObject {
      */
     init(with scrollView: UIScrollView,
          pullableView: UIView,
+         webView: WKWebView? = nil,
+         isFloatingUIEnabled: Bool,
          onRefresh: @escaping () -> Void) {
         self.scrollView = scrollView
         self.pullableView = pullableView
+        self.webView = webView
+        self.isFloatingUIEnabled = isFloatingUIEnabled
         self.onRefresh = onRefresh
 
         super.init()
         setupBackgroundScrollView(basedOn: pullableView)
         fakeScrollView.refreshControl = refreshControl
         setupPanGestureRecognizer()
-        refreshControl.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        if isFloatingUIEnabled {
+            applyBackgroundColor()
+        } else {
+            refreshControl.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        }
+    }
+
+    private func applyBackgroundColor() {
+        let refreshBackgroundColor = Self.refreshBackgroundColor(pageBackgroundColor: pageBackgroundColor)
+        backdropView.backgroundColor = refreshBackgroundColor
+        fakeScrollView.backgroundColor = .clear
+        refreshControl.backgroundColor = isFloatingUIEnabled ? .clear : refreshBackgroundColor
+        refreshControl.tintColor = determineRefreshControlTintColor(for: refreshBackgroundColor)
+
+        if isFloatingUIEnabled, !isFloatingRefreshBackgroundActive {
+            scrollView?.backgroundColor = refreshBackgroundColor
+        }
     }
 
     private func setupBackgroundScrollView(basedOn view: UIView) {
+        guard let superview = view.superview else { return }
+
+        backdropView.translatesAutoresizingMaskIntoConstraints = false
+        superview.insertSubview(backdropView, at: 0)
+
         // Set up the background scroll view that will be visible when pulling down
         fakeScrollView.backgroundColor = .clear
         fakeScrollView.translatesAutoresizingMaskIntoConstraints = false
         fakeScrollView.isScrollEnabled = true // Enable scrolling for refresh control
-
-        view.superview?.addSubview(fakeScrollView)
-        view.superview?.sendSubviewToBack(fakeScrollView)
+        fakeScrollView.clipsToBounds = false
+        if isFloatingUIEnabled {
+            fakeScrollView.isUserInteractionEnabled = false
+            fakeScrollView.contentInsetAdjustmentBehavior = .never
+            superview.insertSubview(fakeScrollView, aboveSubview: view)
+        } else {
+            superview.insertSubview(fakeScrollView, aboveSubview: backdropView)
+        }
 
         let topConstraint = fakeScrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
         self.topConstraint = topConstraint
+
         NSLayoutConstraint.activate([
+            backdropView.topAnchor.constraint(equalTo: superview.topAnchor),
+            backdropView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backdropView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backdropView.bottomAnchor.constraint(equalTo: superview.bottomAnchor),
             topConstraint,
             fakeScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             fakeScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -159,37 +250,61 @@ final class PullToRefreshViewAdapter: NSObject {
         switch gesture.state {
         case .began:
             initialTranslationY = 0
+            if let scrollView {
+                didBeginGestureAtTop = isFloatingUIEnabled && isAtTop(scrollView)
+            }
         case .changed:
             let translation = gesture.translation(in: pullableView)
-            handleVerticalChange(translationY: translation.y)
+            handleVerticalChange(translation: translation)
         case .ended, .cancelled:
+            let shouldKeepRefreshVisible = refreshControl.isRefreshing && !didEndRefreshing
             resetPullState()
-            animatePullableViewToOriginalPosition()
+            animatePullableViewToRestingPosition(whileRefreshing: shouldKeepRefreshVisible)
         default:
             break
         }
     }
 
-    private func handleVerticalChange(translationY: CGFloat) {
+    private func handleVerticalChange(translation: CGPoint) {
         guard let scrollView else { return }
+        guard isRefreshControlEnabled, !isPullSuspended else { return }
+        guard isPulling || translation.y > abs(translation.x) else { return }
 
         let wasNotPulling = !isPulling
         startPullingIfAtTop(of: scrollView)
         if isPulling {
             if wasNotPulling {
-                initialTranslationY = translationY
+                initialTranslationY = didBeginGestureAtTop ? 0 : translation.y
             }
-            let pullDistance = calculatePullDistance(translationY: translationY)
+            let pullDistance = calculatePullDistance(translationY: translation.y)
             handlePullEffect(pullDistance: pullDistance)
             triggerRefreshIfNeeded(pullDistance: pullDistance)
         }
     }
 
     private func startPullingIfAtTop(of scrollView: UIScrollView) {
-        if scrollView.contentOffset.y < 0 {
+        if isAtTop(scrollView) {
+            if !isPulling, isFloatingUIEnabled, pullableViewClipsToBoundsBeforePull == nil {
+                pullableViewClipsToBoundsBeforePull = pullableView?.clipsToBounds
+                pullableView?.clipsToBounds = true
+                pullableViewBackgroundColorBeforePull = pullableView?.backgroundColor
+                if let webView {
+                    webViewBackgroundColorBeforePull = webView.backgroundColor
+                    refreshBackgroundColorDuringPull = Self.refreshBackgroundColor(
+                        pageBackgroundColor: webView.underPageBackgroundColor
+                    )
+                }
+                applyFloatingRefreshBackground()
+            }
             scrollView.bounces = false
             isPulling = true
         }
+    }
+
+    private func isAtTop(_ scrollView: UIScrollView) -> Bool {
+        isFloatingUIEnabled
+            ? scrollView.contentOffset.y <= -scrollView.adjustedContentInset.top
+            : scrollView.contentOffset.y < 0
     }
 
     private func calculatePullDistance(translationY: CGFloat) -> CGFloat {
@@ -210,14 +325,31 @@ final class PullToRefreshViewAdapter: NSObject {
     }
 
     private func handlePullEffect(pullDistance: CGFloat) {
+        applyFloatingRefreshBackground()
+        if isFloatingUIEnabled, let scrollView {
+            scrollView.contentOffset.y = -scrollView.adjustedContentInset.top
+        }
+
         // Move the pullable view down based on pull distance
-        pullableView?.transform = CGAffineTransform(translationX: pullableView?.frame.origin.x ?? 0,
-                                                    y: pullDistance)
+        pullableView?.transform = CGAffineTransform(translationX: 0, y: pullDistance)
 
         // Update the background scroll view's content offset to match the pull
         // We only adjust the content offset if not refreshing to avoid hiding the refresh spinner
         if !refreshControl.isRefreshing {
             fakeScrollView.contentOffset.y = -pullDistance * 0.5
+        }
+    }
+
+    private func applyFloatingRefreshBackground() {
+        guard isFloatingUIEnabled else { return }
+        let refreshBackgroundColor = Self.refreshBackgroundColor(pageBackgroundColor: pageBackgroundColor)
+        backdropView.backgroundColor = refreshBackgroundColor
+        refreshControl.backgroundColor = .clear
+        refreshControl.tintColor = determineRefreshControlTintColor(for: refreshBackgroundColor)
+        pullableView?.backgroundColor = refreshBackgroundColor
+        scrollView?.backgroundColor = refreshBackgroundColor
+        if let webView {
+            Self.applyRefreshBackgroundColor(refreshBackgroundColor, to: webView)
         }
     }
 
@@ -232,19 +364,39 @@ final class PullToRefreshViewAdapter: NSObject {
         isPulling = false
         scrollView?.bounces = true
         didTriggerRefresh = false
+        didBeginGestureAtTop = false
         if didEndRefreshing {
             refreshControl.endRefreshing()
             didEndRefreshing = false
         }
     }
 
-    private func animatePullableViewToOriginalPosition() {
+    private func animatePullableViewToRestingPosition(whileRefreshing: Bool) {
+        let restingOffset = Self.pullableViewRestingOffset(isRefreshing: whileRefreshing,
+                                                           isFloatingUIEnabled: isFloatingUIEnabled)
         UIView.animate(withDuration: 0.2, delay: 0.0, options: .curveEaseInOut) {
-            self.pullableView?.transform = .identity
-            if !self.refreshControl.isRefreshing {
+            self.pullableView?.transform = CGAffineTransform(translationX: 0, y: restingOffset)
+            if !whileRefreshing {
                 self.fakeScrollView.contentOffset.y = 0
             }
+        } completion: { _ in
+            if restingOffset == 0 {
+                self.restorePullableViewClippingIfNeeded()
+            }
         }
+    }
+
+    private func restorePullableViewClippingIfNeeded() {
+        guard !isPulling, let pullableViewClipsToBoundsBeforePull else { return }
+        pullableView?.clipsToBounds = pullableViewClipsToBoundsBeforePull
+        pullableView?.backgroundColor = pullableViewBackgroundColorBeforePull
+        pullableViewBackgroundColorBeforePull = nil
+        webView?.backgroundColor = webViewBackgroundColorBeforePull
+        webViewBackgroundColorBeforePull = nil
+        webView?.underPageBackgroundColor = nil
+        refreshBackgroundColorDuringPull = nil
+        self.pullableViewClipsToBoundsBeforePull = nil
+        applyBackgroundColor()
     }
 
     private func beginRefreshing() {
@@ -263,7 +415,7 @@ final class PullToRefreshViewAdapter: NSObject {
         didEndRefreshing = true
         if !isPulling {
             refreshControl.endRefreshing()
-            animatePullableViewToOriginalPosition()
+            animatePullableViewToRestingPosition(whileRefreshing: false)
         }
     }
 

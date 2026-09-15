@@ -32,6 +32,7 @@ import Suggestions
 import AIChat
 import RemoteMessaging
 import FeatureFlags_iOS
+import PixelKit
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)
@@ -1050,8 +1051,8 @@ extension UnifiedInputContentContainerViewController {
 
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion) {
         let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
-        DailyPixel.fireDailyAndCount(pixel: pixel)
-        Pixel.fire(pixel: .autocompleteDuckAIClickChatHistory)
+        PixelKit.fire(pixel, frequency: .dailyAndCount)
+        PixelKit.fire(Pixel.Event.autocompleteDuckAIClickChatHistory)
 
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
         delegate?.unifiedInputEditingStateDidSelectChatHistory(url: url)
@@ -1063,7 +1064,7 @@ extension UnifiedInputContentContainerViewController {
     }
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {
-        Pixel.fire(pixel: .autocompleteDuckAIClickSearchDuckDuckGo)
+        PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSearchDuckDuckGo)
         // Symmetric with Search-side "Ask privately" (which calls openAIChat with autoSend:true):
         // flip toggle to Search and submit the query in one step.
         switchBarHandler.setToggleState(.search)
@@ -1086,13 +1087,13 @@ extension UnifiedInputContentContainerViewController {
     private func fireDuckAISuggestionClickPixel(for suggestion: Suggestion) {
         switch suggestion {
         case .website:
-            Pixel.fire(pixel: .autocompleteDuckAIClickWebsite)
+            PixelKit.fire(Pixel.Event.autocompleteDuckAIClickWebsite)
         case .bookmark(_, _, let isFavorite, _):
-            Pixel.fire(pixel: isFavorite ? .autocompleteDuckAIClickFavorite : .autocompleteDuckAIClickBookmark)
+            PixelKit.fire(isFavorite ? Pixel.Event.autocompleteDuckAIClickFavorite : .autocompleteDuckAIClickBookmark)
         case .historyEntry(_, let url, _):
-            Pixel.fire(pixel: url.isDuckDuckGoSearch ? .autocompleteDuckAIClickHistorySearch : .autocompleteDuckAIClickHistorySite)
+            PixelKit.fire(url.isDuckDuckGoSearch ? Pixel.Event.autocompleteDuckAIClickHistorySearch : .autocompleteDuckAIClickHistorySite)
         case .openTab:
-            Pixel.fire(pixel: .autocompleteDuckAIClickSwitchToTab)
+            PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSwitchToTab)
         case .phrase, .internalPage, .unknown, .askAIChat:
             break
         }
@@ -1105,23 +1106,23 @@ extension UnifiedInputContentContainerViewController {
 /// switch-tab exactly like the standalone NTP.
 extension UnifiedInputContentContainerViewController: NewTabPageControllerDelegate {
 
-    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+    func newTabPageDidSelectFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         delegate?.unifiedInputEditingStateDidSelectFavorite(favorite)
     }
 
-    func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+    func newTabPageDidEditFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         delegate?.unifiedInputEditingStateDidEditFavorite(favorite)
     }
 
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
+    func newTabPageDidRequestSwitchToTab(_ controller: any NewTabPage, tab: Tab) {
         delegate?.unifiedInputEditingStateDidRequestSwitchTab(tab)
     }
 
-    func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
+    func newTabPageDidRequestTabSwitcher(_ controller: any NewTabPage) {
         delegate?.unifiedInputEditingStateDidRequestTabSwitcher()
     }
 
-    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {}
+    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: any NewTabPage) {}
 
     func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {}
 }

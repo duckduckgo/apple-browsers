@@ -61,13 +61,23 @@ Each auto-close adds a one-line story explaining why.
 Tagging and following branch owners
 -----------------------------------
 If a user-map file is provided via ``CW_USER_MAP_PATH`` (a flat YAML of
-``github_login: asana_user_gid``), mapped branch authors are added as
-task followers at creation time. The kickoff comment posted immediately
-afterwards also ``@``-mentions both authors using Asana's rich-text
-format (``<a data-asana-gid="…"/>``). Adding followers explicitly keeps
-the long-term association independent of Asana's mention behaviour.
-When ``CW_NO_MENTIONS=1`` no followers are added, the mentions collapse
-to plain author names, and no notification fires.
+``github_login: asana_user_gid``), branch authors can be added as task
+followers at creation time and ``@``-mentioned in the kickoff comment
+using Asana's rich-text format (``<a data-asana-gid="…"/>``). Adding
+followers explicitly keeps the long-term association independent of
+Asana's mention behaviour.
+
+Being in the user map is not consent to be notified. Under the default
+``CW_MENTION_MEMBERS_ONLY=1``, only people who have **joined the target
+Asana project** are mentioned and followed; everyone else appears in the
+comment as a plain name with no tag, so a task about their branch reads
+correctly but never lands in their inbox. Joining the project is the
+opt-in; leaving it is the opt-out. If the membership list can't be read
+the run fails closed — plain names, no followers — because each pair is
+written exactly once, so a wrong guess can't be taken back.
+
+``CW_NO_MENTIONS=1`` still suppresses everything regardless of
+membership.
 
 Configuration
 -------------
@@ -102,6 +112,10 @@ Optional (defaults shown):
                            kickoff comments with plain author names instead
                            of Asana @-mentions — no inbox notification fires;
                            useful for first-run pilots)
+    CW_MENTION_MEMBERS_ONLY=1
+                          (0 to mention and follow every author found in the
+                           user map. Default 1 restricts both to people who
+                           joined CW_ASANA_PROJECT_GID)
     CW_BOT_AUTHORS=…      (comma-separated GitHub logins to skip)
     CW_BRANCH_SKIP_PATTERNS=…
                           (comma-separated fnmatch globs on branch name;
@@ -212,6 +226,13 @@ MIN_CONFLICT_LINES = int(os.environ.get("CW_MIN_CONFLICT_LINES", "20"))
 # run writes tasks without notifying anyone. Useful for the first real write
 # while the team is still inspecting filter output.
 NO_MENTIONS = os.environ.get("CW_NO_MENTIONS", "0").lower() in ("1", "true", "yes")
+# Only @-mention and add-as-follower people who have joined the target Asana
+# project. Joining is the opt-in signal: everyone else is named in plain text,
+# so the task still reads correctly but never reaches their inbox. Set to 0 to
+# notify every author we can map to an Asana gid, member or not.
+MENTION_MEMBERS_ONLY = os.environ.get(
+    "CW_MENTION_MEMBERS_ONLY", "1"
+).lower() in ("1", "true", "yes")
 
 DEFAULT_BOT_AUTHORS = (
     "dependabot[bot],"
@@ -257,11 +278,26 @@ class Branch:
     author_email: str
     github_login: Optional[str] = None
     asana_gid: Optional[str] = None
+    # True when asana_gid belongs to someone who joined ASANA_PROJECT_GID.
+    is_project_member: bool = False
     pr_url: Optional[str] = None
 
     @property
     def short_sha(self) -> str:
         return self.sha[:7]
+
+    @property
+    def mentionable_gid(self) -> Optional[str]:
+        """Asana gid to notify with, or ``None`` when we deliberately
+        won't. Gated on project membership so conflict-watch only reaches
+        the inbox of people who opted in by joining the project — being
+        in the github→asana user map isn't consent to be pinged.
+        """
+        if not self.asana_gid:
+            return None
+        if MENTION_MEMBERS_ONLY and not self.is_project_member:
+            return None
+        return self.asana_gid
 
     @property
     def owner_key(self) -> str:
@@ -332,6 +368,8 @@ class RunSummary:
     pairs_below_line_threshold: int = 0
     pairs_same_author: int = 0
     pairs_already_reported: int = 0
+    project_members_loaded: int = 0
+    authors_not_project_members: int = 0
     tasks_created: int = 0
     tasks_auto_closed_merged: int = 0
     tasks_auto_closed_resolved: int = 0
@@ -982,6 +1020,35 @@ class AsanaClient:
                 break
         return out
 
+    def list_project_member_gids(self) -> set[str]:
+        """Return the Asana user gids of everyone who joined the project.
+
+        Membership is conflict-watch's opt-in signal for notifications:
+        people who joined the project want these tasks in their inbox,
+        people who didn't get named in plain text instead. This is a read,
+        so it runs in dry-run too — it only needs a PAT.
+        """
+        gids: set[str] = set()
+        offset: Optional[str] = None
+        while True:
+            params: dict = {"opt_fields": "user", "limit": 100}
+            if offset:
+                params["offset"] = offset
+            data = self._request(
+                "GET",
+                f"/projects/{self.project_gid}/project_memberships",
+                params=params,
+            )
+            for item in data.get("data", []):
+                gid = (item.get("user") or {}).get("gid")
+                if gid:
+                    gids.add(str(gid))
+            next_page = data.get("next_page") or {}
+            offset = next_page.get("offset")
+            if not offset:
+                break
+        return gids
+
     def create_task(self, name: str, html_notes: str,
                     follower_gids: Optional[list[str]] = None) -> dict:
         if self.dry_run:
@@ -1022,20 +1089,19 @@ class AsanaClient:
 # ---------------------------------------------------------------------------
 
 def asana_mention(b: Branch) -> str:
-    """Asana rich-text mention if we have the user's gid; otherwise a
-    plain-text label that won't notify.
+    """Asana rich-text mention for authors who joined the project;
+    a plain-text name for everyone else.
 
-    Honours ``CW_NO_MENTIONS=1`` by always returning a plain-text label —
-    no Asana-mention HTML, no leading ``@`` — so the task body shows the
-    author name as context but generates no inbox notification.
+    The plain-text branch deliberately carries no leading ``@`` — a
+    string that looks like a tag but notifies nobody is worse than a
+    bare name. ``CW_NO_MENTIONS=1`` forces plain text for everyone.
     """
     if NO_MENTIONS:
-        return html_escape(b.author_name or b.github_login or b.author_email or "unknown")
-    if b.asana_gid:
-        return f'<a data-asana-gid="{html_escape(b.asana_gid)}"/>'
-    if b.github_login:
-        return f"@{html_escape(b.github_login)}"
-    return html_escape(b.author_name or b.author_email or "unknown")
+        return _author_label(b)
+    gid = b.mentionable_gid
+    if gid:
+        return f'<a data-asana-gid="{html_escape(gid)}"/>'
+    return _author_label(b)
 
 
 def _author_label(b: Branch) -> str:
@@ -1056,13 +1122,15 @@ def _branches_alpha(pair: ConflictPair) -> tuple[Branch, Branch]:
 
 
 def _follower_gids(pair: ConflictPair) -> list[str]:
-    """Mapped branch-owner gids to add as followers at task creation."""
+    """Branch-owner gids to add as followers at task creation — only
+    people who joined the project, so a task never starts feeding the
+    inbox of someone who never opted into it."""
     if NO_MENTIONS:
         return []
     return list(dict.fromkeys(
-        branch.asana_gid
+        branch.mentionable_gid
         for branch in _branches_alpha(pair)
-        if branch.asana_gid
+        if branch.mentionable_gid
     ))
 
 
@@ -1125,25 +1193,26 @@ def render_task_body_html(pair: ConflictPair, today_local: str) -> str:
 
 
 def render_creation_comment_html(pair: ConflictPair) -> str:
-    """Kickoff comment posted after mapped authors become task followers.
+    """Kickoff comment posted after project members become task followers.
 
-    Carries @-mentions and a short next-steps prompt. In NO_MENTIONS mode
-    the lead-in switches to plain author names and no notification fires.
+    @-mentions the authors who joined the project; the rest are named in
+    plain text and get no notification. When neither author is
+    mentionable the lead-in drops to "Heads up" so the sentence doesn't
+    promise a ping it isn't sending.
     """
     a_branch, b_branch = _branches_alpha(pair)
     rest = (
         " — your branches are likely to conflict at merge. "
         "You can use this thread to coordinate."
     )
-    if NO_MENTIONS:
-        head = (
-            f"Heads up {_author_label(a_branch)} and {_author_label(b_branch)}"
-        )
-    else:
-        head = (
-            f"Hey {asana_mention(a_branch)} {asana_mention(b_branch)}"
-        )
-    return f"<body>{head}{rest}</body>"
+    anyone_notified = not NO_MENTIONS and any(
+        b.mentionable_gid for b in (a_branch, b_branch)
+    )
+    lead = "Hey" if anyone_notified else "Heads up"
+    return (
+        f"<body>{lead} {asana_mention(a_branch)} and "
+        f"{asana_mention(b_branch)}{rest}</body>"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1537,6 +1606,56 @@ def run_self_test() -> int:
         else:
             print("PASS: parse_user_map → flat mapping with comments + skips")
 
+        # Mention gating on project membership
+        global MENTION_MEMBERS_ONLY
+        saved_members_only = MENTION_MEMBERS_ONLY
+        try:
+            MENTION_MEMBERS_ONLY = True
+            member = Branch("feat/a", "a" * 40, "", "Ada Lovelace", "ada@x",
+                            github_login="ada", asana_gid="111",
+                            is_project_member=True)
+            outsider = Branch("feat/b", "b" * 40, "", "Bob Stranger", "bob@x",
+                              github_login="bob", asana_gid="222",
+                              is_project_member=False)
+            pair = ConflictPair(a=member, b=outsider, merge_base="c" * 40,
+                                hard_files=["X"], hard_conflict_lines=42)
+
+            followers = _follower_gids(pair)
+            if followers != ["111"]:
+                print(f"FAIL: _follower_gids → {followers} (expected ['111'])")
+                ok = False
+            else:
+                print("PASS: _follower_gids → project members only")
+
+            comment = render_creation_comment_html(pair)
+            if ('data-asana-gid="111"' not in comment
+                    or "222" in comment
+                    or "Bob Stranger" not in comment):
+                print(f"FAIL: kickoff comment gating → {comment}")
+                ok = False
+            else:
+                print("PASS: kickoff comment tags the member, names the "
+                      "non-member in plain text")
+
+            outsider_only = ConflictPair(a=outsider, b=outsider,
+                                         merge_base="c" * 40)
+            if not render_creation_comment_html(outsider_only).startswith(
+                    "<body>Heads up "):
+                print("FAIL: all-non-member comment should lead with "
+                      "'Heads up'")
+                ok = False
+            else:
+                print("PASS: all-non-member comment leads with 'Heads up'")
+
+            MENTION_MEMBERS_ONLY = False
+            if _follower_gids(pair) != ["111", "222"]:
+                print("FAIL: CW_MENTION_MEMBERS_ONLY=0 should follow both")
+                ok = False
+            else:
+                print("PASS: CW_MENTION_MEMBERS_ONLY=0 restores old behaviour")
+        finally:
+            MENTION_MEMBERS_ONLY = saved_members_only
+
         # _matches_always_ignore against defaults
         cases = [
             ("App.pbxproj", True),
@@ -1769,6 +1888,37 @@ def main() -> int:
     if user_map:
         logger.info("Loaded user map with %d entries", len(user_map))
 
+    # Who has actually joined the Asana project? Only those people get
+    # @-mentioned and added as followers; everyone else is named in plain
+    # text so we don't fill the inbox of someone who never opted in.
+    member_gids: set[str] = set()
+    if MENTION_MEMBERS_ONLY and not NO_MENTIONS and pat:
+        try:
+            member_gids = asana.list_project_member_gids()
+            summary.project_members_loaded = len(member_gids)
+            if member_gids:
+                logger.info("Asana project %s has %d members eligible for "
+                            "mentions", ASANA_PROJECT_GID, len(member_gids))
+            else:
+                # A real project always has at least its creator, so an
+                # empty list usually means the response shape changed
+                # rather than that everybody left.
+                logger.warning(
+                    "Asana project %s reported zero members — nobody will be "
+                    "tagged this run; check the project_memberships response",
+                    ASANA_PROJECT_GID,
+                )
+        except AsanaError as exc:
+            # Fail closed. An unreadable member list means we can't tell
+            # who opted in, and each pair is written exactly once ever —
+            # a wrong guess permanently spams someone who didn't ask.
+            # Naming everyone in plain text loses nothing but a ping.
+            summary.errors.append(f"project membership fetch failed: {exc}")
+            logger.error(
+                "Could not read project membership (%s); this run names all "
+                "authors in plain text and adds no followers", exc
+            )
+
     kept: list[Branch] = []
     for b in branches:
         b.github_login = lookup_github_login(b.sha)
@@ -1778,6 +1928,7 @@ def main() -> int:
             continue
         if b.github_login and b.github_login in user_map:
             b.asana_gid = user_map[b.github_login]
+            b.is_project_member = b.asana_gid in member_gids
         pr_status = lookup_branch_pr_status(b.name)
         # PR-state filter: if every PR for this branch is non-open, the
         # engineer isn't actively heading toward merge. Closes the
@@ -1792,6 +1943,18 @@ def main() -> int:
         kept.append(b)
     branches = kept
     summary.branches_checked = len(branches)
+
+    # Mapped to an Asana account but not in the project — these people are
+    # named without a tag. Logged by name so it's obvious from the run
+    # artifact who to invite if they *do* want the pings.
+    non_member_logins = sorted({
+        b.github_login for b in branches
+        if b.github_login and b.asana_gid and not b.is_project_member
+    })
+    summary.authors_not_project_members = len(non_member_logins)
+    if non_member_logins:
+        logger.info("Mapped but not in the project (mentioned by name only): "
+                    "%s", ", ".join(non_member_logins))
 
     state = load_state()
     conflicts: list[ConflictPair] = []

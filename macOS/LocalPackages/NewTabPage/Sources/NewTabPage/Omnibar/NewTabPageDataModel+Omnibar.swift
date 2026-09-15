@@ -97,6 +97,18 @@ public extension NewTabPageDataModel {
         }
     }
 
+    struct OmnibarCreateImageModelSwitch: Codable, Equatable {
+        let message: String
+        let secondaryText: String?
+        let dismissible: Bool
+
+        public init(message: String, secondaryText: String?, dismissible: Bool = true) {
+            self.message = message
+            self.secondaryText = secondaryText
+            self.dismissible = dismissible
+        }
+    }
+
     /// Attachment limits forwarded to the web. All optional: `files`/`images` are backend-sourced; `tabs` is a hardcoded native cap, omitted when the limit is disabled (web then applies no tab limit).
     struct AttachmentLimits: Codable, Equatable {
         public struct FileLimits: Codable, Equatable {
@@ -195,6 +207,14 @@ public extension NewTabPageDataModel {
         let enableAiChatDeletion: Bool?
         /// When true, history-entry suggestions show a delete button that sends `omnibar_removeSuggestion`.
         let enableSearchSuggestionDeletion: Bool?
+        /// Enables the native-driven Create Image model-switch flow in the web omnibar.
+        var enableUpdatedCreateImage: Bool?
+        /// Native-localized notice shown after Create Image switches away from an unsupported model.
+        var createImageModelSwitch: OmnibarCreateImageModelSwitch?
+    }
+
+    struct OmnibarSetImageGenerationActive: Codable, Equatable {
+        let active: Bool
     }
 
     // MARK: - omnibar_getSuggestions

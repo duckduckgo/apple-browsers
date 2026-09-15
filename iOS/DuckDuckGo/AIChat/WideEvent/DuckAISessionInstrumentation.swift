@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 /// What the Duck.ai session instrumentation needs to know about the tab on screen.
 struct DuckAISessionTabSnapshot: Equatable {

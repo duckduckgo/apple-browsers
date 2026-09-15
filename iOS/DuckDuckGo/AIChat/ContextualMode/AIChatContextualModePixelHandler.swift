@@ -43,6 +43,7 @@ protocol AIChatContextualModePixelFiring {
     func fireAddressBarMenuShown()
     func fireAddressBarMenuNewChatSelected()
     func fireAddressBarMenuAskAboutPageSelected()
+    func fireAddressBarMenuRecentChatsSelected()
 
     // MARK: - Floating Input
     func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool)
@@ -116,7 +117,7 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     private let firePixel: (Pixel.Event) -> Void
     private let firePixelWithParameters: (Pixel.Event, [String: String]) -> Void
-    private let fireSelectionPixel: (PixelKit.Event, PixelKit.Frequency) -> Void
+    private let firePixelKitEvent: (PixelKit.Event, PixelKit.Frequency) -> Void
     private let featureDiscovery: FeatureDiscovery
 
     // MARK: - Public Properties
@@ -127,17 +128,17 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     // MARK: - Initialization
 
-    init(firePixel: @escaping (Pixel.Event) -> Void = { DailyPixel.fireDailyAndCount(pixel: $0) },
+    init(firePixel: @escaping (Pixel.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount) },
          firePixelWithParameters: @escaping (Pixel.Event, [String: String]) -> Void = {
-             DailyPixel.fireDailyAndCount(pixel: $0, withAdditionalParameters: $1)
+             PixelKit.fire($0, frequency: .dailyAndCount, options: .parameters($1))
          },
-         fireSelectionPixel: @escaping (PixelKit.Event, PixelKit.Frequency) -> Void = {
+         firePixelKitEvent: @escaping (PixelKit.Event, PixelKit.Frequency) -> Void = {
              PixelKit.fire($0, frequency: $1)
          },
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.firePixel = firePixel
         self.firePixelWithParameters = firePixelWithParameters
-        self.fireSelectionPixel = fireSelectionPixel
+        self.firePixelKitEvent = firePixelKitEvent
         self.featureDiscovery = featureDiscovery
     }
 
@@ -194,6 +195,10 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualAddressBarMenuAskAboutPageSelected)
     }
 
+    func fireAddressBarMenuRecentChatsSelected() {
+        firePixelKitEvent(AIChatAddressBarMenuPixel.recentChatsSelected, .dailyAndCount)
+    }
+
     func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {
         firePixelWithParameters(.aiChatContextualFloatingInputDismissedWithoutSubmission,
                                 [PixelParameters.aiChatHadUnsubmittedSelections: String(hadUnsubmittedSelections)])
@@ -242,15 +247,15 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     // MARK: - Text Selections
 
     func fireSelectionAttached() {
-        fireSelectionPixel(AIChatContextualSelectionPixel.attached, .dailyAndCount)
+        firePixelKitEvent(AIChatContextualSelectionPixel.attached, .dailyAndCount)
     }
 
     func fireSelectionLimitReached() {
-        fireSelectionPixel(AIChatContextualSelectionPixel.limitReached, .dailyAndCount)
+        firePixelKitEvent(AIChatContextualSelectionPixel.limitReached, .dailyAndCount)
     }
 
     func fireSelectionRemoved() {
-        fireSelectionPixel(AIChatContextualSelectionPixel.removed, .dailyAndCount)
+        firePixelKitEvent(AIChatContextualSelectionPixel.removed, .dailyAndCount)
     }
 
     func firePromptSubmittedWithSelections(count: Int) {
@@ -261,11 +266,11 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         case 3...AIChatSelectionContextBuilder.maxAttachedSelections: countBucket = "3-5"
         default: return
         }
-        fireSelectionPixel(AIChatContextualSelectionPixel.promptSubmitted(selectionCount: countBucket), .dailyAndCount)
+        firePixelKitEvent(AIChatContextualSelectionPixel.promptSubmitted(selectionCount: countBucket), .dailyAndCount)
     }
 
     func fireSelectionToolDeliveryTimedOut() {
-        fireSelectionPixel(AIChatContextualSelectionPixel.toolDeliveryTimedOut, .dailyAndCount)
+        firePixelKitEvent(AIChatContextualSelectionPixel.toolDeliveryTimedOut, .dailyAndCount)
     }
 
     // MARK: - Page Context Collection
@@ -402,6 +407,21 @@ enum AIChatContextualSelectionPixel: PixelKit.Event {
         guard case .promptSubmitted(let selectionCount) = self else { return nil }
         return [PixelParameters.aiChatSelectionCount: selectionCount]
     }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
+enum AIChatAddressBarMenuPixel: PixelKit.Event {
+    case recentChatsSelected
+
+    var name: String {
+        switch self {
+        case .recentChatsSelected:
+            return "aichat_contextual_address_bar_menu_all_chats_selected"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }

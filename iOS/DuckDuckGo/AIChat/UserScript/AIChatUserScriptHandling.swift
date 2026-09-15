@@ -31,6 +31,7 @@ import DDGSync
 import Core
 import Persistence
 import FeatureFlags_iOS
+import PixelKit
 
 /// The current display mode of the AI Chat interface.
 enum AIChatDisplayMode {
@@ -122,28 +123,28 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
         static let failureReason = "failureReason"
     }
 
-    init(dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         super.init { event, _, _, _ in
             switch event {
             case .reportMetricDecodingFailed(let error, let failureReason):
-                dailyPixelFiring.fireDailyAndCount(
-                    .aiChatReportMetricDecodeError,
-                    error: error,
-                    withAdditionalParameters: [Parameters.failureReason: failureReason.rawValue]
+                pixelFiring?.fire(
+                    Pixel.Event.aiChatReportMetricDecodeError.withError(error),
+                    frequency: .dailyAndCount,
+                    options: .parameters([Parameters.failureReason: failureReason.rawValue])
                 )
             case .responseStateDecodingFailed(let error, let failureReason):
-                dailyPixelFiring.fireDailyAndCount(
-                    .aiChatResponseStateDecodeError,
-                    error: error,
-                    withAdditionalParameters: [Parameters.failureReason: failureReason.rawValue]
+                pixelFiring?.fire(
+                    Pixel.Event.aiChatResponseStateDecodeError.withError(error),
+                    frequency: .dailyAndCount,
+                    options: .parameters([Parameters.failureReason: failureReason.rawValue])
                 )
             }
         }
     }
 
-    @available(*, unavailable, message: "Use init(dailyPixelFiring:) instead")
+    @available(*, unavailable, message: "Use init(pixelFiring:) instead")
     override init(mapping: @escaping EventMapping<AIChatUserScriptErrorEvent>.Mapping) {
-        fatalError("Use init(dailyPixelFiring:) instead")
+        fatalError("Use init(pixelFiring:) instead")
     }
 }
 
@@ -181,6 +182,8 @@ protocol AIChatUserScriptHandling: AnyObject {
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable?
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
+    func voiceModeOpened(params: Any, message: UserScriptMessage) async -> Encodable?
+    func voiceModeClosed(params: Any, message: UserScriptMessage) async -> Encodable?
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable?
     func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable?
     func showReasoningPicker(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -358,7 +361,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             let pixel: Pixel.Event = syncHandler.isSyncTurnedOn()
                 ? .aiChatTermsAcceptedDuplicateSyncOn
                 : .aiChatTermsAcceptedDuplicateSyncOff
-            DailyPixel.fireDailyAndCount(pixel: pixel)
+            PixelKit.fire(pixel, frequency: .dailyAndCount)
         }
 
         keyValueStore.set(true, forKey: Self.hasAcceptedTermsAndConditionsKey)
@@ -607,13 +610,29 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
         // `object` carries the source webView so listeners can route per-tab (matches macOS).
         NotificationCenter.default.post(name: .aiChatVoiceSessionStarted, object: message.messageWebView)
-        Pixel.fire(pixel: .voiceSessionStarted)
+        PixelKit.fire(Pixel.Event.voiceSessionStarted)
         return nil
     }
 
     @MainActor
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? {
         NotificationCenter.default.post(name: .aiChatVoiceSessionEnded, object: message.messageWebView)
+        return nil
+    }
+
+    @MainActor
+    func voiceModeOpened(params: Any, message: UserScriptMessage) async -> Encodable? {
+        var userInfo: [String: Any] = [:]
+        if let backgroundColor = (params as? [String: Any])?[AIChatNotificationUserInfoKey.voiceModeBackgroundColor] as? String {
+            userInfo[AIChatNotificationUserInfoKey.voiceModeBackgroundColor] = backgroundColor
+        }
+        NotificationCenter.default.post(name: .aiChatVoiceModeOpened, object: message.messageWebView, userInfo: userInfo)
+        return nil
+    }
+
+    @MainActor
+    func voiceModeClosed(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatVoiceModeClosed, object: message.messageWebView)
         return nil
     }
 
@@ -820,13 +839,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     private func fireSyncAiChatActiveDailyIfNeeded() {
-        DailyPixel.fire(pixel: .syncAiChatActiveDaily)
+        PixelKit.fire(Pixel.Event.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
     }
 
     @MainActor
     private func fireSyncDailyAndCountPixel(_ pixel: Pixel.Event,
                                             withAdditionalParameters params: [String: String]) {
-        DailyPixel.fireDailyAndCount(pixel: pixel, withAdditionalParameters: params)
+        PixelKit.fire(pixel, frequency: .dailyAndCount, options: .parameters(params))
     }
 }
 // swiftlint:enable inclusive_language

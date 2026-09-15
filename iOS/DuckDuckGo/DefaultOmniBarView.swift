@@ -787,6 +787,16 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return view
     }
 
+    private static var defaultSupportsButtonMenusInGlass: Bool {
+#if targetEnvironment(simulator)
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        return version.majorVersion != 26 || version.minorVersion > 5
+#else
+        return true
+#endif
+    }
+
+    private let supportsButtonMenusInGlass: Bool
     private var glassEffectConstraints: [NSLayoutConstraint] = []
     private var floatingHostToContainerConstraints: [NSLayoutConstraint] = []
     private var floatingHostToGlassContentConstraints: [NSLayoutConstraint] = []
@@ -822,8 +832,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         Self.init(isFloatingUIEnabled: false)
     }
 
-    init(isFloatingUIEnabled: Bool) {
+    convenience init(isFloatingUIEnabled: Bool) {
+        self.init(isFloatingUIEnabled: isFloatingUIEnabled,
+                  supportsButtonMenusInGlass: Self.defaultSupportsButtonMenusInGlass)
+    }
+
+    init(isFloatingUIEnabled: Bool, supportsButtonMenusInGlass: Bool) {
         self.isFloatingUIEnabled = isFloatingUIEnabled
+        self.supportsButtonMenusInGlass = supportsButtonMenusInGlass
         self.searchAreaView = DefaultOmniBarSearchView(centersContentVertically: isFloatingUIEnabled)
         if isFloatingUIEnabled {
             self.searchAreaContainerView = SearchAreaContainerView()
@@ -854,6 +870,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     func makeGlass() {
         guard isFloatingUIEnabled else {
+            makeOpaque()
+            return
+        }
+        // iOS 26.5 Simulator glass breaks button menus.
+        if !supportsButtonMenusInGlass {
             makeOpaque()
             return
         }
@@ -1316,17 +1337,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 ? UIColor(singleUseColor: .fireModeAccent).cgColor
                 : UIColor(designSystemColor: .accentPrimary).cgColor
         } else {
-            // Floating UI off (production): preserve the original fire-mode fill so the
-            // fire-mode omnibar colour is unchanged from `main`.
-            setFieldBackgroundColor(fireMode
-                ? UIColor(singleUseColor: .fireModeCardBackground)
-                : restingFieldBackgroundColor)
+            // Floating UI off (production): use the same fire-mode fill as the floating field so the
+            // field stays legible against the surrounding chrome in dark mode.
+            setFieldBackgroundColor(opaqueFieldBackgroundColor)
             activeOutlineView.layer.borderColor = fireMode
                 ? UIColor(singleUseColor: .fireModeAccent).cgColor
                 : UIColor(designSystemColor: .accentPrimary).cgColor
         }
         let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
         searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
+        // Stack siblings of searchAreaContainerView, so the loop above misses them — same override needed.
+        leadingButtonsContainer.overrideUserInterfaceStyle = style
+        trailingButtonsContainer.overrideUserInterfaceStyle = style
         if isBottomFloatingField, !isFloatingMinimalChromeBar, !fireMode, let embeddedGlassInterfaceStyle {
             glassEffect.overrideUserInterfaceStyle = embeddedGlassInterfaceStyle
         }
@@ -1387,6 +1409,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         aiChatButton.accessibilityLabel = UserText.duckAiFeatureName
         aiChatButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
         aiChatButton.accessibilityTraits = .button
+
+        customizableButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Customizable"
 
         // This is for compatibility purposes with old OmniBar
         searchAreaView.textField.accessibilityIdentifier = "searchEntry"
@@ -1761,7 +1785,7 @@ private extension DefaultOmniBarView {
 
     var opaqueFieldBackgroundColor: UIColor {
         fireMode
-            ? UIColor(singleUseColor: .fireModeBackground)
+            ? UIColor(singleUseColor: .fireModeFieldBackground)
             : restingFieldBackgroundColor
     }
 }

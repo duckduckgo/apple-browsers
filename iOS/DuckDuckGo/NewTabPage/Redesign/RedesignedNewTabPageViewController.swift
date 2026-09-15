@@ -35,6 +35,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
 
     var isDragging: Bool { scrollView.isDragging }
 
+    var hasInlineSearchInput: Bool { false }
+
     private let blocks: [any NewTabPageBlock]
 
     private let scrollView: UIScrollView = {

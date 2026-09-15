@@ -87,6 +87,160 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertFalse(didPrompt)
     }
 
+    func testPermissionQueryMatchesNextRequestAcrossStoredGlobalAndSystemPrecedence() async throws {
+        struct Scenario {
+            let stored: SitePermissionDecision?
+            let global: GlobalSitePermissionDecision
+            let system: SystemPermissionAuthorizationState
+            let queryState: SitePermissionQueryState
+            let expectsPrompt: Bool
+            let resolution: SitePermissionResolution
+        }
+        let scenarios = [
+            Scenario(stored: nil, global: .ask, system: .authorized,
+                     queryState: .prompt, expectsPrompt: true, resolution: .grant),
+            Scenario(stored: .ask, global: .ask, system: .authorized,
+                     queryState: .prompt, expectsPrompt: true, resolution: .grant),
+            Scenario(stored: nil, global: .deny, system: .authorized,
+                     queryState: .denied, expectsPrompt: false, resolution: .deny(systemBlocks: [])),
+            Scenario(stored: .deny, global: .ask, system: .authorized,
+                     queryState: .denied, expectsPrompt: false, resolution: .deny(systemBlocks: [])),
+            Scenario(stored: .allow, global: .deny, system: .authorized,
+                     queryState: .granted, expectsPrompt: false, resolution: .grant),
+            Scenario(stored: .allow, global: .ask, system: .notDetermined,
+                     queryState: .denied, expectsPrompt: false,
+                     resolution: .deny(systemBlocks: [.init(permissionType: .location,
+                                                              state: .notDetermined,
+                                                              timing: .preexisting)])),
+            Scenario(stored: .allow, global: .ask, system: .denied,
+                     queryState: .denied, expectsPrompt: false,
+                     resolution: .deny(systemBlocks: [.init(permissionType: .location,
+                                                              state: .denied,
+                                                              timing: .preexisting)])),
+            Scenario(stored: .allow, global: .ask, system: .restricted,
+                     queryState: .denied, expectsPrompt: false,
+                     resolution: .deny(systemBlocks: [.init(permissionType: .location,
+                                                              state: .restricted,
+                                                              timing: .preexisting)])),
+            Scenario(stored: .allow, global: .ask, system: .unavailable,
+                     queryState: .denied, expectsPrompt: false,
+                     resolution: .deny(systemBlocks: [.init(permissionType: .location,
+                                                              state: .unavailable,
+                                                              timing: .preexisting)]))
+        ]
+
+        for scenario in scenarios {
+            let harness = try Harness()
+            harness.store.setGlobalDefault(scenario.global, for: .location)
+            switch scenario.stored {
+            case .ask?:
+                harness.store.resetDecision(for: .location, at: harness.site)
+            case let decision?:
+                harness.store.setPersistentDecision(decision, for: .location, at: harness.site)
+            case nil:
+                break
+            }
+            harness.systemStates[.location] = scenario.system
+
+            XCTAssertEqual(
+                harness.coordinator.queryState(for: .location, context: harness.context),
+                scenario.queryState
+            )
+
+            var didPrompt = false
+            let requestCompleted = expectation(description: "Request matching \(scenario.queryState) query completes")
+            harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+                didPrompt = true
+                respond(.allowOnce)
+            }, completion: { resolution in
+                XCTAssertEqual(resolution, scenario.resolution)
+                requestCompleted.fulfill()
+            })
+
+            await fulfillment(of: [requestCompleted], timeout: 1)
+            XCTAssertEqual(didPrompt, scenario.expectsPrompt)
+        }
+    }
+
+    func testPermissionQueryAndRequestBothRejectStaleContext() throws {
+        let harness = try Harness()
+        let staleContext = harness.context
+        harness.context = harness.context(changingNavigationGenerationTo: 2)
+        var didPrompt = false
+        var didComplete = false
+
+        XCTAssertEqual(harness.coordinator.queryState(for: .location, context: staleContext), .denied)
+        harness.coordinator.request(
+            SitePermissionRequest(context: staleContext, permissionTypes: [.location]),
+            promptHandler: { _, _ in didPrompt = true },
+            completion: { _ in didComplete = true }
+        )
+
+        XCTAssertFalse(didPrompt)
+        XCTAssertFalse(didComplete)
+    }
+
+    func testPermissionQueryMatchesNextRequestForActivePageDecision() async throws {
+        let cases: [(SitePermissionPromptDecision, SitePermissionQueryState, SitePermissionResolution)] = [
+            (.denyOnce, .denied, .deny(systemBlocks: [])),
+            (.allowOnce, .granted, .grant)
+        ]
+
+        for (decision, queryState, expectedResolution) in cases {
+            let harness = try Harness()
+            let initialRequestCompleted = expectation(description: "Activate \(decision)")
+            harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+                respond(decision)
+            }, completion: { _ in
+                initialRequestCompleted.fulfill()
+            })
+            await fulfillment(of: [initialRequestCompleted], timeout: 1)
+
+            XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), queryState)
+
+            var didPrompt = false
+            let repeatedRequestCompleted = expectation(description: "Request after \(decision) completes")
+            harness.coordinator.request(harness.request([.location]), promptHandler: { _, _ in
+                didPrompt = true
+            }, completion: { resolution in
+                XCTAssertEqual(resolution, expectedResolution)
+                repeatedRequestCompleted.fulfill()
+            })
+            await fulfillment(of: [repeatedRequestCompleted], timeout: 1)
+            XCTAssertFalse(didPrompt)
+        }
+    }
+
+    func testPermissionQueryReturnsImmediatelyWhileFIFOIsBusyAndMatchesNextRequest() async throws {
+        let harness = try Harness()
+        var cameraResponder: ((SitePermissionPromptDecision) -> Void)?
+        var locationResponder: ((SitePermissionPromptDecision) -> Void)?
+        var promptedTypes = [Set<SitePermissionType>]()
+
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { prompt, respond in
+            promptedTypes.append(prompt.permissionTypes)
+            cameraResponder = respond
+        }, completion: { _ in })
+
+        XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .prompt)
+        XCTAssertEqual(promptedTypes, [[.camera]])
+
+        let locationCompleted = expectation(description: "Location request completes after camera request")
+        harness.coordinator.request(harness.request([.location]), promptHandler: { prompt, respond in
+            promptedTypes.append(prompt.permissionTypes)
+            locationResponder = respond
+        }, completion: { resolution in
+            XCTAssertEqual(resolution, .grant)
+            locationCompleted.fulfill()
+        })
+        XCTAssertEqual(promptedTypes, [[.camera]])
+
+        cameraResponder?(.denyOnce)
+        XCTAssertEqual(promptedTypes, [[.camera], [.location]])
+        locationResponder?(.allowOnce)
+        await fulfillment(of: [locationCompleted], timeout: 1)
+    }
+
     func testWhenCombinedStoredStateIsPartialAllowAndAskThenOneCombinedPromptIsShown() throws {
         let harness = try Harness()
         harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)

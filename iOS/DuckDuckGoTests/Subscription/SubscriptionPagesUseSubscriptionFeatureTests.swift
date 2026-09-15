@@ -19,7 +19,7 @@
 
 import XCTest
 import WebKit
-@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import PrivacyConfig
 import UserNotifications
 @testable import DuckDuckGo

@@ -28,4 +28,14 @@ struct AIChatCreateImageModelSwitchNotice: Equatable {
         newModelShortName = newModel.shortName
         previousModelHasExtraPrivacyProtections = previousModel.provider == .oss
     }
+
+    var localizedTitle: String {
+        UserText.aiChatCreateImageModelSwitchTitle(newModelShortName)
+    }
+
+    var localizedSubtitle: String {
+        previousModelHasExtraPrivacyProtections
+            ? UserText.aiChatCreateImageModelSwitchPrivacySubtitle(previousModelShortName)
+            : UserText.aiChatCreateImageModelSwitchSubtitle(previousModelShortName)
+    }
 }

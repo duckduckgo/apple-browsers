@@ -217,6 +217,7 @@ extension MainViewController {
         guard isShortcutEnabled() else { return }
         guard fireModeCapability.isFireModeEnabled else { return }
 
+        recordDuckAISessionPendingExit(.fireTabOpened)
         tabManager.setBrowsingMode(.fire, source: .keyCommand)
         performCancel()
         newTab()
@@ -264,7 +265,8 @@ extension MainViewController {
     @objc func keyboardBrowserBack() {
         guard tabSwitcherController == nil else { return }
         guard isShortcutEnabled() else { return }
-        
+
+        recordDuckAISessionPendingExit(.backOrClose)
         currentTab?.goBack()
     }
     

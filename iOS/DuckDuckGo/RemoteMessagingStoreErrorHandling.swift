@@ -22,6 +22,7 @@ import FoundationExtensions
 import Core
 import Foundation
 import RemoteMessaging
+import PixelKit
 
 public class RemoteMessagingStoreErrorHandling: EventMapping<RemoteMessagingStoreError> {
 
@@ -29,11 +30,11 @@ public class RemoteMessagingStoreErrorHandling: EventMapping<RemoteMessagingStor
         super.init { event, error, _, _ in
             switch event {
             case .saveConfigFailed:
-                Pixel.fire(pixel: .dbRemoteMessagingSaveConfigError, error: error)
+                PixelKit.fire(Pixel.Event.dbRemoteMessagingSaveConfigError.withError(error))
             case .updateMessageShownFailed:
-                Pixel.fire(pixel: .dbRemoteMessagingUpdateMessageShownError, error: error)
+                PixelKit.fire(Pixel.Event.dbRemoteMessagingUpdateMessageShownError.withError(error))
             case .updateMessageStatusFailed:
-                Pixel.fire(pixel: .dbRemoteMessagingUpdateMessageStatusError, error: error)
+                PixelKit.fire(Pixel.Event.dbRemoteMessagingUpdateMessageStatusError.withError(error))
             }
         }
     }

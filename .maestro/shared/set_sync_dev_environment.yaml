@@ -12,6 +12,7 @@ appId: com.duckduckgo.mobile.ios
     direction: DOWN
     centerElement: false
 - tapOn: Sync
+- scroll
 - scrollUntilVisible:
     element: Production
     direction: DOWN

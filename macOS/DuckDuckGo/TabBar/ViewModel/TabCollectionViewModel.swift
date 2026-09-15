@@ -636,6 +636,14 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
+    func close(at index: TabIndex, forceChange: Bool = false) {
+        guard changesEnabled || (forceChange && index.isUnpinnedTab), let tab = tab(at: index) else { return }
+        if case .loaded(let tab) = tab {
+            tab.onClose?()
+        }
+        remove(at: index, forceChange: forceChange)
+    }
+
     func remove(at index: TabIndex, published: Bool = true, forceChange: Bool = false) {
         switch index {
         case .unpinned(let i):
@@ -759,8 +767,20 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
+    /// Notifies only tabs being closed, preserving the snapshot during callbacks.
+    private func notifyTabsWillClose(keepingIndices keptIndices: Set<Int> = []) {
+        let removed = tabCollection.tabs.enumerated()
+            .filter { !keptIndices.contains($0.offset) }
+            .map(\.element)
+        for case .loaded(let tab) in removed {
+            tab.onClose?()
+        }
+    }
+
     func removeAllTabs(except exceptionIndex: Int? = nil, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
+
+        notifyTabsWillClose(keepingIndices: exceptionIndex.map { [$0] } ?? [])
 
         if let exceptionTab = exceptionIndex.flatMap({ tabCollection.tabs[$0] }) {
             tabCollection.removeAll(andAppend: exceptionTab)
@@ -783,6 +803,8 @@ final class TabCollectionViewModel: NSObject {
     func removeAllTabs(andAppend tab: Tab, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
 
+        notifyTabsWillClose()
+
         shouldReturnToPreviousActiveTab = true
         tabCollection.removeAll(andAppend: tab)
         handleNewTabPageSideEffects(for: tab)
@@ -793,6 +815,7 @@ final class TabCollectionViewModel: NSObject {
     func removeTabs(before index: Int) {
         guard changesEnabled else { return }
 
+        notifyTabsWillClose(keepingIndices: Set(index..<tabCollection.tabs.count))
         tabCollection.removeTabs(before: index)
 
         if let currentSelection = selectionIndex, currentSelection.isUnpinnedTab {
@@ -809,6 +832,7 @@ final class TabCollectionViewModel: NSObject {
     func removeTabs(after index: Int) {
         guard changesEnabled else { return }
 
+        notifyTabsWillClose(keepingIndices: Set(0...index))
         tabCollection.removeTabs(after: index)
 
         if let currentSelection = selectionIndex, currentSelection.isUnpinnedTab, !tabCollection.tabs.indices.contains(currentSelection.item) {
@@ -818,7 +842,7 @@ final class TabCollectionViewModel: NSObject {
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
-    func removeSelected(forceChange: Bool = false) -> Result<Void, Error> {
+    func closeSelected(forceChange: Bool = false) -> Result<Void, Error> {
         guard changesEnabled || forceChange else { return .success(()) }
 
         guard let selectionIndex else {
@@ -826,7 +850,7 @@ final class TabCollectionViewModel: NSObject {
             return .failure(TabCollectionViewModelError.noTabSelected)
         }
 
-        remove(at: selectionIndex, forceChange: forceChange)
+        close(at: selectionIndex, forceChange: forceChange)
         return .success(())
     }
 

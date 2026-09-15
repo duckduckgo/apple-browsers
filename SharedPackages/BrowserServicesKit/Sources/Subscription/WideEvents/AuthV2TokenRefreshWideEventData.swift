@@ -20,7 +20,7 @@ import Foundation
 import Common
 import FoundationExtensions
 import Networking
-import PixelKit
+import WideEvent
 
 #if canImport(UIKit)
 import UIKit

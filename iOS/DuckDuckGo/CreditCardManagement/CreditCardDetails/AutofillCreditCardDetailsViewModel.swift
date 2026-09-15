@@ -22,6 +22,7 @@ import BrowserServicesKit
 import SwiftUI
 import Combine
 import Core
+import PixelKit
 
 protocol AutofillCreditCardDetailsViewModelDelegate: AnyObject {
     func autofillCreditCardDetailsViewModelDidSave()
@@ -163,7 +164,7 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
         case .cardNumber:
             message = UserText.autofillCreditCardCopyToastCopiedCardNumber
             UIPasteboard.general.string = cardNumber
-            Pixel.fire(pixel: .autofillCardsManagementCopyCardNumber)
+            PixelKit.fire(Pixel.Event.autofillCardsManagementCopyCardNumber)
         case .expirationDate:
             message = UserText.autofillCreditCardCopyToastCopiedExpirationDate
             UIPasteboard.general.string = formattedExpiration
@@ -208,7 +209,7 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
                     delegate?.autofillCreditCardDetailsViewModelDidSave()
                     
                     if let newCard = try vault.creditCardFor(id: cardId) {
-                        Pixel.fire(pixel: .autofillCardsManagementUpdateCard)
+                        PixelKit.fire(Pixel.Event.autofillCardsManagementUpdateCard)
                         self.updateData(with: newCard)
                     }
                     
@@ -235,7 +236,7 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
                 delegate?.autofillCreditCardDetailsViewModelDidSave()
                 
                 if let newCard = try vault.creditCardFor(id: cardId) {
-                    Pixel.fire(pixel: .autofillCardsManagementSaveCard)
+                    PixelKit.fire(Pixel.Event.autofillCardsManagementSaveCard)
                     self.updateData(with: newCard)
                 }
             } catch let error {
@@ -306,6 +307,6 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
     }
     
     private func handleSecureVaultError(_ error: Error) {
-        Pixel.fire(pixel: .secureVaultError, error: error)
+        PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
     }
 }

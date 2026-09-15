@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 /// Result structure containing both the operation result and pre-measured duration.
 ///

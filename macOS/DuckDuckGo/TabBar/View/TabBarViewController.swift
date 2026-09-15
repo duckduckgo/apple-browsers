@@ -92,6 +92,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var aiChatMenuConfigCancellable: AnyCancellable?
     private var aiChatButtonHoverCancellable: AnyCancellable?
     private var duckAIChromeButtonsVisibilityCancellable: AnyCancellable?
+    private var isChatsMenuItemEnabled = true
     private var didPerformInitialChromeSidebarApply = false
     private var duckAIChromeDividerInsetConstraint: NSLayoutConstraint?
     private var duckAIChromeDividerFullConstraint: NSLayoutConstraint?
@@ -124,10 +125,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private let fireproofDomains: FireproofDomains
     private let featureFlagger: FeatureFlagger
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
+    private let nativeStorageHandler: DuckAiNativeStorageHandling?
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private var pinnedTabsDiscoveryPopover: NSPopover?
     private weak var crashPopoverViewController: PopoverMessageViewController?
-    private let autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating?
+    private let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate? // swiftlint:disable:this weak_delegate
 
     let themeManager: ThemeManaging
     private let tabDragAndDropManager: TabDragAndDropManager
@@ -228,9 +230,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         featureFlagger: FeatureFlagger,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
+        nativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
         duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
         tabDragAndDropManager: TabDragAndDropManager,
-        autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating? = nil
+        cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate? = nil
     ) -> TabBarViewController {
         NSStoryboard(name: "TabBar", bundle: nil).instantiateInitialController { coder in
             self.init(
@@ -241,9 +244,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 activeRemoteMessageModel: activeRemoteMessageModel,
                 featureFlagger: featureFlagger,
                 aiChatMenuConfig: aiChatMenuConfig,
+                nativeStorageHandler: nativeStorageHandler,
                 duckAIChromeButtonsVisibilityManager: duckAIChromeButtonsVisibilityManager,
                 tabDragAndDropManager: tabDragAndDropManager,
-                autoconsentStatsPopoverCoordinator: autoconsentStatsPopoverCoordinator
+                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate
             )
         }!
     }
@@ -259,15 +263,17 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
           activeRemoteMessageModel: ActiveRemoteMessageModel,
           featureFlagger: FeatureFlagger,
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+          nativeStorageHandler: DuckAiNativeStorageHandling?,
           duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging,
           themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
           tabDragAndDropManager: TabDragAndDropManager,
-          autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating? = nil) {
+          cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate? = nil) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.fireproofDomains = fireproofDomains
         self.featureFlagger = featureFlagger
         self.aiChatMenuConfig = aiChatMenuConfig
+        self.nativeStorageHandler = nativeStorageHandler
         self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
         let tabBarActiveRemoteMessageModel = TabBarActiveRemoteMessage(activeRemoteMessageModel: activeRemoteMessageModel)
         self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(
@@ -276,7 +282,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         )
         self.themeManager = themeManager
         self.tabDragAndDropManager = tabDragAndDropManager
-        self.autoconsentStatsPopoverCoordinator = autoconsentStatsPopoverCoordinator
+        self.cookiePopupsBlockedPromoDelegate = cookiePopupsBlockedPromoDelegate
 
         standardTabHeight = themeManager.theme.tabStyleProvider.standardTabHeight
         pinnedTabHeight = themeManager.theme.tabStyleProvider.pinnedTabHeight
@@ -330,6 +336,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         subscribeToChromeSidebarFeatureFlag()
         subscribeToDuckAIChromeLayoutChanges()
         subscribeToDuckAIChromeButtonsVisibilityChanges()
+        subscribeToNativeChats()
         setupPinnedTabsView()
         subscribeToTabModeChanges()
         setupAddTabButton()
@@ -935,6 +942,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             canToggleSidebar = true
         } else if aiChatMenuConfig.shouldOpenAIChatInSidebar, case .url = tab.content {
             canToggleSidebar = true
+        } else if aiChatMenuConfig.shouldOpenAIChatInSidebar, case .onboarding = tab.content,
+                  NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
+            canToggleSidebar = true
         }
 
         return canToggleSidebar
@@ -950,7 +960,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private var isDuckAIChromeButtonsEnabled: Bool {
         guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return false }
-        return tab.content != .onboarding
+        return tab.content != .onboarding || NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
     }
 
     private func updateDuckAIChromeSegmentedControlState() {
@@ -1033,10 +1043,23 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         menu.popUp(positioning: nil, at: origin, in: sender)
     }
 
-    /// The pill's two-item dropdown (New Chat + a state-dependent sidebar item), rebuilt per press so
-    /// its title/icon reflect the current tab and chat state.
+    private func subscribeToNativeChats() {
+        guard !isFireWindow else { return }
+        (nativeStorageHandler as? DuckAiNativeChatsObserving)?.chatsPublisher()
+            .map { !$0.isEmpty }
+            .replaceError(with: true)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] hasChats in
+                self?.isChatsMenuItemEnabled = hasChats
+            }
+            .store(in: &cancellables)
+    }
+
+    /// The pill's dropdown, rebuilt per press so the sidebar item's title/icon reflect the current
+    /// tab and chat state.
     private func makeDuckAIMenuButtonMenu() -> NSMenu {
         let menu = NSMenu()
+        menu.autoenablesItems = false
 
         let newChatItem = NSMenuItem(title: UserText.aiChatMenuNewChat, action: #selector(duckAIMenuNewChatAction), keyEquivalent: "")
         newChatItem.target = self
@@ -1063,7 +1086,33 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         sidebarItem.keyEquivalentModifierMask = [.command, .option]
         menu.addItem(sidebarItem)
 
+        if featureFlagger.isFeatureOn(.aiChatChromeMenuChats) {
+            menu.addItem(.separator())
+
+            let chatsItem = NSMenuItem(title: UserText.actionChats, action: #selector(duckAIMenuChatsAction), keyEquivalent: "")
+            chatsItem.target = self
+            chatsItem.isEnabled = Self.chatsMenuItemIsEnabled(
+                inFireWindow: isFireWindow,
+                nativeStorageHandler: nativeStorageHandler,
+                observedRegularWindowValue: isChatsMenuItemEnabled
+            )
+            chatsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.chats), visibleOnMacOS27: true)
+            menu.addItem(chatsItem)
+        }
+
         return menu
+    }
+
+    static func chatsMenuItemIsEnabled(
+        inFireWindow isFireWindow: Bool,
+        nativeStorageHandler: DuckAiNativeStorageHandling?,
+        observedRegularWindowValue: Bool
+    ) -> Bool {
+        guard isFireWindow else { return observedRegularWindowValue }
+        // Only a confirmed empty store disables Chats; unavailable storage must not block navigation.
+        guard let nativeStorageHandler,
+              let chats = try? nativeStorageHandler.getAllChats() else { return true }
+        return !chats.isEmpty
     }
 
     /// The two-part control's "open sidebar" icon, copied and sized for a menu item. Copying avoids
@@ -1106,6 +1155,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
         mainViewController.openNewDuckAIChatTab()
+    }
+
+    @objc private func duckAIMenuChatsAction() {
+        PixelKit.fire(AIChatPixel.aiChatChatsTitleBarMenu, frequency: .dailyAndStandard)
+        guard let mainViewController = parent as? MainViewController else {
+            Logger.general.error("TabBarViewController: Failed to find MainViewController to open Duck.ai")
+            return
+        }
+        mainViewController.openDuckAIChatHistory()
     }
 
     /// Toggles the sidebar: closes an open chat (sidebar or floating), otherwise opens it with the
@@ -1372,7 +1430,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Actions
 
     @objc func addButtonAction(_ sender: NSButton) {
-        autoconsentStatsPopoverCoordinator?.dismissDialogDueToNewTabBeingShown()
+        cookiePopupsBlockedPromoDelegate?.dismissDueToNewTabBeingShown()
         tabCollectionViewModel.insertOrAppendNewTab()
     }
 
@@ -2687,7 +2745,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         if let tabID = tabCollectionViewModel.tabBarViewModel(at: tabIndex)?.uuid {
             aiChatCoordinator?.closeFloatingWindow(for: tabID)
         }
-        tabCollectionViewModel.remove(at: tabIndex)
+        tabCollectionViewModel.close(at: tabIndex)
     }
 
     private func shouldWarnBeforeClosingFloatingAIChat(tabID: String) -> Bool {
@@ -2745,7 +2803,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     private func closeTab(for tabID: String) {
         aiChatCoordinator?.closeFloatingWindow(for: tabID)
         guard let tabIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == tabID }) else { return }
-        tabCollectionViewModel.remove(at: tabIndex)
+        tabCollectionViewModel.close(at: tabIndex)
     }
 
     func tabBarViewItemCloseOtherAction(_ tabBarViewItem: TabBarViewItem) {

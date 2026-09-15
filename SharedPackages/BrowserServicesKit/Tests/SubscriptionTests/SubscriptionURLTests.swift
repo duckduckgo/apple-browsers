@@ -377,6 +377,202 @@ final class SubscriptionURLTests: XCTestCase {
         XCTAssertEqual(components?.url, expectedURL)
     }
 
+    // MARK: - First paywall, performance-optimized
+
+    func testFirstPaywallURLsWhenPerformanceOptimizedPaywallsIsOn() throws {
+        // Given
+        let vpn = SubscriptionURL.purchase.subscriptionURL(environment: .production)
+        let duckai = try XCTUnwrap(SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: nil,
+                                                                                                featurePage: "duckai",
+                                                                                                environment: .production)?.url)
+        let pir = try XCTUnwrap(SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: nil,
+                                                                                              featurePage: "pir",
+                                                                                              environment: .production)?.url)
+
+        // Keep the matrix uniform even though the PIR entry point cannot produce `pir=false` in practice.
+        let cases: [(url: URL, isTrialEligible: Bool, isPIRAvailable: Bool, expected: String)] = [
+            (vpn, false, true, "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=false"),
+            (vpn, true, true, "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=true"),
+            (vpn, false, false, "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=false&pir=false"),
+            (vpn, true, false, "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=true&pir=false"),
+            (duckai, false, true, "https://duckduckgo.com/subscriptions/new/mobile/duckai?trial=false"),
+            (duckai, true, true, "https://duckduckgo.com/subscriptions/new/mobile/duckai?trial=true"),
+            (duckai, false, false, "https://duckduckgo.com/subscriptions/new/mobile/duckai?trial=false&pir=false"),
+            (duckai, true, false, "https://duckduckgo.com/subscriptions/new/mobile/duckai?trial=true&pir=false"),
+            (pir, false, true, "https://duckduckgo.com/subscriptions/new/mobile/pir?trial=false"),
+            (pir, true, true, "https://duckduckgo.com/subscriptions/new/mobile/pir?trial=true"),
+            (pir, false, false, "https://duckduckgo.com/subscriptions/new/mobile/pir?trial=false&pir=false"),
+            (pir, true, false, "https://duckduckgo.com/subscriptions/new/mobile/pir?trial=true&pir=false")
+        ]
+
+        for testCase in cases {
+            // When
+            let url = SubscriptionURL.performanceOptimizedPaywallURL(basedOn: testCase.url,
+                                                                     isTrialEligible: testCase.isTrialEligible,
+                                                                     isPersonalInformationRemovalAvailable: testCase.isPIRAvailable)
+
+            // Then
+            XCTAssertEqual(url?.absoluteString, testCase.expected, "built from \(testCase.url.absoluteString)")
+        }
+    }
+
+    func testForComparisonIgnoresFirstPaywallStateParameters() throws {
+        let page = URL(string: "https://duckduckgo.com/subscriptions/new/mobile/vpn")!
+        let pageWithState = URL(string: "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=true&pir=false")!
+
+        XCTAssertEqual(pageWithState.forComparison(), page.forComparison())
+    }
+
+    func testFirstPaywallURLKeepsOriginAndDropsFeaturePage() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let purchaseURL = try XCTUnwrap(SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: origin,
+                                                                                                     featurePage: "duckai",
+                                                                                                     environment: .production)?.url)
+
+        // When
+        let url = SubscriptionURL.performanceOptimizedPaywallURL(basedOn: purchaseURL,
+                                                                 isTrialEligible: true,
+                                                                 isPersonalInformationRemovalAvailable: true)
+
+        // Then
+        XCTAssertEqual(url?.absoluteString,
+                       "https://duckduckgo.com/subscriptions/new/mobile/duckai?origin=funnel_appsettings_ios&trial=true")
+    }
+
+    func testFirstPaywallURLKeepsStagingEnvironment() throws {
+        // Given
+        let purchaseURL = SubscriptionURL.purchase.subscriptionURL(environment: .staging)
+
+        // When
+        let url = SubscriptionURL.performanceOptimizedPaywallURL(basedOn: purchaseURL,
+                                                                 isTrialEligible: false,
+                                                                 isPersonalInformationRemovalAvailable: true)
+
+        // Then
+        XCTAssertEqual(url?.absoluteString,
+                       "https://duckduckgo.com/subscriptions/new/mobile/vpn?environment=staging&trial=false")
+    }
+
+    func testFirstPaywallURLUsesCustomBaseURL() throws {
+        // Given
+        let customBaseURL = URL(string: "https://sdz0qh1x-80.eun1.devtunnels.ms/subscriptions")!
+        let purchaseURL = SubscriptionURL.purchase.subscriptionURL(withCustomBaseURL: customBaseURL, environment: .production)
+
+        // When
+        let url = SubscriptionURL.performanceOptimizedPaywallURL(basedOn: purchaseURL,
+                                                                 isTrialEligible: true,
+                                                                 isPersonalInformationRemovalAvailable: true)
+
+        // Then
+        XCTAssertEqual(url?.absoluteString,
+                       "https://sdz0qh1x-80.eun1.devtunnels.ms/subscriptions/new/mobile/vpn?trial=true")
+    }
+
+    func testFirstPaywallURLUsesConfiguredPaths() throws {
+        // Given
+        let paths = SubscriptionURL.PerformanceOptimizedPaywallPaths(vpn: "/subscriptions/v2/vpn",
+                                                                    duckai: "/subscriptions/v2/duckai",
+                                                                    pir: "/subscriptions/v2/pir")
+        let purchaseURL = SubscriptionURL.purchase.subscriptionURL(environment: .production)
+        let pirPurchaseURL = try XCTUnwrap(SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: nil,
+                                                                                                        featurePage: "pir",
+                                                                                                        environment: .production)?.url)
+
+        // When
+        let url = SubscriptionURL.performanceOptimizedPaywallURL(basedOn: purchaseURL,
+                                                                 paths: paths,
+                                                                 isTrialEligible: false,
+                                                                 isPersonalInformationRemovalAvailable: true)
+        let pirURL = SubscriptionURL.performanceOptimizedPaywallURL(basedOn: pirPurchaseURL,
+                                                                    paths: paths,
+                                                                    isTrialEligible: false,
+                                                                    isPersonalInformationRemovalAvailable: true)
+
+        // Then
+        XCTAssertEqual(url?.absoluteString, "https://duckduckgo.com/subscriptions/v2/vpn?trial=false")
+        XCTAssertEqual(pirURL?.absoluteString, "https://duckduckgo.com/subscriptions/v2/pir?trial=false")
+    }
+
+    func testPerformanceOptimizedPaywallPathsMakePurchaseRedirectComponents() throws {
+        let paths = SubscriptionURL.PerformanceOptimizedPaywallPaths(vpn: "/subscriptions/v2/vpn",
+                                                                    duckai: "/subscriptions/v2/duckai",
+                                                                    pir: "/subscriptions/v2/pir")
+        let testCases = [
+            (path: "/subscriptions/v2/vpn", featurePage: "vpn"),
+            (path: "/subscriptions/v2/duckai", featurePage: "duckai"),
+            (path: "/subscriptions/v2/pir", featurePage: "pir")
+        ]
+
+        for testCase in testCases {
+            let source = try XCTUnwrap(URLComponents(
+                string: "https://duckduckgo.com\(testCase.path)?origin=test&featurePage=stale"))
+
+            let redirect = paths.purchaseRedirectComponents(from: source)
+
+            XCTAssertEqual(redirect?.url?.absoluteString,
+                           "https://duckduckgo.com/subscriptions?origin=test&featurePage=\(testCase.featurePage)")
+        }
+
+        let unknown = try XCTUnwrap(URLComponents(string: "https://duckduckgo.com/subscriptions/v2/unknown"))
+        XCTAssertNil(paths.purchaseRedirectComponents(from: unknown))
+    }
+
+    func testFirstPaywallURLCarriesOverEveryOtherQueryItem() throws {
+        // Given
+        let purchaseURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/subscriptions"
+                                            + "?origin=funnel_pir_ios"
+                                            + "&featurePage=pir"
+                                            + "&environment=staging"
+                                            + "&experiment_mobileannualtrials2_ios=treatment"
+                                            + "&using=something"))
+
+        // When
+        let url = SubscriptionURL.performanceOptimizedPaywallURL(basedOn: purchaseURL,
+                                                                 isTrialEligible: true,
+                                                                 isPersonalInformationRemovalAvailable: true)
+
+        // Then
+        XCTAssertEqual(url?.absoluteString, "https://duckduckgo.com/subscriptions/new/mobile/pir"
+                       + "?origin=funnel_pir_ios"
+                       + "&environment=staging"
+                       + "&experiment_mobileannualtrials2_ios=treatment"
+                       + "&using=something"
+                       + "&trial=true")
+    }
+
+    /// A URL that already states `trial` or `pir` gets the rewrite's answer, not a second copy alongside
+    /// the stale one.
+    func testFirstPaywallURLStatesTrialAndPIROnlyOnce() throws {
+        // Given
+        let purchaseURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/subscriptions?trial=true&pir=true"))
+
+        // When
+        let url = SubscriptionURL.performanceOptimizedPaywallURL(basedOn: purchaseURL,
+                                                                 isTrialEligible: false,
+                                                                 isPersonalInformationRemovalAvailable: false)
+
+        // Then
+        XCTAssertEqual(url?.absoluteString, "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=false&pir=false")
+    }
+
+    func testFirstPaywallURLIsNotProducedForOtherFeaturePages() throws {
+        // Given
+        let purchaseURL = try XCTUnwrap(SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(
+            origin: nil,
+            featurePage: SubscriptionURL.FeaturePage.winback,
+            environment: .production
+        )?.url)
+
+        // When
+        let url = SubscriptionURL.performanceOptimizedPaywallURL(basedOn: purchaseURL,
+                                                                 isTrialEligible: true,
+                                                                 isPersonalInformationRemovalAvailable: true)
+
+        // Then
+        XCTAssertNil(url)
+    }
+
     func testPurchaseURLComponentsWithOnlyOrigin() throws {
         // Given
         let origin = "funnel_appsettings_ios"

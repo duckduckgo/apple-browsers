@@ -22,6 +22,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import PixelKit
 
 private struct ClearButtonFrameKey: PreferenceKey {
     static var defaultValue: CGRect = .zero
@@ -101,7 +102,7 @@ struct SettingsDataClearingView: View {
             viewModel.refreshFireproofedSitesCount()
         }
         .onFirstAppear {
-            Pixel.fire(pixel: .settingsDataClearingOpen)
+            PixelKit.fire(Pixel.Event.settingsDataClearingOpen)
         }
     }
 

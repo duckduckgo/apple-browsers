@@ -18,7 +18,7 @@
 
 import XCTest
 import Common
-@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 @testable import Subscription
 
 // MARK: - Service Tests

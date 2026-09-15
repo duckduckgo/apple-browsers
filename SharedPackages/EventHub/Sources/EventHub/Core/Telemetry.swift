@@ -28,22 +28,22 @@ final class Telemetry {
     private var parameters: [String: Parameter]
 
     /// Starts a fresh period from `config`, beginning at `periodStartMillis`.
-    init(config: TelemetryPixelConfig, periodStartMillis: Int64, dedupStore: DedupStore) {
+    init(config: TelemetryPixelConfig, periodStartMillis: Int64) {
         self.name = config.name
         self.config = config
         self.periodStartMillis = periodStartMillis
         self.periodEndMillis = periodStartMillis + (config.trigger.periodSeconds ?? 0) * 1000
-        self.parameters = Self.makeParameters(config: config, dedupStore: dedupStore)
+        self.parameters = Self.makeParameters(config: config)
     }
 
-    /// Rehydrates from persisted state (restart / foreground catch-up). Dedup is deliberately not
-    /// restored: it is in-memory only, so after a restart a page legitimately counts once more.
-    init(restoring persisted: PixelState, dedupStore: DedupStore) {
+    /// Rehydrates from persisted state (restart / foreground catch-up). The hub's de-duplication state
+    /// is deliberately not restored: it is in-memory only, so after a restart a page counts once more.
+    init(restoring persisted: PixelState) {
         self.name = persisted.pixelName
         self.config = persisted.config
         self.periodStartMillis = persisted.periodStartMillis
         self.periodEndMillis = persisted.periodEndMillis
-        self.parameters = Self.makeParameters(config: persisted.config, dedupStore: dedupStore)
+        self.parameters = Self.makeParameters(config: persisted.config)
         for (paramName, parameter) in parameters {
             if let restored = persisted.params[paramName] {
                 parameter.restoreState(restored)
@@ -51,13 +51,10 @@ final class Telemetry {
         }
     }
 
-    /// Builds this pixel's parameters, giving each counter a dedup key scoped to pixel×param×source so
-    /// two pixels sharing a parameter name and source still de-duplicate independently.
-    private static func makeParameters(config: TelemetryPixelConfig, dedupStore: DedupStore) -> [String: Parameter] {
+    private static func makeParameters(config: TelemetryPixelConfig) -> [String: Parameter] {
         var result: [String: Parameter] = [:]
         for (paramName, paramConfig) in config.parameters {
-            let dedupKey = "\(config.name):\(paramName):\(paramConfig.source ?? "")"
-            if let parameter = ParameterFactory.make(paramConfig, dedupKey: dedupKey, dedupStore: dedupStore) {
+            if let parameter = ParameterFactory.make(paramConfig) {
                 result[paramName] = parameter
             }
         }
@@ -73,14 +70,15 @@ final class Telemetry {
         config.parameters.values.contains { $0.source == source }
     }
 
-    /// Routes a matching event to every parameter whose config `source` equals `source`. Returns
-    /// `true` if any parameter's state changed.
+    /// Routes a delivered event to every parameter whose config `source` equals `source`. Returns
+    /// `true` if any parameter's state changed. De-duplication has already happened at the hub, so
+    /// every event reaching here is a genuine occurrence.
     @discardableResult
-    func handleEvent(source: String, data: [String: Any]?, tabID: EventHubTabID) -> Bool {
+    func handleEvent(source: String, data: [String: Any]?) -> Bool {
         var changed = false
         for (paramName, paramConfig) in config.parameters where paramConfig.source == source {
             guard let parameter = parameters[paramName] else { continue }
-            if parameter.handle(data: data, tabID: tabID) { changed = true }
+            if parameter.handle(data: data) { changed = true }
         }
         return changed
     }

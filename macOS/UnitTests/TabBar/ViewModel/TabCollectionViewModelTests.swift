@@ -60,6 +60,50 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertEqual(tabCollectionViewModel.tabs[0].content, .newtab)
     }
 
+    // MARK: - Close lifecycle
+
+    @MainActor
+    func testLockedCloseDoesNotNotifyButForcedCloseDoes() {
+        let sut = TabCollectionViewModel.aTabCollectionViewModel()
+        guard case .loaded(let tab) = sut.tabs[0] else { return XCTFail("Expected loaded tab") }
+        var closes = 0
+        let tabID = tab.uuid
+        tab.onClose = { [weak sut] in
+            XCTAssertTrue(sut?.tabCollection.contains(uuid: tabID) == true)
+            closes += 1
+        }
+        sut.close(at: .unpinned(100))
+        XCTAssertEqual(closes, 0)
+        sut.changesEnabled = false
+        sut.close(at: .unpinned(0))
+        XCTAssertEqual(closes, 0)
+        XCTAssertEqual(sut.tabs.count, 1)
+        sut.close(at: .unpinned(0), forceChange: true)
+        XCTAssertEqual(closes, 1)
+        XCTAssertTrue(sut.tabs.isEmpty)
+    }
+
+    @MainActor
+    func testMovesPinningAndRawRemovalDoNotNotifyClose() {
+        let source = TabCollectionViewModel.aTabCollectionViewModel()
+        let destination = TabCollectionViewModel.aTabCollectionViewModel()
+        guard case .loaded(let tab) = source.tabs[0] else { return XCTFail("Expected loaded tab") }
+        var closes = 0
+        tab.onClose = { closes += 1 }
+
+        source.pinTab(at: 0)
+        XCTAssertEqual(source.pinnedTabs.count, 1)
+        source.unpinTab(at: 0)
+        XCTAssertTrue(source.tabCollection.contains(tab: tab))
+        source.moveTab(at: 0, to: destination, at: 1)
+        XCTAssertFalse(source.tabCollection.contains(tab: tab))
+        XCTAssertTrue(destination.tabCollection.contains(tab: tab))
+        destination.remove(at: .unpinned(1))
+        XCTAssertFalse(destination.tabCollection.contains(tab: tab))
+
+        XCTAssertEqual(closes, 0)
+    }
+
     // MARK: - Select
 
     @MainActor
@@ -626,7 +670,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         // Select and remove childTab2
         tabCollectionViewModel.selectPrevious()
-        _ = tabCollectionViewModel.removeSelected()
+        _ = tabCollectionViewModel.closeSelected()
 
         XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.tab, childTab1)
     }
@@ -684,7 +728,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         tabCollectionViewModel.appendNewTab()
         let selectedTab = tabCollectionViewModel.selectedTabViewModel?.tab
 
-        _ = tabCollectionViewModel.removeSelected()
+        _ = tabCollectionViewModel.closeSelected()
 
         XCTAssertFalse(tabCollectionViewModel.tabCollection.contains(tab: selectedTab!))
     }

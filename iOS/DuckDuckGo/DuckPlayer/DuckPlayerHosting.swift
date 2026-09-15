@@ -31,8 +31,8 @@ protocol DuckPlayerHosting: UIViewController {
     /// The constraint that controls the bottom spacing of the main content
     var contentBottomConstraint: NSLayoutConstraint? { get }
 
-    /// Returns the height of any persistent UI bars at the bottom of the screen (e.g. toolbars, tab bars)
-    var persistentBottomBarHeight: CGFloat { get }
+    /// Full height obscured by floating chrome at the bottom of the screen.
+    var floatingBottomChromeObscuredHeight: CGFloat { get }
 
     /// The URL of the current page
     var url: URL? { get }

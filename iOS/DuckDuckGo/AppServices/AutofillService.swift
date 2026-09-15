@@ -25,6 +25,7 @@ import FoundationExtensions
 import Persistence
 import PrivacyConfig
 import FeatureFlags_iOS
+import PixelKit
 
 final class AutofillService {
 
@@ -61,33 +62,33 @@ final class AutofillService {
             eventMapping: EventMapping<AutofillPixelEvent> { [weak self] event, _, params, _ in
                 switch event {
                 case .autofillActiveUser:
-                    Pixel.fire(pixel: .autofillActiveUser, withAdditionalParameters: params ?? [:])
+                    PixelKit.fire(Pixel.Event.autofillActiveUser, options: .parameters(params ?? [:]))
                 case .autofillEnabledUser:
-                    Pixel.fire(pixel: .autofillEnabledUser)
+                    PixelKit.fire(Pixel.Event.autofillEnabledUser)
                 case .autofillOnboardedUser:
-                    Pixel.fire(pixel: .autofillOnboardedUser)
+                    PixelKit.fire(Pixel.Event.autofillOnboardedUser)
                 case .autofillToggledOn:
                     guard AutofillSettingStatus.isDeviceAuthenticationEnabled else {
                         return
                     }
-                    Pixel.fire(pixel: .autofillToggledOn, withAdditionalParameters: params ?? [:])
+                    PixelKit.fire(Pixel.Event.autofillToggledOn, options: .parameters(params ?? [:]))
                     if let autofillExtensionToggled = self?.autofillUsageMonitor.autofillExtensionEnabled {
-                        Pixel.fire(pixel: autofillExtensionToggled ? .autofillExtensionToggledOn : .autofillExtensionToggledOff,
-                                   withAdditionalParameters: params ?? [:])
+                        PixelKit.fire(autofillExtensionToggled ? Pixel.Event.autofillExtensionToggledOn : .autofillExtensionToggledOff,
+                                      options: .parameters(params ?? [:]))
                     }
                 case .autofillToggledOff:
                     guard AutofillSettingStatus.isDeviceAuthenticationEnabled else {
                         return
                     }
-                    Pixel.fire(pixel: .autofillToggledOff, withAdditionalParameters: params ?? [:])
+                    PixelKit.fire(Pixel.Event.autofillToggledOff, options: .parameters(params ?? [:]))
                     if let autofillExtensionToggled = self?.autofillUsageMonitor.autofillExtensionEnabled {
-                        Pixel.fire(pixel: autofillExtensionToggled ? .autofillExtensionToggledOn : .autofillExtensionToggledOff,
-                                   withAdditionalParameters: params ?? [:])
+                        PixelKit.fire(autofillExtensionToggled ? Pixel.Event.autofillExtensionToggledOn : .autofillExtensionToggledOff,
+                                      options: .parameters(params ?? [:]))
                     }
                 case .autofillLoginsStacked:
-                    Pixel.fire(pixel: .autofillLoginsStacked, withAdditionalParameters: params ?? [:])
+                    PixelKit.fire(Pixel.Event.autofillLoginsStacked, options: .parameters(params ?? [:]))
                 case .autofillCreditCardsStacked:
-                    Pixel.fire(pixel: .autofillCreditCardsStacked, withAdditionalParameters: params ?? [:])
+                    PixelKit.fire(Pixel.Event.autofillCreditCardsStacked, options: .parameters(params ?? [:]))
                 default:
                     break
                 }

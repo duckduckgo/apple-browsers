@@ -18,7 +18,7 @@
 //
 
 import BrowserServicesKit
-@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import XCTest
 
 @testable import DuckDuckGo

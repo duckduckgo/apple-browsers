@@ -50,6 +50,7 @@ struct SettingsMainSettingsView: View {
         SettingsEntry(label: UserText.accessibility, build: Self.viewBuilder.buildAccessibility),
         SettingsEntry(label: UserText.dataClearing, build: Self.viewBuilder.buildDataClearing),
         SettingsEntry(label: UserText.duckPlayerFeatureName, build: Self.viewBuilder.buildDuckPlayer),
+        SettingsEntry(label: UserText.sitePermissions, build: Self.viewBuilder.buildSitePermissions),
     ].sorted(by: { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending })
 
     var body: some View {
@@ -106,6 +107,19 @@ struct SettingsMainSettingsView: View {
                                      image: Image(uiImage: DesignSystemImages.Color.Size24.videoPlayer))
                 })
             }
+        }
+
+        @ViewBuilder func buildSitePermissions(viewModel: SettingsViewModel) -> AnyView? {
+            if shouldShowSitePermissions(state: viewModel.state) {
+                AnyView(NavigationLink(destination: SettingsSitePermissionsView(viewModel: viewModel.sitePermissionsSettingsViewModel).environmentObject(viewModel)) {
+                    SettingsCellView(label: UserText.sitePermissions,
+                                     image: Image(uiImage: DesignSystemImages.Color.Size24.websitePermissions))
+                })
+            }
+        }
+
+        func shouldShowSitePermissions(state: SettingsState) -> Bool {
+            state.sitePermissionsEnabled
         }
 
         @ViewBuilder func buildSyncEntry(viewModel: SettingsViewModel) -> AnyView {

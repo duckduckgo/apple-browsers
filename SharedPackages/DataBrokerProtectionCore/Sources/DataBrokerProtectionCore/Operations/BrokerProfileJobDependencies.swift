@@ -21,7 +21,7 @@ import Common
 import os.log
 import PrivacyConfig
 import BrowserServicesKit
-import PixelKit
+import WideEvent
 
 public protocol BrokerProfileJobDependencyProviding {
     var database: DataBrokerProtectionRepository { get }

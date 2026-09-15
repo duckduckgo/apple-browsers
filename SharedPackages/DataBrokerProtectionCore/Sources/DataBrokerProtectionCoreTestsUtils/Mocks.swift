@@ -23,7 +23,7 @@ import Common
 import Foundation
 import GRDB
 import SecureStorage
-import PixelKit
+import WideEvent
 import TrackerRadarKit
 import WebKit
 
@@ -259,6 +259,10 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
 
     public func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
         return nil
+    }
+
+    public func allSubfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] {
+        [:]
     }
 
     public func userEnabledProtection(forDomain: String) {

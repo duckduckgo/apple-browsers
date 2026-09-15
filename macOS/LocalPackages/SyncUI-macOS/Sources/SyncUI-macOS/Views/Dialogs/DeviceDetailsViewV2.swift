@@ -47,8 +47,9 @@ struct DeviceDetailsViewV2: View {
     }
 
     private var title: String {
-        guard device.isCurrent, !trimmedDeviceName.isEmpty else { return device.name }
-        return trimmedDeviceName
+        guard device.isCurrent else { return device.name }
+        let name = trimmedDeviceName.isEmpty ? device.name : trimmedDeviceName
+        return "\(name) (\(UserText.thisDevice))"
     }
 
     var body: some View {
@@ -79,9 +80,13 @@ struct DeviceDetailsViewV2: View {
             Text(UserText.deviceDetailsNameLabelV2)
                 .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
-            TextField("", text: $deviceName, onCommit: save)
-                .disabled(isSaving)
-                .accessibilityIdentifier("SyncSettings.deviceDetails.nameField")
+            TextField(text: $deviceName) {
+                EmptyView()
+            }
+            .labelsHidden()
+            .onSubmit(save)
+            .disabled(isSaving)
+            .accessibilityIdentifier("SyncSettings.deviceDetails.nameField")
         }
         .padding(.horizontal, 10)
         .frame(height: 45)

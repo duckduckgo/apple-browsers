@@ -20,27 +20,28 @@
 import Foundation
 import Subscription
 import Core
+import PixelKit
 
 public struct FreeTrialPixelHandler: FreeTrialPixelHandling {
 
     public init() {}
 
     public func fireFreeTrialStart() {
-        Pixel.fire(pixel: .privacyProFreeTrialStart)
+        PixelKit.fire(Pixel.Event.privacyProFreeTrialStart)
     }
 
     public func fireFreeTrialVPNActivation(activationDay: FreeTrialActivationDay) {
-        Pixel.fire(pixel: .privacyProFreeTrialVPNActivation,
-                   withAdditionalParameters: ["activation_day": activationDay.rawValue])
+        PixelKit.fire(Pixel.Event.privacyProFreeTrialVPNActivation,
+                      options: .parameters(["activation_day": activationDay.rawValue]))
     }
 
     public func fireFreeTrialPIRActivation(activationDay: FreeTrialActivationDay) {
-        Pixel.fire(pixel: .privacyProFreeTrialPIRActivation,
-                   withAdditionalParameters: ["activation_day": activationDay.rawValue])
+        PixelKit.fire(Pixel.Event.privacyProFreeTrialPIRActivation,
+                      options: .parameters(["activation_day": activationDay.rawValue]))
     }
 
     public func fireFreeTrialDuckAIActivation(activationDay: FreeTrialActivationDay) {
-        Pixel.fire(pixel: .privacyProFreeTrialDuckAIActivation,
-                   withAdditionalParameters: ["activation_day": activationDay.rawValue])
+        PixelKit.fire(Pixel.Event.privacyProFreeTrialDuckAIActivation,
+                      options: .parameters(["activation_day": activationDay.rawValue]))
     }
 }

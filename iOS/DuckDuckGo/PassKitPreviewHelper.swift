@@ -22,18 +22,19 @@ import Core
 import FoundationExtensions
 import UIKit
 import PassKit
+import PixelKit
 import os.log
 
 class PassKitPreviewHelper: FilePreview {
     private weak var viewController: UIViewController?
     private let filePath: URL
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
     required convenience init(_ filePath: URL, viewController: UIViewController) {
-        self.init(filePath, viewController: viewController, pixelFiring: Pixel.self)
+        self.init(filePath, viewController: viewController, pixelFiring: PixelKit.shared)
     }
 
-    init(_ filePath: URL, viewController: UIViewController, pixelFiring: PixelFiring.Type) {
+    init(_ filePath: URL, viewController: UIViewController, pixelFiring: (any PixelKitFiring)?) {
         self.filePath = filePath
         self.viewController = viewController
         self.pixelFiring = pixelFiring
@@ -45,15 +46,15 @@ class PassKitPreviewHelper: FilePreview {
             data = try Data(contentsOf: self.filePath)
         } catch {
             Logger.general.error("Can't present passkit: \(error.localizedDescription, privacy: .public)")
-            pixelFiring.fire(.walletPassPreviewFailed,
-                             withAdditionalParameters: [Self.reasonParameterKey: "no_data_supplied"])
+            pixelFiring?.fire(Pixel.Event.walletPassPreviewFailed,
+                              options: .parameters([Self.reasonParameterKey: "no_data_supplied"]))
             return
         }
 
         guard !data.isEmpty else {
             Logger.general.error("Can't present passkit: empty pass data")
-            pixelFiring.fire(.walletPassPreviewFailed,
-                             withAdditionalParameters: [Self.reasonParameterKey: "no_data_supplied"])
+            pixelFiring?.fire(Pixel.Event.walletPassPreviewFailed,
+                              options: .parameters([Self.reasonParameterKey: "no_data_supplied"]))
             return
         }
 
@@ -64,8 +65,8 @@ class PassKitPreviewHelper: FilePreview {
             }
         } catch {
             Logger.general.error("Can't present passkit: \(error.localizedDescription, privacy: .public)")
-            pixelFiring.fire(.walletPassPreviewFailed,
-                             withAdditionalParameters: [Self.reasonParameterKey: Self.failureReason(for: error)])
+            pixelFiring?.fire(Pixel.Event.walletPassPreviewFailed,
+                              options: .parameters([Self.reasonParameterKey: Self.failureReason(for: error)]))
         }
     }
 

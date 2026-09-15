@@ -132,7 +132,7 @@ final class AIChatUsageWarningCopyTests: XCTestCase {
 
     func testWhenCreateImageSwitchesFromOSSModel_ThenCopyExplainsPrivacyChange() {
         XCTAssertEqual(UserText.aiChatCreateImageModelSwitchPrivacySubtitle("GPT-OSS"),
-                       "GPT-OSS can't create images. Its extra privacy protections won't apply until you switch back.")
+                       "GPT-OSS can't create images. Zero Provider Visibility won't apply until you switch back.")
     }
 
     // MARK: - Helpers

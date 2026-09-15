@@ -19,6 +19,7 @@
 
 import UIKit
 import Core
+import PixelKit
 
 enum AppEvent {
 
@@ -244,8 +245,9 @@ final class AppStateMachine {
         case .willConnectToWindow(let window):
             let windowChanged = lastConnectedWindowIdentifier != ObjectIdentifier(window)
             storeWindowIdentifier(window)
-            DailyPixel.fireDailyAndCount(pixel: .sceneWillConnectToWindowCalledInConnectedState,
-                                         withAdditionalParameters: [PixelParameters.windowChanged: String(windowChanged)])
+            PixelKit.fire(Pixel.Event.sceneWillConnectToWindowCalledInConnectedState,
+                          frequency: .dailyAndCount,
+                          options: .parameters([PixelParameters.windowChanged: String(windowChanged)]))
         default:
             handleUnexpectedEvent(event, for: .connected(connected))
         }
@@ -309,9 +311,10 @@ final class AppStateMachine {
 
     private func handleUnexpectedEvent(_ event: AppEvent, for state: AppState) {
         Logger.lifecycle.error("🔴 Unexpected [\(String(describing: event))] event while in [\(state.name))] state!")
-        DailyPixel.fireDailyAndCount(pixel: .appDidTransitionToUnexpectedState,
-                                     withAdditionalParameters: [PixelParameters.appState: state.name,
-                                                                PixelParameters.appEvent: String(describing: event)])
+        PixelKit.fire(Pixel.Event.appDidTransitionToUnexpectedState,
+                      frequency: .dailyAndCount,
+                      options: .parameters([PixelParameters.appState: state.name,
+                                                                PixelParameters.appEvent: String(describing: event)]))
     }
 
 }

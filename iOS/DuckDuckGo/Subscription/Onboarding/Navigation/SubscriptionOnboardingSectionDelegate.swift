@@ -20,7 +20,7 @@
 /// Receives events from an onboarding section.
 protocol SubscriptionOnboardingSectionDelegate: AnyObject {
     func sectionDidComplete(_ section: SubscriptionOnboardingSection)
-    func sectionDidRequestDuckAIChat(modelID: String?)
+    /// - Returns: whether the chat was actually launched.
+    func sectionDidRequestDuckAIChat(modelID: String?) -> Bool
     func sectionDidRequestAdvance()
-    func sectionDidRequestGoBack()
 }

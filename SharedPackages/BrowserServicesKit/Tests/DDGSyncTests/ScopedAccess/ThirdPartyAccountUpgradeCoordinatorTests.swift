@@ -66,6 +66,35 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
         XCTAssertEqual(keys.count, 1)
         XCTAssertEqual(keys.first?["kid"] as? String, "key-1")
         XCTAssertEqual(keys.first?["encrypted_with"] as? String, SyncCredentialID.defaultCredential)
+        XCTAssertTrue(setup.events.events.isEmpty)
+    }
+
+    func testWhenUpgradeRunsThenRewrapsAccountInfoKeyForDefaultCredential() async throws {
+        let accountInfoKey = try thirdPartyProtectedKey(kid: "account-info-key",
+                                                        purpose: ProtectedKeyPurpose.accountInfo)
+        let setup = try makeSUT(protectedKeys: [try thirdPartyProtectedKey(), accountInfoKey])
+
+        let result = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
+            recoveryCode(),
+            deviceName: "Mac",
+            deviceType: "desktop")
+
+        let rewrappedAccountInfoKey = try XCTUnwrap(result.protectedKeys.first {
+            $0.purpose == ProtectedKeyPurpose.accountInfo
+        })
+        XCTAssertEqual(rewrappedAccountInfoKey.kid, accountInfoKey.kid)
+        XCTAssertEqual(rewrappedAccountInfoKey.publicKey, accountInfoKey.publicKey)
+        XCTAssertEqual(rewrappedAccountInfoKey.encryptedWith, SyncCredentialID.defaultCredential)
+
+        let postBody = try body(for: setup.endpoints.accessCredential(SyncCredentialID.defaultCredential), in: setup.api)
+        let postPayload = try decodeJSONObject(postBody)
+        let keys = try XCTUnwrap(postPayload["keys"] as? [[String: Any]])
+        let accountInfoPayload = try XCTUnwrap(keys.first {
+            $0["purpose"] as? String == ProtectedKeyPurpose.accountInfo
+        })
+        XCTAssertEqual(accountInfoPayload["kid"] as? String, accountInfoKey.kid)
+        XCTAssertEqual(accountInfoPayload["encrypted_with"] as? String, SyncCredentialID.defaultCredential)
+        XCTAssertEqual(setup.events.events, [.accountInfoKeyWrapSuccess])
     }
 
     func testWhenUpgradeRunsThenTemporaryLoginUsesAIChatsScopeAndFinalNativeLoginUsesSyncScope() async throws {
@@ -277,7 +306,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
                                                encryptedPrivateKey: "not-jwe",
                                                publicKey: .mock,
                                                encryptedWith: SyncCode.RecoveryKeyV2.thirdPartyCredentialId,
-                                               purpose: "ai_chats")
+                                               purpose: ProtectedKeyPurpose.accountInfo)
         let setup = try makeSUT(protectedKeys: [invalidProtectedKey])
 
         do {
@@ -290,10 +319,13 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
+        XCTAssertEqual(setup.events.events, [.accountInfoKeyWrapFailed(.unwrapFailed)])
     }
 
     func testWhenNativeCredentialCreationReturnsUnexpectedStatusThenUpgradeAbortsWithTypedError() async throws {
-        let setup = try makeSUT()
+        let setup = try makeSUT(protectedKeys: [
+            try thirdPartyProtectedKey(purpose: ProtectedKeyPurpose.accountInfo)
+        ])
         setup.api.fakeRequests[setup.endpoints.accessCredential(SyncCredentialID.defaultCredential)] = makeRequest(statusCode: 500)
 
         do {
@@ -307,6 +339,27 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
+        XCTAssertEqual(setup.events.events, [.accountInfoKeyWrapFailed(.requestFailed)])
+    }
+
+    func testWhenNativeCredentialCreationIsRateLimitedThenFiresAccountInfoWrapRateLimitFailure() async throws {
+        let setup = try makeSUT(protectedKeys: [
+            try thirdPartyProtectedKey(purpose: ProtectedKeyPurpose.accountInfo)
+        ])
+        setup.api.fakeRequests[setup.endpoints.accessCredential(SyncCredentialID.defaultCredential)] = makeRequest(statusCode: 429)
+
+        do {
+            _ = try await setup.coordinator.upgradeThirdPartyAccountToDefaultCredential(
+                recoveryCode(),
+                deviceName: "Mac",
+                deviceType: "desktop")
+            XCTFail("Expected native credential creation to be rate limited")
+        } catch ThirdPartyAccountUpgradeError.nativeCredentialCreationFailed(let statusCode) {
+            XCTAssertEqual(statusCode, 429)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+        XCTAssertEqual(setup.events.events, [.accountInfoKeyWrapFailed(.rateLimited)])
     }
 
     private func makeSUT(accessCredentials: [AccessCredential] = [],
@@ -314,10 +367,12 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
                          finalNativeLoginRetryDelays: [UInt64] = []) throws -> (coordinator: ThirdPartyAccountUpgradeCoordinator,
                                                                                  api: RemoteAPIRequestCreatingMock,
                                                                                  account: AccountManagingMock,
-                                                                                 endpoints: Endpoints) {
+                                                                                 endpoints: Endpoints,
+                                                                                 events: UnifiedDeviceListEventMappingMock) {
         let api = RemoteAPIRequestCreatingMock()
         let account = AccountManagingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
+        let events = UnifiedDeviceListEventMappingMock()
         let userId = self.userId
         let defaultPrimaryKey = self.defaultPrimaryKey
         let defaultSecretKey = self.defaultSecretKey
@@ -340,12 +395,17 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
         }
         crypter._extractSecretKey = { _, _ in extractedSecretKey }
 
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let coordinator = ThirdPartyAccountUpgradeCoordinator(endpoints: endpoints,
                                                               api: api,
                                                               crypter: crypter,
                                                               scopedAccess: manager,
                                                               account: account,
+                                                              unifiedDeviceListEvents: events,
                                                               finalNativeLoginRetryDelays: finalNativeLoginRetryDelays)
         let keys = try protectedKeys ?? [thirdPartyProtectedKey()]
 
@@ -357,7 +417,7 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
         api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody(keys))
         api.fakeRequests[endpoints.accessCredential(SyncCredentialID.defaultCredential)] = makeRequest(statusCode: 201)
 
-        return (coordinator, api, account, endpoints)
+        return (coordinator, api, account, endpoints, events)
     }
 
     private func recoveryCode() throws -> String {
@@ -368,16 +428,17 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
         return Base64URL.encode(try SyncCode(recovery: .v2(payload)).toJSON())
     }
 
-    private func thirdPartyProtectedKey() throws -> ProtectedKey {
+    private func thirdPartyProtectedKey(kid: String = "key-1",
+                                        purpose: String = "ai_chats") throws -> ProtectedKey {
         let thirdPartyMainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: userId)
         let encryptedPrivateKey = try JWECompactCodec().encryptDirect(payload: Data("private-key".utf8),
                                                                       contentEncryptionKey: thirdPartyMainKey,
                                                                       kid: SyncCode.RecoveryKeyV2.thirdPartyCredentialId)
-        return ProtectedKey(kid: "key-1",
+        return ProtectedKey(kid: kid,
                             encryptedPrivateKey: encryptedPrivateKey,
                             publicKey: .mock,
                             encryptedWith: SyncCode.RecoveryKeyV2.thirdPartyCredentialId,
-                            purpose: "ai_chats")
+                            purpose: purpose)
     }
 
     private func thirdPartyLoginBody() -> String {

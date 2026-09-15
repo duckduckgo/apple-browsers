@@ -55,6 +55,19 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var isImageGenerationEnabled: Bool = false
 
+    var isUpdatedCreateImageEnabled: Bool = false
+
+    var imageGenerationModelId: String?
+
+    var activateImageGenerationResult: NewTabPageDataModel.OmnibarCreateImageModelSwitch?
+    private(set) var activateImageGenerationCallCount = 0
+
+    @MainActor
+    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? {
+        activateImageGenerationCallCount += 1
+        return activateImageGenerationResult
+    }
+
     var isWebSearchEnabled: Bool = false
 
     var isCustomizeResponsesEnabled: Bool = false

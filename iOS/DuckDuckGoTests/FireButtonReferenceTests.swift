@@ -23,6 +23,7 @@ import XCTest
 import os.log
 import WebKit
 @testable import Core
+@testable import DuckDuckGo
 @_spi(Testing) import Persistence
 import BrowserServicesKitTestsUtils
 import WKAbstractions

@@ -92,6 +92,7 @@ public enum SyncSetupTimeoutStage: String, Equatable {
     case waitingForPeerStatus = "waiting_for_peer_status"
     case waitingForConfirmation = "waiting_for_confirmation"
     case waitingForRecoveryCode = "waiting_for_recovery_code"
+    case waitingForJoinStatus = "waiting_for_join_status"
     case loggingIn = "logging_in"
 }
 
@@ -643,6 +644,8 @@ public class SyncConnectionController: SyncConnectionControlling {
                 .hostSendingRecoveryCode,
                 .joinerWaitingForRecoveryCode:
             return .waitingForRecoveryCode
+        case .hostWaitingForJoinStatus:
+            return .waitingForJoinStatus
         case .joinerLoggingIn:
             return .loggingIn
         case .idle,
@@ -699,6 +702,7 @@ public class SyncConnectionController: SyncConnectionControlling {
              .hostWaitingForConfirmation,
              .hostPreparingRecoveryCode,
              .hostSendingRecoveryCode,
+             .hostWaitingForJoinStatus,
              .joinerWaitingForConfirmation,
              .joinerWaitingForRecoveryCode,
              .joinerLoggingIn:

@@ -1072,6 +1072,11 @@ class MainViewController: UIViewController {
                                                     },
                                                     isPaidAIChatEnabledProvider: { [weak self] in
                                                         self?.isPaidAIChatEnabledForSwipe ?? false
+                                                    },
+                                                    hasInlineSearchInput: { [weak self] tab in
+                                                        guard let self, tab?.isAITab != true, tab?.link == nil,
+                                                              !(tab?.fireTab ?? self.isCurrentTabFireTab()) else { return false }
+                                                        return NewTabPageRedesignFeature(featureFlagger: self.featureFlagger).isAvailable
                                                     }) { [weak self] tab in
 
             guard tab !== self?.tabManager.currentTabsModel.currentTab else {

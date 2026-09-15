@@ -55,7 +55,7 @@ final class YouTubeAdBlockUnavailableTipController {
         let work = DispatchWorkItem { [weak self] in
             guard let self, self.shouldShow() else { return }
             guard present() else { return }
-            var storage = self.storage
+            let storage = self.storage
             storage.youTubeAdBlockUnavailableNoticeShown = true
         }
         scheduledShowWork = work

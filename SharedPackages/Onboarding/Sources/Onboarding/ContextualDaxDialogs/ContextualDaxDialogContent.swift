@@ -111,7 +111,7 @@ public struct ContextualDaxDialogContent: View {
         }
         .onAppear {
             Task { @MainActor in
-                try await Task.sleep(interval: 0.3)
+                try? await Task.sleep(interval: 0.3)
                 startAnimating()
             }
         }

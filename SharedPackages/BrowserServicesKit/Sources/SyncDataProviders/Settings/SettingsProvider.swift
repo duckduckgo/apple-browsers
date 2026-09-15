@@ -22,7 +22,7 @@ import Combine
 import Common
 import FoundationExtensions
 import CoreData
-import DDGSync
+@preconcurrency import DDGSync
 import Persistence
 
 /**

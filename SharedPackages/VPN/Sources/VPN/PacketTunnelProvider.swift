@@ -752,7 +752,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                         try await self.handleSettingsChange(change)
                     } catch {
                         await self.subscriptionAccessErrorHandler(error)
-                        throw error
                     }
                 }
             }.store(in: &cancellables)

@@ -1318,7 +1318,7 @@ extension Tab {
                 for _ in 0..<50 {
                     guard let self else { return }
                     self.webView.perform(Selector.killWebContentProcessAndResetState)
-                    try await Task.sleep(nanoseconds: 20 * NSEC_PER_MSEC)
+                    try? await Task.sleep(nanoseconds: 20 * NSEC_PER_MSEC)
                 }
             }
         }

@@ -59,7 +59,7 @@ struct DataBrokerProtectionAppEvents {
                 await restartBackgroundAgent(loginItemsManager: loginItemsManager)
 
                 // Wait to make sure the agent has had time to restart before attempting to call a method on it
-                try await Task.sleep(nanoseconds: 1_000_000_000)
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
                 await loginItemInterface.appLaunched()
             }
         }
@@ -71,7 +71,7 @@ struct DataBrokerProtectionAppEvents {
         // Check feature prerequisites and disable the login item if they are not satisfied
         Task { @MainActor in
             // Failure doesn't mean no entitlements, so we just bail out and do nothing
-            let prerequisitesMet = try await featureGatekeeper.arePrerequisitesSatisfied()
+            guard let prerequisitesMet = try? await featureGatekeeper.arePrerequisitesSatisfied() else { return }
 
             guard prerequisitesMet else {
                 await loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])

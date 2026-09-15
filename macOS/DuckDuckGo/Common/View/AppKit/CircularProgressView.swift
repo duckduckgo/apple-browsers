@@ -526,7 +526,7 @@ struct ProgressPreview: View {
                         perform {
                             progress = 0
                         }
-                        try await Task.sleep(interval: 0.1)
+                        try? await Task.sleep(interval: 0.1)
 
                         perform {
                             progress = nil
@@ -541,7 +541,7 @@ struct ProgressPreview: View {
                         perform {
                             progress = 0
                         }
-                        try await Task.sleep(interval: 0.1)
+                        try? await Task.sleep(interval: 0.1)
                         perform {
                             progress = 1
                         }
@@ -624,12 +624,12 @@ struct ProgressPreview: View {
                         perform {
                             progress = 0
                         }
-                        try await Task.sleep(interval: 0.2)
+                        try? await Task.sleep(interval: 0.2)
                         for p in [0.26, 0.64, 0.95, 1, nil] {
                             perform {
                                 progress = p
                             }
-                            try await Task.sleep(interval: 0.001)
+                            try? await Task.sleep(interval: 0.001)
                         }
                     }
                 } label: {
@@ -641,22 +641,22 @@ struct ProgressPreview: View {
                         perform {
                             progress = -1
                         }
-                        try await Task.sleep(interval: 0.8 * mult)
+                        try? await Task.sleep(interval: 0.8 * mult)
                         perform {
                             progress = 0
                         }
-                        try await Task.sleep(interval: 0.2 * mult)
+                        try? await Task.sleep(interval: 0.2 * mult)
                         perform {
                             progress = 0.1
                         }
 
                         for i in 2...10 {
-                            try await Task.sleep(interval: 0.2 * mult)
+                            try? await Task.sleep(interval: 0.2 * mult)
                             perform {
                                 progress = Double(i) / 10
                             }
                         }
-                        try await Task.sleep(interval: 0.2 * mult)
+                        try? await Task.sleep(interval: 0.2 * mult)
                         perform {
                             progress = nil
                         }

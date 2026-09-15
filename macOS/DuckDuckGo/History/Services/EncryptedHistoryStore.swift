@@ -21,7 +21,7 @@ import FoundationExtensions
 import Foundation
 import CoreData
 import Combine
-import History
+@preconcurrency import History
 import PixelKit
 import os.log
 

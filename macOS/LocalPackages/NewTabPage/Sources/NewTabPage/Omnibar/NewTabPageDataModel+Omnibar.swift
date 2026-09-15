@@ -503,7 +503,7 @@ public extension NewTabPageDataModel {
 
     // MARK: - omnibar_showSubscriptionUpsell / omnibar_showSubscriptionUpgrade
 
-    public enum OmnibarSubscriptionUpsellSource: String, Codable, Equatable {
+    enum OmnibarSubscriptionUpsellSource: String, Codable, Equatable {
         case model
         case reasoning
     }

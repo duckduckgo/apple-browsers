@@ -145,7 +145,7 @@ extension OnboardingRebranding {
             .onAppear {
                 guard !alreadyRevealed else { return }
                 Task { @MainActor in
-                    try await Task.sleep(interval: theme.contentFadeInDelay)
+                    try? await Task.sleep(interval: theme.contentFadeInDelay)
                     if title != nil {
                         startTypingTitle = true
                     } else {

@@ -157,19 +157,19 @@ final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
     }
 
     @objc private func setYouTubeAdBlockingEnabledTrue() {
-        var settings = self.settings
+        let settings = self.settings
         settings.youTubeAdBlockingEnabled = true
         notifyYouTubeAdBlockingEnabledChanged()
     }
 
     @objc private func setYouTubeAdBlockingEnabledFalse() {
-        var settings = self.settings
+        let settings = self.settings
         settings.youTubeAdBlockingEnabled = false
         notifyYouTubeAdBlockingEnabledChanged()
     }
 
     @objc private func resetYouTubeAdBlockingEnabled() {
-        var settings = self.settings
+        let settings = self.settings
         settings.removeValue(for: \.youTubeAdBlockingEnabled)
         notifyYouTubeAdBlockingEnabledChanged()
     }
@@ -204,27 +204,27 @@ final class AdBlockingDebugMenu: NSMenuItem, NSMenuDelegate {
     }
 
     @objc private func setShouldHideDisclosureTrue() {
-        var settings = self.settings
+        let settings = self.settings
         settings.shouldHideYouTubeAdBlockingDisclosure = true
     }
 
     @objc private func setShouldHideDisclosureFalse() {
-        var settings = self.settings
+        let settings = self.settings
         settings.shouldHideYouTubeAdBlockingDisclosure = false
     }
 
     @objc private func resetShouldHideDisclosure() {
-        var settings = self.settings
+        let settings = self.settings
         settings.removeValue(for: \.shouldHideYouTubeAdBlockingDisclosure)
     }
 
     @objc private func resetYouTubeAnalyticsEnabled() {
-        var settings = self.settings
+        let settings = self.settings
         settings.removeValue(for: \.youTubeAnalyticsEnabled)
     }
 
     @objc private func resetUnavailableNoticeShown() {
-        var settings = self.settings
+        let settings = self.settings
         settings.removeValue(for: \.youTubeAdBlockUnavailableNoticeShown)
     }
 

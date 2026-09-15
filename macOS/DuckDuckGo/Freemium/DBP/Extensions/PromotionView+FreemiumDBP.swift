@@ -23,7 +23,7 @@ extension PromotionViewModel {
                                      closeAction: @escaping () -> Void) -> PromotionViewModel {
 
         let title = UserText.homePagePromotionFreemiumDBPTitle
-        var description = UserText.homePagePromotionFreemiumDBPDescriptionMarkdown
+        let description = UserText.homePagePromotionFreemiumDBPDescriptionMarkdown
 
         let actionButtonText = UserText.homePagePromotionFreemiumDBPButtonTitle
 

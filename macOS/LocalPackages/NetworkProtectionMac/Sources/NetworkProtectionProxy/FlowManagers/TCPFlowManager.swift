@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import NetworkExtension
+@preconcurrency import NetworkExtension
 import os.log
 
 /// A private global actor to handle UDP flows management

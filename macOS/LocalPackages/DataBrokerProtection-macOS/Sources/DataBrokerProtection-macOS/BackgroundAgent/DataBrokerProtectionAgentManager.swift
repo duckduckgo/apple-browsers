@@ -404,9 +404,7 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
 
     public func queueManagerWillEnqueueOperations(_ queueManager: JobQueueManaging) {
         Task {
-            do {
-                try await brokerUpdater.checkForUpdates()
-            }
+            try? await brokerUpdater.checkForUpdates()
         }
     }
 

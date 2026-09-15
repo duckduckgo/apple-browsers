@@ -159,7 +159,7 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
         subscriptionChangeObserver = NotificationCenter.default.addObserver(forName: .subscriptionDidChange, object: nil, queue: .main) { _ in
             Logger.general.debug("SubscriptionDidChange notification received")
             guard self.fetchSubscriptionDetailsTask == nil else { return }
-            self.fetchSubscriptionDetailsTask = Task { [weak self] in
+            self.fetchSubscriptionDetailsTask = Task { [weak self = self] in
                 defer {
                     self?.fetchSubscriptionDetailsTask = nil
                 }

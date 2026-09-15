@@ -267,8 +267,6 @@ import os.log
 
 @available(macOS 14.0, *)
 #Preview(traits: .fixedLayout(width: 344, height: 144)) {
-    let logger = Logger(subsystem: "Preview", category: "FirePopoverViewController")
-
     // Mock dependencies
     let fireViewModel = FireViewModel(
         tld: TLD(),

@@ -76,7 +76,7 @@ final class VPNProxyLauncher {
 
     private func statusChanged(newStatus: NEVPNStatus, isProxyStatusChange: Bool) {
         Task { @MainActor in
-            try await startOrStopProxyIfNeeded(isProxyStatusChange: isProxyStatusChange)
+            try? await startOrStopProxyIfNeeded(isProxyStatusChange: isProxyStatusChange)
         }
     }
 
@@ -92,7 +92,7 @@ final class VPNProxyLauncher {
 
     private func proxySettingChanged(_ change: TransparentProxySettings.Change) {
         Task { @MainActor in
-            try await startOrStopProxyIfNeeded()
+            try? await startOrStopProxyIfNeeded()
         }
     }
 

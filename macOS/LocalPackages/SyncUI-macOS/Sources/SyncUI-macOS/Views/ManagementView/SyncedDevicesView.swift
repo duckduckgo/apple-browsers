@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct SyncedDevicesView<ViewModel>: View where ViewModel: ManagementViewModel {
 

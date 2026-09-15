@@ -85,11 +85,11 @@ extension DefaultExcludedAppsModel: ExcludedAppsModel {
     func reloadVPN() {
         Task {
             // Allow some time for the change to propagate
-            try await Task.sleep(interval: 0.1)
+            try? await Task.sleep(interval: 0.1)
 
             // We need to allow some time for the setting to propagate
             // But ultimately this should actually be a user choice
-            try await vpnXPCClient.command(.restartAdapter)
+            try? await vpnXPCClient.command(.restartAdapter)
         }
     }
 }

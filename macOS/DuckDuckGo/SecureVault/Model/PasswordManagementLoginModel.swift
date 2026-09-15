@@ -256,7 +256,7 @@ final class PasswordManagementLoginModel: ObservableObject, PasswordManagementIt
     }
 
     func togglePrivateEmailStatus() {
-        Task { try await togglePrivateEmailStatus() }
+        Task { try? await togglePrivateEmailStatus() }
     }
 
     private func populateViewModelFromCredentials() {

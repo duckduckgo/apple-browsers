@@ -19,7 +19,7 @@
 import AppInfoRetriever
 import Combine
 import Foundation
-import NetworkExtension
+@preconcurrency import NetworkExtension
 import VPN
 import os.log
 import PixelKit
@@ -151,11 +151,11 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
             switch change {
             case .appRoutingRules:
                 Task {
-                    try await self.updateNetworkSettings()
+                    try? await self.updateNetworkSettings()
                 }
             case .excludedDomains:
                 Task {
-                    try await self.updateNetworkSettings()
+                    try? await self.updateNetworkSettings()
                 }
             }
         }.store(in: &cancellables)

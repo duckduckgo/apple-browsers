@@ -18,6 +18,7 @@
 
 import SwiftUI
 import SwiftUIExtensions
+import Combine
 
 struct DeviceSyncedView: View {
     @EnvironmentObject var model: ManagementDialogModel

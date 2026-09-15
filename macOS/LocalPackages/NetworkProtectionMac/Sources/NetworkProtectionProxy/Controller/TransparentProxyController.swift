@@ -133,7 +133,7 @@ public final class TransparentProxyController {
                 return
             }
 
-            try TransparentProxySession(session).send(.changeSetting(change, responseHandler: {
+            try? TransparentProxySession(session).send(.changeSetting(change, responseHandler: {
                 // no-op
             }))
         }

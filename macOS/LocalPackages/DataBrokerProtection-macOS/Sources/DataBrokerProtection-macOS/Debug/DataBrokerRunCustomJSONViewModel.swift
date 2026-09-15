@@ -374,7 +374,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             group.leave()
                         } catch let UserScriptError.failedToLoadJS(jsFile, error) {
                             pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
-                            try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                            try? await Task.sleep(interval: 1.0) // give time for the pixel to be sent
                             fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
                         } catch {
                             addScanErrorEvent(for: query, error: error)
@@ -480,7 +480,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
             } catch let UserScriptError.failedToLoadJS(jsFile, error) {
                 pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
-                try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                try? await Task.sleep(interval: 1.0) // give time for the pixel to be sent
                 fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
             } catch {
                 addOptOutErrorEvent(for: scanResult, error: error)

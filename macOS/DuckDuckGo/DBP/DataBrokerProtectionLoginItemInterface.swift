@@ -78,7 +78,7 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
 
         Task {
             // Wait to make sure the agent has had time to launch
-            try await Task.sleep(nanoseconds: 1_000_000_000)
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
             pixelHandler.fire(.ipcServerProfileSavedCalledByApp)
             ipcClient.profileSaved { error in
                 if let error = error {

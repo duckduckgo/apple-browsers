@@ -419,8 +419,8 @@ final class NetworkProtectionDebugMenu: NSMenu {
         settings.enforceRoutes.toggle()
 
         Task {
-            try await Task.sleep(interval: 0.1)
-            try await debugUtilities.restartAdapter()
+            try? await Task.sleep(interval: 0.1)
+            try? await debugUtilities.restartAdapter()
         }
     }
 
@@ -428,8 +428,8 @@ final class NetworkProtectionDebugMenu: NSMenu {
         settings.includeAllNetworks.toggle()
 
         Task {
-            try await Task.sleep(interval: 0.1)
-            try await debugUtilities.restartAdapter()
+            try? await Task.sleep(interval: 0.1)
+            try? await debugUtilities.restartAdapter()
         }
     }
 
@@ -437,8 +437,8 @@ final class NetworkProtectionDebugMenu: NSMenu {
         settings.excludeLocalNetworks.toggle()
 
         Task {
-            try await Task.sleep(interval: 0.1)
-            try await debugUtilities.restartAdapter()
+            try? await Task.sleep(interval: 0.1)
+            try? await debugUtilities.restartAdapter()
         }
     }
 
@@ -446,8 +446,8 @@ final class NetworkProtectionDebugMenu: NSMenu {
         settings.excludeCGNAT.toggle()
 
         Task {
-            try await Task.sleep(interval: 0.1)
-            try await debugUtilities.restartAdapter()
+            try? await Task.sleep(interval: 0.1)
+            try? await debugUtilities.restartAdapter()
         }
     }
 
@@ -455,8 +455,8 @@ final class NetworkProtectionDebugMenu: NSMenu {
         settings.excludeAPNs.toggle()
 
         Task {
-            try await Task.sleep(interval: 0.1)
-            try await debugUtilities.restartAdapter()
+            try? await Task.sleep(interval: 0.1)
+            try? await debugUtilities.restartAdapter()
         }
     }
 
@@ -464,8 +464,8 @@ final class NetworkProtectionDebugMenu: NSMenu {
         settings.excludeCellularServices.toggle()
 
         Task {
-            try await Task.sleep(interval: 0.1)
-            try await debugUtilities.restartAdapter()
+            try? await Task.sleep(interval: 0.1)
+            try? await debugUtilities.restartAdapter()
         }
     }
 
@@ -473,8 +473,8 @@ final class NetworkProtectionDebugMenu: NSMenu {
         settings.excludeDeviceCommunication.toggle()
 
         Task {
-            try await Task.sleep(interval: 0.1)
-            try await debugUtilities.restartAdapter()
+            try? await Task.sleep(interval: 0.1)
+            try? await debugUtilities.restartAdapter()
         }
     }
 
@@ -482,8 +482,8 @@ final class NetworkProtectionDebugMenu: NSMenu {
         settings.resetTunnelFlagsToDefaults()
 
         Task {
-            try await Task.sleep(interval: 0.1)
-            try await debugUtilities.restartAdapter()
+            try? await Task.sleep(interval: 0.1)
+            try? await debugUtilities.restartAdapter()
         }
     }
 
@@ -742,7 +742,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
         settings.selectedEnvironment = selectedEnvironment
 
         Task {
-            _ = try await networkProtectionDeviceManager.refreshServerList()
+            guard (try? await networkProtectionDeviceManager.refreshServerList()) != nil else { return }
             try? await populateNetworkProtectionServerListMenuItems()
 
             settings.selectedServer = .automatic

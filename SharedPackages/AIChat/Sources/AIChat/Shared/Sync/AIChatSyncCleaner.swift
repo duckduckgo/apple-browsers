@@ -200,7 +200,7 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
     }
 
     public func updateIfNeeded() async {
-        guard canUseAIChatSyncUpdate, let storageHandler else { return }
+        guard canUseAIChatSyncUpdate, storageHandler != nil else { return }
         let pending = await state.readChatIDsToBeUpdated() ?? []
         guard !pending.isEmpty else { return }
 

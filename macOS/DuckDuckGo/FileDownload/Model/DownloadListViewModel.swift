@@ -97,7 +97,7 @@ final class DownloadListViewModel {
     }
 
     func cleanupInactiveDownloads() {
-        coordinator.cleanupInactiveDownloads(for: fireWindowSession)
+        _ = coordinator.cleanupInactiveDownloads(for: fireWindowSession)
     }
 
     func cancelDownload(at index: Int) {
@@ -113,7 +113,7 @@ final class DownloadListViewModel {
             assertionFailure("DownloadListViewModel: no item at \(index)")
             return
         }
-        coordinator.remove(downloadWithIdentifier: item.id)
+        _ = coordinator.remove(downloadWithIdentifier: item.id)
     }
 
     func restartDownload(at index: Int) {

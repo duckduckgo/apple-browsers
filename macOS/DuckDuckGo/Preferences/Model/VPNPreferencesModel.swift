@@ -329,8 +329,8 @@ final class VPNPreferencesModel: ObservableObject {
     func reloadVPN() {
         Task {
             // Allow some time for the change to propagate
-            try await Task.sleep(interval: 0.1)
-            try await vpnXPCClient.command(.restartAdapter)
+            try? await Task.sleep(interval: 0.1)
+            try? await vpnXPCClient.command(.restartAdapter)
         }
     }
 

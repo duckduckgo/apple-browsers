@@ -49,18 +49,19 @@ struct BookmarkFolderPicker: View {
 
 }
 
-#Preview { {
+@available(macOS 14.0, *)
+#Preview {
+    @Previewable @State var selectedFolder: BookmarkFolder? = BookmarkFolder(id: "4", title: "Nested Folder", children: [])
+
     let folder1 = BookmarkFolder(id: "3", title: "A Folder with a name that normally won‘t fit into the folder picker", children: [])
     let folder2 = BookmarkFolder(id: "4", title: "Nested Folder", children: [])
     let folder3 = BookmarkFolder(id: "5", title: "Another Nested Folder", children: [])
-    @State var selectedFolder: BookmarkFolder? = folder2
 
     return VStack {
         BookmarkFolderPicker(folders: [
             FolderViewModel(entity: folder1, level: 0),
             FolderViewModel(entity: folder2, level: 1),
             FolderViewModel(entity: folder3, level: 2),
-        ], selectedFolder: _selectedFolder.projectedValue)
+        ], selectedFolder: $selectedFolder)
     }.frame(width: 300)
-
-}() }
+}

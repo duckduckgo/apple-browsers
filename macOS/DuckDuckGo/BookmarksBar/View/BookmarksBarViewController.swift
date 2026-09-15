@@ -474,7 +474,7 @@ extension BookmarksBarViewController: BookmarksBarViewModelDelegate {
                     if self.dragging(over: item.view, representing: folder, updatedWith: info) == true {
                         return
                     }
-                    try await Task.sleep(interval: 0.05)
+                    try? await Task.sleep(interval: 0.05)
                 }
             }
         }

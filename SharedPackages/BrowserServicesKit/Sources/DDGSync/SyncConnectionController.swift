@@ -914,6 +914,9 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     private func makePairingV2Coordinator() -> PairingV2Coordinator {
         let canUseExchangeV2Point1 = dependencies.syncFeatureFlags.canUseExchangeV2Point1()
+        let joinStatusDeadline = PairingV2PollingDefaults.resolvedJoinStatusDeadline(
+            from: dependencies.privacyConfigurationManager.privacyConfig.settings(for: .sync)
+        )
         return PairingV2Coordinator(
             syncService: syncService,
             messageExchanger: dependencies.createPairingV2MessageExchanger(),
@@ -924,6 +927,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             canSendExchangeChannelSecret: dependencies.syncFeatureFlags.canSendExchangeChannelSecret(),
             advertisedVersion: canUseExchangeV2Point1 ? .v2Point1 : .v2,
             confirmationDelegate: self,
+            joinStatusDeadline: joinStatusDeadline,
             makeKeyPair: makePairingV2KeyPair
         )
     }

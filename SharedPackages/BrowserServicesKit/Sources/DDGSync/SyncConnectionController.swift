@@ -654,7 +654,8 @@ public class SyncConnectionController: SyncConnectionControlling {
                 .hostSendingRecoveryCode,
                 .joinerWaitingForRecoveryCode:
             return .waitingForRecoveryCode
-        case .hostWaitingForJoinStatus:
+        case .hostWaitingForJoinStatus,
+                .hostJoinOutcomeUnknown:
             return .waitingForJoinStatus
         case .joinerLoggingIn:
             return .loggingIn
@@ -716,6 +717,7 @@ public class SyncConnectionController: SyncConnectionControlling {
              .hostPreparingRecoveryCode,
              .hostSendingRecoveryCode,
              .hostWaitingForJoinStatus,
+             .hostJoinOutcomeUnknown,
              .joinerWaitingForConfirmation,
              .joinerWaitingForRecoveryCode,
              .joinerLoggingIn:
@@ -941,6 +943,8 @@ public class SyncConnectionController: SyncConnectionControlling {
         case .invalidCredentials:
             return .invalidCredentials
         case .loginFailed:
+            return .transportFailure
+        case .peerDisconnected:
             return .transportFailure
         case .upgradeFailed:
             return .accountUpgradeFailed

@@ -28,6 +28,7 @@ enum PairingV2ApplicationMessage: Equatable {
     case recoveryCodeUnavailable(PairingV2RecoveryCodeTerminalMessage)
     case recoveryCodeResponse(PairingV2RecoveryCodeResponseMessage)
     case recoveryCodeDone(PairingV2RecoveryCodeDoneMessage)
+    case bye(PairingV2ByeMessage)
 }
 
 /// A major-2 capability version, separate from the minimum version required by each message.
@@ -281,6 +282,57 @@ enum PairingV2RecoveryCodeDoneReason: Codable, Equatable {
     }
 }
 
+struct PairingV2ByeMessage: Codable, Equatable {
+    static let messageType = "bye"
+
+    let type: String
+    let reason: PairingV2ByeReason
+
+    init(reason: PairingV2ByeReason) {
+        self.type = Self.messageType
+        self.reason = reason
+    }
+}
+
+enum PairingV2ByeReason: Codable, Equatable {
+    case done
+    case cancelled
+    case error
+    case unknown(String)
+
+    init(from decoder: Decoder) throws {
+        let rawValue = try decoder.singleValueContainer().decode(String.self)
+        switch rawValue {
+        case "done":
+            self = .done
+        case "cancelled":
+            self = .cancelled
+        case "error":
+            self = .error
+        default:
+            self = .unknown(rawValue)
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    private var rawValue: String {
+        switch self {
+        case .done:
+            return "done"
+        case .cancelled:
+            return "cancelled"
+        case .error:
+            return "error"
+        case .unknown(let rawValue):
+            return rawValue
+        }
+    }
+}
+
 extension PairingV2ApplicationMessage {
 
     /// The envelope describes the message's requirements, not the sender's advertised capability.
@@ -289,7 +341,7 @@ extension PairingV2ApplicationMessage {
         case .hello, .recoveryCodeAvailable, .recoveryCodeRequest, .recoveryCodeAwaitingConfirmation,
                 .recoveryCodeConfirmed, .recoveryCodeDenied, .recoveryCodeUnavailable, .recoveryCodeResponse:
             return .v2
-        case .recoveryCodeDone:
+        case .recoveryCodeDone, .bye:
             return .v2Point1
         }
     }
@@ -319,6 +371,8 @@ extension PairingV2ApplicationMessage {
         case .recoveryCodeResponse(let message):
             return message.type
         case .recoveryCodeDone(let message):
+            return message.type
+        case .bye(let message):
             return message.type
         }
     }

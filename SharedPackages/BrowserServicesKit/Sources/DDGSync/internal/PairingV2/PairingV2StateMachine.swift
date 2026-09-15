@@ -119,6 +119,7 @@ enum PairingV2State: Equatable {
     case hostPreparingRecoveryCode(PairingV2Session, credentialKind: PairingV2DeviceKind)
     case hostSendingRecoveryCode(PairingV2Session, credentialKind: PairingV2DeviceKind, recoveryCode: String)
     case hostWaitingForJoinStatus(PairingV2Session, credentialKind: PairingV2DeviceKind)
+    case hostJoinOutcomeUnknown(PairingV2Session, credentialKind: PairingV2DeviceKind)
     case joinerWaitingForConfirmation(PairingV2Session)
     case joinerWaitingForRecoveryCode(PairingV2Session)
     case joinerLoggingIn(PairingV2Session, recoveryCode: String)
@@ -144,6 +145,7 @@ enum PairingV2Event: Equatable {
     case receivedRecoveryCodeUnavailable
     case receivedRecoveryCode(String)
     case receivedRecoveryCodeDone(PairingV2RecoveryCodeDoneReason)
+    case receivedBye(PairingV2ByeReason)
     case loginSucceeded
     case failed(PairingV2Error)
 }
@@ -184,6 +186,7 @@ enum PairingV2Error: Error, Equatable {
     case invalidCredentials
     case loginFailed
     case upgradeFailed
+    case peerDisconnected
     case recoveryCodeDenied
     case recoveryCodeUnavailable
     case unsupportedVersion(String)
@@ -345,6 +348,9 @@ struct PairingV2StateMachine {
         case .receivedRecoveryCodeDone:
             return handleReceivedRecoveryCodeDone()
 
+        case .receivedBye(let reason):
+            return handleReceivedBye(reason)
+
         case .loginSucceeded:
             return handleLoginSucceeded()
 
@@ -429,6 +435,7 @@ struct PairingV2StateMachine {
                 .hostPreparingRecoveryCode,
                 .hostSendingRecoveryCode,
                 .hostWaitingForJoinStatus,
+                .hostJoinOutcomeUnknown,
                 .joinerWaitingForConfirmation,
                 .joinerWaitingForRecoveryCode,
                 .joinerLoggingIn:
@@ -577,7 +584,30 @@ struct PairingV2StateMachine {
         case .completed(.recoveryCodeSent):
             return []
         default:
+            // hostJoinOutcomeUnknown intentionally falls through until follow-up PR adds late-status handling.
             return fail(with: .unexpectedEvent(.recoveryCodeDoneWhileNotWaitingForJoinStatus))
+        }
+    }
+
+    private mutating func handleReceivedBye(_ reason: PairingV2ByeReason) -> [PairingV2Command] {
+        switch state {
+        case .completed, .failed:
+            return []
+        case .joinerLoggingIn:
+            return []
+        case .hostWaitingForJoinStatus(let session, let credentialKind):
+            guard reason == .done else {
+                return failAfterPeerLeft(reason)
+            }
+            state = .hostJoinOutcomeUnknown(session, credentialKind: credentialKind)
+            return []
+        case .hostJoinOutcomeUnknown:
+            guard reason != .done else {
+                return []
+            }
+            return failAfterPeerLeft(reason)
+        default:
+            return failAfterPeerLeft(reason)
         }
     }
 
@@ -599,6 +629,10 @@ struct PairingV2StateMachine {
         }
         state = .failed(error)
         return commands
+    }
+
+    private mutating func failAfterPeerLeft(_ reason: PairingV2ByeReason) -> [PairingV2Command] {
+        fail(with: reason == .cancelled ? .cancelled : .peerDisconnected)
     }
 
     private static func localRecoveryCodeStatus(for localClient: PairingV2LocalClient) -> PairingV2PeerStatus {

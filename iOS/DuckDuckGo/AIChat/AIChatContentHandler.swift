@@ -23,6 +23,8 @@ import Common
 import FoundationExtensions
 import Core
 import os.log
+import PixelKit
+import PixelExperimentKit
 import PrivacyConfig
 import Foundation
 import Subscription
@@ -179,6 +181,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let debugSettings: AIChatDebugSettingsHandling
     private let iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding
+    private let fireNewChatExperimentPixels: () -> Void
 
     private var userScript: AIChatUserScriptProviding?
 
@@ -204,7 +207,8 @@ final class AIChatContentHandler: AIChatContentHandling {
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding = IPadDuckAIControlsFeature(),
-         getPageContext: PageContextAsyncProvider? = nil) {
+         getPageContext: PageContextAsyncProvider? = nil,
+         fireNewChatExperimentPixels: @escaping () -> Void = { PixelKit.fireNewAIChatExperimentPixels() }) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
         self.pixelMetricHandler = pixelMetricHandler
@@ -218,6 +222,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.debugSettings = debugSettings
         self.iPadDuckAIControlsFeature = iPadDuckAIControlsFeature
         self.getPageContext = getPageContext
+        self.fireNewChatExperimentPixels = fireNewChatExperimentPixels
     }
 
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
@@ -393,6 +398,7 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
         case .sendToSyncSettings, .sendToSetupSync:
             delegate?.aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(self)
         case .newChatStarted:
+            fireNewChatExperimentPixels()
             delegate?.aiChatContentHandlerDidReceiveNewChatCreated(self)
         default:
             break

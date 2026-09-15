@@ -1,0 +1,10 @@
+// Debug pixels for the Fire button's data clearing (see TabCleanupPreparer.swift)
+{
+    "m_mac_debug_blank_navigation_on_burn_timed_out": {
+        "description": "Fired when a burn gives up waiting for its tabs to load a blank page before clearing. Every open tab is navigated to about:blank first, and the burn waited for all of them with no time limit; a tab whose web content process died, or that the user closed mid-burn, never reported back and left the burn stuck for the rest of the session. This pixel means that wait hit its timeout and the burn proceeded anyway. Daily count is affected users per day; standard count is how often it happens.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

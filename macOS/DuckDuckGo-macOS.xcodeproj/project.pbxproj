@@ -507,6 +507,8 @@
 		369BA9872F31305F0037B56D /* DataClearingPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369BA9852F31305C0037B56D /* DataClearingPixels.swift */; };
 		36E19A022F322D0200556F78 /* DataClearingPixelsReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E19A012F322CFE00556F78 /* DataClearingPixelsReporterTests.swift */; };
 		36E19A032F322D0200556F78 /* DataClearingPixelsReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E19A012F322CFE00556F78 /* DataClearingPixelsReporterTests.swift */; };
+		36E19A112F33000000556F78 /* TabCleanupPreparerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E19A102F33000000556F78 /* TabCleanupPreparerTests.swift */; };
+		36E19A122F33000000556F78 /* TabCleanupPreparerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E19A102F33000000556F78 /* TabCleanupPreparerTests.swift */; };
 		36E19A052F3230D900556F78 /* DataClearingPixelsReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E19A042F3230D200556F78 /* DataClearingPixelsReporter.swift */; };
 		36E19A062F3230D900556F78 /* DataClearingPixelsReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E19A042F3230D200556F78 /* DataClearingPixelsReporter.swift */; };
 		36E8D3722F857F9000861037 /* SubscriptionPromoTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E8D3712F857F9000861037 /* SubscriptionPromoTabExtension.swift */; };
@@ -5413,6 +5415,7 @@
 		369A0CE72FAE24FB00494F41 /* URL+SubscriptionAttribution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+SubscriptionAttribution.swift"; sourceTree = "<group>"; };
 		369BA9852F31305C0037B56D /* DataClearingPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixels.swift; sourceTree = "<group>"; };
 		36E19A012F322CFE00556F78 /* DataClearingPixelsReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixelsReporterTests.swift; sourceTree = "<group>"; };
+		36E19A102F33000000556F78 /* TabCleanupPreparerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabCleanupPreparerTests.swift; sourceTree = "<group>"; };
 		36E19A042F3230D200556F78 /* DataClearingPixelsReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixelsReporter.swift; sourceTree = "<group>"; };
 		36E8D3712F857F9000861037 /* SubscriptionPromoTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoTabExtension.swift; sourceTree = "<group>"; };
 		36E8D3742F86C96200861037 /* SubscriptionPromoDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoDebugMenu.swift; sourceTree = "<group>"; };
@@ -12028,6 +12031,7 @@
 			children = (
 				365B21782F64460D00DE0CB0 /* DataClearingWideEventServiceTests.swift */,
 				36E19A012F322CFE00556F78 /* DataClearingPixelsReporterTests.swift */,
+				36E19A102F33000000556F78 /* TabCleanupPreparerTests.swift */,
 				BB10556D2E14350300199F37 /* DefaultVisualizeFireSettingsDeciderTests.swift */,
 				376C4DB828A1A48A00CC0F5B /* FireDialogViewModelTests.swift */,
 				CC951A5A2EB4E10C0047E245 /* FireCoordinatorTests.swift */,
@@ -17578,6 +17582,7 @@
 				3706FE5D293F661700E42796 /* FileSystemDSL.swift in Sources */,
 				3706FE5E293F661700E42796 /* DataImportMocks.swift in Sources */,
 				36E19A032F322D0200556F78 /* DataClearingPixelsReporterTests.swift in Sources */,
+				36E19A122F33000000556F78 /* TabCleanupPreparerTests.swift in Sources */,
 				376731882C7EF9C300EB097B /* ColorSchemeLosslessStringConvertibleExtensionTests.swift in Sources */,
 				9F0FFFBF2BCCAF1F007C87DD /* BookmarkAllTabsDialogViewModelMock.swift in Sources */,
 				C1CE846D2C88868D0068913B /* FreemiumDBPScanResultPollingTests.swift in Sources */,
@@ -20035,6 +20040,7 @@
 				C149975A2DE762B600FF8F0F /* SubscriptionPagesUseSubscriptionFeatureTests.swift in Sources */,
 				37CDFC2B2D79CCF400CBB429 /* HistoryViewDataProviderPixelHandlerTests.swift in Sources */,
 				36E19A022F322D0200556F78 /* DataClearingPixelsReporterTests.swift in Sources */,
+				36E19A112F33000000556F78 /* TabCleanupPreparerTests.swift in Sources */,
 				1D4B03D92CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift in Sources */,
 				B6106BB326A7F4AA0013B453 /* GeolocationServiceMock.swift in Sources */,
 				4B8AC93D26B49BE600879451 /* FirefoxLoginReaderTests.swift in Sources */,

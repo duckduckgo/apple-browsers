@@ -81,7 +81,9 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
     }
 
     @objc private func customizeButtonTapped() {
-        let customizationViewController = NewTabPageCustomizationViewController()
+        let model = NewTabPageCustomizationModel()
+        model.reportOpening()
+        let customizationViewController = NewTabPageCustomizationViewController(model: model)
         customizationViewController.onAllSettingsSelected = { [weak self] in
             guard let self else { return }
             delegate?.newTabPageDidRequestSettings(self)

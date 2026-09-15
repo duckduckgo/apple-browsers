@@ -18,7 +18,9 @@
 //
 
 import XCTest
+import UIKit
 import Core
+import DesignResourcesKit
 
 @testable import DuckDuckGo
 
@@ -207,4 +209,112 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         XCTAssertFalse(stateHandler.doneButton.isEnabled)
     }
 
+}
+
+@MainActor
+final class TabViewCellSelectionAppearanceTests: XCTestCase {
+
+    func testSelectionAccentIsShockingGreenInLightAndDarkMode() {
+        let color = UIColor(singleUseColor: .tabSwitcherSelectionAccent)
+
+        assertShockingGreen(color.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light)))
+        assertShockingGreen(color.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark)))
+    }
+
+    func testSelectedNormalTabUsesSelectionAccent() {
+        let tab = Tab(fireTab: false)
+        let cell = makeCell(tab: tab, isSelectionModeEnabled: true, isSelected: true)
+
+        assertSelectionAccent(on: cell)
+    }
+
+    func testSelectedFireTabUsesSelectionAccent() {
+        let tab = Tab(fireTab: true)
+        let cell = makeCell(tab: tab, isSelectionModeEnabled: true, isSelected: true)
+
+        assertSelectionAccent(on: cell)
+    }
+
+    func testDeselectedTabHasNoBorder() {
+        let tab = Tab(fireTab: false)
+        let cell = makeCell(tab: tab, isSelectionModeEnabled: true, isSelected: false)
+
+        XCTAssertEqual(cell.border.layer.borderWidth, TabViewCell.Constants.unselectedBorderWidth)
+    }
+
+    func testCurrentNormalTabOutsideSelectionModeKeepsCurrentTabAccent() {
+        let tab = Tab(fireTab: false)
+        let cell = makeCell(tab: tab, isSelectionModeEnabled: false, isSelected: false, isCurrent: true)
+
+        assertBorderColor(UIColor(designSystemColor: .decorationTertiary), on: cell)
+    }
+
+    func testCurrentFireTabOutsideSelectionModeKeepsFireAccent() {
+        let tab = Tab(fireTab: true)
+        let cell = makeCell(tab: tab, isSelectionModeEnabled: false, isSelected: false, isCurrent: true)
+
+        assertBorderColor(UIColor(singleUseColor: .fireModeAccent), on: cell)
+    }
+
+    private func makeCell(tab: Tab,
+                          isSelectionModeEnabled: Bool,
+                          isSelected: Bool,
+                          isCurrent: Bool = false) -> TabViewCell {
+        let cell = TabViewCell(frame: .zero)
+        cell.tab = tab
+        cell.isSelectionModeEnabled = isSelectionModeEnabled
+        cell.isSelected = isSelected
+        cell.isCurrent = isCurrent
+        cell.refreshSelectionAppearance()
+        return cell
+    }
+
+    private func assertSelectionAccent(on cell: TabViewCell, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertEqual(cell.border.layer.borderWidth, TabViewCell.Constants.selectedBorderWidth, file: file, line: line)
+        assertBorderColor(UIColor(singleUseColor: .tabSwitcherSelectionAccent), on: cell, file: file, line: line)
+        XCTAssertNotNil(cell.selectionIndicator.image, file: file, line: line)
+        assertShockingGreen(cell.selectionAccentColor, file: file, line: line)
+    }
+
+    private func assertBorderColor(_ expectedColor: UIColor,
+                                   on cell: TabViewCell,
+                                   file: StaticString = #filePath,
+                                   line: UInt = #line) {
+        guard let borderColor = cell.border.layer.borderColor else {
+            XCTFail("Missing border color", file: file, line: line)
+            return
+        }
+        assertColor(UIColor(cgColor: borderColor), matches: expectedColor.resolvedColor(with: cell.traitCollection), file: file, line: line)
+    }
+
+    private func assertShockingGreen(_ color: UIColor, file: StaticString = #filePath, line: UInt = #line) {
+        assertColor(color,
+                    matches: UIColor(red: 57.0 / 255.0, green: 1, blue: 20.0 / 255.0, alpha: 1),
+                    file: file,
+                    line: line)
+    }
+
+    private func assertColor(_ color: UIColor,
+                             matches expectedColor: UIColor,
+                             file: StaticString = #filePath,
+                             line: UInt = #line) {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        var expectedRed: CGFloat = 0
+        var expectedGreen: CGFloat = 0
+        var expectedBlue: CGFloat = 0
+        var expectedAlpha: CGFloat = 0
+
+        XCTAssertTrue(color.getRed(&red, green: &green, blue: &blue, alpha: &alpha), file: file, line: line)
+        XCTAssertTrue(expectedColor.getRed(&expectedRed,
+                                           green: &expectedGreen,
+                                           blue: &expectedBlue,
+                                           alpha: &expectedAlpha), file: file, line: line)
+        XCTAssertEqual(red, expectedRed, accuracy: 0.001, file: file, line: line)
+        XCTAssertEqual(green, expectedGreen, accuracy: 0.001, file: file, line: line)
+        XCTAssertEqual(blue, expectedBlue, accuracy: 0.001, file: file, line: line)
+        XCTAssertEqual(alpha, expectedAlpha, accuracy: 0.001, file: file, line: line)
+    }
 }

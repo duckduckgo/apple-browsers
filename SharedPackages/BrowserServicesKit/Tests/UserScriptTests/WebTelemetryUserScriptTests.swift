@@ -33,6 +33,13 @@ final class WebTelemetryUserScriptTests: XCTestCase {
         XCTAssertNotNil(handler, "Should return a handler for video-playback method")
     }
 
+    func testHandlerReturnsFunctionForVideoAutoplayMethod() {
+        let script = WebTelemetryUserScript()
+        let handler = script.handler(forMethodNamed: "video-autoplay")
+
+        XCTAssertNotNil(handler, "Should return a handler for video-autoplay method")
+    }
+
     func testHandlerReturnsNilForUnknownMethod() {
         let script = WebTelemetryUserScript()
         let handler = script.handler(forMethodNamed: "unknownMethod")
@@ -45,29 +52,6 @@ final class WebTelemetryUserScriptTests: XCTestCase {
         let handler = script.handler(forMethodNamed: "")
 
         XCTAssertNil(handler, "Should return nil for empty method name")
-    }
-
-    // MARK: - Data Model Tests
-
-    func testVideoPlaybackPayloadCodable() throws {
-        let payload = WebTelemetryUserScript.VideoPlaybackPayload(userInteraction: true)
-
-        let encoder = JSONEncoder()
-        let data = try encoder.encode(payload)
-
-        let decoder = JSONDecoder()
-        let decoded = try decoder.decode(WebTelemetryUserScript.VideoPlaybackPayload.self, from: data)
-
-        XCTAssertEqual(payload, decoded, "Should round-trip through JSON encoding/decoding")
-    }
-
-    func testVideoPlaybackPayloadDecodesFromJS() throws {
-        let json = #"{"userInteraction": false}"#
-        let data = json.data(using: .utf8)!
-
-        let decoded = try JSONDecoder().decode(WebTelemetryUserScript.VideoPlaybackPayload.self, from: data)
-
-        XCTAssertFalse(decoded.userInteraction)
     }
 
     // MARK: - Subfeature Configuration Tests
@@ -116,12 +100,16 @@ final class WebTelemetryUserScriptTests: XCTestCase {
 // MARK: - Mocks
 
 private final class MockWebTelemetryUserScriptDelegate: WebTelemetryUserScriptDelegate {
-    var receivedUserInteraction: Bool?
+    var didDetectVideoPlaybackCallCount = 0
+    var didDetectVideoAutoplayCallCount = 0
 
     @MainActor
-    func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript,
-                                didDetectVideoPlayback payload: WebTelemetryUserScript.VideoPlaybackPayload,
-                                in webView: WKWebView?) {
-        receivedUserInteraction = payload.userInteraction
+    func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript, didDetectVideoPlaybackIn webView: WKWebView?) {
+        didDetectVideoPlaybackCallCount += 1
+    }
+
+    @MainActor
+    func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript, didDetectVideoAutoplayIn webView: WKWebView?) {
+        didDetectVideoAutoplayCallCount += 1
     }
 }

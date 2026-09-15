@@ -39,7 +39,7 @@ jobs:
 
     # This doesn't need Xcode, so could technically run on Ubuntu, but find_asana_release_task.sh
     # uses BSD-specific `date` syntax, that doesn't work with GNU `date` (available on Linux).
-    runs-on: macos-26
+    runs-on: bitrise:macos26-m4
     timeout-minutes: 10
 
     env:
@@ -57,6 +57,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Assert release branch
         run: |
@@ -114,6 +117,9 @@ jobs:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           ref: ${{ needs.validate_input_conditions.outputs.release-branch }}
           submodules: recursive
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Setup Ruby and dependencies
         uses: ./.github/actions/setup-ruby

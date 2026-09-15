@@ -21,6 +21,7 @@ import Subscription
 import SubscriptionUI
 import enum StoreKit.StoreKitError
 import PixelKit
+import WideEvent
 import PrivacyConfig
 
 protocol SubscriptionAppStoreRestorer {

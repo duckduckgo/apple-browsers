@@ -22,7 +22,7 @@ import CoreGraphics
 import Testing
 import Core
 import PrivacyConfig
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 
 @Suite("Escape Hatch Model")
@@ -133,7 +133,7 @@ struct EscapeHatchModelTests {
 
         sut.primarySwipeAction.perform()
 
-        #expect(sut.primarySwipeAction.label == UserText.escapeHatchMenuCloseTab)
+        #expect(sut.primarySwipeAction.label == UserText.escapeHatchSwipeActionCloseTab)
         #expect(router.closeCalls.count == 1)
         #expect(router.closeCalls.first === targetTab)
         #expect(router.burnImmediatelyCalls.isEmpty)

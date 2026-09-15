@@ -112,6 +112,7 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func fetchExtractedProfiles(for brokerId: Int64, with profileQueryId: Int64) throws -> [ExtractedProfile]
     func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile]
     func updateRemovedDate(for extractedProfileId: Int64, with date: Date?) throws
+    func updateExtractedProfile(_ extractedProfile: ExtractedProfile, for extractedProfileId: Int64) throws
 
     func hasMatches() throws -> Bool
 
@@ -501,6 +502,12 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
 
     public func updateRemovedDate(for extractedProfileId: Int64, with date: Date?) throws {
         try self.providers.database.updateRemovedDate(for: extractedProfileId, with: date)
+    }
+
+    public func updateExtractedProfile(_ extractedProfile: ExtractedProfile, for extractedProfileId: Int64) throws {
+        let mapper = MapperToDB(mechanism: l2Encrypt(data:))
+
+        try self.providers.database.updateProfileData(for: extractedProfileId, with: mapper.mapToDB(extractedProfile))
     }
 
     public func hasMatches() throws -> Bool {

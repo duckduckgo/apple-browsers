@@ -151,14 +151,38 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           FINGERPRINT: ${{ steps.fingerprint.outputs.value }}
         run: |
-          fingerprint_count="$(
-            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=wpr-validation-failure-$FINGERPRINT&per_page=100" \
-              --jq '[.artifacts[] | select(.expired == false)] | length'
-          )"
-          run_count="$(
-            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=wpr-validation-run-$GITHUB_RUN_ID&per_page=100" \
-              --jq '[.artifacts[] | select(.expired == false)] | length'
-          )"
+          # Up to 3 attempts per lookup, 5s apart: a transient API failure
+          # should not lose an alert. exists=unknown (and skipping task
+          # creation) is still the outcome after 3 consecutive failures on
+          # either lookup — treating unknown as "false" would risk duplicate
+          # tasks, which is worse than a delayed alert.
+          gh_api_artifact_count() {
+            local url="$1"
+            local count=""
+            for attempt in 1 2 3; do
+              if count="$(gh api "$url" --jq '[.artifacts[] | select(.expired == false)] | length')"; then
+                printf '%s' "$count"
+                return 0
+              fi
+              [ "$attempt" -lt 3 ] && sleep 5
+            done
+            return 1
+          }
+
+          if ! fingerprint_count="$(
+              gh_api_artifact_count "repos/$GITHUB_REPOSITORY/actions/artifacts?name=wpr-validation-failure-$FINGERPRINT&per_page=100"
+            )"; then
+            echo "::warning title=Asana notification skipped::Could not check the fingerprint alert marker after 3 attempts; skipping task creation to avoid duplicates."
+            echo "exists=unknown" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! run_count="$(
+              gh_api_artifact_count "repos/$GITHUB_REPOSITORY/actions/artifacts?name=wpr-validation-run-$GITHUB_RUN_ID&per_page=100"
+            )"; then
+            echo "::warning title=Asana notification skipped::Could not check the run alert marker after 3 attempts; skipping task creation to avoid duplicates."
+            echo "exists=unknown" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ "$fingerprint_count" -gt 0 ] || [ "$run_count" -gt 0 ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
@@ -176,6 +200,7 @@ jobs:
         working-directory: .
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          ASANA_FOLLOWERS: ${{ vars.CROSSBENCH_ALERT_FOLLOWERS }}
           PACKAGE_FAILED: ${{ steps.report.outputs.package-failed }}
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -220,13 +245,24 @@ jobs:
             task_name="WPR Validation Failure: Site Archives"
           fi
           "$helper" \
-            1216902374642227 \
+            1217628708169653 \
+            1217628708169657 \
             "$task_name" \
             "$notes_file" \
             "$start_date" \
             "$due_date"
           echo "created=true" >> "$GITHUB_OUTPUT"
           echo "reported by run $GITHUB_RUN_ID" > macOS/scripts/crossbench/wpr-validation/alert-marker.txt
+
+      - name: Fail loudly when the Asana alert could not be delivered
+        # No continue-on-error: create-asana-subtask.sh keeps it on the step
+        # above so the marker-saving steps below still run, but a failed
+        # notification must not leave the run green.
+        if: always() && steps.asana.outcome == 'failure'
+        working-directory: .
+        run: |
+          echo "::error title=Asana alert not delivered::Asana subtask creation failed for run https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          exit 1
 
       - name: Save fingerprint alert marker
         if: always() && steps.asana.outputs.created == 'true'

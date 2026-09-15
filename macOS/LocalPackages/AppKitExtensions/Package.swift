@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../Utilities"),
-        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Common"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
     ],
     targets: [
@@ -19,7 +19,7 @@ let package = Package(
             name: "AppKitExtensions",
             dependencies: [
                 "Utilities",
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),

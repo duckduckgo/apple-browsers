@@ -20,9 +20,9 @@
 import Foundation
 
 import XCTest
-@testable import Core
+@testable import DuckDuckGo
 import WebKit
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 class DataStoreIDManagerTests: XCTestCase {
 

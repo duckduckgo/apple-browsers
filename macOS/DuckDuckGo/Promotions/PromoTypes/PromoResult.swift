@@ -29,6 +29,10 @@ enum PromoResult: Equatable {
     /// - `.ignored(cooldown: interval)` -> temporarily dismissed; may re-show after cooldown interval elapses.
     case ignored(cooldown: TimeInterval? = nil)
 
+    /// Promo declined to display for this user and will not be offered again.
+    /// Permanently dismissed without recording a dismissal, so it does not contribute to the global cooldown.
+    case retired
+
     /// Promo retracted itself or encountered an error.
     /// No state change recorded; eligible again on next trigger.
     case noChange

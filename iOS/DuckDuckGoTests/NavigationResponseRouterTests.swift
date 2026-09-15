@@ -22,18 +22,14 @@ import Core
 import Foundation
 import PrivacyConfig
 import Testing
+import FeatureFlags_iOS
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 @Suite("NavigationResponseRouter", .serialized)
 final class NavigationResponseRouterTests {
 
-    init() {
-        PixelFiringMock.tearDown()
-    }
-
-    deinit {
-        PixelFiringMock.tearDown()
-    }
+    private let pixelKitMock = PixelKitMock()
 
     // MARK: - BLOB (branch 1)
 
@@ -286,9 +282,9 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        let downloadStarted = PixelFiringMock.allPixelsFired.first { $0.pixelName == Pixel.Event.downloadStarted.name }
+        let downloadStarted = pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.downloadStarted.name }
         #expect(downloadStarted != nil)
-        #expect(downloadStarted?.params?[PixelParameters.canAutoPreviewMIMEType] == "1")
+        #expect(downloadStarted?.additionalParameters?[PixelParameters.canAutoPreviewMIMEType] == "1")
     }
 
     @available(iOS 16, *)
@@ -302,7 +298,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(!PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+        #expect(!pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     // MARK: - Data scheme download (branch 3a)
@@ -420,9 +416,9 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        let downloadStarted = PixelFiringMock.allPixelsFired.first { $0.pixelName == Pixel.Event.downloadStarted.name }
+        let downloadStarted = pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.downloadStarted.name }
         #expect(downloadStarted != nil)
-        #expect(downloadStarted?.params?[PixelParameters.canAutoPreviewMIMEType] == "1")
+        #expect(downloadStarted?.additionalParameters?[PixelParameters.canAutoPreviewMIMEType] == "1")
     }
 
     @available(iOS 16, *)
@@ -436,9 +432,9 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        let downloadStarted = PixelFiringMock.allPixelsFired.first { $0.pixelName == Pixel.Event.downloadStarted.name }
+        let downloadStarted = pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.downloadStarted.name }
         #expect(downloadStarted != nil)
-        #expect(downloadStarted?.params?[PixelParameters.canAutoPreviewMIMEType] == "1")
+        #expect(downloadStarted?.additionalParameters?[PixelParameters.canAutoPreviewMIMEType] == "1")
     }
 
     @available(iOS 16, *)
@@ -452,7 +448,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     @available(iOS 16, *)
@@ -470,7 +466,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     @available(iOS 16, *)
@@ -484,7 +480,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     // MARK: - Wallet pass preview pixel
@@ -500,7 +496,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+        #expect(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     @available(iOS 16, *)
@@ -514,7 +510,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+        #expect(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     @available(iOS 16, *)
@@ -528,7 +524,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+        #expect(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     @available(iOS 16, *)
@@ -542,7 +538,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(!PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+        #expect(!pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     @available(iOS 16, *)
@@ -556,7 +552,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(!PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+        #expect(!pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     @available(iOS 16, *)
@@ -574,7 +570,7 @@ final class NavigationResponseRouterTests {
         _ = router.decide(for: shape)
 
         // THEN
-        #expect(!PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.walletPassPreviewRequested.name })
+        #expect(!pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.walletPassPreviewRequested.name })
     }
 
     // MARK: - Helpers
@@ -583,7 +579,7 @@ final class NavigationResponseRouterTests {
         var enabled: [FeatureFlag] = []
         if walletPassDownload { enabled.append(.walletPassDownload) }
         let flagger = MockFeatureFlagger(enabledFeatureFlags: enabled)
-        return NavigationResponseRouter(featureFlagger: flagger, pixelFiring: PixelFiringMock.self)
+        return NavigationResponseRouter(featureFlagger: flagger, pixelFiring: pixelKitMock)
     }
 
     private func makeShape(

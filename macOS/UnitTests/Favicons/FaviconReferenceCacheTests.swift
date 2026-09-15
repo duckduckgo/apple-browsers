@@ -91,6 +91,107 @@ class FaviconReferenceCacheTests: XCTestCase {
         XCTAssertEqual(store.removedHostReferenceIdentifiers, [hostReference.identifier])
         XCTAssertEqual(store.removedUrlReferenceIdentifiers, [urlReference.identifier])
     }
+
+    // MARK: - Empty references
+
+    /// A favicon fetch that finds nothing must not delete the favicon the host already has.
+    @MainActor
+    func testWhenNoFaviconIsFoundForKnownDocumentUrlThenExistingReferenceIsKept() async throws {
+        let referenceCache = FaviconReferenceCache(faviconStoring: FaviconStoringMock())
+        try await referenceCache.load()
+
+        referenceCache.insert(faviconUrls: (URL.aFaviconUrl1, URL.aFaviconUrl1), documentUrl: URL.aDocumentUrl1)
+        referenceCache.insert(faviconUrls: (nil, nil), documentUrl: URL.aDocumentUrl1)
+
+        XCTAssertEqual(URL.aFaviconUrl1, referenceCache.getFaviconUrl(for: URL.aDocumentUrl1, sizeCategory: .small))
+        XCTAssertEqual(URL.aFaviconUrl1, referenceCache.getFaviconUrl(for: URL.aDocumentUrl1.host!, sizeCategory: .small))
+    }
+
+    /// The same fetch failure on a different page of a known host must not add an empty URL reference,
+    /// which would shadow the host reference and hide the favicon for that one page.
+    @MainActor
+    func testWhenNoFaviconIsFoundForOtherDocumentUrlThenHostReferenceIsNotShadowed() async throws {
+        let referenceCache = FaviconReferenceCache(faviconStoring: FaviconStoringMock())
+        try await referenceCache.load()
+
+        XCTAssertEqual(URL.aDocumentUrl1.host, URL.aDocumentUrl2.host)
+
+        referenceCache.insert(faviconUrls: (URL.aFaviconUrl1, URL.aFaviconUrl1), documentUrl: URL.aDocumentUrl1)
+        referenceCache.insert(faviconUrls: (nil, nil), documentUrl: URL.aDocumentUrl2)
+
+        XCTAssertNil(referenceCache.urlReferences[URL.aDocumentUrl2])
+        XCTAssertEqual(URL.aFaviconUrl1, referenceCache.getFaviconUrl(for: URL.aDocumentUrl2, sizeCategory: .small))
+    }
+
+    /// A URL reference is an exception for one page, so it wins — but only for the sizes it names.
+    /// For the sizes it does not name, the host reference answers instead of the lookup missing.
+    @MainActor
+    func testWhenUrlReferenceNamesNoFaviconForSizeThenHostReferenceIsUsed() async throws {
+        let store = FaviconStoringMock()
+        store.hostReferencesToLoad = [
+            FaviconHostReference(identifier: UUID(),
+                                 smallFaviconUrl: URL.aFaviconUrl1,
+                                 mediumFaviconUrl: URL.aFaviconUrl1,
+                                 host: URL.aDocumentUrl1.host!,
+                                 documentUrl: URL.aDocumentUrl1,
+                                 dateCreated: Date())
+        ]
+        store.urlReferencesToLoad = [
+            FaviconUrlReference(identifier: UUID(),
+                                smallFaviconUrl: URL.aFaviconUrl2,
+                                mediumFaviconUrl: nil,
+                                documentUrl: URL.aDocumentUrl2,
+                                dateCreated: Date())
+        ]
+
+        let referenceCache = FaviconReferenceCache(faviconStoring: store)
+        try await referenceCache.load()
+
+        XCTAssertEqual(URL.aFaviconUrl2, referenceCache.getFaviconUrl(for: URL.aDocumentUrl2, sizeCategory: .small))
+        XCTAssertEqual(URL.aFaviconUrl1, referenceCache.getFaviconUrl(for: URL.aDocumentUrl2, sizeCategory: .medium))
+    }
+
+    /// Earlier versions stored references that name no favicon URL. They answer no lookup, and an empty
+    /// URL reference hid the host's favicon, so `load()` discards them from memory and from the store.
+    @MainActor
+    func testWhenReferencesAreLoadedThenEmptyOnesAreDiscardedAndRemovedFromStore() async throws {
+        let store = FaviconStoringMock()
+        let emptyHostReference = FaviconHostReference(identifier: UUID(),
+                                                      smallFaviconUrl: nil,
+                                                      mediumFaviconUrl: nil,
+                                                      host: URL.aDocumentUrl3.host!,
+                                                      documentUrl: URL.aDocumentUrl3,
+                                                      dateCreated: Date())
+        let validHostReference = FaviconHostReference(identifier: UUID(),
+                                                      smallFaviconUrl: URL.aFaviconUrl1,
+                                                      mediumFaviconUrl: URL.aFaviconUrl1,
+                                                      host: URL.aDocumentUrl1.host!,
+                                                      documentUrl: URL.aDocumentUrl1,
+                                                      dateCreated: Date())
+        let emptyUrlReference = FaviconUrlReference(identifier: UUID(),
+                                                    smallFaviconUrl: nil,
+                                                    mediumFaviconUrl: nil,
+                                                    documentUrl: URL.aDocumentUrl2,
+                                                    dateCreated: Date())
+        store.hostReferencesToLoad = [emptyHostReference, validHostReference]
+        store.urlReferencesToLoad = [emptyUrlReference]
+        store.removeHostReferencesExpectation = expectation(description: "Empty host reference removed from store")
+        store.removeUrlReferencesExpectation = expectation(description: "Empty URL reference removed from store")
+
+        let referenceCache = FaviconReferenceCache(faviconStoring: store)
+        try await referenceCache.load()
+
+        XCTAssertEqual([URL.aDocumentUrl1.host!], Array(referenceCache.hostReferences.keys))
+        XCTAssertTrue(referenceCache.urlReferences.isEmpty)
+        XCTAssertEqual(URL.aFaviconUrl1, referenceCache.getFaviconUrl(for: URL.aDocumentUrl1, sizeCategory: .small))
+        // The empty URL reference is gone, so this page falls back to its host's favicon.
+        XCTAssertEqual(URL.aFaviconUrl1, referenceCache.getFaviconUrl(for: URL.aDocumentUrl2, sizeCategory: .small))
+        XCTAssertNil(referenceCache.getFaviconUrl(for: URL.aDocumentUrl3, sizeCategory: .small))
+
+        await fulfillment(of: [store.removeHostReferencesExpectation!, store.removeUrlReferencesExpectation!], timeout: 5)
+        XCTAssertEqual([emptyHostReference.identifier], store.removedHostReferenceIdentifiers)
+        XCTAssertEqual([emptyUrlReference.identifier], store.removedUrlReferenceIdentifiers)
+    }
 }
 
 private extension URL {

@@ -20,22 +20,26 @@
 import AIChat
 import Core
 import Foundation
+import PixelKit
 
-/// Injectable pixel-firing seam: bundles the two standard firers (`PixelFiring` for one-off pixels,
-/// `DailyPixelFiring` for daily-and-count) behind one value so UTI pixel firing has a single
-/// injection point. `.live` fires for real; tests pass `PixelFiringMock` to assert what was fired.
+/// Injectable pixel-firing seam: routes UTI pixel firing through a single PixelKit injection point.
+/// `.live` fires for real; tests pass a `PixelKitMock`.
 struct UTIPixelFiring {
-    var pixel: PixelFiring.Type = Pixel.self
-    var daily: DailyPixelFiring.Type = DailyPixel.self
+    /// Resolved at fire time so it picks up `PixelKit.setUp` regardless of when this value was created.
+    var pixelKit: () -> (any PixelKitFiring)? = { PixelKit.shared }
 
     static let live = UTIPixelFiring()
 
     func fire(_ event: Pixel.Event, _ parameters: [String: String] = [:]) {
-        pixel.fire(event, withAdditionalParameters: parameters)
+        pixelKit()?.fire(event, options: .parameters(parameters))
     }
 
     func fireDailyAndCount(_ event: Pixel.Event, _ parameters: [String: String] = [:]) {
-        daily.fireDailyAndCount(event, error: nil, withAdditionalParameters: parameters)
+        pixelKit()?.fire(event, frequency: .dailyAndCount, options: .parameters(parameters))
+    }
+
+    func fire(_ event: PixelKit.Event, frequency: PixelKit.Frequency) {
+        pixelKit()?.fire(event, frequency: frequency)
     }
 }
 
@@ -46,6 +50,9 @@ struct UTIPixelContext {
     let surface: UnifiedToggleInputPixelSurface
     let isDuckAISurfaceForAttribution: Bool
     let inputMode: TextEntryMode
+    let isToggleVisible: Bool
+    let pageType: UnifiedToggleInputPromptPageType
+    let duckAIEntrySource: AIChatEntryPointSource?
 }
 
 /// Owns the omnibar UTI's pixel firing. Resolves the surface (and the other live inputs) through a
@@ -68,7 +75,10 @@ final class UTIPixelReporter {
     /// The pair fired whenever the unified input surface first appears in the omnibar host.
     func reportOmnibarInputSurfaceShown() {
         firing.fireDailyAndCount(.aiChatInternalSwitchBarDisplayed)
-        firing.fireDailyAndCount(.aiChatExperimentalOmnibarShown)
+        withContext {
+            firing.fire(ExperimentalOmnibarPixel.omnibarShownDaily(isToggleVisible: $0.isToggleVisible), frequency: .legacyDailyNoSuffix)
+            firing.fire(ExperimentalOmnibarPixel.omnibarShownCount(isToggleVisible: $0.isToggleVisible), frequency: .standard)
+        }
     }
 
     func reportBackButtonPressed() {
@@ -92,6 +102,26 @@ final class UTIPixelReporter {
     func reportStopGenerationTapped() {
         withContext { firing.fire(.unifiedToggleInputStopGenerationTapped, ["surface": $0.surface.rawValue]) }
     }
+
+    // MARK: - Message edit
+
+    func reportEditReceived() {
+        withContext { firing.fire(.unifiedToggleInputEditReceived, ["surface": $0.surface.rawValue]) }
+    }
+
+    func reportEditSubmitted() {
+        withContext { firing.fire(.unifiedToggleInputEditSubmitted, ["surface": $0.surface.rawValue]) }
+    }
+
+    func reportEditCancelled() {
+        withContext { firing.fire(.unifiedToggleInputEditCancelled, ["surface": $0.surface.rawValue]) }
+    }
+
+    func reportEditAttachmentRemoved(_ attachment: UnifiedToggleInputAttachment) {
+        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireEditAttachmentRemovedPixel(for: attachment, surface: $0.surface, firing: firing) }
+    }
+
+    // MARK: - Voice
 
     func reportVoiceTapped(hasPendingPageContext: Bool) {
         withContext {
@@ -121,6 +151,16 @@ final class UTIPixelReporter {
 
     func reportFileAttached(source: String) {
         withContext { firing.fireDailyAndCount(.unifiedToggleInputFileAttached, ["surface": $0.surface.rawValue, "source": source]) }
+    }
+
+    func reportImageValidationFailed(reason: String, source: String) {
+        withContext {
+            firing.fireDailyAndCount(.unifiedToggleInputImageValidationFailed, [
+                "reason": reason,
+                "surface": $0.surface.rawValue,
+                "source": source
+            ])
+        }
     }
 
     func reportImageAttached(source: String) {
@@ -184,7 +224,9 @@ final class UTIPixelReporter {
                                selectedTool: AIChatRAGTool?,
                                attachments: [UnifiedToggleInputAttachment],
                                reasoningMode: AIChatReasoningMode?,
-                               modelId: String?) {
+                               modelId: String?,
+                               defaultOmnibarMode: DefaultOmnibarMode,
+                               isFirstPromptNewInstall: Bool) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
                 hasText: hasText,
@@ -193,8 +235,37 @@ final class UTIPixelReporter {
                 reasoningMode: reasoningMode,
                 modelId: modelId,
                 surface: $0.surface,
+                pageType: $0.pageType,
+                origin: Self.promptOrigin(for: $0),
+                defaultMode: defaultOmnibarMode,
+                isFirstPromptNewInstall: isFirstPromptNewInstall,
                 firing: firing
             )
+        }
+    }
+
+    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode) {
+        withContext {
+            UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedQuerySubmittedPixel(
+                surface: $0.surface,
+                pageType: $0.pageType,
+                isToggleVisible: $0.isToggleVisible,
+                defaultMode: defaultOmnibarMode,
+                firing: firing
+            )
+        }
+    }
+
+    func currentPromptOrigin() -> AIChatEntryPointSource? {
+        guard let context = context() else { return nil }
+        return Self.promptOrigin(for: context)
+    }
+
+    static func promptOrigin(for context: UTIPixelContext) -> AIChatEntryPointSource? {
+        switch context.surface {
+        case .addressBar: return .addressBarPrompt
+        case .contextualChat: return .contextualChat
+        case .duckAI: return context.duckAIEntrySource
         }
     }
 

@@ -100,6 +100,7 @@
                 "enum": [
                     "menu",
                     "dashboard",
+                    "error_page",
                     "on_protections_off_menu",
                     "on_protections_off_dashboard_main",
                     "reload-three-times-within-20-seconds",
@@ -270,6 +271,11 @@
                 "key": "isAfterSuppressedXSafariRedirect",
                 "type": "boolean",
                 "description": "Whether the page was loaded after a suppressed x-safari-https redirect. Only sent when true."
+            },
+            {
+                "key": "isAfterTabTermination",
+                "type": "boolean",
+                "description": "Whether the report is associated with the tab termination error page. Only sent when true."
             },
             {
                 "key": "siteType",
@@ -474,6 +480,7 @@
                 "enum": [
                     "menu",
                     "dashboard",
+                    "error_page",
                     "on_protections_off_menu",
                     "on_protections_off_dashboard_main",
                     "reload-three-times-within-20-seconds",
@@ -644,6 +651,11 @@
                 "key": "isAfterSuppressedXSafariRedirect",
                 "type": "boolean",
                 "description": "Whether the page was loaded after a suppressed x-safari-https redirect. Only sent when true."
+            },
+            {
+                "key": "isAfterTabTermination",
+                "type": "boolean",
+                "description": "Whether the report is associated with the tab termination error page. Only sent when true."
             },
             {
                 "key": "siteType",

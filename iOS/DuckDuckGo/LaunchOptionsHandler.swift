@@ -22,6 +22,7 @@ import Persistence
 import PrivacyConfig
 import Common
 import FoundationExtensions
+import FeatureFlags_iOS
 
 public final class LaunchOptionsHandler {
 
@@ -32,12 +33,6 @@ public final class LaunchOptionsHandler {
     private static let automationPort = "automationPort"
 
     // MARK: - UI Test Override Constants
-
-    private enum PIRTestOverrides {
-        static let profileState = "pir.profileState"
-        static let debugServer = "pir.debugServer"
-        static let openDashboardForTesting = "pir.openDashboardForTesting"
-    }
 
     /// Constants for UI test override launch parameters
     /// These allow Maestro tests to override feature flags, config rollouts, and experiments
@@ -145,32 +140,9 @@ public final class LaunchOptionsHandler {
         sanitisedEnvParameter(string: userDefaults.string(forKey: Self.appVariantName))
     }
 
-    public var pirProfileStateOverride: String? {
-        guard allowsPIRTestOverrides else { return nil }
-        return sanitisedEnvParameter(string: userDefaults.string(forKey: PIRTestOverrides.profileState))
-    }
-
-    public var shouldAutostartPIRDebugServer: Bool {
-        guard allowsPIRTestOverrides else { return false }
-        return userDefaults.string(forKey: PIRTestOverrides.debugServer) == "true"
-    }
-
-    public var shouldOpenPIRDashboardForTesting: Bool {
-        guard allowsPIRTestOverrides else { return false }
-        return userDefaults.string(forKey: PIRTestOverrides.openDashboardForTesting) == "true"
-    }
-
     private func sanitisedEnvParameter(string: String?) -> String? {
         guard let string, string != "null" else { return nil }
         return string
-    }
-
-    private var allowsPIRTestOverrides: Bool {
-#if DEBUG
-        isUITesting
-#else
-        false
-#endif
     }
 }
 
@@ -238,15 +210,18 @@ extension LaunchOptionsHandler {
         featureFlagOverrideStore: KeyValueStoring,
         configRolloutStore: UserDefaults
     ) {
-        // Read the group-ID prefix once; used for suite-namespaced stores.
-        let groupIdPrefix = Bundle.main.object(forInfoDictionaryKey: "DuckDuckGoGroupIdentifierPrefix") as? String
+        let shouldClearAllDefaults = arguments.contains("-clearAllDefaults")
+        let shouldBackdateInstallDate = arguments.contains("-backdateInstallDate")
+        if shouldClearAllDefaults || shouldBackdateInstallDate {
+            let statisticsGroupName = Bundle.main.appGroup(bundle: .statistics)
 
-        if arguments.contains("-clearAllDefaults") {
-            clearAllDefaults(groupIdPrefix: groupIdPrefix)
-        }
+            if shouldClearAllDefaults {
+                clearAllDefaults(statisticsGroupName: statisticsGroupName)
+            }
 
-        if arguments.contains("-backdateInstallDate") {
-            backdateInstallDate(groupIdPrefix: groupIdPrefix)
+            if shouldBackdateInstallDate {
+                backdateInstallDate(statisticsGroupName: statisticsGroupName)
+            }
         }
 
         // Writing ATB keys in -backdateInstallDate makes hasInstallStatistics=true, which causes
@@ -269,14 +244,11 @@ extension LaunchOptionsHandler {
 
     /// Wipes all persistent state so the test run starts with a clean slate.
     /// Must be called before feature-flag overrides are written.
-    private func clearAllDefaults(groupIdPrefix: String?) {
+    private func clearAllDefaults(statisticsGroupName: String) {
         if let bundleID = Bundle.main.bundleIdentifier {
             userDefaults.removePersistentDomain(forName: bundleID)
         }
-        if let prefix = groupIdPrefix {
-            let suite = "\(prefix).statistics"
-            UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite)
-        }
+        UserDefaults(suiteName: statisticsGroupName)?.removePersistentDomain(forName: statisticsGroupName)
         clearAppSupportFiles()
     }
 
@@ -307,12 +279,10 @@ extension LaunchOptionsHandler {
     /// `StatisticsLoader.fireInstallPixel` from overwriting the backdated date.
     /// Persists the VARIANT environment variable into the statistics store so that
     /// `isReturningUser` checks inside promo coordinators match the onboarding path.
-    private func backdateInstallDate(groupIdPrefix: String?) {
-        guard let prefix = groupIdPrefix,
-              let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) else { return }
+    private func backdateInstallDate(statisticsGroupName: String) {
+        guard let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) else { return }
 
-        let suite = "\(prefix).statistics"
-        let statisticsDefaults = UserDefaults(suiteName: suite)
+        let statisticsDefaults = UserDefaults(suiteName: statisticsGroupName)
         statisticsDefaults?.set(sevenDaysAgo.timeIntervalSince1970, forKey: "com.duckduckgo.statistics.installdate.key")
         statisticsDefaults?.set("v1-1", forKey: "com.duckduckgo.statistics.atb.key")
         statisticsDefaults?.set("v1-1", forKey: "com.duckduckgo.statistics.retentionatb.key")

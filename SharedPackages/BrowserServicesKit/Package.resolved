@@ -1,13 +1,13 @@
 {
-  "originHash" : "0608181a1c3f1cccbe0af72152d13b305ca5059a862a9bc4b2f7b09352c385ec",
+  "originHash" : "bbe13cb134c8ed0497b2c38437adf730b29e4fe85e12093de7741b384fc85073",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "2b57f4b72186080efade861494eef5ad6f3853a1",
-        "version" : "15.23.0"
+        "revision" : "dfbdb5e9dea9bf076a08173f817aea0f4cfb72d8",
+        "version" : "17.4.0"
       }
     },
     {
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-clocks.git",
       "state" : {
-        "revision" : "cc46202b53476d64e824e0b6612da09d84ffde8e",
-        "version" : "1.0.6"
+        "revision" : "82440fa0a8b1c381a6d1e8e0fc7bbba53ec63204",
+        "version" : "1.1.1"
       }
     },
     {
@@ -105,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/TrackerRadarKit.git",
       "state" : {
-        "revision" : "6d2db2a50cbd6d0a33d40864953bbef523489b28",
-        "version" : "3.1.0"
+        "revision" : "6ae7e79e77a4deb03fb5f21a73d701cae4132281",
+        "version" : "4.0.0"
       }
     },
     {
@@ -114,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
-        "revision" : "34e463e98ab8541c604af706c99bed7160f5ec70",
-        "version" : "1.8.1"
+        "revision" : "d9308ad679143c26a30dec52daefe82f54af2b82",
+        "version" : "1.13.1"
       }
     }
   ],

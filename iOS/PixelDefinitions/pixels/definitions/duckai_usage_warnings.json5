@@ -1,0 +1,305 @@
+// Duck.ai usage-warning footer pixels - the card under the Duck.ai input, gated by the
+// `utiDuckAIWarnings` feature flag.
+//
+// Which message the user saw is in the pixel name, so each of the three states is its own series:
+// `approaching` (50/75/90% of an allowance), `limit_reached` (the allowance is spent) and the
+// high-usage model notice. The window, the rung and the model id are parameters.
+//
+// Each state reports one impression per appearance, and one follow-through per exposure: what the
+// user did about the message before the input closed. An exposure outlives the card - dismissing or
+// acting on the message takes it off screen while the user carries on typing - so `_dismissed` and a
+// following `_prompt_submitted` can both fire for one appearance, while `_prompt_submitted`,
+// `_model_switched` and `_abandoned` are the mutually exclusive ways an exposure ends.
+//
+// Not defined on purpose: a dismissal of a reached limit (that card carries no close button), and
+// anything for "Advanced AI models limit reached" (the payload cannot name that allowance yet, so
+// the message is unreachable and folds into `limit_reached`).
+{
+    "aichat_usage_warning_approaching_shown": {
+        "description": "Fires when the approaching-limit card appears under the Duck.ai input. One per appearance: re-expanding the input reports again, while a refresh that only fills in the card's CTA does not.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": ["daily", "weekly"]
+            },
+            {
+                "key": "percent_bucket",
+                "description": "The rung of the approaching ladder the card was shown at.",
+                "type": "string",
+                "enum": ["50", "75", "90"]
+            }
+        ]
+    },
+    "aichat_usage_warning_approaching_dismissed": {
+        "description": "Fires when the user closes the approaching-limit card with its close button. Not a terminal outcome: the input session carries on, and a prompt sent afterwards is still reported against this exposure.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": ["daily", "weekly"]
+            },
+            {
+                "key": "percent_bucket",
+                "description": "The rung of the approaching ladder the card was shown at.",
+                "type": "string",
+                "enum": ["50", "75", "90"]
+            }
+        ]
+    },
+    "aichat_usage_warning_approaching_prompt_submitted": {
+        "description": "Fires for the first prompt the user sends after seeing the approaching-limit card, in the same input session. Once per exposure.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": ["daily", "weekly"]
+            },
+            {
+                "key": "percent_bucket",
+                "description": "The rung of the approaching ladder the card was shown at.",
+                "type": "string",
+                "enum": ["50", "75", "90"]
+            }
+        ]
+    },
+    "aichat_usage_warning_approaching_model_switched": {
+        "description": "Fires when the user changes model themselves after seeing the approaching-limit card, in the same input session. Once per exposure, and never for the switch the card's own CTA performs - that reports aichat_usage_warning_switch_model_tapped instead.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": ["daily", "weekly"]
+            },
+            {
+                "key": "percent_bucket",
+                "description": "The rung of the approaching ladder the card was shown at.",
+                "type": "string",
+                "enum": ["50", "75", "90"]
+            }
+        ]
+    },
+    "aichat_usage_warning_approaching_abandoned": {
+        "description": "Fires when the input session ends after an approaching-limit card with no follow-through: no prompt, no model change and no CTA taken.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": ["daily", "weekly"]
+            },
+            {
+                "key": "percent_bucket",
+                "description": "The rung of the approaching ladder the card was shown at.",
+                "type": "string",
+                "enum": ["50", "75", "90"]
+            }
+        ]
+    },
+    "aichat_usage_warning_limit_reached_shown": {
+        "description": "Fires when the limit-reached card appears under the Duck.ai input. One per appearance.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "window",
+                "description": "Which allowance is spent.",
+                "type": "string",
+                "enum": ["daily", "weekly"]
+            }
+        ]
+    },
+    "aichat_usage_warning_limit_reached_prompt_submitted": {
+        "description": "Fires for the first prompt the user sends after seeing the limit-reached card, in the same input session. Once per exposure.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "window",
+                "description": "Which allowance is spent.",
+                "type": "string",
+                "enum": ["daily", "weekly"]
+            }
+        ]
+    },
+    "aichat_usage_warning_limit_reached_model_switched": {
+        "description": "Fires when the user changes model themselves after seeing the limit-reached card, in the same input session. Once per exposure.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "window",
+                "description": "Which allowance is spent.",
+                "type": "string",
+                "enum": ["daily", "weekly"]
+            }
+        ]
+    },
+    "aichat_usage_warning_limit_reached_abandoned": {
+        "description": "Fires when the input session ends after a limit-reached card with no follow-through: no prompt, no model change and no CTA taken.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "window",
+                "description": "Which allowance is spent.",
+                "type": "string",
+                "enum": ["daily", "weekly"]
+            }
+        ]
+    },
+    "aichat_usage_warning_switch_model_tapped": {
+        "description": "Fires when the user taps the card's model-switch CTA. In practice this is the approaching-limit card's Switch button; the rung is absent when a card without one offers it.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": ["daily", "weekly"]
+            },
+            {
+                "key": "percent_bucket",
+                "description": "The rung of the approaching ladder the card was shown at, when the card is an approaching one.",
+                "type": "string",
+                "enum": ["50", "75", "90"]
+            }
+        ]
+    },
+    "aichat_usage_warning_upsell_tapped": {
+        "description": "Fires when the user taps the card's subscription CTA (Try for free / Subscribe), offered on a limit-reached card to a user without a paid tier.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "window",
+                "description": "Which allowance is spent.",
+                "type": "string",
+                "enum": ["daily", "weekly"]
+            }
+        ]
+    },
+    "aichat_high_usage_model_notice_shown": {
+        "description": "Fires when the high-usage model notice appears under the Duck.ai input. Keyed off the selected model rather than an allowance, and shown once per model until dismissed.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "model_id",
+                "description": "The id of the high-usage model the notice is about.",
+                "type": "string"
+            }
+        ]
+    },
+    "aichat_high_usage_model_notice_dismissed": {
+        "description": "Fires when the user closes the high-usage model notice with its close button, which retires it for that model.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "model_id",
+                "description": "The id of the high-usage model the notice is about.",
+                "type": "string"
+            }
+        ]
+    },
+    "aichat_high_usage_model_notice_prompt_submitted": {
+        "description": "Fires for the first prompt the user sends after seeing the high-usage model notice, in the same input session. Once per exposure.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "model_id",
+                "description": "The id of the high-usage model the notice is about.",
+                "type": "string"
+            }
+        ]
+    },
+    "aichat_high_usage_model_notice_model_switched": {
+        "description": "Fires when the user changes model after seeing the high-usage model notice, in the same input session. The notice's reason for existing, so worth reading against its impressions.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "model_id",
+                "description": "The id of the high-usage model the notice was about, i.e. the model the user switched away from.",
+                "type": "string"
+            }
+        ]
+    },
+    "aichat_high_usage_model_notice_abandoned": {
+        "description": "Fires when the input session ends after a high-usage model notice with no follow-through: no prompt and no model change.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "model_id",
+                "description": "The id of the high-usage model the notice is about.",
+                "type": "string"
+            }
+        ]
+    }
+}

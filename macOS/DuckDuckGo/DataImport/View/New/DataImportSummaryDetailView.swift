@@ -89,7 +89,7 @@ struct DataImportSummaryDetailView: View {
 
             iconWithWhiteBackground(
                 image: DesignSystemImages.Glyphs.Size20.checkSolid,
-                foregroundColor: Color(designSystemColor: .alertGreen)
+                foregroundColor: Color(designSystemColor: .statusGreen)
             )
         }
         .padding(.horizontal, Metrics.sectionInnerPadding)

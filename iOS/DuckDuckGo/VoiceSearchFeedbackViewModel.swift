@@ -21,6 +21,7 @@ import Foundation
 import Core
 import UIKit
 import AIChat
+import PixelKit
 
 enum VoiceSearchTarget: Int {
     case SERP = 0
@@ -103,9 +104,9 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
                     if (text ?? "").isEmpty {
                         // Session ended with no usable transcription: fires no done/cancelled pixel otherwise
                         if let error {
-                            DailyPixel.fireDailyAndCount(pixel: .voiceSearchError, error: error)
+                            PixelKit.fire(Pixel.Event.voiceSearchError.withError(error), frequency: .dailyAndCount)
                         } else {
-                            DailyPixel.fireDailyAndCount(pixel: .voiceSearchNoSpeech)
+                            PixelKit.fire(Pixel.Event.voiceSearchNoSpeech, frequency: .dailyAndCount)
                         }
                     }
                     self.finish()
@@ -158,7 +159,7 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
         guard !hasCompleted else { return }
         hasCompleted = true
         speechRecognizer.stopRecording()
-        Pixel.fire(pixel: .voiceSearchCancelled)
+        PixelKit.fire(Pixel.Event.voiceSearchCancelled)
         delegate?.voiceSearchFeedbackViewModel(self, didFinishQuery: nil, target: searchTarget)
     }
 

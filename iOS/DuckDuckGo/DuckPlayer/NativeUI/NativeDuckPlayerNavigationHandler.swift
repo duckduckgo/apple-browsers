@@ -27,6 +27,7 @@ import PrivacyConfig
 import DuckPlayer
 import os.log
 import Combine
+import FeatureFlags_iOS
 
 /// Handles navigation and interactions related to Duck Player within the app.
 final class NativeDuckPlayerNavigationHandler: NSObject {
@@ -544,7 +545,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         }
 
         // Only account for MainFrame navigation
-        guard navigationAction.isTargetingMainFrame() else {
+        guard navigationAction.isTargetingMainFrame else {
             return false
         }
 

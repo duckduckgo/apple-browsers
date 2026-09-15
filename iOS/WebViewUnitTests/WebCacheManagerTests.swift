@@ -19,8 +19,9 @@
 
 import XCTest
 @testable import Core
+@testable import DuckDuckGo
 import WebKit
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import BrowserServicesKitTestsUtils
 import WKAbstractions
 

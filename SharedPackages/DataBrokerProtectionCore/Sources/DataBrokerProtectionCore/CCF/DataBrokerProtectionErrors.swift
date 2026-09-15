@@ -32,11 +32,13 @@ public enum DataBrokerProtectionError: Error, Equatable, Codable {
     case noOptOutStep
     case captchaServiceError(CaptchaServiceError)
     case emailError(EmailError?)
+    /// The parent operation or task cancelled the scan or opt-out.
     case cancelled
     case solvingCaptchaWithCallbackError
     case cantCalculatePreferredRunDate
     case httpError(code: Int)
     case dataNotInDatabase
+    /// The scan or opt-out exceeded its configured deadline; action timeouts use `actionFailed`.
     case jobTimeout
     case webContentProcessTerminated
     case secureVaultNotInitialized
@@ -142,6 +144,17 @@ extension DataBrokerProtectionError: LocalizedError {
             return "Secure Vault has not finished initializing"
         case .secureVaultNotNeeded:
             return "Secure Vault initialization not needed (no profile)"
+        }
+    }
+}
+
+extension DataBrokerProtectionError {
+    var debugDescription: String {
+        switch self {
+        case .emailError(let emailError?):
+            return "Email service error: \(emailError.debugDescription)"
+        default:
+            return localizedDescription
         }
     }
 }

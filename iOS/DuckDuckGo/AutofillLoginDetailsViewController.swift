@@ -296,6 +296,15 @@ extension AutofillLoginDetailsViewController: AutofillLoginDetailsViewModelDeleg
         present(alert, animated: true)
     }
 
+    func autofillLoginDetailsViewModelDidAttemptToSaveNoteWithoutDomain() {
+        let alert = UIAlertController(title: UserText.autofillLoginDetailsNoteRequiresDomainAlertTitle,
+                                      message: UserText.autofillLoginDetailsNoteRequiresDomainAlertMessage,
+                                      preferredStyle: .alert)
+        let action = UIAlertAction(title: UserText.autofillLoginDetailsSaveDuplicateLoginAlertAction, style: .default)
+        alert.addAction(action)
+        present(alert, animated: true)
+    }
+
     func autofillLoginDetailsViewModelDelete(account: SecureVaultModels.WebsiteAccount, title: String) {
         delegate?.autofillLoginDetailsViewControllerDelete(account: account, title: title)
         navigationController?.popViewController(animated: true)

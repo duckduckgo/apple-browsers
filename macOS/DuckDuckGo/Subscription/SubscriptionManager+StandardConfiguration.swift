@@ -21,8 +21,9 @@ import Subscription
 import Common
 import FoundationExtensions
 import PixelKit
+import WideEvent
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_macOS
 import Networking
 import os.log
 
@@ -100,6 +101,10 @@ extension DefaultSubscriptionManager {
                 return (featureFlagger.internalUserDecider.isInternalUser &&
                         environment.serviceEnvironment == .staging &&
                         userDefaults.storefrontRegionOverride == .restOfWorld)
+            case .useSubscriptionNoProductsOverride:
+                return (featureFlagger.internalUserDecider.isInternalUser &&
+                        environment.serviceEnvironment == .staging &&
+                        userDefaults.noSubscriptionProductsOverride)
             }
         }
         let isInternalUserEnabled = { featureFlagger?.internalUserDecider.isInternalUser ?? false }

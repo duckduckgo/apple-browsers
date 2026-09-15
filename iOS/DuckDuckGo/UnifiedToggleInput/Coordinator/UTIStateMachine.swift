@@ -64,7 +64,22 @@ final class UTIStateMachine {
     }
 
     var isContextualChatState: Bool {
-        displayState == .contextualChat
+        if case .contextualChat = displayState { return true }
+        return false
+    }
+
+    var isContextualChatExpanded: Bool {
+        displayState == .contextualChat(.expanded)
+    }
+
+    /// A contextual sheet showing the plain collapsed pill rather than the expanded input pane.
+    var isContextualChatCollapsed: Bool {
+        displayState == .contextualChat(.collapsed)
+    }
+
+    /// The voice button dictates into the field: this surface is already a chat, so voice mode is wrong.
+    var prefersDictationOverVoiceChat: Bool {
+        host == .contextualChat
     }
 
     /// The omnibar session is being edited. Distinct from `isOmnibarSession` (any omnibar state)
@@ -96,13 +111,13 @@ final class UTIStateMachine {
     /// `applyCardLayout` runs from the intent handler.
     var isInputPaneExpanded: Bool {
         switch displayState {
-        case .contextualChat, .aiTab(.expanded), .omnibar(.active): return true
+        case .contextualChat(.expanded), .aiTab(.expanded), .omnibar(.active): return true
         default: return false
         }
     }
 
     var isInputEditing: Bool {
-        isOmnibarSession || isAITabExpanded || isContextualChatState
+        isOmnibarSession || isAITabExpanded || isContextualChatExpanded
     }
 
     var isActive: Bool {
@@ -142,8 +157,14 @@ final class UTIStateMachine {
             isContentVisible = false
             inactiveAppearance = false
 
-        case .contextualChat:
+        case .contextualChat(.expanded):
             isExpanded = true
+            isInputVisible = true
+            isContentVisible = false
+            inactiveAppearance = false
+
+        case .contextualChat(.collapsed):
+            isExpanded = false
             isInputVisible = true
             isContentVisible = false
             inactiveAppearance = false
@@ -205,6 +226,7 @@ final class UTIStateMachine {
                             inputMode: TextEntryMode,
                             isToggleEnabled: Bool) -> UnifiedToggleInputCardLayout {
         guard isExpanded else {
+            // Only a Duck.ai tab gets the flanked pose; the contextual sheet collapses to the plain pill.
             return isAITabState ? .flanked : .collapsed
         }
         switch host {

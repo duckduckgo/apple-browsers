@@ -20,6 +20,9 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
+"%@: %@" = "%1$@: %2$@";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -63,6 +66,9 @@
 
 /* Add action - button shown in alert */
 "action.title.add" = "Lägg till";
+
+/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
+"action.title.aiChat.askDuckAI" = "Fråga Duck.ai";
 
 /* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
 "action.title.aiChat.hideContextualSheetButton" = "Dölj genväg för nedre panel";
@@ -202,6 +208,9 @@
 /* Add to Favorites action */
 "action.title.save.favorite" = "Lägg till favorit";
 
+/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
+"action.title.searchWithDuckDuckGo" = "Sök";
+
 /* Settings action */
 "action.title.settings" = "Inställningar";
 
@@ -310,6 +319,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Filtypen stöds inte – bifoga en %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Vid redigering ersätts svaret med ett nytt.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Redigera meddelande";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Ny";
 
@@ -397,6 +412,15 @@
 /* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
 "aiChat.history.swipe.unpin.a11y" = "Lossa chatt";
 
+/* Section header for Pro-only models shown to DuckDuckGo Plus subscribers */
+"aichat.model-picker.pro-plan-exclusive" = "Exklusivt för Pro-planen";
+
+/* Section header for subscription models shown to users who are not eligible for a free trial */
+"aichat.model-picker.subscriber-exclusive" = "Exklusivt för abonnenter";
+
+/* Section header for subscription models shown to free users */
+"aichat.model-picker.try-free" = "Prova gratis";
+
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "För analytiska uppgifter";
 
@@ -454,11 +478,50 @@
 /* Title for the image generation tool in the unified input tools menu */
 "aichat.toolbar.tools.imagegeneration.title" = "Skapa bild";
 
+/* Subtitle for the image generation tool in the unified input tools menu, shown when the chat is already under way on a model that cannot generate images */
+"aichat.toolbar.tools.imagegeneration.unavailable.subtitle" = "Inte tillgängligt för vald modell";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Hämta svar från webben";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Webbsökning";
+
+/* Button in the Duck.ai input footer letting a paid user keep chatting on their weekly allowance after the daily one is spent */
+"aichat.usageWarnings.action.startUsingWeeklyLimit" = "Börja använda veckogränsen";
+
+/* Button in the Duck.ai input footer warning taking a user who has already used their free trial to the subscription flow */
+"aichat.usageWarnings.action.subscribe" = "Prenumerera";
+
+/* Button in the Duck.ai input footer warning that moves the user onto the suggested model */
+"aichat.usageWarnings.action.switch" = "Byt modell";
+
+/* Button in the Duck.ai input footer warning taking a user who is still eligible for a free trial to the subscription flow */
+"aichat.usageWarnings.action.tryForFree" = "Prova abonnemang gratis";
+
+/* Title of the Duck.ai input footer warning shown once the allowance for advanced AI models specifically is used up, while free models remain available */
+"aichat.usageWarnings.advancedModelsLimitReached.title" = "Gränsen för avancerade AI-modeller har nåtts";
+
+/* Title of the Duck.ai input footer warning shown once the user's daily message limit is used up */
+"aichat.usageWarnings.dailyLimitReached.title" = "Daglig gräns uppnådd";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their daily message limit is used. %d is a percentage */
+"aichat.usageWarnings.dailyUsage.title" = "%d%% av den dagliga gränsen";
+
+/* Accessibility label for the button that dismisses the Duck.ai input footer warning */
+"aichat.usageWarnings.dismiss.a11y" = "Avvisa";
+
+/* Duck.ai input footer notice shown while a costly model is selected. %@ is the model's short name, such as 'Opus 4.8' */
+"aichat.usageWarnings.highUsageModel" = "%@ förbrukar gränserna upp till 2–5 gånger snabbare än basmodeller.";
+
+/* Subtitle of the Duck.ai input footer warning saying how long until the usage limit resets. %@ is a duration such as '2 days' */
+"aichat.usageWarnings.resetsIn" = "Återställs om %@";
+
+/* Title of the Duck.ai input footer warning shown once the user's weekly message limit is used up */
+"aichat.usageWarnings.weeklyLimitReached.title" = "Veckogränsen för användning har nåtts";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their weekly message limit is used. %d is a percentage */
+"aichat.usageWarnings.weeklyUsage.title" = "%d %% av veckogränsen";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Befintliga bokmärken kommer inte att kopieras.";
@@ -516,9 +579,6 @@
 
 /* Title for sync error alert */
 "alert.sync-error" = "Synkroniserings- och säkerhetskopieringsfel";
-
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Synkronisera inställningar";
 
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Försök igen.";
@@ -948,6 +1008,12 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Rubrik";
+
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Ange en webbplats eller ett användarnamn för att spara lösenordet.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Webbplats eller användarnamn krävs";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Lägg till lösenord";
@@ -1888,6 +1954,9 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "De senaste ändringarna på YouTube har påverkat funktionaliteten hos Duck Player. Vi arbetar för att åtgärda problemen och tackar för din förståelse.";
 
+/* Address bar Duck.ai menu option that opens a fresh chat with no page context */
+"duckai.address.bar.menu.new.chat" = "Ny chatt";
+
 /* Fourth paragraph of the Duck.ai widget education screen */
 "duckai.addWidget.settings.fourthParagraph" = "Tryck på widgeten för att redigera den och ställ sedan in **Duck.ai** och **Duck.ai Voice** som genvägar";
 
@@ -1899,6 +1968,9 @@
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Skickat med ditt meddelande till Duck.ai";
+
+/* Row in the contextual chat's chats popup that opens Duck.ai in a new tab */
+"duckai.contextual.open.duckai" = "Öppna Duck.ai";
 
 /* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
 "duckai.contextual.recent.chats.button" = "Senaste chattar";
@@ -2191,11 +2263,23 @@
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Sammanfatta denna bok.";
 
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Sammanfatta detta dokument";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Sammanfatta detta dokument.";
+
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Sammanfatta denna sida";
 
 /* Suggested prompt submitted text: summarize the current page */
 "duckai.suggestion.summarize-page.prompt" = "Sammanfatta denna sida.";
+
+/* Suggested prompt chip shown when the user has attached a text selection: summarize that selection */
+"duckai.suggestion.summarize-selection.label" = "Sammanfatta detta urval";
+
+/* Suggested prompt submitted text: summarize the attached text selection */
+"duckai.suggestion.summarize-selection.prompt" = "Sammanfatta detta urval.";
 
 /* Suggested prompt chip: summarize a discussion thread */
 "duckai.suggestion.summarize-thread.label" = "Sammanfatta denna diskussion";
@@ -2221,6 +2305,12 @@
 /* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
 "duckai.suggestion.translate-page.prompt" = "Översätt den här sidan till %@.";
 
+/* Suggested prompt chip shown when the user has attached a text selection: translate that selection */
+"duckai.suggestion.translate-selection.label" = "Översätt detta urval";
+
+/* Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-selection.prompt" = "Översätt detta urval till %@.";
+
 /* Suggested prompt chip: video key points */
 "duckai.suggestion.video-key-points.label" = "Vilka är de viktigaste punkterna?";
 
@@ -2238,6 +2328,12 @@
 
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Är det värt att titta på? Ge mig en spoilerfri bedömning.";
+
+/* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
+"duckai.text-selection.context-title" = "Texturval";
+
+/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
+"duckai.text-selection.limit-reached" = "Du kan lägga till upp till %d textmarkeringar. Ta bort en för att lägga till en annan.";
 
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Alla chattar är %@ privata";
@@ -2530,14 +2626,17 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Senast använda Fire Tab";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Stäng flik";
+/* Menu item that closes the last used open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeLastUsedTab" = "Stäng senast använda flik";
 
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Radera flik";
 
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Återgå till flik";
+/* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
+"escapeHatch.menu.hideReturnToShortcut" = "Dölj Återgå till-genväg";
+
+/* Menu item that returns the user to the last used open tab from the escape hatch card */
+"escapeHatch.menu.returnToLastUsedTab" = "Återgå till den senaste använda fliken";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Fler alternativ";
@@ -2550,6 +2649,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Gå tillbaka till %1$@, %2$@";
+
+/* Swipe action that closes the open tab referenced by the escape hatch card */
+"escapeHatch.swipeAction.closeTab" = "Stäng flik";
 
 /* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
 "escapeHatch.tabSwitcher.privateTabs.label" = "Privata flikar";
@@ -2949,6 +3051,12 @@
 
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importera dina lösenord till DuckDuckGo";
+
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Använd DuckDuckGo för att undvika annonser som spårar dig på webben och minska ditt digitala fotavtryck.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Ta kontroll över din onlineupplevelse";
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Fråga vad som helst privat";
@@ -4009,6 +4117,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Den här sidan laddas bara i Safari";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Inläsningen av sidan avbröts flera gånger. Uppdatera sidan igen eller skicka feedback till oss.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Uppdatera";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Skicka feedback";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Vi kunde inte läsa in den här sidan";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Webbplatsen har ett ogiltigt säkerhetscertifikat och kan vara riskabel att besöka.";
 
@@ -4186,11 +4306,11 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Inaktivitetstimer";
 
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Senast använda flik";
+/* Option: open last used tab when returning after inactivity */
+"settings.afterInactivity.option.openLastUsedTab" = "Öppna senast använda flik";
 
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Ny flik";
+/* Option: open New Tab when returning after inactivity */
+"settings.afterInactivity.option.openNewTab" = "Öppna ny flik";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Efter inaktivitet";
@@ -4498,11 +4618,11 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tangentbord";
 
+/* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
+"settings.lastTabShortcut.subtitle" = "Visar en länk för att återgå till den senast använda fliken när du öppnar appen efter inaktivitet.";
+
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Läs mer";
-
-/* Switch button label. */
-"settings.let.duckduckgo.manage.cookie.consent.popups" = "Låt DuckDuckGo hantera popup-fönster för godkännande av cookies";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Lösenord och automatisk ifyllning";
@@ -4560,6 +4680,9 @@
 
 /* Settings screen cell text for setting the refresh button position. */
 "settings.refreshButton.position.title" = "Position för omladdningsknappen";
+
+/* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
+"settings.returnToShortcut.label" = "\"Återgå till\"-genväg";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Sökinställningar";
@@ -5077,17 +5200,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-varning";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Återställningskoden har kopierats till urklipp";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Radera serverdata";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Din säkerhetskopia kommer att raderas från servern. Alla enheter kommer att kopplas bort från synkronisering, men inget kommer att raderas från någon enhet.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Radera serverdata?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Synkronisera nu";
@@ -5167,11 +5281,17 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Vill du ta bort enheten?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Serverdata har raderats";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Alla enheter som använder Sync & Backup kommer att kopplas bort och dina synkroniserade data raderas från servern.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Vill du inaktivera Sync & Backup och radera serverdata?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Ny enhet tillagd!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup aktiverad";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Återställningskod kopierad";
@@ -5719,3 +5839,14 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Vad vill du importera?";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ kan inte skapa bilder. Ingen leverantörssynlighet gäller först när du byter tillbaka.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ stöder inte bildskapande.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Använder nu %@";
+
+/* Address bar Duck.ai menu option that opens the full chat history */
+"duckai.address.bar.menu.all.chats" = "Alla chattar";

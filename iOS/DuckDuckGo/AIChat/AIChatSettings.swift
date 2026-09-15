@@ -22,6 +22,8 @@ import AIChat
 import Foundation
 import Core
 import Persistence
+import FeatureFlags_iOS
+import PixelKit
 
 /// This struct serves as a wrapper for PrivacyConfigurationManaging, enabling the retrieval of data relevant to AIChat.
 /// It also fire pixels when necessary data is missing.
@@ -52,20 +54,17 @@ final class AIChatSettings: AIChatSettingsProvider {
     private let keyValueStore: KeyValueStoring
     private let notificationCenter: NotificationCenter
     private let featureFlagger: FeatureFlagger
-    private let switchBarFunnel: SwitchBarFunnelProviding
     
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          notificationCenter: NotificationCenter = .default,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         switchBarFunnel: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard)) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.debugSettings = debugSettings
         self.keyValueStore = keyValueStore
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
-        self.switchBarFunnel = switchBarFunnel
 
         migrateAddressBarSettingIfNeeded()
     }
@@ -158,7 +157,7 @@ final class AIChatSettings: AIChatSettingsProvider {
 
     var isAIChatSearchInputUserSettingsEnabled: Bool {
         keyValueStore.bool(.showAIChatExperimentalSearchInputKey, defaultValue: .showAIChatExperimentalSearchInputDefaultValue)
-                            && isAIChatEnabled && featureFlagger.isFeatureOn(.experimentalAddressBar)
+            && isAIChatEnabled
     }
 
     var isAIChatSearchInputUserSettingsDisabledByUser: Bool {
@@ -191,9 +190,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsEnabled)
+            PixelKit.fire(Pixel.Event.aiChatSettingsEnabled, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisabled)
+            PixelKit.fire(Pixel.Event.aiChatSettingsDisabled, frequency: .dailyAndCount)
         }
     }
 
@@ -202,9 +201,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsBrowserMenuTurnedOn)
+            PixelKit.fire(Pixel.Event.aiChatSettingsBrowserMenuTurnedOn, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsBrowserMenuTurnedOff)
+            PixelKit.fire(Pixel.Event.aiChatSettingsBrowserMenuTurnedOff, frequency: .dailyAndCount)
         }
     }
 
@@ -213,9 +212,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAddressBarTurnedOn)
+            PixelKit.fire(Pixel.Event.aiChatSettingsAddressBarTurnedOn, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAddressBarTurnedOff)
+            PixelKit.fire(Pixel.Event.aiChatSettingsAddressBarTurnedOff, frequency: .dailyAndCount)
         }
     }
 
@@ -224,16 +223,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSearchInputTurnedOn)
-            
-            
-            // Process feature enabled funnel step
-            switchBarFunnel.processStep(.featureEnabled)
+            PixelKit.fire(Pixel.Event.aiChatSettingsSearchInputTurnedOn, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSearchInputTurnedOff)
-            
-            // Reset funnel when feature is disabled
-            resetFunnelStorage()
+            PixelKit.fire(Pixel.Event.aiChatSettingsSearchInputTurnedOff, frequency: .dailyAndCount)
         }
     }
 
@@ -249,9 +241,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsVoiceTurnedOn)
+            PixelKit.fire(Pixel.Event.aiChatSettingsVoiceTurnedOn, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsVoiceTurnedOff)
+            PixelKit.fire(Pixel.Event.aiChatSettingsVoiceTurnedOff, frequency: .dailyAndCount)
         }
     }
 
@@ -259,9 +251,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         keyValueStore.set(enable, forKey: .showAIChatTabSwitcherKey)
         triggerSettingsChangedNotification()
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsTabManagerTurnedOn)
+            PixelKit.fire(Pixel.Event.aiChatSettingsTabManagerTurnedOn, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsTabManagerTurnedOff)
+            PixelKit.fire(Pixel.Event.aiChatSettingsTabManagerTurnedOff, frequency: .dailyAndCount)
         }
     }
 
@@ -302,9 +294,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsChatSuggestionsTurnedOn)
+            PixelKit.fire(Pixel.Event.aiChatSettingsChatSuggestionsTurnedOn, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsChatSuggestionsTurnedOff)
+            PixelKit.fire(Pixel.Event.aiChatSettingsChatSuggestionsTurnedOff, frequency: .dailyAndCount)
         }
     }
     
@@ -313,9 +305,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAutoContextEnabled)
+            PixelKit.fire(Pixel.Event.aiChatSettingsAutoContextEnabled, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAutoContextDisabled)
+            PixelKit.fire(Pixel.Event.aiChatSettingsAutoContextDisabled, frequency: .dailyAndCount)
         }
     }
 
@@ -326,15 +318,9 @@ final class AIChatSettings: AIChatSettingsProvider {
 
         keyValueStore.set(mode.rawValue, forKey: .defaultOmnibarModeKey)
         triggerSettingsChangedNotification()
-        DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDefaultTogglePositionChanged,
-                                      withAdditionalParameters: ["value": mode.rawValue])
-    }
-
-    /// Process the settings view funnels step
-    func processSettingsViewedFunnelStep() {
-        if !isAIChatSearchInputUserSettingsEnabled {
-            switchBarFunnel.processStep(.settingsViewed)
-        }
+        PixelKit.fire(Pixel.Event.aiChatSettingsDefaultTogglePositionChanged,
+                      frequency: .dailyAndCount,
+                      options: .parameters(["value": mode.rawValue]))
     }
 
     // MARK: - Private
@@ -347,15 +333,11 @@ final class AIChatSettings: AIChatSettingsProvider {
         if let value = remoteSettings[value.rawValue] as? String {
             return value
         } else {
-            Pixel.fire(pixel: .aiChatNoRemoteSettingsFound(settings: value.rawValue))
+            PixelKit.fire(Pixel.Event.aiChatNoRemoteSettingsFound(settings: value.rawValue))
             return value.defaultValue
         }
     }
     
-    /// Reset all funnel storage when the new input feature is disabled
-    private func resetFunnelStorage() {
-        switchBarFunnel.resetAllFunnelState()
-    }
 }
 
 // MARK: - Keys for storage

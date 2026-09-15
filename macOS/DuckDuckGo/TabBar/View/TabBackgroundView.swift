@@ -35,7 +35,7 @@ final class TabBackgroundView: NSView {
         static let slideOffsetY: CGFloat = -8
     }
 
-    private enum Metrics {
+    enum Metrics {
         static let overlayCornerRadius: CGFloat = 8
         static let overlayInsets: NSEdgeInsets = NSEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
         static let tabCornerRadius: CGFloat = 12

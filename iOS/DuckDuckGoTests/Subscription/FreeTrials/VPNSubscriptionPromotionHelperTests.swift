@@ -20,7 +20,7 @@
 import XCTest
 @testable import Subscription
 import Core
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 
@@ -31,7 +31,6 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
     private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockKeyValueStore: MockKeyValueStore!
     private var mockFreeTrialBadgePersistor: FreeTrialBadgePersisting!
-    private var mockPixelFiring: PixelFiringMock!
     private let persistenceKey = "free-trial-badge.view-count"
 
     override func setUpWithError() throws {
@@ -41,8 +40,7 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
         mockFreeTrialBadgePersistor = FreeTrialBadgePersistor(keyValueStore: mockKeyValueStore)
         sut = VPNSubscriptionPromotionHelper(featureFlagger: mockFeatureFlagger,
                                              subscriptionManager: mockSubscriptionManager,
-                                             freeTrialBadgePersistor: mockFreeTrialBadgePersistor,
-                                             pixelFiring: PixelFiringMock.self)
+                                             freeTrialBadgePersistor: mockFreeTrialBadgePersistor)
     }
 
     override func tearDownWithError() throws {
@@ -51,7 +49,6 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
         mockSubscriptionManager = nil
         mockKeyValueStore = nil
         mockFreeTrialBadgePersistor = nil
-        mockPixelFiring = nil
     }
 
     func testWhenSubscriptionIsActive_subscriptionPromoStatusIsSubscribed() {

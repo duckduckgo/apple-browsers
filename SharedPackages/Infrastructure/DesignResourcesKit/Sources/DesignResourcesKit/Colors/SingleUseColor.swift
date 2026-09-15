@@ -25,6 +25,11 @@ public enum SingleUseColor {
     case fireModeAccent
 
 #if os(iOS)
+    /// Background for grouped-list rows and visually associated inline cards.
+    /// Temporary compatibility token; replace with `.surfaceTertiary` when the
+    /// legacy palette and app-rebranding feature flag are removed.
+    case groupedListContentBackground
+
     case controlWidgetBackground
     case unifiedFeedbackFieldBackground
     case privacyDashboardBackground
@@ -34,6 +39,9 @@ public enum SingleUseColor {
 
     /// Resting background fill for the floating address bar field (composites over the toolbar's Liquid Glass capsule)
     case floatingAddressBarBackground
+
+    /// Flat fill for the address field embedded in the bottom floating chrome (no glass highlights).
+    case floatingEmbeddedAddressBarBackground
 
     /// Color used for what's New background
     case whatsNewBackground
@@ -70,20 +78,38 @@ public enum SingleUseColor {
     case fireModeBackground
     case fireModeCardBackground
 
+    /// Fire Mode address bar field fill (Figma: Unified-Input-Fire/Field)
+    case fireModeFieldBackground
+
     // Duck.ai Grid Cell
     case duckAIVoiceCellBackground
 
-#elseif os(macOS)
+    /// Native voice-mode chrome (header + status strip) background, matching the web voice background.
+    case duckAIVoiceModeBackground
 
-    case aiToggleBorder
-    case aiToggleBackground
-    case aiToggleSelectionBackground
-    case aiToggleSelectionBorder
+    /// The confetti burst's particle palette. Each brand hue supplies a body fill and a darker outline
+    case confettiMandarinFill
+    case confettiMandarinStroke
+    case confettiPondwaterFill
+    case confettiPondwaterStroke
+    case confettiLilypadFill
+    case confettiLilypadStroke
+    case confettiBlossomFill
+    case confettiBlossomStroke
+    case confettiPollenFill
+    case confettiPollenStroke
+
+#elseif os(macOS)
 
     case fireButtonGradientStart
     case fireButtonGradientEnd
     case fireButtonPressedGradientStart
     case fireButtonPressedGradientEnd
+    case fireDialogKnobFill
+    case fireDialogTabBackground
+    case fireDialogTabBackgroundSelected
+    case fireDialogTabShadowPrimary
+    case fireDialogTabShadowSecondary
 
 #endif
 
@@ -124,6 +150,7 @@ public extension SingleUseColor {
         case destructiveGlowPrimary
 
         case controlsFillPrimary
+        case controlBorderTertiary
 
         case decorationPrimary
         case decorationSecondary

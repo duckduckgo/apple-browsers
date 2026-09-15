@@ -24,7 +24,7 @@ import PrivacyConfig
 import PrivacyDashboard
 import UserScript
 import WebKit
-import FeatureFlags
+import FeatureFlags_macOS
 import WebExtensions
 
 protocol AutoconsentUserScriptDelegate: AnyObject {
@@ -302,7 +302,6 @@ extension AutoconsentUserScript {
 
     @MainActor
     private func heuristicModeValue() -> String {
-        // If the new preferences menu is not enabled, use reject only, otherwise use the value from the setting.
         if !(consentHeuristicEnabled ?? false) {
             return "off"
         }
@@ -310,7 +309,7 @@ extension AutoconsentUserScript {
             return "tier2"
         }
         if preferences.cookiePopupPreference == .default {
-            return config.isSubfeatureEnabled(AutoconsentSubfeature.cookiePopupPreferenceSetting) ? "tier1" : "reject"
+            return "tier1"
         }
         return "off"
     }

@@ -19,6 +19,7 @@
 
 import Foundation
 import Core
+import PixelKit
 
 /// Deletes a browsing-history entry shown as a suggestion and fires the standard autocomplete
 /// delete pixels. Shared by the Search and Duck.ai suggestion delete paths so the pixels stay in sync.
@@ -26,7 +27,7 @@ import Core
 enum SuggestionHistoryDeletion {
     static func delete(_ url: URL, using historyManager: HistoryManaging) async {
         await historyManager.deleteHistoryForURL(url)
-        Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
-        DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
+        PixelKit.fire(Pixel.Event.autocompleteDeleteHistoryEntry)
+        PixelKit.fire(Pixel.Event.autocompleteDeleteHistoryEntryDaily, frequency: .legacyDailyNoSuffix)
     }
 }

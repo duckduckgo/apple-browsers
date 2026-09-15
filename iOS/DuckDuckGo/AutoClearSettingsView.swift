@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import Core
 import DuckUI
+import PixelKit
 
 struct AutoClearSettingsView: View {
     
@@ -40,7 +41,7 @@ struct AutoClearSettingsView: View {
                                     viewModel: settingsViewModel)
         .modifier(ScrollBounceBehaviorModifier())
         .onFirstAppear {
-            Pixel.fire(pixel: .settingsDataClearingClearDataOpen)
+            PixelKit.fire(Pixel.Event.settingsDataClearingClearDataOpen)
         }
         .onDisappear {
             viewModel.onViewDismiss()
@@ -136,7 +137,7 @@ private struct TimingOptionRow: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
         .accessibilityLabel(label)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }

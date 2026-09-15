@@ -21,6 +21,7 @@ import Core
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import PixelKit
 
 struct SettingsAppearanceView: View {
 
@@ -60,11 +61,13 @@ struct SettingsAppearanceView: View {
     var body: some View {
         List {
             Section {
-                // App Icon
                 let image = Image(uiImage: viewModel.state.appIcon.smallImage)
+                    // Necessary to counteract the vertical padding added in SettingsCellView,
+                    // otherwise the cell is taller than it needs to be and taller than the others.
+                    .frame(height: 20)
                 SettingsCellView(label: UserText.settingsIcon,
                                  action: { viewModel.presentLegacyView(.appIcon ) },
-                                 accessory: .image(image),
+                                 accessory: .custom(AnyView(image)),
                                  disclosureIndicator: true,
                                  isButton: true)
 
@@ -132,7 +135,7 @@ struct SettingsAppearanceView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onFirstAppear {
-            Pixel.fire(pixel: .settingsAppearanceOpen)
+            PixelKit.fire(Pixel.Event.settingsAppearanceOpen)
         }
     }
 
@@ -162,7 +165,7 @@ struct SettingsAppearanceView: View {
             }
 
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
     }
 
@@ -182,7 +185,7 @@ struct SettingsAppearanceView: View {
                 SettingsCellView(label: UserText.mobileCustomizationToolbarTitle, accessory: .rightDetail(UserText.mobileCustomizationNoneOptionShort))
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
     }
 

@@ -54,7 +54,6 @@ final class ContentBlockingTabExtension: NSObject {
     private weak var userContentController: ContentBlockingAssetsInstalling?
     private let cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let fbBlockingEnabledProvider: FbBlockingEnabledProvider
     private let tld: TLD
     private let contentBlockingManager: ContentBlockerRulesManagerProtocol
     private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor()
@@ -62,36 +61,27 @@ final class ContentBlockingTabExtension: NSObject {
     private var cachedMapper: TrackerProtectionEventMapper?
     private var cachedMapperVendor: String?
     private var cachedMapperAttributionTrackerData: TrackerData?
-    private var cachedMapperFbBlockingEnabled: Bool?
 
     private func mapper(forAttributionTrackerData attributionTrackerData: TrackerData?,
                         vendor: String?) -> TrackerProtectionEventMapper? {
-        let fbBlockingEnabled = fbBlockingEnabledProvider.fbBlockingEnabled
         if let cachedMapper,
            cachedMapperVendor == vendor,
-           cachedMapperAttributionTrackerData == attributionTrackerData,
-           cachedMapperFbBlockingEnabled == fbBlockingEnabled {
+           cachedMapperAttributionTrackerData == attributionTrackerData {
             return cachedMapper
         }
         let mapper = makeMapper(attributionTrackerData: attributionTrackerData)
         cachedMapper = mapper
         cachedMapperVendor = vendor
         cachedMapperAttributionTrackerData = attributionTrackerData
-        cachedMapperFbBlockingEnabled = fbBlockingEnabled
         return mapper
     }
 
     private func makeMapper(attributionTrackerData: TrackerData?) -> TrackerProtectionEventMapper? {
         let tdsName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
-        let ctlListName = DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName
         let rules = contentBlockingManager.currentRules
         guard let mainTrackerData = rules.first(where: { $0.name == tdsName })?.trackerData else { return nil }
 
         var supplementary: [TrackerData] = []
-        if fbBlockingEnabledProvider.fbBlockingEnabled,
-           let ctlTrackerData = rules.first(where: { $0.name == ctlListName })?.trackerData {
-            supplementary.append(ctlTrackerData)
-        }
         if let attributionTrackerData {
             supplementary.append(attributionTrackerData)
         }
@@ -121,8 +111,7 @@ final class ContentBlockingTabExtension: NSObject {
     func enableLongDecisionMakingChecks() {}
 #endif
 
-    init(fbBlockingEnabledProvider: FbBlockingEnabledProvider,
-         userContentControllerFuture: some Publisher<some ContentBlockingAssetsInstalling, Never>,
+    init(userContentControllerFuture: some Publisher<some ContentBlockingAssetsInstalling, Never>,
          cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          trackerProtectionSubfeaturePublisher: some Publisher<TrackerProtectionSubfeature?, Never>,
@@ -130,7 +119,6 @@ final class ContentBlockingTabExtension: NSObject {
          contentBlockingManager: ContentBlockerRulesManagerProtocol) {
 
         self.cbaTimeReporter = cbaTimeReporter
-        self.fbBlockingEnabledProvider = fbBlockingEnabledProvider
         self.privacyConfigurationManager = privacyConfigurationManager
         self.tld = tld
         self.contentBlockingManager = contentBlockingManager
@@ -207,9 +195,6 @@ extension ContentBlockingTabExtension: TrackerProtectionSubfeatureDelegate {
         if let detected = mapper.classifyResource(observation,
                                                    adClickAttributionVendor: subfeature.currentAdClickAttributionVendor) {
             trackersSubject.send(DetectedTracker(request: detected, type: .tracker))
-            if detected.state == .blocked && detected.ownerName == fbBlockingEnabledProvider.fbEntity {
-                fbBlockingEnabledProvider.trackerDetected()
-            }
         } else if let thirdParty = mapper.makeThirdPartyRequest(from: observation) {
             trackersSubject.send(DetectedTracker(request: thirdParty, type: .thirdPartyRequest))
         }

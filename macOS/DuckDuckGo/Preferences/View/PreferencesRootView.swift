@@ -26,6 +26,7 @@ import SwiftUIExtensions
 import SyncUI_macOS
 import PrivacyConfig
 import PixelKit
+import WideEvent
 import Subscription
 import SubscriptionUI
 import AIChat
@@ -52,6 +53,7 @@ enum Preferences {
 
         @ObservedObject var model: PreferencesSidebarModel
         @ObservedObject var themeManager: ThemeManager
+        @StateObject private var websitePermissionsModel: WebsitePermissionsViewModel
 
         var purchaseSubscriptionModel: PreferencesPurchaseSubscriptionModel?
         var personalInformationRemovalModel: PreferencesPersonalInformationRemovalModel?
@@ -80,6 +82,7 @@ enum Preferences {
             aiChatURLSettings: AIChatRemoteSettingsProvider,
             wideEvent: WideEventManaging,
             pinningManager: PinningManager,
+            permissionManager: PermissionManagerProtocol,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
@@ -94,6 +97,8 @@ enum Preferences {
             self.themeManager = themeManager
             self.aiChatURLSettings = aiChatURLSettings
             self.wideEvent = wideEvent
+            self._websitePermissionsModel = StateObject(wrappedValue: WebsitePermissionsViewModel(permissionManager: permissionManager,
+                                                                                                 featureFlagger: featureFlagger))
             self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
             self.blackFridayCampaignProvider = blackFridayCampaignProvider
             self.pixelHandler = pixelHandler
@@ -113,18 +118,33 @@ enum Preferences {
                     .frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
                     .layoutPriority(1)
                 Color(NSColor.separatorColor).frame(width: 1)
-                ScrollView(.vertical) {
-                    HStack(spacing: 0) {
-                        contentView
-                        Spacer()
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical) {
+                        HStack(spacing: 0) {
+                            contentView
+                            Spacer()
+                        }
+                    }
+                    .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
+                    .accessibilityIdentifier("Settings.ScrollView")
+                    // `onReceive`, not `onChange`: a deep-linked request lands before this view's first body
+                    // evaluation, so it's already the current value and `onChange` never fires for it.
+                    .onReceive(model.$scrollTarget) { anchor in
+                        guard let anchor else { return }
+                        scroll(proxy, to: anchor)
                     }
                 }
-                .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
-                .accessibilityIdentifier("Settings.ScrollView")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(colorsProvider.settingsBackgroundColor))
             .environment(\.designSystemPalette, themeManager.designColorPalette)
+        }
+
+        private func scroll(_ proxy: ScrollViewProxy, to anchor: PreferencesScrollAnchor) {
+            DispatchQueue.main.async {
+                proxy.scrollTo(anchor, anchor: nil)
+                model.resetScrollRequest()
+            }
         }
 
         @ViewBuilder
@@ -184,6 +204,8 @@ enum Preferences {
                     AccessibilityView(model: model.accessibilityPreferences)
                 case .duckPlayer:
                     DuckPlayerView(model: model.duckPlayerPreferences)
+                case .websitePermissions:
+                    PreferencesWebsitePermissionsView(model: websitePermissionsModel)
                 case .otherPlatforms:
                     // Opens a new tab
                     Spacer()
@@ -392,4 +414,5 @@ enum Preferences {
             }
         }
     }
+
 }

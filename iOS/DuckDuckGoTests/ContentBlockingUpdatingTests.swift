@@ -61,9 +61,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                           contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                                                                           internalUserDecider: MockInternalUserDecider(),
                                                                           syncErrorHandler: CapturingAdapterErrorHandler(),
-                                                                          webExtensionAvailability: nil),
-                                           keyValueStore: UserDefaults(suiteName: "ContentBlockingUpdatingTests")!,
-                                           adBlockingAvailability: StubAdBlockingAvailability())
+                                                                          webExtensionAvailability: nil))
     }
 
     override static func setUp() {

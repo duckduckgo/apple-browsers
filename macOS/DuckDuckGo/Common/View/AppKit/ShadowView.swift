@@ -141,6 +141,12 @@ final class ShadowView: NSView {
         return maskPath
     }
 
+    /// Decoration mounted above the content it shadows. The ring is carved out by a layer mask,
+    /// which doesn't affect hit testing, so without this it swallows clicks meant for that content.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
     override func layout() {
         super.layout()
 

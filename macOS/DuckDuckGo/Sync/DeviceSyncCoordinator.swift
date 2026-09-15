@@ -119,8 +119,8 @@ extension DeviceSyncCoordinator: SyncDeviceFlowLaunching {
 }
 
 extension DeviceSyncCoordinator: SyncSettingsViewHandling {
-    func saveRecoveryPDF() {
-        dialogController.saveRecoveryPDF()
+    func saveRecoveryPDF(requiresAuthentication: Bool) {
+        dialogController.saveRecoveryPDF(requiresAuthentication: requiresAuthentication)
     }
 
     var devicesPublisher: AnyPublisher<[SyncDevice], Never> {
@@ -136,9 +136,9 @@ extension DeviceSyncCoordinator: SyncSettingsViewHandling {
         dialogController.turnOffSyncPressed()
     }
 
-    func presentDeviceDetails(_ device: SyncUI_macOS.SyncDevice) {
+    func presentDeviceDetails(_ device: SyncUI_macOS.SyncDevice) async {
         presentDialog()
-        dialogController.presentDeviceDetails(device)
+        await dialogController.presentDeviceDetails(device)
     }
 
     func presentRemoveDevice(_ device: SyncUI_macOS.SyncDevice) {
@@ -146,9 +146,9 @@ extension DeviceSyncCoordinator: SyncSettingsViewHandling {
         dialogController.presentRemoveDevice(device)
     }
 
-    func presentDeleteAccount() {
+    func presentDeleteAccount() async {
         presentDialog()
-        dialogController.presentDeleteAccount()
+        await dialogController.presentDeleteAccount()
     }
 
     func syncWithAnotherDevicePressed(source: SyncDeviceButtonTouchpoint?) async {

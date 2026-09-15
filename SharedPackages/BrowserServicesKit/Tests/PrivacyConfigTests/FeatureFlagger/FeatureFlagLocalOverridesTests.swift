@@ -18,7 +18,7 @@
 
 import PrivacyConfig
 import PrivacyConfigTestsUtils
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import XCTest
 
 final class CapturingFeatureFlagLocalOverridesHandler: FeatureFlagLocalOverridesHandling {

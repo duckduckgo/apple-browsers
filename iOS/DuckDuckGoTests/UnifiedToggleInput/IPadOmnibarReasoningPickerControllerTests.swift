@@ -38,7 +38,8 @@ final class IPadOmnibarReasoningPickerControllerTests: XCTestCase {
         store = UTIModelStore(
             modelsService: StubModelsService(),
             preferences: preferences,
-            subscriptionManager: SubscriptionManagerMock()
+            subscriptionManager: SubscriptionManagerMock(),
+            isUpdatedModelPickerEnabled: false
         )
         upsellPresenter = MockUpsellPresenter()
         sut = IPadOmnibarReasoningPickerController(
@@ -238,6 +239,7 @@ final class IPadOmnibarReasoningPickerControllerTests: XCTestCase {
 private final class MockUpsellPresenter: DuckAISubscriptionUpselling {
     var presentedPurchaseFlows: [(source: SubscriptionFlowSource, isAITabState: Bool)] = []
     var presentedUpgradeFlows: [(source: SubscriptionFlowSource, isAITabState: Bool)] = []
+    var presentedOrigins: [SubscriptionFunnelOrigin] = []
 
     func presentPurchaseFlow(source: SubscriptionFlowSource, isAITabState: Bool) {
         presentedPurchaseFlows.append((source, isAITabState))
@@ -245,6 +247,10 @@ private final class MockUpsellPresenter: DuckAISubscriptionUpselling {
 
     func presentUpgradeFlow(source: SubscriptionFlowSource, isAITabState: Bool) {
         presentedUpgradeFlows.append((source, isAITabState))
+    }
+
+    func presentPurchaseFlow(origin: SubscriptionFunnelOrigin) {
+        presentedOrigins.append(origin)
     }
 }
 

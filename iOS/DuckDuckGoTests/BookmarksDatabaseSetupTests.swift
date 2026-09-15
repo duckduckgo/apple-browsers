@@ -20,12 +20,11 @@
 
 import Foundation
 import XCTest
-import Persistence
+@_spi(Testing) import Persistence
 import CoreData
 import Bookmarks
 @testable import DuckDuckGo
 @testable import Core
-import PersistenceTestingUtils
 
 class DummyCoreDataStoreMock: CoreDataStoring {
 
@@ -90,7 +89,7 @@ class FormFactorMigratingMock: BookmarkFormFactorFavoritesMigrating {
 class BookmarksStateValidationMock: BookmarksStateValidation {
 
     var onValidateInitialState: () -> Bool = { return true }
-    func validateInitialState(context: NSManagedObjectContext, validationError: Core.BookmarksStateValidator.ValidationError) -> Bool {
+    func validateInitialState(context: NSManagedObjectContext, validationError: BookmarksStateValidator.ValidationError) -> Bool {
         onValidateInitialState()
     }
 

@@ -19,7 +19,7 @@
 import Cocoa
 import Combine
 import AIChat
-import FeatureFlags
+import FeatureFlags_macOS
 import os.log
 import Persistence
 import PixelKit
@@ -55,6 +55,13 @@ extension AIChatOmnibarControllerDelegate {
 enum AIChatToolMode: Equatable {
     case imageGeneration
     case webSearch
+
+    var ragTool: AIChatRAGTool {
+        switch self {
+        case .imageGeneration: return .imageGeneration
+        case .webSearch: return .webSearch
+        }
+    }
 }
 
 /// Controller that manages the state and actions for the AI Chat omnibar.
@@ -82,6 +89,7 @@ final class AIChatOmnibarController {
 
     private let aiChatTabOpener: AIChatTabOpening
     private let promptHandler: AIChatPromptHandler
+    private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
     private let draftSource: DuckAIPromptDraftSource
     /// The browser window backing page-context and voice-session scoping. `nil` for window-less surfaces.
     private let origin: DuckAIPromptOriginProviding?
@@ -91,12 +99,18 @@ final class AIChatOmnibarController {
     private let featureFlagger: FeatureFlagger
     private let searchPreferencesPersistor: SearchPreferencesPersistor
     private let suggestionsReader: AIChatSuggestionsReading?
+    /// Burner (Fire Window) omnibars run an isolated Duck.ai session, so persisted chat-history
+    /// suggestions from the regular session can't be opened here. When true, suggestions are
+    /// suppressed entirely — see `isSuggestionsEnabled`.
+    private let isBurner: Bool
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
     private let subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling
-    /// Shared 4-view cap across both pickers (reuses `FreeTrialBadgePersistor`, separately keyed).
-    /// Past the cap the badge mutes instead of hiding — it's the only entry point to the upsell.
-    private let badgeImpressionPersistor: FreeTrialBadgePersisting
+    private let usageLimitsStore: DuckAiUsageLimitsStore?
+    private lazy var attachedTabsTracker = AIChatAttachedTabsTracker(
+        origin: origin,
+        windowControllersManager: Application.appDelegate.windowControllersManager
+    )
     private var preferences: AIChatPreferencesPersisting
     private var cancellables = Set<AnyCancellable>()
     private var draftStoreCancellable: AnyCancellable?
@@ -124,9 +138,70 @@ final class AIChatOmnibarController {
     /// omits the block — callers fall back to the previously shipped defaults in that case.
     private(set) var attachmentLimits: AIChatAttachmentTierLimits?
 
+    /// `nil` when the usage-warnings feature isn't active, which differs from having nothing to show.
+    private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
+
+    /// The panel's label, image-upload button, tool chips and reasoning picker all key off the
+    /// selected model, and the picker menu is not the only thing that can change it.
+    var onSelectedModelChanged: (() -> Void)?
+
+    /// Create Image can be enabled before models finish loading. If resolving the models then
+    /// requires a switch, the container presents the same notice as an immediate switch.
+    var onCreateImageModelSwitchNotice: ((AIChatCreateImageModelSwitchNotice) -> Void)?
+
+    /// The high-usage notice has no publisher of its own, so it re-resolves on the same beats the
+    /// warning does — activation included, which is what `cleanup()` dropped it for.
+    var onUsageWarningsRefreshed: (() -> Void)?
+
+    /// Turns the card's lifecycle into pixels. Lives here rather than on the container VC because
+    /// submit and teardown — two of the events — are this type's to report.
+    private(set) lazy var usageWarningMeasurement = DuckAiUsageWarningMeasurement(
+        pixelFiring: DuckAiUsageWarningPixelAdapter(surface: surface.usageWarningPixelSurface)
+    )
+
+    /// Advanced models have no allowance left until web republishes. Read off the snapshot, not the
+    /// message: switching to a free model retires the message while the limit it named still stands.
+    var isAdvancedModelUsageExhausted: Bool {
+        usageWarningViewModel?.activeNoticeID == .weeklyReachedDegraded
+    }
+
+    /// The card's subscribe CTA. The container VC owns the dialog, and the window it has to open in.
+    var onSubscriptionUpsellDialogRequested: ((SubscriptionFunnelOrigin) -> Void)?
+
+    /// Set by the container VC from the card it renders; the text VC listens so the prompt goes
+    /// inert alongside the buttons.
+    @Published var isInputBlockedByUsageLimit = false
+
+    private func performUsageWarningAction(_ action: DuckAiUsageAction) {
+        switch action {
+        case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
+            usageWarningMeasurement.ctaTapped(.switchModel)
+            updateSelectedModel(suggestion.modelId)
+        case .tryForFree:
+            // Confirms first, the same as a gated pick in either picker, rather than navigating on tap.
+            usageWarningMeasurement.ctaTapped(.upsell)
+            onSubscriptionUpsellDialogRequested?(surface.usageLimitFunnelOrigin)
+        case .startUsingWeeklyLimit(let entries):
+            // Web reads the entry on its next hydration, so there is nothing to reload here.
+            usageLimitsStore?.write(entries)
+        }
+    }
+
+    /// Stops the cheaper-model CTA suggesting something that can't handle the current draft.
+    private var chatCapabilityRequirements: DuckAiChatCapabilityRequirements {
+        DuckAiChatCapabilityRequirements(
+            needsImageUpload: hasImageAttachments,
+            requiredMimeTypes: activeFileAttachments.map(\.mimeType),
+            requiredTools: activeToolMode.map { [$0.ragTool] } ?? []
+        )
+    }
+
     /// Called after a successful submit so the container VC can cancel any in-flight image
     /// resize tasks (data is cleared via `persistAttachmentsToActiveTab([])`).
     var onAttachmentsClearRequested: (() -> Void)?
+
+    /// Blocked-submit reason, for the container VC's attachments error label.
+    var onAttachmentValidationFailed: ((String) -> Void)?
 
     /// Waits for all attachment resizing to complete before proceeding.
     var waitForAttachmentsReady: (() async -> Void)?
@@ -148,7 +223,8 @@ final class AIChatOmnibarController {
     /// Whether the suggestions feature is enabled.
     /// Requires both the feature flag and the autocomplete setting to be on.
     var isSuggestionsEnabled: Bool {
-        surface.supportsSuggestions
+        !isBurner
+            && surface.supportsSuggestions
             && featureFlagger.isFeatureOn(.aiChatSuggestions)
             && searchPreferencesPersistor.showAutocompleteSuggestions
     }
@@ -165,6 +241,10 @@ final class AIChatOmnibarController {
     /// Whether the image generation tool is available.
     var isImageGenerationEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarImageGeneration)
+    }
+
+    var isUpdatedCreateImageEnabled: Bool {
+        featureFlagger.isFeatureOn(.updatedCreateImage)
     }
 
     /// Whether the web search tool is available.
@@ -200,19 +280,6 @@ final class AIChatOmnibarController {
         return subscriptionManager.isUserEligibleForFreeTrial()
     }
 
-    /// `true` once the shared model-picker/reasoning-picker badge impression cap is reached — the
-    /// badge stays put and stays tappable, but the caller should render it muted rather than yellow.
-    var isBadgeMuted: Bool {
-        badgeImpressionPersistor.hasReachedViewLimit
-    }
-
-    /// Call once per menu-open where a subscription-upsell badge is actually shown (mirroring how
-    /// the app menu counts a "view" of its own free-trial badge) — not once per gated row, since a
-    /// menu can show several gated rows in one open.
-    func recordBadgeImpression() {
-        badgeImpressionPersistor.incrementViewCount()
-    }
-
     /// Whether 1-click voice-chat access in the omnibar is available. When disabled, the submit
     /// button keeps its legacy "arrow / disabled when empty" behavior.
     var isVoiceChatAccessEnabled: Bool {
@@ -228,8 +295,16 @@ final class AIChatOmnibarController {
             && featureFlagger.isFeatureOn(.aiChatOmnibarAttachMoreTabs)
     }
 
-    func toggleImageGenerationMode() {
-        activeToolMode = isImageGenerationMode ? nil : .imageGeneration
+    @discardableResult
+    func toggleImageGenerationMode() -> AIChatCreateImageModelSwitchNotice? {
+        guard !isImageGenerationMode else {
+            activeToolMode = nil
+            return nil
+        }
+
+        let notice = switchToImageGenerationModelIfNeeded()
+        activeToolMode = .imageGeneration
+        return notice
     }
 
     func toggleWebSearchMode() {
@@ -261,17 +336,19 @@ final class AIChatOmnibarController {
         origin: DuckAIPromptOriginProviding?,
         pixelHandler: DuckAIPromptPixelFiring,
         promptHandler: AIChatPromptHandler = .shared,
+        aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         searchPreferencesPersistor: SearchPreferencesPersistor = SearchPreferencesUserDefaultsPersistor(),
         suggestionsReader: AIChatSuggestionsReading? = nil,
+        isBurner: Bool = false,
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
-        modelsService: AIChatModelsProviding = AIChatModelsService(),
+        modelsService: AIChatModelsProviding? = nil,
         subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager,
         // `AIChatOmnibarSubscriptionUpsellPresenter.init` and `Application.appDelegate.subscriptionNavigationCoordinator`
         // are both @MainActor-isolated; a default *parameter value* is evaluated in a nonisolated
         // context even though this initializer's body is not, so the real default is resolved below.
         subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
-        badgeImpressionPersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "aichat-omnibar")
+        usageLimitsStore: DuckAiUsageLimitsStore? = nil
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.surface = surface
@@ -279,15 +356,17 @@ final class AIChatOmnibarController {
         self.origin = origin
         self.pixelHandler = pixelHandler
         self.promptHandler = promptHandler
+        self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
         self.featureFlagger = featureFlagger
         self.searchPreferencesPersistor = searchPreferencesPersistor
         self.suggestionsReader = suggestionsReader
+        self.isBurner = isBurner
         self.preferences = preferences
-        self.modelsService = modelsService
+        self.modelsService = modelsService ?? AIChatModelsService(accessTokenProvider: subscriptionManager)
         self.subscriptionManager = subscriptionManager
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
             ?? AIChatOmnibarSubscriptionUpsellPresenter(coordinator: Application.appDelegate.subscriptionNavigationCoordinator)
-        self.badgeImpressionPersistor = badgeImpressionPersistor
+        self.usageLimitsStore = usageLimitsStore
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
@@ -295,6 +374,38 @@ final class AIChatOmnibarController {
         subscribeToDraftSource()
         subscribeToTextChangesForSuggestions()
         subscribeToToolModeChangesForDraftStore()
+        setUpUsageWarnings()
+    }
+
+    /// The persisted id, matching what the warning's own suggester reasons about.
+    func makeHighUsageNoticeSource() -> AIChatHighUsageNoticeSource? {
+        usageLimitsStore?.makeHighUsageNoticeSource(modelProvider: { [weak self] in
+            guard let self else { return (nil, nil) }
+            let modelId = persistedModelId
+            return (modelId, models.first { $0.id == modelId }?.shortName ?? cachedModelShortName)
+        })
+    }
+
+    private func setUpUsageWarnings() {
+        usageWarningViewModel = usageLimitsStore?.makeWarningViewModel(
+            modelSuggester: DuckAiModelSuggester(
+                modelsProvider: { [weak self] in self?.models ?? [] },
+                currentModelIdProvider: { [weak self] in self?.currentModelId },
+                requirementsProvider: { [weak self] in self?.chatCapabilityRequirements ?? .plainText }
+            ),
+            isTrialEligible: { [weak self] in self?.shouldOfferFreeTrial ?? false },
+            isFireMode: { [weak self] in self?.isBurner ?? false }
+        )
+        usageWarningViewModel?.onAction = { [weak self] action in
+            self?.performUsageWarningAction(action)
+        }
+        // `onOpenModelPicker` is set by the container VC, which owns the anchor the menu pops from.
+
+        // Also what brings a message back after the user has acted on the previous one.
+        usageLimitsStore?.snapshotUpdates?
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.refreshUsageWarnings() }
+            .store(in: &cancellables)
     }
 
     /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;
@@ -310,6 +421,7 @@ final class AIChatOmnibarController {
         // Defer the tab open: synchronously it tears the panel down mid-click, so the click falls through to the bookmarks bar behind.
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
+            self.aiChatConversationSourceHandler.setData(.omnibarVoice)
             self.aiChatTabOpener.openVoiceSession(
                 inSourceCollection: self.origin?.originTabCollectionViewModel,
                 behavior: .newTab(selected: true)
@@ -369,6 +481,7 @@ final class AIChatOmnibarController {
         }
 
         fetchModels()
+        refreshUsageWarnings()
 
         // If feature is disabled, clear any existing suggestions and don't fetch
         if !isSuggestionsEnabled {
@@ -379,6 +492,15 @@ final class AIChatOmnibarController {
         if shouldFetchSuggestions {
             fetchSuggestionsIfNeeded(query: currentText)
         }
+    }
+
+    private func refreshUsageWarnings() {
+        // `cleanup()` clears the message on the switch back to search; without this a snapshot
+        // published after that would re-resolve it under a search omnibar.
+        guard hasBeenActivated else { return }
+
+        usageWarningViewModel?.refresh()
+        onUsageWarningsRefreshed?()
     }
 
     private func fetchModels() {
@@ -397,7 +519,14 @@ final class AIChatOmnibarController {
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningEffortIfNeeded()
                 self.deactivateWebSearchIfUnsupported()
+                if self.isImageGenerationMode,
+                   let notice = self.switchToImageGenerationModelIfNeeded() {
+                    self.onCreateImageModelSwitchNotice?(notice)
+                }
                 self.deactivateImageGenerationIfUnsupported()
+                // Tier and models land after the activation that resolved the warning, so the first
+                // banner after a tier change would otherwise show a stale tier and no CTA.
+                self.refreshUsageWarnings()
             } catch is CancellationError {
                 return
             } catch {
@@ -733,7 +862,29 @@ final class AIChatOmnibarController {
         if let selectedModel, selectedModel.supportsTool(.imageGeneration) {
             return selectedModel
         }
-        return models.first(where: { $0.entityHasAccess && $0.supportsTool(.imageGeneration) })
+        return AIChatModel.preferredImageGenerationModel(in: models)
+    }
+
+    private func switchToImageGenerationModelIfNeeded() -> AIChatCreateImageModelSwitchNotice? {
+        guard isUpdatedCreateImageEnabled,
+              let previousModel = selectedModel,
+              !previousModel.supportsTool(.imageGeneration) else {
+            return nil
+        }
+
+        guard let fallbackModel = imageGenerationModel else {
+            pixelHandler.fire(.createImageUnavailable)
+            return nil
+        }
+
+        updateSelectedModel(fallbackModel.id)
+        let notice = AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
+        pixelHandler.fire(.createImageModelSwitched(
+            fromModelId: previousModel.id,
+            toModelId: fallbackModel.id,
+            fromModelPrivacyPreserving: notice.previousModelHasExtraPrivacyProtections
+        ))
+        return notice
     }
 
     /// The model ID to use for the current submission. In image-generation mode an
@@ -778,6 +929,7 @@ final class AIChatOmnibarController {
         clearStaleReasoningEffortIfNeeded()
         deactivateWebSearchIfUnsupported()
         deactivateImageGenerationIfUnsupported()
+        onSelectedModelChanged?()
     }
 
     /// Clears Web Search mode if the currently selected model doesn't support the WebSearch tool.
@@ -826,6 +978,7 @@ final class AIChatOmnibarController {
     /// Called by the container VC whenever the tab attachment list changes (toggle from menu, removal from carousel).
     func persistTabAttachmentsToActiveTab(_ attachments: [AIChatTabAttachment]) {
         draftStore?.setAIChatTabAttachments(attachments)
+        attachedTabsTracker.trackAttachments(of: draftStore)
     }
 
     /// The tab attachments persisted for the current tab, or an empty list if none / no shared state.
@@ -856,16 +1009,35 @@ final class AIChatOmnibarController {
         persistTabAttachmentsToActiveTab(current)
     }
 
-    /// Wakes a just-attached tab if it's suspended so its content is loaded by the time the user
-    /// submits, avoiding a submit-time wait. Fire-and-forget — `extractPageContextsForOmnibarSubmit`
-    /// re-resolves and wakes regardless, so this is purely a latency optimization.
+    /// Starts loading a just-attached tab whose page isn't loaded yet, so it's ready by submit time.
+    /// Fire-and-forget: the submit path waits regardless, this just keeps it off the critical path.
     private func prewarmAttachedTab(id: String) {
         guard let originTabCollection = origin?.originTabCollectionViewModel,
               let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: originTabCollection, in: Application.appDelegate.windowControllersManager),
-              resolved.wasMaterialized else {
+              resolved.needsLoad else {
             return
         }
         resolved.tab.reload()
+    }
+
+    /// Attach/detach from a picker, whose rows are a snapshot: a tab closed since it was taken, or
+    /// one that has since left the page the row showed, is no longer the thing the user picked.
+    /// Returns whether the attachments changed, so callers can skip their pixel when nothing did.
+    @discardableResult
+    func togglePickedTabAttachment(_ attachment: AIChatTabAttachment) -> Bool {
+        guard !activeTabAttachments.contains(where: { $0.id == attachment.id }) else {
+            toggleTabAttachment(attachment)
+            return true
+        }
+        guard let stillOffered = openTabsForOmnibarPicker().first(where: { $0.id == attachment.id }),
+              stillOffered.url == attachment.url else {
+            // Every picker works from a snapshot, so say why the pick didn't take rather than
+            // leaving the click looking ignored.
+            onAttachmentValidationFailed?(UserText.aiChatAttachTabsStaleSelection)
+            return false
+        }
+        toggleTabAttachment(stillOffered)
+        return true
     }
 
     /// Removes a tab attachment from the active tab's prompt, identified by `id`. No-op if not
@@ -987,15 +1159,23 @@ final class AIChatOmnibarController {
         // every access, so caching avoids hitting it per-tab.
         let debugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = UserDefaults.standard.keyedStoring()
         let customAIChatURLHost = debugURLSettings.customURLHostname
-        let candidates = AIChatTabPickerSource.attachableTabs(forOrigin: originTabCollection, in: Application.appDelegate.windowControllersManager).compactMap { tab -> AIChatTabAttachment? in
-            guard case .url(let url, _, _) = tab.content else { return nil }
-            if let customHost = customAIChatURLHost, !customHost.isEmpty, url.host == customHost {
-                return nil
+        let candidates = AIChatTabPickerSource.attachableTabs(forOrigin: originTabCollection, in: Application.appDelegate.windowControllersManager)
+            .enumerated()
+            .sorted { lhs, rhs in
+                let lhsDate = lhs.element.lastSelectedAt ?? .distantPast
+                let rhsDate = rhs.element.lastSelectedAt ?? .distantPast
+                if lhsDate != rhsDate { return lhsDate > rhsDate }
+                return lhs.offset < rhs.offset
             }
-            let title = tab.title ?? url.host ?? ""
-            let favicon = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image
-            return AIChatTabAttachment(id: tab.uuid, title: title, url: url, favicon: favicon)
-        }
+            .compactMap { _, tab -> AIChatTabAttachment? in
+                guard case .url(let url, _, _) = tab.content else { return nil }
+                if let customHost = customAIChatURLHost, !customHost.isEmpty, url.host == customHost {
+                    return nil
+                }
+                let title = tab.title ?? url.host ?? ""
+                let favicon = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image
+                return AIChatTabAttachment(id: tab.uuid, title: title, url: url, favicon: favicon)
+            }
         // Move the current tab to the front so the picker pins it on top.
         guard let currentTabUUID,
               let currentIndex = candidates.firstIndex(where: { $0.id == currentTabUUID }),
@@ -1015,6 +1195,9 @@ final class AIChatOmnibarController {
         activeToolMode = nil
         hasImageAttachments = false
         hasBeenActivated = false
+        // Whatever the user was going to do about the card, they have now done it.
+        usageWarningMeasurement.inputSessionEnded()
+        usageWarningViewModel?.clear()
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
         currentFetchTask = nil
@@ -1094,6 +1277,7 @@ final class AIChatOmnibarController {
                     .sink { [weak self] panelAttachments in
                         self?.onActiveTabPanelAttachmentsChanged?(panelAttachments)
                     }
+                self.attachedTabsTracker.trackAttachments(of: store)
                 if store == nil {
                     // No store → empty carousel; nothing can deliver the empty value for us.
                     self.onActiveTabPanelAttachmentsChanged?([])
@@ -1121,12 +1305,14 @@ final class AIChatOmnibarController {
 
     func viewAllChats() {
         PixelKit.fire(AIChatPixel.aiChatViewAllChatsClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
-        aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
+        aiChatConversationSourceHandler.setData(.omnibarViewAllChats)
+        aiChatTabOpener.openAIChatTab(with: .chatHistory, behavior: .newTab(selected: true))
     }
 
     /// Fallback when no window can host the modal: opens the customize URL in a tab.
     func openCustomizeResponses() {
         let url = AIChatURLParameters.nativeCustomizeModalURL(from: AIChatRemoteSettings().aiChatURL)
+        aiChatConversationSourceHandler.setData(.omnibar)
         aiChatTabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
     }
 
@@ -1146,12 +1332,37 @@ final class AIChatOmnibarController {
         return hasExcessTabAttachments
     }
 
+    /// Files accepted while `attachmentLimits` was nil were never validated, and the limits can change after a pick.
+    private var fileSubmissionValidationError: AIChatAttachmentValidator.FileValidationError? {
+        guard attachmentLimits != nil, selectedModelSupportsFileUpload else { return nil }
+
+        var validated: [AIChatAttachmentValidator.FileDescriptor] = []
+        for descriptor in activeFileAttachments.map(AIChatAttachmentValidator.FileDescriptor.init) {
+            let validator = makeAttachmentValidator(
+                pendingImageCount: activeImageAttachments.count,
+                pendingFiles: validated
+            )
+            // enforceCount off: the count limit keeps its one-over cue via `hasSubmitBlockingAttachmentExcess`.
+            if let error = validator.fileValidationError(for: descriptor, enforceCount: false) {
+                return error
+            }
+            validated.append(descriptor)
+        }
+        return nil
+    }
+
     func submit() {
         guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return
         }
 
         guard !hasSubmitBlockingAttachmentExcess else {
+            return
+        }
+
+        if let error = fileSubmissionValidationError {
+            pixelHandler.fire(.fileValidationFailed(reason: error.reason.rawValue))
+            onAttachmentValidationFailed?(error.message)
             return
         }
 
@@ -1164,13 +1375,9 @@ final class AIChatOmnibarController {
             return
         }
 
-        pixelHandler.fire(.promptSubmitted)
-
-        if isImageGenerationMode {
-            pixelHandler.fire(.imageGenerationSubmitted)
-        } else if isWebSearchMode {
-            pixelHandler.fire(.webSearchSubmitted)
-        }
+        firePromptSubmissionPixels()
+        // After the URL branch: navigating away is not a prompt spent against the allowance.
+        usageWarningMeasurement.promptSubmitted()
 
         // Snapshot everything that could change between now and when the async submit Task
         // resumes. `await waitForAttachmentsReady?()` can take seconds for large images, and
@@ -1245,7 +1452,8 @@ final class AIChatOmnibarController {
             } else {
                 pageContextPayload = await self.extractPageContextsForOmnibarSubmit(
                     tabAttachments: snapshotTabAttachments,
-                    activeTabUUID: snapshotActiveTabUUID
+                    activeTabUUID: snapshotActiveTabUUID,
+                    promptStore: snapshotDraftStore
                 )
                 pixelHandler.fire(.submittedWithTabs(count: snapshotTabAttachments.count))
             }
@@ -1277,6 +1485,7 @@ final class AIChatOmnibarController {
             if surface.routesSubmissionThroughHost {
                 delegate?.aiChatOmnibarController(self, requestsSubmissionOf: trimmedText, payload: prompt)
             } else {
+                aiChatConversationSourceHandler.setData(.omnibar)
                 aiChatTabOpener.openAIChatTab(
                     with: .query(trimmedText, shouldAutoSubmit: true),
                     behavior: .currentTab
@@ -1300,6 +1509,22 @@ final class AIChatOmnibarController {
         currentText = ""
     }
 
+    private func firePromptSubmissionPixels() {
+        pixelHandler.fire(.promptSubmitted)
+
+        switch activeToolMode {
+        case .imageGeneration:
+            if !selectedModelSupportsImageGeneration {
+                pixelHandler.fire(.createImageSubmittedWithUnsupportedModel)
+            }
+            pixelHandler.fire(.imageGenerationSubmitted)
+        case .webSearch:
+            pixelHandler.fire(.webSearchSubmitted)
+        case nil:
+            break
+        }
+    }
+
     /// Eagerly extracts the page context for each omnibar-attached tab, returning a
     /// `AIChatPageContextPayload?` ready to attach to the prompt's top-level `pageContext`
     /// field. Empty list → `nil` (the field is omitted on the wire). Otherwise a
@@ -1315,7 +1540,8 @@ final class AIChatOmnibarController {
     @MainActor
     private func extractPageContextsForOmnibarSubmit(
         tabAttachments: [AIChatTabAttachment],
-        activeTabUUID: String?
+        activeTabUUID: String?,
+        promptStore: (any DuckAIPromptDraftStoring)?
     ) async -> AIChatPageContextPayload? {
         guard !tabAttachments.isEmpty, let origin = origin?.originTabCollectionViewModel else { return nil }
 
@@ -1337,9 +1563,17 @@ final class AIChatOmnibarController {
 
         // Stamp `tabId` on each successful extraction (or strip it if the entry matches the
         // active tab), then re-order to match the carousel's insertion order.
+        // Extraction resolves the live tab, which may have navigated while the extraction ran, so
+        // only attachments this submission made — and that are still attached — may ship.
+        let submittedInstanceIDs = Dictionary(tabAttachments.map { ($0.id, $0.instanceID) }, uniquingKeysWith: { _, latest in latest })
+        // Matched on instanceID, so a tab detached and reattached mid-submit is a different
+        // attachment and its new page can't ride along with this prompt.
+        let attachedNow = Set((promptStore?.aiChatTabAttachments ?? tabAttachments)
+            .filter { submittedInstanceIDs[$0.id] == $0.instanceID }
+            .map(\.id))
         var byId: [String: AIChatPageContextData] = [:]
         for (tabId, maybeContext) in extracted {
-            guard let ctx = maybeContext else { continue }
+            guard let ctx = maybeContext, attachedNow.contains(tabId) else { continue }
             let stampedTabId: String? = (tabId == activeTabUUID) ? nil : tabId
             byId[tabId] = ctx.withTabId(stampedTabId)
         }
@@ -1439,98 +1673,87 @@ final class AIChatOmnibarController {
 
 /// A fully-resolved model-picker row so the view controller only maps it to an `NSMenuItem`.
 enum AIChatModelPickerItem {
-    case model(AIChatModel, badge: String?, isSelected: Bool)
+    case model(AIChatModel, subtitle: String? = nil, isSelected: Bool)
     case separator
-    case gatedHeader(title: String, badge: String, isMuted: Bool, representativeModel: AIChatModel?)
-    case gatedModel(AIChatModel, badge: String?)
+    /// Muted, uppercase section title (no CTA) — used above the gated models section.
+    case sectionHeader(title: String)
+    /// `routesToUpsell` is false when the upsell is unavailable (kill switch, or a surface that
+    /// doesn't support it) — the row still shows, but must not open the purchase dialog.
+    case gatedModel(AIChatModel, routesToUpsell: Bool)
+    /// Out of allowance rather than out of subscription: the row shows, greyed, and selects nothing.
+    case unavailableModel(AIChatModel, isSelected: Bool)
 }
 
 /// A fully-resolved reasoning-effort row so the view controller only maps it to an `NSMenuItem`.
 struct AIChatReasoningPickerItem {
     let effort: AIChatReasoningEffort
     let isSelected: Bool
-    /// PLUS/PRO label, shown for a gated effort when the upsell is off.
-    let trailingText: String?
-    /// "Try for Free"/"Upgrade" badge, shown for a gated effort when the upsell is on.
-    let upsellBadge: String?
-    let isBadgeMuted: Bool
     let isGated: Bool
+    /// Title of the section this effort opens, set on the first gated effort only. `nil` when the
+    /// upsell is unavailable — the divider still separates the section, just without a heading.
+    let gatedSectionTitle: String?
+    /// See `AIChatModelPickerItem.gatedModel`'s `routesToUpsell`.
+    let routesToUpsell: Bool
 }
 
 extension AIChatOmnibarController {
-    /// Resolved picker contents (accessible first, then the gated upsell section); owns the flag, copy, ordering, and badge impression so the VC just renders.
-    func modelPickerItems(selectedModelId: String?) -> [AIChatModelPickerItem] {
-        let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
-        let ordered = AIChatModelSectionBuilder.orderedAccessibleModels(accessible, userTier: userTier)
+    /// Resolved picker contents (accessible first, then the gated upsell section); owns the flag, copy, and ordering so the VC just renders.
+    /// `freeModelsOnly` is the free-model CTA's chevron: advanced models are what it has run out of.
+    func modelPickerItems(selectedModelId: String?, freeModelsOnly: Bool = false) -> [AIChatModelPickerItem] {
+        let source = freeModelsOnly ? models.filter { !$0.isAdvanced } : models
+        let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: source)
+        // Recommended = backend-labelled models, shown first with the label as a subtitle.
+        let (recommended, rest) = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
 
-        var items: [AIChatModelPickerItem] = ordered.map { model in
-            .model(model, badge: trailingBadge(for: model), isSelected: model.id == selectedModelId)
+        let advancedExhausted = isAdvancedModelUsageExhausted
+        func item(for model: AIChatModel, subtitle: String? = nil) -> AIChatModelPickerItem {
+            let isSelected = model.id == selectedModelId
+            guard advancedExhausted, model.isAdvanced else {
+                return .model(model, subtitle: subtitle, isSelected: isSelected)
+            }
+            return .unavailableModel(model, isSelected: isSelected)
         }
 
-        guard !gated.isEmpty else { return items }
+        var items: [AIChatModelPickerItem] = recommended.map { model in
+            item(for: model, subtitle: AIChatPickerSectionCopy.subtitle(for: model.label))
+        }
+        items += rest.map { item(for: $0) }
+
+        guard !gated.isEmpty, !freeModelsOnly else { return items }
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {
-            // Free user's gated section mixes Plus+Pro ("Subscriber exclusive"); a Plus user's is Pro-only.
-            let title = userTier == .free ? UserText.aiChatModelPickerSubscriberExclusive
-                                          : UserText.aiChatModelPickerProExclusive
-            let badge = shouldOfferFreeTrial ? UserText.aiChatModelPickerTryForFree
-                                             : UserText.aiChatModelPickerUpgrade
-            // Header CTA routes off a representative tier; any gated model suffices.
-            items.append(.gatedHeader(title: title,
-                                      badge: badge,
-                                      isMuted: isBadgeMuted,
-                                      representativeModel: gated.first?.model))
-            recordBadgeImpression()
+            items.append(.sectionHeader(title: AIChatPickerSectionCopy.gatedModelsHeader(userTier: userTier, isEligibleForFreeTrial: shouldOfferFreeTrial)))
         }
 
-        items += gated.map { .gatedModel($0.model, badge: trailingBadge(for: $0.model)) }
+        items += gated.map { .gatedModel($0.model, routesToUpsell: isSubscriptionUpsellEnabled) }
         return items
     }
 
-    /// PLUS/PRO tag for models whose minimum tier is above free (incl. already-accessible ones), else nil.
-    private func trailingBadge(for model: AIChatModel) -> String? {
-        switch model.lowestPublicAccessTier {
-        case .plus: return UserText.aiChatModelPickerTierBadgePlus
-        case .pro: return UserText.aiChatModelPickerTierBadgePro
-        case .free, .none: return nil
-        }
-    }
-
-    /// Resolved reasoning-effort rows; owns the current-effort fallback, the flag/eligibility/tier
-    /// decisions, and the badge impression so the VC just renders.
+    /// Resolved reasoning-effort rows; owns the current-effort fallback and the
+    /// flag/eligibility/tier decisions so the VC just renders.
     func reasoningPickerItems() -> [AIChatReasoningPickerItem] {
         // Falls back to the first (always-accessible) effort before models load, so the menu and
         // the chip agree on what's "current".
         let current = displayedReasoningEffort ?? pickerReasoningEfforts.first
         var items: [AIChatReasoningPickerItem] = []
-        var showedUpsellBadge = false
+        var titledGatedSection = false
         for effort in pickerReasoningEfforts {
             let requiredTier = requiredTier(for: effort)
             let isGated = requiredTier != nil
-            let showsUpsell = isGated && isSubscriptionUpsellEnabled
-            showedUpsellBadge = showedUpsellBadge || showsUpsell
+            // Only the first gated effort heads the section.
+            let sectionTitle = isGated && isSubscriptionUpsellEnabled && !titledGatedSection
+                ? AIChatPickerSectionCopy.gatedEffortsHeader(requiredTier: requiredTier, userTier: userTier, isEligibleForFreeTrial: shouldOfferFreeTrial)
+                : nil
+            titledGatedSection = titledGatedSection || sectionTitle != nil
             items.append(AIChatReasoningPickerItem(
                 effort: effort,
                 isSelected: effort == current && !isGated,
-                trailingText: showsUpsell ? nil : tierBadge(for: requiredTier),
-                upsellBadge: showsUpsell ? (shouldOfferFreeTrial ? UserText.aiChatModelPickerTryForFree
-                                                                 : UserText.aiChatModelPickerUpgrade) : nil,
-                isBadgeMuted: isBadgeMuted,
-                isGated: isGated
+                isGated: isGated,
+                gatedSectionTitle: sectionTitle,
+                routesToUpsell: isGated && isSubscriptionUpsellEnabled
             ))
         }
-        // One impression per open, matching the model picker.
-        if showedUpsellBadge { recordBadgeImpression() }
         return items
-    }
-
-    /// PLUS/PRO tag for a gated effort's required tier, else nil.
-    private func tierBadge(for requiredTier: AIChatModelPublicAccessTier?) -> String? {
-        switch requiredTier {
-        case .plus: return UserText.aiChatModelPickerTierBadgePlus
-        case .pro: return UserText.aiChatModelPickerTierBadgePro
-        case .free, .none: return nil
-        }
     }
 }

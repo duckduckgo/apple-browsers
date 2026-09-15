@@ -28,6 +28,7 @@ import os.log
 import PixelKit
 import Combine
 import WebExtensions
+import FeatureFlags_iOS
 
 protocol AutoconsentPreferences {
     var cookiePopupPreference: CookiePopupPreference { get set }
@@ -661,7 +662,6 @@ extension AutoconsentUserScript {
 
     @MainActor
     private func heuristicModeValue() -> String {
-        // If the new preferences menu is not enabled, use reject only, otherwise use the value from the setting.
         if !(consentHeuristicEnabled ?? false) {
             return "off"
         }
@@ -669,7 +669,7 @@ extension AutoconsentUserScript {
             return "tier2"
         }
         if preferences.cookiePopupPreference == .default {
-            return config.isSubfeatureEnabled(AutoconsentSubfeature.cookiePopupPreferenceSetting) ? "tier1" : "reject"
+            return "tier1"
         }
         return "off"
     }

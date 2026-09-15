@@ -18,7 +18,7 @@
 
 import AIChat
 import AppKit
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SubscriptionTestingUtilities
@@ -52,7 +52,17 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
     func testWhenThePromptIsOneLineThenTheControlsRowSitsClearOfIt() {
         let gap = layOutAndMeasureGap(prompt: "what is a duck")
 
-        XCTAssertGreaterThanOrEqual(gap, 8, "The controls row must not touch the prompt text")
+        XCTAssertEqual(gap, expectedPromptToControlsGap, accuracy: 1,
+                       "The gap between the prompt and the controls row has moved")
+    }
+
+    func testWhenRebrandedThenThePanelBudgetsTheControlsRowItLaysOut() {
+        content = makeContent(isAppRebranded: true)
+
+        let gap = layOutAndMeasureGap(prompt: "what is a duck")
+
+        XCTAssertEqual(gap, expectedPromptToControlsGap, accuracy: 1,
+                       "The rebranded panel budgets a different controls row height than it lays out")
     }
 
     func testWhenThePromptGrowsToMoreLinesThenTheGapBelowItDoesNotChange() {
@@ -113,6 +123,27 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
         }
     }
 
+    func testWhenSuggestionsAreCollapsedThenTheSubmitButtonClearsTheBottomEdgeByItsTrailingInset() {
+        content = makeContent(isAppRebranded: true)
+        _ = layOutAndMeasureGap(prompt: "what is a duck")
+
+        XCTAssertEqual(containerViewController.suggestionsHeight, 0,
+                       "This measurement only holds while the suggestions list is collapsed")
+
+        let host = containerViewController.view
+        guard let submit = firstDescendant(of: host, ofType: AIChatSubmitButton.self) else {
+            return XCTFail("No submit button in the hierarchy")
+        }
+
+        let frame = host.convert(submit.bounds, from: submit)
+        let bottomInset = host.isFlipped ? host.bounds.maxY - frame.maxY : frame.minY - host.bounds.minY
+        let trailingInset = host.bounds.maxX - frame.maxX
+
+        XCTAssertGreaterThan(bottomInset, 0, "A zero inset means the panel never got laid out")
+        XCTAssertEqual(bottomInset, trailingInset, accuracy: 0.5,
+                       "The submit button no longer clears the bottom and trailing edges equally")
+    }
+
     func testWhenTheDuckAILogoIsLaidOutThenItCentresOnTheToolRowsLeadingButton() {
         let view = content.view
         _ = layOutAndMeasureGap(prompt: "what is a duck")
@@ -133,6 +164,12 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
     }
 
     // MARK: - Measurement
+
+    /// Exact rather than a lower bound: a panel that over-budgets the controls row shows up here as
+    /// extra slack, which `>=` waves through.
+    private var expectedPromptToControlsGap: CGFloat {
+        8 + containerViewController.additionalContentHeight
+    }
 
     private func duckAILogo(in host: NSView) -> NSImageView? {
         descendants(of: host)
@@ -231,8 +268,9 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
     // MARK: - Assembly
 
-    private func makeContent() -> PromptBarOmnibarContentViewController {
+    private func makeContent(isAppRebranded: Bool = false) -> PromptBarOmnibarContentViewController {
         let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub[FeatureFlag.appRebranding.rawValue] = isAppRebranded
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
@@ -274,7 +312,8 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
             containerViewController: containerViewController,
             textViewController: textViewController,
             draftStore: draftStore,
-            promptSubmitter: StubPromptBarPromptSubmitter()
+            promptSubmitter: StubPromptBarPromptSubmitter(),
+            themeManager: themeManager
         )
     }
 }

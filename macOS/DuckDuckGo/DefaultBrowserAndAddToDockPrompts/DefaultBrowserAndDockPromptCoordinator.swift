@@ -101,7 +101,7 @@ import Combine
 import SwiftUI
 import SwiftUIExtensions
 import BrowserServicesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import PixelKit
 
 enum DefaultBrowserAndDockPromptDismissAction: Equatable {

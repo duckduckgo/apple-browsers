@@ -33,17 +33,20 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
     private let subscriptionDataProvider: SubscriptionSurveyDataProviding?
     private let localeIdentifier: String
     private let autofillUsageStore: AutofillUsageStore?
+    private let featureDiscovery: FeatureDiscovery?
 
     public init(statisticsStore: StatisticsStore,
                 vpnActivationDateStore: VPNActivationDateProviding,
                 subscriptionDataProvider: SubscriptionSurveyDataProviding?,
                 localeIdentifier: String = Locale.current.identifier,
-                autofillUsageStore: AutofillUsageStore?) {
+                autofillUsageStore: AutofillUsageStore?,
+                featureDiscovery: FeatureDiscovery? = nil) {
         self.statisticsStore = statisticsStore
         self.vpnActivationDateStore = vpnActivationDateStore
         self.subscriptionDataProvider = subscriptionDataProvider
         self.localeIdentifier = localeIdentifier
         self.autofillUsageStore = autofillUsageStore
+        self.featureDiscovery = featureDiscovery
     }
 
     // swiftlint:disable:next cyclomatic_complexity
@@ -80,6 +83,9 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
                    let daysSinceInstall = Calendar.current.numberOfDaysBetween(installDate, and: Date()) {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(describing: daysSinceInstall)))
                 }
+            case .lastDuckAIUsage:
+                let daysSinceLastUsed = featureDiscovery?.daysSinceLastUsed(.aiChat)
+                queryItems.append(URLQueryItem(name: parameter.rawValue, value: Self.usageState(daysSinceLastUsage: daysSinceLastUsed)))
             case .lastSearchState:
                 queryItems.append(URLQueryItem(name: parameter.rawValue, value: Self.searchState(lastSearchDate: autofillUsageStore?.searchDauDate)))
             case .locale:
@@ -156,7 +162,15 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
             .dateComponents([.day], from: startOfLast, to: startOfToday)
             .day ?? Int.max
 
-        switch daysApart {
+        return usageState(daysSinceLastUsage: daysApart)
+    }
+
+    private static func usageState(daysSinceLastUsage: Int?) -> String {
+        guard let daysSinceLastUsage else {
+            return "none"
+        }
+
+        switch daysSinceLastUsage {
         case 0...1:
             return "day"
         case 2...7:
@@ -167,20 +181,41 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
     }
 
     public static func refreshLastSearchState(in urlString: String, lastSearchDate: Date?) -> String {
-        guard var comps = URLComponents(string: urlString),
-              let items = comps.queryItems,
-              items.contains(where: { $0.name == RemoteMessagingSurveyActionParameter.lastSearchState.rawValue }) else {
+        refreshUsageStates(in: urlString,
+                           updatedStates: [.lastSearchState: searchState(lastSearchDate: lastSearchDate)])
+    }
+
+    public static func refreshSurveyUsageStates(in urlString: String, lastSearchDate: Date?, daysSinceDuckAIUsed: Int?) -> String {
+        refreshUsageStates(
+            in: urlString,
+            updatedStates: [
+                .lastDuckAIUsage: usageState(daysSinceLastUsage: daysSinceDuckAIUsed),
+                .lastSearchState: searchState(lastSearchDate: lastSearchDate)
+            ]
+        )
+    }
+
+    private static func refreshUsageStates(in urlString: String, updatedStates: [RemoteMessagingSurveyActionParameter: String]) -> String {
+        guard var components = URLComponents(string: urlString),
+              let queryItems = components.queryItems else {
             return urlString
         }
 
-        let filtered = items.filter { $0.name != RemoteMessagingSurveyActionParameter.lastSearchState.rawValue }
+        var didUpdateState = false
+        components.queryItems = queryItems.map { queryItem in
+            guard let parameter = RemoteMessagingSurveyActionParameter(rawValue: queryItem.name),
+                  let updatedState = updatedStates[parameter] else {
+                return queryItem
+            }
 
-        let updatedState = Self.searchState(lastSearchDate: lastSearchDate)
+            didUpdateState = true
+            return URLQueryItem(name: queryItem.name, value: updatedState)
+        }
 
-        comps.queryItems = filtered + [
-            URLQueryItem(name: RemoteMessagingSurveyActionParameter.lastSearchState.rawValue, value: updatedState)
-        ]
+        guard didUpdateState else {
+            return urlString
+        }
 
-        return comps.url?.absoluteString ?? urlString
+        return components.url?.absoluteString ?? urlString
     }
 }

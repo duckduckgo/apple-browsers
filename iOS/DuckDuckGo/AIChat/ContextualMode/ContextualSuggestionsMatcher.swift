@@ -21,6 +21,7 @@ import AIChat
 import Core
 import Foundation
 import os.log
+import PixelKit
 
 struct SuggestionCatalog: Decodable {
     struct Entry: Decodable {
@@ -65,9 +66,15 @@ struct ContextualSuggestionsMatcher {
 
     private init() {}
 
+    /// Suggestions that act on attached selection text rather than the current page.
+    private static let selectionScopedIDs = AIChatTextSelectionAction.selectionSuggestionIDs
+
     static func resolve(_ input: ResolvePageSuggestionsInput, catalog: SuggestionCatalog) -> ResolvedPageSuggestions {
         let cap = max(1, catalog.maxSuggestedPrompts)
-        let candidates = collectCandidateIds(input, catalog: catalog, cap: cap)
+        // A fixed pair, not page-matched, so never "smart".
+        let candidates = input.scope == .selection
+            ? (ids: selectionScopedIDs, isSmart: false)
+            : collectCandidateIds(input, catalog: catalog, cap: cap)
         var seen = Set<String>()
         var resolved: [ContextualSuggestedPrompt] = []
 
@@ -78,7 +85,7 @@ struct ContextualSuggestionsMatcher {
 
             guard let entry = catalog.catalog[id], conditionPasses(entry.condition, input: input) else { continue }
 
-            let copy = localizedCopy(for: id, entry: entry)
+            let copy = localizedCopy(for: id, entry: entry, input: input)
             resolved.append(ContextualSuggestedPrompt(
                 id: id,
                 label: copy.label,
@@ -235,15 +242,25 @@ struct ContextualSuggestionsMatcher {
 
     // MARK: Localization
 
-    private static func localizedCopy(for id: String, entry: SuggestionCatalog.Entry) -> (label: String, prompt: String) {
-        localizedCopyByID[id] ?? (entry.label, entry.prompt)
+    private static func localizedCopy(for id: String, entry: SuggestionCatalog.Entry, input: ResolvePageSuggestionsInput) -> (label: String, prompt: String) {
+        if input.isDocument, let documentCopy = localizedCopyForDocumentsByID[id] {
+            return documentCopy
+        }
+        return localizedCopyByID[id] ?? (entry.label, entry.prompt)
     }
+
+    /// Maps each catalog id to its native `UserText` copy for document pages
+    private static let localizedCopyForDocumentsByID: [String: (label: String, prompt: String)] = [
+        "summarize-page": (UserText.aiChatSuggestionSummarizeDocumentLabel, UserText.aiChatSuggestionSummarizeDocumentPrompt)
+    ]
 
     /// Maps each catalog id to its native `UserText` copy. The `UserText` extension holds the strings
     /// (idiomatic for the codebase); this map is the id → strings glue the matcher needs.
     private static let localizedCopyByID: [String: (label: String, prompt: String)] = [
         "summarize-page": (UserText.aiChatSuggestionSummarizePageLabel, UserText.aiChatSuggestionSummarizePagePrompt),
         "translate-page": (UserText.aiChatSuggestionTranslatePageLabel, UserText.aiChatSuggestionTranslatePagePrompt),
+        "summarize-selection": (UserText.aiChatSuggestionSummarizeSelectionLabel, UserText.aiChatSuggestionSummarizeSelectionPrompt),
+        "translate-selection": (UserText.aiChatSuggestionTranslateSelectionLabel, UserText.aiChatSuggestionTranslateSelectionPrompt),
         "key-takeaways": (UserText.aiChatSuggestionKeyTakeawaysLabel, UserText.aiChatSuggestionKeyTakeawaysPrompt),
         "explain-simply": (UserText.aiChatSuggestionExplainSimplyLabel, UserText.aiChatSuggestionExplainSimplyPrompt),
         "counterarguments": (UserText.aiChatSuggestionCounterargumentsLabel, UserText.aiChatSuggestionCounterargumentsPrompt),
@@ -338,7 +355,7 @@ struct DefaultContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProv
 
     init(catalog: SuggestionCatalog? = SuggestionCatalog.bundled,
          fireCatalogLoadFailedPixel: @escaping () -> Void = {
-             DailyPixel.fireDailyAndCount(pixel: .aiChatContextualSuggestionsCatalogLoadFailed)
+             PixelKit.fire(Pixel.Event.aiChatContextualSuggestionsCatalogLoadFailed, frequency: .dailyAndCount)
          }) {
         self.catalog = catalog
         self.fireCatalogLoadFailedPixel = fireCatalogLoadFailedPixel
@@ -353,14 +370,14 @@ struct DefaultContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProv
     }
 
     /// Last-resort floor if the bundled catalog cannot be decoded: a single unconditional
-    /// "Summarize this page" so the start surface is never empty. The page type is still
-    /// classified — it does not depend on the catalog.
+    /// summarize so the start surface is never empty. The page type is still classified — it does
+    /// not depend on the catalog.
     private static func decodeFailureFallback(for input: ResolvePageSuggestionsInput) -> ResolvedPageSuggestions {
         ResolvedPageSuggestions(
             suggestions: [ContextualSuggestedPrompt(
                 id: "summarize-page",
-                label: UserText.aiChatSuggestionSummarizePageLabel,
-                prompt: UserText.aiChatSuggestionSummarizePagePrompt,
+                label: input.isDocument ? UserText.aiChatSuggestionSummarizeDocumentLabel : UserText.aiChatSuggestionSummarizePageLabel,
+                prompt: input.isDocument ? UserText.aiChatSuggestionSummarizeDocumentPrompt : UserText.aiChatSuggestionSummarizePagePrompt,
                 icon: "summary"
             )],
             isSmart: false,

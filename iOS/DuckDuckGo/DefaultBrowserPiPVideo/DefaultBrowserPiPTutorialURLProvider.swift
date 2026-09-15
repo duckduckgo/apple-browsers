@@ -20,6 +20,7 @@
 import Foundation
 import SystemSettingsPiPTutorial
 import protocol PrivacyConfig.FeatureFlagger
+import FeatureFlags_iOS
 
 final class DefaultBrowserPiPTutorialURLProvider: PiPTutorialURLProvider {
 

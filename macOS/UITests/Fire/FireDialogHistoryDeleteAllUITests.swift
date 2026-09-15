@@ -67,9 +67,11 @@ final class FireDialogHistoryDeleteAllUITests: UITestCase, FireDialogUITests {
         // Verify no scope pill appears (Everything scope should be selected by default for Delete All)
         XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for Delete All")
 
+        // Verify no history toggle appears (history view dialogs always delete history)
+        XCTAssertFalse(fireDialogHistoryToggle.exists, "History toggle should not appear for History delete dialog")
+
         // Configure toggles: only history
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
 
         // Burn
@@ -88,7 +90,7 @@ final class FireDialogHistoryDeleteAllUITests: UITestCase, FireDialogUITests {
         verifyInitialCountersSet()
     }
 
-    func test_historyView_deleteAllHistory_viaDeleteAllButton_onlyTabsToggle() throws {
+    func test_historyView_deleteAllHistory_viaDeleteAllButton_closeTabsToggle() throws {
         let storageURL = URL(string: "https://privacy-test-pages.site/features/local-storage.html")!
 
         // Visit sites and set storage
@@ -116,9 +118,11 @@ final class FireDialogHistoryDeleteAllUITests: UITestCase, FireDialogUITests {
         // Verify no scope pill appears
         XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for Delete All")
 
+        // Verify no history toggle appears (history view dialogs always delete history)
+        XCTAssertFalse(fireDialogHistoryToggle.exists, "History toggle should not appear for History delete dialog")
+
         // Configure toggles: only tabs (close windows)
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
 
         // Burn
@@ -129,11 +133,11 @@ final class FireDialogHistoryDeleteAllUITests: UITestCase, FireDialogUITests {
         XCTAssertEqual(app.windows.count, 1, "Should have 1 window")
         verifyNewTabPageIsOpen()
 
-        // Verify history was preserved (history toggle was off)
+        // Verify history was deleted
         app.openHistory()
         XCTAssertTrue(historyWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence), "History view should reopen")
-        XCTAssertTrue(historyWebView.links[site1Title].waitForExistence(timeout: UITests.Timeouts.elementExistence), "Site 1 should still be in history")
-        XCTAssertTrue(historyWebView.links.element(matching: .keyPath(\.title, contains: "Local Storage")).exists, "Storage site should still be in history")
+        let emptyHistoryText = historyWebView.staticTexts["No browsing history yet."]
+        XCTAssertTrue(emptyHistoryText.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Today section should show empty message after deletion")
 
         // Verify storage was preserved (cookies toggle was off)
         app.activateAddressBar()
@@ -141,7 +145,7 @@ final class FireDialogHistoryDeleteAllUITests: UITestCase, FireDialogUITests {
         verifyInitialCountersSet()
     }
 
-    func test_historyView_deleteAllHistory_viaDeleteAllButton_onlyCookiesToggle() throws {
+    func test_historyView_deleteAllHistory_viaDeleteAllButton_deleteCookiesToggle() throws {
         let storageURL = URL(string: "https://privacy-test-pages.site/features/local-storage.html")!
 
         // Visit sites and set storage
@@ -169,9 +173,11 @@ final class FireDialogHistoryDeleteAllUITests: UITestCase, FireDialogUITests {
         // Verify no scope pill appears
         XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for Delete All")
 
+        // Verify no history toggle appears (history view dialogs always delete history)
+        XCTAssertFalse(fireDialogHistoryToggle.exists, "History toggle should not appear for History delete dialog")
+
         // Configure toggles: only cookies
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
 
         // Burn
@@ -181,9 +187,9 @@ final class FireDialogHistoryDeleteAllUITests: UITestCase, FireDialogUITests {
         // Verify History view still open
         XCTAssertTrue(historyWebView.exists, "History view should still be open")
 
-        // Verify history was preserved (history toggle was off)
-        XCTAssertTrue(historyWebView.links[site1Title].exists, "Site 1 should still be in history")
-        XCTAssertTrue(historyWebView.links.element(matching: .keyPath(\.title, contains: "Local Storage")).exists, "Storage site should still be in history")
+        // Verify history was deleted
+        let emptyHistoryText = historyWebView.staticTexts["No browsing history yet."]
+        XCTAssertTrue(emptyHistoryText.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Today section should show empty message after deletion")
 
         // Verify storage was cleared (cookies toggle was on)
         app.activateAddressBar()
@@ -191,7 +197,7 @@ final class FireDialogHistoryDeleteAllUITests: UITestCase, FireDialogUITests {
         verifyCountersCleared()
     }
 
-    func test_historyView_deleteAllHistory_viaDeleteAllButton_allTogglesActive() throws {
+    func test_historyView_deleteAllHistory_viaDeleteAllButton_deleteCookiesAndCloseTabs() throws {
         let storageURL = URL(string: "https://privacy-test-pages.site/features/local-storage.html")!
 
         // Visit sites and set storage
@@ -219,9 +225,11 @@ final class FireDialogHistoryDeleteAllUITests: UITestCase, FireDialogUITests {
         // Verify no scope pill appears
         XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for Delete All")
 
+        // Verify no history toggle appears (history view dialogs always delete history)
+        XCTAssertFalse(fireDialogHistoryToggle.exists, "History toggle should not appear for History delete dialog")
+
         // Configure toggles: all active
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
 
         // Burn

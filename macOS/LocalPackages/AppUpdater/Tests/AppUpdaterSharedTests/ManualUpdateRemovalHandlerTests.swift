@@ -18,9 +18,8 @@
 
 import AppUpdaterShared
 import AppUpdaterTestHelpers
-import FeatureFlags
-import Persistence
-import PersistenceTestingUtils
+import FeatureFlags_macOS
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import XCTest
 

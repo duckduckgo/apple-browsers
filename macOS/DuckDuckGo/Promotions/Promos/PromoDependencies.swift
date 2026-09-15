@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import BrowserServicesKit
+import DDGSync
 import Foundation
 import Persistence
 import PrivacyConfig
@@ -27,6 +29,7 @@ import RemoteMessaging
 struct PromoDependencies {
     let keyValueStore: ThrowingKeyValueStoring
     let isExternallyActivated: Bool
+    let isNewUserProvider: () -> Bool
     let isOnboardingCompletedProvider: () -> Bool
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
@@ -35,4 +38,13 @@ struct PromoDependencies {
     let featureFlagger: FeatureFlagger
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let windowControllersManager: WindowControllersManagerProtocol
+    let syncService: DDGSyncing?
+    let syncBookmarksAdapter: SyncBookmarksAdapter?
+    let pinningManager: PinningManager
+    let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate
+    let duckPlayerOverlayObserver: DuckPlayerOverlayObserver
+    let updateController: (any UpdateController)?
+    let updateNotificationBridge: UpdateNotificationPromoBridge?
+    let brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator
+    let quitSurveyPromoObserver: QuitSurveyPromoObserver
 }

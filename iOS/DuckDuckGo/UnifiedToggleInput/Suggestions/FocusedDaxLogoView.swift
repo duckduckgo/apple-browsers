@@ -19,6 +19,7 @@
 
 import Lottie
 import SwiftUI
+import DesignResourcesKitIcons
 
 /// The focused-omnibar empty-state logo, morphing Dax ↔ Duck.ai via a bound `progress`
 /// (0 = Dax/search, 1 = Duck.ai). Renders through the same Lottie asset as `NewTabPageDaxLogoView`
@@ -36,7 +37,12 @@ struct FocusedDaxLogoView: View {
     var animationSpeed: Double = 1
 
     private var animationName: String {
-        colorScheme == .dark ? Constant.darkAnimationName : Constant.animationName
+        let isDark = colorScheme == .dark
+        if AppRebrand.isAppRebranded() {
+            return isDark ? Constant.darkAnimationName : Constant.animationName
+        } else {
+            return isDark ? Constant.darkAnimationNameLegacy : Constant.animationNameLegacy
+        }
     }
 
     private var playbackMode: LottiePlaybackMode {
@@ -54,6 +60,8 @@ struct FocusedDaxLogoView: View {
     private enum Constant {
         static let animationName = "duckduckgo-ai-transition.json"
         static let darkAnimationName = "duckduckgo-ai-transition-dark.json"
+        static let animationNameLegacy = "duckduckgo-ai-transition-legacy.json"
+        static let darkAnimationNameLegacy = "duckduckgo-ai-transition-dark-legacy.json"
         static let logoHeight: CGFloat = 162
     }
 }

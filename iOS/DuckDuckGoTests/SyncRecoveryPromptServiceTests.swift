@@ -20,10 +20,9 @@
 import XCTest
 import Core
 import BrowserServicesKit
-import Persistence
+@_spi(Testing) import Persistence
 import SecureStorage
 @testable import DuckDuckGo
-@testable import PersistenceTestingUtils
 @testable import DDGSync
 
 @MainActor

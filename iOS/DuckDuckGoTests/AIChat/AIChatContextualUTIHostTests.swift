@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -89,6 +90,16 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(voiceCallCount, 1)
     }
 
+    func test_duckAIPromptSubmission_forwardsContextualOrigin() {
+        var submittedOrigins: [AIChatEntryPointSource?] = []
+        makeSUT()
+        sut.onDuckAIPromptSubmitted = { submittedOrigins.append($0) }
+
+        sut.unifiedToggleInputDidSubmitDuckAIPrompt(origin: .contextualChat)
+
+        XCTAssertEqual(submittedOrigins, [.contextualChat])
+    }
+
     func test_chipRemoveAction_firesRemoveCallbackOnly() {
         let url = URL(string: "https://example.com/a")!
         var removeCallCount = 0
@@ -119,34 +130,64 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
         sut.clearAttachedContext()
 
-        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
+        XCTAssertNil(sut.chipViewModel.state)
         XCTAssertNil(sut.attachedContextURL)
     }
 
-    func test_showAttachAffordanceKeepsPlaceholderHiddenWithoutClearingDeliveredAttachment() {
+    func test_setSuggestedContext_showsTheOfferWithoutAttachingIt() {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
-        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString), initialAttachmentDeliveryState: .delivered)
+        makeSUT()
 
-        sut.showAttachAffordance()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
 
-        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
-        XCTAssertFalse(sut.chipViewModel.isVisible)
-        XCTAssertEqual(sut.attachedContextURL, url)
+        XCTAssertEqualState(sut.chipViewModel.state, .suggested(title: "Page A", favicon: nil))
+        XCTAssertNil(sut.attachedContextURL)
         XCTAssertNil(sut.chipViewModel.pendingAttachedContextData)
     }
 
-    func test_showAttachAffordanceDoesNotOverridePendingAttachment() {
+    func test_clearSuggestedContext_removesTheOffer() {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
-        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString), initialAttachmentDeliveryState: .pendingSubmit)
+        makeSUT()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
 
-        sut.showAttachAffordance()
+        sut.clearSuggestedContext()
 
-        XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page A", favicon: nil))
-        XCTAssertTrue(sut.chipViewModel.isVisible)
-        XCTAssertEqual(sut.attachedContextURL, url)
-        XCTAssertEqual(sut.chipViewModel.pendingAttachedContextData?.url, url.absoluteString)
+        XCTAssertNil(sut.chipViewModel.state)
+    }
+
+    func test_chipTapOnASuggestion_forwardsAcceptanceNotAnAttachRequest() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
+        var acceptCallCount = 0
+        var attachCallCount = 0
+        sut.onSuggestionAccepted = { acceptCallCount += 1 }
+        sut.onAttachRequested = { attachCallCount += 1 }
+
+        sut.chipViewModel.tapToAttach()
+
+        XCTAssertEqual(acceptCallCount, 1)
+        XCTAssertEqual(attachCallCount, 0)
+    }
+
+    func test_chipRemoveOnASuggestion_forwardsDismissalNotARemoval() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
+        var dismissCallCount = 0
+        var removeCallCount = 0
+        sut.onSuggestionDismissed = { dismissCallCount += 1 }
+        sut.onRemoveRequested = { removeCallCount += 1 }
+
+        sut.chipViewModel.tapToRemove()
+
+        XCTAssertEqual(dismissCallCount, 1)
+        XCTAssertEqual(removeCallCount, 0)
+        XCTAssertNil(sut.chipViewModel.state)
     }
 
     func test_setAttachedContextWithSameURLAfterDelivered_makesContextPendingAgain() {
@@ -182,7 +223,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
         sut.prepareForNewChat()
 
-        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
+        XCTAssertNil(sut.chipViewModel.state)
         XCTAssertNil(sut.attachedContextURL)
     }
 
@@ -212,6 +253,106 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(sut.attachedContextURL, pageAURL)
     }
 
+    func test_unmountThenMountElsewhere_leavesExactlyOneParent() {
+        makeSUT()
+        let first = UIViewController()
+        let second = UIViewController()
+
+        let firstView = sut.mount(in: first)
+        XCTAssertTrue(firstView.isDescendant(of: first.view))
+        XCTAssertEqual(first.children.count, 1)
+
+        sut.unmount(from: first)
+        XCTAssertTrue(first.children.isEmpty)
+        XCTAssertNil(firstView.superview)
+
+        let secondView = sut.mount(in: second)
+        XCTAssertTrue(secondView.isDescendant(of: second.view))
+        XCTAssertEqual(second.children.count, 1)
+        XCTAssertTrue(first.children.isEmpty)
+    }
+
+    func test_mountTwiceInSameParent_doesNotDuplicate() {
+        makeSUT()
+        let parent = UIViewController()
+
+        sut.mount(in: parent)
+        sut.mount(in: parent)
+
+        XCTAssertEqual(parent.children.count, 1)
+    }
+
+    func test_unmountWithoutMount_doesNothing() {
+        makeSUT()
+        sut.unmount(from: UIViewController())
+    }
+
+    /// A dismissal animating out finishes after the next surface may already have mounted the input. Taking
+    /// it away then would leave that surface without its bar.
+    func test_unmountFromAStaleParent_leavesTheCurrentMountAlone() {
+        makeSUT()
+        let stale = UIViewController()
+        let current = UIViewController()
+
+        _ = sut.mount(in: stale)
+        let inputView = sut.mount(in: current)
+
+        sut.unmount(from: stale)
+
+        XCTAssertTrue(inputView.isDescendant(of: current.view))
+        XCTAssertEqual(current.children.count, 1)
+    }
+
+    /// Freezing is what lets a dismissal own the surface's motion, so it has to hand over the position the
+    /// keyboard guide was holding — not shift it as the constraint is swapped.
+    func test_freezeInputPosition_leavesTheInputExactlyWhereItWas() {
+        makeSUT()
+        let parent = UIViewController()
+        parent.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let inputView = sut.mount(in: parent)
+        parent.view.layoutIfNeeded()
+        let before = inputView.frame
+
+        sut.freezeInputPosition()
+        parent.view.layoutIfNeeded()
+
+        XCTAssertEqual(inputView.frame, before)
+    }
+
+    func test_freezeInputPositionTwice_stillLeavesItWhereItWas() {
+        makeSUT()
+        let parent = UIViewController()
+        parent.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let inputView = sut.mount(in: parent)
+        parent.view.layoutIfNeeded()
+        let before = inputView.frame
+
+        sut.freezeInputPosition()
+        sut.freezeInputPosition()
+        parent.view.layoutIfNeeded()
+
+        XCTAssertEqual(inputView.frame, before)
+    }
+
+    /// A frozen pin belongs to the parent it was measured against. Left behind, the next mount would sit at a
+    /// stale position.
+    func test_freezeThenRemount_pinsToTheNewParent() {
+        makeSUT()
+        let first = UIViewController()
+        first.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        _ = sut.mount(in: first)
+        first.view.layoutIfNeeded()
+        sut.freezeInputPosition()
+
+        let second = UIViewController()
+        second.view.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
+        let inputView = sut.mount(in: second)
+        second.view.layoutIfNeeded()
+
+        XCTAssertTrue(inputView.isDescendant(of: second.view))
+        XCTAssertEqual(inputView.frame.maxY, second.view.keyboardLayoutGuide.layoutFrame.minY)
+    }
+
     private func makeContext(title: String, url: String) -> AIChatPageContext {
         AIChatPageContext(
             contextData: AIChatPageContextData(
@@ -228,17 +369,19 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 }
 
 private func XCTAssertEqualState(
-    _ actual: AIChatContextChipView.State,
+    _ actual: AIChatContextChipView.State?,
     _ expected: AIChatContextChipView.State,
     file: StaticString = #filePath,
     line: UInt = #line
 ) {
     switch (actual, expected) {
-    case (.placeholder, .placeholder):
-        return
+    case let (.suggested(actualTitle, _), .suggested(expectedTitle, _)):
+        XCTAssertEqual(actualTitle, expectedTitle, file: file, line: line)
     case let (.attached(actualTitle, _), .attached(expectedTitle, _)):
         XCTAssertEqual(actualTitle, expectedTitle, file: file, line: line)
+    case (.loading, .loading):
+        return
     default:
-        XCTFail("Expected \(expected), got \(actual)", file: file, line: line)
+        XCTFail("Expected \(expected), got \(String(describing: actual))", file: file, line: line)
     }
 }

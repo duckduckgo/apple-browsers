@@ -24,7 +24,7 @@ import FoundationExtensions
 // A type that send pixels that needs attributions parameters.
 protocol AttributionPixelHandler {
     func fireAttributionPixel(
-        event: PixelKitEvent,
+        event: PixelKit.Event,
         frequency: PixelKit.Frequency,
         origin: String?,
         additionalParameters: [String: String]?
@@ -54,7 +54,7 @@ final class GenericAttributionPixelHandler: AttributionPixelHandler {
     }
 
     func fireAttributionPixel(
-        event: PixelKitEvent,
+        event: PixelKit.Event,
         frequency: PixelKit.Frequency,
         origin: String?,
         additionalParameters: [String: String]?
@@ -65,9 +65,7 @@ final class GenericAttributionPixelHandler: AttributionPixelHandler {
             [:],
             self.parameters(additionalParameters, withOrigin: origin, locale: locale.identifier),
             nil,
-            nil,
             true,
-            false,
             { _, _ in }
         )
     }
@@ -90,14 +88,12 @@ private extension GenericAttributionPixelHandler {
 
 extension GenericAttributionPixelHandler {
     typealias FireRequest = (
-        _ event: PixelKitEvent,
+        _ event: PixelKit.Event,
         _ frequency: PixelKit.Frequency,
         _ headers: [String: String],
         _ parameters: [String: String]?,
-        _ namePrefix: String?,
         _ allowedQueryReservedCharacters: CharacterSet?,
         _ includeAppVersionParameter: Bool,
-        _ doNotEnforcePrefix: Bool,
         _ onComplete: @escaping (Bool, Error?) -> Void
     ) -> Void
 }

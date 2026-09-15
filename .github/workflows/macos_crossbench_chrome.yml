@@ -1,5 +1,5 @@
-name: macOS - crossbench Chrome LCP (WPR)
-run-name: macOS - crossbench Chrome LCP (WPR)
+name: "macOS - LCP: Chrome"
+run-name: "macOS - LCP: Chrome"
 
 # Test harness: stands up crossbench on a GitHub-hosted macOS runner,
 # measures Chrome navigation -> Largest Contentful Paint from WPR archives,
@@ -7,7 +7,7 @@ run-name: macOS - crossbench Chrome LCP (WPR)
 # (opt-in dispatch input) a second, self-hosted job inserts per-domain
 # aggregates into ClickHouse (native_apps.macos_browser_health_nav_to_lcp).
 #
-# Triggered manually (workflow_dispatch) and on a daily off-peak schedule. No
+# Triggered manually (workflow_dispatch) and monthly on the first day. No
 # pull_request/push trigger, so fork PRs can't run it. WPR supplies fixed page
 # bytes and the US-broadband shaper matches the Windows harness.
 
@@ -42,7 +42,7 @@ on:
     # GitHub only fires schedules from the default branch.
     # 00:17 UTC avoids the repository's busiest scheduled CI window and the
     # top-of-hour load common to GitHub-hosted runners.
-    - cron: "17 0 * * *"
+    - cron: "17 0 1 * *"
 
 permissions:
   contents: read
@@ -53,7 +53,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: macos-browser-lcp-performance
   cancel-in-progress: false
 
 defaults:
@@ -70,10 +70,11 @@ jobs:
       ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
 
   chrome-lcp:
-    name: Chrome LCP (WPR)
+    name: Chrome LCP
     needs: validate-wpr
-    # Standard hosted Apple Silicon runner, matching the Safari architecture.
-    runs-on: macos-latest
+    # Dedicated self-hosted Apple Silicon runner, matching the Safari
+    # architecture. A fixed machine keeps timings comparable between runs.
+    runs-on: [self-hosted, macOS, ARM64]
     # 10 measured loads/site, with no discarded live-network warm-up. The cap
     # retains headroom for provisioning and trace-processor variance.
     timeout-minutes: 200
@@ -83,6 +84,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           persist-credentials: false
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Download validated WPR archives
         uses: actions/download-artifact@v7
@@ -100,6 +104,8 @@ jobs:
           REPS: ${{ inputs.reps }}
           WPR_DIR: ${{ runner.temp }}/wpr-archives
           WPR_ARCHIVES_PREPARED: "1"
+          BROWSER_WINDOW_WIDTH: "800"
+          BROWSER_WINDOW_HEIGHT: "600"
           PRESERVE_DIAGNOSTICS: ${{ inputs.upload-diagnostics && '1' || '0' }}
           DIAGNOSTICS_DIR: ${{ github.workspace }}/macOS/scripts/crossbench/chrome-diagnostics
         run: |
@@ -160,7 +166,7 @@ jobs:
             --run-id "$GITHUB_RUN_ID" \
             --start-time "$(jq -r '.created_at' <<< "$run_json")" \
             --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
-            --webview-type chr-wpr
+            --webview-type chrome
           cat clickhouse-rows.tsv
 
       - name: Upload ClickHouse rows TSV
@@ -213,7 +219,7 @@ jobs:
             --run-id "$GITHUB_RUN_ID" \
             --start-time "$(jq -r '.created_at' <<< "$run_json")" \
             --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
-            --webview-type chr-wpr
+            --webview-type chrome
           cat clickhouse-attempts.tsv
 
       - name: Upload ClickHouse attempts TSV
@@ -241,7 +247,15 @@ jobs:
       always() &&
       needs.validate-wpr.result == 'success' &&
       (github.event_name == 'schedule' || inputs.upload-to-clickhouse)
-    runs-on: [ self-hosted, apple ]
+    # `apple` names the owning team, not a platform: the label covers both a
+    # Linux utility runner and the bare-metal measurement mac, and only the
+    # former has clickhouse-client. Without the platform label this job lands on
+    # either, so roughly half of its runs fail on a missing binary. Asking for
+    # Linux keeps it off the measurement mac without naming a machine.
+    runs-on: [ self-hosted, apple, Linux ]
+    # 60 minutes, deliberately loose: this job can queue behind a multi-hour
+    # measurement job whenever the runner it wants is busy.
+    timeout-minutes: 60
 
     steps:
       - name: Download ClickHouse rows TSV
@@ -307,7 +321,7 @@ jobs:
 
   notify-runtime-failures:
     name: Report Chrome measurement errors
-    needs: chrome-lcp
+    needs: [chrome-lcp, upload-to-clickhouse]
     if: >-
       always() &&
       (github.event_name != 'workflow_dispatch' || inputs.alert-asana) &&
@@ -368,6 +382,32 @@ jobs:
             exit 0
           fi
 
+      - name: Check ClickHouse upload result
+        # A green chrome-lcp job tells you nothing about whether the aggregated
+        # rows actually reached ClickHouse — that's a separate, self-hosted job.
+        # Runs after "Prepare runtime failure report" on purpose: that step's
+        # python helper also writes has-errors/report.txt, and running before
+        # it would let this step's write of the file (or has-errors) get
+        # clobbered by that one.
+        id: upload-check
+        continue-on-error: true
+        working-directory: .
+        env:
+          UPLOAD_RESULT: ${{ needs.upload-to-clickhouse.result }}
+        run: |
+          if [ "$UPLOAD_RESULT" = "failure" ] || [ "$UPLOAD_RESULT" = "cancelled" ]; then
+            mkdir -p runtime-report
+            cat >> runtime-report/report.txt <<EOF
+
+          [UPLOAD ERROR] ClickHouse insert did not complete.
+          Result: $UPLOAD_RESULT
+          Action: inspect the upload-to-clickhouse job logs.
+          EOF
+            echo "upload-failed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload-failed=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Upload runtime failure report
         if: always()
         continue-on-error: true
@@ -379,18 +419,33 @@ jobs:
           retention-days: 30
 
       - name: Check run alert marker
-        if: always() && steps.report.outputs.has-errors == 'true'
+        if: >-
+          always() &&
+          (steps.report.outputs.has-errors == 'true' ||
+           steps.upload-check.outputs.upload-failed == 'true')
         id: alert-marker
         continue-on-error: true
         working-directory: .
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! marker_count="$(
-              gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=chrome-runtime-failure-run-$GITHUB_RUN_ID&per_page=100" \
-                --jq '[.artifacts[] | select(.expired == false)] | length'
-            )"; then
-            echo "::warning title=Asana notification skipped::Could not check the run alert marker; skipping task creation to avoid duplicates."
+          # Up to 3 attempts, 5s apart: a transient API failure should not lose
+          # an alert. exists=unknown (and skipping task creation) is still the
+          # outcome after 3 consecutive failures — treating unknown as "false"
+          # would risk duplicate tasks, which is worse than a delayed alert.
+          marker_count=""
+          for attempt in 1 2 3; do
+            if marker_count="$(
+                gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=chrome-runtime-failure-run-$GITHUB_RUN_ID&per_page=100" \
+                  --jq '[.artifacts[] | select(.expired == false)] | length'
+              )"; then
+              break
+            fi
+            marker_count=""
+            [ "$attempt" -lt 3 ] && sleep 5
+          done
+          if [ -z "$marker_count" ]; then
+            echo "::warning title=Asana notification skipped::Could not check the run alert marker after 3 attempts; skipping task creation to avoid duplicates."
             echo "exists=unknown" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -402,13 +457,16 @@ jobs:
 
       - name: Create Asana subtask
         if: >-
-          always() && steps.report.outputs.has-errors == 'true' &&
+          always() &&
+          (steps.report.outputs.has-errors == 'true' ||
+           steps.upload-check.outputs.upload-failed == 'true') &&
           steps.alert-marker.outputs.exists == 'false'
         id: asana
         continue-on-error: true
         working-directory: .
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          ASANA_FOLLOWERS: ${{ vars.CROSSBENCH_ALERT_FOLLOWERS }}
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ -z "$ASANA_ACCESS_TOKEN" ]; then
@@ -432,6 +490,17 @@ jobs:
             cat "$report"
           } > "$notes_file"
 
+          diagnostics_zip=""
+          diagnostics_artifact_id="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=chrome-lcp-perfetto-diagnostics" \
+              --jq '.artifacts[0].id // empty'
+          )"
+          if [ -n "$diagnostics_artifact_id" ]; then
+            diagnostics_zip="$RUNNER_TEMP/chrome-lcp-perfetto-diagnostics.zip"
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$diagnostics_artifact_id/zip" \
+              > "$diagnostics_zip"
+          fi
+
           run_started_at="$(
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
               --jq '.run_started_at'
@@ -448,14 +517,26 @@ jobs:
           done
 
           "$helper" \
-            1216902374642227 \
+            1217628708169653 \
+            1217628708169657 \
             "Browser Measurement Failure: Chrome LCP" \
             "$notes_file" \
             "$start_date" \
-            "$due_date"
+            "$due_date" \
+            "$diagnostics_zip"
           echo "created=true" >> "$GITHUB_OUTPUT"
           mkdir -p runtime-report
           echo "reported by run $GITHUB_RUN_ID" > runtime-report/alert-marker.txt
+
+      - name: Fail loudly when the Asana alert could not be delivered
+        # No continue-on-error: create-asana-subtask.sh keeps it on the step
+        # above so the marker-saving step below still runs, but a failed
+        # notification must not leave the run green.
+        if: always() && steps.asana.outcome == 'failure'
+        working-directory: .
+        run: |
+          echo "::error title=Asana alert not delivered::Asana subtask creation failed for run https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          exit 1
 
       - name: Save run alert marker
         if: always() && steps.asana.outputs.created == 'true'

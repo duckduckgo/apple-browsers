@@ -192,11 +192,15 @@ enum ThirdPartyBrowser: CaseIterable {
         }
     }
 
-    func browserProfiles(applicationSupportURL: URL? = nil) -> DataImport.BrowserProfileList {
+    func browserProfiles(applicationSupportURL: URL? = nil, detectsInaccessibleProfiles: Bool = false) -> DataImport.BrowserProfileList {
         var potentialProfileURLs: [URL] {
             let fm = FileManager()
             let profilesDirectories = self.profilesDirectories(applicationSupportURL: applicationSupportURL)
             return profilesDirectories.reduce(into: []) { result, profilesDir in
+                if detectsInaccessibleProfiles, fm.requiresReadPermission(atPath: profilesDir.path) {
+                    return
+                }
+
                 result.append(contentsOf: (try? fm.contentsOfDirectory(at: profilesDir,
                                                                        includingPropertiesForKeys: nil,
                                                                        options: [.skipsHiddenFiles])
@@ -241,7 +245,9 @@ enum ThirdPartyBrowser: CaseIterable {
             profiles = []
         }
 
-        return DataImport.BrowserProfileList(browser: self, profiles: profiles)
+        let profilesWithAccessState = detectsInaccessibleProfiles ? detectAccessState(for: profiles, applicationSupportURL: applicationSupportURL) : profiles
+
+        return DataImport.BrowserProfileList(browser: self, profiles: profilesWithAccessState)
     }
 
     var isWebBrowser: Bool {
@@ -310,4 +316,39 @@ enum ThirdPartyBrowser: CaseIterable {
         }
     }
 
+}
+
+extension ThirdPartyBrowser {
+
+    func detectAccessState(for profiles: [DataImport.BrowserProfile], applicationSupportURL: URL? = nil) -> [DataImport.BrowserProfile] {
+        guard isWebBrowser, !isSafari else {
+            return profiles
+        }
+
+        let inaccessibleDirectories = inaccessibleProfilesDirectories(applicationSupportURL: applicationSupportURL)
+        if inaccessibleDirectories.isEmpty {
+            return profiles
+        }
+
+        let inaccessibleDirectorySet = Set(inaccessibleDirectories)
+        let accessibleProfiles = profiles.filter {
+            !inaccessibleDirectorySet.contains($0.profileURL)
+        }
+
+        let deniedProfiles = inaccessibleDirectories.map {
+            DataImport.BrowserProfile(browser: self, profileURL: $0, accessState: .permissionDenied)
+        }
+
+        return accessibleProfiles + deniedProfiles
+    }
+
+    /// On macOS 27+ this happens when the other browser's `~/Library/Application Support/*` directory is TCC-protected.
+    private func inaccessibleProfilesDirectories(applicationSupportURL: URL?) -> [URL] {
+        let profiles = profilesDirectories(applicationSupportURL: applicationSupportURL)
+        let fileManager = FileManager.default
+
+        return profiles.filter { directory in
+            fileManager.requiresReadPermission(atPath: directory.path)
+        }
+    }
 }

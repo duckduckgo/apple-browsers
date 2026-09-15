@@ -628,7 +628,6 @@ enum WebViewTestConfig {
         trackerProtectionEnabled: Bool = true,
         contentBlockingEnabled: Bool = true,
         surrogateInjectionEnabled: Bool = true,
-        ctlEnabled: Bool = false,
         trackerAllowlist: [String: [[String: Any]]] = [:],
         unprotectedDomains: [String] = [],
         tempUnprotectedDomains: [String] = [],
@@ -645,7 +644,6 @@ enum WebViewTestConfig {
 
         let settings: [String: Any] = [
             "blockingEnabled": contentBlockingEnabled,
-            "ctlEnabled": ctlEnabled,
             "surrogateInjectionEnabled": surrogateInjectionEnabled,
             "allowlist": trackerAllowlist,
             "tempUnprotectedDomains": tempUnprotectedDomains,
@@ -682,16 +680,6 @@ enum WebViewTestConfig {
         ]
         if !trackerAllowlist.isEmpty {
             features["trackerAllowlist"] = trackerAllowlistFeature
-        }
-        // The pre-built C-S-S bundle determines _ctlEnabled from
-        // `features.clickToLoad.state` (via _isStateEnabled), while the local
-        // submodule source reads `trackerProtection.settings.ctlEnabled`.
-        // Both paths must be set so tests work with either bundle version.
-        if ctlEnabled {
-            features["clickToLoad"] = [
-                "state": "enabled",
-                "exceptions": [] as [[String: String]]
-            ] as [String: Any]
         }
 
         let config: [String: Any] = [
@@ -766,17 +754,13 @@ final class WebKitTestHelper {
                                      trackerAllowlist: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]],
                                      contentBlockingEnabled: Bool,
                                      exceptions: [String],
-                                     httpsUpgradesEnabled: Bool = false,
-                                     clickToLoadEnabled: Bool = true) -> PrivacyConfiguration {
+                                     httpsUpgradesEnabled: Bool = false) -> PrivacyConfiguration {
         let contentBlockingExceptions = exceptions.map { PrivacyConfigurationData.ExceptionEntry(domain: $0, reason: nil) }
         let contentBlockingStatus = contentBlockingEnabled ? "enabled" : "disabled"
         let httpsStatus = httpsUpgradesEnabled ? "enabled" : "disabled"
-        let clickToLoadStatus = clickToLoadEnabled ? "enabled" : "disabled"
         let features = [PrivacyFeature.contentBlocking.rawValue: PrivacyConfigurationData.PrivacyFeature(state: contentBlockingStatus,
                                                                                                          exceptions: contentBlockingExceptions),
-                        PrivacyFeature.httpsUpgrade.rawValue: PrivacyConfigurationData.PrivacyFeature(state: httpsStatus, exceptions: []),
-                        PrivacyFeature.clickToLoad.rawValue: PrivacyConfigurationData.PrivacyFeature(state: clickToLoadStatus,
-                                                                                                         exceptions: contentBlockingExceptions)]
+                        PrivacyFeature.httpsUpgrade.rawValue: PrivacyConfigurationData.PrivacyFeature(state: httpsStatus, exceptions: [])]
         let unprotectedTemporary = tempUnprotected.map { PrivacyConfigurationData.ExceptionEntry(domain: $0, reason: nil) }
         let privacyData = PrivacyConfigurationData(features: features,
                                                    unprotectedTemporary: unprotectedTemporary,

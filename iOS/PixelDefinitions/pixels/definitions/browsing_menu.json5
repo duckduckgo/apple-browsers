@@ -40,5 +40,12 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_sharesheet_activity_addtohomescreen": {
+        "description": "Fires when the user picks the Add to Home Screen action in the share sheet opened from the browsing menu. Only available on iOS 16.4 and later; earlier versions report m_sharesheet_activity_other",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

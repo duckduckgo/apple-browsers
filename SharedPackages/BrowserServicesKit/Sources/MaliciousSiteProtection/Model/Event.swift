@@ -36,7 +36,10 @@ public extension PixelKit {
     }
 }
 
-public enum Event: PixelKitEvent {
+public enum Event: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     case errorPageShown(category: ThreatKind, clientSideHit: Bool?)
     case visitSite(category: ThreatKind)
     case leaveSite(category: ThreatKind)

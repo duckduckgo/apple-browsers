@@ -24,6 +24,7 @@ final class MockOnboardingSearchExperienceProvider: OnboardingSearchExperiencePr
     var didEnableAIChatSearchInputDuringOnboarding = false
     var didMakeChoiceDuringOnboarding = false
     var didApplyOnboardingChoiceSettings = false
+    var didStartAIChatDuringOnboarding = false
 
     var storeAIChatSearchInputDuringOnboardingChoiceCalled = false
     var lastStoredValue: Bool?
@@ -32,5 +33,9 @@ final class MockOnboardingSearchExperienceProvider: OnboardingSearchExperiencePr
         storeAIChatSearchInputDuringOnboardingChoiceCalled = true
         lastStoredValue = enable
         didEnableAIChatSearchInputDuringOnboarding = enable
+    }
+
+    func storeDidStartAIChatDuringOnboarding(_ didStart: Bool) {
+        didStartAIChatDuringOnboarding = didStart
     }
 }

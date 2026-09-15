@@ -107,9 +107,12 @@ public class MockOAuthClient: OAuthClient {
         if let logoutError {
             throw logoutError
         }
+        internalCurrentTokenContainer = nil
     }
 
-    public func removeLocalAccount() throws {}
+    public func removeLocalAccount() throws {
+        internalCurrentTokenContainer = nil
+    }
 
     public var changeAccountEmailResponse: Result<String, Error>!
     public func changeAccount(email: String?) async throws -> String {

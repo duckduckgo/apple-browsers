@@ -18,6 +18,7 @@
 import AppUpdaterShared
 import BrowserServicesKit
 import Common
+import DDGError
 import FoundationExtensions
 import Foundation
 

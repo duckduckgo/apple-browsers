@@ -36,10 +36,10 @@ public final class SiteLoadingPerformanceSubfeature: Subfeature {
     public weak var broker: UserScriptMessageBroker?
 
     private let samplePercentage: Int
-    private let pixelFire: (PixelKitEvent, PixelKit.Frequency) -> Void
+    private let pixelFire: (PixelKit.Event, PixelKit.Frequency) -> Void
 
     public init(samplePercentage: Int = 2,
-                pixelFire: @escaping (PixelKitEvent, PixelKit.Frequency) -> Void = { event, frequency in
+                pixelFire: @escaping (PixelKit.Event, PixelKit.Frequency) -> Void = { event, frequency in
                     PixelKit.fire(event, frequency: frequency)
                 }) {
         self.samplePercentage = samplePercentage

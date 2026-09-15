@@ -21,12 +21,12 @@ import XCTest
 import BrowserServicesKit
 import SubscriptionTestingUtilities
 import Core
-import PixelKit
+@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import PixelExperimentKit
 @testable import Subscription
 @testable import DuckDuckGo
 import PrivacyConfig
-import PixelKitTestingUtilities
 import NetworkingTestingUtils
 import BrowserServicesKitTestsUtils
 import WebKit

@@ -55,19 +55,25 @@ public enum WebExtensionManagerFactory {
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferences,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
+        searchTokenProvider: SearchTokenProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil
     ) -> WebExtensionManager {
         let preferencesAdapter = AutoconsentPreferencesAdapter(preferences: autoconsentPreferences)
+        let pixelFiring = iOSWebExtensionPixelFiring()
+        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
 
         return WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(mainViewController: mainViewController),
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
-            pixelFiring: iOSWebExtensionPixelFiring(),
+            pixelFiring: pixelFiring,
+            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: preferencesAdapter,
-                darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
+                cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+                darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider,
+                searchTokenProvider: searchTokenProvider
             ),
             scriptletConfiguration: scriptletConfiguration
         )

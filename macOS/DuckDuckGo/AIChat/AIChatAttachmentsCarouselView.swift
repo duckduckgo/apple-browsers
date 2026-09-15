@@ -186,6 +186,10 @@ final class AIChatAttachmentsCarouselView: NSView {
                 if case .image(let image) = entry, let thumbnail = existing as? AIChatImageAttachmentThumbnailView {
                     thumbnail.updateImage(image.image)
                 }
+                // Same for tabs: navigation and late title / favicon keep the id.
+                if case .tab(let tab) = entry, let card = existing as? AIChatTabAttachmentCardView {
+                    card.update(with: tab)
+                }
                 continue
             }
             let view = makeView(for: entry)

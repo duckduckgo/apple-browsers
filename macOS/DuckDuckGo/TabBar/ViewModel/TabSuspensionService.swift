@@ -25,7 +25,7 @@ import Persistence
 import PixelKit
 import PrivacyConfig
 
-enum TabSuspensionPixel: PixelKitEvent {
+enum TabSuspensionPixel: PixelKit.Event {
 
     enum Trigger: String {
         case criticalMemoryPressure = "critical_memory_pressure"

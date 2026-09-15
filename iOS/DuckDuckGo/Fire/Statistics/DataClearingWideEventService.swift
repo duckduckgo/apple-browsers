@@ -20,7 +20,7 @@
 import Foundation
 import Core
 import BrowserServicesKit
-import PixelKit
+import WideEvent
 
 /// Service responsible for managing data clearing wide event lifecycle.
 ///

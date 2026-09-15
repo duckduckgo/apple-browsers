@@ -17,8 +17,7 @@
 //
 
 import BrowserServicesKit
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import WideEvent
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

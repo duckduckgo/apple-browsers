@@ -486,4 +486,20 @@ final class StringExtensionTests: XCTestCase {
         XCTAssertEqual(result, "abcde     …    vwxyz")
     }
 
+    func testWhenFullyRemovingPercentEncodingThenEscapesAreDecoded() {
+        XCTAssertEqual("%2525".fullyRemovingPercentEncoding(), "%")
+        XCTAssertEqual("%252520".fullyRemovingPercentEncoding(), " ")
+        XCTAssertEqual("a%20b".fullyRemovingPercentEncoding(), "a b")
+        XCTAssertEqual("%E2%82%AC".fullyRemovingPercentEncoding(), "€")
+        XCTAssertEqual("abc".fullyRemovingPercentEncoding(), "abc")
+    }
+
+    func testWhenInputExceedsDecodingCapThenItIsReturnedUnchanged() {
+        let longInput = "https://a/" + String(repeating: "%25", count: 5_000)
+        XCTAssertEqual(longInput.fullyRemovingPercentEncoding(), longInput)
+
+        let atLimit = String(repeating: "a", count: 4_096)
+        XCTAssertEqual(atLimit.fullyRemovingPercentEncoding(), atLimit)
+    }
+
 }

@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import BrowserServicesKit
+import FeatureFlags_iOS
 
 enum FloatingSwipePreviewGeometry {
 
@@ -972,6 +973,7 @@ extension SwipeTabsCoordinator {
         
         if scrollToSelected {
             scrollToCurrent()
+            collectionView.layoutIfNeeded()
         }
     }
 
@@ -1091,11 +1093,7 @@ private extension SwipeTabsCoordinator {
         omniBar.showSeparator()
         omniBar.adjust(for: appSettings.currentAddressBarPosition)
         if floatingUIManager.isFloatingUIEnabled {
-            if appSettings.currentAddressBarPosition.isBottom {
-                omniBar.barView.makeOpaque()
-            } else {
-                omniBar.barView.makeGlass()
-            }
+            omniBar.barView.makeGlass()
         }
         omniBar.configureForSwipeTemplate(
             isExpandedPhone: coordinator.omniBar.isExpandedPhone,
@@ -1180,6 +1178,7 @@ class OmniBarCell: UICollectionViewCell {
 
     weak var omniBar: OmniBar? {
         willSet {
+            guard omniBar !== newValue || omniBar?.barView.superview !== self else { return }
             let isFloatingUIEnabled = isFloatingUIEnabledProvider?() ?? false
             if isFloatingUIEnabled {
                 guard let currentBarView = omniBar?.barView, currentBarView.superview === self else { return }
@@ -1191,6 +1190,7 @@ class OmniBarCell: UICollectionViewCell {
             }
         }
         didSet {
+            guard oldValue !== omniBar || omniBar?.barView.superview !== self else { return }
             guard let omniBarView = omniBar?.barView else { return }
             let isFloatingUIEnabled = isFloatingUIEnabledProvider?() ?? false
             if isFloatingUIEnabled {

@@ -20,6 +20,9 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
+"%@: %@" = "%1$@: %2$@";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -63,6 +66,9 @@
 
 /* Add action - button shown in alert */
 "action.title.add" = "Pridať";
+
+/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
+"action.title.aiChat.askDuckAI" = "Spýtaj sa Duck.ai";
 
 /* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
 "action.title.aiChat.hideContextualSheetButton" = "Skryť skratku dolného panela";
@@ -202,6 +208,9 @@
 /* Add to Favorites action */
 "action.title.save.favorite" = "Pridať do obľúbených položiek";
 
+/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
+"action.title.searchWithDuckDuckGo" = "Vyhľadávať";
+
 /* Settings action */
 "action.title.settings" = "Nastavenia";
 
@@ -310,6 +319,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Tento typ súboru nie je podporovaný. Prilož %@.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Upravením sa odpoveď nahradí novou.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Upraviť správu";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Nové";
 
@@ -397,6 +412,15 @@
 /* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
 "aiChat.history.swipe.unpin.a11y" = "Rozpnúť čet";
 
+/* Section header for Pro-only models shown to DuckDuckGo Plus subscribers */
+"aichat.model-picker.pro-plan-exclusive" = "Exkluzívne pre plán Pro";
+
+/* Section header for subscription models shown to users who are not eligible for a free trial */
+"aichat.model-picker.subscriber-exclusive" = "Exkluzívne pre predplatiteľov";
+
+/* Section header for subscription models shown to free users */
+"aichat.model-picker.try-free" = "Vyskúšaj to zadarmo";
+
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Pre analytické úlohy";
 
@@ -454,11 +478,50 @@
 /* Title for the image generation tool in the unified input tools menu */
 "aichat.toolbar.tools.imagegeneration.title" = "Vytvoriť obrázok";
 
+/* Subtitle for the image generation tool in the unified input tools menu, shown when the chat is already under way on a model that cannot generate images */
+"aichat.toolbar.tools.imagegeneration.unavailable.subtitle" = "Nie je k dispozícii pre vybraný model";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Zdrojové odpovede z webu";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Webové vyhľadávanie";
+
+/* Button in the Duck.ai input footer letting a paid user keep chatting on their weekly allowance after the daily one is spent */
+"aichat.usageWarnings.action.startUsingWeeklyLimit" = "Začni používať týždenný limit";
+
+/* Button in the Duck.ai input footer warning taking a user who has already used their free trial to the subscription flow */
+"aichat.usageWarnings.action.subscribe" = "Predplatiť";
+
+/* Button in the Duck.ai input footer warning that moves the user onto the suggested model */
+"aichat.usageWarnings.action.switch" = "Model prepínača";
+
+/* Button in the Duck.ai input footer warning taking a user who is still eligible for a free trial to the subscription flow */
+"aichat.usageWarnings.action.tryForFree" = "Vyskúšaj predplatné zadarmo";
+
+/* Title of the Duck.ai input footer warning shown once the allowance for advanced AI models specifically is used up, while free models remain available */
+"aichat.usageWarnings.advancedModelsLimitReached.title" = "Bol dosiahnutý limit pre pokročilé modely umelej inteligencie";
+
+/* Title of the Duck.ai input footer warning shown once the user's daily message limit is used up */
+"aichat.usageWarnings.dailyLimitReached.title" = "Bol dosiahnutý denný limit";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their daily message limit is used. %d is a percentage */
+"aichat.usageWarnings.dailyUsage.title" = "%d %% z denného limitu";
+
+/* Accessibility label for the button that dismisses the Duck.ai input footer warning */
+"aichat.usageWarnings.dismiss.a11y" = "Odmietnuť";
+
+/* Duck.ai input footer notice shown while a costly model is selected. %@ is the model's short name, such as 'Opus 4.8' */
+"aichat.usageWarnings.highUsageModel" = "%@ čerpá limity až 2–5× rýchlejšie ako základné modely.";
+
+/* Subtitle of the Duck.ai input footer warning saying how long until the usage limit resets. %@ is a duration such as '2 days' */
+"aichat.usageWarnings.resetsIn" = "Obnoví sa o %@";
+
+/* Title of the Duck.ai input footer warning shown once the user's weekly message limit is used up */
+"aichat.usageWarnings.weeklyLimitReached.title" = "Bol dosiahnutý týždenný limit používania";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their weekly message limit is used. %d is a percentage */
+"aichat.usageWarnings.weeklyUsage.title" = "%d %% z týždenného limitu";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Existujúce záložky sa nebudú duplikovať.";
@@ -516,9 +579,6 @@
 
 /* Title for sync error alert */
 "alert.sync-error" = "Chyba synchronizácie a zálohovania";
-
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Nastavenia synchronizácie";
 
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Skús to znova.";
@@ -948,6 +1008,12 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Názov";
+
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Ak chceš uložiť toto heslo, zadaj webovú stránku alebo používateľské meno.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Vyžaduje sa webová stránka alebo používateľské meno";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Pridať heslo";
@@ -1888,6 +1954,9 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Funkčnosť prehrávača Duck Player bola ovplyvnená nedávnymi zmenami v službe YouTube. Na odstránení týchto problémov pracujeme. Ďakujeme za pochopenie.";
 
+/* Address bar Duck.ai menu option that opens a fresh chat with no page context */
+"duckai.address.bar.menu.new.chat" = "Nový čet";
+
 /* Fourth paragraph of the Duck.ai widget education screen */
 "duckai.addWidget.settings.fourthParagraph" = "Klepnutím na miniaplikáciu ho uprav a potom nastav **Duck.ai** a **Duck.ai hlas** ako skratky";
 
@@ -1899,6 +1968,9 @@
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Odoslané s tvojou správou na Duck.ai";
+
+/* Row in the contextual chat's chats popup that opens Duck.ai in a new tab */
+"duckai.contextual.open.duckai" = "Otvoriť Duck.ai";
 
 /* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
 "duckai.contextual.recent.chats.button" = "Nedávne chaty";
@@ -2191,11 +2263,23 @@
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Zhrň túto knihu.";
 
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Zhrň tento dokument";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Zhrň tento dokument.";
+
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Zhrň túto stránku";
 
 /* Suggested prompt submitted text: summarize the current page */
 "duckai.suggestion.summarize-page.prompt" = "Zhrň túto stránku.";
+
+/* Suggested prompt chip shown when the user has attached a text selection: summarize that selection */
+"duckai.suggestion.summarize-selection.label" = "Zhrň tento výber";
+
+/* Suggested prompt submitted text: summarize the attached text selection */
+"duckai.suggestion.summarize-selection.prompt" = "Zhrň tento výber.";
 
 /* Suggested prompt chip: summarize a discussion thread */
 "duckai.suggestion.summarize-thread.label" = "Zhrň túto diskusiu";
@@ -2221,6 +2305,12 @@
 /* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
 "duckai.suggestion.translate-page.prompt" = "Prelož túto stránku do jazyka %@.";
 
+/* Suggested prompt chip shown when the user has attached a text selection: translate that selection */
+"duckai.suggestion.translate-selection.label" = "Prelož tento výber";
+
+/* Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-selection.prompt" = "Prelož tento výber do %@.";
+
 /* Suggested prompt chip: video key points */
 "duckai.suggestion.video-key-points.label" = "Aké sú hlavné body?";
 
@@ -2238,6 +2328,12 @@
 
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Oplatí sa to pozrieť? Povedz mi o tom bez prezradenia výsledkov deja.";
+
+/* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
+"duckai.text-selection.context-title" = "Výber textu";
+
+/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
+"duckai.text-selection.limit-reached" = "Môžeš pridať až %d výberov textu. Ak chceš pridať ďalší, jeden odstráň.";
 
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Všetky chaty sú %@ súkromné";
@@ -2530,14 +2626,17 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Naposledy použitá karta Fire";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Zatvoriť kartu";
+/* Menu item that closes the last used open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeLastUsedTab" = "Zatvoriť naposledy použitú kartu";
 
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Odstrániť kartu";
 
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Späť na kartu";
+/* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
+"escapeHatch.menu.hideReturnToShortcut" = "Skryť skratku „Vrátiť sa na“";
+
+/* Menu item that returns the user to the last used open tab from the escape hatch card */
+"escapeHatch.menu.returnToLastUsedTab" = "Späť na naposledy použitú kartu";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Ďalšie možnosti";
@@ -2550,6 +2649,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Vráť sa na %1$@, %2$@";
+
+/* Swipe action that closes the open tab referenced by the escape hatch card */
+"escapeHatch.swipeAction.closeTab" = "Zatvoriť kartu";
 
 /* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
 "escapeHatch.tabSwitcher.privateTabs.label" = "Súkromné karty";
@@ -2949,6 +3051,12 @@
 
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importuj si svoje heslá do DuckDuckGo";
+
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Používaj DuckDuckGo a vyhni sa reklamám, ktoré ťa sledujú na webe, a zmenši tak svoju online stopu.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Ovládni svoj online zážitok";
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Spýtaj sa na čokoľvek súkromne";
@@ -4009,6 +4117,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Táto stránka sa načíta iba v prehliadači Safari";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Táto stránka sa niekoľkokrát prestala načítavať. Skús znova načítať stránku alebo nám pošli spätnú väzbu.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Načítať znovu";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Odoslať spätnú väzbu";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Nepodarilo sa nám načítať túto stránku";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Táto webová stránka má neplatný certifikát zabezpečenia a jej návšteva nemusí byť bezpečná.";
 
@@ -4186,11 +4306,11 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Časovač nečinnosti";
 
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Naposledy použitá karta";
+/* Option: open last used tab when returning after inactivity */
+"settings.afterInactivity.option.openLastUsedTab" = "Otvoriť naposledy použitú kartu";
 
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Nová karta";
+/* Option: open New Tab when returning after inactivity */
+"settings.afterInactivity.option.openNewTab" = "Otvoriť novú kartu";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Po nečinnosti";
@@ -4498,11 +4618,11 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klávesnica";
 
+/* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
+"settings.lastTabShortcut.subtitle" = "Zobrazí odkaz na návrat na naposledy použitú kartu pri spustení aplikácie po nečinnosti.";
+
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Zistite viac";
-
-/* Switch button label. */
-"settings.let.duckduckgo.manage.cookie.consent.popups" = "Nech DuckDuckGo spravuje kontextové okná týkajúce sa súhlasu so súbormi cookie";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Heslá a automatické dopĺňanie";
@@ -4560,6 +4680,9 @@
 
 /* Settings screen cell text for setting the refresh button position. */
 "settings.refreshButton.position.title" = "Poloha tlačidla obnovenia";
+
+/* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
+"settings.returnToShortcut.label" = "Skratka „Návrat na“";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Nastavenia vyhľadávania";
@@ -5077,17 +5200,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Upozornenie SwiftUI";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Kód obnovenia bol skopírovaný do schránky";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Zmazanie údajov servera";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Tvoja záloha bude vymazaná zo servera. Všetky zariadenia budú odpojené od synchronizácie, ale zo žiadneho zariadenia sa nič neodstráni.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Zmazať údaje servera?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Synchronizovať teraz";
@@ -5167,11 +5281,17 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Odstrániť zariadenie?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Údaje servera boli zmazané";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Všetky zariadenia používajúce Sync & Backup budú odpojené a tvoje synchronizované údaje budú zmazané zo servera.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Chceš vypnúť Sync & Backup a zmazať údaje zo servera?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Bolo pridané nové zariadenie.";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup je povolené";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Kód obnovy bol skopírovaný";
@@ -5719,3 +5839,14 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Čo chceš importovať?";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ nedokáže vytvárať obrázky. Nulová viditeľnosť poskytovateľa nebude platiť, kým sa neprepneš späť.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ nepodporuje vytváranie obrázkov.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Teraz používaš %@";
+
+/* Address bar Duck.ai menu option that opens the full chat history */
+"duckai.address.bar.menu.all.chats" = "Všetky chaty";

@@ -17,25 +17,19 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Logo" translatesAutoresizingMaskIntoConstraints="NO" id="EId-hf-6HL">
-                                <rect key="frame" x="159" y="328" width="96" height="96"/>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Logo-Stacked" translatesAutoresizingMaskIntoConstraints="NO" id="EId-hf-6HL">
+                                <rect key="frame" x="127" y="320" width="160" height="128"/>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="96" id="Iq7-49-dwL"/>
-                                    <constraint firstAttribute="width" secondItem="EId-hf-6HL" secondAttribute="height" multiplier="1:1" id="cA7-p8-Jv3"/>
+                                    <constraint firstAttribute="width" constant="160" id="Iq7-49-dwL"/>
+                                    <constraint firstAttribute="width" secondItem="EId-hf-6HL" secondAttribute="height" multiplier="206:165" id="cA7-p8-Jv3"/>
                                 </constraints>
-                            </imageView>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="TextDuckDuckGo" translatesAutoresizingMaskIntoConstraints="NO" id="CCq-t1-1xH">
-                                <rect key="frame" x="126" y="436" width="162" height="21"/>
-                                <color key="tintColor" systemColor="labelColor"/>
                             </imageView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="Uoe-RS-vTk"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
                             <constraint firstItem="EId-hf-6HL" firstAttribute="centerX" secondItem="5uF-ws-lnA" secondAttribute="centerX" id="2In-4c-xKC"/>
-                            <constraint firstItem="CCq-t1-1xH" firstAttribute="centerX" secondItem="5uF-ws-lnA" secondAttribute="centerX" id="VEh-23-FIM"/>
-                            <constraint firstItem="CCq-t1-1xH" firstAttribute="top" secondItem="EId-hf-6HL" secondAttribute="bottom" constant="12" id="mpA-8u-WRo"/>
-                            <constraint firstItem="EId-hf-6HL" firstAttribute="centerY" secondItem="5uF-ws-lnA" secondAttribute="centerY" constant="-72" id="x78-TH-9qh"/>
+                            <constraint firstItem="EId-hf-6HL" firstAttribute="centerY" secondItem="5uF-ws-lnA" secondAttribute="centerY" constant="-55" id="x78-TH-9qh"/>
                         </constraints>
                     </view>
                     <simulatedStatusBarMetrics key="simulatedStatusBarMetrics" statusBarStyle="lightContent"/>
@@ -46,8 +40,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="Logo" width="128" height="128"/>
-        <image name="TextDuckDuckGo" width="162" height="21"/>
+        <image name="Logo-Stacked" width="206" height="165"/>
         <systemColor name="labelColor">
             <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

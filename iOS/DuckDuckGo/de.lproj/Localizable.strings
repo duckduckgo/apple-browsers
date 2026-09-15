@@ -20,6 +20,9 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
+"%@: %@" = "%1$@: %2$@";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -63,6 +66,9 @@
 
 /* Add action - button shown in alert */
 "action.title.add" = "Hinzufügen";
+
+/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
+"action.title.aiChat.askDuckAI" = "Frag Duck.ai";
 
 /* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
 "action.title.aiChat.hideContextualSheetButton" = "Shortcut zum Ausblenden des unteren Teils";
@@ -202,6 +208,9 @@
 /* Add to Favorites action */
 "action.title.save.favorite" = "Favorit hinzufügen";
 
+/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
+"action.title.searchWithDuckDuckGo" = "Suche";
+
 /* Settings action */
 "action.title.settings" = "Einstellungen";
 
@@ -310,6 +319,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Dieser Dateityp wird nicht unterstützt. Bitte %@ anhängen.";
 
+/* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
+"aichat.edit.replaceResponseDisclaimer" = "Beim Bearbeiten wird die Antwort durch eine neue ersetzt.";
+
+/* Title shown in the Duck.ai tab header while editing a previously sent message */
+"aichat.header.editMessage" = "Nachricht bearbeiten";
+
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Neu";
 
@@ -397,6 +412,15 @@
 /* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
 "aiChat.history.swipe.unpin.a11y" = "Chat lösen";
 
+/* Section header for Pro-only models shown to DuckDuckGo Plus subscribers */
+"aichat.model-picker.pro-plan-exclusive" = "Exklusiv für Pro-Abonnenten";
+
+/* Section header for subscription models shown to users who are not eligible for a free trial */
+"aichat.model-picker.subscriber-exclusive" = "Exklusiv für Abonnenten";
+
+/* Section header for subscription models shown to free users */
+"aichat.model-picker.try-free" = "Kostenlos testen";
+
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Für analytische Aufgaben";
 
@@ -454,11 +478,50 @@
 /* Title for the image generation tool in the unified input tools menu */
 "aichat.toolbar.tools.imagegeneration.title" = "Bild erstellen";
 
+/* Subtitle for the image generation tool in the unified input tools menu, shown when the chat is already under way on a model that cannot generate images */
+"aichat.toolbar.tools.imagegeneration.unavailable.subtitle" = "Nicht verfügbar für ausgewähltes Modell";
+
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Antworten aus dem Web beziehen";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Websuche";
+
+/* Button in the Duck.ai input footer letting a paid user keep chatting on their weekly allowance after the daily one is spent */
+"aichat.usageWarnings.action.startUsingWeeklyLimit" = "Beginne mit der Nutzung des Wochenlimits";
+
+/* Button in the Duck.ai input footer warning taking a user who has already used their free trial to the subscription flow */
+"aichat.usageWarnings.action.subscribe" = "Abonnieren";
+
+/* Button in the Duck.ai input footer warning that moves the user onto the suggested model */
+"aichat.usageWarnings.action.switch" = "Modell wechseln";
+
+/* Button in the Duck.ai input footer warning taking a user who is still eligible for a free trial to the subscription flow */
+"aichat.usageWarnings.action.tryForFree" = "Abonnement kostenlos testen";
+
+/* Title of the Duck.ai input footer warning shown once the allowance for advanced AI models specifically is used up, while free models remain available */
+"aichat.usageWarnings.advancedModelsLimitReached.title" = "Limit für fortschrittliche KI-Modelle erreicht";
+
+/* Title of the Duck.ai input footer warning shown once the user's daily message limit is used up */
+"aichat.usageWarnings.dailyLimitReached.title" = "Tageslimit erreicht";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their daily message limit is used. %d is a percentage */
+"aichat.usageWarnings.dailyUsage.title" = "%d%% des Tageslimits";
+
+/* Accessibility label for the button that dismisses the Duck.ai input footer warning */
+"aichat.usageWarnings.dismiss.a11y" = "Verwerfen";
+
+/* Duck.ai input footer notice shown while a costly model is selected. %@ is the model's short name, such as 'Opus 4.8' */
+"aichat.usageWarnings.highUsageModel" = "%@ verbraucht Limits bis zu 2–5 x schneller als Basismodelle.";
+
+/* Subtitle of the Duck.ai input footer warning saying how long until the usage limit resets. %@ is a duration such as '2 days' */
+"aichat.usageWarnings.resetsIn" = "Wird in %@ zurückgesetzt";
+
+/* Title of the Duck.ai input footer warning shown once the user's weekly message limit is used up */
+"aichat.usageWarnings.weeklyLimitReached.title" = "Wöchentliches Nutzungslimit erreicht";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their weekly message limit is used. %d is a percentage */
+"aichat.usageWarnings.weeklyUsage.title" = "%d %% des Wochenlimits";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Bestehende Lesezeichen werden nicht kopiert.";
@@ -516,9 +579,6 @@
 
 /* Title for sync error alert */
 "alert.sync-error" = "Synchronisierungs- und Sicherungsfehler";
-
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Synchronisierungseinstellungen";
 
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Bitte versuche es noch einmal.";
@@ -948,6 +1008,12 @@
 
 /* Login name label for login details on autofill */
 "autofill.logins.details.login-name" = "Titel";
+
+/* Message for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.message" = "Gib eine Website oder einen Benutzernamen ein, um dieses Passwort zu speichern.";
+
+/* Title for alert when attempting to save a password that has neither a website nor a username */
+"autofill.logins.details.missing-website-or-username-alert.title" = "Website oder Benutzername erforderlich";
 
 /* Title when adding new autofill login */
 "autofill.logins.details.new-title" = "Passwort hinzufügen";
@@ -1888,6 +1954,9 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Die Funktionalität des Duck Players wird durch die jüngsten Änderungen bei YouTube beeinträchtigt. Vielen Dank für dein Verständnis, während wir daran arbeiten, diese Probleme zu beheben.";
 
+/* Address bar Duck.ai menu option that opens a fresh chat with no page context */
+"duckai.address.bar.menu.new.chat" = "Neuer Chat";
+
 /* Fourth paragraph of the Duck.ai widget education screen */
 "duckai.addWidget.settings.fourthParagraph" = "Tippe auf das Widget, um es zu bearbeiten, dann lege **Duck.ai** und **Duck.ai Voice** als deine Shortcuts fest";
 
@@ -1899,6 +1968,9 @@
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Mit deiner Nachricht an Duck.ai gesendet";
+
+/* Row in the contextual chat's chats popup that opens Duck.ai in a new tab */
+"duckai.contextual.open.duckai" = "Duck.ai öffnen";
 
 /* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
 "duckai.contextual.recent.chats.button" = "Aktuelle Chats";
@@ -2191,11 +2263,23 @@
 /* Suggested prompt submitted text: summarize a book */
 "duckai.suggestion.summarize-book.prompt" = "Fasse dieses Buch zusammen.";
 
+/* Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document */
+"duckai.suggestion.summarize-document.label" = "Dieses Dokument zusammenfassen";
+
+/* Suggested prompt submitted text: summarize the attached document */
+"duckai.suggestion.summarize-document.prompt" = "Fasse dieses Dokument zusammen.";
+
 /* Suggested prompt chip: summarize the current page */
 "duckai.suggestion.summarize-page.label" = "Diese Seite zusammenfassen";
 
 /* Suggested prompt submitted text: summarize the current page */
 "duckai.suggestion.summarize-page.prompt" = "Diese Seite zusammenfassen.";
+
+/* Suggested prompt chip shown when the user has attached a text selection: summarize that selection */
+"duckai.suggestion.summarize-selection.label" = "Diese Auswahl zusammenfassen";
+
+/* Suggested prompt submitted text: summarize the attached text selection */
+"duckai.suggestion.summarize-selection.prompt" = "Fasse diese Auswahl zusammen.";
 
 /* Suggested prompt chip: summarize a discussion thread */
 "duckai.suggestion.summarize-thread.label" = "Diese Diskussion zusammenfassen";
@@ -2221,6 +2305,12 @@
 /* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
 "duckai.suggestion.translate-page.prompt" = "Diese Seite in %@ übersetzen.";
 
+/* Suggested prompt chip shown when the user has attached a text selection: translate that selection */
+"duckai.suggestion.translate-selection.label" = "Diese Auswahl übersetzen";
+
+/* Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-selection.prompt" = "Übersetze diese Auswahl ins %@.";
+
 /* Suggested prompt chip: video key points */
 "duckai.suggestion.video-key-points.label" = "Was sind die wichtigsten Punkte?";
 
@@ -2238,6 +2328,12 @@
 
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Lohnt es sich, das anzuschauen? Gib mir eine spoilerfreie Einschätzung.";
+
+/* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
+"duckai.text-selection.context-title" = "Textauswahl";
+
+/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
+"duckai.text-selection.limit-reached" = "Du kannst bis zu %d Textauswahlen hinzufügen. Entferne eine, um eine andere hinzuzufügen.";
 
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Alle Chats sind %@ privat";
@@ -2327,7 +2423,7 @@
 "duckplayer.settings.autoplay.label" = "Automatisches Abspielen von Videos";
 
 /* Footer text for Enable Duck Player toggle */
-"duckplayer.settings.enable-footer" = "Öffnet Videos im Theatermodus, der verhindert, dass das, was du ansiehst, deinen YouTube-Feed beeinflusst.";
+"duckplayer.settings.enable-footer" = "Öffnet Videos im Kino-Modus, der verhindert, dass das, was du ansiehst, deinen YouTube-Feed beeinflusst.";
 
 /* Toggle to enable Duck Player */
 "duckplayer.settings.enable-toggle" = "Duck Player aktivieren";
@@ -2530,14 +2626,17 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Zuletzt verwendeter Fire-Tab";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Tab schließen";
+/* Menu item that closes the last used open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeLastUsedTab" = "Zuletzt verwendeten Tab schließen";
 
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Tab löschen";
 
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Zurück zum Tab";
+/* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
+"escapeHatch.menu.hideReturnToShortcut" = "Verknüpfung „Zurück zu“ ausblenden";
+
+/* Menu item that returns the user to the last used open tab from the escape hatch card */
+"escapeHatch.menu.returnToLastUsedTab" = "Zurück zum zuletzt verwendeten Tab";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Weitere Optionen";
@@ -2550,6 +2649,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Zurück zu %1$@, %2$@";
+
+/* Swipe action that closes the open tab referenced by the escape hatch card */
+"escapeHatch.swipeAction.closeTab" = "Tab schließen";
 
 /* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
 "escapeHatch.tabSwitcher.privateTabs.label" = "Private Tabs";
@@ -2949,6 +3051,12 @@
 
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importiere deine Passwörter zu DuckDuckGo";
+
+/* Body for the notification sent after a period of inactivity. */
+"inactivity.notification.body" = "Verwende DuckDuckGo, um Werbung zu vermeiden, die dich im Internet trackt, und um deinen digitalen Fußabdruck zu verringern.";
+
+/* Title for the notification sent after a period of inactivity. */
+"inactivity.notification.title" = "Kontrolliere dein Online-Erlebnis";
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Alles privat fragen";
@@ -4009,6 +4117,18 @@
 /* Special error page title for pages that can only be opened in Safari */
 "prompt.general-page-problem.title" = "Diese Seite lässt sich nur in Safari laden";
 
+/* Error page message shown after repeated tab terminations */
+"prompt.tab-termination-error-page.message" = "Diese Seite wurde mehrmals nicht vollständig geladen. Versuche, die Seite neu zu laden, oder sende uns Feedback.";
+
+/* Button that reloads a page after repeated tab terminations */
+"prompt.tab-termination-error-page.reload" = "Neu laden";
+
+/* Button that opens site feedback after repeated tab terminations */
+"prompt.tab-termination-error-page.send-feedback" = "Rückmeldung senden";
+
+/* Error page title shown after repeated tab terminations */
+"prompt.tab-termination-error-page.title" = "Wir konnten diese Seite nicht laden";
+
 /* Default native error page message */
 "prompt.web-page-load-error.message" = "Diese Website hat ein ungültiges Sicherheitszertifikat und ist möglicherweise nicht sicher zu besuchen.";
 
@@ -4186,11 +4306,11 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Inaktivitätstimer";
 
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Zuletzt verwendeter Tab";
+/* Option: open last used tab when returning after inactivity */
+"settings.afterInactivity.option.openLastUsedTab" = "Zuletzt verwendeten Tab öffnen";
 
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Neuer Tab";
+/* Option: open New Tab when returning after inactivity */
+"settings.afterInactivity.option.openNewTab" = "Neuen Tab öffnen";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Nach Inaktivität";
@@ -4498,11 +4618,11 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
 
+/* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
+"settings.lastTabShortcut.subtitle" = "Zeigt einen Link an, über den du zum zuletzt verwendeten Tab zurückkehren kannst, wenn du die App nach einer Pause wieder startest.";
+
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Mehr erfahren";
-
-/* Switch button label. */
-"settings.let.duckduckgo.manage.cookie.consent.popups" = "Lasse Cookie-Zustimmungs-Popups von DuckDuckGo verwalten";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Passwörter und Autovervollständigen";
@@ -4560,6 +4680,9 @@
 
 /* Settings screen cell text for setting the refresh button position. */
 "settings.refreshButton.position.title" = "Position der Schaltfläche „Neu laden“";
+
+/* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
+"settings.returnToShortcut.label" = "Kurzbefehl „Zurück zu“";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Sucheinstellungen";
@@ -5077,17 +5200,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-Benachrichtigung";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Wiederherstellungscode in Zwischenablage kopiert";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Serverdaten löschen";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Dein Backup wird vom Server gelöscht. Alle Geräte werden von der Synchronisierung getrennt, es werden jedoch keine Daten von den Geräten gelöscht.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Serverdaten löschen?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Jetzt synchronisieren";
@@ -5167,11 +5281,17 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Gerät entfernen?";
 
+/* Toast message shown after synced server data is deleted */
+"sync.simplified.data-deleted.toast" = "Serverdaten gelöscht";
+
+/* Message for the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.message" = "Alle Geräte, die Sync & Backup verwenden, werden getrennt und deine synchronisierten Daten werden vom Server gelöscht.";
+
+/* Title of the dialog to confirm turning off sync and deleting server data */
+"sync.simplified.delete.all.confirm.title" = "Sync & Backup deaktivieren und Serverdaten löschen?";
+
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Neues Gerät hinzugefügt!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup aktiviert";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Wiederherstellungscode kopiert";
@@ -5719,3 +5839,14 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Was möchtest du importieren?";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ kann keine Bilder erstellen. Keine Sichtbarkeit auf Anbieterseite gilt erst wieder, wenn du zurückwechselst.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ unterstützt keine Bilderstellung.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Jetzt wird %@ verwendet";
+
+/* Address bar Duck.ai menu option that opens the full chat history */
+"duckai.address.bar.menu.all.chats" = "Alle Chats";

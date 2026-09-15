@@ -30,6 +30,7 @@ import AIChat
 import SetDefaultBrowserCore
 import ContentBlocking
 import os.log
+import FeatureFlags_iOS
 
 /// Reporting service for various metrics:
 /// - AttributedMetric: https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
@@ -163,7 +164,7 @@ final class ReportingService {
     }
 
     private func onStatisticsLoaded() {
-        Pixel.fire(pixel: .appLaunch, includedParameters: [.appVersion, .atb])
+        PixelKit.fire(Pixel.Event.appLaunch, options: .withATB)
         reportAdAttribution()
         reportWidgetUsage()
         reportUserNotificationAuthStatus()
@@ -180,7 +181,6 @@ final class ReportingService {
             await subscriptionDataReporter.saveWidgetAdded()
         }
         reportFailedCompilationsPixelIfNeeded()
-        AppDependencyProvider.shared.persistentPixel.sendQueuedPixels { _ in }
     }
 
     // MARK: - Suspend
@@ -212,18 +212,18 @@ private extension ReportingService {
                     let fetchedEtag = (self.privacyConfigurationManager as? PrivacyConfigurationManager)?.fetchedConfigData?.etag ?? "none"
                     let currentEtag = self.privacyConfigurationManager.privacyConfig.identifier
 
-                    DailyPixel.fireDaily(.widgetReport, withAdditionalParameters: [
+                    PixelKit.fire(Pixel.Event.widgetReport, frequency: .legacyDailyNoSuffix, options: .parameters([
                         "enabled_widgets": enabledWidgets,
                         "privacy_config_embedded_etag": embeddedEtag,
                         "privacy_config_fetched_etag": fetchedEtag,
                         "current_etag": currentEtag,
                         "is_internal": "\(isInternalUser)",
                         "feature_state_enabled": "\(featureState == .enabled)"
-                    ])
+                    ]))
                 }
 
             case .failure(let error):
-                DailyPixel.fire(pixel: .widgetReportFailure, error: error)
+                PixelKit.fire(Pixel.Event.widgetReportFailure.withError(error), frequency: .legacyDailyByError)
             }
         }
     }
@@ -239,17 +239,22 @@ private extension ReportingService {
             let status = await UNUserNotificationCenter.current().authorizationStatus()
             // We only care about authorized or denined at the moment for provisional notification
             guard status == .authorized || status == .denied else { return }
-            DailyPixel.fire(pixel: .userNotificationAuthorizationStatusDaily, withAdditionalParameters: [
+            PixelKit.fire(Pixel.Event.userNotificationAuthorizationStatusDaily, frequency: .legacyDailyNoSuffix, options: .parameters([
                 "status": status.stringValue
-            ])
+            ]))
         }
     }
     
     func reportFailedCompilationsPixelIfNeeded() {
         let store = FailedCompilationsStore()
         if store.hasAnyFailures {
-            DailyPixel.fire(pixel: .compilationFailed, withAdditionalParameters: store.summary) { error in
-                guard error != nil else { return }
+            Task {
+                let result = try? await PixelKit.fireAsync(Pixel.Event.compilationFailed,
+                                                           frequency: .legacyDailyNoSuffix,
+                                                           options: .parameters(store.summary))
+                // The summary is kept while the pixel is still reporting it, and dropped once the
+                // daily throttle has already reported it or the send failed outright.
+                guard result != .sent else { return }
                 store.cleanup()
             }
         }
@@ -302,7 +307,7 @@ struct DefaultSubscriptionStateProvider: SubscriptionStateProviding {
     let subscriptionManager: SubscriptionManager
 
     func isFreeTrial() async -> Bool {
-        (try? await subscriptionManager.getSubscription())?.hasActiveTrialOffer ?? false
+        await subscriptionManager.isOnFreeTrial()
     }
 
     var isActive: Bool {

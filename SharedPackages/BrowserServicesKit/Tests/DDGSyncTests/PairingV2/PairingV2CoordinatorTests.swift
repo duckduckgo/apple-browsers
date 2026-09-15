@@ -23,6 +23,7 @@ import XCTest
 
 private enum PairingV2CoordinatorTestError: Error {
     case expectedLocalHello
+    case keyGenerationFailed
 }
 
 private typealias NativeJoinerThirdPartyUpgradeSetup = (coordinator: PairingV2Coordinator, upgradeCoordinator: ThirdPartyAccountUpgradeCoordinatingMock)
@@ -91,6 +92,76 @@ final class PairingV2CoordinatorTests: XCTestCase {
             coordinator.state,
             .waitingForPeerHello(.init(localClient: .init(name: "Mac", kind: .ddg, hasAccount: false, isPresenter: true), peerChannelID: nil))
         )
+    }
+
+    func testWhenPresenterKeyGenerationFailsThenAttachesPresenterGenerateCodeStage() async throws {
+        let dependencies = MockSyncDependencies()
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+        let coordinator = makeCoordinator(
+            syncService: syncService,
+            messageExchanger: PairingV2MessageExchangingMock(),
+            makeKeyPair: { throw PairingV2CoordinatorTestError.keyGenerationFailed }
+        )
+
+        let failure = await pairingFailure {
+            _ = try await coordinator.startPresenting()
+        }
+
+        XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterGenerateCode, kind: nil))
+        XCTAssertNotNil(failure?.underlyingError as? PairingV2CoordinatorTestError)
+    }
+
+    func testWhenScannerKeyGenerationFailsThenAttachesScannerGenerateKeysStage() async throws {
+        let dependencies = MockSyncDependencies()
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+        let coordinator = makeCoordinator(
+            syncService: syncService,
+            messageExchanger: PairingV2MessageExchangingMock(),
+            makeKeyPair: { throw PairingV2CoordinatorTestError.keyGenerationFailed }
+        )
+
+        let failure = await pairingFailure {
+            try await coordinator.startScanning(qrPayload: .init(channelId: "peer-channel", publicKey: "peer-key"))
+        }
+
+        XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .scannerGenerateKeys, kind: nil))
+        XCTAssertNotNil(failure?.underlyingError as? PairingV2CoordinatorTestError)
+    }
+
+    func testRelayCommandsMapToEntryRoleFailureStages() {
+        let peerStatus = PairingV2PeerStatus.recoveryCodeRequest(kind: .ddg)
+        let testCases: [(command: PairingV2Command, presenter: PairingV2FailureStage?, scanner: PairingV2FailureStage?)] = [
+            (.openV2Channel(channelID: nil), .presenterOpenOwnChannel, .scannerOpenOwnChannel),
+            (.sendHello, nil, .scannerSendHello),
+            (.sendRecoveryCodeStatus(peerStatus), .presenterSendPeerStatus, .scannerSendPeerStatus),
+            (.sendRecoveryCodeAwaitingConfirmation, .presenterSendConfirmationStatus, .scannerSendConfirmationStatus),
+            (.sendRecoveryCodeConfirmed, .presenterSendConfirmationStatus, .scannerSendConfirmationStatus),
+            (.sendRecoveryCodeDenied, .presenterSendRecoveryDenied, .scannerSendRecoveryDenied),
+            (.sendRecoveryCode("recovery-code"), .presenterSendRecoveryCode, .scannerSendRecoveryCode),
+            (.sendRecoveryCodeUnavailable, .presenterSendRecoveryUnavailable, .scannerSendRecoveryUnavailable)
+        ]
+
+        for testCase in testCases {
+            XCTAssertEqual(testCase.command.relayFailureStage(for: .presenter), testCase.presenter)
+            XCTAssertEqual(testCase.command.relayFailureStage(for: .scanner), testCase.scanner)
+        }
+    }
+
+    func testWhenPresenterOpenChannelFailsThenAttachesPresenterOpenStageAndKind() async throws {
+        let dependencies = MockSyncDependencies()
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        messageExchanger.openChannelHandler = { _ in
+            throw PairingV2RelayRequestError(kind: .httpError, underlyingError: SyncError.unexpectedStatusCode(503))
+        }
+        let coordinator = makeCoordinator(syncService: syncService, messageExchanger: messageExchanger)
+
+        let failure = await pairingFailure {
+            _ = try await coordinator.startPresenting()
+        }
+
+        XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterOpenOwnChannel, kind: .httpError))
+        XCTAssertEqual(failure?.underlyingError as? SyncError, .unexpectedStatusCode(503))
     }
 
     func testWhenPresenterReceivesHelloThenSendsRecoveryCodeStatusToPeerChannel() async throws {
@@ -184,7 +255,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertEqual(messageExchanger.closeChannelCalls, [hello.channelId])
     }
 
-    func testWhenPollReceivesRelayChannelUnavailableThenFailsImmediately() async throws {
+    func testWhenPresenterPollReceivesRelayChannelUnavailableThenFailsWithPresenterPollContext() async throws {
         let dependencies = MockSyncDependencies()
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
@@ -193,14 +264,11 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let payload = try await coordinator.startPresenting()
         messageExchanger.fetchMessagesError = PairingV2Error.relayChannelUnavailable
 
-        do {
+        let failure = await pairingFailure {
             try await coordinator.pollOnce()
-            XCTFail("Expected PairingV2Error.relayChannelUnavailable")
-        } catch PairingV2Error.relayChannelUnavailable {
-        } catch {
-            XCTFail("Expected PairingV2Error.relayChannelUnavailable, got \(error)")
         }
 
+        XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterPollOwnChannel, kind: .unavailable))
         XCTAssertEqual(messageExchanger.fetchMessagesCalls.map(\.channelID), [payload.channelId])
         XCTAssertEqual(messageExchanger.closeChannelCalls, [payload.channelId])
         XCTAssertEqual(coordinator.state, .failed(.relayChannelUnavailable))
@@ -210,7 +278,25 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertEqual(messageExchanger.closeChannelCalls, [payload.channelId])
     }
 
-    func testWhenSendReceivesRelayChannelUnavailableThenThrowsRelayChannelUnavailable() async throws {
+    func testWhenScannerPollReceivesRelayChannelExpiredThenFailsWithScannerPollContext() async throws {
+        let dependencies = MockSyncDependencies()
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let coordinator = makeCoordinator(syncService: syncService, messageExchanger: messageExchanger)
+        let peerKeyPair = try makePeerKeyPair()
+
+        try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
+        messageExchanger.fetchMessagesError = PairingV2Error.relayChannelExpired
+
+        let failure = await pairingFailure {
+            try await coordinator.pollOnce()
+        }
+
+        XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .scannerPollOwnChannel, kind: .expired))
+        XCTAssertEqual(coordinator.state, .failed(.relayChannelExpired))
+    }
+
+    func testWhenPresenterPeerStatusSendReceivesRelayChannelUnavailableThenAttachesPeerStatusContext() async throws {
         let dependencies = MockSyncDependencies()
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()
@@ -229,13 +315,11 @@ final class PairingV2CoordinatorTests: XCTestCase {
         )
         messageExchanger.sendError = PairingV2Error.relayChannelUnavailable
 
-        do {
+        let failure = await pairingFailure {
             try await coordinator.pollOnce()
-            XCTFail("Expected PairingV2Error.relayChannelUnavailable")
-        } catch PairingV2Error.relayChannelUnavailable {
-        } catch {
-            XCTFail("Expected PairingV2Error.relayChannelUnavailable, got \(error)")
         }
+
+        XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterSendPeerStatus, kind: .unavailable))
     }
 
     func testWhenPresenterHostsNativePeerThenSendsProgressMessagesBeforeRecoveryCodeResponse() async throws {
@@ -384,14 +468,11 @@ final class PairingV2CoordinatorTests: XCTestCase {
             }
         }
 
-        do {
+        let failure = await pairingFailure {
             try await coordinator.pollOnce()
-            XCTFail("Expected PairingV2Error.relayChannelUnavailable")
-        } catch PairingV2Error.relayChannelUnavailable {
-        } catch {
-            XCTFail("Expected PairingV2Error.relayChannelUnavailable, got \(error)")
         }
 
+        XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterSendConfirmationStatus, kind: .unavailable))
         XCTAssertTrue(accountManager.createAccountCalls.isEmpty)
         XCTAssertNil(syncService.account)
         XCTAssertTrue(confirmationDelegate.didCreateSyncAccountCalls.isEmpty)
@@ -452,6 +533,50 @@ final class PairingV2CoordinatorTests: XCTestCase {
             try decryptSentMessage(at: 3, from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto),
             .recoveryCodeUnavailable(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeUnavailable))
         )
+    }
+
+    func testWhenPresenterRecoveryUnavailableSendFailsThenAttachesRecoveryUnavailableContext() async throws {
+        let dependencies = MockSyncDependencies()
+        let accountManager = AccountManagingMock()
+        accountManager.createAccountError = SyncError.failedToPrepareForConnect("test failure")
+        dependencies.account = accountManager
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let messageCrypto = PairingV2MessageCrypto()
+        let peerKeyPair = try makePeerKeyPair()
+        let confirmationDelegate = PairingV2ConfirmationDelegateMock()
+        let coordinator = makeCoordinator(syncService: syncService,
+                                          messageExchanger: messageExchanger,
+                                          messageCrypto: messageCrypto,
+                                          confirmationDelegate: confirmationDelegate)
+
+        let payload = try await coordinator.startPresenting()
+        messageExchanger.fetchMessagesStub = try encryptedPeerMessages(
+            [
+                .hello(.init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)),
+                .recoveryCodeRequest(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest,
+                                           name: "Peer",
+                                           kind: .ddg))
+            ],
+            recipientPublicKey: payload.publicKey,
+            peerKeyPair: peerKeyPair,
+            messageCrypto: messageCrypto
+        )
+        messageExchanger.sendHandler = { _, _ in
+            if messageExchanger.sendCalls.count == 4 {
+                throw PairingV2RelayRequestError(kind: .networkError, underlyingError: URLError(.notConnectedToInternet))
+            }
+        }
+
+        let failure = await pairingFailure {
+            try await coordinator.pollOnce()
+        }
+
+        XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterSendRecoveryUnavailable, kind: .networkError))
+        XCTAssertEqual((failure?.underlyingError as? URLError)?.code, .notConnectedToInternet)
+        XCTAssertEqual(coordinator.state, .failed(.accountCreationFailed))
+        XCTAssertEqual(messageExchanger.sendCalls.count, 4)
+        XCTAssertEqual(messageExchanger.closeChannelCalls, [payload.channelId])
     }
 
     func testWhenPresenterCannotPrepareThirdPartyRecoveryCodeThenFailsWithThirdPartyPreparationError() async throws {
@@ -540,6 +665,53 @@ final class PairingV2CoordinatorTests: XCTestCase {
         )
         XCTAssertEqual(coordinator.state, .failed(.cancelled))
         XCTAssertEqual(messageExchanger.closeChannelCalls, [payload.channelId])
+    }
+
+    func testWhenScannerHostConfirmationIsDeniedAndNotifyFailsThenAttachesScannerSendRecoveryDeniedContext() async throws {
+        let dependencies = MockSyncDependencies()
+        try dependencies.secureStore.persistAccount(SyncAccount.mock)
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let messageCrypto = PairingV2MessageCrypto()
+        let peerKeyPair = try makePeerKeyPair()
+        let confirmationDelegate = PairingV2ConfirmationDelegateMock()
+        confirmationDelegate.shouldAllowPeerToJoin = false
+        let coordinator = makeCoordinator(syncService: syncService,
+                                          messageExchanger: messageExchanger,
+                                          messageCrypto: messageCrypto,
+                                          confirmationDelegate: confirmationDelegate)
+
+        try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
+        let hello = try localHello(from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto)
+        messageExchanger.fetchMessagesStub = try encryptedPeerMessages(
+            [
+                .recoveryCodeRequest(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest,
+                                           name: "Peer",
+                                           kind: .ddg))
+            ],
+            recipientPublicKey: hello.publicKey,
+            peerKeyPair: peerKeyPair,
+            messageCrypto: messageCrypto
+        )
+        messageExchanger.sendHandler = { _, _ in
+            if messageExchanger.sendCalls.count == 4 {
+                throw PairingV2RelayRequestError(kind: .httpError, underlyingError: SyncError.unexpectedStatusCode(500))
+            }
+        }
+
+        let failure = await pairingFailure {
+            try await coordinator.pollOnce()
+        }
+
+        XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .scannerSendRecoveryDenied, kind: .httpError))
+        XCTAssertEqual(failure?.underlyingError as? SyncError, .unexpectedStatusCode(500))
+        XCTAssertEqual(confirmationDelegate.allowPeerToJoinCalls.map { $0.peerName }, ["Peer"])
+        XCTAssertEqual(confirmationDelegate.allowPeerToJoinCalls.map { $0.peerKind }, [.ddg])
+        XCTAssertEqual(
+            try decryptSentMessage(at: 3, from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto),
+            .recoveryCodeDenied(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeDenied))
+        )
+        XCTAssertEqual(coordinator.state, .failed(.cancelled))
     }
 
     func testWhenNativeJoinerReceivesDDGV2RecoveryCodeThenConvertsAndLogsIn() async throws {
@@ -882,14 +1054,29 @@ final class PairingV2CoordinatorTests: XCTestCase {
     private func makeCoordinator(syncService: DDGSyncing,
                                  messageExchanger: PairingV2MessageExchanging,
                                  messageCrypto: PairingV2MessageCrypto = PairingV2MessageCrypto(),
-                                 confirmationDelegate: PairingV2ConfirmationDelegate? = nil) -> PairingV2Coordinator {
+                                 confirmationDelegate: PairingV2ConfirmationDelegate? = nil,
+                                 makeKeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() }) -> PairingV2Coordinator {
         PairingV2Coordinator(syncService: syncService,
                              messageExchanger: messageExchanger,
                              messageCrypto: messageCrypto,
                              deviceName: "Mac",
                              deviceType: "desktop",
                              flags: PairingV2RolloutFlags(isV2ScanningEnabled: true, isV2CodeEnabled: true),
-                             confirmationDelegate: confirmationDelegate)
+                             confirmationDelegate: confirmationDelegate,
+                             makeKeyPair: makeKeyPair)
+    }
+
+    private func pairingFailure(operation: () async throws -> Void) async -> PairingV2OperationFailure? {
+        do {
+            try await operation()
+            XCTFail("Expected PairingV2OperationFailure")
+            return nil
+        } catch let operationFailure as PairingV2OperationFailure {
+            return operationFailure
+        } catch {
+            XCTFail("Expected PairingV2OperationFailure, got \(error)")
+            return nil
+        }
     }
 
     private func makePeerKeyPair(channelID: String = "peer-channel") throws -> PairingV2KeyPair {

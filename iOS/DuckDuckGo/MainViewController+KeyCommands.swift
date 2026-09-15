@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import FeatureFlags_iOS
 
 extension MainViewController {
     
@@ -191,7 +192,7 @@ extension MainViewController {
     
     @objc func keyboardEscape() {
         guard tabSwitcherController == nil else { return }
-        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) {
+        if #available(iOS 16.0, *) {
             dismissSystemFindNavigator(for: currentTab)
         } else {
             findInPageView?.done()
@@ -216,6 +217,7 @@ extension MainViewController {
         guard isShortcutEnabled() else { return }
         guard fireModeCapability.isFireModeEnabled else { return }
 
+        recordDuckAISessionPendingExit(.fireTabOpened)
         tabManager.setBrowsingMode(.fire, source: .keyCommand)
         performCancel()
         newTab()
@@ -263,7 +265,8 @@ extension MainViewController {
     @objc func keyboardBrowserBack() {
         guard tabSwitcherController == nil else { return }
         guard isShortcutEnabled() else { return }
-        
+
+        recordDuckAISessionPendingExit(.backOrClose)
         currentTab?.goBack()
     }
     

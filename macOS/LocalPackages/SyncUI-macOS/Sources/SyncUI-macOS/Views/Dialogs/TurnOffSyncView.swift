@@ -34,11 +34,11 @@ struct TurnOffSyncView: View {
             Button(UserText.cancel) {
                 model.cancelPressed()
             }
-            .buttonStyle(DismissActionButtonStyle())
+            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
             Button(UserText.turnOff) {
                 model.delegate?.turnOffSync()
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
         }
     }
 

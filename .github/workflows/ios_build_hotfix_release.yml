@@ -42,6 +42,9 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Assert hotfix release branch
         run: |
           case "${{ github.ref }}" in
@@ -88,6 +91,9 @@ jobs:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           ref: ${{ github.ref_name }}
           submodules: recursive
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Set commit SHA output
         id: set-commit-sha

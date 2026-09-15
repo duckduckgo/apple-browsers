@@ -85,6 +85,7 @@ default.profraw
 
 # AI assistants
 .github/copilot-instructions.md
+docs/superpowers/
 
 /build-ui-tests
 

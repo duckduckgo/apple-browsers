@@ -18,7 +18,7 @@
 
 import Bookmarks
 import BrowserServicesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import Cocoa
 import Combine
 import Common
@@ -119,19 +119,6 @@ extension FaviconManagement {
         }
 
         return await resolvedCachedFavicon(for: host, sizeCategory: sizeCategory)
-    }
-
-    @MainActor
-    func getCachedFavicon(forUrlOrAnySubdomain documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
-        if let favicon = getCachedFavicon(for: documentUrl, sizeCategory: sizeCategory, fallBackToSmaller: fallBackToSmaller) {
-            return favicon
-        }
-
-        if let domain = documentUrl.host?.dropSubdomain(), let favicon = getCachedFavicon(forDomainOrAnySubdomain: domain, sizeCategory: sizeCategory, fallBackToSmaller: fallBackToSmaller) {
-            return favicon
-        }
-
-        return nil
     }
 
     @MainActor
@@ -405,7 +392,9 @@ final class FaviconManager: FaviconManagement {
         if [.https, .http].contains(documentUrl.navigationalScheme) {
             result.append(FaviconUserScript.FaviconLink(href: root.appending("favicon.ico"), rel: "favicon.ico"))
         }
-        if documentUrl.navigationalScheme == .http, let upgradedRoot = root.toHttps() {
+        if documentUrl.navigationalScheme == .http,
+           let upgradedRoot = root.toHttps(),
+           upgradedRoot.navigationalScheme == .https {
             result.append(FaviconUserScript.FaviconLink(href: upgradedRoot.appending("favicon.ico"), rel: "favicon.ico"))
         }
         return result

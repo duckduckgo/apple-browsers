@@ -147,17 +147,27 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
         return EmbeddedBloomData(specification: specification, excludedDomains: excludedDomains.data)
     }
 
-    public func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws {
+    @discardableResult
+    public func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws -> Bool {
         try onStoreAccessQueue {
             try persistBloomFilter_withoutStoreAccessQueue(specification: specification, data: data)
         }
     }
 
-    private func persistBloomFilter_withoutStoreAccessQueue(specification: HTTPSBloomFilterSpecification, data: Data) throws {
-        guard data.sha256 == specification.sha256 else { throw Error.specMismatch }
+    @discardableResult
+    private func persistBloomFilter_withoutStoreAccessQueue(specification: HTTPSBloomFilterSpecification, data: Data) throws -> Bool {
+        let dataHash = data.sha256
+        guard dataHash == specification.sha256 else { throw Error.specMismatch }
+        let storedSpecification = loadStoredBloomFilterSpecification_withoutStoreAccessQueue()
+        guard specification != storedSpecification || dataHash != storedBloomFilterDataHash else {
+            logger.debug("Bloom filter is already persisted")
+            return false
+        }
+
         logger.log("Persisting data SHA: \(specification.sha256)")
         try persistBloomFilterData(data: data)
         try persistBloomFilterSpecification_withoutStoreAccessQueue(specification)
+        return true
     }
 
     private func persistBloomFilterData(data: Data) throws {
@@ -188,6 +198,7 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
             do {
                 try context.save()
             } catch {
+                context.rollback()
                 errorEvents?.fire(.dbSaveBloomFilterError, error: error)
                 saveError = error
             }
@@ -220,13 +231,21 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
         return result
     }
 
-    public func persistExcludedDomains(_ domains: [String]) throws {
+    @discardableResult
+    public func persistExcludedDomains(_ domains: [String]) throws -> Bool {
         try onStoreAccessQueue {
             try persistExcludedDomains_withoutStoreAccessQueue(domains)
         }
     }
 
-    private func persistExcludedDomains_withoutStoreAccessQueue(_ domains: [String]) throws {
+    @discardableResult
+    private func persistExcludedDomains_withoutStoreAccessQueue(_ domains: [String]) throws -> Bool {
+        let normalizedDomains = domains.map { $0.lowercased() }.sorted()
+        guard normalizedDomains != loadExcludedDomains_withoutStoreAccessQueue() else {
+            logger.debug("Excluded domains are already persisted")
+            return false
+        }
+
         logger.debug("Persisting excluded \(domains.count) domains")
 
         var saveError: Swift.Error?
@@ -240,6 +259,7 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
             do {
                 try context.save()
             } catch {
+                context.rollback()
                 assertionFailure("Could not persist ExcludedDomains")
                 errorEvents?.fire(.dbSaveExcludedHTTPSDomainsError, error: error)
                 saveError = error
@@ -248,6 +268,21 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
         if let saveError {
             throw Error.saveError(saveError)
         }
+        return true
+    }
+
+    private func loadExcludedDomains_withoutStoreAccessQueue() -> [String]? {
+        var domains: [String]?
+        context.performAndWait {
+            do {
+                let storedDomains = try context.fetch(HTTPSExcludedDomain.fetchRequest())
+                guard storedDomains.allSatisfy({ $0.domain != nil }) else { return }
+                domains = storedDomains.compactMap(\.domain).sorted()
+            } catch {
+                logger.error("Could not load excluded domains: \(error.localizedDescription)")
+            }
+        }
+        return domains
     }
 
     private func deleteExcludedDomains() {

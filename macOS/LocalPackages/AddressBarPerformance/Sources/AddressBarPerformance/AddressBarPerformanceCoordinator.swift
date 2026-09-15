@@ -204,7 +204,7 @@ public final class AddressBarPerformanceCoordinator {
 
         let firing = pixelFiring
         let work = DispatchWorkItem {
-            firing?.fire(pixel, frequency: .standard, includeAppVersionParameter: true)
+            firing?.fire(pixel, frequency: .standard)
         }
         DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + deferredEmitDelay, execute: work)
     }

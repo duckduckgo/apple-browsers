@@ -17,7 +17,6 @@ tags:
         isRunningUITests: true
         isInternalUser: ${INTERNAL_USER_MODE}
         ff.iPadAIToggle: "true"
-        ff.unifiedToggleInput: "true"
 
 # iPhone address bar shows Duck.ai button; iPad ModeToggle controls never appear on iPhone
 - assertVisible:

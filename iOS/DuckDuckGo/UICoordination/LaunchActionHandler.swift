@@ -19,6 +19,7 @@
 
 import UIKit
 import Core
+import PixelKit
 
 enum LaunchAction {
 
@@ -58,8 +59,10 @@ protocol OnboardingPresenting: AnyObject {
 
 @MainActor
 protocol IdleReturnLaunchDelegate: AnyObject {
-    func showNewTabPageAfterIdleReturn()
-    func markLastUsedTabAsResumedAfterIdle()
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?)
+    func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?)
+    /// A standard-launch return that did not qualify for an after-idle treatment.
+    func recordOrdinaryReturn(timeAwayMs: Int?)
 }
 
 @MainActor
@@ -76,7 +79,7 @@ final class LaunchActionHandler: LaunchActionHandling {
     private let shortcutItemHandler: ShortcutItemHandling
     private let userActivityHandler: UserActivityHandling
     private let keyboardPresenter: KeyboardPresenting
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private let launchSourceManager: LaunchSourceManaging
     private let idleReturnEvaluator: IdleReturnEvaluating
     private weak var idleReturnDelegate: IdleReturnLaunchDelegate?
@@ -88,7 +91,7 @@ final class LaunchActionHandler: LaunchActionHandling {
          launchSourceService: LaunchSourceManaging,
          idleReturnEvaluator: IdleReturnEvaluating,
          idleReturnDelegate: IdleReturnLaunchDelegate? = nil,
-         pixelFiring: PixelFiring.Type = Pixel.self) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.urlHandler = urlHandler
         self.shortcutItemHandler = shortcutItemHandler
         self.userActivityHandler = userActivityHandler
@@ -112,14 +115,17 @@ final class LaunchActionHandler: LaunchActionHandling {
             userActivityHandler.handleUserActivity(userActivity)
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground):
             launchSourceManager.setSource(.standard)
+            let timeAwayMs = lastBackgroundDate.map { Int(Date().timeIntervalSince($0) * 1000) }
             if idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate) {
                 switch idleReturnEvaluator.treatmentForIdleReturn() {
                 case .ntp:
-                    idleReturnDelegate?.showNewTabPageAfterIdleReturn()
+                    idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs)
                     return
                 case .lut:
-                    idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle()
+                    idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle(timeAwayMs: timeAwayMs)
                 }
+            } else {
+                idleReturnDelegate?.recordOrdinaryReturn(timeAwayMs: timeAwayMs)
             }
             keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate)
         }
@@ -142,9 +148,9 @@ final class LaunchActionHandler: LaunchActionHandling {
         // Websites or searches opened via share extensions have `ddgQuickLink` scheme.
         // If scheme is either `http` or `https` we know the app has been opened by clicking directly an external link.
         if url.scheme == "http" || url.scheme == "https" {
-            pixelFiring.fire(.appLaunchFromExternalLink, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.appLaunchFromExternalLink)
         } else if url.scheme == AppDeepLinkSchemes.quickLink.rawValue {
-            pixelFiring.fire(.appLaunchFromShareExtension, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.appLaunchFromShareExtension)
         }
     }
 

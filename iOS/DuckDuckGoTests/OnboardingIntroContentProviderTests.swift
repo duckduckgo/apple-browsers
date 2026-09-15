@@ -412,10 +412,10 @@ struct OnboardingIntroContentProviderTests {
         }
 
         @Test(
-            "Every reason shows the shared heading and keeps the browser CTAs",
+            "Every reason shows its tailored heading and keeps the browser CTAs",
             arguments: OnboardingDownloadReason.allCases
         )
-        func sharedHeadingAndCTAs(reason: OnboardingDownloadReason) {
+        func headingAndCTAs(reason: OnboardingDownloadReason) {
             // GIVEN
             let sut = makeSUT(reason: reason)
 
@@ -423,7 +423,15 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.setDefaultBrowserContent
 
             // THEN
-            #expect(result.title == UserText.Onboarding.BrowsersComparison.titleDownloadExperiment)
+            let expectedTitle: String = switch reason {
+            case .browserPrivately, .privateAIChat:
+                UserText.Onboarding.BrowsersComparison.titleGenericDownloadReasonExperiment
+            case .noAI:
+                UserText.Onboarding.BrowsersComparison.titleNoAIDownloadReasonExperiment
+            case .blockAds:
+                UserText.Onboarding.BrowsersComparison.titleNoAdsDownloadReasonExperiment
+            }
+            #expect(result.title == expectedTitle)
             #expect(result.primaryCTA == UserText.Onboarding.BrowsersComparison.cta)
             #expect(result.secondaryCTA == UserText.onboardingSkip)
         }
@@ -610,7 +618,7 @@ struct OnboardingIntroContentProviderTests {
             "Check add to dock message is correct per flow",
             arguments: zip(
                 [OnboardingFlowType.default, .duckAI],
-                [UserText.AddToDockOnboarding.Promo.introMessage, UserText.Onboarding.DuckAICPP.AddToDock.Promo.message]
+                [UserText.AddToDockOnboarding.Promo.introMessageNew, UserText.Onboarding.DuckAICPP.AddToDock.Promo.message]
             )
         )
         func checkAddToDockMessage(flow: OnboardingFlowType, expectedMessage: String) {
@@ -1001,6 +1009,88 @@ struct OnboardingIntroContentProviderTests {
             #expect(result.isToggleVisible == expectedVisibility)
         }
 
+        // MARK: Screen selection (title + toggle + default mode)
+
+        @Test(
+            "Check Default flow, search-oriented reasons and toggle ON show Toggle on preselected on search",
+            arguments: [OnboardingDownloadReason.browserPrivately, .noAI, .blockAds]
+        )
+        func searchReasonWithToggleOnShowsCombinedScreen(reason: OnboardingDownloadReason) {
+            // WHEN
+            let result = makeProvider(reason: reason, didEnableAIChatSearchInput: true).duckAIQueryContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.DuckAIQuery.title)
+            #expect(result.isToggleVisible == true)
+            #expect(result.defaultMode == .search)
+        }
+
+        @Test(
+            "Check Default flow, search-oriented reasons and toggle OFF do not show Toggle and preselected on search",
+            arguments: [OnboardingDownloadReason.browserPrivately, .noAI, .blockAds]
+        )
+        func searchReasonWithToggleOffShowsPrivateSearchScreen(reason: OnboardingDownloadReason) {
+            // WHEN
+            let result = makeProvider(reason: reason, didEnableAIChatSearchInput: false).duckAIQueryContent
+
+            // THEN
+            #expect(result.title == "Now, try a private search!")
+            #expect(result.isToggleVisible == false)
+            #expect(result.defaultMode == .search)
+        }
+
+        @Test(
+            "Check Default flow, the AI-chat reason → show Toggle preselected on Duck.ai and independent of the search input toggle",
+            arguments: [true, false]
+        )
+        func aiChatReasonShowsPrivateAIChatScreen(didEnableAIChatSearchInput: Bool) {
+            // WHEN
+            let result = makeProvider(reason: .privateAIChat, didEnableAIChatSearchInput: didEnableAIChatSearchInput).duckAIQueryContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.DuckAICPP.DuckAIQuery.title)
+            #expect(result.isToggleVisible == false)
+            #expect(result.defaultMode == .duckAI)
+        }
+
+        @Test("Check Default flow without a download reason show Toggle preselected on search")
+        func defaultFlowWithoutReasonShowsCombinedScreen() {
+            // WHEN
+            let result = makeProvider(reason: nil).duckAIQueryContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.DuckAIQuery.title)
+            #expect(result.isToggleVisible == true)
+            #expect(result.defaultMode == .search)
+        }
+
+        @Test("Check Duck.ai tailored flow does not show toggle and it's preselected on Duck.ai")
+        func duckAIFlowShowsPrivateAIChatScreen() {
+            // WHEN
+            let result = makeProvider(flow: .duckAI).duckAIQueryContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.DuckAICPP.DuckAIQuery.title)
+            #expect(result.isToggleVisible == false)
+            #expect(result.defaultMode == .duckAI)
+        }
+
+        /// Builds a provider with an injected download reason and AI-chat-search-input state.
+        private func makeProvider(
+            flow: OnboardingFlowType = .default,
+            reason: OnboardingDownloadReason? = nil,
+            didEnableAIChatSearchInput: Bool = false
+        ) -> OnboardingIntroContentProvider {
+            let searchExperienceProvider = MockOnboardingSearchExperienceProvider()
+            searchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = didEnableAIChatSearchInput
+            return OnboardingIntroContentProvider(
+                flowType: flow,
+                featureFlagger: MockFeatureFlagger(),
+                searchExperienceProvider: searchExperienceProvider,
+                downloadReasonProvider: { reason }
+            )
+        }
+
     }
 
     @MainActor
@@ -1060,10 +1150,10 @@ struct OnboardingIntroContentProviderTests {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
             let expectedOptions: [OnboardingDownloadReasonContent.Option] = [
-                .init(reason: .browserPrivately, icon: OnboardingImageResources.DownloadReason.search, title: UserText.Onboarding.DownloadReason.browsePrivately),
-                .init(reason: .privateAIChat, icon: OnboardingImageResources.DownloadReason.aiChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
-                .init(reason: .noAI, icon: OnboardingImageResources.DownloadReason.noAI, title: UserText.Onboarding.DownloadReason.removeAI),
-                .init(reason: .blockAds, icon: OnboardingImageResources.DownloadReason.blockAds, title: UserText.Onboarding.DownloadReason.blockAds)
+                .init(reason: .browserPrivately, animation: .search, title: UserText.Onboarding.DownloadReason.browsePrivately),
+                .init(reason: .privateAIChat, animation: .duckAIChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
+                .init(reason: .noAI, animation: .noAI, title: UserText.Onboarding.DownloadReason.removeAI),
+                .init(reason: .blockAds, animation: .imageSweep, title: UserText.Onboarding.DownloadReason.blockAds)
             ]
 
             // WHEN
@@ -1072,6 +1162,146 @@ struct OnboardingIntroContentProviderTests {
             #expect(result.options == expectedOptions)
         }
 
+    }
+
+    @MainActor
+    @Suite("Personalization Content")
+    struct PersonalizationContent {
+        private let sut: OnboardingIntroContentProvider
+
+        init() {
+            sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
+        }
+
+        @Test("SERP personalization content matches the expected copy and toggles")
+        func serpPersonalizationContent() {
+            // GIVEN
+            let expected = OnboardingPersonalizationContent(
+                title: "Your search, your way.",
+                message: nil,
+                items: [
+                    .init(type: .recentlyVisitedSites, title: "Search History", subtitle: "Show recently visited sites in search suggestions. Private, only on your device."),
+                    .init(type: .safeSearch, title: "Safe Search", subtitle: "Omit questionable (mostly adult) material in results.")
+                ],
+                primaryCTA: "Next",
+                daxAnimation: .wingLeft
+            )
+
+            // WHEN
+            let result = sut.serpPersonalizationContent
+
+            // THEN
+            #expect(result == expected)
+        }
+
+        @Test("AI-model personalization content matches the expected copy")
+        func aiModelPersonalizationContent() {
+            // GIVEN
+            let expected = OnboardingAIModelContent(
+                title: "Your chats, your way.",
+                message: "Change your default AI now, or anytime during chat.",
+                primaryCTA: "Next",
+                daxAnimation: .wingLeft
+            )
+
+            // WHEN
+            let result = sut.aiModelPersonalizationContent
+
+            // THEN
+            #expect(result == expected)
+        }
+
+        @Test("Address-bar toggle-mode personalization content matches the expected copy and icon")
+        func addressBarToggleModePersonalizationContent() {
+            // GIVEN
+            let expected = OnboardingAddressBarToggleModeContent(
+                title: "Want new tabs to open with AI chat?",
+                icon: OnboardingImageResources.Personalization.addressBarToggleMode,
+                footer: "You can switch to Search with one tap",
+                primaryCTA: "Open tabs with AI chat",
+                secondaryCTA: "Not Now",
+                daxAnimation: nil
+            )
+
+            // WHEN
+            let result = sut.addressBarToggleModePersonalizationContent
+
+            // THEN
+            #expect(result == expected)
+        }
+
+        @Test("AI-search (no-AI) personalization content matches the expected copy and toggles")
+        func aiSearchPersonalizationContent() {
+            // GIVEN
+            let expected = OnboardingPersonalizationContent(
+                title: "Search without AI",
+                message: nil,
+                items: [
+                    .init(type: .searchAssist, title: "Search Assist", subtitle: "Include AI-generated answers with search results"),
+                    .init(type: .aiGeneratedImages, title: "Hide AI-generated images", subtitle: "Filter out known AI spam sites from image search results")
+                ],
+                primaryCTA: "Next",
+                daxAnimation: .wingLeft
+            )
+
+            // WHEN
+            let result = sut.aiSearchPersonalizationContent
+
+            // THEN
+            #expect(result == expected)
+        }
+
+        @Test("Keep-Duck.ai personalization content matches the expected copy and icon")
+        func aiChatEnabledPersonalizationContent() {
+            // GIVEN
+            let expected = OnboardingDuckAIEnabledPersonalizationContent(
+                icon: OnboardingImageResources.Personalization.addressBarToggleMode,
+                title: "Want the option to chat privately with popular AIs?",
+                message: "In Duck.ai, your chats are anonymized by us and never used to train AI.",
+                primaryCTA: "Turn Duck.ai On",
+                secondaryCTA: "Keep Duck.ai Off",
+                daxAnimation: nil
+            )
+
+            // WHEN
+            let result = sut.aiChatEnabledPersonalizationContent
+
+            // THEN
+            #expect(result == expected)
+        }
+
+        @Test("Ad-blocking personalization content matches the expected copy and nested cookie toggles")
+        func adBlockingPersonalizationContent() {
+            // GIVEN
+            let expected = OnboardingPersonalizationContent(
+                title: "Internet, without the noise.",
+                message: nil,
+                items: [
+                    .init(type: .youTubeAdBlocking, title: "Block video ads on YouTube", subtitle: nil),
+                    .init(
+                        type: .rejectOptionalCookies,
+                        title: "Reject optional cookies",
+                        subtitle: "Maximizes privacy and closes cookie pop-ups",
+                        dependentItems: [
+                            .init(
+                                type: .acceptOtherCookies,
+                                title: "Accept some cookies",
+                                subtitle: "Hides more pop-ups by accepting cookies that can’t be rejected"
+                            )
+                        ]
+                    )
+                ],
+                primaryCTA: "Next",
+                daxAnimation: .wingLeft,
+                footer: "You can always adjust later in Settings."
+            )
+
+            // WHEN
+            let result = sut.adBlockingPersonalizationContent
+
+            // THEN
+            #expect(result == expected)
+        }
     }
 
     @MainActor

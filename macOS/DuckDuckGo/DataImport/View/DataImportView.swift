@@ -24,6 +24,7 @@ import PrivacyConfig
 import SwiftUI
 import UIComponents
 import UniformTypeIdentifiers
+import SwiftUIExtensions
 
 @MainActor
 struct DataImportView: ModalView {
@@ -58,11 +59,21 @@ struct DataImportView: ModalView {
     @State private var debugViewDisabled: Bool = true
 #endif
 
+    @State private var areErrorsExpanded = false
+
+    private var errorMessages: [String] {
+        model.errors.flatMap { errorsByDataType in
+            DataImport.DataType.allCases.compactMap { dataType in
+                errorsByDataType[dataType].map { "\(dataType.rawValue.uppercased()): \($0)" }
+            }
+        }
+    }
+
     private var shouldShowDebugView: Bool {
 #if DEBUG
-        return !debugViewDisabled
+        return !debugViewDisabled || !errorMessages.isEmpty
 #else
-        return (!model.errors.isEmpty && isInternalUser)
+        return !errorMessages.isEmpty && isInternalUser
 #endif
     }
 
@@ -119,18 +130,20 @@ struct DataImportView: ModalView {
                 )
             case .moreInfo:
                 NewImportMoreInfoView()
-            case .getReadPermission(let url):
+            case .getFileReadPermission(let url):
                 RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
                     model.initiateImport()
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
+            case .getDirectoryReadPermission:
+                RequestDirectoryReadPermissionView(source: model.importSource)
+            case .directoryReadPermissionCancelled:
+                RequestDirectoryReadPermissionView(source: model.importSource, mode: .retryAfterCancel)
+            case .directoryReadPermissionDenied:
+                RequestDirectoryReadPermissionView(source: model.importSource, mode: .retryAfterError)
             case .passwordEntryHelp:
-                PasswordEntryRetryPromptView(
-                    onRetry: {
-                        model.initiateImport()
-                    }
-                )
+                PasswordEntryRetryPromptView()
             case .summary(let summary):
                 NewImportSummaryView(
                     summary: summary,
@@ -168,6 +181,9 @@ struct DataImportView: ModalView {
         .font(.system(size: 13))
         .frame(width: 420)
         .fixedSize()
+        .background(
+            Color(designSystemColor: .surfaceSecondary)
+        )
         .onReceive(internalUserDecider.isInternalUserPublisher.removeDuplicates()) {
             isInternalUser = $0
         }
@@ -194,16 +210,16 @@ struct DataImportView: ModalView {
                 passwordsExplainerView()
             }
             Spacer()
-            ForEach(model.buttons.indices, id: \.self) { idx in
+            ForEach(Array(model.buttons.enumerated()), id: \.offset) { _, button in
                 Button {
-                    model.performAction(for: model.buttons[idx],
-                                        dismiss: dismiss.callAsFunction)
+                    model.performAction(for: button, dismiss: dismiss.callAsFunction)
                 } label: {
-                    Text(model.buttons[idx].title(dataType: model.screen.fileImportDataType))
+                    Text(button.title(dataType: model.screen.fileImportDataType))
                         .frame(minWidth: 80 - 16 - 1)
                 }
-                .ifLet(model.buttons[idx].shortcut) { $0.keyboardShortcut($1) }
-                .disabled(model.buttons[idx].isDisabled)
+                .ifLet(button.shortcut) { $0.keyboardShortcut($1) }
+                .disabled(button.isDisabled)
+                .applyFooterButtonStyle(for: button)
             }
         }
         .opacity(model.shouldHideFooter ? 0 : 1)
@@ -289,25 +305,13 @@ struct DataImportView: ModalView {
                         .padding(.trailing, 20)
                 }
 
-                if model.errors.count > 0 && isInternalUser {
+                if !errorMessages.isEmpty {
                     Divider()
                 }
 #endif
 
-                if model.errors.count > 0 && isInternalUser {
-                    Text(verbatim: "ERRORS:" as String).bold()
-                        .padding(.top, 10)
-                        .padding(.leading, 20)
-
-                    ForEach(model.errors.indices, id: \.self) { i in
-                        ForEach(Array(model.errors[i].keys), id: \.self) { key in
-                            if let value = model.errors[i][key] {
-                                Text(verbatim: "\(key.rawValue.uppercased()): \(value)").textSelection(.enabled)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 10)
+                if !errorMessages.isEmpty {
+                    errorsView(errorMessages)
                 }
             }
             Spacer()
@@ -323,6 +327,37 @@ struct DataImportView: ModalView {
         }
         .padding(10)
         .background(Color(NSColor(red: 1, green: 0, blue: 0, alpha: 0.2)))
+    }
+
+    private func errorsView(_ messages: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                areErrorsExpanded.toggle()
+            } label: {
+                HStack(spacing: 4) {
+                    Text(verbatim: messages.count == 1 ? "1 error" : "\(messages.count) errors").bold()
+                    Image(systemName: "chevron.right")
+                        .rotationEffect(.degrees(areErrorsExpanded ? 90 : 0))
+                }
+            }
+            .buttonStyle(.link)
+
+            if areErrorsExpanded {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(messages.indices, id: \.self) { idx in
+                            Text(verbatim: messages[idx])
+                                .textSelection(.enabled)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+                .frame(height: 100)
+            }
+        }
+        .padding(.vertical, 10)
+        .padding(.leading, 20)
     }
 
 #if DEBUG
@@ -408,15 +443,33 @@ extension DataImportViewModel.ButtonType {
         case .selectFile: .defaultAction
         case .skip: .cancelAction
         case .cancel: .cancelAction
+        case .cancelImport: .cancelAction
         case .back: .cancelAction
         case .close: .cancelAction
         case .done: .cancelAction
         case .submit: .defaultAction
         case .continue: .defaultAction
         case .sync: .defaultAction
+        case .grantDirectoryAccess: .defaultAction
+        case .showSystemPasswordPrompt: .defaultAction
         }
     }
 
+    var isPrimaryAction: Bool {
+        shortcut == .defaultAction
+    }
+}
+
+private extension View {
+
+    @ViewBuilder
+    func applyFooterButtonStyle(for button: DataImportViewModel.ButtonType) -> some View {
+        if button.isPrimaryAction {
+            buttonStyle(DefaultActionButtonStyle(enabled: !button.isDisabled, stateColors: .themedActionButton))
+        } else {
+            buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
+        }
+    }
 }
 
 extension DataImportViewModel.ButtonType {
@@ -436,6 +489,8 @@ extension DataImportViewModel.ButtonType {
             }
         case .cancel:
             UserText.cancel
+        case .cancelImport:
+            UserText.importBrowserDataRequestAccessDeniedCancelTitle
         case .back:
             UserText.navigateBack
         case .done:
@@ -450,6 +505,10 @@ extension DataImportViewModel.ButtonType {
             UserText.importDataCompleteSyncButtonTitle
         case .close:
             UserText.close
+        case .grantDirectoryAccess(let source):
+            UserText.importBrowserDataRequestAccessButton(for: source)
+        case .showSystemPasswordPrompt:
+            UserText.passwordEntryHelpShowMacOSMessageButton
         }
     }
 

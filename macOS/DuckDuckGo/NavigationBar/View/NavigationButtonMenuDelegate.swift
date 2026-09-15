@@ -68,7 +68,7 @@ extension NavigationButtonMenuDelegate: NSMenuDelegate {
                                                              isCurrentItem: index == 0)
 
         item.title = listItemViewModel.title
-        item.image = listItemViewModel.image
+        item.withImage(listItemViewModel.image, visibleOnMacOS27: true)
         item.state =  listItemViewModel.state
 
         item.target = self

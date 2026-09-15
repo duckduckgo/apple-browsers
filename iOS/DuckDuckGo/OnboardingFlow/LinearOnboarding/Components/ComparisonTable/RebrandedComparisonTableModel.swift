@@ -112,7 +112,7 @@ extension RebrandedComparisonTableModel.Feature {
             case .privateAIChat:
                 OnboardingRebrandingImages.Comparison.privateAIChatIcon
             case .blockTrackers:
-                OnboardingRebrandingImages.Comparison.shieldIcon
+                Image(uiImage: DesignSystemImages.Color.Size24.shield)
             case .blockCookiesAndAds:
                 OnboardingRebrandingImages.Comparison.blockAdsIcon
             case .blockYouTubeAds:
@@ -142,7 +142,7 @@ extension RebrandedComparisonTableModel {
         case .browserPrivately:
             return [
                 Feature(icon: Icon.lensIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
-                Feature(icon: Icon.shieldIcon, title: BrowserText.trackerBlockers, competitorAvailability: .partial, ddgAvailability: .available),
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.shield), title: BrowserText.trackerBlockers, competitorAvailability: .partial, ddgAvailability: .available),
                 Feature(icon: Icon.eraseDataIcon, title: BrowserText.eraseBrowsingData, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.privateAIChatIcon, title: BrowserText.privateAIChat, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.adsBlocked), title: BrowserText.cookiePopupsAndAds, competitorAvailability: .unavailable, ddgAvailability: .available),
@@ -153,14 +153,14 @@ extension RebrandedComparisonTableModel {
                 Feature(icon: Icon.privateAIChatIcon, title: AIText.noAccountsNeeded, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.lockIcon, title: AIText.noTrainingData, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.aiIcon, title: AIText.onePlaceAccess, competitorAvailability: .unavailable, ddgAvailability: .available),
-                Feature(icon: Icon.shieldIcon, title: BrowserText.privateWebSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.shield), title: BrowserText.privateWebSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
             ]
         case .noAI:
             return [
                 Feature(icon: Icon.lensIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.searchAssistStrikethrough), title: BrowserText.noAIAnswers, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.aiImagesStriketrough), title: BrowserText.hideAIImages, competitorAvailability: .unavailable, ddgAvailability: .available),
-                Feature(icon: Icon.shieldIcon, title: BrowserText.trackerBlockers, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.shield), title: BrowserText.trackerBlockers, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.adsBlocked), title: BrowserText.cookiePopupsAndAds, competitorAvailability: .unavailable, ddgAvailability: .available),
             ]
         case .blockAds:
@@ -169,7 +169,7 @@ extension RebrandedComparisonTableModel {
                 Feature(icon: Icon.blockYouTubeAdsIcon, title: BrowserText.duckplayer, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.lensIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.privateAIChatIcon, title: BrowserText.privateAIChat, competitorAvailability: .unavailable, ddgAvailability: .available),
-                Feature(icon: Icon.shieldIcon, title: BrowserText.trackerBlockers, competitorAvailability: .partial, ddgAvailability: .available),
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.shield), title: BrowserText.trackerBlockers, competitorAvailability: .partial, ddgAvailability: .available),
             ]
         }
     }
@@ -212,7 +212,7 @@ extension RebrandedComparisonTableModel.Feature {
         var icon: Image {
             switch self {
             case .anonymousChats:
-                OnboardingRebrandingImages.Comparison.shieldIcon
+                Image(uiImage: DesignSystemImages.Color.Size24.shield)
             case .noAccountsNeeded:
                 OnboardingRebrandingImages.Comparison.privateAIChatIcon
             case .noTrainingData:

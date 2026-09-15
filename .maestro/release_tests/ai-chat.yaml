@@ -15,13 +15,18 @@ tags:
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
         ff.browsingMenuSheetEnabledByDefault: "true"
-        ff.unifiedToggleInput: "true"
 
-# NTP: tap Duck.ai button — opens chat tab
+# NTP: open a chat through the Duck.ai menu when available
 - assertVisible:
     id: "Browser.OmniBar.Button.AIChat"
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"
+
+- runFlow:
+    when:
+        visible: "New Chat"
+    commands:
+        - tapOn: "New Chat"
 
 - runFlow:
     when:

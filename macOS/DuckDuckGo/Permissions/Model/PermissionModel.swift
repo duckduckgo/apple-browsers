@@ -106,9 +106,9 @@ final class PermissionModel {
             guard let permissionManager else { return }
 
             self?.permissionManager(permissionManager,
-                                    didChangePermanentDecisionFor: value.permissionType,
+                                    didChangePermission: value.permissionType,
                                     forDomain: value.domain,
-                                    to: value.decision)
+                                    change: value.change)
         }.store(in: &cancellables)
     }
 
@@ -227,27 +227,30 @@ final class PermissionModel {
     }
 
     private func permissionManager(_: PermissionManagerProtocol,
-                                   didChangePermanentDecisionFor permissionType: PermissionType,
+                                   didChangePermission permissionType: PermissionType,
                                    forDomain domain: String,
-                                   to decision: PersistedPermissionDecision) {
+                                   change: PermissionChange) {
+        guard currentDomain?.droppingWwwPrefix() == domain else { return }
 
-        // If Always Allow/Deny for the current host: Grant/Revoke the permission
-        guard webView?.url?.host?.droppingWwwPrefix() == domain else { return }
-
-        // If decision changed to "allow", remove from removedPermissions so updatePermissions() can track it again
-        if decision == .allow {
-            removedPermissions.remove(permissionType)
-        }
-
-        switch (decision, self.permissions[permissionType]) {
-        case (.deny, .some):
-            self.revoke(permissionType)
-            fallthrough
-        case (.allow, .requested):
-            while let query = self.authorizationQueries.first(where: { $0.permissions == [permissionType] }) {
-                query.handleDecision(grant: decision == .allow)
+        switch change {
+        case .removed:
+            removePermissionFromCurrentPage(permissionType)
+        case .decisionChanged(let decision):
+            // Allow updatePermissions() to track the permission again when access is restored.
+            if decision == .allow {
+                removedPermissions.remove(permissionType)
             }
-        default: break
+
+            switch (decision, self.permissions[permissionType]) {
+            case (.deny, .some):
+                self.revoke(permissionType)
+                fallthrough
+            case (.allow, .requested):
+                while let query = self.authorizationQueries.first(where: { $0.permissions == [permissionType] }) {
+                    query.handleDecision(grant: decision == .allow)
+                }
+            default: break
+            }
         }
     }
 
@@ -282,8 +285,19 @@ final class PermissionModel {
 
     /// Removes a permission completely (revokes and removes from tracking)
     func remove(_ permission: PermissionType) {
+        removePermissionFromCurrentPage(permission)
+
+        // Remove from persisted storage
+        if let domain = currentDomain {
+            permissionManager.removePermission(forDomain: domain, permissionType: permission)
+        } else {
+            assertionFailure("webView URL should not be nil when removing a permission")
+        }
+    }
+
+    private func removePermissionFromCurrentPage(_ permission: PermissionType) {
         // Track as explicitly removed to prevent re-adding via updatePermissions()
-        removedPermissions.insert(permission)
+        guard removedPermissions.insert(permission).inserted else { return }
 
         // First revoke the permission
         switch permission {
@@ -295,13 +309,6 @@ final class PermissionModel {
 
         // Remove from dictionary (will trigger @Published update)
         permissions[permission] = nil
-
-        // Remove from persisted storage
-        if let domain = currentDomain {
-            permissionManager.removePermission(forDomain: domain, permissionType: permission)
-        } else {
-            assertionFailure("webView URL should not be nil when removing a permission")
-        }
     }
 
     /// Checks if a permission is granted (either persistently via "Always Allow" or for this session via one-time grant).

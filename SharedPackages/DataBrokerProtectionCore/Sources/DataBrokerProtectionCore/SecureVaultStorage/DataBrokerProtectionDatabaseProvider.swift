@@ -126,6 +126,7 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
     func fetchExtractedProfiles(for brokerId: Int64, with profileQueryId: Int64) throws -> [ExtractedProfileDB]
     func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfileDB]
     func updateRemovedDate(for extractedProfileId: Int64, with date: Date?) throws
+    func updateProfileData(for extractedProfileId: Int64, with profileData: Data) throws
 
     func hasMatches() throws -> Bool
 
@@ -804,6 +805,17 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
         try db.write { db in
             if var extractedProfile = try ExtractedProfileDB.fetchOne(db, key: extractedProfileId) {
                 extractedProfile.removedDate = date
+                try extractedProfile.update(db)
+            } else {
+                throw DataBrokerProtectionDatabaseErrors.elementNotFound
+            }
+        }
+    }
+
+    public func updateProfileData(for extractedProfileId: Int64, with profileData: Data) throws {
+        try db.write { db in
+            if var extractedProfile = try ExtractedProfileDB.fetchOne(db, key: extractedProfileId) {
+                extractedProfile.profile = profileData
                 try extractedProfile.update(db)
             } else {
                 throw DataBrokerProtectionDatabaseErrors.elementNotFound

@@ -20,6 +20,7 @@
 import Foundation
 import BrowserServicesKit
 import PrivacyConfig
+import FeatureFlags_iOS
 
 /// Adapts the app's FeatureFlagger to the SubscriptionPageFeatureFlagProvider protocol
 /// This keeps the Subscription module decoupled from the app's feature flag system
@@ -39,5 +40,27 @@ struct SubscriptionPageFeatureFlagAdapter: SubscriptionPageFeatureFlagProviding 
         case .supportsAlternateStripePaymentFlow:
             return featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow)
         }
+    }
+}
+
+private struct PerformanceOptimizedPaywallsFeatureFlagger: PerformanceOptimizedPaywallsFeatureFlagging {
+    private let featureFlagger: FeatureFlagger
+
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
+    }
+
+    var isPerformanceOptimizedPaywallsEnabled: Bool {
+        featureFlagger.isFeatureOn(.performanceOptimizedPaywalls)
+    }
+}
+
+extension DefaultPerformanceOptimizedPaywallsProvider {
+
+    init(privacyConfigurationManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
+        self.init(
+            privacyConfigurationManager: privacyConfigurationManager,
+            featureFlagger: PerformanceOptimizedPaywallsFeatureFlagger(featureFlagger: featureFlagger)
+        )
     }
 }

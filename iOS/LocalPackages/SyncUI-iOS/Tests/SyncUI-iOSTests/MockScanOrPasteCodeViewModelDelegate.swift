@@ -32,6 +32,8 @@ final class MockScanOrPasteCodeViewModelDelegate: ScanOrPasteCodeViewModelDelega
     private(set) var requestCameraPermissionModels: [ScanOrPasteCodeViewModel] = []
     private(set) var shareCodeCalls: [(code: String, source: CodeCollectionSource)] = []
     private(set) var didCallCodeEntryScreenShown = false
+    private(set) var didCallBarcodeScreenShown = false
+    private(set) var didCallScanQRCodeScreenShown = false
     private(set) var codeCopiedCalls: [(code: String, source: CodeCollectionSource)] = []
 
     func endConnectMode() {
@@ -61,6 +63,14 @@ final class MockScanOrPasteCodeViewModelDelegate: ScanOrPasteCodeViewModelDelega
 
     func codeEntryScreenShown() {
         didCallCodeEntryScreenShown = true
+    }
+
+    func barcodeScreenShown() {
+        didCallBarcodeScreenShown = true
+    }
+
+    func scanQRCodeScreenShown() {
+        didCallScanQRCodeScreenShown = true
     }
 
     func codeCopied(_ code: String, source: CodeCollectionSource) {

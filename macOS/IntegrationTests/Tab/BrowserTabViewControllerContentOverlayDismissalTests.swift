@@ -19,7 +19,7 @@
 import AppKit
 import BrowserServicesKit
 import Combine
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
@@ -177,6 +177,7 @@ final class BrowserTabViewControllerContentOverlayDismissalTests: XCTestCase {
                 preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
                 internalUserDecider: featureFlagger.internalUserDecider),
+            permissionManager: PermissionManagerMock(),
             pinningManager: MockPinningManager(),
             onContentOverlayDismissalRequested: { spy.record() })
 

@@ -18,7 +18,7 @@
 
 import XCTest
 import Combine
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfigTestsUtils
 @testable import PrivacyConfig
 

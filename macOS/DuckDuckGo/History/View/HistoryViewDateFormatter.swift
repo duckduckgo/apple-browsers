@@ -38,6 +38,15 @@ protocol HistoryViewDateFormatting {
      * Returns string representation of time for a given `date`.
      */
     func timeString(for date: Date) -> String
+
+    /**
+     * Returns a textual representation of a given `date` suitable for use in compact views.
+     *
+     * Rules:
+     *   - when date is "today" -> display only the time
+     *   - when date is older -> display month and day, without time.
+     */
+    func shortString(for date: Date) -> String
 }
 
 struct DefaultHistoryViewDateFormatter: HistoryViewDateFormatting {
@@ -45,6 +54,13 @@ struct DefaultHistoryViewDateFormatter: HistoryViewDateFormatting {
         let formatter = DateFormatter()
         formatter.dateStyle = .full
         formatter.timeStyle = .none
+        formatter.formattingContext = .beginningOfSentence
+        return formatter
+    }()
+
+    let shortDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("MMMd")
         formatter.formattingContext = .beginningOfSentence
         return formatter
     }()
@@ -74,5 +90,10 @@ struct DefaultHistoryViewDateFormatter: HistoryViewDateFormatting {
 
     func timeString(for date: Date) -> String {
         timeFormatter.string(from: date)
+    }
+
+    func shortString(for date: Date) -> String {
+        let isSameDay = currentDate().isSameDay(date)
+        return isSameDay ? timeString(for: date) : shortDateFormatter.string(from: date)
     }
 }

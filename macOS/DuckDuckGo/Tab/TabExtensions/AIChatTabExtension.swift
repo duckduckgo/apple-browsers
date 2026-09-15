@@ -19,7 +19,7 @@
 import Navigation
 import Foundation
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import os.log
 import Persistence
 import PrivacyConfig

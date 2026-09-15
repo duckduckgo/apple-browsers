@@ -19,9 +19,9 @@
 
 import XCTest
 @testable import Core
+@testable import DuckDuckGo
 import WebKit
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 public class CookieStorageTests: XCTestCase {
 

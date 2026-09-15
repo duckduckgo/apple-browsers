@@ -22,7 +22,7 @@ import Combine
 import Common
 import FoundationExtensions
 import BrowserServicesKit
-import PixelKit
+import WideEvent
 import os.log
 import Subscription
 import UserNotifications
@@ -89,6 +89,7 @@ public class DBPIOSInterface {
 
     public protocol AuthenticationDelegate: AnyObject {
         func isUserAuthenticated() async -> Bool
+        func isUserEligibleForFreeTrial() -> Bool
     }
 
     public protocol RunPrerequisitesDelegate: AnyObject, AuthenticationDelegate {
@@ -176,10 +177,6 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
-    private struct VaultInitDebugState {
-        var reason: String?
-    }
-
     private struct Constants {
         /// Maximum delay before the next background task must run
         static let defaultMaxBackgroundTaskWaitTime: TimeInterval = .hours(48)
@@ -197,7 +194,6 @@ public final class DataBrokerProtectionIOSManager {
     private let vaultResourcesLock = NSLock()
     private var cachedVaultResources: DBPVaultResources?
     private var ongoingVaultResourcesInitTask: Task<DBPVaultResources, Error>?
-    private var vaultInitDebugState = VaultInitDebugState()
     private let vaultResourcesProvider: (() throws -> DBPVaultResources)?
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let userNotificationService: DataBrokerProtectionUserNotificationService
@@ -489,11 +485,9 @@ public final class DataBrokerProtectionIOSManager {
             }
 
             if reason.skipsWhenNoProfile, profileStateManager.profileState == .noProfile {
-                vaultInitDebugState.reason = reason.rawValue
                 return .skipped
             }
 
-            vaultInitDebugState.reason = reason.rawValue
             let task = Task {
                 do {
                     let resources = try await loadVaultResources()
@@ -664,6 +658,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.UserEventsDelegate {
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.AuthenticationDelegate {
     public func isUserAuthenticated() async -> Bool {
         await authenticationManager.isUserAuthenticated
+    }
+
+    public func isUserEligibleForFreeTrial() -> Bool {
+        authenticationManager.isUserEligibleForFreeTrial
     }
 }
 
@@ -950,14 +948,6 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
 // MARK: - Debug HTTP server read access
 
 extension DataBrokerProtectionIOSManager: DataBrokerProtectionDebugReadProviding {
-
-    public var iOSRuntimeStatus: DBPDebugIOSRuntimeStatus? {
-        vaultResourcesLock.withLock {
-            DBPDebugIOSRuntimeStatus(profileState: profileStateManager.profileState.rawValue,
-                                     vault: DBPDebugIOSRuntimeStatus.VaultStatus(initialized: cachedVaultResources != nil,
-                                                                                 lastInitReason: vaultInitDebugState.reason))
-        }
-    }
 
     public var agentVersion: String {
         let version = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "unknown"

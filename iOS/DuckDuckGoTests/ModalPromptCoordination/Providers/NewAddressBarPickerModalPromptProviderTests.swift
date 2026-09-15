@@ -20,7 +20,7 @@
 import UIKit
 import Testing
 import AIChat
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 
 @MainActor
@@ -278,13 +278,11 @@ final class NewAddressBarPickerModalPromptProviderTests {
 @MainActor
 @Suite("Modal Prompt Coordination - New Address Bar Picker Modal Prompt Provider Integration")
 final class NewAddressBarPickerModalPromptProviderIntegrationTests {
-    let testUserDefaults: UserDefaults
     let validator: NewAddressBarPickerDisplayValidator
     let pickerStorage: NewAddressBarPickerStore
     let mockAIChatSettings: MockAIChatSettingsProvider
 
-    init() throws {
-        testUserDefaults = try #require(UserDefaults(suiteName: String(describing: Self.self)))
+    init() {
         mockAIChatSettings = MockAIChatSettingsProvider()
         mockAIChatSettings.isAIChatEnabled = true
         mockAIChatSettings.isAIChatAddressBarUserSettingsEnabled = true
@@ -293,12 +291,10 @@ final class NewAddressBarPickerModalPromptProviderIntegrationTests {
         let mockAppSettings = AppSettingsMock()
         let mockKeyValueStore = MockKeyValueStore()
 
-        testUserDefaults.set(false, forKey: "experimentalAIChatSettingsEnabled")
         mockKeyValueStore.set(false, forKey: NewAddressBarPickerStore.Key.hasBeenShown)
 
         let experimentalAIChatManager = ExperimentalAIChatManager(
-            featureFlagger: mockFeatureFlagger,
-            userDefaults: testUserDefaults
+            featureFlagger: mockFeatureFlagger
         )
         pickerStorage = NewAddressBarPickerStore(keyValueStore: mockKeyValueStore)
 
@@ -314,10 +310,6 @@ final class NewAddressBarPickerModalPromptProviderIntegrationTests {
             searchExperienceOnboardingProvider: MockOnboardingSearchExperienceProvider(),
             statisticsStore: mockStatisticsStore
         )
-    }
-
-    deinit {
-        testUserDefaults.removePersistentDomain(forName: String(describing: Self.self))
     }
 
     @Test("Check Configuration Is Nil After Calling Mark As Shown", arguments: [true, false])

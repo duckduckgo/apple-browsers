@@ -20,14 +20,13 @@ import PrivacyConfig
 import Combine
 import Common
 import LoginItems
-import PixelKitTestingUtilities
 import WebKit
 import XCTest
 
 @testable import DataBrokerProtection_macOS
 @testable import DataBrokerProtectionCore
 @testable import DuckDuckGo_Privacy_Browser
-@testable import PixelKit
+@_spi(Testing) @testable import PixelKit
 
 // swiftlint:disable force_try
 
@@ -614,6 +613,10 @@ private extension DBPEndToEndTests {
 
         func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
             nil
+        }
+
+        func allSubfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] {
+            [:]
         }
 
         func userEnabledProtection(forDomain: String) {

@@ -33,6 +33,7 @@ import os.log
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import PixelKit
 
 class BookmarksViewController: UIViewController, UITableViewDelegate {
 
@@ -97,7 +98,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         let emptyView = BookmarksEmptyView(importViaSafariButtonAction: { [weak self] in
             self?.segueToDataImport()
             if case .legacy = DataImportEntryPointHandler().destination(for: .bookmarks) {
-                Pixel.fire(pixel: .bookmarksImportButtonTapped)
+                PixelKit.fire(Pixel.Event.bookmarksImportButtonTapped)
             }
         }, importDocumentButtonAction: { [weak self] in
             self?.presentDocumentPicker()
@@ -149,13 +150,13 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private lazy var syncPromoViewHostingController: UIHostingController<SyncPromoView> = {
         let headerView = SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
             self?.segueToSync(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion)
-            Pixel.fire(.syncPromoConfirmed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.bookmarks.rawValue])
+            PixelKit.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": SyncPromoManager.Touchpoint.bookmarks.rawValue]))
         }, dismissButtonAction: { [weak self] in
             self?.syncPromoManager.dismissPromoFor(.bookmarks, reason: .userTapped)
             self?.refreshTableHeaderView()
         }))
 
-        Pixel.fire(.syncPromoDisplayed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.bookmarks.rawValue])
+        PixelKit.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": SyncPromoManager.Touchpoint.bookmarks.rawValue]))
 
         let hostingController = UIHostingController(rootView: headerView)
         hostingController.view.backgroundColor = .clear
@@ -319,7 +320,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         guard searchDataSource.results.indices.contains(index) else { return }
         dismiss()
 
-        Pixel.fire(pixel: .bookmarkLaunchScored)
+        PixelKit.fire(Pixel.Event.bookmarkLaunchScored)
         delegate?.bookmarksDidSelect(url: searchDataSource.results[index].url)
     }
 
@@ -412,7 +413,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
 
     private func toggleFavoriteAfterSwipe(_ bookmark: BookmarkEntity, _ indexPath: IndexPath) {
         if !bookmark.isFavorite(on: viewModel.favoritesDisplayMode.displayedFolder) {
-            Pixel.fire(pixel: .bookmarkAddFavoriteBySwipe)
+            PixelKit.fire(Pixel.Event.bookmarkAddFavoriteBySwipe)
         }
 
         self.viewModel.toggleFavorite(bookmark)
@@ -649,7 +650,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         ) { [weak self] _ in
             self?.segueToDataImport()
             if case .legacy = DataImportEntryPointHandler().destination(for: .bookmarks) {
-                Pixel.fire(pixel: .bookmarksImportOverflowMenuTapped)
+                PixelKit.fire(Pixel.Event.bookmarksImportOverflowMenuTapped)
             }
         }
     }
@@ -715,7 +716,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             destinationViewController = makeDataImportViewController(importScreen: importScreen)
         case .hub:
             destinationViewController = makeBookmarksSafariImportViewController()
-            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: DataImportViewModel.ImportScreen.bookmarks.importHubEntryPointParameters)
+            PixelKit.fire(Pixel.Event.importHubEntryTapped, options: .parameters(DataImportViewModel.ImportScreen.bookmarks.importHubEntryPointParameters))
         }
         navigationController?.setToolbarHidden(true, animated: true)
         navigationController?.pushViewController(destinationViewController, animated: true)
@@ -733,13 +734,13 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             case .success(let summary):
                 WidgetCenter.shared.reloadAllTimelines()
                 DispatchQueue.main.async {
-                    Pixel.fire(pixel: .bookmarkImportSuccess,
-                               withAdditionalParameters: [PixelParameters.bookmarkCount: "\(summary.successful)"])
+                    PixelKit.fire(Pixel.Event.bookmarkImportSuccess,
+                                  options: .parameters([PixelParameters.bookmarkCount: "\(summary.successful)"]))
                     ActionMessageView.present(message: UserText.importBookmarksSuccessMessage)
                 }
             case .failure(let bookmarksImportError):
                 Logger.bookmarks.error("Bookmarks import error \(bookmarksImportError.localizedDescription, privacy: .public)")
-                Pixel.fire(pixel: .bookmarkImportFailure)
+                PixelKit.fire(Pixel.Event.bookmarkImportFailure)
                 DispatchQueue.main.async {
                     ActionMessageView.present(message: UserText.importBookmarksFailedMessage)
                 }
@@ -793,7 +794,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                     return
                 }
 
-                Pixel.fire(pixel: .bookmarkExportFailure)
+                PixelKit.fire(Pixel.Event.bookmarkExportFailure)
                 self?.presentActionMessageView(withMessage: UserText.exportBookmarksFailedMessage)
                 self?.cleanupTempFile(tempFileUrl)
                 return
@@ -805,7 +806,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                 } else {
                     self?.presentActionMessageView(withMessage: UserText.exportBookmarksShareSuccessMessage)
                 }
-                Pixel.fire(pixel: .bookmarkExportSuccess)
+                PixelKit.fire(Pixel.Event.bookmarkExportSuccess)
             }
 
             self?.cleanupTempFile(tempFileUrl)
@@ -905,9 +906,9 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         if #available(iOS 18.2, *), !hasFiredImportButtonShownPixel {
             hasFiredImportButtonShownPixel = true
             if case .hub = DataImportEntryPointHandler().destination(for: .bookmarks) {
-                Pixel.fire(pixel: .importHubEntryShown, withAdditionalParameters: DataImportViewModel.ImportScreen.bookmarks.importHubEntryPointParameters)
+                PixelKit.fire(Pixel.Event.importHubEntryShown, options: .parameters(DataImportViewModel.ImportScreen.bookmarks.importHubEntryPointParameters))
             } else {
-                Pixel.fire(pixel: .bookmarksImportButtonShown)
+                PixelKit.fire(Pixel.Event.bookmarksImportButtonShown)
             }
         }
     }
@@ -1022,8 +1023,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     fileprivate func select(bookmark: BookmarkEntity) {
         guard let url = bookmark.urlObject else { return }
         dismiss()
-        Pixel.fire(pixel: .bookmarkLaunchList)
-        DailyPixel.fire(pixel: .bookmarkLaunchedDaily)
+        PixelKit.fire(Pixel.Event.bookmarkLaunchList)
+        PixelKit.fire(Pixel.Event.bookmarkLaunchedDaily, frequency: .legacyDailyNoSuffix)
         delegate?.bookmarksDidSelect(url: url)
     }
 
@@ -1105,7 +1106,7 @@ extension BookmarksViewController: AddOrEditBookmarkViewControllerDelegate {
             assertionFailure()
             return
         }
-        Pixel.fire(pixel: .bookmarkDeletedFromBookmark)
+        PixelKit.fire(Pixel.Event.bookmarkDeletedFromBookmark)
         showBookmarkDeletedMessage(bookmark)
         viewModel.softDeleteBookmark(bookmark)
         refreshFooterView()

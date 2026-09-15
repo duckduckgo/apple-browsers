@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Subscription
 
 /// Represents the origin point from which the user enters the subscription funnel in the macOS app.
 enum SubscriptionFunnelOrigin: String {
@@ -54,6 +55,10 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860324
     case newTabPageNextStepsCard = "funnel_onboarding_macOS__nextstepscard"
 
+    /// User entered the funnel via the subscription upsell at the end of contextual onboarding.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217302662203337
+    case onboardingSubscriptionUpsell = "funnel_onboarding_macos__subscriptionupsell"
+
     /// User entered the funnel via the subscription promo on the Fire Window home page.
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1214355390442152
     case fireWindowPromo = "funnel_newtab_macos__firewindowvpn"
@@ -78,19 +83,30 @@ enum SubscriptionFunnelOrigin: String {
 
     /// User entered the funnel by tapping a gated reasoning effort in the address bar's duck.ai omnibar.
     /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
-    case addressBarReasoningPicker = "funnel_addressbar_macos__reasoningpicker"
-
-    /// User entered the funnel by tapping a gated model in duck.ai's own model picker.
-    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
-    case duckAIModelPicker = "funnel_duckai_macos__modelpicker"
-
-    /// User entered the funnel by tapping a gated reasoning effort in duck.ai's own omnibar.
-    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
-    case duckAIReasoningPicker = "funnel_duckai_macos__reasoningpicker"
+    case addressBarReasoningDropdown = "funnel_addressbar_macos__reasoningdropdown"
 
     /// User entered the funnel by tapping a gated model or reasoning effort in the New Tab Page's duck.ai omnibar.
     /// https://app.asana.com/1/137249556945/task/1216424447885172
     case newTabPageOmnibar = "funnel_newtab_macos__omnibar"
+
+    /// Gated model in the New Tab Page omnibar's model picker.
+    case newTabPageModelPicker = "funnel_newtab_macos__modelpicker"
+
+    /// Gated reasoning effort in the New Tab Page omnibar's reasoning picker.
+    case newTabPageReasoningDropdown = "funnel_newtab_macos__reasoningdropdown"
+
+    /// Gated model shown in the Prompt Bar's model picker. Impression only — gated rows aren't
+    /// interactive on this surface, so nothing routes into the purchase flow from here.
+    case promptBarModelPicker = "funnel_promptbar_macos__modelpicker"
+
+    /// Gated reasoning effort shown in the Prompt Bar's reasoning picker. Impression only, as above.
+    case promptBarReasoningDropdown = "funnel_promptbar_macos__reasoningdropdown"
+
+    /// Upsell on the usage-limit card below the address bar's duck.ai omnibar.
+    case addressBarUsageLimit = "funnel_addressbar_macos__usagelimit"
+
+    /// The same card on the Prompt Bar.
+    case promptBarUsageLimit = "funnel_promptbar_macos__usagelimit"
 
     // MARK: - Duck.ai Funnel Origins (frontend-reported)
 
@@ -108,6 +124,71 @@ enum SubscriptionFunnelOrigin: String {
     case duckAIDisclaimerBanner = "funnel_duckai_macos__disclaimerbanner"
     case duckAIVoiceChatLimit = "funnel_duckai_macos__voicechatlimit"
     case duckAIVoiceChatDurationLimit = "funnel_duckai_macos__voicechatdurationlimit"
+    case duckAIModelPicker = "funnel_duckai_macos__modelpicker"
+    case duckAIReasoningDropdown = "funnel_duckai_macos__reasoningdropdown"
+    case duckAISwitchModel = "funnel_duckai_macos__switchmodel"
+
+    /// The frontend opened a modal without attributing it to an entry point.
+    case duckAIUnknown = "funnel_duckai_macos__unknown"
+}
+
+extension SubscriptionFunnelOrigin {
+
+    static func purchaseWideEventEntryPoint(for origin: String?) -> SubscriptionPurchaseWideEventData.EntryPoint {
+        guard let origin else { return .web }
+        guard let funnelOrigin = Self(rawValue: origin) else { return .unknown }
+        return funnelOrigin.purchaseWideEventEntryPoint
+    }
+
+    private var purchaseWideEventEntryPoint: SubscriptionPurchaseWideEventData.EntryPoint {
+        switch self {
+        case .winBackNewTabPage,
+                .newTabPageNextStepsCard,
+                .fireWindowPromo,
+                .newTabPageOmnibar,
+                .newTabPageModelPicker,
+                .newTabPageReasoningDropdown:
+            return .newTabPage
+        case .addressBarModelPicker,
+                .addressBarReasoningDropdown,
+                .duckAIModelPicker,
+                .duckAIReasoningDropdown,
+                .promptBarModelPicker,
+                .promptBarReasoningDropdown,
+                .addressBarUsageLimit,
+                .promptBarUsageLimit,
+                .duckAIAiSidebar,
+                .duckAIActivateSubscription,
+                .duckAIFreeLabel,
+                .duckAIFreeLimit,
+                .duckAIImageGenerationLimit,
+                .duckAIPlusLimit,
+                .duckAIPromotionCard,
+                .duckAISettings,
+                .duckAIDisclaimerBanner,
+                .duckAIVoiceChatLimit,
+                .duckAIVoiceChatDurationLimit,
+                .duckAISwitchModel,
+                .duckAIUnknown:
+            return .duckAI
+        case .appMenu,
+                .winBackMenu:
+            return .appMenu
+        case .winBackLaunch:
+            return .appPromotion
+        case .appSettings,
+                .winBackSettings:
+            return .settings
+        case .onboardingSubscriptionUpsell:
+            return .onboarding
+        case .vpnToolbarUpsell,
+                .vpnToolbarRevoked,
+                .vpnMenuBarRevoked:
+            return .vpn
+        case .freeScan:
+            return .personalInformationRemoval
+        }
+    }
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.

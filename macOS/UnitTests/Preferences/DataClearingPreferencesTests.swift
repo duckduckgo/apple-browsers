@@ -18,11 +18,10 @@
 
 import AIChat
 import BrowserServicesKit
-import FeatureFlags
-import PixelKit
-import PixelKitTestingUtilities
+import FeatureFlags_macOS
+@_spi(Testing) import PixelKit
 import PrivacyConfig
-import SharedTestUtilities
+@_spi(Testing) import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

@@ -82,7 +82,7 @@ jobs:
     outputs:
       stop_workflow: ${{ steps.download-stop-workflow.outcome == 'success' }}
 
-    runs-on: macos-26
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out the code
@@ -116,7 +116,7 @@ jobs:
     outputs:
       dmg-url: ${{ steps.set-common-env.outputs.dmg-url }}
 
-    runs-on: macos-26-xlarge
+    runs-on: bitrise:macos26-m4
     timeout-minutes: 10
 
     steps:
@@ -127,6 +127,9 @@ jobs:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           submodules: recursive
           ref: main
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Download tag artifact
         id: download-tag

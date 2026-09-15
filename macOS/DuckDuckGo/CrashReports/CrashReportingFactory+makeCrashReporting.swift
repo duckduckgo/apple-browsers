@@ -18,7 +18,7 @@
 
 import Crashes
 import CrashReportingShared
-import FeatureFlags
+import FeatureFlags_macOS
 import Persistence
 import PixelKit
 import PrivacyConfig

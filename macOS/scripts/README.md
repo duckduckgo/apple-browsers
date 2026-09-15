@@ -3,6 +3,7 @@
 * [archive.sh](#archivesh-create-notarized-application-build)
 * [find-private-symbols.sh](#find-private-symbolssh-check-a-binary-for-private-api-usage)
 * [update-embedded.sh](#update-embeddedsh-update-embedded-tracker-data-set-and-privacy-config)
+* [update_embedded_brokers.sh](#update_embedded_brokerssh-update-embedded-dbp-broker-json)
 
 ## `archive.sh`: Create notarized application build
 
@@ -125,3 +126,20 @@ Make sure that unit tests pass after updating files. These test cases verify
 embedded data correctness:
 * `EmbeddedTrackerDataTests.testWhenEmbeddedDataIsUpdatedThenUpdateSHAAndEtag`
 * `AppPrivacyConfigurationTests.testWhenEmbeddedDataIsUpdatedThenUpdateSHAAndEtag`
+
+## `update_embedded_brokers.sh`: Update embedded DBP broker JSON
+
+This script refreshes the Data Broker Protection broker JSON files embedded in
+`DataBrokerProtectionCore`. It is run by `update_embedded.sh`, and can also be
+run on its own.
+
+Only brokers listed in `main_config.json`'s `active_data_brokers` are installed.
+Stale files are never pruned.
+
+### Requirements
+
+`jq`, plus built-in command line utilities and curl.
+
+### Usage
+
+    $ ./scripts/update_embedded_brokers.sh

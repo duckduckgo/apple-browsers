@@ -117,7 +117,7 @@ private struct QuitSurveyInitialView: View {
 
     private func header() -> some View {
         HStack(spacing: 12) {
-            Image(DesignSystemRebrand.isAppRebranded() ? .duckDuckGoResponseQuestion96 : .daxResponse48Legacy)
+            Image(DesignSystemRebrand.isAppRebranded() ? .duckDuckGoResponseQuestion96 : .daxResponse)
                 .resizable()
                 .frame(width: 48, height: 48)
 

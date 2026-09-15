@@ -25,12 +25,27 @@ final class SubscriptionOnboardingSectionTests: XCTestCase {
 
     // MARK: - Kind mapping
 
-    func testWhenSectionIsWelcomeThenKindIsOverview() {
+    func testWhenSectionIsAnOverviewThenKindIsOverview() {
+        XCTAssertEqual(SubscriptionOnboardingSection.orderConfirmation.kind, .overview)
         XCTAssertEqual(SubscriptionOnboardingSection.welcome.kind, .overview)
     }
 
-    func testWhenEnumeratingSectionsThenTheyAreExactlyWelcome() {
-        XCTAssertEqual(SubscriptionOnboardingSection.allCases, [.welcome])
+    func testWhenSectionIsAnActivationThenKindCarriesItsChecklistItem() {
+        XCTAssertEqual(SubscriptionOnboardingSection.vpnActivation.kind, .activation(.vpn))
+        XCTAssertEqual(SubscriptionOnboardingSection.vpnWidget.kind, .activation(.vpnWidget))
+        XCTAssertEqual(SubscriptionOnboardingSection.vpnTips.kind, .activation(.vpnTips))
+        XCTAssertEqual(SubscriptionOnboardingSection.idtr.kind, .activation(.idtr))
+        XCTAssertEqual(SubscriptionOnboardingSection.duckAI.kind, .activation(.duckAI))
+        XCTAssertEqual(SubscriptionOnboardingSection.pir.kind, .activation(.pir))
+    }
+
+    func testWhenSectionIsProgressThenKindIsProgressTracker() {
+        XCTAssertEqual(SubscriptionOnboardingSection.progress.kind, .progressTracker)
+    }
+
+    func testWhenEnumeratingActivationSectionsThenPIRIsExcluded() {
+        XCTAssertEqual(SubscriptionOnboardingSection.activationSections,
+                       [.vpnActivation, .vpnWidget, .vpnTips, .idtr, .duckAI])
     }
 
     // MARK: - Navigation button accessibility

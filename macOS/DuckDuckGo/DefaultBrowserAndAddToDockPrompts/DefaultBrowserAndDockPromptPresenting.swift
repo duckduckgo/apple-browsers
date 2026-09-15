@@ -20,7 +20,7 @@ import AppKit
 import SwiftUIExtensions
 import Combine
 import BrowserServicesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import Utilities
 
 protocol DefaultBrowserAndDockPromptPresenting {

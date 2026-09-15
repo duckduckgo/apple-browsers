@@ -47,6 +47,62 @@ public enum WebExtensionPixelEvent {
     case scriptletValidationError(type: DuckDuckGoWebExtensionType, error: Error)
     case scriptletInstalled(type: DuckDuckGoWebExtensionType, version: String)
     case scriptletInstallError(type: DuckDuckGoWebExtensionType, error: Error)
+
+    /// CPM did not return dashboard state before a navigation's grace period expired.
+    case cpmInitializationFailed(reason: CPMMessagingFailureReason)
+    /// A later eligible navigation confirmed the preceding initialization failure.
+    case cpmMessagingStuck(reason: CPMMessagingFailureReason)
+    /// CPM messaging recovered without an intervening successful extension reload.
+    case cpmMessagingRecoveredWithoutExtensionReload
+    /// CPM messaging recovered after an embedded-extension reload.
+    case cpmMessagingRecoveredAfterExtensionReload
+    /// The first CPM measurement using a successful extension-reload generation also failed.
+    case cpmMessagingExtensionReloadFailed
+}
+
+/// Reporting cadence shared by both platform CPM pixel adapters.
+public enum CPMWebExtensionPixelFrequency: Equatable, Sendable {
+    case daily
+    case dailyAndCount
+}
+
+/// Canonical CPM pixel contract. Platform adapters preserve these names and let PixelKit apply its standard platform suffix policy.
+public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
+    public let name: String
+    public let frequency: CPMWebExtensionPixelFrequency
+    public let parameters: [String: String]
+
+    @available(macOS 15.4, iOS 18.4, *)
+    public init?(event: WebExtensionPixelEvent) {
+        switch event {
+        case .cpmInitializationFailed(let reason):
+            name = "debug_web_extension_cpm_initialization_failed_after_\(reason.rawValue)"
+            frequency = .daily
+            parameters = [:]
+        case .cpmMessagingStuck(let reason):
+            name = "debug_web_extension_cpm_messaging_stuck_\(reason.rawValue)"
+            frequency = .dailyAndCount
+            parameters = [:]
+        case .cpmMessagingRecoveredWithoutExtensionReload:
+            name = "debug_web_extension_cpm_messaging_recovered_without_extension_reload"
+            frequency = .dailyAndCount
+            parameters = [:]
+        case .cpmMessagingRecoveredAfterExtensionReload:
+            name = "debug_web_extension_cpm_messaging_recovered_after_extension_reload"
+            frequency = .dailyAndCount
+            parameters = [:]
+        case .cpmMessagingExtensionReloadFailed:
+            name = "debug_web_extension_cpm_messaging_extension_reload_failed"
+            frequency = .dailyAndCount
+            parameters = [:]
+        case .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
+             .uninstallAllError, .loaded, .loadError, .stateChecked, .expectedExtensionNotLoaded,
+             .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
+             .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
+             .scriptletValidationError, .scriptletInstalled, .scriptletInstallError:
+            return nil
+        }
+    }
 }
 
 /// Protocol for firing web extension pixels.

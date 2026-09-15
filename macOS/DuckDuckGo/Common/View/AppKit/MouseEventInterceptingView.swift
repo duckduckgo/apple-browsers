@@ -110,10 +110,13 @@ internal class MouseEventInterceptingView: ColorView {
             }
         }
 
-        if let hitView = hitTest(locationInView), hitView != self {
+        if let hitView = hitTest(inSelfSpace: locationInView), hitView != self {
             forward(event, to: hitView, in: window)
         }
-        return nil
+
+        // AppKit needs mouse-moved to drive tracking-area enter/exit, which every hover effect
+        // here relies on. Clicks and scrolls stay consumed so they can't reach the web view.
+        return event.type == .mouseMoved ? event : nil
     }
 
     private func forward(_ event: NSEvent, to hitView: NSView, in window: NSWindow) {
@@ -164,7 +167,14 @@ internal class MouseEventInterceptingView: ColorView {
     override func otherMouseDragged(with event: NSEvent) {}
     override func scrollWheel(with event: NSEvent) {}
 
+    /// AppKit passes a point in the superview's space, but `bounds`, subview frames and
+    /// `shouldPassThroughEvent` are all in ours — the two only match at the superview's origin.
     override func hitTest(_ point: NSPoint) -> NSView? {
+        hitTest(inSelfSpace: convert(point, from: superview))
+    }
+
+    /// The event monitor already works in this view's space, so it skips the conversion above.
+    func hitTest(inSelfSpace point: NSPoint) -> NSView? {
         if shouldPassThroughEvent(at: point) { return nil }
         guard bounds.contains(point) else { return nil }
         // Front-to-back so a subview claims its own hit.

@@ -18,7 +18,7 @@
 
 import Combine
 import Foundation
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import RemoteMessaging
 import RemoteMessagingTestsUtils
 import XCTest

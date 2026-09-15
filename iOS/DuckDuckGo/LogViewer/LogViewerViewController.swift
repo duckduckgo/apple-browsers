@@ -297,7 +297,7 @@ private class LogEntryTableViewCell: UITableViewCell {
     }
     
     private func setupUI() {
-        backgroundColor = UIColor(designSystemColor: .surface)
+        backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
 
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
         messageLabel.font = UIFont.daxBodyRegular()

@@ -20,6 +20,7 @@
 import Foundation
 import PrivacyConfig
 import Testing
+import FeatureFlags_iOS
 @testable import Core
 @testable import DuckDuckGo
 
@@ -31,26 +32,30 @@ struct MonthlyFreeTrialExperimentTests {
     private func cohortValue(in url: URL) -> String? {
         URLComponents(url: url, resolvingAgainstBaseURL: false)?
             .queryItems?
-            .first { $0.name == "experiment_mobileannualtrials_ios" }?
+            .first { $0.name == "experiment_mobileannualtrials2_ios" }?
             .value
     }
 
     @available(iOS 16, *)
-    @Test("Control cohort is appended as experiment_mobileannualtrials_ios=control", .timeLimit(.minutes(1)))
+    @Test("Control cohort is appended as experiment_mobileannualtrials2_ios=control", .timeLimit(.minutes(1)))
     func controlCohortAppendedToURL() {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.MonthlyFreeTrialExperimentCohort.control)
 
-        let result = MonthlyFreeTrialExperiment.appendingCohortParameter(to: baseURL, resolvedBy: featureFlagger)
+        let result = MonthlyFreeTrialExperiment.appendingCohortParameter(to: baseURL,
+                                                                        resolvedBy: featureFlagger,
+                                                                        isEligibleForFreeTrial: true)
 
         #expect(cohortValue(in: result) == "control")
     }
 
     @available(iOS 16, *)
-    @Test("Treatment cohort is appended as experiment_mobileannualtrials_ios=treatment", .timeLimit(.minutes(1)))
+    @Test("Treatment cohort is appended as experiment_mobileannualtrials2_ios=treatment", .timeLimit(.minutes(1)))
     func treatmentCohortAppendedToURL() {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.MonthlyFreeTrialExperimentCohort.treatment)
 
-        let result = MonthlyFreeTrialExperiment.appendingCohortParameter(to: baseURL, resolvedBy: featureFlagger)
+        let result = MonthlyFreeTrialExperiment.appendingCohortParameter(to: baseURL,
+                                                                        resolvedBy: featureFlagger,
+                                                                        isEligibleForFreeTrial: true)
 
         #expect(cohortValue(in: result) == "treatment")
     }
@@ -60,8 +65,24 @@ struct MonthlyFreeTrialExperimentTests {
     func unenrolledUserLeavesURLUnchanged() {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: nil)
 
-        let result = MonthlyFreeTrialExperiment.appendingCohortParameter(to: baseURL, resolvedBy: featureFlagger)
+        let result = MonthlyFreeTrialExperiment.appendingCohortParameter(to: baseURL,
+                                                                        resolvedBy: featureFlagger,
+                                                                        isEligibleForFreeTrial: true)
 
+        #expect(cohortValue(in: result) == nil)
+        #expect(result == baseURL)
+    }
+
+    @available(iOS 16, *)
+    @Test("A user who is not eligible for a free trial is not enrolled and the URL is unchanged", .timeLimit(.minutes(1)))
+    func ineligibleUserIsNotEnrolled() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.MonthlyFreeTrialExperimentCohort.treatment)
+
+        let result = MonthlyFreeTrialExperiment.appendingCohortParameter(to: baseURL,
+                                                                        resolvedBy: featureFlagger,
+                                                                        isEligibleForFreeTrial: false)
+
+        #expect(featureFlagger.didCallResolveCohort == false)
         #expect(cohortValue(in: result) == nil)
         #expect(result == baseURL)
     }

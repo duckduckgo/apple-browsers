@@ -40,13 +40,13 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
             isSubscriptionActive: true,
             sourceObject: nil
         )
-        XCTAssertEqual(pixel.namePrefix, "m_mac_vpn_subs_notification_")
+        XCTAssertEqual(pixel.namePrefix, .custom("m_mac_vpn_subs_notification_"))
 #elseif os(iOS)
         let pixel = VPNSubscriptionStatusPixel.signedIn(
             isSubscriptionActive: true,
             sourceObject: nil
         )
-        XCTAssertEqual(pixel.namePrefix, "m_vpn_subs_notification_")
+        XCTAssertEqual(pixel.namePrefix, .custom("m_vpn_subs_notification_"))
 #endif
     }
 
@@ -204,7 +204,7 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
             sourceObject: nil
         )
 
-        let fullName = pixel.namePrefix + pixel.name
+        let fullName = (pixel.namePrefix.literal ?? "") + pixel.name
         XCTAssertEqual(fullName, expectedPrefix + "signed_in")
     }
 
@@ -220,7 +220,7 @@ final class VPNSubscriptionStatusPixelTests: XCTestCase {
             sourceObject: TestSourceObject()
         )
 
-        let fullName = pixel.namePrefix + pixel.name
+        let fullName = (pixel.namePrefix.literal ?? "") + pixel.name
         XCTAssertEqual(fullName, expectedPrefix + "vpn_feature_disabled")
     }
 

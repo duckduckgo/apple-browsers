@@ -18,6 +18,7 @@
 //
 
 import PrivacyConfig
+import FeatureFlags_iOS
 
 struct DataImportEntryPointHandler {
 

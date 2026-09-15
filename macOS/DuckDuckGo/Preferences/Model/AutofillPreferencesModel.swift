@@ -178,7 +178,7 @@ final class AutofillPreferencesModel: ObservableObject {
         hasNeverPromptWebsites = !neverPromptWebsitesManager.neverPromptWebsites.isEmpty
         setShouldShowSyncPromo()
 
-        PixelKit.fire(AutofillPixelKitEvent.autofillSettingsOpened, doNotEnforcePrefix: true)
+        PixelKit.fire(AutofillPixelKitEvent.autofillSettingsOpened)
     }
 
     private var persistor: AutofillPreferencesPersistor

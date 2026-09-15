@@ -17,7 +17,7 @@
 //
 import PixelKit
 
-public enum UpdateFlowPixels: PixelKitEvent {
+public enum UpdateFlowPixels: PixelKit.Event {
 
     /**
      * Event Trigger: Update notification is shown to user

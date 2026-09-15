@@ -11,6 +11,31 @@ disabled_rules:
   - type_body_length
   - explicit_non_final_class
 
+opt_in_rules:
+  - overridden_super_call
+
+# UITestCase.setUp() performs first-run reset and interruption monitors.
+# Subclasses that override setUp/setUpWithError without calling super skip that work.
+overridden_super_call:
+  severity: error
+  included:
+    - setUp()
+    - setUpWithError()
+
+custom_rules:
+  uitest_case_base_class:
+    name: "UI tests must subclass UITestCase"
+    regex: "(?:class|protocol)\\s+(?!UITestCase\\b)\\w+\\s*:\\s*XCTestCase\\b"
+    message: "UI tests must subclass UITestCase, not XCTestCase."
+    severity: error
+
+  uitest_use_application_setup:
+    name: "Use XCUIApplication.setUp instead of launch"
+    regex: "\\.launch\\s*\\("
+    excluded: ".*XCUIApplicationExtension\\.swift"
+    message: "Use XCUIApplication.setUp() instead of calling launch() directly. Use restart() to restart the app."
+    severity: error
+
 large_tuple:
   warning: 6
   error: 10

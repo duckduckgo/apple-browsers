@@ -378,10 +378,10 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
             self.emailManager.updateLastUseDate()
 
-            PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: pixelParameters, doNotEnforcePrefix: true)
+            PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: pixelParameters)
             NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
         } else if pixel.isCredentialsImportPromotionPixel {
-            PixelKit.fire(GeneralPixel.jsPixel(pixel), doNotEnforcePrefix: true)
+            PixelKit.fire(GeneralPixel.jsPixel(pixel))
         } else {
             var existingParameters = pixel.pixelParameters ?? [:]
             let parameters = usageProvider.formattedFillDate.flatMap {

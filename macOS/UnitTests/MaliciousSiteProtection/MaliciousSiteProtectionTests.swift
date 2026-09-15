@@ -19,7 +19,7 @@
 import Combine
 import Foundation
 import MaliciousSiteProtection
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import NetworkingTestingUtils

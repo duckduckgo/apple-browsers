@@ -46,12 +46,6 @@ WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
 # same binary that this provisioner installs.
 TRACEBOX_BIN="${TRACEBOX_BIN:-$HOME/Developer/mac-perf-runner/bin/tracebox-$TRACEBOX_VERSION}"
 
-# The tsproxy revision in crossbench's DEPS is not Python-3-compatible. Use
-# Catapult's fixed copy instead, pinned to immutable source and verified by
-# content hash so scheduled runs cannot silently pick up tip-of-tree changes.
-TSPROXY_REV="d810008022eeaefcbea50393ea5baa0930b27047"
-TSPROXY_SHA256="8380fa81c3b632aa9b83a34728b31046c53855adbf071c18a7afc2945c523c67"
-TSPROXY_URL="https://chromium.googlesource.com/catapult/+/$TSPROXY_REV/third_party/tsproxy/tsproxy.py?format=TEXT"
 TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
 
 # Non-interactive: never prompt (Homebrew honors these).
@@ -89,6 +83,9 @@ echo "brew: $(brew --version | head -1)"
 log "Python ${PYTHON_VERSION} + Poetry"
 brew list "python@${PYTHON_VERSION}" >/dev/null 2>&1 || brew install "python@${PYTHON_VERSION}"
 command -v poetry >/dev/null 2>&1 || brew install poetry
+# The GitHub CLI reads this run's metadata during result aggregation. Hosted
+# images ship it; a self-hosted runner does not.
+command -v gh >/dev/null 2>&1 || brew install gh
 PY_BIN="$(brew --prefix "python@${PYTHON_VERSION}")/bin/python${PYTHON_VERSION}"
 echo "python: $("$PY_BIN" --version)"
 echo "poetry: $(poetry --version)"

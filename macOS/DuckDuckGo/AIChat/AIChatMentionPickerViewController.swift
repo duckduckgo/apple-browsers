@@ -59,7 +59,7 @@ final class AIChatMentionPickerViewController: NSViewController {
 
     private let chromeView = NSView()
     private let backgroundView = NSVisualEffectView()
-    private let headerLabel = NSTextField(labelWithString: UserText.aiChatAttachMenuRecentTabsHeader)
+    private let headerLabel = NSTextField(labelWithString: UserText.aiChatAttachMenuTabsHeader)
     private let scrollView = NSScrollView()
     private let rowStack = HoverObservingStackView()
     private var rowViews: [AIChatMentionPickerRowView] = []

@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import Networking
 import Core
+import PixelKit
 
 extension MainViewController {
 
@@ -38,7 +39,8 @@ extension MainViewController {
         pixelParameters[PixelParameters.emailLastUsed] = emailManager.lastUseDate
         emailManager.updateLastUseDate()
 
-        Pixel.fire(pixel: .emailUserCreatedAlias, withAdditionalParameters: pixelParameters, includedParameters: [])
+        PixelKit.fire(Pixel.Event.emailUserCreatedAlias,
+                      options: PixelKit.Options(additionalParameters: pixelParameters, includeAppVersionParameter: false))
 
         let emailManager = self.emailManager
         emailManager.getAliasIfNeededAndConsume { alias, _ in
@@ -49,6 +51,7 @@ extension MainViewController {
                 }
                 let pasteBoard = UIPasteboard.general
                 pasteBoard.string = emailManager.emailAddressFor(alias)
+                self.recordNewTabPageSessionAction { $0.emailCopied() }
                 let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
                 ActionMessageView.present(message: UserText.emailBrowsingMenuAlert,
                                           presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom))

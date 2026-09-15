@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Combine
+import Common
 import Foundation
 import Navigation
 
@@ -46,6 +47,9 @@ extension HTTPSUpgradeTabExtension: NavigationResponder {
             || navigationAction.request.mainDocumentURL?.host != lastUpgradedURL?.host {
             lastUpgradedURL = nil
         }
+
+        // Don't upgrade HTTP URLs with explicit ports.
+        guard navigationAction.url.isHttp, navigationAction.url.port == nil else { return .next }
 
         guard case let .success(upgradedURL) = await httpsUpgrade.upgrade(url: navigationAction.url),
               lastUpgradedURL != upgradedURL

@@ -26,6 +26,13 @@ enum UnifiedToggleInputImageEncoder {
         let images = attachments.compactMap { attachment -> AIChatNativePrompt.NativePromptImage? in
             guard case .image(let imageAttachment) = attachment else { return nil }
 
+            if let originalData = imageAttachment.originalEncodedData, let format = imageAttachment.originalFormat {
+                return AIChatNativePrompt.NativePromptImage(
+                    data: originalData.base64EncodedString(),
+                    format: format
+                )
+            }
+
             if let jpegData = imageAttachment.image.jpegData(compressionQuality: 0.85) {
                 return AIChatNativePrompt.NativePromptImage(
                     data: jpegData.base64EncodedString(),

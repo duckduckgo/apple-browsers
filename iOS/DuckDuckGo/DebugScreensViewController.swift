@@ -64,9 +64,9 @@ struct DebugScreensView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 DebugTogglesView(model: model)
-                    .listRowBackground(Color(designSystemColor: .surface))
+                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
                 if !model.pinnedScreens.isEmpty {
                     DebugScreensListView(model: model, sectionTitle: "Pinned", screens: model.pinnedScreens)
@@ -77,7 +77,7 @@ struct DebugScreensView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
                 DebugScreensListView(model: model, sectionTitle: "Screens", screens: model.unpinnedScreens)
                 DebugScreensListView(model: model, sectionTitle: "Actions", screens: model.actions)
@@ -110,6 +110,11 @@ struct DebugScreensView: View {
                                         Text(verbatim: "Default: \(model.featureFlagDefaultValue(flag))")
                                             .font(.caption)
                                             .foregroundColor(.gray)
+                                        if flag == .promoPresentationCoordination {
+                                            Text(verbatim: "Relaunch required for changes to take effect.")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
                                     }
                                 }
                                 Button(action: {
@@ -122,7 +127,7 @@ struct DebugScreensView: View {
                             }
                         }
                     }
-                    .listRowBackground(Color(designSystemColor: .surface))
+                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 }
             }
         }
@@ -179,7 +184,7 @@ struct DebugScreensListView: View {
                     }
                 }
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
         } header: {
             Text(verbatim: sectionTitle)
         }
@@ -209,6 +214,14 @@ struct DebugTogglesView: View {
                     Text(verbatim: "Inspectable WebViews")
                 } icon: {
                     Image(systemName: "globe")
+                }
+            }
+
+            Toggle(isOn: $model.isSlowAnimationsEnabled) {
+                Label {
+                    Text(verbatim: "Slow Animations")
+                } icon: {
+                    Image(systemName: "tortoise")
                 }
             }
         }

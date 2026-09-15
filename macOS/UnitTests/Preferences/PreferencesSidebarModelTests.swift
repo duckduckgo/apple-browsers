@@ -21,11 +21,12 @@ import Common
 import ConcurrencyExtensions
 import FoundationExtensions
 import NetworkingTestingUtils
-import PersistenceTestingUtils
-import PixelKitTestingUtilities
+@_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 import PreferencesUI_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
+@_spi(Testing) import SharedTestUtilities
 import SubscriptionTestingUtilities
 import SubscriptionUI
 import XCTest
@@ -104,7 +105,16 @@ final class PreferencesSidebarModelTests: XCTestCase {
     private func PreferencesSidebarModel(loadSections: [PreferencesSection]? = nil, tabSwitcherTabs: [Tab.TabContent] = Tab.TabContent.displayableTabTypes) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
         let windowControllersManager = WindowControllersManagerMock()
         return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
-            loadSections: { _ in loadSections ?? PreferencesSection.defaultSections(includingDuckPlayer: false, includingSync: false, includingAIChat: false, includingYouTubeAdBlocking: false, subscriptionState: PreferencesSidebarSubscriptionState()) },
+            loadSections: { _ in
+                loadSections ?? PreferencesSection.defaultSections(
+                    includingDuckPlayer: false,
+                    includingSync: false,
+                    includingAIChat: false,
+                    includingYouTubeAdBlocking: false,
+                    includingWebsitePermissions: false,
+                    subscriptionState: PreferencesSidebarSubscriptionState()
+                )
+            },
             tabSwitcherTabs: tabSwitcherTabs,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
@@ -192,6 +202,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
                 includingSync: false,
                 includingAIChat: includeAIChat,
                 includingYouTubeAdBlocking: false,
+                includingWebsitePermissions: false,
                 subscriptionState: currentSubscriptionFeatures
             )
         }

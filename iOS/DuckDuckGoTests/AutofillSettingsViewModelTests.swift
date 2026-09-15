@@ -22,8 +22,7 @@ import XCTest
 import BrowserServicesKit
 import Bookmarks
 import DDGSync
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import Core
 import Common
 import FoundationExtensions

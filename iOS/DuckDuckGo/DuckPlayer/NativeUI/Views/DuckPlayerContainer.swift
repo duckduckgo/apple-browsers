@@ -27,6 +27,7 @@ public enum DuckPlayerContainer {
         static let springDuration: Double = 0.5
         static let springBounce: Double = 0.2
         static let initialOffsetValue: Double = 500.0
+        static let presentedOffset: CGFloat = 10
         static let dragThreshold: CGFloat = 50
         static let dragAreaHeight: CGFloat = 44
         static let contentTopPadding: CGFloat = 24
@@ -160,7 +161,7 @@ public enum DuckPlayerContainer {
 // MARK: - Private
 
 private func calculateSheetOffset(for visible: Bool, containerHeight: Double) -> Double {
-    visible ? 10 : containerHeight
+    visible ? Double(DuckPlayerContainer.Constants.presentedOffset) : containerHeight
 }
 
 @MainActor

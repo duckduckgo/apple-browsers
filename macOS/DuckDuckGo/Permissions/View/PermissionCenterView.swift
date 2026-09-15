@@ -56,6 +56,11 @@ struct PermissionCenterView: View {
         return PopoverWidth.base
     }
 
+    /// Whether anything follows the permission rows container, which gets a tighter bottom padding when so
+    private var displaysContentBelowPermissions: Bool {
+        viewModel.showAutoplayDisclaimer || viewModel.showReloadBanner
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header - only show if there are permission items
@@ -137,7 +142,14 @@ struct PermissionCenterView: View {
                         .stroke(Color(designSystemColor: .lines), lineWidth: 1)
                 )
                 .padding(.horizontal, 16)
-                .padding(.bottom, viewModel.showReloadBanner ? 12 : 16)
+                .padding(.bottom, displaysContentBelowPermissions ? 12 : 16)
+            }
+
+            // Autoplay disclaimer
+            if viewModel.showAutoplayDisclaimer {
+                AutoplayDiscoverabilityView(onClickSettings: viewModel.openAutoplaySettings)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, viewModel.showReloadBanner ? 12 : 16)
             }
 
             // Reload banner
@@ -150,6 +162,12 @@ struct PermissionCenterView: View {
         }
         .frame(width: popoverWidth)
         .background(Color(viewModel.backgroundColor))
+        .onHover { isHovered in
+            // Reaching the popover with the pointer counts as engaging with it: stop any pending autodismissal.
+            if isHovered {
+                viewModel.disableAutodismiss()
+            }
+        }
     }
 }
 
@@ -324,24 +342,13 @@ struct PermissionRowView: View {
             button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
 
             for decision in [PersistedPermissionDecision.ask, .allow, .deny] {
-                let item = button.menu?.addItem(withTitle: decisionDisplayText(for: decision), action: nil, keyEquivalent: "")
+                let item = button.menu?.addItem(withTitle: decision.localizedTitle, action: nil, keyEquivalent: "")
                 item?.representedObject = decision
             }
 
             return button
         }
         .fixedSize()
-    }
-
-    private func decisionDisplayText(for decision: PersistedPermissionDecision) -> String {
-        switch decision {
-        case .ask:
-            return UserText.permissionCenterAlwaysAsk
-        case .allow:
-            return UserText.permissionCenterAlwaysAllow
-        case .deny:
-            return UserText.permissionCenterNeverAllow
-        }
     }
 
     /// Whether this is a notification permission that hasn't been requested from the system yet
@@ -356,7 +363,7 @@ struct PermissionRowView: View {
             SystemPermissionWarningView(
                 prefixText: UserText.permissionCenterSystemNotificationNotDetermined,
                 linkText: UserText.permissionCenterTurnOnNotifications,
-                linkColor: .accentColor
+                linkColor: Color(designSystemColor: .accentTextPrimary)
             ) {
                 onRequestSystemPermission?()
             }
@@ -365,7 +372,7 @@ struct PermissionRowView: View {
             SystemPermissionWarningView(
                 prefixText: item.permissionType.systemPermissionDisabledText,
                 linkText: item.permissionType.systemSettingsLinkText,
-                linkColor: .accentColor,
+                linkColor: Color(designSystemColor: .accentTextPrimary),
                 linkOnNewLine: item.permissionType == .notification
             ) {
                 openSystemSettings()
@@ -653,24 +660,13 @@ struct ExternalSchemeRowView: View {
             button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
 
             for decision in [PersistedPermissionDecision.ask, .allow, .deny] {
-                let item = button.menu?.addItem(withTitle: decisionDisplayText(for: decision), action: nil, keyEquivalent: "")
+                let item = button.menu?.addItem(withTitle: decision.localizedTitle, action: nil, keyEquivalent: "")
                 item?.representedObject = decision
             }
 
             return button
         }
         .fixedSize()
-    }
-
-    private func decisionDisplayText(for decision: PersistedPermissionDecision) -> String {
-        switch decision {
-        case .ask:
-            return UserText.permissionCenterAlwaysAsk
-        case .allow:
-            return UserText.permissionCenterAlwaysAllow
-        case .deny:
-            return UserText.permissionCenterNeverAllow
-        }
     }
 }
 

@@ -101,8 +101,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         let showDeleteAllOnlyForSingleTab = Self.showDeleteAllOnlyForSingleTab(fireContext: fireContext,
                                                                                isSingleTab: isSingleTab,
                                                                                isSingleChatConfirmation: isSingleChatConfirmation,
-                                                                               tabViewModel: tabViewModel,
-                                                                               dataClearingCapability: dataClearingCapability)
+                                                                               tabViewModel: tabViewModel)
 
         self.headerTitle = Self.computeHeaderTitle(fireContext: fireContext,
                                                    isSingleChatConfirmation: isSingleChatConfirmation,
@@ -157,14 +156,13 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
 
     /// Returns `true` when only one non-Duck.ai tab is open and the standard fire button is used.
     /// In that case "Delete This Tab" is equivalent to "Delete All", so the choice is dropped and
-    /// only "Delete All" is shown. Gated behind the `fireButtonSingleTabDeleteAll` flag.
+    /// only "Delete All" is shown.
     private static func showDeleteAllOnlyForSingleTab(fireContext: FireContext,
                                                       isSingleTab: Bool,
                                                       isSingleChatConfirmation: Bool,
-                                                      tabViewModel: TabViewModel?,
-                                                      dataClearingCapability: DataClearingCapable) -> Bool {
+                                                      tabViewModel: TabViewModel?) -> Bool {
         guard case .default = fireContext else { return false }
-        guard dataClearingCapability.isSingleTabDeleteAllEnabled, isSingleTab else { return false }
+        guard isSingleTab else { return false }
         // Never override the Duck.ai single-chat confirmation.
         return !isSingleChatConfirmation && tabViewModel?.tab.isAITab != true
     }

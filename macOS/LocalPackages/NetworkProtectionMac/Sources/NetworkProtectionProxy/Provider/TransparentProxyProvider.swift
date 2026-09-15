@@ -636,7 +636,7 @@ extension TransparentProxyProvider {
         }
     }
 
-    public struct OrphanedEvent: PixelKitEvent {
+    public struct OrphanedEvent: PixelKit.Event {
         public let heartbeatAge: HeartbeatAgeBucket
         public let proxyAge: ProxyAgeBucket
 
@@ -656,7 +656,7 @@ extension TransparentProxyProvider {
         }
     }
 
-    public enum StartAttemptStep: PixelKitEvent {
+    public enum StartAttemptStep: PixelKit.Event {
         /// Attempt to start the proxy begins
         case begin
 

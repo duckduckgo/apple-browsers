@@ -28,6 +28,11 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         let delegate: any InternalPromoDelegate
         let promoType: PromoType
 
+        /// Debug "Force Show": reuses this same session machinery (timeout, eligibility retraction) so
+        /// debug behavior can't drift from a real show, but its outcome must never touch persisted
+        /// history/cooldowns
+        let isForceShow: Bool
+
         /// First-write-wins flag. Once true, ignore further results from show(), timeout, or eligibility.
         var isResultRecorded = false
 
@@ -175,7 +180,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         }
     }
 
-    /// Debug: Force-show a promo by ID, bypassing all evaluation rules. Does not affect history or cooldowns.
+    /// Debug: Force-show a promo by ID, bypassing all evaluation rules.
     /// No-op for external promos (ExternalPromoDelegate); they control their own visibility.
     func forceShow(promoId: String) {
         stateQueue.async { [weak self] in
@@ -188,11 +193,12 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
                 Logger.general.warning("PromoService: forceShow - external promos control their own visibility")
                 return
             }
-            let record = historyStore.record(for: promoId)
-            Task { @MainActor in
-                _ = await delegate.show(history: record, force: true)
-                delegate.hide()
+            guard activeSessions[promoId] == nil else {
+                Logger.general.warning("PromoService: forceShow - \(promoId) already has an active session")
+                return
             }
+            let record = historyStore.record(for: promoId)
+            performShow(promo: promo, delegate: delegate, record: record, isRestore: false, isForceShow: true)
         }
     }
 
@@ -429,24 +435,38 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             historyStore.save(record)
             notifyRecordChanged(for: promoId, record: record)
             // External visibility is not gated by checkRules; retract conflicting internal promos shown earlier.
-            hideInternalPromosConflictingWithCurrentVisibility()
-        } else if externalVisiblePromoIds.remove(promoId) != nil {
-            applyResult(delegate.resultWhenHidden, toRecordFor: promoId)
+            let hideTasks = hideInternalPromosConflictingWithCurrentVisibility()
+            Task { @MainActor in
+                for task in hideTasks {
+                    await task.value
+                }
+                delegate.promoServiceDidApplyVisibility(true)
+            }
+        } else {
+            if externalVisiblePromoIds.remove(promoId) != nil {
+                applyResult(delegate.resultWhenHidden, toRecordFor: promoId)
+            }
+            Task { @MainActor in
+                delegate.promoServiceDidApplyVisibility(false)
+            }
         }
     }
 
     /// Retracts visible internal promos that would fail `checkRules` now that an external promo may be visible.
-    private func hideInternalPromosConflictingWithCurrentVisibility() {
+    private func hideInternalPromosConflictingWithCurrentVisibility() -> [Task<Void, Never>] {
         dispatchPrecondition(condition: .onQueue(stateQueue))
+        var hideTasks: [Task<Void, Never>] = []
         let visiblePromos = Array(activeSessions.keys)
         for promoID in visiblePromos {
             guard activeSessions[promoID] != nil,
                   let promo = promos.first(where: { $0.id == promoID }),
                   promo.delegate is InternalPromoDelegate else { continue }
-            if !checkRules(for: promo) {
-                recordResultAndCleanup(promoId: promoID, result: .noChange)
+            if !checkRules(for: promo),
+               let hideTask = recordResultAndCleanup(promoId: promoID, result: .noChange) {
+                hideTasks.append(hideTask)
             }
         }
+        return hideTasks
     }
 
     /// Processes buffered triggers after all delegates are registered, if the deferral window has ended,
@@ -526,15 +546,18 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         let coexisting = promo.coexistingPromoIDs
 
         for otherId in visibleIds where otherId != promoId {
-            guard let other = promos.first(where: { $0.id == otherId }) else { continue }
+            // Global rules only apply between medium+ promos. A visible low-severity promo must not
+            // block anything; the early return above covers a low-severity promo being blocked.
+            guard let other = promos.first(where: { $0.id == otherId }),
+                  other.promoType.severity >= .medium else { continue }
+
+            // Coexistence has to be declared by both promos, and is deliberately non-transitive:
+            // it's evaluated per pair, so A<->B plus B<->C still leaves A and C blocking each other.
             let mutuallyCoexisting = coexisting.contains(otherId) && other.coexistingPromoIDs.contains(promoId)
+            guard !mutuallyCoexisting else { continue }
 
-            let contextConflict = !mutuallyCoexisting && (
-                context == .global || other.context == .global || context == other.context
-            )
-            if contextConflict { return false }
-
-            if severity >= .medium && other.promoType.severity >= .medium && !mutuallyCoexisting {
+            // One medium+ promo per context, and `.global` is exclusive with every other context.
+            if context == .global || other.context == .global || context == other.context {
                 return false
             }
         }
@@ -554,15 +577,17 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
 
     // MARK: - Show / Session Management
 
-    private func performShow(promo: Promo, delegate: InternalPromoDelegate, record: PromoHistoryRecord, isRestore: Bool = false) {
+    private func performShow(promo: Promo, delegate: InternalPromoDelegate, record: PromoHistoryRecord, isRestore: Bool = false, isForceShow: Bool = false) {
         dispatchPrecondition(condition: .onQueue(stateQueue))
         let promoId = promo.id
         var recordToUse = record
         if !isRestore {
             recordToUse.lastShown = currentDate
         }
-        historyStore.save(recordToUse)
-        notifyRecordChanged(for: promoId, record: recordToUse)
+        if !isForceShow {
+            historyStore.save(recordToUse)
+            notifyRecordChanged(for: promoId, record: recordToUse)
+        }
 
         let eligibilityCancellable = delegate.isEligiblePublisher
             .dropFirst()
@@ -586,7 +611,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
 
         let showTask = Task { @MainActor [weak self] in
             guard !Task.isCancelled else { return }
-            let result = await delegate.show(history: recordToUse, force: false)
+            let result = await delegate.show(history: recordToUse, force: isForceShow)
             self?.stateQueue.async { [weak self] in
                 self?.recordResultAndCleanup(promoId: promoId, result: result)
             }
@@ -596,6 +621,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             promoId: promoId,
             delegate: delegate,
             promoType: promo.promoType,
+            isForceShow: isForceShow,
             isResultRecorded: false,
             showTask: showTask,
             timeout: timeout,
@@ -618,15 +644,16 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         recordResultAndCleanup(promoId: promoId, result: .noChange)
     }
 
-    private func recordResultAndCleanup(promoId: String, result: PromoResult) {
+    @discardableResult
+    private func recordResultAndCleanup(promoId: String, result: PromoResult) -> Task<Void, Never>? {
         guard isOnStateQueue else {
             stateQueue.async { [weak self] in
                 self?.recordResultAndCleanup(promoId: promoId, result: result)
             }
-            return
+            return nil
         }
-        guard var session = activeSessions[promoId] else { return }
-        if session.isResultRecorded { return }
+        guard var session = activeSessions[promoId] else { return nil }
+        if session.isResultRecorded { return nil }
 
         session.isResultRecorded = true
         activeSessions[promoId] = session
@@ -638,12 +665,14 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         session.eligibilityCancellable?.cancel()
         session.eligibilityCancellable = nil
 
-        applyResult(result, toRecordFor: promoId)
+        if !session.isForceShow {
+            applyResult(result, toRecordFor: promoId)
+        }
 
         activeSessions.removeValue(forKey: promoId)
 
         let delegate = session.delegate
-        Task { @MainActor in
+        return Task { @MainActor in
             delegate.hide()
         }
     }
@@ -670,6 +699,9 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             record.timesDismissed += 1
             record.lastDismissed = currentDate
             record.nextEligibleDate = currentDate.addingTimeInterval(interval)
+        case .retired:
+            record.nextEligibleDate = .distantFuture
+            record.lastShown = nil // Ensure promo is not restored if it was retired before app restart
         case .noChange:
             record.lastShown = nil // Ensure promo is not restored if it was retracted before app restart
         }

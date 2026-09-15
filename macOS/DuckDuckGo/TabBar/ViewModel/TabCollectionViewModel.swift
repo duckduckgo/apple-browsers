@@ -20,7 +20,7 @@ import AppKit
 import Combine
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import History
 import os.log
@@ -446,10 +446,11 @@ final class TabCollectionViewModel: NSObject {
         tabCollection.append(tab: tab)
         handleNewTabPageSideEffects(for: tab)
         let insertionIndex = tabCollection.tabs.indices.index(before: tabCollection.tabs.endIndex)
+        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
+        delegate?.tabCollectionViewModelDidAppend(self, selected: selected)
         if selected {
             selectUnpinnedTab(at: insertionIndex, forceChange: forceChange)
         }
-        delegate?.tabCollectionViewModelDidAppend(self, selected: selected)
         return insertionIndex
     }
 
@@ -496,6 +497,7 @@ final class TabCollectionViewModel: NSObject {
             let newSelectionIndex = tabCollection.tabs.count - 1
             selectUnpinnedTab(at: newSelectionIndex)
         }
+        // The delegate reloads the whole collection and needs the final selection for layout.
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
@@ -537,10 +539,16 @@ final class TabCollectionViewModel: NSObject {
         }()
 
         tabCollection.insert(tabToInsert, at: index.item)
+        // Notify the delegate before updating selection: setting `selectionIndex` publishes
+        // `selectedTabViewModel`, and a subscriber can synchronously insert another tab (a
+        // queued pop-up arriving at `createdChild` while the web view is attached on
+        // selection) while the collection view still holds the pre-insert item count,
+        // raising NSInternalInconsistencyException. The tab bar sizes the incoming tab from
+        // `index`/`selected` — see `TabBarViewController.incomingSelectionIndex`.
+        delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
         if selected {
             select(at: index)
         }
-        delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
     }
 
     func insert(_ tab: Tab, at index: TabIndex, selected: Bool = true) {
@@ -626,6 +634,14 @@ final class TabCollectionViewModel: NSObject {
                 remove(at: index)
             }
         }
+    }
+
+    func close(at index: TabIndex, forceChange: Bool = false) {
+        guard changesEnabled || (forceChange && index.isUnpinnedTab), let tab = tab(at: index) else { return }
+        if case .loaded(let tab) = tab {
+            tab.onClose?()
+        }
+        remove(at: index, forceChange: forceChange)
     }
 
     func remove(at index: TabIndex, published: Bool = true, forceChange: Bool = false) {
@@ -745,13 +761,26 @@ final class TabCollectionViewModel: NSObject {
 
             didRemoveTab(movedTab, at: fromIndex, withParent: parentTab)
 
-            otherViewModel.selectWithoutResettingState(at: toIndex)
+            // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
             otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
+            otherViewModel.selectWithoutResettingState(at: toIndex)
+        }
+    }
+
+    /// Notifies only tabs being closed, preserving the snapshot during callbacks.
+    private func notifyTabsWillClose(keepingIndices keptIndices: Set<Int> = []) {
+        let removed = tabCollection.tabs.enumerated()
+            .filter { !keptIndices.contains($0.offset) }
+            .map(\.element)
+        for case .loaded(let tab) in removed {
+            tab.onClose?()
         }
     }
 
     func removeAllTabs(except exceptionIndex: Int? = nil, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
+
+        notifyTabsWillClose(keepingIndices: exceptionIndex.map { [$0] } ?? [])
 
         if let exceptionTab = exceptionIndex.flatMap({ tabCollection.tabs[$0] }) {
             tabCollection.removeAll(andAppend: exceptionTab)
@@ -774,6 +803,8 @@ final class TabCollectionViewModel: NSObject {
     func removeAllTabs(andAppend tab: Tab, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
 
+        notifyTabsWillClose()
+
         shouldReturnToPreviousActiveTab = true
         tabCollection.removeAll(andAppend: tab)
         handleNewTabPageSideEffects(for: tab)
@@ -784,6 +815,7 @@ final class TabCollectionViewModel: NSObject {
     func removeTabs(before index: Int) {
         guard changesEnabled else { return }
 
+        notifyTabsWillClose(keepingIndices: Set(index..<tabCollection.tabs.count))
         tabCollection.removeTabs(before: index)
 
         if let currentSelection = selectionIndex, currentSelection.isUnpinnedTab {
@@ -800,6 +832,7 @@ final class TabCollectionViewModel: NSObject {
     func removeTabs(after index: Int) {
         guard changesEnabled else { return }
 
+        notifyTabsWillClose(keepingIndices: Set(0...index))
         tabCollection.removeTabs(after: index)
 
         if let currentSelection = selectionIndex, currentSelection.isUnpinnedTab, !tabCollection.tabs.indices.contains(currentSelection.item) {
@@ -809,7 +842,7 @@ final class TabCollectionViewModel: NSObject {
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
-    func removeSelected(forceChange: Bool = false) -> Result<Void, Error> {
+    func closeSelected(forceChange: Bool = false) -> Result<Void, Error> {
         guard changesEnabled || forceChange else { return .success(()) }
 
         guard let selectionIndex else {
@@ -817,7 +850,7 @@ final class TabCollectionViewModel: NSObject {
             return .failure(TabCollectionViewModelError.noTabSelected)
         }
 
-        remove(at: selectionIndex, forceChange: forceChange)
+        close(at: selectionIndex, forceChange: forceChange)
         return .success(())
     }
 
@@ -848,9 +881,9 @@ final class TabCollectionViewModel: NSObject {
         let newIndex = tabIndex.makeNext()
 
         tabCollection(for: tabIndex)?.insert(tabCopy, at: newIndex.item)
-        select(at: newIndex)
-
+        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
         delegate?.tabCollectionViewModelDidInsert(self, at: newIndex, selected: true)
+        select(at: newIndex)
     }
 
     func pinTab(at index: Int) {

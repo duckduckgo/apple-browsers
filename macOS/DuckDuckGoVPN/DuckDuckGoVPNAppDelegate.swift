@@ -23,7 +23,7 @@ import Combine
 import Common
 import Configuration
 import DesignResourcesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import LoginItems
 import Networking
 import NetworkExtension
@@ -32,6 +32,7 @@ import NetworkProtectionProxy
 import NetworkProtectionUI
 import os.log
 import PixelKit
+import WideEvent
 import ServiceManagement
 import Subscription
 import SwiftUI

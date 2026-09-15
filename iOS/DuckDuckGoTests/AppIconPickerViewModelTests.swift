@@ -41,7 +41,7 @@ final class AppIconPickerViewModelTests: XCTestCase {
     @MainActor
     func testWhenItemsIsCalledThenIconsAreReturned() {
         // GIVEN
-        let expectedIcons: [AppIcon] = [.red, .pink, .yellow, .green, .blue, .purple, .black]
+        let expectedIcons: [AppIcon] = [.red, .pink, .purple, .yellow, .green, .blue, .black, .white]
 
         // WHEN
         let result = sut.items

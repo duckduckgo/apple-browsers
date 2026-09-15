@@ -257,7 +257,6 @@ private final class StubSparkleUpdateController: NSObject, SparkleUpdateControll
     var notificationDotPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var clearsNotificationDotOnMenuOpen = true
     var lastUpdateCheckDate: Date?
-    var lastUpdateNotificationShownDate = Date.distantPast
 
     @Published var updateProgress: UpdateCycleProgress = .updateCycleNotStarted
     var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { $updateProgress }
@@ -272,14 +271,11 @@ private final class StubSparkleUpdateController: NSObject, SparkleUpdateControll
 }
 
 private final class CapturingPixelFiring: PixelFiring {
-    var firedEvents: [PixelKitEvent] = []
+    var firedEvents: [PixelKit.Event] = []
 
-    func fire(_ event: PixelKitEvent,
+    func fire(event: PixelKit.Event,
               frequency: PixelKit.Frequency,
-              includeAppVersionParameter: Bool,
-              withAdditionalParameters: [String: String]?,
-              withNamePrefix: String?,
-              doNotEnforcePrefix: Bool,
+              options: PixelKit.Options,
               onComplete: @escaping PixelKit.CompletionBlock) {
         firedEvents.append(event)
     }

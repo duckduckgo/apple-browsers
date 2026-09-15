@@ -449,6 +449,7 @@ public extension DesignSystemImages {
                     ? .init(resource: .feedbackColor24)
                     : .init(resource: .feedbackColor24Legacy)
             }
+            public static var filePDF: DesignSystemImage { .init(resource: .filePDFColor24) }
             public static var fire: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .fireColor24)
@@ -486,7 +487,7 @@ public extension DesignSystemImages {
                     ? .init(resource: .importColor24)
                     : .init(resource: .importColor24Legacy)
             }
-            public static var info: DesignSystemImage { .init(resource: .infoRecolorable24)}
+            public static var infoFeedback: DesignSystemImage { .init(resource: .infoFeedbackColor24) }
             public static var key: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .keyColor24)
@@ -529,6 +530,7 @@ public extension DesignSystemImages {
             public static var privacyCheckGreyscale: DesignSystemImage { .init(resource: .privacyCheckGreyscaleColor24) }
             public static var profile: DesignSystemImage { .init(resource: .profileColor24) }
             public static var rocket: DesignSystemImage { .init(resource: .rocketColor24) }
+            public static var searchAssist: DesignSystemImage { .init(resource: .searchAssistColor24) }
             public static var searchAssistStrikethrough: DesignSystemImage { .init(resource: .searchAssistStrikethroughColor24) }
             public static var sessionRestore: DesignSystemImage { .init(resource: .sessionRestoreColor24) }
             public static var settings: DesignSystemImage {
@@ -577,13 +579,20 @@ public extension DesignSystemImages {
                     : .init(resource: .vpnColor24Legacy)
             }
             public static var vpnGrayscale: DesignSystemImage { .init(resource: .vpnGrayscaleColor24) }
+            public static var websitePermissions: DesignSystemImage { .init(resource: .websitePermissionsColor24) }
         }
 
         public enum Size32 {
             public static var duckDuckAI: DesignSystemImage { .init(resource: .duckAIColor32) }
             public static var duckDuckGo: DesignSystemImage { .init(resource: .duckDuckGoColor32) }
-            public static var document: DesignSystemImage { .init(resource: .documentColor32) }
+            public static var document: DesignSystemImage { .init(resource: .documentColor32Legacy) }
             public static var shieldUtility: DesignSystemImage { .init(resource: .shieldUtilityColor32) }
+        }
+
+        public enum Size56 {
+            public static var fileCSV: DesignSystemImage { .init(resource: .fileCsv56) }
+            public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag56) }
+            public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop56) }
         }
 
         public enum Size72 {
@@ -650,8 +659,8 @@ public extension DesignSystemImages {
                     ? .init(resource: .success128)
                     : .init(resource: .success128Legacy)
             }
-            public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag128) }
-            public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop128) }
+            public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag128Legacy) }
+            public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop128Legacy) }
             public static var fileIssue: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .fileIssue128)

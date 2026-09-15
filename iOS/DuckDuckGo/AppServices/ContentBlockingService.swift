@@ -64,8 +64,6 @@ final class ContentBlockingService {
                                                                            webExtensionAvailability: webExtensionAvailability)
 
         updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies,
-                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                                           keyValueStore: keyValueStore,
-                                           adBlockingAvailability: adBlockingAvailability)
+                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler)
     }
 }

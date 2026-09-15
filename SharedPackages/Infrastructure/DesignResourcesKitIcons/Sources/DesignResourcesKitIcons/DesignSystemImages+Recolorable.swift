@@ -20,6 +20,7 @@ public extension DesignSystemImages {
     enum Recolorable {
         public enum Size24 {
             public static var check: DesignSystemImage { .init(resource: .checkRecolorable24) }
+            public static var info: DesignSystemImage { .init(resource: .infoRecolorable24) }
         }
     }
 }

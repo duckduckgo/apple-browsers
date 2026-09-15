@@ -18,9 +18,8 @@
 
 import Combine
 import DDGSync
-import FeatureFlags
-import Persistence
-import PersistenceTestingUtils
+import FeatureFlags_macOS
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser

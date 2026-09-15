@@ -21,6 +21,7 @@ import Foundation
 import Core
 import Common
 import AIChat
+import FeatureFlags_iOS
 
 extension FeatureFlag.SearchTokenExperimentCohort {
     var paramValue: String {
@@ -47,12 +48,9 @@ enum SerpSearchTokenInterceptor {
     }
 
     /// Returns a copy of `request` with the experiment signals applied, or `nil` when the
-    /// request is not a SERP navigation or already carries every signal it needs (caller then
-    /// lets the navigation proceed unchanged).
-    ///
-    /// - Parameters:
-    ///   - isTreatment: `true` = treatment arm, `false` = control. Both arms get the param.
-    ///   - token: live search token; used only for the treatment header. `nil`/expired → header skipped.
+    /// request is not a SERP navigation or already carries every signal it needs.
+    /// - cohort `.treatment`/`.control` — both arms get the `dindexexp` param.
+    /// - token: live search token; added as the `X-DDG-Search-Token` header for treatment only. `nil`/expired → header skipped.
     static func signalledRequest(for request: URLRequest,
                                  cohort: FeatureFlag.SearchTokenExperimentCohort,
                                  token: String?) -> URLRequest? {
@@ -69,17 +67,16 @@ enum SerpSearchTokenInterceptor {
             changed = true
         }
 
-        // X-DDG-Search-Token — treatment only, requires a live token. (Inert until the token is wired in.)
+        // X-DDG-Search-Token — treatment only, requires a live token.
         if cohort == .treatment, let token, request.value(forHTTPHeaderField: tokenHeader) == nil {
             mutated.setValue(token, forHTTPHeaderField: tokenHeader)
             changed = true
         }
-        
+
         if changed {
             mutated.attribution = .user
             return mutated
         }
-
         return nil
     }
 }

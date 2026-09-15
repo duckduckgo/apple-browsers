@@ -42,28 +42,75 @@ TranslationIssue = Tuple[str, str, Set[str], str]
 # .xcstrings (String Catalog) Handling
 # =============================================================================
 
+def flatten_localization(entry: Dict, prefix: str = "") -> Dict[str, Dict]:
+    """
+    Flatten one .xcstrings localization entry to {subpath: stringUnit}.
+
+    Recurses through stringUnit, variations (plural/device), and substitutions
+    (named plural arguments, which themselves nest variations), so every
+    translatable leaf is captured. A plural string keeps one stringUnit per
+    category instead of a single one at the top level.
+    """
+    leaves: Dict[str, Dict] = {}
+    if not isinstance(entry, dict):
+        return leaves
+    string_unit = entry.get("stringUnit")
+    if isinstance(string_unit, dict):
+        leaves[prefix] = string_unit
+    variations = entry.get("variations")
+    if isinstance(variations, dict):
+        for kind, cases in variations.items():
+            if not isinstance(cases, dict):
+                continue
+            for case_name, case_entry in cases.items():
+                key = f"{prefix}.{kind}.{case_name}" if prefix else f"{kind}.{case_name}"
+                leaves.update(flatten_localization(case_entry, key))
+    substitutions = entry.get("substitutions")
+    if isinstance(substitutions, dict):
+        for name, sub_entry in substitutions.items():
+            key = f"{prefix}.sub:{name}" if prefix else f"sub:{name}"
+            leaves.update(flatten_localization(sub_entry, key))
+    return leaves
+
 def get_string_unit_value(string_entry: Dict) -> str:
-    """Extract source string value from a .xcstrings string entry."""
+    """
+    Extract the source string value from a .xcstrings string entry.
+
+    The value of every leaf is included, so a change to one plural category
+    counts as a change to the source string.
+    """
     if not isinstance(string_entry, dict):
         return ""
-    # The source string is stored in localizations['en']['stringUnit']['value']
+    # The source string is stored in localizations['en']
     localizations = string_entry.get("localizations", {})
-    if isinstance(localizations, dict):
-        en_localization = localizations.get("en", {})
-        if isinstance(en_localization, dict):
-            string_unit = en_localization.get("stringUnit", {})
-            if isinstance(string_unit, dict):
-                return string_unit.get("value", "")
-    return ""
+    if not isinstance(localizations, dict):
+        return ""
+    leaves = flatten_localization(localizations.get("en", {}))
+    if not leaves:
+        return ""
+    return "\n".join(
+        f"{subpath}={leaves[subpath].get('value', '')}" for subpath in sorted(leaves)
+    )
 
 def get_string_unit_state(localization_entry: Dict) -> Optional[str]:
-    """Extract state from a .xcstrings localization entry."""
-    if not isinstance(localization_entry, dict):
+    """
+    Extract the effective state from a .xcstrings localization entry.
+
+    A plural string holds one state per category, so the leaf states are
+    combined into the least complete one: an untranslated category outranks
+    needs_review, and needs_review outranks translated. Returns None when the
+    entry holds no leaf at all.
+    """
+    leaves = flatten_localization(localization_entry)
+    if not leaves:
         return None
-    string_unit = localization_entry.get("stringUnit", {})
-    if isinstance(string_unit, dict):
-        return string_unit.get("state")
-    return None
+    states = [leaves[subpath].get("state") for subpath in sorted(leaves)]
+    for state in states:
+        if state != "translated" and state != "needs_review":
+            return state
+    if "needs_review" in states:
+        return "needs_review"
+    return "translated"
 
 def get_changed_string_keys(old_data: Dict, new_data: Dict) -> Set[str]:
     """Get keys that have changed in new_data compared to old_data."""

@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import Core
 import Subscription
+import PixelKit
 
 /// Coordinator for the Win-back offer.
 /// 
@@ -55,7 +56,7 @@ final class WinBackOfferCoordinator {
 
     init(
         visibilityManager: WinBackOfferVisibilityManaging,
-        pixelHandler: @escaping (Pixel.Event) -> Void = { Pixel.fire(pixel: $0) },
+        pixelHandler: @escaping (Pixel.Event) -> Void = { PixelKit.fire($0) },
         isOnboardingCompleted: @escaping () -> Bool
     ) {
         self.visibilityManager = visibilityManager

@@ -32,6 +32,8 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
       "catalog": {
         "summarize-page": { "label": "Summarize", "icon": "summary", "prompt": "Summarize this page." },
         "translate-page": { "label": "Translate", "icon": "translate", "prompt": "Translate into {language}.", "condition": "differentLanguage" },
+        "summarize-selection": { "label": "Summarize selection", "icon": "summary", "prompt": "Summarize this selection." },
+        "translate-selection": { "label": "Translate selection", "icon": "translate", "prompt": "Translate selection into {language}.", "condition": "differentLanguage" },
         "recipe-a": { "label": "Shopping list", "prompt": "Make a list." },
         "recipe-b": { "label": "Nutrition", "prompt": "Estimate nutrition." },
         "recipe-c": { "label": "Scale", "prompt": "Scale the recipe." },
@@ -85,8 +87,12 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         AIChatPageTypeSignals(jsonLdType: jsonLd, ogType: ogType, lang: lang)
     }
 
-    private func input(_ signals: AIChatPageTypeSignals?, url: String? = nil, uiLocale: String = "en_US") -> ResolvePageSuggestionsInput {
-        ResolvePageSuggestionsInput(pageTypeSignals: signals, url: url, uiLocale: uiLocale)
+    private func input(_ signals: AIChatPageTypeSignals?,
+                       url: String? = nil,
+                       uiLocale: String = "en_US",
+                       scope: ResolvePageSuggestionsInput.Scope = .page,
+                       isDocument: Bool = false) -> ResolvePageSuggestionsInput {
+        ResolvePageSuggestionsInput(pageTypeSignals: signals, url: url, uiLocale: uiLocale, scope: scope, isDocument: isDocument)
     }
 
     private func resolvedIDs(_ input: ResolvePageSuggestionsInput, _ catalog: SuggestionCatalog) -> [String] {
@@ -364,5 +370,78 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         let provider = DefaultContextualSuggestedPromptsProvider(catalog: catalog)
         let result = await provider.resolveSuggestions(input(signals(jsonLd: ["Recipe"], lang: "en")))
         XCTAssertEqual(result.suggestions.map(\.id), ["recipe-a", "recipe-b", "recipe-c"])
+    }
+
+    // MARK: - Selection scope
+
+    func testSelectionScopeOffersTheSelectionPairAndNoPageSuggestions() throws {
+        let ids = resolvedIDs(input(signals(jsonLd: ["Recipe"], lang: "fr"), scope: .selection), try standardCatalog())
+
+        XCTAssertEqual(ids, ["summarize-selection", "translate-selection"])
+    }
+
+    func testSelectionScopeDropsTranslateWhenThePageIsAlreadyInTheUILanguage() throws {
+        let ids = resolvedIDs(input(signals(lang: "en"), uiLocale: "en_US", scope: .selection), try standardCatalog())
+
+        XCTAssertEqual(ids, ["summarize-selection"])
+    }
+
+    func testSelectionScopeIsNeverSmart() throws {
+        let result = ContextualSuggestionsMatcher.resolve(
+            input(signals(jsonLd: ["Recipe"], lang: "fr"), scope: .selection),
+            catalog: try standardCatalog()
+        )
+
+        XCTAssertFalse(result.isSmart)
+    }
+
+    /// Adding the two ids to the catalog must not leak them into the page-scoped sets.
+    func testPageScopeNeverOffersTheSelectionSuggestions() throws {
+        let catalog = try standardCatalog()
+        let scenarios = [
+            input(nil, uiLocale: "en_US"),
+            input(signals(lang: "fr")),
+            input(signals(jsonLd: ["Recipe"], lang: "fr")),
+            input(signals(jsonLd: ["Article"], lang: "fr")),
+            input(signals(ogType: "video", lang: "fr"))
+        ]
+
+        for scenario in scenarios {
+            let ids = resolvedIDs(scenario, catalog)
+            XCTAssertFalse(ids.contains("summarize-selection"))
+            XCTAssertFalse(ids.contains("translate-selection"))
+        }
+    }
+
+    // MARK: - Document copy
+
+    func testDocumentContextRewordsSummarizeWithoutChangingWhichSuggestionsAreOffered() throws {
+        let page = ContextualSuggestionsMatcher.resolve(input(signals(lang: "fr"), uiLocale: "en_US"), catalog: try standardCatalog())
+        let document = ContextualSuggestionsMatcher.resolve(input(signals(lang: "fr"), uiLocale: "en_US", isDocument: true), catalog: try standardCatalog())
+
+        XCTAssertEqual(document.suggestions.map(\.id), page.suggestions.map(\.id))
+
+        let summarize = try XCTUnwrap(document.suggestions.first { $0.id == "summarize-page" })
+        XCTAssertEqual(summarize.label, UserText.aiChatSuggestionSummarizeDocumentLabel)
+        XCTAssertEqual(summarize.prompt, UserText.aiChatSuggestionSummarizeDocumentPrompt)
+
+        // The rest of the set is untouched: only summarize is page-vs-document specific.
+        let translate = try XCTUnwrap(document.suggestions.first { $0.id == "translate-page" })
+        XCTAssertEqual(translate.label, UserText.aiChatSuggestionTranslatePageLabel)
+    }
+
+    func testPageContextKeepsThePageWordingForSummarize() throws {
+        let result = ContextualSuggestionsMatcher.resolve(input(nil, uiLocale: "en_US"), catalog: try standardCatalog())
+
+        let summarize = try XCTUnwrap(result.suggestions.first { $0.id == "summarize-page" })
+        XCTAssertEqual(summarize.label, UserText.aiChatSuggestionSummarizePageLabel)
+        XCTAssertEqual(summarize.prompt, UserText.aiChatSuggestionSummarizePagePrompt)
+    }
+
+    /// A document with a text selection attached is asking about the selection, not the document.
+    func testSelectionScopeIsUnaffectedByDocumentContext() throws {
+        let ids = resolvedIDs(input(signals(lang: "fr"), scope: .selection, isDocument: true), try standardCatalog())
+
+        XCTAssertEqual(ids, ["summarize-selection", "translate-selection"])
     }
 }

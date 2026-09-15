@@ -26,10 +26,42 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     private(set) var capturedPresenter: ModalPromptPresenter?
     private(set) var callCount = 0
     var didPresentModalPromptThisSession = false
+    private(set) var capturedModalLease: PromoQueueModalLease?
+    private(set) var reconcilePresentedModalCallCount = 0
+    var onPresentCoordinated: (@MainActor () -> Void)?
+    var onReconcilePresentedModal: (@MainActor () -> Void)?
+    var redeemDeferredModalResult = false
+    private(set) var redeemDeferredModalCallCount = 0
+    private(set) var releaseDeferredModalCallCount = 0
 
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
         didCallPresentModalPromptIfNeeded = true
         capturedPresenter = presenter
         callCount += 1
+    }
+
+    func presentModalPromptIfNeeded(
+        from presenter: ModalPromptPresenter,
+        with lease: PromoQueueModalLease
+    ) {
+        didCallPresentModalPromptIfNeeded = true
+        capturedPresenter = presenter
+        capturedModalLease = lease
+        callCount += 1
+        onPresentCoordinated?()
+    }
+
+    func reconcilePresentedModal() {
+        reconcilePresentedModalCallCount += 1
+        onReconcilePresentedModal?()
+    }
+
+    func redeemDeferredModal() -> Bool {
+        redeemDeferredModalCallCount += 1
+        return redeemDeferredModalResult
+    }
+
+    func releaseDeferredModal() {
+        releaseDeferredModalCallCount += 1
     }
 }

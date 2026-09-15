@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 import Swifter
 
 /**
@@ -30,6 +31,10 @@ import Swifter
 
  **/
 
+extension Logger {
+    static let testsServer = Logger(subsystem: "tests-server", category: "HTTP")
+}
+
 let server = HttpServer()
 
 private func parseSizeString(_ sizeString: String) -> Int64? {
@@ -37,9 +42,10 @@ private func parseSizeString(_ sizeString: String) -> Int64? {
     // Examples: 512, 100KB, 1MB, 500MB, 5GB
     let trimmed = sizeString.trimmingCharacters(in: .whitespacesAndNewlines)
     let pattern = "^([0-9]+)([KkMmGg][Bb])?$"
-    guard let regex = try? NSRegularExpression(pattern: pattern),
-          let match = regex.firstMatch(in: trimmed, range: NSRange(location: 0, length: trimmed.utf16.count))
-    else { return nil }
+    let regex = (try? NSRegularExpression(pattern: pattern))!
+    guard let match = regex.firstMatch(in: trimmed, range: NSRange(location: 0, length: trimmed.utf16.count)) else {
+        return nil
+    }
 
     func substring(_ range: NSRange) -> String? {
         guard range.location != NSNotFound,
@@ -74,13 +80,96 @@ private func httpDateString(_ date: Date) -> String {
     return fmt.string(from: date)
 }
 
+/// Formats a dictionary for os.Logger. Long `data` values are truncated so HTML/base64 bodies don't flood CI logs.
+private func descriptionForLog(_ dict: [String: String]) -> String {
+    dict.sorted { $0.key < $1.key }.map { key, value in
+        if key == "data", value.count > 120 {
+            return "\(key)=\(value.prefix(120))…(\(value.count) chars)"
+        }
+        return "\(key)=\(value)"
+    }.joined(separator: " ")
+}
+
+private func isDirectoryAt(_ url: URL) -> Bool {
+    do {
+        return try url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory ?? false
+    } catch {
+        Logger.testsServer.error("🔴 failed to read isDirectory for \(url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        return false
+    }
+}
+
+private func removeItemAt(_ url: URL) -> Bool {
+    do {
+        try FileManager.default.removeItem(at: url)
+        return true
+    } catch {
+        Logger.testsServer.error("🔴 failed to delete \(url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        return false
+    }
+}
+
+private func writeResponse(_ writer: HttpResponseBodyWriter, data: Data, context: String) {
+    do {
+        try writer.write(data)
+    } catch {
+        Logger.testsServer.error("🔴 failed to write \(context, privacy: .public): \(error.localizedDescription, privacy: .public)")
+    }
+}
+
+/// Kept alive so GCD signal sources are not deallocated while the server runs.
+private var terminationSignalSources: [any DispatchSourceSignal] = []
+
+private func signalName(_ sig: Int32) -> String {
+    switch sig {
+    case SIGTERM: return "SIGTERM"
+    case SIGINT: return "SIGINT"
+    case SIGHUP: return "SIGHUP"
+    case SIGQUIT: return "SIGQUIT"
+    default: return "signal \(sig)"
+    }
+}
+
+private let logTestsServerAtexit: @convention(c) () -> Void = {
+    let pid = ProcessInfo.processInfo.processIdentifier
+    Logger.testsServer.error("🔴 tests-server exiting (atexit) pid=\(pid, privacy: .public)")
+}
+
+private func installProcessDeathLogging() {
+    // Client disconnect mid-write would otherwise kill the process with an unlogged SIGPIPE.
+    signal(SIGPIPE, SIG_IGN)
+    Logger.testsServer.info("SIGPIPE ignored; write failures are logged instead")
+
+    atexit(logTestsServerAtexit)
+
+    NSSetUncaughtExceptionHandler { exception in
+        let reason = exception.reason ?? ""
+        Logger.testsServer.error(
+            "🔴 uncaught exception \(exception.name.rawValue, privacy: .public): \(reason, privacy: .public)")
+    }
+
+    // DispatchSource is used instead of a C signal handler so Logger (not async-signal-safe) can run.
+    // SIGKILL and crashes (SIGSEGV/SIGBUS) cannot be caught.
+    for sig in [SIGTERM, SIGINT, SIGHUP, SIGQUIT] {
+        signal(sig, SIG_IGN)
+        let source = DispatchSource.makeSignalSource(signal: sig, queue: .main)
+        let name = signalName(sig)
+        source.setEventHandler {
+            let pid = ProcessInfo.processInfo.processIdentifier
+            Logger.testsServer.error("🔴 tests-server received \(name, privacy: .public) pid=\(pid, privacy: .public)")
+            source.cancel()
+            exit(128 + sig)
+        }
+        source.resume()
+        terminationSignalSources.append(source)
+    }
+}
+
 // swiftlint:disable:next opening_brace
 server.middleware = [{ request in
     let params = request.queryParams.reduce(into: [:]) { $0[$1.0] = $1.1.removingPercentEncoding }
-    print(request.method, request.path, params)
-    defer {
-        print("\n")
-    }
+    let paramsDescription = descriptionForLog(params)
+    Logger.testsServer.info("request \(request.method, privacy: .public) \(request.path, privacy: .public) \(paramsDescription, privacy: .public)")
 
     let status = params["status"].flatMap(Int.init) ?? 200
     let reason = params["reason"] ?? "OK"
@@ -88,51 +177,71 @@ server.middleware = [{ request in
     // Handle file deletion requests
     if let filesToDelete = params["deleteFiles"] {
         let paths = filesToDelete.components(separatedBy: ",")
+        Logger.testsServer.info("deleteFiles: \(paths.count, privacy: .public) path(s)")
         var results: [(path: String, success: Bool)] = []
 
         // First try to delete all files
         for path in paths {
             let url = URL(fileURLWithPath: path)
-            let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+            let isDirectory = isDirectoryAt(url)
 
             // Skip directories on first pass
             if !isDirectory {
-                let success = (try? FileManager.default.removeItem(at: url)) != nil
+                let success = removeItemAt(url)
+                if success {
+                    Logger.testsServer.info("deleted file \(path, privacy: .public)")
+                }
                 results.append((path: path, success: success))
+            } else {
+                Logger.testsServer.info("delete skip directory on first pass \(path, privacy: .public)")
             }
         }
 
         // Then try to delete any empty directories
         for path in paths {
             let url = URL(fileURLWithPath: path)
-            let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+            guard isDirectoryAt(url) else { continue }
 
-            if isDirectory {
-                // Only delete if empty
-                if let contents = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil),
-                   contents.isEmpty {
-                    let success = (try? FileManager.default.removeItem(at: url)) != nil
-                    results.append((path: path, success: success))
+            // Only delete if empty
+            let contents: [URL]
+            do {
+                contents = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
+            } catch {
+                Logger.testsServer.error(
+                    "🔴 failed to list directory \(path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                continue
+            }
+
+            if contents.isEmpty {
+                let success = removeItemAt(url)
+                if success {
+                    Logger.testsServer.info("deleted empty directory \(path, privacy: .public)")
                 }
+                results.append((path: path, success: success))
+            } else {
+                Logger.testsServer.info("delete skip non-empty directory \(path, privacy: .public)")
             }
         }
 
         // Return results but don't fail even if some deletions failed
         let report = results.map { "\($0.path): \($0.success ? "deleted" : "failed")" }.joined(separator: "\n")
+        Logger.testsServer.info("deleteFiles result: \(report, privacy: .public)")
         return .ok(.text(report))
     }
 
     // Handle file reading requests
     if let fileToRead = params["readFile"] {
         let fileURL = URL(fileURLWithPath: fileToRead)
+        Logger.testsServer.info("readFile \(fileToRead, privacy: .public)")
 
         do {
             let fileData = try Data(contentsOf: fileURL)
+            Logger.testsServer.info("readFile succeeded \(fileData.count, privacy: .public) bytes")
             return .raw(200, "OK", ["Content-Type": "application/octet-stream"]) { writer in
-                try? writer.write(fileData)
+                writeResponse(writer, data: fileData, context: "readFile body \(fileToRead)")
             }
         } catch {
-            print("Failed to read file at \(fileToRead): \(error)")
+            Logger.testsServer.error("🔴 readFile failed \(fileToRead, privacy: .public): \(error.localizedDescription, privacy: .public)")
             return .notFound
         }
     }
@@ -140,12 +249,15 @@ server.middleware = [{ request in
     // Support /download/{size} to stream random data of specified size
     if request.path.hasPrefix("/download/") {
         let sizeSpec = String(request.path.dropFirst("/download/".count))
+        Logger.testsServer.info("download sizeSpec=\(sizeSpec, privacy: .public)")
         guard let byteCount = parseSizeString(sizeSpec) else {
+            Logger.testsServer.error("🔴 download invalid size specification \(sizeSpec, privacy: .public)")
             return .badRequest(.text("Invalid size specification"))
         }
 
         // Determine if client requested a Range
         let rangeHeader = request.headers["range"] ?? request.headers["Range"]
+        Logger.testsServer.info("download byteCount=\(byteCount, privacy: .public) range=\(rangeHeader ?? "none", privacy: .public)")
 
         // Deterministic per-byte generator based on byte offset
         func byteAt(offset: Int64) -> UInt8 {
@@ -159,6 +271,7 @@ server.middleware = [{ request in
         }
 
         func writeBytes(writer: HttpResponseBodyWriter, start: Int64, length: Int64) {
+            Logger.testsServer.info("download writing \(length, privacy: .public) bytes from offset \(start, privacy: .public)")
             let chunkSize = 64 * 1024
             var written: Int64 = 0
             var buffer = [UInt8](repeating: 0, count: chunkSize)
@@ -168,9 +281,16 @@ server.middleware = [{ request in
                 for i in 0..<toWrite {
                     buffer[i] = byteAt(offset: base + Int64(i))
                 }
-                try? writer.write(Data(bytes: buffer, count: toWrite))
-                written += Int64(toWrite)
+                do {
+                    try writer.write(Data(bytes: buffer, count: toWrite))
+                    written += Int64(toWrite)
+                } catch {
+                    Logger.testsServer.error(
+                        "🔴 download write failed after \(written, privacy: .public) bytes: \(error.localizedDescription, privacy: .public)")
+                    return
+                }
             }
+            Logger.testsServer.info("download finished writing \(written, privacy: .public) bytes")
         }
 
         // Common headers
@@ -190,6 +310,7 @@ server.middleware = [{ request in
            let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
            let items = components.queryItems {
             let overrideHeaders = items.reduce(into: [:]) { $0[$1.name] = $1.value }
+            Logger.testsServer.info("download header overrides \(descriptionForLog(overrideHeaders), privacy: .public)")
             for (k, v) in overrideHeaders {
                 dlHeaders[k] = v
             }
@@ -206,18 +327,25 @@ server.middleware = [{ request in
                     if se.count >= 2, let e = Int64(se[1]) { return min(byteCount - 1, e) }
                     return byteCount - 1
                 }()
-                guard start <= end else { return .badRequest(.text("Invalid Range")) }
+                guard start <= end else {
+                    Logger.testsServer.error("🔴 download invalid range \(rangeHeader, privacy: .public)")
+                    return .badRequest(.text("Invalid Range"))
+                }
                 let length = end - start + 1
                 dlHeaders["Content-Length"] = String(length)
                 dlHeaders["Content-Range"] = "bytes \(start)-\(end)/\(byteCount)"
+                Logger.testsServer.info(
+                    "download 206 Partial Content bytes \(start, privacy: .public)-\(end, privacy: .public)/\(byteCount, privacy: .public)")
                 return .raw(206, "Partial Content", dlHeaders) { writer in
                     writeBytes(writer: writer, start: start, length: length)
                 }
             }
+            Logger.testsServer.info("download range header unparsed, serving full content \(rangeHeader, privacy: .public)")
         }
 
         // Full content
         dlHeaders["Content-Length"] = String(byteCount)
+        Logger.testsServer.info("download \(status, privacy: .public) \(reason, privacy: .public) \(byteCount, privacy: .public) bytes")
         return .raw(status, reason, dlHeaders) { writer in
             writeBytes(writer: writer, start: 0, length: byteCount)
         }
@@ -227,17 +355,21 @@ server.middleware = [{ request in
     let data: Data
     if request.path == "/", params["data"] == nil {
         data = Data()
+        Logger.testsServer.info("empty body (path=/ with no data param)")
 
     } else if let str = params["data"] {
         data = Data(base64Encoded: str) ?? str.data(using: .utf8)!
+        Logger.testsServer.info("body from data param \(data.count, privacy: .public) bytes")
 
     } else {
         let currentDirectoryURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
         let resourceURL = currentDirectoryURL.appendingPathComponent(request.path)
+        Logger.testsServer.info("loading resource \(resourceURL.path, privacy: .public)")
         do {
             data = try Data(contentsOf: resourceURL)
+            Logger.testsServer.info("loaded resource \(data.count, privacy: .public) bytes")
         } catch {
-            print("file not found at", resourceURL.path)
+            Logger.testsServer.error("🔴 file not found at \(resourceURL.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
             return .notFound
         }
     }
@@ -247,21 +379,35 @@ server.middleware = [{ request in
         guard let url = URL(string: "/?" + headersQuery),
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         else {
-            print(headersQuery + " is not a valid URL query string")
+            Logger.testsServer.error("🔴 invalid headers query \(headersQuery, privacy: .public)")
             return .badRequest(.text(headersQuery + " is not a valid URL query string"))
         }
 
         headers = components.queryItems?.reduce(into: [:]) { $0[$1.name] = $1.value } ?? [:]
+        Logger.testsServer.info("response headers \(descriptionForLog(headers), privacy: .public)")
     } else {
         headers = [:]
     }
 
+    Logger.testsServer.info("responding \(status, privacy: .public) \(reason, privacy: .public) \(data.count, privacy: .public) bytes")
     return .raw(status, reason, headers) { writer in
-        try? writer.write(data)
+        writeResponse(writer, data: data, context: "response body \(request.path)")
     }
 }]
 
-print("starting web server at localhost:8085")
-try server.start(8085)
+installProcessDeathLogging()
 
+let pid = ProcessInfo.processInfo.processIdentifier
+let cwd = FileManager.default.currentDirectoryPath
+Logger.testsServer.info("starting web server at localhost:8085 pid=\(pid, privacy: .public) cwd=\(cwd, privacy: .public)")
+do {
+    try server.start(8085)
+    Logger.testsServer.info("web server started at localhost:8085")
+} catch {
+    Logger.testsServer.error("🔴 failed to start web server: \(error.localizedDescription, privacy: .public)")
+    throw error
+}
+
+Logger.testsServer.info("entering run loop")
 RunLoop.main.run()
+Logger.testsServer.error("🔴 run loop exited pid=\(pid, privacy: .public)")

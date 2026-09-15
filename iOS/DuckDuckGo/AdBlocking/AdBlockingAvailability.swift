@@ -22,6 +22,7 @@ import BrowserServicesKit
 import DuckPlayer
 import PrivacyConfig
 import WebExtensions
+import FeatureFlags_iOS
 
 final class AdBlockingAvailability: AdBlockingAvailabilityProviding, ObservableObject {
 

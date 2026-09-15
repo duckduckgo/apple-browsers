@@ -18,8 +18,7 @@
 //
 
 import Testing
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 @testable import DuckDuckGo
 

@@ -21,6 +21,7 @@ import Combine
 import Common
 import ConcurrencyExtensions
 import DesignResourcesKitIcons
+import FeatureFlags_macOS
 import Foundation
 import FoundationExtensions
 import os.log
@@ -60,6 +61,7 @@ final class BookmarksBarViewController: NSViewController {
     private let viewModel: BookmarksBarViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
     private let appereancePreferences: AppearancePreferencesPersistor
+    private let featureFlagger: FeatureFlagger
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
@@ -77,12 +79,22 @@ final class BookmarksBarViewController: NSViewController {
         return indicatorFrameInCollectionView.minX - 3
     }
 
-    @UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false)
-    var bookmarksBarPromptShown: Bool
-
-    static func create(tabCollectionViewModel: TabCollectionViewModel, bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager, pinningManager: PinningManager) -> BookmarksBarViewController {
+    static func create(
+        tabCollectionViewModel: TabCollectionViewModel,
+        bookmarkManager: BookmarkManager,
+        dragDropManager: BookmarkDragDropManager,
+        pinningManager: PinningManager,
+        featureFlagger: FeatureFlagger
+    ) -> BookmarksBarViewController {
         NSStoryboard(name: "BookmarksBar", bundle: nil).instantiateInitialController { coder in
-            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: pinningManager)
+            self.init(
+                coder: coder,
+                tabCollectionViewModel: tabCollectionViewModel,
+                bookmarkManager: bookmarkManager,
+                dragDropManager: dragDropManager,
+                pinningManager: pinningManager,
+                featureFlagger: featureFlagger
+            )
         }!
     }
 
@@ -91,6 +103,7 @@ final class BookmarksBarViewController: NSViewController {
           bookmarkManager: BookmarkManager,
           dragDropManager: BookmarkDragDropManager,
           pinningManager: PinningManager,
+          featureFlagger: FeatureFlagger,
           appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
           themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
     ) {
@@ -99,6 +112,7 @@ final class BookmarksBarViewController: NSViewController {
         self.pinningManager = pinningManager
         self.appereancePreferences = appereancePreferences
         self.themeManager = themeManager
+        self.featureFlagger = featureFlagger
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager,
@@ -190,9 +204,21 @@ final class BookmarksBarViewController: NSViewController {
         frameDidChangeNotification()
     }
 
-    func showBookmarksBarPrompt() {
-        BookmarksBarPromptPopover().show(relativeTo: promptAnchor.bounds, of: promptAnchor, preferredEdge: .minY)
-        self.bookmarksBarPromptShown = true
+    private var bookmarksBarPrompt: BookmarksBarPromptPopover?
+
+    func showBookmarksBarPrompt(onDismiss: @escaping (PromoResult) -> Void) {
+        let popover = BookmarksBarPromptPopover()
+        popover.viewController.rootView.model.onDismiss = { [weak self] result in
+            self?.bookmarksBarPrompt = nil
+            onDismiss(result)
+        }
+        bookmarksBarPrompt = popover
+        popover.show(relativeTo: promptAnchor.bounds, of: promptAnchor, preferredEdge: .minY)
+    }
+
+    func retractBookmarksBarPromptIfNeeded() {
+        bookmarksBarPrompt?.retract()
+        bookmarksBarPrompt = nil
     }
 
     func userInteraction(prevented: Bool) {
@@ -467,7 +493,7 @@ extension BookmarksBarViewController: ThemeUpdateListening {
 
         backgroundColorView.backgroundColor = navigationBackgroundColor
         bookmarksBarCollectionView.backgroundColors = [navigationBackgroundColor]
-        separatorColorView.backgroundColor = theme.palette.surfaceDecorationPrimary
+        separatorColorView.backgroundColor = theme.palette.unifiedInputFieldFillSecondary
         backseparatorColorView.backgroundColor = theme.palette.surfaceBackdrop
     }
 }
@@ -558,6 +584,14 @@ private extension BookmarksBarViewController {
         showDialog(BookmarksDialogViewFactory.makeAddBookmarkFolderView(parentFolder: nil, bookmarkManager: bookmarkManager))
     }
 
+    @objc func reorderBookmarksBarByName(_ sender: NSMenuItem) {
+        bookmarkManager.reorderByName(
+            bookmarkManager.list?.topLevelEntities ?? [],
+            withinParentFolder: .root,
+            undoManager: undoManager
+        )
+    }
+
 }
 // MARK: - NSMenuDelegate
 extension BookmarksBarViewController: NSMenuDelegate {
@@ -568,6 +602,7 @@ extension BookmarksBarViewController: NSMenuDelegate {
             menu,
             target: self,
             addFolderSelector: #selector(addFolder(sender:)),
+            reorderByNameSelector: featureFlagger.isFeatureOn(.bookmarksReorderByName) ? #selector(reorderBookmarksBarByName(_:)) : nil,
             manageBookmarksSelector: #selector(manageBookmarks),
             prefs: NSApp.delegateTyped.appearancePreferences
         )
@@ -631,7 +666,14 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
 
     private func dispatchBookmarksBarHover() {
         guard let mainWindow = view.window else { return }
-        let windowPoint = mainWindow.convertPoint(fromScreen: NSEvent.mouseLocation)
+        let mouseLocation = NSEvent.mouseLocation
+        // In a short window a folder menu can cover the Bookmarks Bar. The local
+        // mouse-moved monitor also receives events sent to the menu window, so ignore
+        // the hover when a menu is displayed above the point: without this the
+        // Bookmarks Bar selection changes and the menu closes while the user moves
+        // the cursor over the menu items.
+        guard !isBookmarksBarMenuDisplayed(at: mouseLocation) else { return }
+        let windowPoint = mainWindow.convertPoint(fromScreen: mouseLocation)
         let cvPoint = bookmarksBarCollectionView.convert(windowPoint, from: nil)
         if bookmarksBarCollectionView.bounds.contains(cvPoint),
            let indexPath = bookmarksBarCollectionView.indexPathForItem(at: cvPoint),
@@ -645,6 +687,12 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
                 mouseDidHover(over: clippedItemsIndicator as Any)
             }
         }
+    }
+
+    /// Is a bookmarks menu window the frontmost window at the given screen point?
+    private func isBookmarksBarMenuDisplayed(at screenPoint: NSPoint) -> Bool {
+        let windowNumber = NSWindow.windowNumber(at: screenPoint, belowWindowWithWindowNumber: 0)
+        return NSApp.window(withWindowNumber: windowNumber) is BookmarksBarMenuWindow
     }
 
     func openNextBookmarksMenu(_ sender: any BookmarksBarMenuPopoverPresenting) {
@@ -721,11 +769,5 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
             return
         }
     }
-
-}
-
-extension Notification.Name {
-
-    static let bookmarkPromptShouldShow = Notification.Name(rawValue: "bookmarkPromptShouldShow")
 
 }

@@ -23,7 +23,11 @@ import PixelKit
 typealias FireDialogPixel = FireButtonPixel
 
 /// This enum keeps pixels related to Fire Button and Fire Dialog.
-enum FireButtonPixel: PixelKitEvent {
+enum FireButtonPixel: PixelKit.Event {
+    /// Frozen: these names are already complete. This was `doNotEnforcePrefix: true` repeated at
+    /// every call site that fires this type.
+    var namePrefix: PixelKitNamePrefix { .none }
+
     case fireStarted
     case fireStartedInSession
     case fireStartedOnExit

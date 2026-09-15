@@ -63,6 +63,31 @@ final class SearchTokenFetcherTests: XCTestCase {
         XCTAssertEqual(requester.lastUserAgent, "UA/1.0")
     }
 
+    // MARK: no UA guard
+
+    func testRetrieveReturnsTokenRegardlessOfMintUserAgent() async {
+        let clock = Clock(Date(timeIntervalSince1970: 1000))
+        let requester = MockSearchTokenRequester()
+        requester.tokenToReturn = "abc"
+        let sut = SearchTokenFetcher(requester: requester, ttlProvider: { 300 }, now: clock.now)
+        await sut.fetchIfNeeded(userAgent: "mint-UA")
+        XCTAssertEqual(sut.retrieveToken(), "abc")
+    }
+
+    // MARK: UA-aware refetch
+
+    func testDifferentUserAgentForcesRefetchDespiteFreshness() async {
+        let clock = Clock(Date(timeIntervalSince1970: 1000))
+        let requester = MockSearchTokenRequester()
+        requester.tokenToReturn = "mobile-tok"
+        let sut = SearchTokenFetcher(requester: requester, ttlProvider: { 300 }, windowProvider: { 120 }, now: clock.now)
+        await sut.fetchIfNeeded(userAgent: "mobile-UA") // fresh token for mobile UA (callCount 1)
+        requester.tokenToReturn = "desktop-tok"
+        await sut.fetchIfNeeded(userAgent: "desktop-UA") // different UA must refetch despite freshness
+        XCTAssertEqual(requester.callCount, 2)
+        XCTAssertEqual(sut.retrieveToken(), "desktop-tok")
+    }
+
     // MARK: refresh-ahead skip window
 
     func testSkipsWhenTokenStillFresh() async {

@@ -26,7 +26,7 @@ final class AIChatImageAttachmentThumbnailView: NSView {
 
     private enum Constants {
         static let thumbnailSize: CGFloat = 56
-        static let cornerRadius: CGFloat = 12
+        static let cornerRadius: CGFloat = 8
         static let removeButtonSize: CGFloat = 20
         static let removeButtonInset: CGFloat = 4
         /// How far the remove button extends beyond the thumbnail edge. Calibrated so that
@@ -237,7 +237,7 @@ final class AIChatImageAttachmentThumbnailView: NSView {
     // MARK: - Appearance
 
     private func updateAppearance() {
-        NSAppearance.withAppAppearance {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
             // Match the tab-card style: surface secondary background, no border, shadow.
             let surfaceColor = NSColor(designSystemColor: .surfaceSecondary)
             let removeButtonBackgroundColor = NSColor(named: Constants.removeButtonBackgroundColorName) ?? .white

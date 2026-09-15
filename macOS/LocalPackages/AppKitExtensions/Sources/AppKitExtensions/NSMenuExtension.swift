@@ -88,8 +88,13 @@ public extension NSMenu {
     /// least one item with an image, this sets a transparent placeholder image (sized to the largest
     /// image in that section) on the section's image-less items, which forces AppKit to reserve the
     /// icon column for them and aligns text. Sections with no icons are left untouched. Idempotent.
+    ///
+    /// This is a workaround for macOS 26 only. On macOS 27, adding placeholder images would
+    /// incorrectly reserve an icon column for items whose images are explicitly hidden. No-op on
+    /// other OS versions.
     @MainActor
-    func alignItemTextWithIcons() {
+    func alignItemTextWithIcons(shouldAlignItems: Bool = ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26) {
+        guard shouldAlignItems else { return }
         var section: [NSMenuItem] = []
         for item in items {
             if item.isSeparatorItem {

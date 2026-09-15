@@ -24,6 +24,7 @@ final class SiteThemeColorManager {
     private let viewCoordinator: MainViewCoordinator
     private let themeManager: ThemeManaging
     private let appSettings: AppSettings
+    private let isFloatingUIEnabled: Bool
     private let currentTabViewController: () -> TabViewController?
 
     private weak var tabViewController: TabViewController?
@@ -33,10 +34,12 @@ final class SiteThemeColorManager {
     init(viewCoordinator: MainViewCoordinator,
          currentTabViewController: @autoclosure @escaping () -> TabViewController?,
          appSettings: AppSettings,
-         themeManager: ThemeManaging) {
+         themeManager: ThemeManaging,
+         isFloatingUIEnabled: Bool) {
         self.viewCoordinator = viewCoordinator
         self.appSettings = appSettings
         self.themeManager = themeManager
+        self.isFloatingUIEnabled = isFloatingUIEnabled
         self.currentTabViewController = currentTabViewController
     }
 
@@ -148,9 +151,14 @@ final class SiteThemeColorManager {
             statusBackgroundColor = newColor
         }
         viewCoordinator.setStandardStatusBackgroundColor(statusBackgroundColor)
+        if isFloatingUIEnabled {
+            // nil = WebKit's page-derived color (what the glass policy reads); still never the site theme color (#6554).
+            tabViewController?.webView?.underPageBackgroundColor = nil
+        } else {
+            tabViewController?.webView?.underPageBackgroundColor = newColor
+            tabViewController?.webView?.scrollView.backgroundColor = newColor
+        }
         tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
-        tabViewController?.webView?.underPageBackgroundColor = newColor
-        tabViewController?.webView?.scrollView.backgroundColor = newColor
     }
 
 }

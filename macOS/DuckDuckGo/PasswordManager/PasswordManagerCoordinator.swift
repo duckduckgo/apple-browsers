@@ -22,7 +22,7 @@ import BrowserServicesKit
 import Combine
 import BWManagementShared
 import Common
-import FeatureFlags
+import FeatureFlags_macOS
 import FoundationExtensions
 import PixelKit
 import os.log

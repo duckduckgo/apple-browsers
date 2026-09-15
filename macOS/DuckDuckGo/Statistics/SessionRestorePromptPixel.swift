@@ -34,7 +34,7 @@ enum UncleanExitRestartSource: String {
  *
  * See macOS/PixelDefinitions/pixels/session_restore_prompt_pixels.json5 for more details.
  */
-enum SessionRestorePromptPixel: PixelKitEvent {
+enum SessionRestorePromptPixel: PixelKit.Event {
     case unexpectedAppTerminationDetected(reason: UncleanExitRestartSource)
     case promptShown
     case promptDismissedWithoutRestore

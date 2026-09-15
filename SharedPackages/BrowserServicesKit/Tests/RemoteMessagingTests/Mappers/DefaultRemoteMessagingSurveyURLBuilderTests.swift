@@ -171,6 +171,29 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?last_search_state=week")
     }
 
+    func testAddingLastDuckAIUsageUsesExpectedBucket() {
+        let expectations: [(daysSinceLastUsed: Int?, expectedState: String)] = [
+            (nil, "none"),
+            (0, "day"),
+            (1, "day"),
+            (2, "week"),
+            (7, "week"),
+            (8, "none")
+        ]
+
+        for expectation in expectations {
+            let builder = buildRemoteMessagingSurveyURLBuilder(daysSinceDuckAIUsed: expectation.daysSinceLastUsed)
+            let baseURL = URL(string: "https://duckduckgo.com")!
+            let finalURL = builder.add(parameters: [.lastDuckAIUsage], to: baseURL)
+
+            XCTAssertEqual(
+                finalURL.absoluteString,
+                "https://duckduckgo.com?last_duck_ai_usage=\(expectation.expectedState)",
+                "Unexpected state for \(String(describing: expectation.daysSinceLastUsed)) days since Duck.ai use"
+            )
+        }
+    }
+
     func testRefreshLastSearchState_noParamPresent_returnsUnchangedURL() {
         let raw = "https://duckduckgo.com?atb=v1"
         let refreshed = DefaultRemoteMessagingSurveyURLBuilder.refreshLastSearchState(in: raw, lastSearchDate: Date())
@@ -189,6 +212,32 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         XCTAssertTrue(components.queryItems!.contains { $0.name == "foo" && $0.value == "bar" })
     }
 
+    func testRefreshSurveyUsageStates_noUsageParamsPresent_returnsUnchangedURL() {
+        let raw = "https://duckduckgo.com?atb=v1"
+        let refreshed = DefaultRemoteMessagingSurveyURLBuilder.refreshSurveyUsageStates(
+            in: raw,
+            lastSearchDate: Date(),
+            daysSinceDuckAIUsed: 0
+        )
+
+        XCTAssertEqual(refreshed, raw)
+    }
+
+    func testRefreshSurveyUsageStates_updatesBothValuesAndPreservesOtherParameters() {
+        let raw = "https://duckduckgo.com?last_search_state=none&foo=bar&last_duck_ai_usage=none"
+        let refreshed = DefaultRemoteMessagingSurveyURLBuilder.refreshSurveyUsageStates(
+            in: raw,
+            lastSearchDate: Date(),
+            daysSinceDuckAIUsed: 3
+        )
+
+        let components = URLComponents(string: refreshed)!
+        let queryItems = components.queryItems!
+        XCTAssertEqual(queryItems.first(where: { $0.name == "last_search_state" })?.value, "day")
+        XCTAssertEqual(queryItems.first(where: { $0.name == "last_duck_ai_usage" })?.value, "week")
+        XCTAssertTrue(queryItems.contains { $0.name == "foo" && $0.value == "bar" })
+    }
+
     private func buildRemoteMessagingSurveyURLBuilder(
         atb: String = "v123-4",
         variant: String = "var",
@@ -196,6 +245,7 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         vpnDaysSinceLastActive: Int = 1,
         locale: Locale = Locale(identifier: "en_US"),
         lastSearchDate: Date? = nil,
+        daysSinceDuckAIUsed: Int? = nil,
         subscriptionTrialActive: Bool = false,
         subscriptionTier: String? = "pro"
     ) -> DefaultRemoteMessagingSurveyURLBuilder {
@@ -220,12 +270,18 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
 
         standardDefaults.set(lastSearchDate, forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey)
 
+        let featureDiscovery = MockFeatureDiscovery()
+        if let daysSinceDuckAIUsed {
+            featureDiscovery.setDaysSinceLastUsedValue(daysSinceDuckAIUsed, for: .aiChat)
+        }
+
         return DefaultRemoteMessagingSurveyURLBuilder(
             statisticsStore: mockStatisticsStore,
             vpnActivationDateStore: vpnActivationDateStore,
             subscriptionDataProvider: mockSubscription,
             localeIdentifier: locale.identifier,
-            autofillUsageStore: autofillUsageStore
+            autofillUsageStore: autofillUsageStore,
+            featureDiscovery: featureDiscovery
         )
     }
 

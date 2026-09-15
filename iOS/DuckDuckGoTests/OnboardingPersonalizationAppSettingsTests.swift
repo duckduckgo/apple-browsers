@@ -19,6 +19,7 @@
 
 import Testing
 import Foundation
+import WebExtensions
 @testable import DuckDuckGo
 
 @Suite("Onboarding Personalization – App Settings adapter")
@@ -61,51 +62,74 @@ final class OnboardingPersonalizationAppSettingsTests {
         #expect(sut.recentlyVisitedSitesEnabled == enabled)
     }
 
-    // MARK: - Duck Player (Block Ads step)
+    // MARK: - Cookie pop-up protection (Block Ads step)
 
-    @Test("Duck Player defaults to Off, with DuckDuckGo Search Results On")
-    func duckPlayerDefaultsToOff() {
-        // THEN
-        #expect(!sut.isDuckPlayerEnabled)
-        #expect(sut.duckPlayerNativeYoutubeMode == .ask)   // "Let me choose"
-        #expect(sut.duckPlayerNativeUISERPEnabled)          // DuckDuckGo Search Results → On
+    @Test("Disabling cookie protection collapses the preference to off and clears pop-ups-without-opt-outs")
+    func disablingCookieProtection() {
+        // GIVEN pop-ups-without-opt-outs is on (preference == .max)
+        sut.isPopUpsWithoutOptOutsEnabled = true
+        #expect(sut.cookiePopupPreference == .max)
+
+        // WHEN protection is turned off
+        sut.isCookiePopUpProtectionEnabled = false
+
+        // THEN protection is off and the child collapses with it
+        #expect(!sut.isCookiePopUpProtectionEnabled)
+        #expect(!sut.isPopUpsWithoutOptOutsEnabled)
+        #expect(sut.cookiePopupPreference == .off)
     }
 
-    @Test("Enabling Duck Player sets Open Automatically and keeps Search Results On")
-    func enablingDuckPlayer() {
-        // WHEN
-        sut.isDuckPlayerEnabled = true
+    @Test("Enabling cookie protection selects the default level, pop-ups-without-opt-outs off")
+    func enablingCookieProtection() {
+        // GIVEN protection is off
+        sut.isCookiePopUpProtectionEnabled = false
+        #expect(sut.cookiePopupPreference == .off)
+
+        // WHEN protection is turned on
+        sut.isCookiePopUpProtectionEnabled = true
 
         // THEN
-        #expect(sut.isDuckPlayerEnabled)
-        #expect(sut.duckPlayerNativeYoutubeMode == .auto)   // "Open Automatically"
-        #expect(sut.duckPlayerNativeUISERPEnabled)          // still On in both states
+        #expect(sut.isCookiePopUpProtectionEnabled)
+        #expect(!sut.isPopUpsWithoutOptOutsEnabled)
+        #expect(sut.cookiePopupPreference == .default)
     }
 
-    @Test("Disabling Duck Player sets Let-me-choose and keeps Search Results On")
-    func disablingDuckPlayer() {
-        // GIVEN
-        sut.isDuckPlayerEnabled = true // move off the default first
-
+    @Test("Enabling pop-ups-without-opt-outs raises the preference to max, protection stays on")
+    func enablingPopUpsWithoutOptOuts() {
         // WHEN
-        sut.isDuckPlayerEnabled = false
+        sut.isPopUpsWithoutOptOutsEnabled = true
 
         // THEN
-        #expect(!sut.isDuckPlayerEnabled)
-        #expect(sut.duckPlayerNativeYoutubeMode == .ask)    // "Let me choose"
-        #expect(sut.duckPlayerNativeUISERPEnabled)          // still On in both states
+        #expect(sut.isPopUpsWithoutOptOutsEnabled)
+        #expect(sut.isCookiePopUpProtectionEnabled)
+        #expect(sut.cookiePopupPreference == .max)
     }
 
-    @Test("Duck Player flag reflects the underlying YouTube mode")
-    func duckPlayerReflectsYoutubeMode() {
-        // WHEN
-        sut.duckPlayerNativeYoutubeMode = .auto
-        // THEN
-        #expect(sut.isDuckPlayerEnabled)
+    @Test("Disabling pop-ups-without-opt-outs drops to the default level, protection stays on")
+    func disablingPopUpsWithoutOptOuts() {
+        // GIVEN preference == .max
+        sut.isPopUpsWithoutOptOutsEnabled = true
 
-        // WHEN - any non-auto mode reads as "off"
-        sut.duckPlayerNativeYoutubeMode = .never
+        // WHEN
+        sut.isPopUpsWithoutOptOutsEnabled = false
+
         // THEN
-        #expect(!sut.isDuckPlayerEnabled)
+        #expect(!sut.isPopUpsWithoutOptOutsEnabled)
+        #expect(sut.isCookiePopUpProtectionEnabled)
+        #expect(sut.cookiePopupPreference == .default)
+    }
+
+    @Test("Cookie toggles reflect the underlying preference", arguments: [
+        (CookiePopupPreference.off, false, false),
+        (CookiePopupPreference.default, true, false),
+        (CookiePopupPreference.max, true, true)
+    ])
+    func cookieTogglesReflectPreference(preference: CookiePopupPreference, protectionOn: Bool, optOutOn: Bool) {
+        // WHEN
+        sut.cookiePopupPreference = preference
+
+        // THEN
+        #expect(sut.isCookiePopUpProtectionEnabled == protectionOn)
+        #expect(sut.isPopUpsWithoutOptOutsEnabled == optOutOn)
     }
 }

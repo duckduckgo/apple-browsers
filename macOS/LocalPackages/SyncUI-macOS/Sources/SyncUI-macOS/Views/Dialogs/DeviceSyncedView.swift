@@ -34,7 +34,7 @@ struct DeviceSyncedView: View {
             Button(UserText.done) {
                 model.endFlow()
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
         }
         .frame(width: 360)
         .onReceive(timer, perform: { _ in

@@ -30,7 +30,7 @@ import PixelKit
 /// macOS divergence is intentional — both stages share trigger, snapshot, and deferred dispatch,
 /// so a single pixel halves the network traffic in the case where both stages have data.
 /// Backend aggregation accommodates the divergence via a macOS-specific Prefect case.
-struct AddressBarPerformancePixel: PixelKitEvent {
+struct AddressBarPerformancePixel: PixelKit.Event {
 
     /// Names which halves of the pixel carry real data. A pixel is only emitted when at least one
     /// stage has samples, so a "neither" case is never sent.

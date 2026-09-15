@@ -22,6 +22,7 @@ import SwiftUI
 import Combine
 import DesignResourcesKitIcons
 import Core
+import PixelKit
 
 class SwitchBarTextEntryView: UIView {
 
@@ -216,6 +217,7 @@ class SwitchBarTextEntryView: UIView {
 
     private var heightConstraint: NSLayoutConstraint?
     private var buttonsTrailingConstraint: NSLayoutConstraint?
+    private var buttonsCenterYConstraint: NSLayoutConstraint?
     private var placeholderTopConstraint: NSLayoutConstraint?
     private var placeholderCenterYConstraint: NSLayoutConstraint?
 
@@ -265,6 +267,13 @@ class SwitchBarTextEntryView: UIView {
     var isUsingIncreasedButtonPadding: Bool = false {
         didSet {
             updateButtonsPadding()
+        }
+    }
+
+    var trailingButtonsRowHeight: CGFloat = Constants.minHeight {
+        didSet {
+            guard trailingButtonsRowHeight != oldValue else { return }
+            updateButtonsVerticalAlignment()
         }
     }
 
@@ -448,10 +457,16 @@ class SwitchBarTextEntryView: UIView {
         buttonsTrailingConstraint?.constant = isUsingIncreasedButtonPadding ? -Constants.additionalVerticalButtonsPadding : 0
     }
 
+    private func updateButtonsVerticalAlignment() {
+        buttonsCenterYConstraint?.constant = trailingButtonsRowHeight / 2
+    }
+
     private func setupConstraints() {
 
         buttonsTrailingConstraint = buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
         buttonsTrailingConstraint?.isActive = true
+        let buttonsCenterY = buttonsView.centerYAnchor.constraint(equalTo: topAnchor, constant: trailingButtonsRowHeight / 2)
+        buttonsCenterYConstraint = buttonsCenterY
         let placeholderTopConstraint = placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset)
         let placeholderCenterYConstraint = placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor)
         self.placeholderTopConstraint = placeholderTopConstraint
@@ -476,7 +491,7 @@ class SwitchBarTextEntryView: UIView {
             placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
 
             // Pin to the top row so the button stays top-right when the field grows multi-line.
-            buttonsView.centerYAnchor.constraint(equalTo: topAnchor, constant: Constants.minHeight / 2)
+            buttonsCenterY
         ])
     }
 
@@ -672,7 +687,7 @@ class SwitchBarTextEntryView: UIView {
 
     private func updateVoiceButtonStyle() {
         handler.hidesVoiceButton = voiceButtonAppearance == .hidden
-        let showsAIVoiceChatButton = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
+        let showsAIVoiceChatButton = handler.currentToggleState == .aiChat
         switch voiceButtonAppearance {
         case .automatic:
             buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoiceAccent : .microphone
@@ -972,17 +987,6 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
-    func moveCaretToStart() {
-        if usesTextField {
-            let start = textField.beginningOfDocument
-            textField.selectedTextRange = textField.textRange(from: start, to: start)
-        } else {
-            let start = textView.beginningOfDocument
-            textView.selectedTextRange = textView.textRange(from: start, to: start)
-            textView.scrollRangeToVisible(NSRange(location: 0, length: 0))
-        }
-    }
-
     func setQueryText(_ text: String) {
         if usesTextField {
             textField.text = text
@@ -1155,6 +1159,9 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        // Refusing the edit rather than clearing `isEditable`: that would end editing and take the
+        // keyboard, and the card explaining the block down with it.
+        guard !handler.isInputBlockedByUsageLimit else { return false }
         if text == "\n" {
             if currentMode == .aiChat && !handler.submitsAIChatOnKeyboardReturn {
                 return true
@@ -1204,15 +1211,15 @@ extension SwitchBarTextEntryView: UITextFieldDelegate {
 private extension SwitchBarTextEntryView {
     func fireTextAreaFocusedPixel() {
         let parameters = ["orientation": UIDevice.current.orientation.orientationDescription]
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarTextAreaFocused, withAdditionalParameters: parameters)
+        PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarTextAreaFocused, options: .parameters(parameters))
     }
     
     func fireClearButtonPressedPixel() {
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarClearButtonPressed, withAdditionalParameters: handler.modeParameters)
+        PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarClearButtonPressed, options: .parameters(handler.modeParameters))
     }
     
     func fireKeyboardGoPressedPixel() {
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarKeyboardGoPressed, withAdditionalParameters: handler.modeParameters)
+        PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarKeyboardGoPressed, options: .parameters(handler.modeParameters))
     }
 }
 

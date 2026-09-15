@@ -96,6 +96,41 @@ class SafariHarnessTests(unittest.TestCase):
         return path
 
     def _write_fakes(self) -> None:
+        # The harness looks for running Safari processes with `pgrep -x Safari`.
+        # Faking it keeps these tests independent of whether the machine running
+        # them happens to have Safari open. FAKE_SAFARI_PIDS lists the PIDs to
+        # report; FAKE_SAFARI_PIDS_AFTER_CALL delays them until a later call so a
+        # test can pass the startup check and still meet a Safari it cannot quit.
+        # Only never-existent PIDs belong in those variables — the harness signals
+        # whatever they name.
+        self._write_executable(
+            "pgrep",
+            r"""
+            #!/usr/bin/env python3
+            import os
+            import sys
+
+            if sys.argv[1:] != ["-x", "Safari"]:
+                raise SystemExit(1)
+            pids = os.environ.get("FAKE_SAFARI_PIDS", "").split()
+            after = int(os.environ.get("FAKE_SAFARI_PIDS_AFTER_CALL", "0"))
+            counter_path = os.environ.get("FAKE_PGREP_COUNTER")
+            if counter_path:
+                try:
+                    with open(counter_path, encoding="utf-8") as source:
+                        calls = int(source.read().strip() or "0")
+                except FileNotFoundError:
+                    calls = 0
+                calls += 1
+                with open(counter_path, "w", encoding="utf-8") as sink:
+                    sink.write(str(calls))
+                if calls <= after:
+                    pids = []
+            for pid in pids:
+                print(pid)
+            raise SystemExit(0 if pids else 1)
+            """,
+        )
         self._write_executable(
             "defaults",
             r"""
@@ -392,6 +427,30 @@ class SafariHarnessTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertEqual(json.loads(self.defaults_state.read_text()), initial)
         self.assertIn("unsupported pre-existing type", result.stderr)
+
+    def test_already_running_safari_stops_the_run_before_measuring(self) -> None:
+        result = self.run_harness(FAKE_SAFARI_PIDS="999999")
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("Safari is already running", result.stderr)
+        self.assertEqual(list((self.root / "results").glob("*.tsv")), [])
+        # Cleanup must not then go after the Safari the run just refused to
+        # start alongside; trying and failing would say so here.
+        self.assertNotIn("Safari did not quit during cleanup", result.stderr)
+
+    def test_safari_that_will_not_quit_is_an_infrastructure_failure(self) -> None:
+        # Report no Safari for the startup check, then a PID that outlives every
+        # signal, so the repetition meets a browser it cannot make fresh.
+        result = self.run_harness(
+            FAKE_SAFARI_PIDS="999999",
+            FAKE_SAFARI_PIDS_AFTER_CALL="1",
+            FAKE_PGREP_COUNTER=str(self.root / "pgrep-calls"),
+        )
+        self.assertEqual(result.returncode, 1)
+        row = self.disposition_rows()[0]
+        self.assertEqual(row[3], "infra_error")
+        self.assertEqual(row[9:12], ["runner", "safari_quit_failed", "repetition=1"])
+        self.assertIn("Safari would not quit", result.stderr)
+        self.assertEqual(self.measurement_rows(), [])
 
     def test_missing_connect_is_an_infrastructure_failure(self) -> None:
         result = self.run_harness(AUTOMATION_MODE="no_connect")

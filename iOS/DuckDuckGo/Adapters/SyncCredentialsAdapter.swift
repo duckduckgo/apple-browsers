@@ -26,6 +26,7 @@ import Persistence
 import SecureStorage
 import SyncDataProviders
 import Core
+import PixelKit
 
 public final class SyncCredentialsAdapter {
 
@@ -98,7 +99,7 @@ public final class SyncCredentialsAdapter {
         } catch let error as NSError {
             let processedErrors = CoreDataErrorsParser.parse(error: error)
             let params = processedErrors.errorPixelParameters
-            Pixel.fire(pixel: .syncCredentialsProviderInitializationFailed, error: error, withAdditionalParameters: params)
+            PixelKit.fire(Pixel.Event.syncCredentialsProviderInitializationFailed.withError(error), options: .parameters(params))
        }
     }
 

@@ -31,7 +31,7 @@ import PixelKit
  * Anomaly Investigation:
  * - Anomaly in these pixels may mean an increase/drop in app use.
  */
-enum MoreOptionsMenuPixel: PixelKitEvent {
+enum MoreOptionsMenuPixel: PixelKit.Event {
 
     /// Event Trigger: Feedback or Subscription feedback menu action is clicked
     case feedbackActionClicked

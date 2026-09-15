@@ -18,7 +18,7 @@
 
 import AppKit
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import NetworkProtectionUI
 import DesignResourcesKit
 import PixelKit

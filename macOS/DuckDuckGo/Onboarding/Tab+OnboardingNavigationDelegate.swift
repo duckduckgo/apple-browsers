@@ -18,6 +18,19 @@
 
 import Foundation
 import Onboarding
+import Subscription
+
+extension OnboardingNavigationDelegate {
+
+    /// Opens the purchase page tagged with the onboarding-upsell origin. The service environment is
+    /// left at the default, matching every other macOS purchase-URL call site.
+    func navigateToSubscriptionUpsellPurchasePage() {
+        guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(
+            SubscriptionFunnelOrigin.onboardingSubscriptionUpsell.rawValue
+        )?.url else { return }
+        navigateFromOnboardingInNewTab(to: url)
+    }
+}
 
 extension Tab: OnboardingNavigationDelegate {
 
@@ -35,6 +48,17 @@ extension Tab: OnboardingNavigationDelegate {
 
     func navigateFromOnboarding(to url: URL) {
         setUrl(url, source: .ui)
+    }
+
+    func navigateFromOnboardingInNewTab(to url: URL) {
+        Task { @MainActor in
+            Application.appDelegate.windowControllersManager.show(
+                url: url,
+                source: .ui,
+                newTab: true,
+                selected: true
+            )
+        }
     }
 
 }

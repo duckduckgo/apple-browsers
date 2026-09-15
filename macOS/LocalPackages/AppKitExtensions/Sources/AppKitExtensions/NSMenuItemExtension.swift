@@ -19,7 +19,6 @@
 import AppKit
 
 public extension NSMenuItem {
-
     private final class NSMenuItemTarget: NSObject {
         let action: (NSMenuItem) -> Void
         init(action: @escaping (NSMenuItem) -> Void) {
@@ -111,9 +110,22 @@ public extension NSMenuItem {
         return self
     }
 
+    /// Sets the image and controls whether AppKit displays it on macOS 27 and later.
     @discardableResult
-    func withImage(_ image: NSImage?) -> NSMenuItem {
-        self.image = image
+    func withImage(_ image: NSImage?, visibleOnMacOS27: Bool = false) -> NSMenuItem {
+        var effectiveImage = image
+
+#if compiler(>=6.4)
+        if #available(macOS 27.0, *) {
+            preferredImageVisibility = visibleOnMacOS27 ? .visible : .hidden
+        }
+#else
+        if #available(macOS 27.0, *), visibleOnMacOS27 == false {
+            effectiveImage = nil
+        }
+#endif
+
+        self.image = effectiveImage
         return self
     }
 

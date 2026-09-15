@@ -21,6 +21,9 @@ jobs:
         # peter-evans/create-pull-request (Duplicate header: "Authorization", HTTP 400).
         uses: actions/checkout@v5
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Assign SSH keys
         uses: webfactory/ssh-agent@v0.9.1
         with:

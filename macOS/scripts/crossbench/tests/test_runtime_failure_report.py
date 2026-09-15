@@ -96,6 +96,8 @@ class RuntimeFailureReportTests(unittest.TestCase):
         self.assertIn("Samples: 3/10 (observed 3", report)
         self.assertIn("Failure: crossbench / site_timeout", report)
         self.assertIn("Detail: timeout_seconds=1200", report)
+        self.assertIn("Diagnostics: attached to this task when available", report)
+        self.assertNotIn("inspect the workflow warnings", report)
 
     def test_measured_and_excluded_sites_do_not_report(self) -> None:
         path = self.write_rows(

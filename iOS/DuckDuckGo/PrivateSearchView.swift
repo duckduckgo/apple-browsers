@@ -21,6 +21,7 @@ import Core
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import PixelKit
 
 struct PrivateSearchView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -35,15 +36,15 @@ struct PrivateSearchView: View {
     var body: some View {
         List {
             SettingsDescriptionView(content: description)
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             PrivateSearchViewSettings()
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
         }
         .applySettingsListModifiers(title: UserText.privateSearch,
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onFirstAppear {
-            Pixel.fire(pixel: .settingsPrivateSearchOpen)
+            PixelKit.fire(Pixel.Event.settingsPrivateSearchOpen)
         }
     }
 }
@@ -74,7 +75,7 @@ struct PrivateSearchViewSettings: View {
                 SettingsCellView(label: UserText.moreSearchSettings,
                                  subtitle: UserText.moreSearchSettingsExplanation)
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
         }
     }
 }

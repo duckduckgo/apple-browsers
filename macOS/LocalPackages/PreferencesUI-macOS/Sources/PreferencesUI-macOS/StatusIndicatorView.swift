@@ -41,9 +41,9 @@ public enum StatusIndicator: Equatable {
     var color: Color {
         switch self {
         case .alwaysOn:
-            Color(designSystemColor: .alertGreen)
+            Color(designSystemColor: .statusGreen)
         case .on:
-            Color(designSystemColor: .alertGreen)
+            Color(designSystemColor: .statusGreen)
         case .off:
             Color.secondary.opacity(0.33)
         case .custom(_, let customColor):

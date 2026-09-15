@@ -17,6 +17,7 @@
 //
 
 import Common
+import DDGError
 import FoundationExtensions
 
 public enum SubscriptionManagerError: DDGError {

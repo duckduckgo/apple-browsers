@@ -22,6 +22,7 @@ import BackgroundTasks
 import Core
 import BrowserServicesKit
 import Configuration
+import PixelKit
 
 typealias AppConfigurationFetchCompletion = (ConfigurationManager.UpdateResult) -> Void
 
@@ -170,7 +171,7 @@ class AppConfigurationFetch: AppConfigurationFetching {
         do {
             try BGTaskScheduler.shared.submit(task)
         } catch {
-            Pixel.fire(pixel: .backgroundTaskSubmissionFailed, error: error, withAdditionalParameters: [PixelParameters.backgroundTaskCategory: "appConfiguration"])
+            PixelKit.fire(Pixel.Event.backgroundTaskSubmissionFailed.withError(error), options: .parameters([PixelParameters.backgroundTaskCategory: "appConfiguration"]))
         }
         #endif
     }
@@ -180,11 +181,19 @@ class AppConfigurationFetch: AppConfigurationFetching {
             self.markFetchStarted(isBackground: isBackground)
             let result = await AppDependencyProvider.shared.configurationManager.update(isDebug: isDebug)
 
+            let shouldRefreshRemoteMessages: Bool
             switch result {
             case .noData:
                 self.markFetchCompleted(isBackground: isBackground, hasNewData: false)
+                shouldRefreshRemoteMessages = isBackground
             case .assetsUpdated:
                 self.markFetchCompleted(isBackground: isBackground, hasNewData: true)
+                shouldRefreshRemoteMessages = true
+            }
+
+            // Foreground transitions already refresh RMF. Background checks must also refresh it because
+            // user state can change without any configuration assets changing.
+            if shouldRefreshRemoteMessages {
                 NotificationCenter.default.post(name: .remoteMessagesShouldRefresh, object: nil)
             }
 
@@ -245,16 +254,15 @@ class AppConfigurationFetch: AppConfigurationFetching {
         
         let semaphore = DispatchSemaphore(value: 0)
         
-        Pixel.fire(pixel: .configurationFetchInfo, withAdditionalParameters: parameters) { error in
-            guard error == nil else {
-                semaphore.signal()
-                return
-            }
-
+        Task {
+            defer { semaphore.signal() }
+            // The counts are only cleared once they have actually been reported, so a failed send
+            // leaves them for the next attempt.
+            guard (try? await PixelKit.fireAsync(Pixel.Event.configurationFetchInfo,
+                                                 options: .parameters(parameters))) == .sent else { return }
             self.resetStatistics()
-            semaphore.signal()
         }
-        
+
         semaphore.wait()
         completion()
     }

@@ -21,6 +21,7 @@ import Carbon
 import Combine
 import Common
 import FoundationExtensions
+import PrivacyConfig
 import SwiftUI
 import PixelKit
 
@@ -50,8 +51,12 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.newFolderButton")
     private lazy var deleteItemsButton = MouseOverButton(title: Self.thinSpace + UserText.bookmarksBarContextMenuDelete, target: self, action: #selector(delete))
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.deleteItemsButton")
-    private lazy var sortItemsButton = MouseOverButton(title: Self.thinSpace + UserText.bookmarksSort.capitalized, target: self, action: #selector(sortBookmarks))
-        .withAccessibilityIdentifier("BookmarkManagementDetailViewController.sortItemsButton")
+    private lazy var sortItemsButton: MouseOverButton = {
+        let button = MouseOverButton(title: Self.thinSpace + managementDetailViewModel.sortButtonTitle, target: self, action: #selector(sortBookmarks))
+            .withAccessibilityIdentifier("BookmarkManagementDetailViewController.sortItemsButton")
+        button.toolTip = managementDetailViewModel.isBookmarksReorderByNameEnabled ? UserText.bookmarksSortViewTooltip : nil
+        return button
+    }()
 
     lazy var searchBar = SearchField()
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.searchBar")
@@ -65,7 +70,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             self?.onImport()
         }, onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }))
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -127,10 +132,13 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         self.selectionState = selectionState
     }
 
-    init(bookmarkManager: BookmarkManager,
-         dragDropManager: BookmarkDragDropManager,
-         pinningManager: PinningManager,
-         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
+    init(
+        bookmarkManager: BookmarkManager,
+        dragDropManager: BookmarkDragDropManager,
+        pinningManager: PinningManager,
+        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
+    ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.pinningManager = pinningManager
@@ -139,10 +147,13 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         let sortViewModel = SortBookmarksViewModel(manager: bookmarkManager, metrics: metrics, origin: .manager)
         self.sortBookmarksViewModel = sortViewModel
         self.themeManager = themeManager
-        self.managementDetailViewModel = BookmarkManagementDetailViewModel(bookmarkManager: bookmarkManager,
-                                                                           metrics: metrics,
-                                                                           navigationEngagementMetrics: navigationEngagementMetrics,
-                                                                           mode: bookmarkManager.sortMode)
+        self.managementDetailViewModel = BookmarkManagementDetailViewModel(
+            bookmarkManager: bookmarkManager,
+            metrics: metrics,
+            navigationEngagementMetrics: navigationEngagementMetrics,
+            featureFlagger: featureFlagger,
+            mode: bookmarkManager.sortMode
+        )
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -323,13 +334,13 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             let bookmarksIconsProvider = theme.iconsProvider.bookmarksIconsProvider
             switch newSortMode {
             case .nameDescending:
-                self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSortByNameTitle
+                self.sortItemsButton.title = Self.thinSpace + managementDetailViewModel.sortButtonByNameTitle
                 self.sortItemsButton.image = bookmarksIconsProvider.sortBookmarkDescendingIcon
             case .nameAscending:
-                self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSortByNameTitle
+                self.sortItemsButton.title = Self.thinSpace + managementDetailViewModel.sortButtonByNameTitle
                 self.sortItemsButton.image = bookmarksIconsProvider.sortBookmarkAscendingIcon
             case .manual:
-                self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSort
+                self.sortItemsButton.title = Self.thinSpace + managementDetailViewModel.sortButtonTitle
                 self.sortItemsButton.image = bookmarksIconsProvider.sortBookmarkManuallyIcon
             }
 
@@ -443,7 +454,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             self?.onImport()
         }, onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         })
         emptyStateHostingView.isHidden = false
@@ -564,13 +575,6 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         bookmarkManager.remove(objectsWithUUIDs: entityUUIDs, undoManager: undoManager)
     }
 
-    private(set) lazy var faviconsFetcherOnboarding: FaviconsFetcherOnboarding? = {
-        guard let syncService = NSApp.delegateTyped.syncService, let syncBookmarksAdapter = NSApp.delegateTyped.syncDataProviders?.bookmarksAdapter else {
-            assertionFailure("SyncService and/or SyncBookmarksAdapter is nil")
-            return nil
-        }
-        return .init(syncService: syncService, syncBookmarksAdapter: syncBookmarksAdapter)
-    }()
 }
 
 // MARK: - ThemeUpdateListening
@@ -622,7 +626,7 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
             cell.update(from: bookmark)
 
             if bookmark.favicon(.small) == nil {
-                faviconsFetcherOnboarding?.presentOnboardingIfNeeded()
+                NotificationCenter.default.post(name: .missingBookmarkFaviconEncountered, object: nil)
             }
         } else if let folder = entity as? BookmarkFolder {
             cell.update(from: folder)

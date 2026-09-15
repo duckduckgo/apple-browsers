@@ -173,12 +173,17 @@ extension WebExtensionEventsCoordinator: TabControllerCacheDelegate {
         didOpenTab(controller)
     }
 
-    // The tab stays in the model, so we must not call didCloseTab — extensions would drop it
-    // entirely. Retain the controller instead and report didReplaceTab on recreation (see above).
-    func tabManager(_ tabManager: TabManager, didInvalidateController controller: TabViewController) {
+    func tabManager(_ tabManager: TabManager,
+                    didEvictController controller: TabViewController,
+                    reason: TabControllerCacheEvictionReason) {
         guard #available(iOS 18.4, *) else { return }
         pruneInvalidatedControllers()
-        invalidatedControllersByTabUID[controller.tabModel.uid] = controller
+        switch reason {
+        case .webContentProcessTermination:
+            invalidatedControllersByTabUID[controller.tabModel.uid] = controller
+        case .memoryWarning, .lruCapacity:
+            didCloseTab(controller)
+        }
     }
 
     /// Reports retained controllers whose tab is gone from the model as closed, so the extension

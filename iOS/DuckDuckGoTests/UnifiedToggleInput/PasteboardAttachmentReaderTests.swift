@@ -77,6 +77,54 @@ final class PasteboardAttachmentReaderTests: XCTestCase {
         ))
     }
 
+    func testHasSupportedAttachmentsRejectsTextOnlyPasteboardWhenOnlyImagesAllowed() {
+        let pasteboard = UIPasteboard.withUniqueName()
+        defer { UIPasteboard.remove(withName: pasteboard.name) }
+        pasteboard.string = "duckduckgo.com"
+
+        XCTAssertFalse(PasteboardAttachmentReader.hasSupportedAttachments(
+            in: pasteboard, allowsImages: true, allowedFileTypes: []
+        ))
+    }
+
+    func testHasSupportedAttachmentsRejectsEmptyPasteboard() {
+        let pasteboard = UIPasteboard.withUniqueName()
+        defer { UIPasteboard.remove(withName: pasteboard.name) }
+
+        XCTAssertFalse(PasteboardAttachmentReader.hasSupportedAttachments(
+            in: pasteboard, allowsImages: true, allowedFileTypes: [.pdf]
+        ))
+    }
+
+    /// `hasImages` reports false for HEIC — the iOS default photo format — so gating on it hid Paste for copied photos.
+    func testHasSupportedAttachmentsFindsImageTypesHasImagesMisses() {
+        for identifier in ["public.heic", "org.webmproject.webp", "public.avif"] {
+            let pasteboard = UIPasteboard.withUniqueName()
+            defer { UIPasteboard.remove(withName: pasteboard.name) }
+            pasteboard.setItems([[identifier: Data([0x00, 0x01, 0x02, 0x03])]])
+
+            XCTAssertTrue(PasteboardAttachmentReader.hasSupportedAttachments(
+                in: pasteboard, allowsImages: true, allowedFileTypes: []
+            ), "\(identifier) is loadable as a UIImage but the metadata gate rejected it")
+        }
+    }
+
+    /// The image is not always item 0 — a mixed clipboard must still offer Paste.
+    func testHasSupportedAttachmentsFindsImageThatIsNotTheFirstItem() {
+        for identifier in ["public.png", "public.heic"] {
+            let pasteboard = UIPasteboard.withUniqueName()
+            defer { UIPasteboard.remove(withName: pasteboard.name) }
+            pasteboard.setItems([
+                ["public.plain-text": Data("hello".utf8)],
+                [identifier: Data([0x00, 0x01, 0x02, 0x03])]
+            ])
+
+            XCTAssertTrue(PasteboardAttachmentReader.hasSupportedAttachments(
+                in: pasteboard, allowsImages: true, allowedFileTypes: []
+            ), "\(identifier) at item 1 is loadable but the metadata gate rejected it")
+        }
+    }
+
     // MARK: - loadAttachments
 
     func testLoadAttachmentsLoadsImage() async {

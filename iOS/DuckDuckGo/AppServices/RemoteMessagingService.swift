@@ -59,7 +59,7 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
          dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     ) {
         remoteMessagingActionHandler = RemoteMessagingActionHandler(
-            lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher()
+            surveyUsageStateRefresher: RemoteMessagingSurveyUsageStateRefresher()
         )
 
         self.remoteMessagingImageLoader = remoteMessagingImageLoader

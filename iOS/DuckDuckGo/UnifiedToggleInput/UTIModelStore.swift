@@ -18,8 +18,16 @@
 //
 
 import AIChat
+import Combine
 import os.log
 import Subscription
+
+/// Free trial eligibility used to label gated models and reasoning efforts.
+enum FreeTrialEligibility: Equatable {
+    case unknown
+    case eligible
+    case ineligible
+}
 
 @MainActor
 final class UTIModelStore {
@@ -27,11 +35,14 @@ final class UTIModelStore {
     var models: [AIChatModel] = []
     var subscriptionState: SubscriptionState = .free
     var attachmentLimits: AIChatAttachmentTierLimits?
+    private(set) var freeTrialEligibility: FreeTrialEligibility = .unknown
 
     private let modelsService: AIChatModelsProviding
     private(set) var preferences: AIChatPreferencesPersisting
     private let subscriptionManager: any SubscriptionManager
+    private let isUpdatedModelPickerEnabled: Bool
     private var modelsFetchTask: Task<Void, Never>?
+    private var cancellables = Set<AnyCancellable>()
 
     private var liveModelId: String?
 
@@ -40,11 +51,17 @@ final class UTIModelStore {
     init(
         modelsService: AIChatModelsProviding,
         preferences: AIChatPreferencesPersisting,
-        subscriptionManager: any SubscriptionManager
+        subscriptionManager: any SubscriptionManager,
+        isUpdatedModelPickerEnabled: Bool
     ) {
         self.modelsService = modelsService
         self.preferences = preferences
         self.subscriptionManager = subscriptionManager
+        self.isUpdatedModelPickerEnabled = isUpdatedModelPickerEnabled
+        if isUpdatedModelPickerEnabled {
+            // Only the updated picker labels gated models and reasoning efforts based on trial eligibility.
+            subscribeToAppStoreProductAvailability()
+        }
     }
 
     var persistedModelId: String? {
@@ -97,6 +114,14 @@ final class UTIModelStore {
         return models.first(where: { $0.id == persistedModelId })?.supportsTool(tool) ?? false
     }
 
+    /// The model to switch to when the user picks Create Image on a model that can't generate images.
+    /// `entityHasAccess` is part of the predicate on purpose: `persistedModelId` runs every id through
+    /// `resolve(modelId:)`, which drops an inaccessible model and falls back to `firstAccessibleModelId`
+    /// — so switching to one would leave the user on a third model while the footer card names this one.
+    var imageGenerationFallbackModel: AIChatModel? {
+        AIChatModel.preferredImageGenerationModel(in: models)
+    }
+
     private var firstAccessibleModelId: String? {
         models.first(where: { $0.entityHasAccess })?.id
     }
@@ -109,6 +134,9 @@ final class UTIModelStore {
     }
 
     func fetchModels() {
+        if isUpdatedModelPickerEnabled {
+            updateFreeTrialEligibilityFromSubscriptionCache(notifyOnChange: false)
+        }
         modelsFetchTask?.cancel()
         modelsFetchTask = Task { [weak self] in
             guard let self else { return }
@@ -129,6 +157,31 @@ final class UTIModelStore {
                 self.onModelsUpdated?()
                 os_log(.error, "Failed to fetch models: %{public}@", error.localizedDescription)
             }
+        }
+    }
+
+    private func subscribeToAppStoreProductAvailability() {
+        subscriptionManager.hasAppStoreProductsAvailablePublisher
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.updateFreeTrialEligibilityFromSubscriptionCache(notifyOnChange: true)
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func updateFreeTrialEligibilityFromSubscriptionCache(notifyOnChange: Bool) {
+        let updatedEligibility: FreeTrialEligibility
+        if !subscriptionManager.isSubscriptionPurchaseEligible {
+            updatedEligibility = .unknown
+        } else {
+            updatedEligibility = subscriptionManager.isUserEligibleForFreeTrial() ? .eligible : .ineligible
+        }
+
+        guard updatedEligibility != freeTrialEligibility else { return }
+        freeTrialEligibility = updatedEligibility
+        if notifyOnChange {
+            onModelsUpdated?()
         }
     }
 
@@ -174,7 +227,8 @@ final class UTIModelStore {
                     supportedTools: remote.supportedTools.compactMap(AIChatRAGTool.init(rawValue:)),
                     entityHasAccess: remote.entityHasAccess,
                     accessTier: remote.accessTier,
-                    supportedReasoningEffort: remote.supportedReasoningEffort
+                    supportedReasoningEffort: remote.supportedReasoningEffort,
+                    label: remote.label
                 )
             }
             return AIChatModel(remoteModel: remote, userTier: userTier)

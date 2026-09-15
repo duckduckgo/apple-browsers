@@ -20,6 +20,7 @@
 import Core
 import PrivacyConfig
 import Subscription
+import FeatureFlags_iOS
 
 struct IOSMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
 
@@ -30,7 +31,7 @@ struct IOSMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
     }
 
     func shouldOfferMonthlyFreeTrial() -> Bool {
-        let cohort = featureFlagger.assignedCohort(for: FeatureFlag.monthlyFreeTrialExperiment) as? FeatureFlag.MonthlyFreeTrialExperimentCohort
+        let cohort = featureFlagger.assignedCohort(for: FeatureFlag.monthlyFreeTrialExperiment2) as? FeatureFlag.MonthlyFreeTrialExperimentCohort
 
         // Do not offer free monthly trial for users in the treatment group.
         switch cohort {

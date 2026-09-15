@@ -44,6 +44,8 @@ public struct AIChatModel {
     public let supportedReasoningEffort: [AIChatReasoningEffort]
     /// Per-effort access metadata from the `/models` API. `nil` when the backend omits the field.
     public let reasoningEffortAccess: [AIChatReasoningEffortAccess]?
+    /// Suggested usage label returned by the `/models` API.
+    public let label: AIChatModelLabel?
 
     public enum ModelProvider {
         case openAI
@@ -56,6 +58,21 @@ public struct AIChatModel {
 
     public var supportsFileUpload: Bool {
         !supportedFileTypes.isEmpty
+    }
+
+    public var isSuggestedForImageCreation: Bool {
+        switch label {
+        case .everydayUse:
+            return true
+        case .usesLimitsFaster, .unknown, .none:
+            return false
+        }
+    }
+
+    /// Picks the preferred accessible model that supports Create Image across native surfaces.
+    public static func preferredImageGenerationModel(in models: [AIChatModel]) -> AIChatModel? {
+        let candidates = models.filter { $0.entityHasAccess && $0.supportsTool(.imageGeneration) }
+        return candidates.first(where: \.isSuggestedForImageCreation) ?? candidates.first
     }
 
     /// Whether this is an advanced (paid-tier) model — i.e. not available on the free tier. Single source
@@ -76,7 +93,8 @@ public struct AIChatModel {
         entityHasAccess: Bool,
         accessTier: [String] = [],
         supportedReasoningEffort: [AIChatReasoningEffort] = [],
-        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil,
+        label: AIChatModelLabel? = nil
     ) {
         self.id = id
         self.name = name
@@ -90,6 +108,7 @@ public struct AIChatModel {
         self.accessTier = accessTier
         self.supportedReasoningEffort = supportedReasoningEffort
         self.reasoningEffortAccess = reasoningEffortAccess
+        self.label = label
     }
 
     public func supportsTool(_ tool: AIChatRAGTool) -> Bool {

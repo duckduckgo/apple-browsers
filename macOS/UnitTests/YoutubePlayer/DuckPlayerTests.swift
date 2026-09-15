@@ -21,6 +21,7 @@ import Combine
 import Common
 import FoundationExtensions
 import NewTabPage
+import PrivacyConfig
 import PrivacyConfigTestsUtils
 import WebKit
 import XCTest
@@ -114,7 +115,8 @@ final class DuckPlayerTests: XCTestCase {
     func testEnabledPiPFlag() async {
         let configuration = WKWebViewConfiguration()
 
-        configuration.applyStandardConfiguration(contentBlocking: ContentBlockingMock(),
+        configuration.applyStandardConfiguration(featureFlagger: MockFeatureFlagger(),
+                                                 contentBlocking: ContentBlockingMock(),
                                                  burnerMode: .regular)
         XCTAssertEqual(configuration.allowsPictureInPictureMediaPlayback, !NSApp.isSandboxed)
     }

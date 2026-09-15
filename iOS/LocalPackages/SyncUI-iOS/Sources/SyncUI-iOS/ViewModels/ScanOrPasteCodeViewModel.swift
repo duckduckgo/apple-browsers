@@ -47,6 +47,8 @@ public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
     func shareCode(_ code: String, source: CodeCollectionSource)
 
     func codeEntryScreenShown()
+    func barcodeScreenShown()
+    func scanQRCodeScreenShown()
     func codeCopied(_ code: String, source: CodeCollectionSource)
 }
 

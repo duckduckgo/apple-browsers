@@ -84,7 +84,7 @@ final class NavigationPixelNavigationResponder {
     /// measured. The captured type is consumed by the next `didStart` call; navigations that fail the
     /// gating clear any pending value instead.
     func willStart(_ navigationAction: WKNavigationAction) {
-        guard navigationAction.isTargetingMainFrame() else { return }
+        guard navigationAction.isTargetingMainFrame else { return }
 
         guard !isLoadingErrorPage(navigationAction) else {
             pendingNavigationType = nil

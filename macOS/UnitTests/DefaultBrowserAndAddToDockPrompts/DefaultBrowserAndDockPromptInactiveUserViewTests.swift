@@ -22,7 +22,7 @@ import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
-@Suite("Default Browser And Dock Prompt Inactive User View Tests", .disabled("Snapshot testing is opt-in until the sync automations land"))
+@Suite("Default Browser And Dock Prompt Inactive User View Tests")
 final class DefaultBrowserAndDockPromptInactiveUserViewTests {
 
     @available(macOS 13, *)

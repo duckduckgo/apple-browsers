@@ -22,7 +22,7 @@ import WebExtensions
 
 /// Telemetry for the Cookie Pop-up Protection opt-in dialog.
 /// `autoconsentEnabled` is the feature state at the moment the dialog was shown.
-enum CookiePopupProtectionOptInPixel: PixelKitEvent {
+enum CookiePopupProtectionOptInPixel: PixelKit.Event {
     /// The dialog was shown on launch for the first time (once per install).
     case shownFirst(autoconsentEnabled: Bool)
     /// The dialog was shown on launch again (any presentation after the first).

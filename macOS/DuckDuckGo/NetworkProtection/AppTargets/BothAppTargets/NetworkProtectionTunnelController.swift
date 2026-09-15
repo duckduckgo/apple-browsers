@@ -21,7 +21,7 @@ import Combine
 import SwiftUI
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import NetworkExtension
 import VPN
@@ -29,6 +29,7 @@ import NetworkProtectionProxy
 import NetworkProtectionUI
 import Networking
 import PixelKit
+import WideEvent
 import os.log
 import Subscription
 import SystemExtensionManager
@@ -296,6 +297,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 .setSelectedLocation,
                 .setDNSSettings,
                 .setShowInMenuBar,
+                .setSessionHealthTelemetryEnabled,
                 .setDisableRekeying:
             // Intentional no-op as this is handled by the extension or the agent's app delegate
             break
@@ -374,6 +376,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         // runs on every connect, regardless of whether the user ever opens VPN settings.
         settings.resetEnforceRoutesIfUnavailable(
             strictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRoutingToggle))
+
+        settings.sessionHealthTelemetryEnabled = featureFlagger.isFeatureOn(.vpnSessionHealthTelemetry)
 
         if tunnelManager.localizedDescription == nil {
             tunnelManager.localizedDescription = UserText.networkProtectionTunnelName
@@ -812,8 +816,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     @MainActor
     private func start(_ tunnelManager: NETunnelProviderManager) async throws {
-        settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle))
-
         let options = try await prepareStartupOptions()
 
         if Self.simulationOptions.isEnabled(.controllerFailure) {

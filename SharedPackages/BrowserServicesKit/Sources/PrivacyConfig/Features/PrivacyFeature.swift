@@ -29,7 +29,6 @@ public enum PrivacyFeature: String {
     case gpc
     case httpsUpgrade = "https"
     case autoconsent
-    case clickToLoad
     case autofill
     case autofillBreakageReporter
     case ampLinks
@@ -89,6 +88,7 @@ public enum PrivacyFeature: String {
     case forceDarkModeOnWebsites
     case promoQueue
     case adBlockingExtension
+    case eventHub
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -176,6 +176,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
 
+    /// Enables the Website Permissions entry point in Settings.
+    case websitePermissionsSettings
+
     /// Memory Pressure Reporter
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
     case memoryPressureReporting
@@ -205,124 +208,23 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case screenTimeCleaning
 
-    /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211806114021633?focus=true
-    case onboardingRebranding
-
     /// Option to install Chrome extension during onboarding (DMG only)
     case onboardingChromeExtension
+
+    /// Allows browsing before completing onboarding.
+    case onboardingAsync
+
+    /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
+    case onboardingNonBlocking
 
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
     /// trampoline if the SPI ever misbehaves.
     case newErrorPageReload
-}
 
-public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .iOSBrowserConfig
-    }
-
-    // Demonstrative case for default value. Remove once a real-world feature is added
-    case intentionallyLocalOnlySubfeatureForTests
-
-    case widgetReporting
-
-    // Local inactivity provisional notifications delivered to Notification Center.
-    // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
-    case inactivityNotification
-
-    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1210997282929955?focus=true
-    case unifiedURLPredictor
-
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
-    case forgetAllInSettings
-
-    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
-    case productTelemetrySurfaceUsage
-
-    ///  https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
-    case appRatingPrompt
-
-    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1212238464901412?focus=true
-    case showWhatsNewPromptOnDemand
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
-    case genericBackgroundTask
-
-    /// Failsafe flag for disabling call stack tree depth limiting in crash collector
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
-    case crashCollectionLimitCallStackTreeDepth
-
-    /// Enables sending MetricKit launch-time telemetry pixels.
-    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1214963974721156
-    case launchTimeMetrics
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
-    case browsingMenuSheetEnabledByDefault
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
-    case showNTPAfterIdleReturn
-
-    case crashReportOptInStatusResetting
-
-    case screenTimeCleaning
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
-    case bottomBarViewportFixedElementsWorkaround
-
-    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
-    case onboardingRebranding
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214974217398704?focus=true
-    case appRebranding
-
-    /// https://app.asana.com/1/137249556945/task/1213314048601761
-    case fireMode
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
-    case fireButtonRefinements
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216535350078652
-    case fireButtonSingleTabDeleteAll
-
-    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1212828713075939?focus=true
-    case omniBarLongPressMenu
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
-    case customProductPageDuckAiChat
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215151176422651?focus=true
-    case customProductPageDuckAiOnboardingFlow
-
-    /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
-    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
-    case defaultExistingIPhoneUsersToNewTabAfterIdle
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
-    case walletPassDownload
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
-    case floatingUI
-
-    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1216807388526023?focus=true
-    case tabSwitcherJuly2026
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215385432113040?focus=true
-    case removeChatHistory
-
-    /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperiment
-
-    /// NA Experiment: tailor the onboarding flow based on the user's download reason.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
-    case onboardingFlowByDownloadReasonExperiment
-
-    /// Caches the blank-snapshot overlay off the suspend path to avoid the background scene-update watchdog.
-    case blankSnapshotCaching
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
-    case systemFindInPage
+    /// "Sort by name permanently" — permanently reorders a bookmark folder's direct children alphabetically.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217076881156357?focus=true
+    case bookmarksReorderByName
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -372,7 +274,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlist
     case waitlistBetaActive
     case freemium
-    case remoteBrokerDelivery
     case foregroundRunningOnAppActive
     case continuedProcessing
     case pirRollout
@@ -381,6 +282,9 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case freemiumPIR
     case optOutRetryError96Hours
     case deferredSecureVaultInit
+    case performanceMetrics
+    case extractedProfileRefresh
+    case schedulerDeferralHandling
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -406,9 +310,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Single "Ask Duck.ai" menu button (New Chat / Ask About Page) replacing the two-part split button.
     case chromeMenuButton
 
-    /// Experimental address bar with duck.ai
-    case experimentalAddressBar
-
     /// Global switch to disable all AI Chat related functionality
     case globalToggle
 
@@ -422,6 +323,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Context-aware page suggestions shown in the iOS contextual Duck.ai sheet
     case contextualSuggestedPrompts
+
+    /// Offers the page navigated to as an attachment, in an active contextual chat with auto-attach off
+    case contextualPagePlaceholder
 
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
@@ -437,9 +341,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Allows user to clear AI Chat history with the fire button or auto-clear
     case clearAIChatHistory
-
-    /// Signals that the iOS app should display duck.ai chats in "full mode" i.e in a tab, not a sheet
-    case fullDuckAIMode
 
     /// Enables native-side support for standalone migration flows in AI Chat
     case standaloneMigration
@@ -459,13 +360,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the default omnibar toggle position setting for AI Chat
     case omnibarDefaultPosition
 
-    case unifiedToggleInput
+    /// Enables updated model picker with BE-driven sorting and sublines for models.
+    case updatedModelPicker
 
-    /// Forward-only lever for the unified toggle input rollout. When disabled, *new* (un-granted)
-    /// users stop receiving the unified toggle input; users who have already been granted it keep
-    /// it. Independent of the master `unifiedToggleInput` flag (which revokes from everyone when
-    /// turned off). See `UnifiedToggleInputFeature`.
-    case unifiedToggleInputIncludeNewUsers
+    /// Enables updated `Create image` tool behavior.
+    case updatedCreateImage
 
     /// Hides the Search↔Duck.ai toggle in the unified input when the user is on a Duck.ai tab,
     /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
@@ -474,6 +373,16 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables Unified Toggle Input inside the iOS contextual AI chat sheet.
     case contextualUnifiedToggleInput
+
+    /// Enables the address-bar Duck.ai menu and the floating contextual input that replaces the
+    /// pre-submit contextual sheet on iPhone.
+    case contextualFloatingInput
+
+    /// Enables Chats in the iOS address-bar and macOS tab-bar Duck.ai menus.
+    case addressBarRecentChats
+
+    /// Makes the address-bar Duck.ai menu page-aware
+    case contextualAddressBarMenu
 
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
@@ -492,6 +401,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls pin/unpin updates of Synced chats
     case supportsSyncChatsUpdate
+
+    /// Duck.ai actions on selected text in the browser, offered from the selection edit menu.
+    case textActions
 
     /// Shows a link in Settings → AI Features that opens the Duck.ai Settings modal.
     case settingsLinkInAiFeatures
@@ -518,6 +430,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
 
+    /// Enables handing a PDF tab to Duck.ai as page context (bytes instead of markdown)
+    case pdfPageContext
+
     /// Enables attaching content from multiple open tabs to the Duck.ai sidebar chat.
     case sidebarAttachMoreTabs
 
@@ -533,17 +448,8 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     case ntpSuggestionsDeletion
 
-    /// Enables page context feature on iPad
-    case iPadPageContext
-
-    /// Enables voice chat shortcut in the focused address bar
-    case voiceShortcut
-
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
-
-    /// Enables the fire button in the contextual AI chat sheet
-    case contextualFireButton
 
     /// Enables the Duck.ai top-level main menu shortcut (macOS only)
     case mainMenuShortcut
@@ -589,16 +495,13 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Displays the Duck.ai shortcut in the iPad browser chrome (tabs bar).
     case iPadChromeShortcut
 
+    /// Single Duck.ai menu button in the iPad tabs bar.
+    case iPadChromeMenuButton
+
     /// Enables moving the AI Chat native-storage container from the shared App
     /// Group into the app's Application Support directory on iOS. Off keeps the
     /// legacy App Group path.
     case nativeStoragePathMigration
-
-    /// Once the native-storage path migration is complete (or not needed), opens
-    /// the store on locked / background launches instead of deferring on the
-    /// protected-data gate. Off keeps the legacy behavior where any locked launch
-    /// nils the handler — which makes the Duck.ai front-end re-prompt T&C.
-    case nativeStorageMigrationLockedLaunchFix
 
     /// Enables the rich Duck.ai tab grid card in the iOS tab switcher (rendered from
     /// native-storage chat data). When off, Duck.ai tabs fall back to the standard
@@ -622,8 +525,15 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Replaces Duck.ai's web-based chat sidebar with native UI.
     case nativeSidebar
 
-    /// macOS only. System-wide Duck.ai entry point: global keyboard shortcut and menu bar icon.
-    case macosPromptBar
+    /// Supports Duck.ai edit prompt from the native input field.
+    case nativePromptEditing
+
+    /// Re-enables Duck.ai promo cards on the native input (their CTAs open native pickers).
+    case nativePromoCards
+
+    /// Warns users as they approach their daily/weekly Duck.ai limits, using the usage snapshot the
+    /// web app writes into the reserved `usageLimits` native-storage entry.
+    case usageWarnings
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -685,6 +595,10 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Toggle for the Copy VPN Diagnostics button in VPN settings/status.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
     case showCopyDiagnosticsButton
+
+    /// VPN Session Health Telemetry
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218245909089002?focus=true
+    case sessionHealthTelemetry
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {
@@ -707,14 +621,13 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncCreditCards
     case syncIdentities
     case aiChatSync
-    case aiChatSyncPromo
     case allowSingleDeviceOnConnectScreen
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
-
-    /// Gates the Simplified Sync Setup follow-up screens (deactivation + multi-device path).
-    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1215960387490701
+    case canWriteUnifiedDeviceList
+    case canUsePatchEndpointForLegacyDeviceRename
+    case canReadUnifiedDeviceList
     case simplifiedSyncSetupV2
 }
 
@@ -726,7 +639,6 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case onByDefault
     case filterlist
     case heuristicAction
-    case cookiePopupPreferenceSetting
     case cookiePopupOptInDialog
     case cookiePopupOptInDialogExperiment
 }
@@ -748,7 +660,13 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification
     case subscriptionPromoForExistingUsers
-    case monthlyFreeTrialExperiment
+    case monthlyFreeTrialExperiment2
+    case subscriptionOnboardingFreeTrialsSep2026
+    case subscriptionOnboardingPaidSubsSep2026
+    case onboardingSubscriptionUpsellExperiment
+
+    /// Gates the server-rendered first paywall.
+    case performanceOptimizedPaywalls
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -869,6 +787,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
+    case dataDirectoryAccess
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {
@@ -928,6 +847,27 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
     case featureEnabled
+
+    /// Kill switch for the Bookmark Toolbar ("Show Bookmarks Bar?") promo.
+    case bookmarkToolbarPromo
+
+    /// Kill switch for the Sync Favicons ("Download Missing Icons?") promo.
+    case syncFaviconsPromo
+
+    /// Kill switch for the Autofill Toolbar Pinning ("Add passwords shortcut?") promo.
+    case autofillToolbarPinningPromo
+
+    /// Kill switch for the Cookie Pop-ups Blocked promo.
+    case cookiePopupsBlockedPromo
+
+    /// Kill switch for observing the Duck Player ("Watch in Duck Player?") overlay.
+    case duckPlayerOverlayPromo
+
+    /// Kill switch for the "Update available" promo.
+    case updateAvailablePromo
+
+    /// Kill switch for the "Browser updated" promo.
+    case browserUpdatedPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

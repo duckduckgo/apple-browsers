@@ -75,6 +75,9 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Set cache key hash
       run: |
          has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
@@ -101,7 +104,7 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.4"
+        preferred-versions: "26.5"
 
     - name: Boot iOS Simulator for log collection
       id: boot-simulator

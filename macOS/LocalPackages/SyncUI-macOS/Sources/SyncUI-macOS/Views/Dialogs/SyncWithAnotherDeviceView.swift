@@ -125,9 +125,9 @@ struct SyncWithAnotherDeviceView: View {
             .background(
                 ZStack {
                     RoundedRectangle(cornerRadius: Metrics.pickerInnerRadius)
-                        .stroke(selectedSegment == tag ? Color(.blackWhite10) : .clear, lineWidth: 1)
+                        .stroke(selectedSegment == tag ? Color(designSystemColor: .controlsRaisedFillPrimary) : .clear, lineWidth: 1)
                     RoundedRectangle(cornerRadius: Metrics.pickerInnerRadius)
-                        .fill(selectedSegment == tag ? Color(.pickerViewSelected) : .clear)
+                        .fill(selectedSegment == tag ? Color(designSystemColor: .controlsRaisedFillPrimary) : .clear)
                 }
             )
         }
@@ -193,7 +193,7 @@ struct SyncWithAnotherDeviceView: View {
                         .frame(height: 28)
                     }
                     Button {
-                        model.delegate?.copyCode()
+                        model.delegate?.copyCode(codeForDisplayOrPasting)
                         showCopyConfirmation = true
                     } label: {
                         HStack {
@@ -323,10 +323,10 @@ private struct NumberBadge: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(Color.primary.opacity(0.06))
+                .fill(Color(designSystemColor: .toneTintSecondary))
             Text(verbatim: "\(number)")
                 .font(.system(size: 8.75, weight: .semibold))
-                .foregroundColor(.secondary)
+                .foregroundColor(Color(designSystemColor: .accentAltTextPrimary))
         }
         .frame(width: 16, height: 16)
     }

@@ -23,7 +23,7 @@ import UIKit
 
 /// Hosts the SwiftUI `UnifiedSuggestionsView` for any UTI surface (Duck.ai, Search). Parameterized
 /// by `UnifiedSuggestionsHostConfig` so the host is surface-agnostic. The empty-state logo and fire
-/// screen render inside the view; the host no longer touches `DaxLogoManager`.
+/// screen render inside the view.
 @MainActor
 final class UnifiedSuggestionsHost {
 

@@ -18,7 +18,7 @@
 
 import BrowserServicesKit
 import DuckPlayer
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
 import XCTest

@@ -29,6 +29,8 @@ import SwiftUI
 import WebKit
 import UIKit
 import UserScript
+import FeatureFlags_iOS
+import PixelKit
 
 /// Values that the frontend can use to determine the current state.
 struct InitialPlayerSettings: Codable {
@@ -687,8 +689,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     @MainActor
     public func handleYoutubeError(params: Any, message: WKScriptMessage) async -> Encodable? {
         let (volumePixel, dailyPixel) = getPixelsForYouTubeErrorParams(params)
-        DailyPixel.fire(pixel: dailyPixel)
-        Pixel.fire(pixel: volumePixel)
+        PixelKit.fire(dailyPixel, frequency: .legacyDailyNoSuffix)
+        PixelKit.fire(volumePixel)
         return nil
     }
 
@@ -786,9 +788,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         if isSERP {
             switch userValues.duckPlayerMode {
             case .enabled:
-                Pixel.fire(pixel: .duckPlayerSettingsAlwaysOverlaySERP)
+                PixelKit.fire(Pixel.Event.duckPlayerSettingsAlwaysOverlaySERP)
             case .disabled:
-                Pixel.fire(pixel: .duckPlayerSettingsNeverOverlaySERP)
+                PixelKit.fire(Pixel.Event.duckPlayerSettingsNeverOverlaySERP)
             default: break
             }
 
@@ -796,9 +798,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         } else {
             switch userValues.duckPlayerMode {
             case .enabled:
-                Pixel.fire(pixel: .duckPlayerSettingsAlwaysOverlayYoutube)
+                PixelKit.fire(Pixel.Event.duckPlayerSettingsAlwaysOverlayYoutube)
             case .disabled:
-                Pixel.fire(pixel: .duckPlayerSettingsNeverOverlayYoutube)
+                PixelKit.fire(Pixel.Event.duckPlayerSettingsNeverOverlayYoutube)
             default: break
             }
         }

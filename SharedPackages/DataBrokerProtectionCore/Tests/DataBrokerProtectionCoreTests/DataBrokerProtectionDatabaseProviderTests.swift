@@ -503,6 +503,29 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         try? FileManager.default.removeItem(at: url)
     }
 
+    func testUpdateProfileDataReplacesTheStoredProfileAndLeavesTheRemovedDateAlone() throws {
+        // Given
+        let brokerIds = try sut.fetchAllBrokers().compactMap(\.id)
+        let extractedProfileId = try XCTUnwrap(brokerIds.flatMap { try sut.fetchExtractedProfiles(for: $0) }.first?.id)
+        let removedDate = Date(timeIntervalSince1970: 1_000_000)
+        try sut.updateRemovedDate(for: extractedProfileId, with: removedDate)
+
+        // When
+        let refreshedProfileData = Data("refreshed".utf8)
+        try sut.updateProfileData(for: extractedProfileId, with: refreshedProfileData)
+
+        // Then
+        let updated = try XCTUnwrap(sut.fetchExtractedProfile(with: extractedProfileId))
+        XCTAssertEqual(updated.profile, refreshedProfileData)
+        XCTAssertEqual(try XCTUnwrap(updated.removedDate).timeIntervalSince1970, removedDate.timeIntervalSince1970, accuracy: 0.001)
+    }
+
+    func testUpdateProfileDataThrowsWhenTheProfileDoesNotExist() throws {
+        XCTAssertThrowsError(try sut.updateProfileData(for: -1, with: Data())) { error in
+            XCTAssertEqual(error as? DataBrokerProtectionDatabaseErrors, .elementNotFound)
+        }
+    }
+
     private func createFreshTestVault() throws -> (DefaultDataBrokerProtectionDatabaseProvider, URL) {
         let freshVaultURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
             directoryName: "DBP",

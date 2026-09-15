@@ -22,6 +22,7 @@ import Combine
 import Core
 import DesignResourcesKit
 import UIKit
+import FeatureFlags_iOS
 
 // MARK: - Duck.ai fire onboarding types
 
@@ -271,7 +272,7 @@ extension MainViewController {
         if let tabToClose = currentTab?.tabModel {
             closeTab(tabToClose, behavior: .createEmptyTabAtSamePosition, clearTabHistory: false)
         }
-        openAIChat(query, autoSend: query.map { !$0.isEmpty } ?? false, flowType: .mobileAppOnboarding)
+        openAIChat(source: .onboarding, query, autoSend: query.map { !$0.isEmpty } ?? false, flowType: .mobileAppOnboarding)
     }
 
     func clearDuckAIWebsiteDataForResumeIfNeeded() async {
@@ -480,7 +481,7 @@ extension MainViewController {
         }
 
         setDuckAIFireControlsLocked(shouldArmDuckAIFireOnboarding)
-        openAIChat(query, autoSend: autoSend, flowType: flowType)
+        openAIChat(source: .onboarding, query, autoSend: autoSend, flowType: flowType)
     }
 
     func clearDuckAIOnboardingResumeStepIfNeeded() {

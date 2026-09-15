@@ -40,6 +40,7 @@ final class MainWindowController: NSWindowController {
     var themeUpdateCancellable: AnyCancellable?
 
     private let featureFlagger: FeatureFlagger?
+    private weak var windowControllersManager: WindowControllersManager?
 
     private(set) var lastWindowDidBecomeKeyTimestamp: TimeInterval = 0
 
@@ -56,7 +57,8 @@ final class MainWindowController: NSWindowController {
          fireWindowOpenTrigger: FireWindowOpenTrigger? = nil,
          fireViewModel: FireViewModel,
          themeManager: ThemeManaging,
-         featureFlagger: FeatureFlagger? = nil) {
+         featureFlagger: FeatureFlagger? = nil,
+         windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager) {
 
         // Compute initial window frame
         let frame = InitialWindowFrameProvider.initialFrame()
@@ -78,6 +80,7 @@ final class MainWindowController: NSWindowController {
 
         self.themeManager = themeManager
         self.featureFlagger = featureFlagger
+        self.windowControllersManager = windowControllersManager
 
         super.init(window: window)
 
@@ -164,16 +167,44 @@ final class MainWindowController: NSWindowController {
         startOnboardingIfNeeded()
     }
 
+    /// Automation runs and overridden onboarding would enrol without being real first runs, and a
+    /// reinstalling user is not a new user.
+    private var isEligibleForNonBlockingExperiment: Bool {
+        let launchOptions = LaunchOptionsHandler()
+        guard !launchOptions.isAutomationSession,
+              case .notOverridden = launchOptions.onboardingStatus else { return false }
+
+        let reinstallDetector = DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore)
+        return !reinstallDetector.isReinstallingUser
+    }
+
     private func startOnboardingIfNeeded() {
         guard shouldShowOnboarding, let selectedTab = mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab else {
             return
         }
 
-        // During Onboarding, several UI elements get disabled. In order to prevent flickering, we'll disable them right after kicking off Onboarding.
-        // Locking up UI via `OnboardingUserScript.setInit` has a noticeable delay, where elements may flash.
-        //
+        let experiment = featureFlagger.map(OnboardingNonBlockingExperiment.init)
+        if isEligibleForNonBlockingExperiment {
+            experiment?.enroll()
+        }
+        let isNonBlocking = experiment?.isNonBlocking == true
+        if isNonBlocking, windowControllersManager?.hasOnboardingTab == true {
+            return
+        }
+
         selectedTab.startOnboarding()
-        userInteraction(prevented: true)
+        configureOnboardingInteraction(for: selectedTab, isNonBlocking: isNonBlocking)
+    }
+
+    private func configureOnboardingInteraction(for tab: Tab, isNonBlocking: Bool) {
+        if isNonBlocking {
+            // Track the source before selection can change or the page can be closed.
+            windowControllersManager?.setOnboardingTab(tab)
+            tab.onboardingActionsManager?.installNonBlockingHandlers()
+        } else {
+            // Lock immediately to avoid flicker while the onboarding script loads.
+            userInteraction(prevented: true)
+        }
     }
 
     private func subscribeToResolutionChange() {
@@ -287,6 +318,7 @@ final class MainWindowController: NSWindowController {
     private var burningDataCancellable: AnyCancellable?
     private var delayedBlockingWorkItem: DispatchWorkItem?
     private var didMoveTabBarForFireAnimation = false
+    private var isClosingAndBurning = false
 
     private func subscribeToBurningData() {
         burningDataCancellable = fireViewModel.fire.burningDataPublisher
@@ -592,12 +624,24 @@ extension MainWindowController: NSWindowDelegate {
     func windowShouldClose(_ window: NSWindow) -> Bool {
         guard mainViewController.tabCollectionViewModel.isBurner else { return true }
 
+        burnAndClose(window)
+        return false
+    }
+
+    /// `NSWindow.close()` bypasses `windowShouldClose(_:)`, so programmatic Fire Window closes have to come
+    /// through here or they lose the fire animation and the in-progress downloads warning.
+    func burnAndClose(_ window: NSWindow) {
+        // A burn already has the animation on screen and closes windows itself (see Fire.closeWindows).
+        guard fireViewModel.fire.burningData == nil else {
+            window.close()
+            return
+        }
+
         if showAlertIfActiveDownloadsPresent(in: window) {
-            return false
+            return
         }
 
         animateBurningIfNeededAndClose(window)
-        return false
     }
 
     private func showAlertIfActiveDownloadsPresent(in window: NSWindow) -> Bool {
@@ -635,6 +679,10 @@ extension MainWindowController: NSWindowDelegate {
     }
 
     private func animateBurningIfNeededAndClose(_ window: NSWindow) {
+        // The animation is awaited, so the window stays around and closable in the meantime.
+        guard !isClosingAndBurning else { return }
+        isClosingAndBurning = true
+
         guard !window.isPopUpWindow else {
             window.close()
             return

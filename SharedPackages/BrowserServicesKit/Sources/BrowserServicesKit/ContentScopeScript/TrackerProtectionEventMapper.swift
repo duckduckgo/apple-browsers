@@ -129,12 +129,17 @@ public struct TrackerProtectionEventMapper {
 
     // MARK: - Classification helpers
 
+    /// This set contains eTLD+1 domains owned by DuckDuckGo, to avoid incorrectly
+    /// reporting 3rd party requests between DDG domains.
+    private static let duckDuckGoETLDplus1: Set<String> = ["duckduckgo.com", "duck.ai"]
+
     /// Returns true when request and page share the same eTLD+1.
     public func isSameSiteObservation(_ observation: TrackerProtectionSubfeature.ResourceObservation) -> Bool {
         let requestETLDplus1 = tld.eTLDplus1(forStringURL: observation.url)
         let pageETLDplus1 = tld.eTLDplus1(forStringURL: observation.pageUrl)
         guard let requestETLDplus1, let pageETLDplus1 else { return false }
-        return requestETLDplus1 == pageETLDplus1
+        return requestETLDplus1 == pageETLDplus1 ||
+            (Self.duckDuckGoETLDplus1.contains(pageETLDplus1) && Self.duckDuckGoETLDplus1.contains(requestETLDplus1))
     }
 
     /// Build a DetectedRequest for a non-TDS cross-site resource (third-party request).
@@ -175,12 +180,12 @@ public struct TrackerProtectionEventMapper {
     /// pipeline exactly so the C-S-S-driven classification is observationally identical to
     /// the WKScriptMessage-driven one. Any divergence here is a behavior regression.
     ///
-    /// 1. Try each supplementary TDS (CTL, ad-attribution) with ad-click vendor.
+    /// 1. Try each supplementary TDS (ad-attribution) with ad-click vendor.
     ///    If any returns blocked, use it immediately.
     /// 2. Fall back to the main TDS without vendor.
     /// 3. Main result unconditionally overwrites non-blocked supplementary candidates.
-    ///    This matches legacy semantics. It is safe in practice because the splitters
-    ///    (`AdClickAttributionRulesSplitter`, `ClickToLoadRulesSplitter`) remove the
+    ///    This matches legacy semantics. It is safe in practice because the splitter
+    ///    (`AdClickAttributionRulesSplitter`) removes the
     ///    supplementary trackers from the main TDS, so main returns nil for those URLs
     ///    and the supplementary candidate survives. If the splitter contract were ever
     ///    weakened, both the legacy script and this mapper would change behavior in

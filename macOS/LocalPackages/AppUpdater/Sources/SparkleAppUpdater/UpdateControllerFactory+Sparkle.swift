@@ -18,9 +18,10 @@
 
 import AppUpdaterShared
 import BrowserServicesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import Persistence
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Subscription
 

@@ -18,6 +18,7 @@
 //
 
 import Core
+import PixelKit
 
 /// Domain-event hooks for the NTP-after-idle feature.
 ///
@@ -93,7 +94,7 @@ final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
     private let firePixel: (Pixel.Event) -> Void
 
     init(eligibilityManager: IdleReturnEligibilityManaging,
-         firePixel: @escaping (Pixel.Event) -> Void = { DailyPixel.fireDailyAndCount(pixel: $0) }) {
+         firePixel: @escaping (Pixel.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount) }) {
         self.eligibilityManager = eligibilityManager
         self.firePixel = firePixel
     }

@@ -1,0 +1,46 @@
+appId: com.duckduckgo.mobile.ios
+
+---
+
+# Seeds a synthetic usage-limit snapshot via Debug ▸ AI Chat ▸ Duck.ai Usage Warnings, which writes
+# the reserved `usageLimits` entry the web app writes, so the real read path drives the footer.
+# Free-tier users get an empty snapshot until a window is already blocked, so there is no way to
+# reach the approaching cards without this. Caller must pass PRESET — one of the labels in
+# AIChatUsageWarningsSection.presets. Starts and ends on the browser, with the omnibar unfocused.
+#
+# The debug row is scrolled to here rather than through shared/open_debug_menu.yaml: it is the last
+# row in Settings, so that flow's `centerElement: true` can never be satisfied and the scroll runs
+# out having walked straight past it.
+- tapOn: "Browsing Menu"
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element:
+        text: "All debug options"
+    direction: DOWN
+    centerElement: false
+- tapOn: "All debug options"
+
+# The debug screen is pushed asynchronously. Without this wait the scroll below can start while
+# Settings is still up, walk it to the bottom looking for a row it does not have, and fail with
+# `No visible element found: "AI Chat"`. Deliberately not anchored on a row: the first row sits
+# under the search bar, and asserting it failed on the second seed in a flow that seeds twice.
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- scrollUntilVisible:
+    element:
+        text: "AI Chat"
+    direction: DOWN
+    centerElement: false
+- tapOn: "AI Chat"
+
+- scrollUntilVisible:
+    element:
+        text: "${PRESET}"
+    direction: DOWN
+    centerElement: true
+- tapOn: "${PRESET}"
+
+- tapOn: "Debug"
+- tapOn: "Settings"
+- tapOn: "Done"

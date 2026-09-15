@@ -17,8 +17,7 @@
 //
 
 import XCTest
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import Configuration
 @testable import Networking
 import NetworkingTestingUtils
@@ -37,8 +36,8 @@ final class MockConfigurationManager: DefaultConfigurationManager {
 
     func fetchConfigDependencies(isDebug: Bool) async -> Bool {
         do {
-            try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
-            return true
+            let fetchResult = try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
+            return fetchResult == .updated
         } catch {
             return false
         }
@@ -93,6 +92,17 @@ final class ConfigurationManagerTests: XCTestCase {
         configurationManagers = []
     }
 
+    func testWhenTryAgainSoonIsCalledThenRefreshIsDeferredRatherThanTriggeredImmediately() {
+        let manager = makeConfigurationManager()
+
+        manager.tryAgainSoon()
+
+        XCTAssertFalse(manager.isReadyToRefresh,
+                       "tryAgainSoon() must delay the next refresh; dating lastUpdateTime in the past makes every subsequent check refresh immediately")
+        XCTAssertGreaterThan(manager.lastUpdateTime, Date(),
+                             "The retry is scheduled by pushing lastUpdateTime forward, not back")
+    }
+
     func makeConfigurationFetcher(store: ConfigurationStoring,
                                   validator: ConfigurationValidating = MockValidator()) -> ConfigurationFetcher {
         let testConfiguration = URLSessionConfiguration.default
@@ -128,11 +138,16 @@ final class ConfigurationManagerTests: XCTestCase {
 
     func testWhenConfigIsNotModifiedThenDependencyIsNotUpdated() async {
         let configurationManager = makeConfigurationManager()
+        var didUpdateDependencies = false
+        configurationManager.onDependenciesUpdated = {
+            didUpdateDependencies = true
+        }
 
         MockURLProtocol.requestHandler = { _ in (HTTPURLResponse.notModified, nil) }
         await configurationManager.refreshNow()
 
         XCTAssertNotNil(MockURLProtocol.lastRequest)
+        XCTAssertFalse(didUpdateDependencies)
         XCTAssertNil(configurationManager.dependencyProvider.privacyConfigData)
         XCTAssertNil(configurationManager.dependencyProvider.privacyConfigEtag)
     }

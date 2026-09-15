@@ -36,6 +36,8 @@ protocol AIChatUserScriptProviding: AnyObject {
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
+    func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?)
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?)
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
@@ -134,6 +136,12 @@ protocol AIChatContentHandling: AnyObject {
     /// Pushes page context to the frontend (for context updates during navigation).
     func submitPageContext(_ context: AIChatPageContextData?)
 
+    /// Text selections sent on the prompt's `selections` key, alongside page context rather than in place of it.
+    func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?)
+
+    /// Called with the IDs of selections that have been dispatched.
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?)
+
     /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
     func fireAIChatTelemetry()
 
@@ -165,6 +173,8 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let featureDiscovery: FeatureDiscovery
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
+    private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
+    private let subscriptionManager: any SubscriptionManager
     private let statisticsLoader: StatisticsLoader
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let debugSettings: AIChatDebugSettingsHandling
@@ -176,6 +186,10 @@ final class AIChatContentHandler: AIChatContentHandling {
     /// Parameter is the request reason (e.g., `.userAction` for manual attach).
     private let getPageContext: PageContextAsyncProvider?
 
+    /// Retained so they survive a `setup` that happens after the owner installed them.
+    private var getAttachedSelections: (() -> [AIChatSelectionContextData])?
+    private var onAttachedSelectionsConsumed: (([String]) -> Void)?
+
     weak var delegate: AIChatContentHandlingDelegate?
 
     init(aiChatSettings: AIChatSettingsProvider,
@@ -184,6 +198,8 @@ final class AIChatContentHandler: AIChatContentHandling {
          featureDiscovery: FeatureDiscovery,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          statisticsLoader: StatisticsLoader = .shared,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
@@ -195,6 +211,8 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.featureDiscovery = featureDiscovery
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.freeTrialConversionService = freeTrialConversionService
+        self.onboardingActivationRecorder = onboardingActivationRecorder
+        self.subscriptionManager = subscriptionManager
         self.statisticsLoader = statisticsLoader
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.debugSettings = debugSettings
@@ -217,6 +235,8 @@ final class AIChatContentHandler: AIChatContentHandling {
         }
         self.userScript?.webView = webView
         self.userScript?.setPageContextProvider(getPageContext)
+        self.userScript?.setAttachedSelectionsProvider(getAttachedSelections)
+        self.userScript?.setAttachedSelectionsConsumedHandler(onAttachedSelectionsConsumed)
     }
     
     /// Sets the initial payload data for the AIChat session.
@@ -327,6 +347,16 @@ final class AIChatContentHandler: AIChatContentHandling {
         userScript?.submitPageContext(context)
     }
 
+    func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?) {
+        getAttachedSelections = provider
+        userScript?.setAttachedSelectionsProvider(provider)
+    }
+
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?) {
+        onAttachedSelectionsConsumed = handler
+        userScript?.setAttachedSelectionsConsumedHandler(handler)
+    }
+
     /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
     func fireAIChatTelemetry() {
         productSurfaceTelemetry.duckAIUsed()
@@ -377,6 +407,13 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
 
             if let tier = metric.modelTier, case .plus = tier {
                 freeTrialConversionService.markDuckAIActivated()
+                // Also completes the subscription onboarding checklist's Duck.ai step
+                let wasAlreadyActivated = onboardingActivationRecorder.recordDuckAIActivatedIfNeeded()
+                Task {
+                    SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(
+                        isSubscriptionActive: await subscriptionManager.isActiveSubscription(),
+                        isAlreadyActivated: wasAlreadyActivated)
+                }
             }
 
             DispatchQueue.main.async {

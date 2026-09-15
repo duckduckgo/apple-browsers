@@ -22,6 +22,7 @@ import ImageIO
 import AIChat
 import PrivacyConfig
 import os.log
+import FeatureFlags_iOS
 
 /// Resolves a `DuckAIGridItem` for a tab. Returns `nil` when the tab should fall
 /// back to the existing screenshot path (flag off, not a Duck.ai chat tab, native

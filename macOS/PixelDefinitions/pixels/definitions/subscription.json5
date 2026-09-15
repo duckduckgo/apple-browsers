@@ -967,5 +967,19 @@
                 "enum": ["d1", "d2_to_d7"]
             }
         ]
+    },
+    "m_mac_store_privacy-pro_app-settings_partner-benefits_click": {
+        "description": "Fires when the user clicks 'Subscriber Offers' in the DuckDuckGo Subscription section of Settings, which opens the Partnerships Hub. The name says 'partner-benefits' because it is shared with Android, iOS and Windows, and predates the label being renamed to 'Subscriber Offers'. App Store distribution.",
+        "owners": ["pbardos"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_direct_privacy-pro_app-settings_partner-benefits_click": {
+        "description": "Fires when the user clicks 'Subscriber Offers' in the DuckDuckGo Subscription section of Settings, which opens the Partnerships Hub. The name says 'partner-benefits' because it is shared with Android, iOS and Windows, and predates the label being renamed to 'Subscriber Offers'. Direct distribution.",
+        "owners": ["pbardos"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

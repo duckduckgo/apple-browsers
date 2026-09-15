@@ -142,6 +142,17 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    /// Backs the Subscriber Offers entry point. The fallback URL is resolved on each read so it
+    /// follows the current subscription environment.
+    private(set) lazy var partnershipsHubProvider: PartnershipsHubProviding = {
+        let subscriptionManager = self.subscriptionManager
+        return DefaultPartnershipsHubProvider(
+            privacyConfigurationManager: privacyConfigurationManager,
+            featureFlagger: featureFlagger,
+            fallbackURL: { subscriptionManager.url(for: .partnershipsHub) }
+        )
+    }()
+
     private enum UserDefaultsCacheKey: String, UserDefaultsCacheKeyStore {
         case subscriptionState = "com.duckduckgo.ios.subscription.state"
     }
@@ -1645,6 +1656,30 @@ extension SettingsViewModel {
 
     func openOtherPlatforms() {
         urlOpener.open(URL.otherDevices)
+    }
+
+    /// Whether the Subscriber Offers entry point is enabled in remote config. The caller must also
+    /// require an active subscription.
+    var isSubscriberOffersEnabled: Bool {
+        partnershipsHubProvider.isEntryPointEnabled
+    }
+
+    var shouldShowSubscriberOffersNewBadge: Bool {
+        partnershipsHubProvider.showsNewBadge
+    }
+
+    func openSubscriberOffers() {
+        PixelKit.fire(SubscriptionPartnershipsHubPixel.subscriberOffersSettingsClick, frequency: .dailyAndCount)
+
+        // The hub is a regular web page, so it opens in a new browser tab rather than inside
+        // Settings. A quick link keeps that navigation in DuckDuckGo instead of handing the https
+        // URL to the system default browser.
+        let hubURL = partnershipsHubProvider.hubURL
+        guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(hubURL.absoluteString)) else {
+            assertionFailure("Could not build a quick link for \(hubURL)")
+            return
+        }
+        urlOpener.open(quickLinkURL)
     }
 
     func openMoreSearchSettings() {

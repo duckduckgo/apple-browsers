@@ -25,6 +25,8 @@ protocol PairingV2ConfirmationDelegate: AnyObject {
     func pairingV2CoordinatorShouldAllowPeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
     /// Asks the local joiner whether to continue with the host that offered a recovery code.
     func pairingV2CoordinatorShouldJoinPeer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
+    /// Dismisses a pending host or joiner confirmation without treating it as a user decision.
+    func pairingV2CoordinatorDismissConfirmation() async
     /// Notifies the app that Pairing V2 created a local account before preparing a recovery code.
     func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async
 }
@@ -61,6 +63,8 @@ final class PairingV2Coordinator {
     private var lastProcessedSequence = 0
     private var hasOpenedLocalChannel = false
     private var hasClosedLocalChannel = false
+    private var pendingConfirmation: PairingV2PendingConfirmation?
+    private var pendingRecoveryCode: PairingV2RecoveryCodeResponseMessage?
     private(set) var completedRegisteredDevices: [RegisteredDevice]?
     private(set) var pendingRecoveryKey: SyncCode.RecoveryKey?
     private(set) var negotiatedVersion: PairingV2ProtocolVersion = .v2
@@ -129,6 +133,11 @@ final class PairingV2Coordinator {
             throw PairingV2Error.pairingSessionNotReady(.localKeyPair)
         }
 
+        try await handleConfirmationResult()
+        guard !hasFinishedPairing else {
+            return
+        }
+
         let messages: [PairingV2SequencedMessage]
         do {
             messages = try await performRelayOperation(
@@ -144,11 +153,26 @@ final class PairingV2Coordinator {
             }
             throw operationFailure
         }
-        for message in messages.sorted(by: { $0.seq < $1.seq }) {
+        try await processPolledMessages(messages)
+    }
+
+    private func processPolledMessages(_ messages: [PairingV2SequencedMessage]) async throws {
+        for message in messages.sorted(by: { $0.seq < $1.seq }) where message.seq > lastProcessedSequence {
             guard !hasFinishedPairing else {
                 return
             }
-            try await handle(message.encryptedMessage)
+
+            guard let applicationMessage = try decrypt(message.encryptedMessage) else {
+                lastProcessedSequence = max(lastProcessedSequence, message.seq)
+                continue
+            }
+            if case .joinerWaitingForConfirmation = state,
+               case .recoveryCodeResponse(let response) = applicationMessage {
+                // The peer may release its code before the local user confirms. Keep it while continuing to receive other messages.
+                pendingRecoveryCode = pendingRecoveryCode ?? response
+            } else {
+                try await handle(applicationMessage)
+            }
             lastProcessedSequence = max(lastProcessedSequence, message.seq)
         }
     }
@@ -247,17 +271,20 @@ final class PairingV2Coordinator {
                                                  authorizationSecret: teardown.authorizationSecret)
     }
 
-    private func handle(_ encryptedMessage: PairingV2EncryptedMessage) async throws {
+    private func decrypt(_ encryptedMessage: PairingV2EncryptedMessage) throws -> PairingV2ApplicationMessage? {
         guard let privateKey = localKeyPair?.privateKey else {
             throw PairingV2Error.pairingSessionNotReady(.localPrivateKey)
         }
         guard let message = try messageCrypto.decrypt(encryptedMessage, privateKey: privateKey, expectedSenderChannelID: peerChannelID) else {
-            return
+            return nil
         }
         guard message.minimumProtocolVersion <= negotiatedVersion else {
-            return
+            return nil
         }
+        return message
+    }
 
+    private func handle(_ message: PairingV2ApplicationMessage) async throws {
         let commands: [PairingV2Command]
         let stateBeforeMessage = stateMachine.state
         switch message {
@@ -379,18 +406,20 @@ final class PairingV2Coordinator {
                 try await execute(stateMachine.handle(.hostConfirmationDenied))
                 return
             }
-            let isConfirmed = await confirmationDelegate.pairingV2CoordinatorShouldAllowPeerToJoin(peerName: peerName, peerKind: peerKind)
-            let event: PairingV2Event = isConfirmed ? .hostConfirmationAccepted : .hostConfirmationDenied
-            try await execute(stateMachine.handle(event))
+            beginConfirmation { [weak confirmationDelegate] in
+                let isConfirmed = await confirmationDelegate?.pairingV2CoordinatorShouldAllowPeerToJoin(peerName: peerName, peerKind: peerKind) ?? false
+                return isConfirmed ? .hostConfirmationAccepted : .hostConfirmationDenied
+            }
 
         case .requestJoinerConfirmation(let peerName, let peerKind):
             guard let confirmationDelegate else {
                 try await execute(stateMachine.handle(.joinerConfirmationDenied))
                 return
             }
-            let isConfirmed = await confirmationDelegate.pairingV2CoordinatorShouldJoinPeer(peerName: peerName, peerKind: peerKind)
-            let event: PairingV2Event = isConfirmed ? .joinerConfirmationAccepted : .joinerConfirmationDenied
-            try await execute(stateMachine.handle(event))
+            beginConfirmation { [weak confirmationDelegate] in
+                let isConfirmed = await confirmationDelegate?.pairingV2CoordinatorShouldJoinPeer(peerName: peerName, peerKind: peerKind) ?? false
+                return isConfirmed ? .joinerConfirmationAccepted : .joinerConfirmationDenied
+            }
 
         case .prepareRecoveryCode(let credentialKind, let purpose):
             let recoveryCode: String
@@ -547,6 +576,38 @@ final class PairingV2Coordinator {
         }
     }
 
+    private func beginConfirmation(_ operation: @escaping () async -> PairingV2Event) {
+        let confirmation = PairingV2PendingConfirmation()
+        pendingConfirmation = confirmation
+        Task {
+            await confirmation.resolve(operation())
+        }
+    }
+
+    private func handleConfirmationResult() async throws {
+        guard let confirmation = pendingConfirmation,
+              let event = await confirmation.result,
+              pendingConfirmation === confirmation else {
+            return
+        }
+        pendingConfirmation = nil
+        let recoveryCode = pendingRecoveryCode
+        pendingRecoveryCode = nil
+        try await execute(stateMachine.handle(event))
+        if let recoveryCode, !hasFinishedPairing {
+            try await handle(.recoveryCodeResponse(recoveryCode))
+        }
+    }
+
+    private func dismissPendingConfirmation() async {
+        let confirmation = pendingConfirmation
+        pendingConfirmation = nil
+        pendingRecoveryCode = nil
+        if confirmation != nil {
+            await confirmationDelegate?.pairingV2CoordinatorDismissConfirmation()
+        }
+    }
+
     private func login(with recoveryCode: String) async throws {
         let syncCode = try SyncCode.decodeBase64String(recoveryCode)
         guard let recovery = syncCode.recovery else {
@@ -627,6 +688,8 @@ final class PairingV2Coordinator {
         lastProcessedSequence = 0
         hasOpenedLocalChannel = false
         hasClosedLocalChannel = false
+        pendingConfirmation = nil
+        pendingRecoveryCode = nil
     }
 
     private func negotiateProtocolVersion(with peerVersion: String) {

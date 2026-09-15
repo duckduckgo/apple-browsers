@@ -145,19 +145,27 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     private func handleDeny() {
-        isAuthorizationInProgress = false
+        defer {
+            isAuthorizationInProgress = false
+            dismiss()
+        }
+        guard let query else { return }
+
         fireAuthorizationPixel(decision: .deny)
-        dismiss()
-        query?.handleDecision(grant: false, remember: nil)
+        query.handleDecision(grant: false, remember: nil)
     }
 
     private func handleAllow() {
-        isAuthorizationInProgress = false
+        defer {
+            isAuthorizationInProgress = false
+            dismiss()
+        }
+        guard let query else { return }
+
         fireAuthorizationPixel(decision: .allow)
-        dismiss()
         // For duck.ai microphone, persist "always allow" so voice chat doesn't re-prompt on every session.
-        let alwaysRemember = query?.permissions.contains(.microphone) == true && query?.domain.isDuckAIHost == true
-        query?.handleDecision(grant: true, remember: alwaysRemember ? true : nil)
+        let alwaysRemember = query.permissions.contains(.microphone) && query.domain.isDuckAIHost
+        query.handleDecision(grant: true, remember: alwaysRemember ? true : nil)
     }
 
     private func handleDismiss() {

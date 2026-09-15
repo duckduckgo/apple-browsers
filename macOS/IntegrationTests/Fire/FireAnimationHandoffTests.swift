@@ -124,6 +124,41 @@ final class FireAnimationHandoffTests: XCTestCase {
         XCTAssertNil(fire.burningData)
     }
 
+    // MARK: - Animation state
+
+    /// Releasing only the dispatch group isn't enough: `isFirePresentationInProgress` is
+    /// `isAnimationPlaying || burningData != nil`, and `FireViewModel` is app-wide, so a stuck flag
+    /// leaves the overlay up in every window and blocks every later animation.
+    @MainActor
+    func testWhenFireAnimationNeverFinishes_thenAnimationStateIsReleasedToo() {
+        assertAnimationStateIsReleased(isFireWindow: false)
+    }
+
+    @MainActor
+    func testWhenFireWindowAnimationNeverFinishes_thenAnimationStateIsReleasedToo() {
+        assertAnimationStateIsReleased(isFireWindow: true)
+    }
+
+    @MainActor
+    private func assertAnimationStateIsReleased(isFireWindow: Bool) {
+        // The animation timeout on `Fire` is the backstop and only releases the group, so keep it out
+        // of the way — this is about `FireViewModel` reporting the stop edge itself.
+        let viewModel = FireViewModel(fire: makeFire(fireAnimationTimeout: 60), animationTimeout: 0.3)
+
+        let released = expectation(description: "Animation state released")
+        viewModel.$isAnimationPlaying
+            .dropFirst()
+            .filter { $0 == false }
+            .sink { _ in released.fulfill() }
+            .store(in: &cancellables)
+
+        viewModel.setAnimationPlaying(true, isFireWindow: isFireWindow)
+        XCTAssertTrue(viewModel.isAnimationPlaying)
+
+        wait(for: [released], timeout: 5)
+        XCTAssertFalse(viewModel.isAnimationPlaying, "A lost callback must not leave the overlay up")
+    }
+
     // MARK: - Re-entry
 
     @MainActor

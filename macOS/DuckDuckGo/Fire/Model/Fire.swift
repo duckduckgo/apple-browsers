@@ -198,7 +198,8 @@ final class Fire: FireProtocol {
     let dataClearingPixelsReporter: DataClearingPixelsReporter
     var dataClearingWideEventService: DataClearingWideEventService?
 
-    /// The animation runs for about 1.3s; this only ever trips when its completion callback is lost.
+    /// Backstop behind `FireViewModel`'s own timeout, which reports the stop edge and so releases the
+    /// group through the normal path. This only trips if nothing reports at all.
     let fireAnimationTimeout: TimeInterval
 
     /// Clearing isn't cancelled when this trips — we only stop waiting on it, so a lost callback
@@ -366,7 +367,7 @@ final class Fire: FireProtocol {
          dataClearingPixelsReporter: DataClearingPixelsReporter = .init(),
          dataClearingWideEventService: DataClearingWideEventService? = nil,
          tabCleanupPreparer: TabCleanupPreparing = TabCleanupPreparer(),
-         fireAnimationTimeout: TimeInterval = .seconds(4),
+         fireAnimationTimeout: TimeInterval = .seconds(8),
          burnTimeout: TimeInterval = .seconds(30)
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager

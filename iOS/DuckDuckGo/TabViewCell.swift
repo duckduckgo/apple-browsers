@@ -279,6 +279,10 @@ class TabViewCell: UICollectionViewCell {
         isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
     }
 
+    var selectionAccentColor: UIColor {
+        UIColor(singleUseColor: .tabSwitcherSelectionAccent)
+    }
+
     // MARK: - Programmatic Layout
 
     /// Creates all shared views and constrains background+border to contentView.
@@ -468,17 +472,20 @@ class TabViewCell: UICollectionViewCell {
             image.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: Constants.selectionIndicatorSize - 4)
             image.image = DesignSystemImages.Recolorable.Size24.check.applyPalleteColorsToSymbol(
                 foreground: UIColor(designSystemColor: .accentContentPrimary),
-                background: accentColor,
+                background: selectionAccentColor,
             )
         }
     }
 
     func updateCurrentTabBorder() {
         var borderColor: UIColor {
+            if isSelectionModeEnabled {
+                return selectionAccentColor
+            }
             if isFireTab {
                 return UIColor(singleUseColor: .fireModeAccent)
             }
-            return isSelectionModeEnabled ? UIColor(designSystemColor: .accentPrimary) : UIColor(designSystemColor: .decorationTertiary)
+            return UIColor(designSystemColor: .decorationTertiary)
         }
         let showBorder = isSelectionModeEnabled ? isSelected : isCurrent
         border.layer.borderColor = borderColor.cgColor

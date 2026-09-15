@@ -353,6 +353,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(staticColor: xD4452F)
         case .tabSwitcherTrackerCountBackground:
             return DynamicColor(lightColor: .green0, darkColor: .x2C3A2A)
+        case .tabSwitcherSelectionAccent:
+            return DynamicColor(staticColorHex: 0x39FF14)
         case let .rebranding(rebrandingColor):
             return dynamicColor(for: rebrandingColor)
         case .toolbarButton:

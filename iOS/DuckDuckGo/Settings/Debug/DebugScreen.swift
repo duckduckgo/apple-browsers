@@ -64,7 +64,7 @@ enum DebugScreen: Identifiable {
     }
 
     case controller(title: String, (Dependencies) -> UIViewController)
-    case view(title: String, (Dependencies) -> any View)
+    case view(title: String, accessibilityIdentifier: String? = nil, (Dependencies) -> any View)
     case action(title: String, @MainActor (Dependencies) -> Void)
 
     var isAction: Bool {
@@ -83,11 +83,20 @@ enum DebugScreen: Identifiable {
         case .controller(let title, _):
             return title
 
-        case .view(let title, _):
+        case .view(let title, _, _):
             return title
 
         case .action(let title, _):
             return title
+        }
+    }
+
+    var accessibilityIdentifier: String? {
+        switch self {
+        case .view(_, let accessibilityIdentifier, _):
+            return accessibilityIdentifier
+        case .controller, .action:
+            return nil
         }
     }
 

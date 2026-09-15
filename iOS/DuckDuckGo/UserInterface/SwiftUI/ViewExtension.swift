@@ -117,4 +117,14 @@ extension View {
             self
         }
     }
+
+    /// Applies an accessibility identifier when one is provided.
+    @ViewBuilder
+    func accessibilityIdentifier(ifPresent identifier: String?) -> some View {
+        if let identifier {
+            accessibilityIdentifier(identifier)
+        } else {
+            self
+        }
+    }
 }

@@ -25,6 +25,9 @@ public enum SingleUseColor {
     case fireModeAccent
 
 #if os(iOS)
+    /// Fixed green fill for onboarding comparison checkmarks, independent of the active palette and appearance.
+    case onboardingComparisonCheckmarkBackground
+
     case controlWidgetBackground
     case unifiedFeedbackFieldBackground
     case privacyDashboardBackground

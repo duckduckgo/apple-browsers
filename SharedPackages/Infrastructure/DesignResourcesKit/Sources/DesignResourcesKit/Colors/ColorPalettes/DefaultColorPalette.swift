@@ -304,6 +304,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
         switch singleUseColor {
+        case .onboardingComparisonCheckmarkBackground:
+            return DynamicColor(staticColor: .green50)
         case .controlWidgetBackground:
             return DynamicColor(staticColor: .x818387)
         case .unifiedFeedbackFieldBackground:

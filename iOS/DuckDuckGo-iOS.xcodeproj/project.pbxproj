@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E1D031AA99B743E792AF1003 /* NewTabPageSearchInputModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1D031AA99B743E792AF1004 /* NewTabPageSearchInputModelTests.swift */; };
 		E1D031AA99B743E792AF1001 /* NewTabPageInputPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1D031AA99B743E792AF1002 /* NewTabPageInputPresentationTests.swift */; };
 		02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02025663298818B100E694E7 /* NetworkExtension.framework */; };
 		021440742C7FAB1900426724 /* ConfigurationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021440732C7FAB1900426724 /* ConfigurationManager.swift */; };
@@ -2600,6 +2601,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E1D031AA99B743E792AF1004 /* NewTabPageSearchInputModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSearchInputModelTests.swift; sourceTree = "<group>"; };
 		E1D031AA99B743E792AF1002 /* NewTabPageInputPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageInputPresentationTests.swift; sourceTree = "<group>"; };
 		02025662298818B100E694E7 /* PacketTunnelProvider.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PacketTunnelProvider.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		02025663298818B100E694E7 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
@@ -8875,6 +8877,7 @@
 			children = (
 				C18390C92F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift */,
 				A8440B0101C0DE0000000003 /* FloatingOmnibarTransitionMetricsTests.swift */,
+				E1D031AA99B743E792AF1004 /* NewTabPageSearchInputModelTests.swift */,
 				E1D031AA99B743E792AF1002 /* NewTabPageInputPresentationTests.swift */,
 				97D45F4B302B5FC2002388C8 /* UpdatedModelPickerFeatureTests.swift */,
 				C18390CB2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift */,
@@ -13369,6 +13372,7 @@
 				4BC21A2F27238B7500229F0E /* RunLoopExtensionTests.swift in Sources */,
 				C18390CA2F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift in Sources */,
 				A8440B0101C0DE0000000004 /* FloatingOmnibarTransitionMetricsTests.swift in Sources */,
+				E1D031AA99B743E792AF1003 /* NewTabPageSearchInputModelTests.swift in Sources */,
 				E1D031AA99B743E792AF1001 /* NewTabPageInputPresentationTests.swift in Sources */,
 				C18390CC2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift in Sources */,
 				BBA0000000000000000A0004 /* TabInputStateTests.swift in Sources */,

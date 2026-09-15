@@ -181,7 +181,9 @@ class MainViewController: UIViewController {
                                                            subscriptionManager: subscriptionManager,
                                                            internalUserCommands: internalUserCommands,
                                                            floatingUIManager: floatingUIManager,
-                                                           redesignFeature: NewTabPageRedesignFeature(featureFlagger: featureFlagger))
+                                                           redesignFeature: NewTabPageRedesignFeature(featureFlagger: featureFlagger),
+                                                           toggleModeStorage: toggleModeStorage,
+                                                           voiceSearchHelper: voiceSearchHelper)
 
     var tabsBarController: TabsBarViewController?
     var suggestionTrayController: SuggestionTrayViewController?

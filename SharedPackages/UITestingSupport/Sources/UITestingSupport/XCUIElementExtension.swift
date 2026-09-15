@@ -45,4 +45,25 @@ public extension XCUIElement {
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
         return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
     }
+
+    /// Scrolls upward until the supplied element is hittable or the timeout expires.
+    func swipeUpToReveal(_ element: XCUIElement,
+                         timeout: TimeInterval = UITestTimeouts.elementExistence,
+                         file: StaticString = #filePath,
+                         line: UInt = #line) {
+        let deadline = Date().addingTimeInterval(timeout)
+        guard waitForExistence(timeout: deadline.timeIntervalSinceNow) else {
+            XCTFail("Scrollable container did not appear: \(self)", file: file, line: line)
+            return
+        }
+
+        while Date() < deadline {
+            if element.isHittable {
+                return
+            }
+            swipeUp()
+        }
+
+        XCTFail("Element was not revealed: \(element)", file: file, line: line)
+    }
 }

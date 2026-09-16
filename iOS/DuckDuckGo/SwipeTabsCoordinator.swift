@@ -44,7 +44,7 @@ enum FloatingSwipePreviewGeometry {
         } else if hasInlineSearchInput {
             frameInSuperview = superviewBounds.inset(by: UIEdgeInsets(top: safeAreaInsets.top,
                                                                      left: 0,
-                                                                     bottom: safeAreaInsets.bottom,
+                                                                     bottom: 0,
                                                                      right: 0))
         } else {
             frameInSuperview = superviewBounds

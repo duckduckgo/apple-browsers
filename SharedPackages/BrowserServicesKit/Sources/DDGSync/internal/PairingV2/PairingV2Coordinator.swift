@@ -145,12 +145,13 @@ final class PairingV2Coordinator {
 
     /// Performs one poll of this device's channel and handles any new messages.
     /// Production polling goes through `pollUntilFinished`; this is internal for unit testing.
-    func pollOnce() async throws {
+    func pollOnce(onStateChange: ((PairingV2State) async -> Void)? = nil) async throws {
         guard let channelID = localKeyPair?.channelID else {
             throw PairingV2Error.pairingSessionNotReady(.localKeyPair)
         }
 
         try await handleConfirmationResult()
+        await onStateChange?(state)
         guard !hasFinishedPairing else {
             return
         }
@@ -209,7 +210,7 @@ final class PairingV2Coordinator {
                 throw SyncError.pollingDidTimeOut
             }
 
-            try await pollOnce()
+            try await pollOnce(onStateChange: onDidPoll)
             await onDidPoll?(state)
             if let completion = try checkPairingCompletion() {
                 return completion

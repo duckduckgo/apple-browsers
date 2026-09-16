@@ -33,6 +33,8 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerShouldJoinPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
     func controllerDismissPairingV2Confirmation() async
 
+    func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus)
+
     func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool)
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource)
 
@@ -701,10 +703,16 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     private func pollPairingV2UntilFinished(_ coordinator: PairingV2Coordinator,
                                             onDidPoll: ((PairingV2State) async -> Void)? = nil) async throws -> PairingV2State.Completion {
-        try await coordinator.pollUntilFinished(
+        var lastReportedJoinStatus: PairingV2JoinStatus?
+        return try await coordinator.pollUntilFinished(
             timeout: pairingV2PollingTimeout,
-            pollInterval: pairingV2PollIntervalNanoseconds,
-            onDidPoll: onDidPoll)
+            pollInterval: pairingV2PollIntervalNanoseconds) { state in
+            if let status = self.pairingV2JoinStatus(for: state), status != lastReportedJoinStatus {
+                lastReportedJoinStatus = status
+                await self.delegate?.controllerDidUpdatePairingV2JoinStatus(status)
+            }
+            await onDidPoll?(state)
+        }
     }
 
     private func handlePairingV2Completion(_ completion: PairingV2State.Completion,
@@ -740,6 +748,17 @@ public class SyncConnectionController: SyncConnectionControlling {
              .completed(.alreadyConnected),
              .failed:
             return false
+        }
+    }
+
+    private func pairingV2JoinStatus(for state: PairingV2State) -> PairingV2JoinStatus? {
+        switch state {
+        case .hostWaitingForJoinStatus:
+            return .waiting
+        case .hostJoinOutcomeUnknown:
+            return .unknown
+        default:
+            return nil
         }
     }
 
@@ -1062,6 +1081,9 @@ public extension SyncConnectionControllerDelegate {
     }
 
     func controllerDismissPairingV2Confirmation() async {
+    }
+
+    func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus) {
     }
 
     func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole _: SyncSetupRole) {

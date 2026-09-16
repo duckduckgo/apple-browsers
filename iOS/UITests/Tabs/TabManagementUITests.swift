@@ -107,4 +107,104 @@ final class TabManagementUITests: UITestCase {
                 "Back did not close the child tab.")
         }
     }
+
+    func testWhenTabSwitcherStyleIsChangedThenGridAndListLayoutsAreApplied() {
+        XCTContext.runActivity(named: "Open the default grid tab switcher") { _ in
+            app.openTabSwitcher()
+            app.assertTabCount(1)
+        }
+
+        let tab = app.tabCell(at: 0)
+        let styleButton = app.buttons["TabSwitcher.Button.ViewStyle"]
+        XCTAssertTrue(styleButton.waitForExistence(timeout: UITestTimeouts.elementExistence))
+        XCTAssertEqual(styleButton.label, "Switch to list view")
+        let gridCellHeight = tab.frame.height
+
+        XCTContext.runActivity(named: "Switch to list view") { _ in
+            styleButton.tapWhenHittable()
+            XCTAssertTrue(
+                styleButton.wait(for: NSPredicate(format: "label == %@", "Switch to grid view"), timeout: UITestTimeouts.elementExistence),
+                "The tab switcher did not change to list view.")
+            XCTAssertTrue(
+                waitForHeight(of: tab, satisfying: { $0 < gridCellHeight }),
+                "The list tab cell did not become shorter than the grid tab cell.")
+        }
+
+        let listCellHeight = tab.frame.height
+        XCTContext.runActivity(named: "Switch back to grid view") { _ in
+            styleButton.tapWhenHittable()
+            XCTAssertTrue(
+                styleButton.wait(for: NSPredicate(format: "label == %@", "Switch to list view"), timeout: UITestTimeouts.elementExistence),
+                "The tab switcher did not change back to grid view.")
+            XCTAssertTrue(
+                waitForHeight(of: tab, satisfying: { $0 > listCellHeight }),
+                "The grid tab cell did not become taller than the list tab cell.")
+        }
+    }
+
+    func testWhenTabsAreSelectedThenSelectionStateUpdatesAndSelectedTabCanBeClosed() {
+        XCTContext.runActivity(named: "Create two tabs") { _ in
+            app.openNewTab()
+            app.openTabSwitcher()
+            app.assertTabCount(2)
+        }
+
+        XCTContext.runActivity(named: "Enter selection mode") { _ in
+            app.buttons["TabSwitcher.Button.Edit"].tapWhenHittable()
+            app.buttons["TabSwitcher.Menu.SelectTabs"].tapWhenHittable()
+            app.assertTabSwitcherTitle("2 Private Tabs")
+        }
+
+        XCTContext.runActivity(named: "Select and deselect all tabs") { _ in
+            app.buttons["TabSwitcher.Button.SelectAll"].tapWhenHittable()
+            app.assertTabSwitcherTitle("2 Selected")
+            app.buttons["TabSwitcher.Button.DeselectAll"].tapWhenHittable()
+            app.assertTabSwitcherTitle("2 Private Tabs")
+            XCTAssertTrue(app.buttons["TabSwitcher.Button.SelectAll"].exists)
+        }
+
+        XCTContext.runActivity(named: "Close one selected tab") { _ in
+            app.tabCell(at: 0).buttons["TabSwitcher.Tab.Open"].tapWhenHittable()
+            app.assertTabSwitcherTitle("1 Selected")
+
+            app.buttons["TabSwitcher.Button.More"].tapWhenHittable()
+            app.buttons["TabSwitcher.Menu.CloseSelected"].tapWhenHittable()
+
+            let alert = app.alerts["Close Tab?"]
+            XCTAssertTrue(alert.waitForExistence(timeout: UITestTimeouts.elementExistence))
+            alert.buttons["Close Tab"].tapWhenHittable()
+
+            app.assertTabCount(1)
+            app.assertTabSwitcherTitle("1 Private Tab")
+        }
+
+        XCTContext.runActivity(named: "Exit selection mode") { _ in
+            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable()
+            XCTAssertTrue(app.buttons["TabSwitcher.Button.ViewStyle"].waitForExistence(timeout: UITestTimeouts.elementExistence))
+        }
+    }
+
+    func testWhenTabIsLongPressedThenSelectionModeStartsWithThatTabSelected() {
+        XCTContext.runActivity(named: "Long-press a home tab") { _ in
+            app.openTabSwitcher()
+            app.assertTabCount(1)
+            app.tabCell(at: 0).buttons["TabSwitcher.Tab.Open"].press(forDuration: 1)
+            app.buttons["TabSwitcher.Menu.SelectTab"].tapWhenHittable()
+        }
+
+        XCTContext.runActivity(named: "Verify and exit selection mode") { _ in
+            app.assertTabSwitcherTitle("1 Selected")
+            app.buttons["TabSwitcher.Button.Done"].tapWhenHittable()
+            XCTAssertTrue(app.buttons["TabSwitcher.Button.ViewStyle"].waitForExistence(timeout: UITestTimeouts.elementExistence))
+        }
+    }
+
+    private func waitForHeight(of element: XCUIElement, satisfying condition: @escaping (CGFloat) -> Bool) -> Bool {
+        let predicate = NSPredicate { object, _ in
+            guard let element = object as? XCUIElement else { return false }
+            return condition(element.frame.height)
+        }
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
+        return XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.elementExistence) == .completed
+    }
 }

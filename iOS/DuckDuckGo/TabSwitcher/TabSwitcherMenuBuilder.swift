@@ -168,7 +168,8 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
             UIMenu(title: "", options: .displayInline, children: [
                 state.canBookmarkAll ? action(UserText.tabSwitcherBookmarkAllTabs,
                                               DesignSystemImages.Glyphs.Size16.bookmarkAll,
-                                              actions.onBookmarkAll) : nil,
+                                              actions.onBookmarkAll,
+                                              accessibilityIdentifier: "TabSwitcher.Menu.BookmarkAll") : nil,
             ].compactMap { $0 }),
         ]
     }
@@ -226,7 +227,10 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
             DesignSystemImages.Glyphs.Size16.tabCloseAlt
     }
 
-    private func action(_ title: String, _ image: UIImage? = nil, _ handler: @escaping () -> Void, accessibilityIdentifier: String? = nil) -> UIAction {
+    private func action(_ title: String,
+                        _ image: UIImage? = nil,
+                        _ handler: @escaping () -> Void,
+                        accessibilityIdentifier: String? = nil) -> UIAction {
         let action = UIAction(title: title, image: image) { _ in handler() }
         if let accessibilityIdentifier {
             action.accessibilityIdentifier = accessibilityIdentifier

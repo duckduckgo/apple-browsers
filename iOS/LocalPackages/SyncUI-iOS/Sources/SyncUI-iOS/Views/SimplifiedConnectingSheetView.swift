@@ -44,6 +44,13 @@ public struct SimplifiedConnectingSheetView: View {
                     isFinishing: isFinishing,
                     onAnimationFinished: { model.connectingAnimationDidFinish() }
                 )
+            case .waitingForOtherDevice:
+                SimplifiedConnectingContentView(
+                    isRecovery: false,
+                    isFinishing: false,
+                    isWaitingForOtherDevice: true,
+                    onAnimationFinished: { model.connectingAnimationDidFinish() }
+                )
             case .success(let isRecovery):
                 SyncSuccessView(model: model, isRecovery: isRecovery)
             case .none:
@@ -60,6 +67,7 @@ struct SimplifiedConnectingSheetView_Previews: PreviewProvider {
         case syncAnotherDevice
         case connecting
         case deviceConnected
+        case waitingForOtherDevice
         case recovering
         case recoveryCompleted
     }
@@ -73,6 +81,7 @@ struct SimplifiedConnectingSheetView_Previews: PreviewProvider {
             .init(name: "Sync Another Device", state: .syncAnotherDevice),
             .init(name: "Connecting", state: .connecting),
             .init(name: "Device Connected", state: .deviceConnected, scope: .previews),
+            .init(name: "Check Other Device", state: .waitingForOtherDevice, scope: .previews),
             .init(name: "Recovering", state: .recovering, scope: .previews),
             .init(name: "Recovery Completed", state: .recoveryCompleted, scope: .previews)
         ],
@@ -90,6 +99,8 @@ struct SimplifiedConnectingSheetView_Previews: PreviewProvider {
             return .connectingSheetPreview(phase: .connecting(isRecovery: false))
         case .deviceConnected:
             return .connectingSheetPreview(phase: .success(isRecovery: false), autoRestoreProvider: .enabled)
+        case .waitingForOtherDevice:
+            return .connectingSheetPreview(phase: .waitingForOtherDevice)
         case .recovering:
             return .connectingSheetPreview(phase: .connecting(isRecovery: true))
         case .recoveryCompleted:

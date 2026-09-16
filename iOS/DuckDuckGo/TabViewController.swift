@@ -522,7 +522,10 @@ class TabViewController: UIViewController {
 
     var isShowingDocument: Bool {
         guard featureFlagger.isFeatureOn(.aiChatPdfPageContext), let url else { return false }
-        return DocumentPageContextProvider.isSupportedDocument(mimeType: lastMainFramePageContextMIMEType(for: url), url: url)
+        let mimeType = lastMainFramePageContextMIMEType(for: url)
+        // Local (file://) PDFs aren't attachable, so don't offer the document menu for them.
+        guard !DocumentPageContextProvider.isLocalDocument(mimeType: mimeType, url: url) else { return false }
+        return DocumentPageContextProvider.isSupportedDocument(mimeType: mimeType, url: url)
     }
 
     /// The tab's chat identity: written on commit and on settled same-document URL rewrites.

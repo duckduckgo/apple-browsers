@@ -789,6 +789,67 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertTrue(handler.isCurrentPageAttachable())
     }
 
+    func testWhenLocalPDFThenIsCurrentPageNotAttachable() {
+        let fileURL = URL(string: "file:///Users/me/spec.pdf")!
+        let withBlocklist = makeHandler(
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { fileURL },
+            mimeTypeProvider: { _ in "application/pdf" },
+            isDocumentContextEnabled: { true }
+        )
+        let withoutBlocklist = makeHandler(
+            attachabilityPolicyProvider: { nil },
+            currentURLProvider: { fileURL },
+            mimeTypeProvider: { _ in "application/pdf" },
+            isDocumentContextEnabled: { true }
+        )
+
+        XCTAssertFalse(withBlocklist.isCurrentPageAttachable())
+        XCTAssertFalse(withoutBlocklist.isCurrentPageAttachable(), "Local PDFs are excluded even without the blocklist config")
+    }
+
+    func testWhenLocalPDFThenCollectionIsPreventedWithoutReadingBytes() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        var didReadDocument = false
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { URL(string: "file:///Users/me/spec.pdf") },
+            mimeTypeProvider: { _ in "application/pdf" },
+            extractionPixelHandler: extractionPixels,
+            isDocumentContextEnabled: { true },
+            makeDocumentContext: { _, _, _ in
+                didReadDocument = true
+                return .unavailable
+            }
+        )
+
+        let expectation = XCTestExpectation(description: "Nil context published")
+        var received: AIChatPageContext?
+        var didPublish = false
+        handler.contextPublisher
+            .dropFirst()
+            .first()
+            .sink { context in
+                received = context
+                didPublish = true
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        let didTrigger = handler.triggerContextCollection(trigger: .tabContent)
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertFalse(didTrigger)
+        XCTAssertTrue(didPublish)
+        XCTAssertNil(received)
+        XCTAssertFalse(didReadDocument)
+        XCTAssertEqual(mockScript.collectCallCount, 0)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("localDocument"))
+    }
+
     func testWhenDocumentTabAndFlagOffThenBlocklistStillPreventsCollection() {
         let mockScript = MockPageContextCollecting()
         let extractionPixels = MockPageContextExtractionPixelFiring()

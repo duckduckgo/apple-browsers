@@ -173,6 +173,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     private let userNotificationCenter: UNUserNotificationCenterRepresentable
     private let expirationReminderScheduler: SubscriptionExpirationReminderScheduling?
     private let isExpirationReminderFeatureEnabled: () -> Bool
+    private let subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviding
 
     init(subscriptionManager: SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -193,7 +194,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
          ),
          userNotificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
          expirationReminderScheduler: SubscriptionExpirationReminderScheduling? = nil,
-         isExpirationReminderFeatureEnabled: @escaping () -> Bool = { false }) {
+         isExpirationReminderFeatureEnabled: @escaping () -> Bool = { false },
+         subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviding = LegacySubscriptionExperimentAttributionProvider()) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -210,6 +212,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         self.userNotificationCenter = userNotificationCenter
         self.expirationReminderScheduler = expirationReminderScheduler
         self.isExpirationReminderFeatureEnabled = isExpirationReminderFeatureEnabled
+        self.subscriptionExperimentAttributionProvider = subscriptionExperimentAttributionProvider
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -227,6 +230,22 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     struct FeatureSelection: Codable {
         let productFeature: SubscriptionEntitlement
+    }
+
+    struct SubscriptionSelection: Decodable {
+        struct Experiment: Decodable {
+            let name: String
+            let cohort: String
+
+            var subscriptionExperiment: SubscriptionExperiment {
+                SubscriptionExperiment(experimentName: name, experimentCohort: cohort)
+            }
+        }
+
+        let id: String
+        let experiment: Experiment?
+        let experiments: [Experiment]?
+        let scheduleNotification: ScheduleNotificationPreference?
     }
 
     weak var broker: UserScriptMessageBroker?
@@ -437,24 +456,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         setTransactionStatus(.purchasing)
         resetSubscriptionFlow()
 
-        struct SubscriptionSelection: Decodable {
-            struct Experiment: Codable {
-                let name: String
-                let cohort: String
-
-                func asParameters() -> [String: String] {
-                    [
-                        "experimentName": name,
-                        "experimentCohort": cohort,
-                    ]
-                }
-            }
-
-            let id: String
-            let experiment: Experiment?
-            let scheduleNotification: ScheduleNotificationPreference?
-        }
-
         // 1: Parse subscription selection from message object
         let message = original
         guard let subscriptionSelection: SubscriptionSelection = CodableHelper.decode(from: params) else {
@@ -567,10 +568,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             return nil
         }
 
-        var subscriptionParameters: [String: String]?
-        if let frontEndExperiment = subscriptionSelection.experiment {
-            subscriptionParameters = frontEndExperiment.asParameters()
-        }
+        let experimentAttribution = subscriptionExperimentAttributionProvider.attribution(from: subscriptionSelection)
 
         if let purchaseWideEventData {
             purchaseWideEventData.activateAccountDuration = WideEvent.MeasuredInterval.startingNow()
@@ -578,7 +576,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         }
 
         switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS,
-                                                                       additionalParams: subscriptionParameters) {
+                                                                       experimentAttribution: experimentAttribution) {
         case .success:
             Logger.subscription.log("Subscription purchase completed successfully")
             PixelKit.fire(Pixel.Event.subscriptionPurchaseSuccess,

@@ -83,8 +83,8 @@ struct NewTabPageBuilder {
             })
 
         let page = RedesignedNewTabPageViewController(blocks: [
-            SwiftUIBlock(id: .welcome, rootView: NewTabPageWelcomeView()),
-            SwiftUIBlock(id: .searchInput, rootView: searchInputView)
+            NewTabPageSwiftUIBlock(id: .welcome, rootView: NewTabPageWelcomeView()),
+            NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView)
         ])
         newTabPage = page
         return page

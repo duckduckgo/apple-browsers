@@ -1,5 +1,5 @@
 //
-//  SwiftUIBlock.swift
+//  NewTabPageSwiftUIBlock.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -21,7 +21,7 @@ import SwiftUI
 import UIKit
 
 /// A New Tab Page block whose content is a SwiftUI view.
-final class SwiftUIBlock<Content: View>: NewTabPageBlock {
+final class NewTabPageSwiftUIBlock<Content: View>: NewTabPageBlock {
 
     let id: NewTabPageBlockID
 

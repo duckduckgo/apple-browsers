@@ -138,6 +138,9 @@ public struct GeolocationFrame {
     }
 }
 
+/// Enforces native permission and lifecycle checks after the script's frame preflight.
+/// The embedding app must also enforce the committed main-frame response's Permissions-Policy;
+/// JavaScript cannot inspect response headers when WebKit lacks its policy API.
 @MainActor
 public protocol GeolocationUserScriptDelegate: AnyObject {
 

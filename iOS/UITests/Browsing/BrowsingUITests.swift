@@ -27,15 +27,19 @@ final class BrowsingUITests: UITestCase {
     }
 
     func testWhenPageLoadsThenRefreshBecomesAvailable() {
-        XCTAssertTrue(
-            app.searchEntry.waitForExistence(timeout: UITestTimeouts.navigation),
-            "Browser UI did not appear after launch.")
         let refreshButton = app.buttons["Browser.OmniBar.Button.Refresh"]
-        XCTAssertFalse(refreshButton.isHittable, "Refresh should not be available on the new tab page.")
 
-        app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
-        refreshButton.tapWhenHittable()
+        XCTContext.runActivity(named: "Verify refresh is unavailable on the new-tab page") { _ in
+            XCTAssertTrue(
+                app.searchEntry.waitForExistence(timeout: UITestTimeouts.navigation),
+                "Browser UI did not appear after launch.")
+            XCTAssertFalse(refreshButton.isHittable, "Refresh should not be available on the new tab page.")
+        }
 
-        app.assertPageContains("Privacy Test Pages")
+        XCTContext.runActivity(named: "Load and refresh the test page") { _ in
+            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            refreshButton.tapWhenHittable()
+            app.assertPageContains("Privacy Test Pages")
+        }
     }
 }

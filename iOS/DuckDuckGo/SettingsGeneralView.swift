@@ -71,7 +71,8 @@ struct SettingsGeneralView: View {
             // Application Lock
             Section(footer: Text(UserText.settingsAutoLockDescription)) {
                 SettingsCellView(label: UserText.settingsAutolock,
-                                 accessory: .toggle(isOn: viewModel.applicationLockBinding))
+                                 accessory: .toggle(isOn: viewModel.applicationLockBinding),
+                                 accessoryAccessibilityIdentifier: "Settings.General.ApplicationLock")
 
             }
             // NTP after idle time
@@ -159,6 +160,7 @@ struct SettingsGeneralView: View {
             }
 
         }
+        .accessibilityIdentifier("Settings.List.General")
         .applySettingsListModifiers(title: UserText.general,
                                     displayMode: .inline,
                                     viewModel: viewModel)

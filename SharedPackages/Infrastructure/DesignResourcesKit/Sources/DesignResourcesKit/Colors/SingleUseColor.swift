@@ -25,6 +25,9 @@ public enum SingleUseColor {
     case fireModeAccent
 
 #if os(iOS)
+    /// Shadow for the purchase-progress card, preserving its light and dark appearance across palettes.
+    case purchaseProgressShadow
+
     /// Fixed fill for the Sync development-environment badge.
     case syncDevelopmentBadgeBackground
 

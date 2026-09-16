@@ -51,9 +51,9 @@
             "appVersion",
             {
                 "key": "category",
-                "description": "The prevention category: a blocklist media category key from aiPageContextBlocklist, internalPage for native special pages (nil URL, about:blank, Duck.ai), or documentTooLarge for a PDF over the size ceiling native will hand across the JS bridge.",
+                "description": "The prevention category: a blocklist media category key from aiPageContextBlocklist, internalPage for native special pages (nil URL, about:blank, Duck.ai), documentTooLarge for a PDF over the size ceiling native will hand across the JS bridge, or localDocument for a PDF opened from disk (file://), which is excluded from page context.",
                 "type": "string",
-                "enum": ["pdf", "image", "video", "audio", "internalPage", "documentTooLarge"]
+                "enum": ["pdf", "image", "video", "audio", "internalPage", "documentTooLarge", "localDocument"]
             },
             {
                 "key": "reason",

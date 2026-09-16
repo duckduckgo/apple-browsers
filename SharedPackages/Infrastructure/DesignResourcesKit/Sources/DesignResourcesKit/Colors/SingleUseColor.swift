@@ -25,6 +25,9 @@ public enum SingleUseColor {
     case fireModeAccent
 
 #if os(iOS)
+    /// Fixed fill for the Sync development-environment badge.
+    case syncDevelopmentBadgeBackground
+
     /// Fixed background for rasterized fallback favicons, independent of appearance and palette.
     case fallbackFaviconBackground
 

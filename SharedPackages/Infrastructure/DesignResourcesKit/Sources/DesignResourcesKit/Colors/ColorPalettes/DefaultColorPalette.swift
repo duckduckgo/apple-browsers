@@ -304,6 +304,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
         switch singleUseColor {
+        case .syncDevelopmentBadgeBackground:
+            return DynamicColor(staticColor: .red40)
         case .fallbackFaviconBackground:
             return DynamicColor(staticColor: .gray70)
         case .onboardingComparisonCheckmarkBackground:

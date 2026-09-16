@@ -14,6 +14,16 @@
  * limitations under the License.
  */
 
+/*
+ * Routes the page's geolocation API through the app's per-site permission flow.
+ * Injected at document start in each frame, this replacement preserves position
+ * callbacks, watches, and geolocation PermissionStatus change events.
+ *
+ * JavaScript checks frame restrictions and keeps the page's callbacks. Swift
+ * decides effective permissions, obtains locations, and sends results back.
+ * Other permission queries keep their native behavior. The embedding app owns
+ * activation and teardown; immediate installation is for its tab web views.
+ */
 (() => {
     const oneShotHandler = globalThis.webkit?.messageHandlers?.sitePermissionsGeolocation;
     const watchHandler = globalThis.webkit?.messageHandlers?.sitePermissionsGeolocationWatch;
@@ -21,7 +31,9 @@
         return;
     }
 
-    // Page scripts can replace Promise.prototype.then; permission decisions must use the captured method.
+    // Capture browser methods before page code can replace them. This runs in the
+    // page's JavaScript context so it can replace the APIs that the page calls.
+    // In particular, a replaced Promise.then must not forge permission decisions.
     const callThen = Function.prototype.call.bind(Promise.prototype.then);
     const postOneShot = oneShotHandler.postMessage.bind(oneShotHandler);
     const postWatch = watchHandler.postMessage.bind(watchHandler);
@@ -77,6 +89,8 @@
         globalThis.crypto.getRandomValues(values);
         return Array.from(values, (value) => value.toString(16).padStart(8, "0")).join("");
     };
+    // The registration nonce also identifies sandbox probes. A separate document
+    // token prefixes callback IDs, so public probes do not expose callback identity.
     const nonce = randomToken();
     const frameNonce = randomToken() ?? "unavailable";
     let nextWatchID = 1;
@@ -141,6 +155,9 @@
         }
     };
 
+    // A child cannot reliably inspect its embedding element. Parent and child
+    // scripts exchange signed sandbox verdicts, including ancestor restrictions.
+    // Signing authenticates these public messages without exposing the capability.
     const sandboxProbeChannel = "ddg-site-permissions-geolocation-sandbox";
     const sandboxRequestValue = (childNonce) => `${sandboxProbeChannel}:request:${childNonce}`;
     const sandboxResponseValue = (childNonce, sandboxed) =>
@@ -173,6 +190,8 @@
         } catch (_) {}
     };
 
+    // Removing a sandbox attribute does not unsandbox the current document.
+    // Remember observed restrictions so a later probe cannot overlook them.
     let sandboxHistoryAvailable = false;
     let sandboxHistoryObserver;
     if (NativeMutationObserver && observeMutations && elementMatches && hasAttribute &&
@@ -234,6 +253,7 @@
 
     let finishSandboxProbe;
     let sandboxProbeTimeout;
+    // Missing or unverifiable parent replies deny access after the timeout.
     const sandboxVerdict = parentWindow === globalThis
         ? Promise.resolve(hasOpaqueOrigin)
         : new Promise((resolve) => {
@@ -358,6 +378,8 @@
 
     const message = (kind, values = {}) => ({ capability, nonce, ...constraints, kind, ...values });
 
+    // Wait for sandbox verification, then register before each operation. Repeating
+    // registration rechecks native activation and recovers after native lifecycle resets.
     const registerFrame = () => callThen(
         callThen(sandboxVerdict, (isSandboxed) => {
             constraints = currentConstraints(isSandboxed);
@@ -432,6 +454,7 @@
         return {
             status,
             initialize: (initialState) => {
+                // A native change may arrive before the initial query reply.
                 state = pendingState ?? initialState;
                 initialized = true;
             },
@@ -499,6 +522,7 @@
                 ? postWatch(message("startWatch", { requestID, options: optionsPayload(options) }))
                 : deniedResult()),
             (result) => {
+                // clearWatch can run while native creation is pending; cancel a late start.
                 if (!apply(mapHas, activeWatches, [requestID]) && result?.status === "started") {
                     callThen(postWatch(message("clearWatch", { requestID })), undefined, () => {});
                     return;
@@ -530,6 +554,8 @@
             undefined, () => {});
     };
 
+    // Receivers acknowledge ownership. Swift cancels subscriptions when the
+    // document token or callback ID no longer matches, including after navigation.
     const receiveWatchResult = (requestID, result) => {
         const callbacks = apply(mapGet, activeWatches, [requestID]);
         if (callbacks) {
@@ -615,6 +641,8 @@
         }
     };
 
+    // Replace instances and prototypes so a page cannot recover the original API
+    // through its prototype. Locked properties keep the replacement in place.
     const installShim = () => {
         const nativeGeolocationPrototype = nativeGeolocation && Object.getPrototypeOf(nativeGeolocation);
         const geolocationPrototypeLocked = !nativeGeolocation || [

@@ -71,7 +71,8 @@ extension MainViewController {
             addressBarPosition: addressBarPosition,
             floatingBottomObscuredHeight: floatingWebViewBottomObscuredHeight(for: 1),
             safeAreaBottom: view.safeAreaInsets.bottom,
-            omnibarHeight: viewCoordinator.omniBar.barView.expectedHeight
+            omnibarHeight: viewCoordinator.omniBar.barView.expectedHeight,
+            reservesAddressBarSpace: viewCoordinator.newTabPageInputPresentation.reservesAddressBarSpace
         )
     }
 

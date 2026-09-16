@@ -204,8 +204,16 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertTrue(payloadCoordinates["altitude"] is NSNull)
     }
 
-    func testDeallocatedDelegateProducesRepliesInsteadOfLeavingOneShotsPending() async {
+    func testDeallocatedDelegateProducesRepliesInsteadOfLeavingOneShotsPending() async throws {
         let script = GeolocationUserScript()
+        script.activationHandler = { _ in true }
+        let webView = WKWebView()
+        let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
+        let controller = WKUserContentController()
+        var body = registrationBody()
+        let registration = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
+        _ = await script.userContentController(controller, didReceive: registration)
+
         var delegate: TestGeolocationUserScriptDelegate? = TestGeolocationUserScriptDelegate()
         weak let weakDelegate = delegate
         script.delegate = delegate
@@ -213,9 +221,16 @@ final class GeolocationUserScriptTests: XCTestCase {
 
         XCTAssertNil(weakDelegate)
 
-        let constraints = GeolocationRequestConstraints(isSecureContext: true, isSandboxed: false, isPolicyAllowed: true)
-        let position = await script.handleOneShot(.getCurrentPosition, body: [:], frame: nil, constraints: constraints)
-        let permission = await script.handleOneShot(.queryPermission, body: [:], frame: nil, constraints: constraints)
+        body["kind"] = "getCurrentPosition"
+        let positionMessage = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
+        let positionReply = await script.userContentController(controller, didReceive: positionMessage)
+        let position = try XCTUnwrap(positionReply.0 as? [String: Any])
+
+        body["kind"] = "queryPermission"
+        body["statusID"] = String(repeating: "b", count: 32) + ":1"
+        let permissionMessage = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
+        let permissionReply = await script.userContentController(controller, didReceive: permissionMessage)
+        let permission = try XCTUnwrap(permissionReply.0 as? [String: Any])
 
         XCTAssertEqual(position["status"] as? String, "error")
         XCTAssertEqual(position["code"] as? Int, GeolocationPositionError.Code.positionUnavailable.rawValue)

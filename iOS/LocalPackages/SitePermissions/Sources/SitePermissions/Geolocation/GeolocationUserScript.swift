@@ -260,7 +260,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
 
         switch kind {
         case .getCurrentPosition:
-            return (await handleOneShot(kind, body: body, frame: frame, constraints: registration.constraints), nil)
+            return (await handlePositionRequest(body: body, frame: frame, constraints: registration.constraints), nil)
         case .queryPermission:
             return (handlePermissionQuery(body: body,
                                           frame: frame,
@@ -274,7 +274,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
                                      constraints: registration.constraints,
                                      webView: webView), nil)
         case .clearWatch:
-            return (handleWatchCancellation(body: body, frame: frame, nonce: nonce), nil)
+            return (handleWatchCancellation(body: body, nonce: nonce), nil)
         case .registerFrame:
             return (Self.errorPayload(.positionUnavailable, message: "Invalid geolocation request"), nil)
         }
@@ -334,31 +334,18 @@ public final class GeolocationUserScript: NSObject, UserScript {
     }
 
     @MainActor
-    func handleOneShot(_ kind: MessageKind,
-                       body: [String: Any],
-                       frame: GeolocationFrame?,
-                       constraints: GeolocationRequestConstraints) async -> [String: Any] {
-        guard let delegate, let frame else {
-            switch kind {
-            case .queryPermission:
-                return Self.permissionPayload(.denied)
-            case .registerFrame, .getCurrentPosition, .startWatch, .clearWatch:
-                return Self.errorPayload(.positionUnavailable, message: "Geolocation is unavailable")
-            }
+    private func handlePositionRequest(body: [String: Any],
+                                       frame: GeolocationFrame,
+                                       constraints: GeolocationRequestConstraints) async -> [String: Any] {
+        guard let delegate else {
+            return Self.errorPayload(.positionUnavailable, message: "Geolocation is unavailable")
         }
 
-        switch kind {
-        case .getCurrentPosition:
-            let result = await delegate.geolocationUserScript(self,
-                                                               getCurrentPositionWith: Self.options(from: body),
-                                                               constraints: constraints,
-                                                               in: frame)
-            return Self.positionPayload(result)
-        case .queryPermission:
-            return Self.permissionPayload(.denied)
-        case .registerFrame, .startWatch, .clearWatch:
-            return Self.errorPayload(.positionUnavailable, message: "Invalid one-shot request")
-        }
+        let result = await delegate.geolocationUserScript(self,
+                                                           getCurrentPositionWith: Self.options(from: body),
+                                                           constraints: constraints,
+                                                           in: frame)
+        return Self.positionPayload(result)
     }
 
     @MainActor
@@ -449,7 +436,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
     }
 
     @MainActor
-    private func handleWatchCancellation(body: [String: Any], frame: GeolocationFrame, nonce: String) -> [String: Any] {
+    private func handleWatchCancellation(body: [String: Any], nonce: String) -> [String: Any] {
         guard let requestID = body["requestID"] as? String,
               Self.isValidRequestID(requestID) else {
             return Self.errorPayload(.positionUnavailable, message: "Invalid geolocation watch")

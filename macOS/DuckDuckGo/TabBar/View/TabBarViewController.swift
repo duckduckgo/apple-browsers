@@ -1574,11 +1574,19 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
+        let oldWebExtensionIndex = tabCollectionViewModel.webExtensionIndex(for: sourceTab)
+        var destinationWindow: NSWindow?
+
         // The tab moves to a new window; it isn't closed and reopened.
         TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
             tabCollectionViewModel.remove(at: sourceTab, published: false)
-            WindowsManager.openNewWindow(with: tab, droppingPoint: droppingPoint)
+            destinationWindow = WindowsManager.openNewWindow(with: tab, droppingPoint: droppingPoint)
         }
+        guard let destinationWindow else {
+            assertionFailure("Failed to open new window")
+            return
+        }
+        tabCollectionViewModel.notifyWebExtensionTabMoved(tab, from: oldWebExtensionIndex)
     }
 
     // MARK: - Mouse Monitor
@@ -1994,6 +2002,15 @@ extension TabBarViewController: ThemeUpdateListening {
 
 // MARK: - TabCollectionViewModelDelegate
 extension TabBarViewController: TabCollectionViewModelDelegate {
+
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel,
+                                didMoveTab tab: Tab,
+                                fromWebExtensionIndex oldIndex: Int) {
+        guard #available(macOS 15.4, *),
+              let oldWindow = Application.appDelegate.windowControllersManager.windowController(for: tabCollectionViewModel),
+              let webExtensionManager = NSApp.delegateTyped.webExtensionManager else { return }
+        webExtensionManager.eventsListener.didMoveTab(tab, from: oldIndex, in: oldWindow)
+    }
 
     func tabCollectionViewModelDidAppend(_ tabCollectionViewModel: TabCollectionViewModel, selected: Bool) {
         appendToCollectionView(selected: selected)

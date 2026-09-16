@@ -32,7 +32,10 @@ extension Tab: WKWebExtensionTab {
     }
 
     private var tabCollectionViewModel: TabCollectionViewModel? {
-        let mainWindowController = Application.appDelegate.windowControllersManager.windowController(for: self)
+        // A shared pinned tab belongs to multiple window view models, so prefer the window that
+        // currently hosts its web view. Fall back to the manager while the web view is detached.
+        let mainWindowController = webView.window?.windowController as? MainWindowController
+            ?? Application.appDelegate.windowControllersManager.windowController(for: self)
         let mainViewController = mainWindowController?.mainViewController
         return mainViewController?.tabCollectionViewModel
     }
@@ -42,8 +45,7 @@ extension Tab: WKWebExtensionTab {
     }
 
     private func indexInWindow(for context: WKWebExtensionContext!) -> UInt {
-        let tabCollection = tabCollectionViewModel?.tabCollection
-        return UInt(tabCollection?.firstIndex(of: self) ?? 0)
+        return UInt(tabCollectionViewModel?.webExtensionIndex(of: self) ?? 0)
     }
 
     func parentTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {

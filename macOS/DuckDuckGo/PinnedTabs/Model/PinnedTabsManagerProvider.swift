@@ -184,7 +184,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
     private func migrateShared(to newPinnedTabsManager: PinnedTabsManager) {
         for tab in sharedPinnedTabsManager.tabCollection.tabs {
             let newTab = Tab(content: tab.content)
-            newPinnedTabsManager.pin(newTab, firePixel: false)
+            newPinnedTabsManager.pinTab(newTab, from: nil, firePixel: false)
         }
         sharedPinnedTabsManager.tabCollection.removeAll()
     }
@@ -199,14 +199,19 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
 
     @MainActor
     private func migrateAllPerWindowPinnedTabsToShared() {
-        let allTabs: [Tab] = perWindowPinnedTabsManagers.flatMap { $0.tabCollection.tabs }.map { tab in
-            switch tab {
-            case .loaded(let tab): tab
-            case .unloaded(let unloaded): unloaded.materialize()
+        for manager in perWindowPinnedTabsManagers {
+            while !manager.tabCollection.tabs.isEmpty {
+                manager.materializeIfNeeded(at: 0)
+                guard manager.tabCollection.moveTab(
+                    at: 0,
+                    to: sharedPinnedTabsManager.tabCollection,
+                    at: sharedPinnedTabsManager.tabCollection.tabs.endIndex
+                ) else {
+                    assertionFailure("Unable to migrate pinned tab to the shared collection")
+                    break
+                }
             }
         }
-        perWindowPinnedTabsManagers.forEach { $0.tabCollection.removeAll() }
-        allTabs.forEach { sharedPinnedTabsManager.pin($0, firePixel: false) }
     }
 
     // MARK: Cache
@@ -228,12 +233,10 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
 fileprivate extension TabCollection {
     @MainActor
     func duplicate() -> TabCollection {
-        let duplicatedCollection = TabCollection()
-        for tab in tabs {
-            if let url = tab.url {
-                duplicatedCollection.append(tab: Tab(content: .url(url, source: .ui)))
-            }
+        let duplicatedTabs = tabs.compactMap { tab in
+            tab.content.urlForWebView.map { Tab(content: .contentFromURL($0, source: .ui)) }
         }
-        return duplicatedCollection
+        // Cached tabs are not open in any window yet, so they must not emit `didOpenTab`.
+        return TabCollection(tabs: duplicatedTabs)
     }
 }

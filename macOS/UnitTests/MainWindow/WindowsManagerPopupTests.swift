@@ -23,6 +23,49 @@ import Cocoa
 
 final class WindowsManagerPopupTests: XCTestCase {
 
+    @MainActor
+    func testWhenClosingWindowContainsTabRetainedByAnotherWindowThenTabIsNotClosedForWebExtensions() {
+        let retainedTab = Tab(content: .newtab)
+        let closingTab = Tab(content: .newtab)
+
+        let tabsToClose = MainWindowController.tabsToCloseForWebExtensions(
+            in: [retainedTab, closingTab],
+            retainedByOpenWindows: [retainedTab],
+            retainedBySharedPinnedTabs: [])
+
+        XCTAssertEqual(tabsToClose.count, 1)
+        XCTAssertIdentical(tabsToClose.first, closingTab)
+    }
+
+    @MainActor
+    func testWhenClosingLastWindowContainsSharedPinnedTabThenPinnedTabIsNotClosedForWebExtensions() {
+        let sharedPinnedTab = Tab(content: .newtab)
+        let closingTab = Tab(content: .newtab)
+
+        let tabsToClose = MainWindowController.tabsToCloseForWebExtensions(
+            in: [sharedPinnedTab, closingTab],
+            retainedByOpenWindows: [],
+            retainedBySharedPinnedTabs: [sharedPinnedTab])
+
+        XCTAssertEqual(tabsToClose.count, 1)
+        XCTAssertIdentical(tabsToClose.first, closingTab)
+    }
+
+    @MainActor
+    func testWhenClosingWindowContainsNoRetainedTabsThenAllTabsAreClosedForWebExtensions() {
+        let firstTab = Tab(content: .newtab)
+        let secondTab = Tab(content: .newtab)
+
+        let tabsToClose = MainWindowController.tabsToCloseForWebExtensions(
+            in: [firstTab, secondTab],
+            retainedByOpenWindows: [],
+            retainedBySharedPinnedTabs: [])
+
+        XCTAssertEqual(tabsToClose.count, 2)
+        XCTAssertIdentical(tabsToClose[0], firstTab)
+        XCTAssertIdentical(tabsToClose[1], secondTab)
+    }
+
     // MARK: - Content Size Tests
 
     @MainActor

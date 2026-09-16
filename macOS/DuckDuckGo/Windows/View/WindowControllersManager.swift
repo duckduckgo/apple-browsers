@@ -631,8 +631,11 @@ extension WindowControllersManagerProtocol {
     }
 
     func windowController(for tab: Tab) -> MainWindowController? {
+        if let windowController = tab.webView.window?.windowController as? MainWindowController {
+            return windowController
+        }
         return mainWindowControllers.first(where: {
-            $0.mainViewController.tabCollectionViewModel.tabCollection.contains(tab: tab)
+            $0.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tab) != nil
         })
     }
 

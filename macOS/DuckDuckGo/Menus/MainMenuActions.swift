@@ -1627,11 +1627,19 @@ extension MainViewController {
     @objc func moveTabToNewWindow(_ sender: Any?) {
         guard let (tab, index) = getActiveTabAndIndex() else { return }
 
+        let oldWebExtensionIndex = tabCollectionViewModel.webExtensionIndex(for: index)
+        var destinationWindow: NSWindow?
+
         // The tab moves to a new window; it isn't closed and reopened.
         TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
             tabCollectionViewModel.remove(at: index)
-            WindowsManager.openNewWindow(with: tab)
+            destinationWindow = WindowsManager.openNewWindow(with: tab)
         }
+        guard let destinationWindow else {
+            assertionFailure("Failed to open new window")
+            return
+        }
+        tabCollectionViewModel.notifyWebExtensionTabMoved(tab, from: oldWebExtensionIndex)
     }
 
     @objc func newTabNextToActive(_ sender: Any?) {
@@ -1674,6 +1682,13 @@ extension MainViewController {
         let otherTabCollectionViewModels = otherMainViewControllers.map { $0.tabCollectionViewModel }
         let otherTabs = otherTabCollectionViewModels.flatMap { $0.tabCollection.tabs }
         let otherLocalHistoryOfRemovedTabs = Set(otherTabCollectionViewModels.flatMap { $0.tabCollection.localHistoryOfRemovedTabs })
+        let movedWebExtensionTabs = otherWindowControllers.flatMap { windowController in
+            let viewModel = windowController.mainViewController.tabCollectionViewModel
+            return viewModel.tabCollection.tabs.enumerated().compactMap { index, tab -> (Tab, Int, TabCollectionViewModel)? in
+                guard case .loaded(let tab) = tab else { return nil }
+                return (tab, viewModel.webExtensionIndex(for: .unpinned(index)), viewModel)
+            }
+        }
 
         // The merged tabs stay alive under the same identity; they aren't newly opened.
         TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
@@ -1684,6 +1699,10 @@ extension MainViewController {
         // Tabs from `otherTabCollectionViewModels` were moved to `tabCollectionViewModel`
         // clear the collection models so they are empty at `deinit` and no deinit checks assert.
         otherTabCollectionViewModels.forEach { $0.clearAfterMerge() }
+
+        for (tab, oldIndex, sourceViewModel) in movedWebExtensionTabs {
+            sourceViewModel.notifyWebExtensionTabMoved(tab, from: oldIndex)
+        }
 
         // Close the now-empty source windows last. Closing them while they still held the tabs would
         // let WebKit tear the (still-registered) moved tabs down together with their old window.

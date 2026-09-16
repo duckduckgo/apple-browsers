@@ -165,15 +165,19 @@ class ActionMessageView: UIView, ActionMessagePresenting {
     /// without affecting unrelated messages.
     @discardableResult
     static func presentTracked(message: String,
+                               actionTitle: String? = nil,
                                presentationLocation: PresentationLocation = .withBottomBar(andAddressBarBottom: false),
                                duration: TimeInterval = Constants.duration,
+                               onAction: @escaping () -> Void = {},
                                onDidDismiss: @escaping () -> Void = {}) -> ActionMessageView? {
         let messageView = loadFromXib()
         messageView.message.setAttributedTextString(message)
         return present(messageView: messageView,
                        message: message,
+                       actionTitle: actionTitle,
                        presentationLocation: presentationLocation,
                        duration: duration,
+                       onAction: onAction,
                        onDidDismiss: onDidDismiss)
     }
 

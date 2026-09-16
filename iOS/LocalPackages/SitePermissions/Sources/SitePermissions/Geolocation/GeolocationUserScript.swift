@@ -22,6 +22,7 @@ import Foundation
 import UserScript
 import WebKit
 
+/// Native options use seconds; the bridge converts JavaScript's millisecond values.
 public struct GeolocationRequestOptions: Equatable, Sendable {
 
     public let enableHighAccuracy: Bool
@@ -37,6 +38,7 @@ public struct GeolocationRequestOptions: Equatable, Sendable {
     }
 }
 
+/// Frame preflight checks, not a grant. The delegate still checks effective permissions.
 public struct GeolocationRequestConstraints: Equatable, Sendable {
 
     public let isSecureContext: Bool
@@ -167,6 +169,8 @@ public protocol GeolocationUserScriptDelegate: AnyObject {
                                didCancelPermissionStatusWithID statusID: String)
 }
 
+/// Routes authenticated page requests and frame-specific callbacks; the delegate owns
+/// permission decisions, location acquisition, and cancellation of its pending work.
 public final class GeolocationUserScript: NSObject, UserScript {
 
     private enum MessageName {
@@ -217,7 +221,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
 
     @MainActor
     /// - Parameter installImmediately: Hardens the page API synchronously at document start. Use only when the
-    ///   embedding app scopes this script to its tab web views; exact `duck.ai` origins remain untouched.
+    ///   embedding app scopes this script to its tab web views; `duck.ai` and its subdomains remain untouched.
     public init(delegate: GeolocationUserScriptDelegate? = nil, installImmediately: Bool = false) {
         self.delegate = delegate
         self.installImmediately = installImmediately
@@ -246,6 +250,8 @@ public final class GeolocationUserScript: NSObject, UserScript {
             return (handleFrameRegistration(body: body, frame: frame, webView: message.webView), nil)
         }
 
+        // Recheck activation for every request. Use the registered constraints so
+        // later messages cannot replace their original sandbox or policy verdict.
         guard activationHandler?(frame) == true,
               let nonce = body["nonce"] as? String,
               Self.isValidNonce(nonce),
@@ -280,7 +286,9 @@ public final class GeolocationUserScript: NSObject, UserScript {
         }
     }
 
-    /// Cancels all page-scoped callbacks. Call this on navigation and web-content-process replacement.
+    /// Cancels watches and permission-status subscriptions, then clears frame registrations.
+    /// Call on navigation, process replacement, and tab teardown. The delegate must
+    /// separately cancel pending one-shot work.
     @MainActor
     public func cancelAllWatches() {
         let requestIDs = watchRegistry.removeAll()
@@ -296,7 +304,8 @@ public final class GeolocationUserScript: NSObject, UserScript {
 
     /// Routes an update back to the frame that created the watch.
     ///
-    /// Returns `false` after `clearWatch`, navigation, process replacement, or frame teardown.
+    /// Returns whether delivery was scheduled. A later negative acknowledgement removes
+    /// the watch and asks the delegate to cancel location acquisition.
     @MainActor @discardableResult
     public func send(_ result: GeolocationPositionResult, toWatchWithID requestID: String) -> Bool {
         guard watchRegistry.contains(requestID) else { return false }
@@ -413,6 +422,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
             return Self.errorPayload(.positionUnavailable, message: "Geolocation is unavailable")
         }
 
+        // Register before invoking the delegate, which may send an update immediately.
         let registered = watchRegistry.register(requestID,
                                                 nonce: nonce) { [weak webView] script, completion in
             guard let webView else {
@@ -631,6 +641,7 @@ final class GeolocationFrameRegistrationStore {
     func register(nonce: String,
                   frame: GeolocationNativeFrameIdentity,
                   constraints: GeolocationRequestConstraints) -> Bool {
+        // Repeated requests may reuse registration, but cannot overwrite its constraints.
         if let registration = registrations[nonce] {
             return registration.frame == frame
         }

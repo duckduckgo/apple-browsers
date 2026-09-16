@@ -692,7 +692,7 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
 final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
     private func makeBarView(isFloatingUIEnabled: Bool) -> DefaultOmniBarView {
-        DefaultOmniBarView(isFloatingUIEnabled: isFloatingUIEnabled, supportsButtonMenusInGlass: true)
+        DefaultOmniBarView.create(isFloatingUIEnabled: isFloatingUIEnabled)
     }
 
     private func firstGlassView(in view: UIView) -> UIVisualEffectView? {
@@ -712,14 +712,6 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
             return host
         }
         return view.subviews.lazy.compactMap(floatingContentHost(in:)).first
-    }
-
-    func testWhenButtonMenusDoNotSupportGlassThenFloatingFieldIsOpaque() throws {
-        let barView = DefaultOmniBarView(isFloatingUIEnabled: true, supportsButtonMenusInGlass: false)
-        let searchContainer = try XCTUnwrap(barView.searchContainer)
-
-        XCTAssertNil(firstGlassView(in: searchContainer))
-        XCTAssertFalse(searchContainer.backgroundColor == .clear)
     }
 
     func testWhenFloatingMinimalChromeBarEnabledThenLeadingAndTrailingGlassGroupsAreAddedAndRemoved() {

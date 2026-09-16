@@ -66,7 +66,7 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertTrue(source.contains("sandboxedEmbeddingFrames"),
                       "An embedding frame that was ever sandboxed must stay fail-closed for its surviving document")
         XCTAssertTrue(source.contains("apply(weakSetHas, sandboxedEmbeddingFrames, [embeddingFrame])"))
-        XCTAssertTrue(source.contains("const ancestorSandboxed = await sandboxVerdict"),
+        XCTAssertTrue(source.contains("callThen(sandboxVerdict, (ancestorSandboxed) => {"),
                       "A child must inherit the sandbox verdict from every ancestor")
         XCTAssertTrue(source.contains("signHMAC(\"HMAC\""),
                       "The page-visible probe must authenticate without exposing the native capability")

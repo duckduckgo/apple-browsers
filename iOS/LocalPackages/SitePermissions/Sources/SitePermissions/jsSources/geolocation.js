@@ -109,19 +109,28 @@
     const noncePattern = /^[0-9a-f]{32}$/;
     const testPattern = globalThis.RegExp.prototype.test;
 
-    const signSandboxProbe = async (value) => {
-        const key = await hmacKey;
-        if (!key || !signHMAC || !encodeText) {
-            return null;
-        }
-        const signature = await signHMAC("HMAC", key, encodeText(value));
-        const bytes = new NativeUint8Array(signature);
-        let result = "";
-        for (let index = 0; index < 32; index++) {
-            const hex = apply(numberToString, bytes[index], [16]);
-            result += bytes[index] < 16 ? `0${hex}` : hex;
-        }
-        return result;
+    // Consume security values inside captured callbacks. Even await can call a
+    // page-replaced then when the page changes Promise.prototype.constructor.
+    const signSandboxProbe = (value, completion) => {
+        callThen(hmacKey, (key) => {
+            if (!key || !signHMAC || !encodeText) {
+                completion(null);
+                return;
+            }
+            try {
+                callThen(signHMAC("HMAC", key, encodeText(value)), (signature) => {
+                    const bytes = new NativeUint8Array(signature);
+                    let result = "";
+                    for (let index = 0; index < 32; index++) {
+                        const hex = apply(numberToString, bytes[index], [16]);
+                        result += bytes[index] < 16 ? `0${hex}` : hex;
+                    }
+                    completion(result);
+                }, () => completion(null));
+            } catch (_) {
+                completion(null);
+            }
+        }, () => completion(null));
     };
 
     // Cross-origin frames are unsupported. Same-origin frames also need the
@@ -269,7 +278,7 @@
             sandboxProbeTimeout = scheduleTask(() => finishSandboxProbe(true), 1_000);
         });
 
-    const handleSandboxProbeMessage = async (event) => {
+    const handleSandboxProbeMessage = (event) => {
         try {
             const data = event.data;
             const source = event.source;
@@ -290,10 +299,11 @@
                     !finishSandboxProbe) {
                     return;
                 }
-                const expectedProof = await signSandboxProbe(sandboxResponseValue(childNonce, reportedSandboxed));
-                if (expectedProof !== null && childNonce === nonce && proof === expectedProof) {
-                    finishSandboxProbe(reportedSandboxed);
-                }
+                signSandboxProbe(sandboxResponseValue(childNonce, reportedSandboxed), (expectedProof) => {
+                    if (expectedProof !== null && childNonce === nonce && proof === expectedProof) {
+                        finishSandboxProbe(reportedSandboxed);
+                    }
+                });
                 return;
             }
 
@@ -312,53 +322,66 @@
             const directlySandboxed = !sandboxHistoryAvailable ||
                 apply(weakSetHas, sandboxedEmbeddingFrames, [embeddingFrame]) ||
                 apply(hasAttribute, embeddingFrame, ["sandbox"]);
-            const expectedProof = await signSandboxProbe(sandboxRequestValue(childNonce));
-            if (expectedProof === null || proof !== expectedProof) {
-                apply(mapDelete, pendingSandboxProbeSources, [childNonce]);
-                return;
-            }
-            const ancestorSandboxed = await sandboxVerdict;
-            const sandboxed = ancestorSandboxed || directlySandboxed;
-            const responseProof = await signSandboxProbe(sandboxResponseValue(childNonce, sandboxed));
-            if (responseProof !== null) {
-                apply(postWindowMessage, source, [{
-                    channel: sandboxProbeChannel,
-                    kind: "response",
-                    nonce: childNonce,
-                    sandboxed,
-                    proof: responseProof
-                }, "*"]);
-            }
-            apply(mapDelete, pendingSandboxProbeSources, [childNonce]);
+            const clearPendingSource = () => { apply(mapDelete, pendingSandboxProbeSources, [childNonce]); };
+            signSandboxProbe(sandboxRequestValue(childNonce), (expectedProof) => {
+                if (expectedProof === null || proof !== expectedProof) {
+                    clearPendingSource();
+                    return;
+                }
+                try {
+                    callThen(sandboxVerdict, (ancestorSandboxed) => {
+                        const sandboxed = ancestorSandboxed || directlySandboxed;
+                        signSandboxProbe(sandboxResponseValue(childNonce, sandboxed), (responseProof) => {
+                            clearPendingSource();
+                            if (responseProof !== null) {
+                                try {
+                                    apply(postWindowMessage, source, [{
+                                        channel: sandboxProbeChannel,
+                                        kind: "response",
+                                        nonce: childNonce,
+                                        sandboxed,
+                                        proof: responseProof
+                                    }, "*"]);
+                                } catch (_) {}
+                            }
+                        });
+                    }, clearPendingSource);
+                } catch (_) {
+                    clearPendingSource();
+                }
+            });
         } catch (_) {}
     };
 
     apply(addWindowEventListener, globalThis, ["message", (event) => {
-        void handleSandboxProbeMessage(event);
+        handleSandboxProbeMessage(event);
     }, false]);
 
     if (parentWindow !== globalThis) {
-        void (async () => {
-            try {
-                if (nonce === null) {
-                    finishSandboxProbe(true);
-                    return;
-                }
-                const proof = await signSandboxProbe(sandboxRequestValue(nonce));
-                if (proof === null) {
-                    finishSandboxProbe(true);
-                    return;
-                }
-                apply(postWindowMessage, parentWindow, [{
-                    channel: sandboxProbeChannel,
-                    kind: "request",
-                    nonce,
-                    proof
-                }, "*"]);
-            } catch (_) {
+        try {
+            if (nonce === null) {
                 finishSandboxProbe(true);
+            } else {
+                signSandboxProbe(sandboxRequestValue(nonce), (proof) => {
+                    if (proof === null) {
+                        finishSandboxProbe(true);
+                        return;
+                    }
+                    try {
+                        apply(postWindowMessage, parentWindow, [{
+                            channel: sandboxProbeChannel,
+                            kind: "request",
+                            nonce,
+                            proof
+                        }, "*"]);
+                    } catch (_) {
+                        finishSandboxProbe(true);
+                    }
+                });
             }
-        })();
+        } catch (_) {
+            finishSandboxProbe(true);
+        }
     }
 
     const isSecureContext = globalThis.isSecureContext === true;

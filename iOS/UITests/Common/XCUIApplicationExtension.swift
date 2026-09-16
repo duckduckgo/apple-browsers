@@ -84,6 +84,13 @@ extension XCUIApplication {
             XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.elementExistence), .completed,
             "Expected \(count) tabs, found \(tabs.count).", file: file, line: line)
     }
+
+    func assertTabSwitcherTitle(_ title: String, file: StaticString = #filePath, line: UInt = #line) {
+        let titleLabel = staticTexts["TabSwitcher.Title"]
+        XCTAssertTrue(
+            titleLabel.wait(for: NSPredicate(format: "label == %@", title), timeout: UITestTimeouts.elementExistence),
+            "Expected tab switcher title '\(title)', found '\(titleLabel.label)'.", file: file, line: line)
+    }
 }
 
 extension XCUIElement {

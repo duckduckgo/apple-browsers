@@ -170,4 +170,31 @@ final class BookmarksUITests: UITestCase {
             app.assertBookmarksEmpty()
         }
     }
+
+    func testWhenTwoTabsAreBookmarkedThenBothAppearInBookmarks() {
+        let expectedTitles = ["Privacy Test Pages - Home", "Ad Click Flow"]
+
+        XCTContext.runActivity(named: "Create two bookmarkable tabs") { _ in
+            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            app.openNewTab()
+            app.openURL("https://www.search-company.site", expecting: "Search engine")
+        }
+
+        XCTContext.runActivity(named: "Bookmark both open tabs") { _ in
+            app.bookmarkAllOpenTabs(expectedTabCount: 2)
+        }
+
+        XCTContext.runActivity(named: "Verify both bookmarks were added") { _ in
+            app.openBookmarks()
+            app.assertBookmarkCount(expectedTitles.count)
+
+            let bookmarks = app.tables["Bookmarks.List"].cells.matching(identifier: "Bookmarks.Item")
+            for title in expectedTitles {
+                let bookmark = bookmarks.containing(.staticText, identifier: title).firstMatch
+                XCTAssertTrue(
+                    bookmark.waitForExistence(timeout: UITestTimeouts.elementExistence),
+                    "Bookmark '\(title)' did not appear.")
+            }
+        }
+    }
 }

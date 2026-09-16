@@ -89,13 +89,14 @@ extension MainViewController {
     }
 
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) {
-        // beginEditing treats focus as programmatic, so record the originating tap here.
-        onExperimentalAddressBarTapped()
         if textEntryMode == .aiChat, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             // Unified input locks to search when the toggle is disabled.
+            recordNewTabPageSessionAction { $0.tapDuckaiButton() }
             openAIChatFromAddressBar(prefilledText: nil)
             return
         }
+        // beginEditing treats focus as programmatic, so record the originating tap here.
+        onExperimentalAddressBarTapped()
         revealAddressBarForEditing()
         defer { finishNewTabPageInputHandoff() }
         viewCoordinator.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)

@@ -37,6 +37,7 @@
     const nodeListLength = Object.getOwnPropertyDescriptor(globalThis.NodeList?.prototype ?? {}, "length")?.get;
     const nodeListItem = globalThis.NodeList?.prototype?.item;
     const mapGet = globalThis.Map.prototype.get;
+    const mapHas = globalThis.Map.prototype.has;
     const mapSet = globalThis.Map.prototype.set;
     const mapDelete = globalThis.Map.prototype.delete;
     const NativeEvent = globalThis.Event;
@@ -482,11 +483,11 @@
 
         const watchID = nextWatchID++;
         const requestID = `${frameNonce}:${watchID}`;
-        activeWatches.set(requestID, { success, error });
+        apply(mapSet, activeWatches, [requestID, { success, error }]);
 
         if (!isContextEligible()) {
             queueMicrotask(() => {
-                if (activeWatches.delete(requestID)) {
+                if (apply(mapDelete, activeWatches, [requestID])) {
                     invokeError(error, deniedError());
                 }
             });
@@ -498,21 +499,21 @@
                 ? postWatch(message("startWatch", { requestID, options: optionsPayload(options) }))
                 : deniedResult()),
             (result) => {
-                if (!activeWatches.has(requestID) && result?.status === "started") {
+                if (!apply(mapHas, activeWatches, [requestID]) && result?.status === "started") {
                     callThen(postWatch(message("clearWatch", { requestID })), undefined, () => {});
                     return;
                 }
                 if (result?.status === "started" && !isAllowedByPlatform()) {
-                    activeWatches.delete(requestID);
+                    apply(mapDelete, activeWatches, [requestID]);
                     callThen(postWatch(message("clearWatch", { requestID })), undefined, () => {});
                     invokeError(error, deniedError());
                     return;
                 }
-                if (result?.status === "error" && activeWatches.delete(requestID)) {
+                if (result?.status === "error" && apply(mapDelete, activeWatches, [requestID])) {
                     invokeError(error, positionError(result.code ?? 2, result.message ?? "Geolocation is unavailable"));
                 }
             }, () => {
-                if (activeWatches.delete(requestID)) {
+                if (apply(mapDelete, activeWatches, [requestID])) {
                     invokeError(error, positionError(2, "Geolocation is unavailable"));
                 }
             });
@@ -521,7 +522,7 @@
 
     const clearWatch = (watchID) => {
         const requestID = `${frameNonce}:${Number(watchID)}`;
-        if (!activeWatches.delete(requestID)) {
+        if (!apply(mapDelete, activeWatches, [requestID])) {
             return;
         }
         callThen(
@@ -530,35 +531,41 @@
     };
 
     const receiveWatchResult = (requestID, result) => {
-        const callbacks = activeWatches.get(requestID);
+        const callbacks = apply(mapGet, activeWatches, [requestID]);
         if (callbacks) {
             if (!isAllowedByPlatform()) {
-                activeWatches.delete(requestID);
+                apply(mapDelete, activeWatches, [requestID]);
                 callThen(postWatch(message("clearWatch", { requestID })), undefined, () => {});
                 invokeError(callbacks.error, deniedError());
-                return;
+                return false;
             }
             settlePosition(result, callbacks.success, callbacks.error);
+            return true;
         }
+        return false;
     };
 
     const receiveTerminalWatchResult = (requestID, result) => {
-        const callbacks = activeWatches.get(requestID);
+        const callbacks = apply(mapGet, activeWatches, [requestID]);
         if (callbacks) {
-            activeWatches.delete(requestID);
+            apply(mapDelete, activeWatches, [requestID]);
             if (isAllowedByPlatform()) {
                 settlePosition(result, callbacks.success, callbacks.error);
             } else {
                 invokeError(callbacks.error, deniedError());
             }
+            return true;
         }
+        return false;
     };
 
     const receivePermissionState = (statusID, state) => {
         const record = apply(mapGet, permissionStatuses, [statusID]);
         if (record) {
             record.update(isAllowedByPlatform() ? state : "denied");
+            return true;
         }
+        return false;
     };
 
     const shim = Object.freeze({ getCurrentPosition, watchPosition, clearWatch });
@@ -627,7 +634,7 @@
 
         Object.defineProperty(globalThis, "__ddgSitePermissionsGeolocation", {
             configurable: false,
-            value: Object.freeze({ receiveWatchResult, receiveTerminalWatchResult, receivePermissionState })
+            value: freeze({ documentID: frameNonce, receiveWatchResult, receiveTerminalWatchResult, receivePermissionState })
         });
         return true;
     };

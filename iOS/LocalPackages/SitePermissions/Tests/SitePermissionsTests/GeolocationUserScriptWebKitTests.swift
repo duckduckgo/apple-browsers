@@ -277,11 +277,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
         // Isolate sandbox enforcement from OS differences in Permissions Policy support.
-        let harness = makeHarness(script: script, precedingScript: """
-        Object.defineProperty(document, "permissionsPolicy", {
-            value: { allowsFeature: () => true }
-        });
-        """)
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
         let frameHTML = """
         <html><head><script>
             const originalThen = Promise.prototype.then;
@@ -314,6 +310,117 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         XCTAssertEqual(state["status"] as? String, "error", "Page state: \(state)")
         XCTAssertEqual(state["forgedSandboxVerdict"] as? Bool, true)
         XCTAssertEqual(delegate.positionRequestCount, 0)
+    }
+
+    func testWatchAcceptsRepeatedUpdatesUntilClearWatch() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let started = expectation(description: "Native watch started")
+        let cancelled = expectation(description: "Native watch cancelled")
+        delegate.watchStarted = started
+        delegate.watchCancelled = cancelled
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
+        defer { server.stop() }
+        try await harness.load(try XCTUnwrap(server.url))
+        _ = try await javaScriptDictionary(in: harness.webView, body: """
+        window.positions = [];
+        window.watchID = navigator.geolocation.watchPosition((position) => positions.push(position.coords.latitude));
+        return {};
+        """)
+        await fulfillment(of: [started], timeout: 5)
+        let requestID = try XCTUnwrap(delegate.watchIDs.first)
+
+        XCTAssertTrue(script.send(delegate.positionResult, toWatchWithID: requestID))
+        try await waitUntil(in: harness.webView, expression: "positions.length === 1")
+        XCTAssertTrue(script.send(delegate.positionResult, toWatchWithID: requestID))
+        try await waitUntil(in: harness.webView, expression: "positions.length === 2")
+        let state = try await javaScriptDictionary(in: harness.webView, body: """
+        navigator.geolocation.clearWatch(window.watchID);
+        return { positions };
+        """)
+        await fulfillment(of: [cancelled], timeout: 5)
+
+        XCTAssertEqual(state["positions"] as? [Double], [37.3317, 37.3317])
+        XCTAssertEqual(delegate.cancelledWatchIDs, [requestID])
+        XCTAssertFalse(script.send(delegate.positionResult, toWatchWithID: requestID))
+    }
+
+    func testIframeNavigationCancelsStaleWatchAndPermissionStatus() async throws {
+        try await assertIframeNavigationCancelsCallbacks(removeShim: false)
+    }
+
+    func testReplacementDocumentCannotInterceptStaleCallbacksWithFakeBridge() async throws {
+        try await assertIframeNavigationCancelsCallbacks(removeShim: true)
+    }
+
+    private func assertIframeNavigationCancelsCallbacks(removeShim: Bool) async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let started = expectation(description: "Native watch started")
+        let watchCancelled = expectation(description: "Stale watch cancelled")
+        let statusCancelled = expectation(description: "Stale permission status cancelled")
+        delegate.watchStarted = started
+        delegate.watchCancelled = watchCancelled
+        delegate.permissionStatusCancelled = statusCancelled
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let server = try await WebKitLoopbackHTTPServer.start(
+            html: frameHostHTML(source: "/frame"),
+            frameHTML: """
+            <html><head><script>
+                if (location.search === "?replacement") {
+                    if (!window.__ddgSitePermissionsGeolocation) {
+                        window.__ddgSitePermissionsGeolocation = new Proxy({}, {
+                            get: () => (...payload) => { parent.staleDeliveries.push(payload); return true; }
+                        });
+                    }
+                    parent.replacementLoaded = true;
+                }
+            </script></head><body></body></html>
+            """
+        )
+        defer { server.stop() }
+        try await harness.load(try XCTUnwrap(server.url))
+        _ = try await javaScriptDictionary(in: harness.webView, body: """
+        window.staleDeliveries = [];
+        const child = document.getElementById("test-frame").contentWindow;
+        const status = await child.navigator.permissions.query({ name: "geolocation" });
+        status.onchange = () => staleDeliveries.push(status.state);
+        child.navigator.geolocation.watchPosition((position) => staleDeliveries.push(position));
+        return {};
+        """)
+        await fulfillment(of: [started], timeout: 5)
+        let requestID = try XCTUnwrap(delegate.watchIDs.first)
+        let statusID = try XCTUnwrap(delegate.permissionStatusIDs.first)
+        if removeShim {
+            harness.webView.configuration.userContentController.removeAllUserScripts()
+        }
+        _ = try await javaScriptDictionary(in: harness.webView, body: """
+        document.getElementById("test-frame").src = "/frame?replacement";
+        return {};
+        """)
+        try await waitUntil(in: harness.webView, expression: "window.replacementLoaded === true")
+
+        XCTAssertTrue(script.send(delegate.positionResult, toWatchWithID: requestID))
+        XCTAssertTrue(script.send(.denied, toPermissionStatusWithID: statusID))
+        await fulfillment(of: [watchCancelled, statusCancelled], timeout: 5)
+
+        XCTAssertFalse(script.send(delegate.positionResult, toWatchWithID: requestID))
+        XCTAssertFalse(script.send(.denied, toPermissionStatusWithID: statusID))
+        XCTAssertEqual(delegate.cancelledWatchIDs, [requestID])
+        XCTAssertEqual(delegate.cancelledPermissionStatusIDs, [statusID])
+        let state = try await javaScriptDictionary(in: harness.webView, body: "return { deliveries: staleDeliveries.length };")
+        XCTAssertEqual(state["deliveries"] as? Int, 0)
+    }
+
+    private var allowedPolicyScript: String {
+        """
+        Object.defineProperty(document, "permissionsPolicy", {
+            value: { allowsFeature: () => true }
+        });
+        """
     }
 
     func testRemovingSandboxAttributeImmediatelyDoesNotUnsandboxSurvivingDocument() async throws {
@@ -761,6 +868,12 @@ private final class WebKitTestGeolocationDelegate: GeolocationUserScriptDelegate
     private(set) var positionRequestCount = 0
     private(set) var permissionQueryCount = 0
     private(set) var permissionStatusIDs = [String]()
+    private(set) var watchIDs = [String]()
+    private(set) var cancelledWatchIDs = [String]()
+    private(set) var cancelledPermissionStatusIDs = [String]()
+    var watchStarted: XCTestExpectation?
+    var watchCancelled: XCTestExpectation?
+    var permissionStatusCancelled: XCTestExpectation?
     var permissionState = GeolocationPermissionState.granted
 
     func geolocationUserScript(_ userScript: GeolocationUserScript,
@@ -768,6 +881,10 @@ private final class WebKitTestGeolocationDelegate: GeolocationUserScriptDelegate
                                constraints: GeolocationRequestConstraints,
                                in frame: GeolocationFrame) async -> GeolocationPositionResult {
         positionRequestCount += 1
+        return positionResult
+    }
+
+    var positionResult: GeolocationPositionResult {
         let coordinates = GeolocationPosition.Coordinates(latitude: 37.3317,
                                                           longitude: -122.0301,
                                                           accuracy: 4,
@@ -791,11 +908,20 @@ private final class WebKitTestGeolocationDelegate: GeolocationUserScriptDelegate
                                didStartWatchWithID requestID: String,
                                options: GeolocationRequestOptions,
                                constraints: GeolocationRequestConstraints,
-                               in frame: GeolocationFrame) {}
+                               in frame: GeolocationFrame) {
+        watchIDs.append(requestID)
+        watchStarted?.fulfill()
+    }
 
     func geolocationUserScript(_ userScript: GeolocationUserScript,
-                               didCancelWatchWithID requestID: String) {}
+                               didCancelWatchWithID requestID: String) {
+        cancelledWatchIDs.append(requestID)
+        watchCancelled?.fulfill()
+    }
 
     func geolocationUserScript(_ userScript: GeolocationUserScript,
-                               didCancelPermissionStatusWithID statusID: String) {}
+                               didCancelPermissionStatusWithID statusID: String) {
+        cancelledPermissionStatusIDs.append(statusID)
+        permissionStatusCancelled?.fulfill()
+    }
 }

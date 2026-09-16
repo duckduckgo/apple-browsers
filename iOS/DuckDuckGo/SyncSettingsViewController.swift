@@ -590,6 +590,16 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         await dismissPresentedViewController()
         viewModel.connectingSheetPhase = .connecting(isRecovery: codeCollectionIntent == .recoverData)
     }
+
+    func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus) {
+        guard isPresentingConnectingSheet else { return }
+        switch status {
+        case .waiting:
+            return
+        case .unknown:
+            viewModel.connectingSheetPhase = .waitingForOtherDevice
+        }
+    }
     
     private func waitForDevicesToChange(then action: @escaping (SyncSettingsViewController) -> Void) {
         viewModel.$devices

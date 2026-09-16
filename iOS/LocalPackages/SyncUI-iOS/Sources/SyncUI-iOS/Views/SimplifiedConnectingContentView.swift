@@ -25,25 +25,41 @@ struct SimplifiedConnectingContentView: View {
 
     let isRecovery: Bool
     let isFinishing: Bool
+    let isWaitingForOtherDevice: Bool
     let onAnimationFinished: () -> Void
+
+    init(isRecovery: Bool, isFinishing: Bool, isWaitingForOtherDevice: Bool = false, onAnimationFinished: @escaping () -> Void) {
+        self.isRecovery = isRecovery
+        self.isFinishing = isFinishing
+        self.isWaitingForOtherDevice = isWaitingForOtherDevice
+        self.onAnimationFinished = onAnimationFinished
+    }
 
     var body: some View {
         VStack(spacing: 24) {
-            LottieView {
-                try await DotLottieFile.named("SyncLock", bundle: .module)
-            }
-            .playbackMode(isFinishing
-                ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
-                : .paused(at: .progress(0)))
-            .animationDidFinish { _ in
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                    onAnimationFinished()
+            if isWaitingForOtherDevice {
+                Image(rebrandable: "Desktop-Mobile-Sync-Feature-128", bundle: .module)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 128, height: 128)
+                    .padding(.top, 40)
+            } else {
+                LottieView {
+                    try await DotLottieFile.named("SyncLock", bundle: .module)
                 }
+                .playbackMode(isFinishing
+                    ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
+                    : .paused(at: .progress(0)))
+                .animationDidFinish { _ in
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        onAnimationFinished()
+                    }
+                }
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 128, height: 128)
+                .padding(.top, 40)
             }
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(width: 128, height: 128)
-            .padding(.top, 40)
 
             Text(title)
                 .daxTitle1()
@@ -66,7 +82,10 @@ struct SimplifiedConnectingContentView: View {
     }
 
     private var title: String {
-        isRecovery ? UserText.simplifiedRecoveringDataTitle : UserText.simplifiedConnectingTitle
+        if isWaitingForOtherDevice {
+            return UserText.simplifiedCheckOtherDeviceTitle
+        }
+        return isRecovery ? UserText.simplifiedRecoveringDataTitle : UserText.simplifiedConnectingTitle
     }
 }
 
@@ -82,5 +101,9 @@ struct SimplifiedConnectingContentView: View {
 
 #Preview("Recovering") {
     SimplifiedConnectingContentView(isRecovery: true, isFinishing: false, onAnimationFinished: {})
+}
+
+#Preview("Check Other Device") {
+    SimplifiedConnectingContentView(isRecovery: false, isFinishing: false, isWaitingForOtherDevice: true, onAnimationFinished: {})
 }
 #endif

@@ -160,6 +160,9 @@
 /* Caption displayed on 'unify favorites' toggle. */
 "sync.simplified.bookmarks.section.unified-favorites.caption" = "Use the same favorite bookmarks on mobile and desktop.";
 
+/* Title shown when Sync setup is still waiting for the other device to finish */
+"sync.simplified.connecting.v2.check-other-device.title" = "Check your other device.";
+
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Sync & Backup is end-to-end encrypted on all your devices.";
 
@@ -260,7 +263,7 @@
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo App";
 
 /* Status text when connecting devices to sync */
-"sync.simplified.scan-or-view-code.connecting.status" = "Connecting...";
+"sync.simplified.scan-or-view-code.connecting.status" = "Connecting…";
 
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Come back to this device after pasting the code.";

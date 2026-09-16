@@ -35,6 +35,8 @@ final class TabSwitcherTitleBarView: UIView {
         label.font = UIFont.daxHeadline()
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.textAlignment = .center
+        label.isAccessibilityElement = true
+        label.accessibilityIdentifier = "TabSwitcher.Title"
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()

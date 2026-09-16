@@ -22,33 +22,47 @@ import XCTest
 final class TabSuggestionsUITests: UITestCase {
 
     func testWhenOpenTabSuggestionIsSelectedThenExistingTabIsShown() {
-        app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
-        app.openNewTab()
-        app.openURL("https://www.search-company.site", expecting: "Search engine")
+        XCTContext.runActivity(named: "Create two tabs") { _ in
+            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            app.openNewTab()
+            app.openURL("https://www.search-company.site", expecting: "Search engine")
+        }
 
-        app.enterSearchText("privacy")
-        app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-privacy-test-pages.site"].tapWhenHittable()
-        app.assertPageContains("Privacy Test Pages")
+        XCTContext.runActivity(named: "Switch to the first tab from autocomplete") { _ in
+            app.enterSearchText("privacy")
+            app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-privacy-test-pages.site"].tapWhenHittable()
+            app.assertPageContains("Privacy Test Pages")
+        }
 
-        app.enterSearchText("ad click")
-        app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-search-company.site"].tapWhenHittable()
-        app.assertPageContains("Search engine")
+        XCTContext.runActivity(named: "Switch to the second tab from autocomplete") { _ in
+            app.enterSearchText("ad click")
+            app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-search-company.site"].tapWhenHittable()
+            app.assertPageContains("Search engine")
+        }
 
-        app.openTabSwitcher()
-        app.assertTabCount(2)
+        XCTContext.runActivity(named: "Verify switching did not create another tab") { _ in
+            app.openTabSwitcher()
+            app.assertTabCount(2)
+        }
     }
 
     func testWhenOpenTabSuggestionIsSelectedFromNewTabThenEmptyTabIsRemoved() {
-        app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
-        app.openNewTab()
+        XCTContext.runActivity(named: "Open an empty tab beside the test page") { _ in
+            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            app.openNewTab()
+        }
 
-        app.enterSearchText("privacy")
-        app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-privacy-test-pages.site"].tapWhenHittable()
-        app.assertPageContains("Privacy Test Pages")
+        XCTContext.runActivity(named: "Switch from the empty tab using autocomplete") { _ in
+            app.enterSearchText("privacy")
+            app.descendants(matching: .any)["Autocomplete.Suggestions.ListItem.OpenTab-privacy-test-pages.site"].tapWhenHittable()
+            app.assertPageContains("Privacy Test Pages")
+        }
 
-        app.openTabSwitcher()
-        app.assertTabCount(1)
-        app.tabCell(at: 0).buttons["TabSwitcher.Tab.Open"].tapWhenHittable()
-        app.assertPageContains("Privacy Test Pages")
+        XCTContext.runActivity(named: "Verify the empty tab was removed") { _ in
+            app.openTabSwitcher()
+            app.assertTabCount(1)
+            app.tabCell(at: 0).buttons["TabSwitcher.Tab.Open"].tapWhenHittable()
+            app.assertPageContains("Privacy Test Pages")
+        }
     }
 }

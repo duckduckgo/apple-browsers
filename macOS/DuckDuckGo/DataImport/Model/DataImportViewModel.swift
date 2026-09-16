@@ -966,6 +966,17 @@ extension DataImportViewModel {
                      onCancelled: onCancelled)
     }
 
+    mutating func setDataType(_ dataType: DataType, selected: Bool) {
+        // Ignore no-op writes so confirming the type sheet unchanged isn't treated as user intent.
+        guard selectedDataTypes.contains(dataType) != selected else { return }
+        hasUserModifiedDataTypeSelection = true
+        if selected {
+            selectedDataTypes.insert(dataType)
+        } else {
+            selectedDataTypes.remove(dataType)
+        }
+    }
+
     /// Selects a profile and filters selected data types to only include types available for that profile.
     /// This should be called when the user selects a profile from the profile picker screen.
     /// - Parameter profile: The profile to select

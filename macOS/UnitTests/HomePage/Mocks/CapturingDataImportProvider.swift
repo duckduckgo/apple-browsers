@@ -24,7 +24,7 @@ class CapturingDataImportProvider: DataImportStatusProviding {
     var showImportWindowCalled = false
     var didImport = false
 
-    func showImportWindow(customTitle: String?, completion: (() -> Void)?) {
+    func showImportWindow(completion: (() -> Void)?) {
         showImportWindowCalled = true
         completion?()
     }

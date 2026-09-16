@@ -61,8 +61,6 @@ final class DataImportFlowLauncher: DataImportFlowRelaunching {
 
     @MainActor
     func launchDataImport(
-        title: String = UserText.importDataTitle,
-        isDataTypePickerExpanded: Bool,
         in window: NSWindow? = nil,
         onFinished: @escaping () -> Void = {},
         onCancelled: @escaping () -> Void = {},

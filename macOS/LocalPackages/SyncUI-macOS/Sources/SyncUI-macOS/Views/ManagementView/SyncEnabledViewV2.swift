@@ -104,21 +104,17 @@ struct SyncEnabledViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
     }
 
     private func bookmarkOption(title: String, caption: String, isOn: Binding<Bool>) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Toggle(isOn: isOn) {
-                EmptyView()
-            }
-            .labelsHidden()
-            .toggleStyle(.checkbox)
-            .rebrandedControlTint()
-            .accessibilityLabel(Text(title))
-
+        Toggle(isOn: isOn) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                 SyncUIViewsV2.TextCaption(text: caption)
             }
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
+        .toggleStyle(.checkbox)
+        .rebrandedControlTint()
+        .accessibilityLabel(Text(title))
     }
 
     private func recoverySection() -> some View {

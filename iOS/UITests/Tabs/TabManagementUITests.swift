@@ -145,6 +145,7 @@ final class TabManagementUITests: UITestCase {
     func testWhenTabsAreSelectedThenSelectionStateUpdatesAndSelectedTabCanBeClosed() {
         XCTContext.runActivity(named: "Create two tabs") { _ in
             app.openNewTab()
+            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
             app.openTabSwitcher()
             app.assertTabCount(2)
         }
@@ -170,9 +171,10 @@ final class TabManagementUITests: UITestCase {
             app.buttons["TabSwitcher.Button.More"].tapWhenHittable()
             app.buttons["TabSwitcher.Menu.CloseSelected"].tapWhenHittable()
 
-            let alert = app.alerts["Close Tab?"]
-            XCTAssertTrue(alert.waitForExistence(timeout: UITestTimeouts.elementExistence))
-            alert.buttons["Close Tab"].tapWhenHittable()
+            app.buttons
+                .matching(identifier: "TabSwitcher.CloseTabs.Confirm")
+                .firstMatch
+                .tapWhenHittable()
 
             app.assertTabCount(1)
             app.assertTabSwitcherTitle("1 Private Tab")

@@ -21,6 +21,8 @@
         return;
     }
 
+    // Page scripts can replace Promise.prototype.then; permission decisions must use the captured method.
+    const callThen = Function.prototype.call.bind(Promise.prototype.then);
     const postOneShot = oneShotHandler.postMessage.bind(oneShotHandler);
     const postWatch = watchHandler.postMessage.bind(watchHandler);
     const scheduleTask = globalThis.setTimeout.bind(globalThis);
@@ -86,7 +88,7 @@
     const signHMAC = subtleCrypto?.sign.bind(subtleCrypto);
     const NativeUint8Array = globalThis.Uint8Array;
     const hmacKey = importHMACKey && encodeText
-        ? importHMACKey("raw", encodeText(capability), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]).catch(() => null)
+        ? callThen(importHMACKey("raw", encodeText(capability), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]), undefined, () => null)
         : Promise.resolve(null);
     const numberToString = globalThis.Number.prototype.toString;
     const noncePattern = /^[0-9a-f]{32}$/;
@@ -355,12 +357,12 @@
 
     const message = (kind, values = {}) => ({ capability, nonce, ...constraints, kind, ...values });
 
-    const registerFrame = () => sandboxVerdict
-        .then((isSandboxed) => {
+    const registerFrame = () => callThen(
+        callThen(sandboxVerdict, (isSandboxed) => {
             constraints = currentConstraints(isSandboxed);
             return postOneShot(message("registerFrame"));
-        })
-        .then((result) => {
+        }),
+        (result) => {
             if (result?.status !== "registered") {
                 throw new Error("Unable to register geolocation frame");
             }
@@ -465,11 +467,12 @@
             return;
         }
 
-        registerFrame().then((enabled) => enabled && isAllowedByPlatform()
-            ? postOneShot(message("getCurrentPosition", { options: optionsPayload(options) }))
-            : deniedResult())
-            .then((result) => settlePosition(isAllowedByPlatform() ? result : deniedResult(), success, error),
-                  () => invokeError(error, positionError(2, "Geolocation is unavailable")));
+        callThen(
+            callThen(registerFrame(), (enabled) => enabled && isAllowedByPlatform()
+                ? postOneShot(message("getCurrentPosition", { options: optionsPayload(options) }))
+                : deniedResult()),
+            (result) => settlePosition(isAllowedByPlatform() ? result : deniedResult(), success, error),
+            () => invokeError(error, positionError(2, "Geolocation is unavailable")));
     };
 
     const watchPosition = (success, error, options) => {
@@ -490,27 +493,29 @@
             return watchID;
         }
 
-        registerFrame().then((enabled) => enabled && isAllowedByPlatform()
-            ? postWatch(message("startWatch", { requestID, options: optionsPayload(options) }))
-            : deniedResult()).then((result) => {
-            if (!activeWatches.has(requestID) && result?.status === "started") {
-                postWatch(message("clearWatch", { requestID })).catch(() => {});
-                return;
-            }
-            if (result?.status === "started" && !isAllowedByPlatform()) {
-                activeWatches.delete(requestID);
-                postWatch(message("clearWatch", { requestID })).catch(() => {});
-                invokeError(error, deniedError());
-                return;
-            }
-            if (result?.status === "error" && activeWatches.delete(requestID)) {
-                invokeError(error, positionError(result.code ?? 2, result.message ?? "Geolocation is unavailable"));
-            }
-        }, () => {
-            if (activeWatches.delete(requestID)) {
-                invokeError(error, positionError(2, "Geolocation is unavailable"));
-            }
-        });
+        callThen(
+            callThen(registerFrame(), (enabled) => enabled && isAllowedByPlatform()
+                ? postWatch(message("startWatch", { requestID, options: optionsPayload(options) }))
+                : deniedResult()),
+            (result) => {
+                if (!activeWatches.has(requestID) && result?.status === "started") {
+                    callThen(postWatch(message("clearWatch", { requestID })), undefined, () => {});
+                    return;
+                }
+                if (result?.status === "started" && !isAllowedByPlatform()) {
+                    activeWatches.delete(requestID);
+                    callThen(postWatch(message("clearWatch", { requestID })), undefined, () => {});
+                    invokeError(error, deniedError());
+                    return;
+                }
+                if (result?.status === "error" && activeWatches.delete(requestID)) {
+                    invokeError(error, positionError(result.code ?? 2, result.message ?? "Geolocation is unavailable"));
+                }
+            }, () => {
+                if (activeWatches.delete(requestID)) {
+                    invokeError(error, positionError(2, "Geolocation is unavailable"));
+                }
+            });
         return watchID;
     };
 
@@ -519,8 +524,9 @@
         if (!activeWatches.delete(requestID)) {
             return;
         }
-        registerFrame().then((enabled) => enabled &&
-            postWatch(message("clearWatch", { requestID }))).catch(() => {});
+        callThen(
+            callThen(registerFrame(), (enabled) => enabled && postWatch(message("clearWatch", { requestID }))),
+            undefined, () => {});
     };
 
     const receiveWatchResult = (requestID, result) => {
@@ -528,7 +534,7 @@
         if (callbacks) {
             if (!isAllowedByPlatform()) {
                 activeWatches.delete(requestID);
-                postWatch(message("clearWatch", { requestID })).catch(() => {});
+                callThen(postWatch(message("clearWatch", { requestID })), undefined, () => {});
                 invokeError(callbacks.error, deniedError());
                 return;
             }
@@ -568,10 +574,11 @@
         const statusID = `${frameNonce}:${nextPermissionStatusID++}`;
         const record = permissionStatus();
         apply(mapSet, permissionStatuses, [statusID, record]);
-        return registerFrame().then((enabled) => enabled && isAllowedByPlatform()
-            ? postOneShot(message("queryPermission", { statusID }))
-            : null)
-            .then((result) => {
+        return callThen(
+            callThen(registerFrame(), (enabled) => enabled && isAllowedByPlatform()
+                ? postOneShot(message("queryPermission", { statusID }))
+                : null),
+            (result) => {
                 if (result?.status !== "permission") {
                     apply(mapDelete, permissionStatuses, [statusID]);
                 }
@@ -629,9 +636,9 @@
         installShim();
     }
 
-    registration.then((enabled) => {
+    callThen(registration, (enabled) => {
         if (enabled && !installImmediately) {
             installShim();
         }
-    }).catch(() => {});
+    }, () => {});
 })();

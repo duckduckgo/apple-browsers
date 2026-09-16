@@ -103,7 +103,7 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertTrue(source.contains("initialHostname.endsWith(\".duck.ai\")"))
         XCTAssertFalse(source.contains("initialHostname === \"duckduckgo.com\""))
         let install = source.range(of: "if (installImmediately) {\n        installShim();")
-        let registrationReply = source.range(of: "registration.then((enabled) => {\n        if (enabled && !installImmediately)")
+        let registrationReply = source.range(of: "callThen(registration, (enabled) => {\n        if (enabled && !installImmediately)")
         XCTAssertNotNil(install)
         XCTAssertNotNil(registrationReply)
         if let install, let registrationReply {
@@ -114,8 +114,8 @@ final class GeolocationUserScriptTests: XCTestCase {
     func testEachOperationRefreshesNativeFrameRegistration() {
         let source = GeolocationUserScript().source
 
-        XCTAssertTrue(source.contains("const registerFrame = () => sandboxVerdict"))
-        XCTAssertEqual(source.components(separatedBy: "registerFrame().then((enabled)").count - 1, 4,
+        XCTAssertTrue(source.contains("callThen(sandboxVerdict, (isSandboxed) => {"))
+        XCTAssertEqual(source.components(separatedBy: "callThen(registerFrame(), (enabled)").count - 1, 4,
                        "Position requests, permission queries, watch starts, and watch cancellation must recover after native registration resets")
     }
 

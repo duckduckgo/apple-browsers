@@ -272,6 +272,50 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         XCTAssertEqual(delegate.permissionQueryCount, 0)
     }
 
+    func testReplacingPromiseThenCannotBypassSandboxVerdict() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        // Isolate sandbox enforcement from OS differences in Permissions Policy support.
+        let harness = makeHarness(script: script, precedingScript: """
+        Object.defineProperty(document, "permissionsPolicy", {
+            value: { allowsFeature: () => true }
+        });
+        """)
+        let frameHTML = """
+        <html><head><script>
+            const originalThen = Promise.prototype.then;
+            Promise.prototype.then = function (onFulfilled, onRejected) {
+                Promise.prototype.then = originalThen;
+                window.forgedSandboxVerdict = true;
+                return originalThen.call(Promise.resolve(false), onFulfilled, onRejected);
+            };
+            navigator.geolocation.getCurrentPosition(
+                () => parent.postMessage({ test: "geolocation-frame-result", status: "success" }, "*"),
+                (error) => parent.postMessage({
+                    test: "geolocation-frame-result",
+                    status: "error",
+                    errorCode: error.code,
+                    forgedSandboxVerdict: window.forgedSandboxVerdict === true
+                }, "*")
+            );
+        </script></head><body></body></html>
+        """
+        let server = try await WebKitLoopbackHTTPServer.start(
+            html: frameHostHTML(source: "/frame", sandboxed: true),
+            frameHTML: frameHTML
+        )
+        defer { server.stop() }
+
+        try await harness.load(try XCTUnwrap(server.url))
+        try await waitUntil(in: harness.webView, expression: "window.frameResult !== undefined")
+        let state = try await javaScriptDictionary(in: harness.webView, body: "return window.frameResult;")
+
+        XCTAssertEqual(state["status"] as? String, "error", "Page state: \(state)")
+        XCTAssertEqual(state["forgedSandboxVerdict"] as? Bool, true)
+        XCTAssertEqual(delegate.positionRequestCount, 0)
+    }
+
     func testRemovingSandboxAttributeImmediatelyDoesNotUnsandboxSurvivingDocument() async throws {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
@@ -527,8 +571,14 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         """
     }
 
-    private func makeHarness(script: GeolocationUserScript) -> WebKitTestHarness {
+    private func makeHarness(script: GeolocationUserScript, precedingScript: String? = nil) -> WebKitTestHarness {
         let configuration = WKWebViewConfiguration()
+        if let precedingScript {
+            configuration.userContentController.addUserScript(WKUserScript(source: precedingScript,
+                                                                            injectionTime: .atDocumentStart,
+                                                                            forMainFrameOnly: false,
+                                                                            in: .page))
+        }
         configuration.userContentController.addUserScript(WKUserScript(source: script.source,
                                                                         injectionTime: script.injectionTime,
                                                                         forMainFrameOnly: script.forMainFrameOnly,

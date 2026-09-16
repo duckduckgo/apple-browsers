@@ -573,6 +573,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         tableView.accessibilityIdentifier = "Bookmarks.List"
         editButton.accessibilityIdentifier = "Bookmarks.Edit"
         doneButton.accessibilityIdentifier = "Bookmarks.Done"
+        addFolderButton.accessibilityIdentifier = "Bookmarks.AddFolder"
     }
 
     private func refreshEditButton() {

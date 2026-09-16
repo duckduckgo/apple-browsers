@@ -115,17 +115,58 @@ final class BookmarksUITests: UITestCase {
 
         XCTContext.runActivity(named: "Delete the non-empty folder hierarchy") { _ in
             app.openBookmarks()
-            XCTAssertTrue(
-                folder.wait(
-                    for: NSPredicate(format: "exists == true AND isHittable == true"),
-                    timeout: UITestTimeouts.elementExistence),
-                "Folder did not become available for deletion.")
-            folder.swipeLeft()
-            // UIKit does not expose an identifier for contextual actions. Tap the revealed trailing
-            // action relative to the semantically identified folder, then verify its confirmation.
-            folder.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
-            app.buttons.matching(identifier: "Bookmarks.Folder.ConfirmDelete").firstMatch.tapWhenHittable()
+            app.deleteBookmarkFolder(folder)
+            app.assertBookmarksEmpty()
+        }
+    }
 
+    func testWhenAllTabsAreBookmarkedThenTheirFolderCanBeDeleted() {
+        let folderName = "Examples"
+        let bookmarksList = app.tables["Bookmarks.List"]
+        let bookmarks = bookmarksList.cells.matching(identifier: "Bookmarks.Item")
+        let folder = bookmarksList.cells["Bookmarks.Folder"].firstMatch
+
+        XCTContext.runActivity(named: "Create five tabs with four bookmarkable pages") { _ in
+            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+            for index in 0..<4 {
+                app.openURL(
+                    "https://privacy-test-pages.site/\(index)",
+                    expecting: "Cannot GET /\(index)")
+                app.openNewTab()
+            }
+            app.buttons["UnifiedToggleInput.Button.Dismiss"].tapWhenHittable()
+        }
+
+        XCTContext.runActivity(named: "Bookmark all open tabs") { _ in
+            app.bookmarkAllOpenTabs(expectedTabCount: 5)
+            app.openBookmarks()
+            app.assertBookmarkCount(4)
+        }
+
+        XCTContext.runActivity(named: "Create a folder and move all bookmarks into it") { _ in
+            app.createBookmarkFolderAtRoot(named: folderName)
+            app.buttons["Bookmarks.Edit"].tapWhenHittable()
+
+            for remainingCount in stride(from: 3, through: 0, by: -1) {
+                bookmarks.firstMatch.tapWhenHittable()
+                let destination = app.tables["Bookmarks.Editor.List"]
+                    .cells.matching(identifier: "Bookmarks.Editor.Folder")
+                    .containing(.staticText, identifier: folderName)
+                    .firstMatch
+                app.tables["Bookmarks.Editor.List"].swipeUpToReveal(destination)
+                destination.tapWhenHittable()
+                app.saveBookmarkEditor()
+                app.assertBookmarkCount(remainingCount)
+            }
+
+            app.buttons["Bookmarks.Edit"].tapWhenHittable()
+            XCTAssertTrue(
+                folder.waitForExistence(timeout: UITestTimeouts.elementExistence),
+                "Created folder is missing after moving the bookmarks.")
+        }
+
+        XCTContext.runActivity(named: "Delete the folder and its bookmarks") { _ in
+            app.deleteBookmarkFolder(folder)
             app.assertBookmarksEmpty()
         }
     }

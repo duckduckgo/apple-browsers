@@ -22,14 +22,6 @@ import UITestingSupport
 
 extension XCUIApplication {
 
-    func openBrowsingMenuItem(_ identifier: String, file: StaticString = #filePath, line: UInt = #line) {
-        buttons["Browser.Toolbar.Button.Menu"].tapWhenHittable(file: file, line: line)
-        let item = descendants(matching: .any)[identifier]
-        let menu = descendants(matching: .any)["Browser.Menu.List"]
-        menu.swipeUpToReveal(item, file: file, line: line)
-        item.tap()
-    }
-
     func openBookmarks(file: StaticString = #filePath, line: UInt = #line) {
         openBrowsingMenuItem("Browser.Menu.Bookmarks", file: file, line: line)
         XCTAssertTrue(
@@ -46,15 +38,83 @@ extension XCUIApplication {
         XCTAssertEqual(bookmarkList.cells.matching(identifier: "Bookmarks.Folder").count, 0, file: file, line: line)
     }
 
-    func openAutocompleteSuggestion(
-        withIdentifierPrefix identifierPrefix: String,
+    func assertBookmarkCount(_ count: Int, file: StaticString = #filePath, line: UInt = #line) {
+        let bookmarks = tables["Bookmarks.List"].cells.matching(identifier: "Bookmarks.Item")
+        let expectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "count == %d", count),
+            object: bookmarks)
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.elementExistence),
+            .completed,
+            "Expected \(count) bookmarks, found \(bookmarks.count).",
+            file: file,
+            line: line)
+    }
+
+    func bookmarkAllOpenTabs(
+        expectedTabCount: Int,
         file: StaticString = #filePath,
         line: UInt = #line) {
-        // Existing suggestion identifiers append unique data; select only by the semantic role prefix.
-        let suggestion = descendants(matching: .any)
-            .matching(NSPredicate(format: "identifier BEGINSWITH %@", identifierPrefix))
-            .firstMatch
-        suggestion.tapWhenHittable(file: file, line: line)
+        openTabSwitcher(file: file, line: line)
+        assertTabCount(expectedTabCount, file: file, line: line)
+        buttons["TabSwitcher.Button.Edit"].tapWhenHittable(file: file, line: line)
+        buttons["TabSwitcher.Menu.SelectTabs"].tapWhenHittable(file: file, line: line)
+        buttons["TabSwitcher.Button.More"].tapWhenHittable(file: file, line: line)
+        buttons["TabSwitcher.Menu.BookmarkAll"].tapWhenHittable(file: file, line: line)
+        buttons.matching(identifier: "TabSwitcher.BookmarkTabs.Confirm").firstMatch
+            .tapWhenHittable(file: file, line: line)
+
+        // First leave selection mode, then close the tab switcher.
+        buttons["TabSwitcher.Button.Done"].tapWhenHittable(file: file, line: line)
+        buttons["TabSwitcher.Button.Done"].tapWhenHittable(file: file, line: line)
+        XCTAssertTrue(
+            searchEntry.wait(
+                for: NSPredicate(format: "isHittable == true"),
+                timeout: UITestTimeouts.elementExistence),
+            "Browser did not reappear after bookmarking all tabs.",
+            file: file,
+            line: line)
+    }
+
+    func createBookmarkFolderAtRoot(
+        named name: String,
+        file: StaticString = #filePath,
+        line: UInt = #line) {
+        buttons["Bookmarks.AddFolder"].tapWhenHittable(file: file, line: line)
+
+        let title = textFields["Bookmarks.Editor.FolderTitle"]
+        title.tapWhenHittable(file: file, line: line)
+        title.typeText(name)
+        buttons["Bookmarks.Editor.FolderSave"].tapWhenHittable(file: file, line: line)
+
+        XCTAssertTrue(
+            tables["Bookmarks.List"].wait(
+                for: NSPredicate(format: "exists == true AND isHittable == true"),
+                timeout: UITestTimeouts.elementExistence),
+            "Bookmarks list did not reappear after creating the folder.",
+            file: file,
+            line: line)
+        XCTAssertTrue(
+            staticTexts[name].waitForExistence(timeout: UITestTimeouts.elementExistence),
+            "Created bookmark folder did not appear.",
+            file: file,
+            line: line)
+    }
+
+    func deleteBookmarkFolder(_ folder: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(
+            folder.wait(
+                for: NSPredicate(format: "exists == true AND isHittable == true"),
+                timeout: UITestTimeouts.elementExistence),
+            "Folder did not become available for deletion.",
+            file: file,
+            line: line)
+        folder.swipeLeft()
+        // UIKit does not expose an identifier for contextual actions. Tap the revealed trailing
+        // action relative to the semantically identified folder, then verify its confirmation.
+        folder.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        buttons.matching(identifier: "Bookmarks.Folder.ConfirmDelete").firstMatch
+            .tapWhenHittable(file: file, line: line)
     }
 
     func createBookmarkFolder(
@@ -162,10 +222,19 @@ extension XCUIApplication {
                 .button,
                 identifier: "Debug.Bookmarks.DeleteAll"
             ).firstMatch
-            bookmarksNavigationBar.swipeDown()
+            let dragStart = bookmarksNavigationBar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            let dragEnd = windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95))
+            dragStart.press(forDuration: 0.1, thenDragTo: dragEnd)
             XCTAssertTrue(
-                debugList.wait(for: NSPredicate(format: "exists == false"), timeout: UITestTimeouts.elementExistence),
+                bookmarksNavigationBar.wait(
+                    for: NSPredicate(format: "exists == false"),
+                    timeout: UITestTimeouts.elementExistence),
                 "Debug screen did not close after resetting bookmarks.", file: file, line: line)
+            XCTAssertTrue(
+                searchEntry.wait(
+                    for: NSPredicate(format: "isHittable == true"),
+                    timeout: UITestTimeouts.elementExistence),
+                "Browser did not become available after resetting bookmarks.", file: file, line: line)
         }
     }
 

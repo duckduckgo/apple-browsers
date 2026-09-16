@@ -29,7 +29,8 @@ extension MainViewController {
             usesUnifiedInput: unifiedToggleInputCoordinator != nil,
             isLegacyInputEditing: hasInlineInput && viewCoordinator.omniBar.isTextFieldEditing,
             isUnifiedInputEditing: unifiedToggleInputCoordinator?.isOmnibarSession == true,
-            isHandingOff: isAddressBarHandOffInProgress)
+            isHandingOff: isAddressBarHandOffInProgress,
+            isDismissing: viewCoordinator.isInlineInputDismissInProgress)
         guard viewCoordinator.newTabPageInputPresentation != presentation else { return }
         viewCoordinator.setNewTabPageInputPresentation(presentation)
         (newTabPageViewController as? NewTabPageInputTransitionSource)?.setSearchInputEditing(

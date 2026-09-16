@@ -113,6 +113,7 @@ class MainViewCoordinator {
     }
 
     private(set) var newTabPageInputPresentation: NewTabPageInputPresentation = .browser
+    private(set) var isInlineInputDismissInProgress = false
 
     private var isNavigationBarContainerHiddenByLayout = false
     private var isNavigationBarContainerInteractionEnabledByLayout = true
@@ -601,6 +602,7 @@ class MainViewCoordinator {
             installOmnibarDismissContentSnapshot(contentSnapshot)
         }
         omnibarDismissInterruptCleanup = interruptCleanup
+        isInlineInputDismissInProgress = transition == .inlineInput
         if isFloatingUIEnabled {
             hideFocusedStateBackground()
         }
@@ -617,6 +619,7 @@ class MainViewCoordinator {
         animator.addCompletion { [weak self] position in
             guard let self else { return }
             self.omnibarDismissAnimator = nil
+            self.isInlineInputDismissInProgress = false
             // Interrupted / superseded: still drop transient dismiss chrome, but skip finish so a concurrent show wins.
             guard position == .end else {
                 self.performOmnibarDismissInterruptCleanup()

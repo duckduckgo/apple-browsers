@@ -52,8 +52,8 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertTrue(source.contains("globalThis.origin !== \"null\""))
         XCTAssertTrue(source.contains("globalThis.location.protocol === \"https:\" || globalThis.location.protocol === \"http:\""),
                       "Only network documents may use the shim")
-        XCTAssertTrue(source.contains("return true;\n        } catch (_)"),
-                      "A missing policy API must use the v1 self-only fallback rather than denying first-party pages")
+        XCTAssertTrue(source.contains("return globalThis.top === globalThis;\n        } catch (_)"),
+                      "Missing Permissions Policy introspection must deny subframes")
         XCTAssertTrue(source.contains("isPolicyAllowed: isFramePolicyEligible && policyAllowsGeolocation()"),
                       "Every request and permission query must share the same policy constraint")
         XCTAssertTrue(source.contains("const nativePermissionsPolicy = document.permissionsPolicy ?? document.featurePolicy"))

@@ -110,11 +110,9 @@
         return result;
     };
 
-    // WebKit does not currently expose Permissions Policy introspection on every
-    // supported OS. V1 therefore applies the platform's `self` default itself:
-    // top-level and same-origin frames may continue, while every cross-origin
-    // frame is denied. This deliberately excludes delegated cross-origin frames
-    // until an OS-managed API can enforce their full policy chain reliably.
+    // Cross-origin frames are unsupported. Same-origin frames also need the
+    // platform's effective policy: origin alone cannot prove that an iframe's
+    // allow attribute or response headers permit geolocation.
     const isSameOriginAsTopLevel = (() => {
         if (globalThis.top === globalThis) {
             return true;
@@ -135,7 +133,9 @@
             if (typeof nativePolicyAllowsFeature === "function") {
                 return apply(nativePolicyAllowsFeature, nativePermissionsPolicy, ["geolocation"]);
             }
-            return true;
+            // Native code checks the top-level response policy. Without this API,
+            // subframe response policies cannot be verified, so deny subframes.
+            return globalThis.top === globalThis;
         } catch (_) {
             return false;
         }

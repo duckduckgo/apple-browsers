@@ -138,7 +138,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script)
+        let harness = makeHarness(script: script, precedingScript: unavailablePolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
         defer { server.stop() }
 
@@ -177,7 +177,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script)
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(html: frameHostHTML(source: "/frame"),
                                                               frameHTML: frameExerciseHTML)
         defer { server.stop() }
@@ -195,7 +195,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script)
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
         let frameServer = try await WebKitLoopbackHTTPServer.start(html: frameExerciseHTML)
         defer { frameServer.stop() }
         let frameURL = try XCTUnwrap(frameServer.url)
@@ -215,7 +215,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script)
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
         let frameServer = try await WebKitLoopbackHTTPServer.start(html: frameExerciseHTML)
         defer { frameServer.stop() }
         var frameURL = try XCTUnwrap(URLComponents(url: try XCTUnwrap(frameServer.url), resolvingAgainstBaseURL: false))
@@ -256,7 +256,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script)
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(
             html: frameHostHTML(source: "/frame", sandboxed: true),
             frameHTML: frameExerciseHTML
@@ -423,11 +423,20 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         """
     }
 
+    private var unavailablePolicyScript: String {
+        """
+        Object.defineProperties(document, {
+            permissionsPolicy: { value: undefined },
+            featurePolicy: { value: undefined }
+        });
+        """
+    }
+
     func testRemovingSandboxAttributeImmediatelyDoesNotUnsandboxSurvivingDocument() async throws {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script)
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(
             html: frameHostHTML(source: "/frame?removeSandbox", sandboxed: true),
             frameHTML: frameExerciseHTML
@@ -450,35 +459,84 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         XCTAssertEqual(delegate.permissionQueryCount, 0)
     }
 
-    func testPolicyIntrospectionDenialIsHonoredWhenAvailableAndUsesFallbackOtherwise() async throws {
+    func testPolicyIntrospectionDenialDoesNotCallDelegate() async throws {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script)
+        let harness = makeHarness(script: script, precedingScript: """
+        Object.defineProperty(document, "permissionsPolicy", {
+            value: { allowsFeature: () => false }
+        });
+        """)
+        let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
+        defer { server.stop() }
+        try await harness.load(try XCTUnwrap(server.url))
+
+        assertDenied(try await exerciseGeolocation(in: harness.webView))
+        XCTAssertEqual(delegate.positionRequestCount, 0)
+        XCTAssertEqual(delegate.permissionQueryCount, 0)
+    }
+
+    func testNativeDelegateCanDenyTopLevelRequestWhenPolicyAPIIsUnavailable() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        // The embedding app owns response-header enforcement; arrange its denial here.
+        delegate.permissionState = .denied
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        let harness = makeHarness(script: script, precedingScript: unavailablePolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>",
                                                               permissionsPolicy: "geolocation=()")
         defer { server.stop() }
-
         try await harness.load(try XCTUnwrap(server.url))
-        try await waitUntil(in: harness.webView, expression: "Boolean(window.__ddgSitePermissionsGeolocation)")
-        let state = try await exerciseGeolocation(in: harness.webView)
 
-        if state["hasPolicyAPI"] as? Bool == true {
-            assertDenied(state)
-            XCTAssertEqual(delegate.positionRequestCount, 0)
-            XCTAssertEqual(delegate.permissionQueryCount, 0)
-        } else {
-            assertAllowed(state)
-            XCTAssertEqual(delegate.positionRequestCount, 1)
-            XCTAssertEqual(delegate.permissionQueryCount, 1)
-        }
+        assertDenied(try await exerciseGeolocation(in: harness.webView))
+        XCTAssertEqual(delegate.positionRequestCount, 1)
+        XCTAssertEqual(delegate.permissionQueryCount, 1)
+    }
+
+    func testSubframeRequestWatchAndQueryFailClosedWhenPolicyAPIIsUnavailable() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        let harness = makeHarness(script: script, precedingScript: unavailablePolicyScript)
+        let server = try await WebKitLoopbackHTTPServer.start(
+            html: frameHostHTML(source: "/frame").replacingOccurrences(of: "allow=\"geolocation\"", with: "allow=\"geolocation 'none'\""),
+            frameHTML: """
+            <html><head><script>
+                window.addEventListener("load", async () => {
+                    const permission = await navigator.permissions.query({ name: "geolocation" });
+                    const request = await new Promise((resolve) => navigator.geolocation.getCurrentPosition(
+                        () => resolve(0), (error) => resolve(error.code)));
+                    const watch = await new Promise((resolve) => navigator.geolocation.watchPosition(
+                        () => resolve(0), (error) => resolve(error.code)));
+                    parent.postMessage({ test: "geolocation-frame-result", state: permission.state, request, watch }, "*");
+                });
+            </script></head><body></body></html>
+            """,
+            permissionsPolicy: "geolocation=()"
+        )
+        defer { server.stop() }
+        try await harness.load(try XCTUnwrap(server.url))
+        try await waitUntil(in: harness.webView, expression: "window.frameResult !== undefined")
+        let state = try await javaScriptDictionary(in: harness.webView, body: "return window.frameResult;")
+
+        XCTAssertEqual(state["state"] as? String, "denied")
+        XCTAssertEqual(state["request"] as? Int, GeolocationPositionError.Code.permissionDenied.rawValue)
+        XCTAssertEqual(state["watch"] as? Int, GeolocationPositionError.Code.permissionDenied.rawValue)
+        XCTAssertEqual(delegate.positionRequestCount, 0)
+        XCTAssertEqual(delegate.permissionQueryCount, 0)
+        XCTAssertTrue(delegate.watchIDs.isEmpty)
     }
 
     func testPolicyIsReevaluatedAfterIframeAllowAttributeBecomesRestrictive() async throws {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script)
+        let harness = makeHarness(script: script, precedingScript: """
+        Object.defineProperty(document, "permissionsPolicy", {
+            value: { allowsFeature: () => globalThis.frameElement?.getAttribute("allow") !== "geolocation 'none'" }
+        });
+        """)
         let server = try await WebKitLoopbackHTTPServer.start(html: frameHostHTML(source: "/frame"),
                                                               frameHTML: frameExerciseHTML)
         defer { server.stop() }
@@ -492,21 +550,14 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         window.frameResult = undefined;
         const frame = document.getElementById("test-frame");
         frame.setAttribute("allow", "geolocation 'none'");
-        await new Promise((resolve) => setTimeout(resolve, 0));
         frame.contentWindow.postMessage({ test: "rerun-geolocation" }, "*");
         """, arguments: [:], in: nil, contentWorld: .page)
         try await waitUntil(in: harness.webView, expression: "window.frameResult !== undefined")
         let secondState = try await javaScriptDictionary(in: harness.webView, body: "return window.frameResult;")
 
-        if secondState["hasPolicyAPI"] as? Bool == true {
-            assertDenied(secondState)
-            XCTAssertEqual(delegate.positionRequestCount, 1)
-            XCTAssertEqual(delegate.permissionQueryCount, 1)
-        } else {
-            assertAllowed(secondState)
-            XCTAssertEqual(delegate.positionRequestCount, 2)
-            XCTAssertEqual(delegate.permissionQueryCount, 2)
-        }
+        assertDenied(secondState)
+        XCTAssertEqual(delegate.positionRequestCount, 1)
+        XCTAssertEqual(delegate.permissionQueryCount, 1)
     }
 
     func testOperationReregistersAfterNativeLifecycleReset() async throws {
@@ -881,6 +932,9 @@ private final class WebKitTestGeolocationDelegate: GeolocationUserScriptDelegate
                                constraints: GeolocationRequestConstraints,
                                in frame: GeolocationFrame) async -> GeolocationPositionResult {
         positionRequestCount += 1
+        if permissionState == .denied {
+            return .failure(.init(code: .permissionDenied, message: "Denied by native permission checks"))
+        }
         return positionResult
     }
 

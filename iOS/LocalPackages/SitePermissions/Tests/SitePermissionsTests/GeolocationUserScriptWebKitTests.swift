@@ -312,6 +312,50 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         XCTAssertEqual(delegate.positionRequestCount, 0)
     }
 
+    func testChangingPromiseConstructorCannotRemoveAncestorSandboxRestriction() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let server = try await WebKitLoopbackHTTPServer.start(
+            html: frameHostHTML(source: "/frame?outer", sandboxed: true),
+            frameHTML: """
+            <html><head><script>
+                if (location.search === "?outer") {
+                    const nativeThen = Promise.prototype.then;
+                    Promise.prototype.constructor = { [Symbol.species]: Promise };
+                    Promise.prototype.then = function (onFulfilled, onRejected) {
+                        return nativeThen.call(this, (value) => {
+                            if (typeof onFulfilled === "function") {
+                                return onFulfilled(typeof value === "boolean" ? false : value);
+                            }
+                            return value;
+                        }, onRejected);
+                    };
+                    window.addEventListener("load", () => {
+                        const child = document.createElement("iframe");
+                        child.src = "/frame?inner";
+                        document.body.appendChild(child);
+                    });
+                } else {
+                    window.addEventListener("load", () => navigator.geolocation.getCurrentPosition(
+                        () => top.postMessage({ test: "geolocation-frame-result", status: "success" }, "*"),
+                        (error) => top.postMessage({ test: "geolocation-frame-result", status: "error", code: error.code }, "*")
+                    ));
+                }
+            </script></head><body></body></html>
+            """
+        )
+        defer { server.stop() }
+        try await harness.load(try XCTUnwrap(server.url))
+        try await waitUntil(in: harness.webView, expression: "window.frameResult !== undefined")
+        let state = try await javaScriptDictionary(in: harness.webView, body: "return window.frameResult;")
+
+        XCTAssertEqual(state["status"] as? String, "error")
+        XCTAssertEqual(state["code"] as? Int, GeolocationPositionError.Code.permissionDenied.rawValue)
+        XCTAssertEqual(delegate.positionRequestCount, 0)
+    }
+
     func testWatchAcceptsRepeatedUpdatesUntilClearWatch() async throws {
         let delegate = WebKitTestGeolocationDelegate()
         let started = expectation(description: "Native watch started")

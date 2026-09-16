@@ -298,8 +298,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
     public func send(_ result: GeolocationPositionResult, toWatchWithID requestID: String) -> Bool {
         guard watchRegistry.contains(requestID) else { return false }
         guard let payload = Self.javaScriptObject(from: Self.positionPayload(result)) else { return false }
-        let encodedRequestID = Self.javaScriptString(requestID)
-        let sent = watchRegistry.send("window.__ddgSitePermissionsGeolocation.receiveWatchResult(\(encodedRequestID), \(payload))",
+        let sent = watchRegistry.send(Self.callbackScript("receiveWatchResult", requestID: requestID, payload: payload),
                                       to: requestID) { [weak self] succeeded in
             guard !succeeded, let self, self.watchRegistry.remove(requestID) else { return }
             self.delegate?.geolocationUserScript(self, didCancelWatchWithID: requestID)
@@ -313,8 +312,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
         guard let payload = Self.javaScriptObject(from: Self.positionPayload(result)),
               let callback = watchRegistry.take(requestID) else { return false }
 
-        let encodedRequestID = Self.javaScriptString(requestID)
-        callback("window.__ddgSitePermissionsGeolocation.receiveTerminalWatchResult(\(encodedRequestID), \(payload))") { _ in }
+        callback(Self.callbackScript("receiveTerminalWatchResult", requestID: requestID, payload: payload)) { _ in }
         delegate?.geolocationUserScript(self, didCancelWatchWithID: requestID)
         return true
     }
@@ -322,10 +320,9 @@ public final class GeolocationUserScript: NSObject, UserScript {
     /// Refreshes a previously queried `PermissionStatus` in its exact requesting frame.
     @MainActor @discardableResult
     public func send(_ state: GeolocationPermissionState, toPermissionStatusWithID statusID: String) -> Bool {
-        let encodedStatusID = Self.javaScriptString(statusID)
         let encodedState = Self.javaScriptString(state.rawValue)
         return permissionStatusRegistry.send(
-            "window.__ddgSitePermissionsGeolocation.receivePermissionState(\(encodedStatusID), \(encodedState))",
+            Self.callbackScript("receivePermissionState", requestID: statusID, payload: encodedState),
             to: statusID
         ) { [weak self] succeeded in
             guard !succeeded, let self, self.permissionStatusRegistry.remove(statusID) else { return }
@@ -380,7 +377,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
                 return
             }
             frame.evaluateJavaScript(script, in: webView) { result in
-                completion((try? result.get()) != nil)
+                completion((try? result.get()) as? Bool == true)
             }
         }
         guard registered else {
@@ -433,7 +430,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
                 return
             }
             frame.evaluateJavaScript(script, in: webView) { result in
-                completion((try? result.get()) != nil)
+                completion((try? result.get()) as? Bool == true)
             }
         }
         guard registered else {
@@ -541,6 +538,15 @@ public final class GeolocationUserScript: NSObject, UserScript {
               let data = try? JSONSerialization.data(withJSONObject: payload),
               let value = String(data: data, encoding: .utf8) else { return nil }
         return value
+    }
+
+    private static func callbackScript(_ method: String, requestID: String, payload: String) -> String {
+        let documentID = String(requestID.prefix { $0 != ":" })
+        // A WKFrameInfo can outlive its document. Check the document token before exposing the payload.
+        return """
+        window.__ddgSitePermissionsGeolocation?.documentID === \(javaScriptString(documentID)) &&
+        window.__ddgSitePermissionsGeolocation.\(method)(\(javaScriptString(requestID)), \(payload)) === true
+        """
     }
 
     private static func jsonValue(_ value: Double?) -> Any {

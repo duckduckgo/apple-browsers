@@ -41,7 +41,7 @@ final class GeolocationUserScriptTests: XCTestCase {
                           "receiveWatchResult", "receiveTerminalWatchResult", "receivePermissionState"] {
             XCTAssertTrue(source.contains(operation), "Expected shim source to contain \(operation)")
         }
-        XCTAssertTrue(source.contains("!activeWatches.has(requestID)"), "A cleared watch must compensate if native start wins the race")
+        XCTAssertTrue(source.contains("!apply(mapHas, activeWatches, [requestID])"), "A cleared watch must compensate if native start wins the race")
         XCTAssertTrue(source.contains("postMessage.bind"), "Page code must not replace the captured native bridge functions")
         XCTAssertTrue(source.contains("const isSecureContext = globalThis.isSecureContext === true"),
                       "The secure-context constraint must be captured before page scripts run")
@@ -86,7 +86,7 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertTrue(source.contains("const installImmediately = false"), "The default script must leave non-tab WebViews untouched")
 
         let terminalStart = try? XCTUnwrap(source.range(of: "const receiveTerminalWatchResult"))
-        let delete = terminalStart.flatMap { source.range(of: "activeWatches.delete(requestID)", range: $0.lowerBound..<source.endIndex) }
+        let delete = terminalStart.flatMap { source.range(of: "apply(mapDelete, activeWatches, [requestID])", range: $0.lowerBound..<source.endIndex) }
         let callback = terminalStart.flatMap { source.range(of: "settlePosition(result", range: $0.lowerBound..<source.endIndex) }
         XCTAssertNotNil(delete)
         XCTAssertNotNil(callback)
@@ -125,7 +125,7 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertTrue(source.contains("constraints = currentConstraints(isSandboxed);\n            return postOneShot(message(\"registerFrame\"))"))
         XCTAssertTrue(source.contains("const isAllowedByPlatform = () => {\n        constraints = currentConstraints(constraints.isSandboxed);"))
         XCTAssertTrue(source.contains("const receiveWatchResult = (requestID, result) => {"))
-        XCTAssertTrue(source.contains("if (!isAllowedByPlatform()) {\n                activeWatches.delete(requestID);"),
+        XCTAssertTrue(source.contains("if (!isAllowedByPlatform()) {\n                apply(mapDelete, activeWatches, [requestID]);"),
                       "A restrictive policy change must stop later watch deliveries")
         XCTAssertTrue(source.contains("settlePosition(isAllowedByPlatform() ? result : deniedResult(), success, error)"),
                       "A newly restrictive policy must suppress an in-flight one-shot result")

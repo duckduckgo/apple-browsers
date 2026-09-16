@@ -157,6 +157,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1214798984829406
     case subscriptionPromoForExistingUsers
 
+    /// https://app.asana.com/1/137249556945/task/1216994294111967
+    case subscriptionConcurrentExperiments
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218291758637477
     case subscriptionOnboardingFreeTrialsSep2026
 
@@ -710,6 +713,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionExpirationReminderNotification))
         case .subscriptionPromoForExistingUsers:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForExistingUsers))
+        case .subscriptionConcurrentExperiments:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionConcurrentExperiments))
         case .subscriptionOnboardingFreeTrialsSep2026:
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingFreeTrialsSep2026), cohortType: SubscriptionOnboardingFreeTrialsSep2026Cohort.self)
         case .subscriptionOnboardingPaidSubsSep2026:

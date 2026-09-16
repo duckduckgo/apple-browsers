@@ -89,6 +89,8 @@ extension MainViewController {
     }
 
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) {
+        // beginEditing treats focus as programmatic, so record the originating tap here.
+        onExperimentalAddressBarTapped()
         if textEntryMode == .aiChat, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             // Unified input locks to search when the toggle is disabled.
             openAIChatFromAddressBar(prefilledText: nil)

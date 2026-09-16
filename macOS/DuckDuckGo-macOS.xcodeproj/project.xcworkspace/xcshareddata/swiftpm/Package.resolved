@@ -1,5 +1,5 @@
 {
-  "originHash" : "258b9eb8dd83e4aa991c06c8ab91c492d53656a92a0d58a3facb979379a8404a",
+  "originHash" : "03dc339611b8a76660ed9897d934418cb3f1dea812791e3b893610c101fcdafe",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/combine-schedulers.git",
       "state" : {
-        "revision" : "dcccb979a2183b8df3334237e3dc1ae2b4116a86",
-        "version" : "1.2.0"
+        "revision" : "114354e8c1667a2edc4993700fb9fa4f90157b56",
+        "version" : "1.2.2"
       }
     },
     {
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "78ac8fe91528dfddaeab093dd88f8defcb13bc2a",
-        "version" : "17.1.0"
+        "revision" : "dfbdb5e9dea9bf076a08173f817aea0f4cfb72d8",
+        "version" : "17.4.0"
       }
     },
     {
@@ -179,6 +179,15 @@
       "state" : {
         "revision" : "a8cd6c976f335ed361dcecddb0dc39ebda51bc3e",
         "version" : "1.6.1"
+      }
+    },
+    {
+      "identity" : "swift-issue-reporting",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-issue-reporting",
+      "state" : {
+        "revision" : "71c7c9a761d1ca6ed4ccb6ced040fe1c1a39e8e7",
+        "version" : "2.1.0"
       }
     },
     {

@@ -88,7 +88,8 @@ struct SettingsAIChatShortcutsView: View {
 
                 if shouldShowAddressBarShortcut {
                     SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
-                                     accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
+                                     accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding),
+                                     accessoryAccessibilityIdentifier: "Settings.AIChat.AddressBarToggle")
                 }
 
                 if shouldShowTabBarShortcut {
@@ -110,6 +111,7 @@ struct SettingsAIChatShortcutsView: View {
             shortcutsSection
         }
         .applySettingsListModifiers(title: UserText.settingsAiChatShortcuts, displayMode: .inline, viewModel: viewModel)
+        .accessibilityIdentifier("Settings.List.AIChatShortcuts")
     }
 
     @ViewBuilder

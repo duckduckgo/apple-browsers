@@ -24,6 +24,7 @@ struct AutofillDeleteButtonCell: View {
     let confirmationTitle: String
     var confirmationMessage: String = ""
     var confirmationButtonTitle: String
+    var deleteButtonAccessibilityIdentifier: String? = nil
     let onDelete: () -> Void
     
     @State private var actionSheetConfirmDeletePresented: Bool = false
@@ -47,6 +48,7 @@ struct AutofillDeleteButtonCell: View {
                                   buttons: [deleteAction, ActionSheet.Button.cancel()])
             })
             .foregroundColor(Color.red)
+            .accessibilityIdentifier(ifPresent: deleteButtonAccessibilityIdentifier)
         }
         .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }}

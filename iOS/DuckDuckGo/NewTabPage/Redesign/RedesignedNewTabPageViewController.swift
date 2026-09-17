@@ -122,8 +122,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         finishEntranceAnimation()
     }
 
-    func prepareForEntranceAnimation() {
-        guard !UIAccessibility.isReduceMotionEnabled else { return }
+    func prepareForEntranceAnimation(if shouldAnimate: Bool) {
+        guard shouldAnimate, !UIAccessibility.isReduceMotionEnabled else { return }
         loadViewIfNeeded()
         isEntranceAnimationPending = true
         contentContainerView.alpha = 0
@@ -135,7 +135,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         contentContainerView.transform = .identity
     }
 
-    private func finishEntranceAnimation() {
+    func finishEntranceAnimation() {
         guard isEntranceAnimationPending || entranceAnimator != nil else { return }
         isEntranceAnimationPending = false
         entranceAnimator?.stopAnimation(true)

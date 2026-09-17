@@ -32,6 +32,9 @@ extension MainViewController {
             isHandingOff: isAddressBarHandOffInProgress,
             isDismissing: viewCoordinator.isInlineInputDismissInProgress)
         guard viewCoordinator.newTabPageInputPresentation != presentation else { return }
+        if presentation.hidesNavigationContainer || presentation.transition != .inlineInput {
+            restingNewTabPageSnapshot = nil
+        }
         viewCoordinator.setNewTabPageInputPresentation(presentation)
         (newTabPageViewController as? NewTabPageInputTransitionSource)?.setSearchInputEditing(
             !presentation.hidesNavigationContainer)
@@ -40,6 +43,9 @@ extension MainViewController {
 
     func revealAddressBarForEditing() {
         guard viewCoordinator.newTabPageInputPresentation.hidesNavigationContainer else { return }
+        if unifiedToggleInputCoordinator != nil {
+            captureRestingNewTabPageSnapshot()
+        }
         isAddressBarHandOffInProgress = true
         updateAddressBarSuppressionForNewTabPage()
         view.layoutIfNeeded()

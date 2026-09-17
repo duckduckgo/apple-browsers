@@ -165,6 +165,7 @@ class MainViewController: UIViewController {
 
     var newTabPageViewController: (any NewTabPage)?
     var isAddressBarHandOffInProgress = false
+    var restingNewTabPageSnapshot: (image: UIImage, frame: CGRect, viewportSize: CGSize)?
 
     private lazy var newTabPageBuilder = NewTabPageBuilder(favoritesInteractionModel: favoritesViewModel,
                                                            homePageMessagesConfiguration: homePageConfiguration,
@@ -2276,9 +2277,8 @@ class MainViewController: UIViewController {
             controller.view.alpha = 0
         }
 
-        if isNewTab && !willBeginEditing && !chatPathCompletionPending {
-            (controller as? RedesignedNewTabPageViewController)?.prepareForEntranceAnimation()
-        }
+        (controller as? RedesignedNewTabPageViewController)?.prepareForEntranceAnimation(
+            if: isNewTab && !willBeginEditing && !chatPathCompletionPending)
 
         addToContentContainer(controller: controller)
         viewCoordinator.logoContainer.isHidden = true
@@ -2373,6 +2373,7 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func removeHomeScreen() {
+        restingNewTabPageSnapshot = nil
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil

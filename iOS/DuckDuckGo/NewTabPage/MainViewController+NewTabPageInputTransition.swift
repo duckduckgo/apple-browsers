@@ -132,16 +132,34 @@ extension MainViewController {
             })
     }
 
-    private func makeRestingNewTabPageSnapshot() -> UIView? {
-        guard let page = newTabPageViewController,
-              let source = page as? NewTabPageInputTransitionSource else { return nil }
+    func captureRestingNewTabPageSnapshot() {
+        restingNewTabPageSnapshot = nil
+        guard let page = newTabPageViewController, page.hasInlineSearchInput else { return }
+        (page as? RedesignedNewTabPageViewController)?.finishEntranceAnimation()
+        view.layoutIfNeeded()
+        let bounds = page.view.bounds
+        guard !bounds.isEmpty else { return }
 
-        // Keep the resting page visible through the handoff without moving a live view
-        // whose layout is also being driven by the keyboard.
-        source.setSearchInputEditing(false)
-        defer { source.setSearchInputEditing(true) }
-        guard let snapshot = page.view.snapshotView(afterScreenUpdates: true) else { return nil }
-        snapshot.frame = page.view.convert(page.view.bounds, to: view)
+        // Capture before editing hides the resting controls. Dismissal must not reveal the
+        // live search field just to build its transition overlay.
+        let renderer = UIGraphicsImageRenderer(bounds: bounds)
+        var didDraw = false
+        let image = renderer.image { _ in
+            didDraw = page.view.drawHierarchy(in: bounds, afterScreenUpdates: true)
+        }
+        guard didDraw else { return }
+        restingNewTabPageSnapshot = (image, page.view.convert(bounds, to: view), view.bounds.size)
+    }
+
+    private func makeRestingNewTabPageSnapshot() -> UIView? {
+        guard let cached = restingNewTabPageSnapshot else { return nil }
+        // Rotation or resizing invalidates the captured layout; use the live-page handoff instead.
+        guard cached.viewportSize == view.bounds.size else {
+            restingNewTabPageSnapshot = nil
+            return nil
+        }
+        let snapshot = UIImageView(image: cached.image)
+        snapshot.frame = cached.frame
         snapshot.isUserInteractionEnabled = false
         snapshot.accessibilityElementsHidden = true
         return snapshot

@@ -150,7 +150,7 @@ public class AppUserDefaults: AppSettings {
 
     lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
 
-    init(groupName: String = "group.com.duckduckgo.app") {
+    init(groupName: String = Global.appUserDefaultsGroupName) {
         self.groupName = groupName
     }
 

@@ -670,7 +670,7 @@ extension WindowControllersManager: OnboardingNavigating {
 
     @MainActor
     func showImportDataView() {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
     @MainActor

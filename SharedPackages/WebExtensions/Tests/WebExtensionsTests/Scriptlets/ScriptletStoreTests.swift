@@ -273,6 +273,32 @@ final class ScriptletStoreTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: sibling.path))
     }
 
+    // MARK: - Symlinked temporary directory containment (regression: #4637)
+
+    /// On device the OS temporary directory is reached via a symlink (e.g. `/var` → `/private/var`),
+    /// and `URL.resolvingSymlinksInPath()` leaves a not-yet-existing staging file path *unresolved*.
+    /// The staging file must therefore be built from the already-resolved temp directory; otherwise
+    /// the containment check compares an unresolved file path against the resolved base, wrongly
+    /// rejects it, and every save fails. Reverting to `tempDirectory.appendingPathComponent(...)`
+    /// makes this throw `ScriptletError.pathEscapesBase`.
+    func testWhenTemporaryDirectoryIsReachedViaSymlinkThenSaveStillSucceeds() throws {
+        let symlinkRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let realTemp = symlinkRoot.appendingPathComponent("real")
+        let linkedTemp = symlinkRoot.appendingPathComponent("link")
+        try FileManager.default.createDirectory(at: realTemp, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: linkedTemp, withDestinationURL: realTemp)
+        defer { try? FileManager.default.removeItem(at: symlinkRoot) }
+
+        let symlinkedFileManager = SymlinkedTemporaryDirectoryFileManager(temporaryDirectoryOverride: linkedTemp)
+        let symlinkStore = ScriptletStore(baseDirectory: tempDirectory, defaults: defaults, fileManager: symlinkedFileManager)
+
+        let fetched = [makeFetchedScriptlet(name: "scriptlets/scriptlet.js", content: "content")]
+
+        XCTAssertNoThrow(try symlinkStore.save(fetched, version: "1.0", for: .adBlockingExtension),
+                         "save must stage into the resolved temp directory so the containment check passes when the temp dir is symlinked")
+        XCTAssertEqual(symlinkStore.loadCached(for: .adBlockingExtension)?.scriptlets.first?.path, "scriptlets/scriptlet.js")
+    }
+
     // MARK: - Helpers
 
     private func makeFetchedScriptlet(name: String, content: String) -> FetchedScriptlet {
@@ -281,5 +307,20 @@ final class ScriptletStoreTests: XCTestCase {
             url: URL(string: "https://example.com/\(name)")!,
             signature: "sig")
         return FetchedScriptlet(descriptor: descriptor, data: Data(content.utf8))
+    }
+}
+
+/// A `FileManager` whose `temporaryDirectory` is a caller-supplied symlink, so tests can reproduce
+/// the on-device layout where the temp directory is reached through a symlink.
+private final class SymlinkedTemporaryDirectoryFileManager: FileManager {
+    private let temporaryDirectoryOverride: URL
+
+    init(temporaryDirectoryOverride: URL) {
+        self.temporaryDirectoryOverride = temporaryDirectoryOverride
+        super.init()
+    }
+
+    override var temporaryDirectory: URL {
+        temporaryDirectoryOverride
     }
 }

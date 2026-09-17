@@ -46,6 +46,9 @@ final class AIChatTabExtension {
     private let featureFlagger: FeatureFlagger
     private let bootstrapRefresher: DuckAiNativeStorageBootstrapScriptRefresher?
     private let fireModeStorageProvider: () -> DuckAiFireModeStorage
+    /// Opens `url` in a new tab and returns whether a tab was opened. Injectable so the sidebar
+    /// navigation-policy fallback can be exercised without a live window hierarchy (#4358).
+    private let openNewTab: @MainActor (URL) -> Bool
 
     private(set) weak var aiChatUserScript: AIChatUserScript? {
         didSet {
@@ -62,12 +65,18 @@ final class AIChatTabExtension {
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
          burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry? = NSApp.delegateTyped.burnerDuckAiStorageRegistry,
-         aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
+         aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil,
+         openNewTab: @escaping @MainActor (URL) -> Bool = { url in
+             guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return false }
+             parentWindowController.mainViewController.tabCollectionViewModel.insertOrAppendNewTab(.url(url, source: .link))
+             return true
+         }) {
         self.isLoadedInSidebar = isLoadedInSidebar
         self.isTabBurner = isTabBurner
         self.burnerMode = burnerMode
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
+        self.openNewTab = openNewTab
         let debugSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
         self.fireModeStorageProvider = { [burnerMode, weak burnerDuckAiStorageRegistry] in
             .resolve(isFireMode: burnerMode.isBurner,
@@ -301,13 +310,7 @@ extension AIChatTabExtension: NavigationResponder {
         }
 
         // For all other hosts, open in a new tab and cancel sidebar navigation
-        guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
-            return .next
-        }
-
-        let tabCollectionViewModel = parentWindowController.mainViewController.tabCollectionViewModel
-        tabCollectionViewModel.insertOrAppendNewTab(.url(navigationAction.url, source: .link))
-        return .cancel
+        return openNewTab(navigationAction.url) ? .cancel : .next
     }
 
     func navigationDidFinish(_ navigation: Navigation) {

@@ -37,6 +37,7 @@ struct AutofillCopyableRow: View {
     
     var buttonImage: UIImage?
     var buttonAccessibilityLabel: String?
+    var buttonAccessibilityIdentifier: String? = nil
     var buttonAction: (() -> Void)?
     
     var secondaryButtonImage: UIImage?
@@ -108,9 +109,10 @@ struct AutofillCopyableRow: View {
                         }
                     }
                     .buttonStyle(.plain) // Prevent taps from being forwarded to the container view
-                    .accessibilityLabel(buttonAccessibilityLabel)
                     .contentShape(Rectangle())
                     .frame(width: 36, height: 36)
+                    .accessibilityLabel(buttonAccessibilityLabel)
+                    .accessibilityIdentifier(ifPresent: buttonAccessibilityIdentifier)
                     
                     if let secondaryButtonImage = secondaryButtonImage,
                        let secondaryButtonAccessibilityLabel = secondaryButtonAccessibilityLabel {

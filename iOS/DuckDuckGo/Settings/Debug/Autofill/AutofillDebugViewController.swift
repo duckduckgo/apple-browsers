@@ -84,10 +84,15 @@ class AutofillDebugViewController: UITableViewController {
                 cell.accessoryType = defaults.autofillDebugScriptEnabled ? .checkmark : .none
                 NotificationCenter.default.post(Notification(name: AppUserDefaults.Notifications.autofillDebugScriptToggled))
             } else if cell.tag == Row.deleteAllCredentials.rawValue {
-                let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
-                // delete all credential related data
-                try? secureVault?.deleteAllWebsiteCredentials()
-                ActionMessageView.present(message: "All credentials deleted")
+                do {
+                    let secureVault = try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+                    try secureVault.deleteAllWebsiteCredentials()
+                    AppDependencyProvider.shared.autofillLoginSession.endSession()
+                    ActionMessageView.present(message: "All credentials deleted")
+                } catch {
+                    Logger.autofill.error("Failed to delete all credentials")
+                    ActionMessageView.present(message: "Failed to delete all credentials")
+                }
             } else if cell.tag == Row.deleteAllCreditCards.rawValue {
                 let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
                 // delete all credit card related data

@@ -44,7 +44,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
     private var mockWideEvent: WideEventMock!
     private var mockPendingTransactionHandler: MockPendingTransactionHandler!
     private var mockRequestValidator: ScriptRequestValidatorMock!
-    private var mockExperimentFeatureFlagger: MockFeatureFlagger!
+    private var mockExperimentFeatureFlagger: PrivacyConfig.MockFeatureFlagger!
 
     override func setUp() async throws {
         PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(), eventTracker: ExperimentEventTracker(), fire: { _, _, _ in })
@@ -61,7 +61,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
         mockWideEvent = WideEventMock()
         mockPendingTransactionHandler = MockPendingTransactionHandler()
         mockRequestValidator = ScriptRequestValidatorMock()
-        mockExperimentFeatureFlagger = MockFeatureFlagger(featuresStub: [
+        mockExperimentFeatureFlagger = PrivacyConfig.MockFeatureFlagger(featuresStub: [
             FeatureFlag.subscriptionConcurrentExperiments.rawValue: true
         ])
 

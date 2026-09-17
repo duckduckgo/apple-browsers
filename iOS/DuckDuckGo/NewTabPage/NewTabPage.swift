@@ -88,3 +88,8 @@ protocol NewTabPage: UIViewController,
 
     func widthChanged()
 }
+
+protocol NewTabPageInputTransitionSource: AnyObject {
+    var searchInputView: UIView? { get }
+    func setSearchInputEditing(_ isEditing: Bool)
+}

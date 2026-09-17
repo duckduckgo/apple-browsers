@@ -31,9 +31,10 @@ enum NewTabPageInputPresentation: Equatable {
                         usesUnifiedInput: Bool,
                         isLegacyInputEditing: Bool,
                         isUnifiedInputEditing: Bool,
-                        isHandingOff: Bool) -> Self {
+                        isHandingOff: Bool,
+                        isDismissing: Bool = false) -> Self {
         guard hasInlineInput else { return .browser }
-        let isEditing = isLegacyInputEditing || isUnifiedInputEditing || isHandingOff
+        let isEditing = isLegacyInputEditing || isUnifiedInputEditing || isHandingOff || isDismissing
         return isEditing ? .editing(usesUnifiedInput: usesUnifiedInput) : .resting(usesUnifiedInput: usesUnifiedInput)
     }
 

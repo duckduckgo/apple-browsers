@@ -29,9 +29,12 @@ extension MainViewController {
             usesUnifiedInput: unifiedToggleInputCoordinator != nil,
             isLegacyInputEditing: hasInlineInput && viewCoordinator.omniBar.isTextFieldEditing,
             isUnifiedInputEditing: unifiedToggleInputCoordinator?.isOmnibarSession == true,
-            isHandingOff: isAddressBarHandOffInProgress)
+            isHandingOff: isAddressBarHandOffInProgress,
+            isDismissing: viewCoordinator.isInlineInputDismissInProgress)
         guard viewCoordinator.newTabPageInputPresentation != presentation else { return }
         viewCoordinator.setNewTabPageInputPresentation(presentation)
+        (newTabPageViewController as? NewTabPageInputTransitionSource)?.setSearchInputEditing(
+            !presentation.hidesNavigationContainer)
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
     }
 
@@ -68,7 +71,8 @@ extension MainViewController {
             addressBarPosition: addressBarPosition,
             floatingBottomObscuredHeight: floatingWebViewBottomObscuredHeight(for: 1),
             safeAreaBottom: view.safeAreaInsets.bottom,
-            omnibarHeight: viewCoordinator.omniBar.barView.expectedHeight
+            omnibarHeight: viewCoordinator.omniBar.barView.expectedHeight,
+            reservesAddressBarSpace: viewCoordinator.newTabPageInputPresentation.reservesAddressBarSpace
         )
     }
 
@@ -87,9 +91,12 @@ extension MainViewController {
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) {
         if textEntryMode == .aiChat, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             // Unified input locks to search when the toggle is disabled.
+            recordNewTabPageSessionAction { $0.tapDuckaiButton() }
             openAIChatFromAddressBar(prefilledText: nil)
             return
         }
+        // beginEditing treats focus as programmatic, so record the originating tap here.
+        onExperimentalAddressBarTapped()
         revealAddressBarForEditing()
         defer { finishNewTabPageInputHandoff() }
         viewCoordinator.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)

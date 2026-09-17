@@ -76,6 +76,20 @@ final class NewTabPageInputPresentationTests: XCTestCase {
         }
     }
 
+    func testWhenEditorSessionEndsDuringDismissThenEditingPresentationIsKept() {
+        let presentation = NewTabPageInputPresentation.resolve(
+            hasInlineInput: true,
+            usesUnifiedInput: true,
+            isLegacyInputEditing: false,
+            isUnifiedInputEditing: false,
+            isHandingOff: false,
+            isDismissing: true)
+
+        XCTAssertFalse(presentation.hidesNavigationContainer)
+        XCTAssertTrue(presentation.hidesRestingOmnibar)
+        XCTAssertFalse(presentation.reservesAddressBarSpace)
+    }
+
     private func resolve(usesUnifiedInput: Bool = true,
                          legacyEditing: Bool = false,
                          unifiedEditing: Bool = false,
@@ -203,7 +217,9 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
             transition: .inlineInput,
             interruptCleanup: { interrupted = true },
             completion: { completed = true })
+        XCTAssertTrue(coordinator.isInlineInputDismissInProgress)
         coordinator.setNewTabPageInputPresentation(.browser)
+        XCTAssertFalse(coordinator.isInlineInputDismissInProgress)
         XCTAssertTrue(interrupted)
         XCTAssertFalse(completed)
         XCTAssertFalse(coordinator.navigationBarCollectionView.isHidden)

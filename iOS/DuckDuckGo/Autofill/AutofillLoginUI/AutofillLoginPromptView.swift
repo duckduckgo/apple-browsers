@@ -48,6 +48,7 @@ struct AutofillLoginPromptView: View {
                 Spacer()
                     .frame(height: Const.Size.headlineTopPadding)
                 AutofillViews.Headline(title: viewModel.message)
+                    .accessibilityIdentifier("Autofill.LoginPrompt")
                 contentSpacer
                 accountButtons
                 bottomSpacer
@@ -159,9 +160,11 @@ struct AutofillLoginPromptView: View {
         case .primary:
             AutofillViews.PrimaryButton(title: accountViewModel.displayString,
                                         action: { viewModel.didSelectAccount(accountViewModel.account) })
+                .accessibilityIdentifier("Autofill.LoginPrompt.Account")
         case .secondary:
             AutofillViews.SecondaryButton(title: accountViewModel.displayString,
                                           action: { viewModel.didSelectAccount(accountViewModel.account) })
+                .accessibilityIdentifier("Autofill.LoginPrompt.Account")
         }
     }
 

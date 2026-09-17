@@ -26,6 +26,7 @@ public struct SubscriptionExperiment: Codable, Equatable, Hashable {
     }
 }
 
+/// Selects the purchase attribution format: `legacy` supports one experiment, while `multiple` supports several.
 public enum PurchaseExperimentAttribution: Equatable {
     case legacy(SubscriptionExperiment)
     case multiple([SubscriptionExperiment])

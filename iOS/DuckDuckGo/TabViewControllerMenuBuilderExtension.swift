@@ -272,6 +272,7 @@ extension TabViewController {
     private func buildSettingsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionSettings,
                  image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.settings : DesignSystemImages.Glyphs.Size24.settings,
+                 accessibilityIdentifier: "Browser.Menu.Settings",
                  action: { [weak self] in
             self?.onBrowsingSettingsAction()
         })

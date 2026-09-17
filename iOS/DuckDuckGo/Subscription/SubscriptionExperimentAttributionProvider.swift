@@ -59,16 +59,19 @@ struct DefaultSubscriptionExperimentAttributionProvider: SubscriptionExperimentA
             .sorted { $0.experimentName < $1.experimentName }
     }
 
-    private func merge(frontEnd: [SubscriptionExperiment], native: [SubscriptionExperiment]) -> [SubscriptionExperiment] {
-        var experimentNames = Set<String>()
+    /// Merges FE and native experiments, preferring FE when experiment names clash.
+    private func merge(
+        frontEnd: [SubscriptionExperiment],
+        native: [SubscriptionExperiment]
+    ) -> [SubscriptionExperiment] {
         var mergedExperiments: [SubscriptionExperiment] = []
 
-        for experiment in frontEnd where experimentNames.insert(experiment.experimentName).inserted {
-            mergedExperiments.append(experiment)
-        }
+        for experiment in frontEnd + native {
+            let isAlreadyIncluded = mergedExperiments.contains {
+                $0.experimentName == experiment.experimentName
+            }
 
-        for experiment in native {
-            if experimentNames.insert(experiment.experimentName).inserted {
+            if !isAlreadyIncluded {
                 mergedExperiments.append(experiment)
             }
         }

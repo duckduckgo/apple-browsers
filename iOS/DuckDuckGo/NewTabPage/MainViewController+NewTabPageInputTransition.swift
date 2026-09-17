@@ -62,7 +62,7 @@ extension MainViewController {
         }
         inputContainer.alpha = 0
         if let restingSnapshot {
-            view.addSubview(restingSnapshot)
+            view.insertSubview(restingSnapshot, aboveSubview: viewCoordinator.unifiedInputContentContainer)
         }
 
         let duration = UIAccessibility.isReduceMotionEnabled ? 0 : Constants.omnibarTransitionDuration(
@@ -106,7 +106,7 @@ extension MainViewController {
         let restingSnapshot = makeRestingNewTabPageSnapshot()
         if let restingSnapshot {
             restingSnapshot.alpha = 0
-            view.addSubview(restingSnapshot)
+            view.insertSubview(restingSnapshot, aboveSubview: viewCoordinator.unifiedInputContentContainer)
         }
 
         viewCoordinator.hideUnifiedToggleInputOmnibar(

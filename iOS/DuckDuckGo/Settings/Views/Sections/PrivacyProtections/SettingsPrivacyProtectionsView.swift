@@ -73,6 +73,7 @@ struct SettingsPrivacyProtectionsView: View {
                                  image: Image(uiImage: DesignSystemImages.Color.Size24.emailProtection),
                                  statusIndicator: StatusIndicatorView(status: viewModel.emailProtectionStatus))
             }
+            .accessibilityIdentifier("Settings.Privacy.EmailProtection")
 
             // Ad Blocking
             if viewModel.state.youTubeAdBlockingAvailable {

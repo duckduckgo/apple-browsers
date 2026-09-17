@@ -1,0 +1,288 @@
+name: Replay Change Detection
+
+# Validation tooling for the shadow change-detection gate. Replays the shared
+# matcher (.github/scripts/detect-changed-areas.sh — the exact script the gate
+# in should_run_pr_checks.yml runs) against real PRs and writes a report to
+# the run summary, cross-checking each "would-skip" area against the PR's
+# actual check results. Purely informational: gates nothing, has no outputs.
+#
+# The pull_request trigger only fires when the replay tooling itself changes;
+# use workflow_dispatch to replay arbitrary PRs on demand.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_numbers:
+        description: 'Space-separated PR numbers to replay (empty = recent merged PRs)'
+        required: false
+        type: string
+      count:
+        description: 'How many recent merged PRs to replay when pr_numbers is empty'
+        required: false
+        type: string
+        default: '100'
+  pull_request:
+    paths:
+      - '.github/scripts/detect-changed-areas.sh'
+      - '.github/scripts/derive-suite-closures.sh'
+      - '.github/workflows/replay_change_detection.yml'
+
+jobs:
+  replay:
+    name: Replay change detection on real PRs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: read
+    steps:
+      - name: Check out scripts and SharedPackages manifests
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            .github/scripts
+            SharedPackages/**/Package.swift
+          sparse-checkout-cone-mode: false
+
+      - name: Replay and cross-check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBERS: ${{ inputs.pr_numbers }}
+          COUNT: ${{ inputs.count }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "$PR_NUMBERS" ]; then
+            prs="$PR_NUMBERS"
+          else
+            prs=$(gh pr list --repo "$REPO" --state merged --limit "${COUNT:-15}" \
+              --json number --jq '.[].number' | tr '\n' ' ')
+          fi
+
+          # Derive the BSK/DBP suite trigger closures once, offline, from the
+          # SharedPackages package graph (replay-only analysis; the gate does
+          # not use this). See .github/scripts/derive-suite-closures.sh.
+          eval "$(.github/scripts/derive-suite-closures.sh SharedPackages)"
+          echo "BSK_CLOSURE=$BSK_CLOSURE"
+          echo "DBP_CLOSURE=$DBP_CLOSURE"
+
+          in_set() { case " $2 " in *" $1 "*) return 0 ;; esac; return 1; }
+
+          # Per-SharedPackages-PR records for the precise-vs-coarse analysis:
+          #   pr \t bsk_precise \t dbp_precise \t bsk_secs_today \t dbp_secs_today \t pkgs
+          sp_records=$(mktemp)
+          bsk_durs=$(mktemp)   # measured BSK-suite seconds, any PR it ran
+          dbp_durs=$(mktemp)   # measured DBP-suite seconds, any PR it ran
+
+          # "Would have saved" = a heavy check that ACTUALLY RAN (conclusion
+          # success/failure) but belongs to a workflow our flags would skip.
+          # We classify each would-skip workflow's checks into three states:
+          #   RAN         -> state SUCCESS or FAILURE  => real marginal saving
+          #   skipped/neutral (job-level `if:` skipped) => zero saving
+          #   absent      -> not present at all (native paths: filter already
+          #                  skipped the whole workflow) => zero saving
+          # Only RAN counts. The gate job itself ("Determine if checks should
+          # run") is excluded — it is the no-op gate, present whenever the
+          # workflow triggers, and is not a heavy job we would save.
+          saved_tally=$(mktemp)   # one "<workflow>: <job>" line per RAN saving
+          saved_prs=0
+          total_prs=0
+          grand_total_min=0
+
+          {
+            echo "## Change-detection replay"
+            echo ""
+            echo "Flags computed by \`.github/scripts/detect-changed-areas.sh\` — the same script the shadow gate runs."
+            echo ""
+            echo "**Would have saved** = heavy checks that actually ran (success/failure) but belong to a would-skip area — the incremental jobs our detection would remove. Checks that are absent (native \`paths:\` filter already skipped the workflow) or skipped/neutral do not count."
+            echo ""
+            echo "**Saved (job-min)** = summed wall duration of those RAN checks (completedAt − startedAt per check). This is **compute / job-minutes** — the sum of individual job durations, i.e. CI runner cost saved. It is NOT wall-clock time-to-green: these jobs run in parallel, so the schedule doesn't shorten by this amount."
+            echo ""
+            echo "| PR | Title | ios | macos | shared | Would skip | Would-have-saved jobs (ran) | Saved (job-min) |"
+            echo "|---|---|---|---|---|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for pr in $prs; do
+            total_prs=$((total_prs + 1))
+            title=$(gh pr view "$pr" --repo "$REPO" --json title --jq '.title' | tr '|' '-' | cut -c1-60)
+
+            if ! files=$(gh pr diff "$pr" --repo "$REPO" --name-only); then
+              echo "| #$pr | $title | error | error | error | - | - | - |" >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+            flags=$(printf '%s\n' "$files" | .github/scripts/detect-changed-areas.sh)
+            ios=$(grep '^ios=' <<< "$flags" | cut -d= -f2)
+            macos=$(grep '^macos=' <<< "$flags" | cut -d= -f2)
+            shared=$(grep '^shared=' <<< "$flags" | cut -d= -f2)
+
+            # Fetch this PR's check runs once; reuse for both analyses.
+            # gh pr checks exits non-zero when any check failed; that is data, not an error.
+            checks_json=$(gh pr checks "$pr" --repo "$REPO" --json workflow,name,state,startedAt,completedAt 2>/dev/null || true)
+
+            # --- Precise BSK/DBP analysis (SharedPackages PRs only) ---
+            sp_pkgs=$(printf '%s\n' "$files" \
+              | awk -F/ '$1=="SharedPackages" && NF>=2 { if ($2=="Infrastructure" && NF>=3) print $2"/"$3; else print $2 }' \
+              | sort -u)
+            if [ -n "$sp_pkgs" ]; then
+              bskp=0; dbpp=0
+              while IFS= read -r p; do
+                in_set "$p" "$BSK_CLOSURE" && bskp=1
+                in_set "$p" "$DBP_CLOSURE" && dbpp=1
+              done <<< "$sp_pkgs"
+              bsk_secs=0; dbp_secs=0
+              if [ -n "$checks_json" ]; then
+                bsk_secs=$(jq -r '[.[]|select(.workflow=="BSK - PR Checks" and (.state=="SUCCESS" or .state=="FAILURE") and .startedAt!=null and .completedAt!=null)|((.completedAt|fromdateiso8601)-(.startedAt|fromdateiso8601))]|add//0' <<< "$checks_json")
+                dbp_secs=$(jq -r '[.[]|select(.workflow=="DBP - PR Checks" and (.state=="SUCCESS" or .state=="FAILURE") and .startedAt!=null and .completedAt!=null)|((.completedAt|fromdateiso8601)-(.startedAt|fromdateiso8601))]|add//0' <<< "$checks_json")
+              fi
+              awk "BEGIN{exit !($bsk_secs>0)}" && echo "$bsk_secs" >> "$bsk_durs"
+              awk "BEGIN{exit !($dbp_secs>0)}" && echo "$dbp_secs" >> "$dbp_durs"
+              printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$pr" "$bskp" "$dbpp" "$bsk_secs" "$dbp_secs" "$(printf '%s' "$sp_pkgs" | paste -sd, -)" >> "$sp_records"
+            fi
+
+            # Map each would-skip area to the workflows it would gate.
+            skip_areas=""
+            skip_workflows=()
+            if [ "$ios" = "false" ]; then
+              skip_areas="$skip_areas ios"
+              skip_workflows+=("iOS - PR Checks")
+            fi
+            if [ "$macos" = "false" ]; then
+              skip_areas="$skip_areas macos"
+              skip_workflows+=("macOS - PR Checks" "macOS - Private API Usage Report")
+            fi
+            if [ "$shared" = "false" ]; then
+              skip_areas="$skip_areas shared"
+              skip_workflows+=("BSK - PR Checks" "DBP - PR Checks")
+            fi
+
+            saved="-"
+            saved_min="0"
+            if [ ${#skip_workflows[@]} -gt 0 ]; then
+              if [ -n "$checks_json" ]; then
+                wf_json=$(printf '%s\n' "${skip_workflows[@]}" | jq -R . | jq -cs .)
+
+                # RAN checks in would-skip workflows, excluding the gate job.
+                # Emit "<workflow>: <job>\t<duration-seconds>" per RAN check.
+                ran_tsv=$(jq -r --argjson wf "$wf_json" '
+                  [.[]
+                    | select((.state == "SUCCESS" or .state == "FAILURE")
+                             and (.name | test("Determine if checks should run") | not)
+                             and (.workflow as $w | $wf | index($w)))
+                    | { key: "\(.workflow): \(.name)",
+                        secs: (if (.startedAt != null and .completedAt != null and .startedAt != "" and .completedAt != "")
+                               then ((.completedAt | fromdateiso8601) - (.startedAt | fromdateiso8601)) else 0 end) }]
+                  | unique_by(.key) | .[] | "\(.key)\t\(.secs)"' <<< "$checks_json")
+
+                if [ -n "$ran_tsv" ]; then
+                  saved=$(cut -f1 <<< "$ran_tsv" | paste -sd ';' - | sed 's/;/; /g')
+                  # Sum durations (seconds -> minutes, one decimal) and tally job names.
+                  secs=$(cut -f2 <<< "$ran_tsv" | awk '{s+=$1} END {print s+0}')
+                  saved_min=$(awk -v s="$secs" 'BEGIN {printf "%.1f", s/60}')
+                  grand_total_min=$(awk -v a="$grand_total_min" -v b="$saved_min" 'BEGIN {printf "%.1f", a+b}')
+                  saved_prs=$((saved_prs + 1))
+                  cut -f1 <<< "$ran_tsv" >> "$saved_tally"
+                fi
+              else
+                saved="checks unavailable"
+                saved_min="-"
+              fi
+            fi
+
+            url="https://github.com/$REPO/pull/$pr"
+            echo "| [#$pr]($url) | $title | $ios | $macos | $shared | ${skip_areas:- -} | $saved | $saved_min |" >> "$GITHUB_STEP_SUMMARY"
+            echo "PR #$pr: ios=$ios macos=$macos shared=$shared would-skip:${skip_areas:- none} saved-job-min:$saved_min saved:[$saved]"
+          done
+
+          # ---- Summary totals ----
+          {
+            echo ""
+            echo "## Totals"
+            echo ""
+            echo "- PRs replayed: **$total_prs**"
+            echo "- PRs with >=1 would-have-saved job (real marginal saving): **$saved_prs**"
+            echo "- **Grand total saved: ${grand_total_min} job-minutes** (compute / runner cost, summed job durations — NOT wall-clock)"
+            echo ""
+            echo "### Would-have-saved jobs by frequency (count = PRs where that job ran but would be skipped)"
+            echo ""
+            if [ -s "$saved_tally" ]; then
+              echo "| Count | Workflow: job |"
+              echo "|---|---|"
+              sort "$saved_tally" | uniq -c | sort -rn | \
+                sed -E 's/^ *([0-9]+) (.*)$/| \1 | \2 |/'
+            else
+              echo "_No would-have-saved jobs across the replayed PRs._"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "TOTALS: replayed=$total_prs saved_prs=$saved_prs grand_total_job_min=$grand_total_min"
+          echo "TALLY:"; sort "$saved_tally" | uniq -c | sort -rn
+
+          # ---- Precise BSK/DBP split economics ----
+          # Median measured suite job-min, used to model the consolidated
+          # end-state where a suite that a flag selects would run.
+          median_min() { # reads seconds on stdin; prints minutes (1 dp)
+            sort -n | awk '{a[NR]=$1} END{n=NR; if(n==0){print "0.0";exit}
+              if(n%2){printf "%.1f\n", a[(n+1)/2]/60} else {printf "%.1f\n",(a[n/2]+a[n/2+1])/2/60}}'
+          }
+          MED_BSK=$(median_min < "$bsk_durs")
+          MED_DBP=$(median_min < "$dbp_durs")
+          N_BSK_RAN=$(wc -l < "$bsk_durs" | tr -d ' ')
+          N_DBP_RAN=$(wc -l < "$dbp_durs" | tr -d ' ')
+
+          # Aggregate the per-PR records into the coarse-vs-precise deltas.
+          totals=$(awk -F'\t' -v mb="$MED_BSK" -v md="$MED_DBP" '
+            { n++
+              coarse += mb + md
+              pb = ($2==1?mb:0); pd = ($3==1?md:0)
+              precise += pb + pd
+              today += ($4/60) + ($5/60)
+              if ($2==1) bskclosure++
+              else if ($3==1) dbponly++
+              else neither_or_leaf++
+              # correctness edge: BSK-closure change where DBP suite did not run today
+              if ($2==1 && $5+0==0) { addc += md; addn++ }
+            }
+            END {
+              printf "%d\t%.1f\t%.1f\t%.1f\t%.1f\t%d\t%d\t%d\t%d",
+                n, coarse, precise, coarse-precise, addc, addn,
+                bskclosure, dbponly, neither_or_leaf
+            }' "$sp_records")
+          IFS=$'\t' read -r SP_N T_COARSE T_PRECISE T_SAVE T_ADD N_ADD N_BSKC N_DBPO N_NEITHER <<< "$totals"
+          NET_TODAY=$(awk -F'\t' -v mb="$MED_BSK" -v md="$MED_DBP" '
+            { pb=($2==1?mb:0); pd=($3==1?md:0); precise+=pb+pd; today+=($4/60)+($5/60) }
+            END{ printf "%.1f", precise-today }' "$sp_records")
+
+          {
+            echo ""
+            echo "## Precise BSK/DBP split (replay-only analysis)"
+            echo ""
+            echo "Suite trigger closures derived offline from the SharedPackages package graph by \`.github/scripts/derive-suite-closures.sh\` (the gate does not use this):"
+            echo "- \`BSK_CLOSURE\` = ${BSK_CLOSURE// /, }"
+            echo "- \`DBP_CLOSURE\` = ${DBP_CLOSURE// /, }"
+            echo ""
+            echo "Modelled suite cost (median measured job-min): BSK ${MED_BSK} (n=${N_BSK_RAN}), DBP ${MED_DBP} (n=${N_DBP_RAN})."
+            echo ""
+            echo "**Coarse** \`shared\` runs BSK+DBP on every SharedPackages PR. **Precise** runs BSK only if the change hits BSK_CLOSURE, DBP only if it hits DBP_CLOSURE. \`ran today\` are the suite job-min that actually executed under today's per-package native filters."
+            echo ""
+            echo "| PR | SharedPackages | coarse bsk/dbp | precise bsk/dbp | precise job-min | ran today bsk/dbp (min) |"
+            echo "|---|---|---|---|---|---|"
+            while IFS=$'\t' read -r pr bskp dbpp bs ds pkgs; do
+              pj=$(awk -v mb="$MED_BSK" -v md="$MED_DBP" -v b="$bskp" -v d="$dbpp" 'BEGIN{printf "%.1f",(b==1?mb:0)+(d==1?md:0)}')
+              bm=$(awk -v s="$bs" 'BEGIN{printf "%.1f",s/60}')
+              dm=$(awk -v s="$ds" 'BEGIN{printf "%.1f",s/60}')
+              yb=$([ "$bskp" = 1 ] && echo Y || echo -)
+              yd=$([ "$dbpp" = 1 ] && echo Y || echo -)
+              echo "| #$pr | $pkgs | Y/Y | $yb/$yd | $pj | $bm/$dm |"
+            done < "$sp_records"
+            echo ""
+            echo "### BSK/DBP totals over the batch"
+            echo ""
+            echo "- SharedPackages PRs: **$SP_N** (BSK-closure: $N_BSKC, DBP-subtree-only: $N_DBPO, neither/app-leaf: $N_NEITHER)"
+            echo "- (a) Consolidated-scenario job-min PRECISE SAVES vs coarse: **${T_SAVE}** (coarse ${T_COARSE} − precise ${T_PRECISE})"
+            echo "- (b) Correctness edge — DBP suite added on BSK-closure changes that skip DBP today: **${T_ADD}** job-min over $N_ADD PRs"
+            echo "- (c) Net vs TODAY (precise consolidated − today's measured bsk/dbp): **${NET_TODAY}** job-min (≈ the correctness add; precise saves ~0 vs today because native filters already skip unrelated packages)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "BSKDBP: sp_prs=$SP_N med_bsk=$MED_BSK med_dbp=$MED_DBP saving=$T_SAVE correctness_add=$T_ADD net_vs_today=$NET_TODAY bskclosure=$N_BSKC dbponly=$N_DBPO neither=$N_NEITHER"
+          echo "BSK_CLOSURE=[$BSK_CLOSURE] DBP_CLOSURE=[$DBP_CLOSURE]"

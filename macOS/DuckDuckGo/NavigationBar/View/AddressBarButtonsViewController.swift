@@ -571,7 +571,22 @@ final class AddressBarButtonsViewController: NSViewController {
             updateTrackingAreaForHover()
         }
         self.buttonsWidth = buttonsContainer.frame.size.width + 10.0
-        self.trailingButtonsWidth = trailingButtonsContainer.frame.size.width + 14.0
+        self.trailingButtonsWidth = trailingButtonsWidthExcludingBookmark()
+    }
+
+    /// Computes trailing buttons width excluding the bookmark button's contribution.
+    /// This keeps the text field's trailing constraint stable when the bookmark button
+    /// appears/disappears on hover, preventing the URL from shifting.
+    private func trailingButtonsWidthExcludingBookmark() -> CGFloat {
+        var width = trailingButtonsContainer.frame.size.width + 14.0
+        if !bookmarkButton.isHidden && bookmarkButton.frame.width > 0 {
+            width -= bookmarkButton.frame.width
+            let hasOtherVisibleItems = trailingButtonsContainer.arrangedSubviews.contains { !$0.isHidden && $0 !== bookmarkButton }
+            if hasOtherVisibleItems {
+                width -= trailingButtonsContainer.spacing
+            }
+        }
+        return width
     }
 
     func updateTrackingAreaForHover() {

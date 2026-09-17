@@ -26,7 +26,7 @@ import XCTest
 @MainActor
 final class GeolocationProviderTests: XCTestCase {
 
-    func testOneShotUsesNewestBatchedUpdateOnceAndStopsSharedManager() async throws {
+    func testWhenReadingsArriveTogetherThenCurrentLocationRequestUsesNewestAndStopsUpdates() async throws {
         let harness = try Harness()
         let task = Task { await harness.provider.requestCurrentPosition(context: harness.context) }
         await waitUntil { harness.locationManager.startUpdatingCallCount == 1 }
@@ -41,7 +41,7 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 1)
     }
 
-    func testOneShotKeepsWaitingAfterInvalidBatchAndUsesNextValidFix() async throws {
+    func testWhenReadingsAreInvalidThenCurrentLocationRequestWaitsForAValidReading() async throws {
         let harness = try Harness()
         let task = Task { await harness.provider.requestCurrentPosition(context: harness.context) }
         await waitUntil { harness.locationManager.startUpdatingCallCount == 1 }
@@ -84,7 +84,130 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 1)
     }
 
-    func testMaximumAgeZeroRejectsStaleNativeFix() async throws {
+    func testWhenAccuracyModeChangesThenCurrentLocationRequestWaitsForNewReading() async throws {
+        for cachedHighAccuracy in [false, true] {
+            var permissionRequestCount = 0
+            let harness = try Harness(requestPermission: { _, completion in
+                permissionRequestCount += 1
+                completion(.grant)
+            })
+            harness.provider.startWatch(withID: "seed", context: harness.context,
+                                        options: .init(enableHighAccuracy: cachedHighAccuracy)) { _ in true }
+            let cachedLocation = CLLocation(latitude: 37.3317, longitude: -122.0301)
+            harness.send([cachedLocation])
+            harness.provider.cancelWatch(withID: "seed")
+
+            // A recent reading is reusable only when the request's accuracy option also matches.
+            var result: GeolocationPositionResult?
+            let request = Task {
+                result = await harness.provider.requestCurrentPosition(
+                    context: harness.context,
+                    options: .init(enableHighAccuracy: !cachedHighAccuracy, timeout: 1, maximumAge: 60)
+                )
+            }
+            await waitUntil { permissionRequestCount == 2 }
+
+            XCTAssertNil(result)
+            XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 2)
+            XCTAssertEqual(harness.locationManager.desiredAccuracy,
+                           cachedHighAccuracy ? kCLLocationAccuracyHundredMeters : kCLLocationAccuracyBest)
+
+            let freshLocation = CLLocation(latitude: 51.5072, longitude: -0.1276)
+            harness.send([freshLocation])
+            await request.value
+
+            XCTAssertEqual(result, .success(.init(location: freshLocation)))
+            XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 2)
+
+            let cachedResult = await harness.provider.requestCurrentPosition(
+                context: harness.context,
+                options: .init(enableHighAccuracy: !cachedHighAccuracy, timeout: 1, maximumAge: 60)
+            )
+
+            XCTAssertEqual(cachedResult, .success(.init(location: freshLocation)))
+            XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 2)
+            XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 2)
+        }
+    }
+
+    func testWhenAccuracyModeChangesThenWatchWaitsForNewReading() throws {
+        for cachedHighAccuracy in [false, true] {
+            let harness = try Harness()
+            harness.provider.startWatch(withID: "seed", context: harness.context,
+                                        options: .init(enableHighAccuracy: cachedHighAccuracy)) { _ in true }
+            let cachedLocation = CLLocation(latitude: 37.3317, longitude: -122.0301)
+            harness.send([cachedLocation])
+            harness.provider.cancelWatch(withID: "seed")
+
+            var results = [GeolocationPositionResult]()
+            harness.provider.startWatch(withID: "watch", context: harness.context,
+                                        options: .init(enableHighAccuracy: !cachedHighAccuracy, maximumAge: 60)) {
+                results.append($0)
+                return true
+            }
+
+            XCTAssertTrue(results.isEmpty)
+            XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 2)
+            let freshLocation = CLLocation(latitude: 51.5072, longitude: -0.1276)
+            harness.send([freshLocation])
+
+            XCTAssertEqual(results, [.success(.init(location: freshLocation))])
+            harness.provider.cancelWatch(withID: "watch")
+        }
+    }
+
+    func testWhenAccuracyModeMatchesThenRequestsAndWatchesReuseCache() async throws {
+        for highAccuracy in [false, true] {
+            let harness = try Harness()
+            harness.provider.startWatch(withID: "seed", context: harness.context,
+                                        options: .init(enableHighAccuracy: highAccuracy)) { _ in true }
+            let cachedLocation = CLLocation(latitude: 37.3317, longitude: -122.0301)
+            harness.send([cachedLocation])
+            harness.provider.cancelWatch(withID: "seed")
+
+            let result = await harness.provider.requestCurrentPosition(
+                context: harness.context,
+                options: .init(enableHighAccuracy: highAccuracy, timeout: 1, maximumAge: 60)
+            )
+
+            XCTAssertEqual(result, .success(.init(location: cachedLocation)))
+            XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 1)
+
+            var watchResults = [GeolocationPositionResult]()
+            harness.provider.startWatch(withID: "watch", context: harness.context,
+                                        options: .init(enableHighAccuracy: highAccuracy, maximumAge: 60)) {
+                watchResults.append($0)
+                return true
+            }
+
+            XCTAssertEqual(watchResults, [.success(.init(location: cachedLocation))])
+            harness.provider.cancelWatch(withID: "watch")
+        }
+    }
+
+    func testWhenAnotherSubscriberNeedsHighAccuracyThenCacheStillUsesRequestAccuracy() async throws {
+        let harness = try Harness()
+        let otherSubscriber = harness.systemPermissionClient.addLocationUpdateHandler(highAccuracy: true) { _ in }
+        harness.provider.startWatch(withID: "seed", context: harness.context) { _ in true }
+        let cachedLocation = CLLocation(latitude: 37.3317, longitude: -122.0301)
+        harness.send([cachedLocation])
+        harness.provider.cancelWatch(withID: "seed")
+
+        // The shared manager's accuracy can come from another tab; this request still used the standard option.
+        XCTAssertEqual(harness.locationManager.desiredAccuracy, kCLLocationAccuracyBest)
+        let result = await harness.provider.requestCurrentPosition(
+            context: harness.context,
+            options: .init(timeout: 1, maximumAge: 60)
+        )
+
+        XCTAssertEqual(result, .success(.init(location: cachedLocation)))
+        harness.systemPermissionClient.removeLocationUpdateHandler(otherSubscriber)
+        XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 1)
+    }
+
+    func testWhenMaximumAgeIsZeroThenRequestRejectsAnOldCoreLocationReading() async throws {
+        // Core Location can deliver a cached reading immediately after updates start.
+        // A maximumAge of zero requires a reading acquired after this request started.
         let harness = try Harness()
         let task = Task { await harness.provider.requestCurrentPosition(context: harness.context) }
         await waitUntil { harness.locationManager.startUpdatingCallCount == 1 }
@@ -134,7 +257,7 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 1)
     }
 
-    func testLocationActivityReportsOnlyWatchBoundaryTransitions() throws {
+    func testWhenWatchesOverlapThenLocationActivityStartsWithFirstAndStopsWithLast() throws {
         let harness = try Harness()
         var activity = [SitePermissionCaptureState]()
         harness.provider.locationActivityHandler = { activity.append($0) }
@@ -148,7 +271,7 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertFalse(harness.provider.isLocationActive)
     }
 
-    func testLocationActivityReportsOneShotStartAndCompletionOnce() async throws {
+    func testWhenCurrentLocationRequestCompletesThenItReportsActivityStartAndEndOnce() async throws {
         let harness = try Harness()
         var activity = [SitePermissionCaptureState]()
         harness.provider.locationActivityHandler = { activity.append($0) }
@@ -162,11 +285,17 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertFalse(harness.provider.isLocationActive)
     }
 
-    func testCachedOneShotStillReportsACompleteActivityBoundaryWithoutRestartingLocationUpdates() async throws {
+    func testWhenCurrentLocationRequestUsesCacheThenItReportsActivityWithoutRestartingUpdates() async throws {
+        // Allow Once ends when capture finishes, even when the result comes from the cache.
         let harness = try Harness()
+        var seedResult: GeolocationPositionResult?
+        harness.provider.startWatch(withID: "seed", context: harness.context) {
+            seedResult = $0
+            return true
+        }
         let cachedLocation = CLLocation(latitude: 37.3317, longitude: -122.0301)
-        harness.provider.startWatch(withID: "seed", context: harness.context) { _ in true }
         harness.send([cachedLocation])
+        XCTAssertEqual(seedResult, .success(.init(location: cachedLocation)))
         harness.provider.cancelWatch(withID: "seed")
         let initialStartCount = harness.locationManager.startUpdatingCallCount
         var activity = [SitePermissionCaptureState]()
@@ -182,7 +311,8 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(harness.locationManager.startUpdatingCallCount, initialStartCount)
     }
 
-    func testOneShotCompletionRefreshesPermissionStatusAfterActivityHandlerExpiresAllowOnce() async throws {
+    func testWhenCurrentLocationRequestCompletesThenPermissionStatusReflectsExpiredAllowOnce() async throws {
+        // The coordinator must mark capture as finished before the provider checks whether another request would prompt.
         var queryState = GeolocationPermissionState.granted
         let harness = try Harness(queryPermission: { _ in queryState })
         var becameActive = false
@@ -208,7 +338,8 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(statusStates, [.prompt])
     }
 
-    func testSuspendedWatchRetainsAllowOnceAndLiveStatusUntilCancellationOrRevocation() async throws {
+    func testWhenWatchIsPausedThenItKeepsAllowOnceUntilCancelledOrPermissionIsRemoved() async throws {
+        // Hiding the tab pauses capture; it must not consume the page's Allow Once decision.
         for revokeWhileSuspended in [false, true] {
             var permissionCoordinator: SitePermissionsCoordinator?
             var promptCount = 0
@@ -292,7 +423,7 @@ final class GeolocationProviderTests: XCTestCase {
         }
     }
 
-    func testPermissionGrantedWhileSuspendedReportsPauseAndCancellationReportsCompletion() throws {
+    func testWhenPermissionIsGrantedWhileTabIsHiddenThenWatchStaysPausedUntilCancelled() throws {
         var permissionCompletion: ((SitePermissionResolution) -> Void)?
         let harness = try Harness(requestPermission: { _, completion in
             permissionCompletion = completion
@@ -322,6 +453,7 @@ final class GeolocationProviderTests: XCTestCase {
         let initialState = harness.provider.permissionState(withID: "status",
                                                             context: harness.context) { state in
             deliveredStates.append(state)
+            // A failed delivery means the page can no longer receive this PermissionStatus.
             return deliveredStates.count < 2
         }
         XCTAssertEqual(initialState, .prompt)
@@ -344,7 +476,7 @@ final class GeolocationProviderTests: XCTestCase {
                                                      requestingFrameID: harness.context.requestingFrameID))
     }
 
-    func testDeniedOneShotResolutionRefreshesPermissionStatus() async throws {
+    func testWhenCurrentLocationRequestIsDeniedThenPermissionStatusUpdates() async throws {
         var queryState = GeolocationPermissionState.prompt
         let harness = try Harness(
             requestPermission: { _, completion in
@@ -365,7 +497,7 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(statusStates, [.denied])
     }
 
-    func testGrantedWatchResolutionRefreshesPermissionStatus() throws {
+    func testWhenWatchIsAllowedThenPermissionStatusUpdates() throws {
         var queryState = GeolocationPermissionState.prompt
         let harness = try Harness(
             requestPermission: { _, completion in
@@ -386,7 +518,7 @@ final class GeolocationProviderTests: XCTestCase {
         harness.provider.cancelWatch(withID: "watch")
     }
 
-    func testRevocationDeniesActiveWorkStopsActivityAndRefreshesPermissionStatus() async throws {
+    func testWhenPermissionIsRemovedThenActiveRequestsFailAndPermissionStatusUpdates() async throws {
         var queryState = GeolocationPermissionState.granted
         var permissionRequestCount = 0
         let harness = try Harness(
@@ -425,7 +557,7 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertFalse(harness.provider.isLocationActive)
     }
 
-    func testWhenLocationIsDeniedOrRemovedThenReallowDoesNotRestartRevokedWatch() async throws {
+    func testWhenLocationIsAllowedAgainThenWatchesStoppedByDenialOrRemovalStayStopped() async throws {
         for removePermission in [false, true] {
             var permissionCoordinator: SitePermissionsCoordinator?
             let harness = try Harness(
@@ -585,7 +717,7 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 1)
     }
 
-    func testAccuracyDemandTracksAuthorizedOneShotsAndWatches() async throws {
+    func testWhenCurrentLocationRequestNeedsHighAccuracyThenWatchAccuracyRisesTemporarily() async throws {
         let harness = try Harness()
         harness.provider.startWatch(withID: "standard", context: harness.context) { _ in true }
         XCTAssertEqual(harness.locationManager.desiredAccuracy, kCLLocationAccuracyHundredMeters)
@@ -610,7 +742,7 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 1)
     }
 
-    func testCancelPageActivityDrainsPendingRequestAndRejectsLatePermissionCompletion() async throws {
+    func testWhenPageActivityIsCancelledThenPendingRequestFinishesAndLatePermissionReplyIsIgnored() async throws {
         var permissionCompletion: ((SitePermissionResolution) -> Void)?
         let harness = try Harness(requestPermission: { _, completion in
             permissionCompletion = completion
@@ -657,7 +789,7 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 1)
     }
 
-    func testDeniedWatchDeliversTerminalErrorAndLeavesNoActiveContext() throws {
+    func testWhenWatchIsDeniedThenItReportsAnErrorAndRemovesItsRequestContext() throws {
         let harness = try Harness(requestPermission: { _, completion in completion(.deny(systemBlocks: [])) })
         var results = [GeolocationPositionResult]()
 
@@ -699,7 +831,8 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 1)
     }
 
-    func testLocationUnknownKeepsAuthorizedRequestsAliveForFutureFixes() async throws {
+    func testWhenLocationIsUnknownThenRequestsKeepWaitingForTheNextReading() async throws {
+        // Core Location uses locationUnknown for a temporary lack of readings, not a failed request.
         var permissionRequestCount = 0
         let harness = try Harness(requestPermission: { _, completion in
             permissionRequestCount += 1
@@ -732,6 +865,7 @@ final class GeolocationProviderTests: XCTestCase {
     }
 
     func testSuccessfulWatchDoesNotTimeOutWhileWaitingForSignificantChange() async throws {
+        // The timeout limits the initial acquisition; a watch can then wait indefinitely for movement.
         let harness = try Harness()
         var results = [GeolocationPositionResult]()
         harness.provider.startWatch(withID: "watch",
@@ -749,7 +883,7 @@ final class GeolocationProviderTests: XCTestCase {
         harness.provider.cancelWatch(withID: "watch")
     }
 
-    func testInactiveWatchReleasesAccuracyDemandAndResumesWithoutPromptOrStaleFix() throws {
+    func testWhenTabReturnsThenHighAccuracyWatchResumesWithoutPromptOrOldReading() throws {
         var permissionRequestCount = 0
         let harness = try Harness(requestPermission: { _, completion in
             permissionRequestCount += 1
@@ -787,10 +921,12 @@ final class GeolocationProviderTests: XCTestCase {
         harness.provider.cancelWatch(withID: "watch")
     }
 
-    func testInactiveOneShotPausesTimeoutAndTimesOutAfterResuming() async throws {
+    func testWhenTabIsHiddenThenCurrentLocationRequestTimeoutPausesUntilItReturns() async throws {
+        // Hidden tabs stop acquiring location, so time spent hidden must not consume the request's timeout.
+        // The remaining timeout resumes when the tab can acquire readings again.
         let harness = try Harness()
         var result: GeolocationPositionResult?
-        let completed = expectation(description: "One-shot times out after resuming")
+        let completed = expectation(description: "Current location request times out after the tab returns")
         let task = Task {
             result = await harness.provider.requestCurrentPosition(context: harness.context, options: .init(timeout: 0.05))
             completed.fulfill()
@@ -810,7 +946,7 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 2)
     }
 
-    func testInactiveRequestsWaitToAskPermissionAndDeliverResults() async throws {
+    func testWhenTabIsHiddenThenItWaitsBeforeAskingPermissionOrDeliveringLocation() async throws {
         var permissionRequestCount = 0
         let harness = try Harness(requestPermission: { _, completion in
             permissionRequestCount += 1
@@ -839,7 +975,7 @@ final class GeolocationProviderTests: XCTestCase {
         harness.provider.close()
     }
 
-    func testPermissionCompletionWhileInactiveWaitsForResume() throws {
+    func testWhenPermissionReplyArrivesWhileTabIsHiddenThenDeliveryWaitsUntilTabIsVisible() throws {
         var permissionCompletion: ((SitePermissionResolution) -> Void)?
         let harness = try Harness(requestPermission: { _, completion in
             permissionCompletion = completion
@@ -859,7 +995,7 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 0)
     }
 
-    func testResumeTerminatesWatchWhenSystemPermissionWasRevokedWhileInactive() throws {
+    func testWhenSystemPermissionIsRemovedWhileTabIsHiddenThenReturningStopsWatch() throws {
         let harness = try Harness()
         var results = [GeolocationPositionResult]()
         harness.provider.startWatch(withID: "watch", context: harness.context) {
@@ -886,6 +1022,8 @@ final class GeolocationProviderTests: XCTestCase {
     }
 }
 
+/// Pairs the provider with controllable permission decisions and a mock Core Location manager to inject readings and errors without real GPS.
+/// Tests call the provider directly without WebKit, so this harness does not cover frame validation.
 @MainActor
 private final class Harness {
 

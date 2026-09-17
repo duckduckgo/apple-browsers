@@ -38,6 +38,7 @@ public final class SystemPermissionClient: NSObject {
 
     public typealias LocationUpdate = Result<CLLocation, Error>
 
+    /// Pairs a tab provider's callback with its accuracy needs so several tabs can share one location manager.
     private struct LocationUpdateSubscriber {
         let highAccuracy: Bool
         let handler: (LocationUpdate) -> Void

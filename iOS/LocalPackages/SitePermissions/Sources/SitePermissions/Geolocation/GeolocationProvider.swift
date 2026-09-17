@@ -20,6 +20,8 @@
 import CoreLocation
 import Foundation
 
+/// Handles a tab's location requests and ongoing location updates after checking site and system permissions.
+/// It shares the system location service while keeping each page's requests, timeouts, and permission subscriptions separate.
 @MainActor
 public final class GeolocationProvider {
 
@@ -27,6 +29,8 @@ public final class GeolocationProvider {
     public typealias PermissionRequestHandler = (SitePermissionRequestContext, @escaping (SitePermissionResolution) -> Void) -> Void
     public typealias PermissionQueryHandler = (SitePermissionRequestContext) -> SitePermissionQueryState
 
+    /// Keeps the original permission context and WebKit frame so later callbacks can detect a changed page or frame.
+    /// Tests can supply just the context when they do not need WebKit validation.
     private final class RetainedFrame {
         let context: SitePermissionRequestContext
         let frame: GeolocationFrame?
@@ -42,6 +46,8 @@ public final class GeolocationProvider {
         }
     }
 
+    /// Tracks one `getCurrentPosition()` call, which completes with a single location reading or an error.
+    /// It keeps the permission decision and timeout state while the request waits or the tab is inactive.
     private final class OneShotRequest {
         let retainedFrame: RetainedFrame
         let options: GeolocationRequestOptions
@@ -64,6 +70,8 @@ public final class GeolocationProvider {
         }
     }
 
+    /// Tracks a page's `navigator.permissions.query()` result so its state can change when permissions change.
+    /// Observing permission state does not itself request location access or start location updates.
     @MainActor
     private final class PermissionStatus {
         weak var userScript: GeolocationUserScript?
@@ -92,6 +100,8 @@ public final class GeolocationProvider {
         }
     }
 
+    /// Tracks a `watchPosition()` subscription that can receive multiple location readings.
+    /// It keeps the callback and request state until cancellation, permission revocation, or page teardown.
     @MainActor
     private final class Watch {
         weak var userScript: GeolocationUserScript?
@@ -150,7 +160,8 @@ public final class GeolocationProvider {
     private var watches = [String: Watch]()
     private var permissionStatuses = [String: PermissionStatus]()
     private var locationUpdateHandlerID: UUID?
-    private var latestLocation: CLLocation?
+    // Cache the request's accuracy option, which can differ from the shared location manager's setting.
+    private var latestLocation: (location: CLLocation, enableHighAccuracy: Bool)?
     private var isActive = true
     private var resumedAt: Date?
     private var isClosed = false
@@ -181,7 +192,7 @@ public final class GeolocationProvider {
     }
 
     /// Suspends acquisition and timeout budgets while the owning tab is not visible and active.
-    /// Watches and permission decisions survive; resuming requires a new location fix.
+    /// Watches and permission decisions survive; resuming requires a new location reading.
     public func setIsActive(_ isActive: Bool) {
         guard !isClosed, self.isActive != isActive else { return }
         self.isActive = isActive
@@ -320,9 +331,9 @@ public final class GeolocationProvider {
         }
 
         request.acquisitionStartedAt = Date()
-        if let location = reusableLocation(maximumAge: request.options.maximumAge) {
-            // Even a cached one-shot has a complete capture lifecycle. Publish that boundary so
-            // Allow Once expires after delivery just as it does for a newly acquired fix.
+        if let location = reusableLocation(for: request.options) {
+            // Returning a cached location still starts and ends a request. Report both transitions so
+            // Allow Once expires after delivery just as it does for a new location reading.
             updateLocationActivity(.active)
             finishOneShot(identifier, with: .success(.init(location: location)))
         } else {
@@ -367,7 +378,7 @@ public final class GeolocationProvider {
         }
 
         watch.acquisitionStartedAt = Date()
-        if let location = reusableLocation(maximumAge: watch.options.maximumAge) {
+        if let location = reusableLocation(for: watch.options) {
             send(.success(.init(location: location)), toWatch: requestID)
             watch.hasDeliveredPosition = true
         } else {
@@ -443,7 +454,6 @@ public final class GeolocationProvider {
         case .success(let location):
             guard isValid(location) else { return }
             if let resumedAt, location.timestamp < resumedAt { return }
-            latestLocation = location
             let oneShotIDs = oneShotRequests.filter { $0.value.isAuthorized }.map(\.key)
             oneShotIDs.forEach { identifier in
                 guard let request = oneShotRequests[identifier], validatedContext(request.retainedFrame) != nil else {
@@ -453,6 +463,7 @@ public final class GeolocationProvider {
                 guard isUsable(location,
                                after: request.acquisitionStartedAt,
                                maximumAge: request.options.maximumAge) else { return }
+                latestLocation = (location, request.options.enableHighAccuracy)
                 finishOneShot(identifier, with: .success(.init(location: location)))
             }
 
@@ -468,6 +479,7 @@ public final class GeolocationProvider {
                         || isUsable(location,
                                     after: watch.acquisitionStartedAt,
                                     maximumAge: watch.options.maximumAge) else { return }
+                latestLocation = (location, watch.options.enableHighAccuracy)
                 send(.success(.init(location: location)), toWatch: requestID)
                 watch.hasDeliveredPosition = true
             }
@@ -494,9 +506,13 @@ public final class GeolocationProvider {
         }
     }
 
-    private func reusableLocation(maximumAge: TimeInterval) -> CLLocation? {
-        guard maximumAge > 0, let latestLocation, isValid(latestLocation) else { return nil }
-        return max(0, Date().timeIntervalSince(latestLocation.timestamp)) <= maximumAge ? latestLocation : nil
+    private func reusableLocation(for options: GeolocationRequestOptions) -> CLLocation? {
+        guard options.maximumAge > 0,
+              let latestLocation,
+              latestLocation.enableHighAccuracy == options.enableHighAccuracy,
+              isValid(latestLocation.location) else { return nil }
+        let location = latestLocation.location
+        return max(0, Date().timeIntervalSince(location.timestamp)) <= options.maximumAge ? location : nil
     }
 
     private func isUsable(_ location: CLLocation,

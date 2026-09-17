@@ -557,6 +557,13 @@ final class AIChatTabChatHeaderView: UIView {
 
         applyState()
         updateButtonShadows()
+
+        closeButton.accessibilityIdentifier = "AIChat.Header.Close"
+        chatListButton.accessibilityIdentifier = "AIChat.Header.RecentChats"
+        newChatButton.accessibilityIdentifier = "AIChat.Header.New"
+        tabSwitcherButton.accessibilityIdentifier = "AIChat.Header.TabSwitcher"
+        freePlanLabel.accessibilityIdentifier = "AIChat.Header.FreePlan"
+        upgradeLabel.accessibilityIdentifier = "AIChat.Header.Upgrade"
     }
 
     private func makeIconButton(image: DesignSystemImage, accessibilityLabel: String, action: Selector) -> UIButton {

@@ -64,6 +64,7 @@ struct EmailProtectionView: View {
                         "subscribed": String(viewModel.subscriptionManager.isUserAuthenticated)
                        ]))
         }
+        .accessibilityIdentifier("Settings.List.EmailProtection")
     }
 }
 
@@ -104,6 +105,7 @@ struct EmailProtectionViewSettings: View {
                                  },
                                  webLinkIndicator: true,
                                  isButton: true)
+                .accessibilityIdentifier("Settings.EmailProtection.Enable")
             }
         }
     }

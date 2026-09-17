@@ -51,6 +51,7 @@ class AutofillLoginDetailsViewController: UIViewController {
         let attributes = [NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .headline)]
         barButtonItem.setTitleTextAttributes(attributes, for: [.normal])
         barButtonItem.setTitleTextAttributes(attributes, for: [.disabled])
+        barButtonItem.accessibilityIdentifier = "Autofill.Passwords.Editor.Save"
         return barButtonItem
     }()
 
@@ -58,6 +59,7 @@ class AutofillLoginDetailsViewController: UIViewController {
         let barButtonItem = UIBarButtonItem(barButtonSystemItem: .edit, target: self, action: #selector(toggleEditMode))
         let attributes = [NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .headline)]
         barButtonItem.setTitleTextAttributes(attributes, for: .normal)
+        barButtonItem.accessibilityIdentifier = "Autofill.Passwords.Details.Edit"
         return barButtonItem
     }()
 

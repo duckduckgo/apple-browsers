@@ -1591,13 +1591,13 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.currentDialog, .nowSyncing)
     }
 
-    func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForNewHostAndNoDeviceChangeExpected_presentsRecoveryCode() {
+    func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForNewHostAfterUnknownOutcome_presentsRecoveryCode() {
         managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
-        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+        managementDialogModel.currentDialog = .waitForOtherDevice
         ddgSyncing.recoveryCodeOverride = testRecoveryCode
 
         syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: false)
-        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+        XCTAssertEqual(managementDialogModel.currentDialog, .waitForOtherDevice)
 
         syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
@@ -1632,13 +1632,49 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertNil(managementDialogModel.currentDialog)
     }
 
-    func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForExistingHostAndNoDeviceChangeExpected_endsWithoutPresentingSuccess() {
+    func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForExistingHostAfterUnknownOutcome_endsWithoutPresentingSuccess() {
         managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
-        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+        managementDialogModel.currentDialog = .waitForOtherDevice
 
         syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
         XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testControllerDidUpdatePairingV2JoinStatus_whenWaiting_preservesConnectingDialog() {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+
+        syncDialogController.controllerDidUpdatePairingV2JoinStatus(.waiting)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+    }
+
+    func testControllerDidUpdatePairingV2JoinStatus_whenUnknown_presentsWaitForOtherDeviceDialog() {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+
+        syncDialogController.controllerDidUpdatePairingV2JoinStatus(.unknown)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .waitForOtherDevice)
+    }
+
+    func testControllerDidUpdatePairingV2JoinStatus_whenFlowEnded_doesNotReopenDialog() {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        managementDialogModel.currentDialog = nil
+
+        syncDialogController.controllerDidUpdatePairingV2JoinStatus(.unknown)
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testControllerDidUpdatePairingV2JoinStatus_whenSimplifiedSetupDisabled_preservesConnectingDialog() {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = false
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+
+        syncDialogController.controllerDidUpdatePairingV2JoinStatus(.unknown)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
     }
 
     func testControllerWillBeginTransmittingRecoveryKey_presentsPrepareDialog() async {

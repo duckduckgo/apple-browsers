@@ -63,10 +63,18 @@ extension XCUIApplication {
                 debugList.waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Debug screen did not reappear after resetting passwords.", file: file, line: line)
 
-            let debugNavigationBar = navigationBars["Debug"]
-            let dragStart = debugNavigationBar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-            let dragEnd = windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95))
-            dragStart.press(forDuration: 0.1, thenDragTo: dragEnd)
+            if keyboards.firstMatch.exists {
+                buttons.matching(NSPredicate(format: "label == %@", "close"))
+                    .firstMatch
+                    .tapWhenHittable(file: file, line: line)
+                XCTAssertTrue(
+                    keyboards.firstMatch.wait(
+                        for: NSPredicate(format: "exists == false"),
+                        timeout: UITestTimeouts.elementExistence),
+                    "Keyboard did not dismiss after resetting passwords.", file: file, line: line)
+            }
+
+            buttons["Debug.Close"].tapWhenHittable(file: file, line: line)
 
             XCTAssertTrue(
                 debugList.wait(for: NSPredicate(format: "exists == false"), timeout: UITestTimeouts.elementExistence),
@@ -95,10 +103,6 @@ extension XCUIApplication {
             "Passwords & Autofill settings did not appear.", file: file, line: line)
         descendants(matching: .any)["Autofill.Settings.Passwords"]
             .tapWhenHittable(file: file, line: line)
-
-        XCTAssertTrue(
-            passwordList.waitForExistence(timeout: UITestTimeouts.elementExistence),
-            "Password list did not appear.", file: file, line: line)
     }
 
     func closePasswordManager(file: StaticString = #filePath, line: UInt = #line) {
@@ -114,6 +118,19 @@ extension XCUIApplication {
                 .waitForExistence(timeout: UITestTimeouts.elementExistence),
             "Settings did not reappear after closing Passwords & Autofill.", file: file, line: line)
         dismissSettings(file: file, line: line)
+    }
+
+    func openPasswordManagerFromBrowsingMenu(file: StaticString = #filePath, line: UInt = #line) {
+        openBrowsingMenuItem("Browser.Menu.Passwords", file: file, line: line)
+    }
+
+    func closePasswordManagerToBrowser(file: StaticString = #filePath, line: UInt = #line) {
+        navigationBars["Passwords"].buttons["Close"].tapWhenHittable(file: file, line: line)
+        XCTAssertTrue(
+            searchEntry.wait(
+                for: NSPredicate(format: "isHittable == true AND isEnabled == true"),
+                timeout: UITestTimeouts.navigation),
+            "Browser did not reappear after closing Passwords.", file: file, line: line)
     }
 
     func addPassword(
@@ -132,20 +149,24 @@ extension XCUIApplication {
             detailsList.waitForExistence(timeout: UITestTimeouts.elementExistence),
             "New password editor did not appear.", file: file, line: line)
 
-        enterText(name, in: descendants(matching: .any)["Field_PasswordName"], file: file, line: line)
+        descendants(matching: .any)["Field_PasswordName"]
+            .enterText(name, pressReturn: true, file: file, line: line)
         if !username.isEmpty {
-            enterText(username, in: descendants(matching: .any)["Field_Username"], file: file, line: line)
+            descendants(matching: .any)["Field_Username"]
+                .enterText(username, pressReturn: true, file: file, line: line)
         }
         if !password.isEmpty {
-            enterText(password, in: descendants(matching: .any)["Field_Password"], file: file, line: line)
+            descendants(matching: .any)["Field_Password"]
+                .enterText(password, pressReturn: true, file: file, line: line)
         }
         if !address.isEmpty {
-            enterText(address, in: descendants(matching: .any)["Field_Address"], file: file, line: line)
+            descendants(matching: .any)["Field_Address"]
+                .enterText(address, pressReturn: true, file: file, line: line)
         }
         if !notes.isEmpty {
             let notesField = descendants(matching: .any)["Field_Notes"]
             detailsList.swipeUpToReveal(notesField, file: file, line: line)
-            enterText(notes, in: notesField, file: file, line: line)
+            notesField.enterText(notes, file: file, line: line)
         }
 
         buttons["Autofill.Passwords.Editor.Save"].tapWhenHittable(file: file, line: line)
@@ -168,12 +189,7 @@ extension XCUIApplication {
         XCTAssertTrue(
             authenticationReason.waitForExistence(timeout: UITestTimeouts.navigation),
             "Password access did not request device authentication.", file: file, line: line)
-
-        let passcodeField = springboard.secureTextFields.firstMatch
-        XCTAssertTrue(
-            passcodeField.waitForExistence(timeout: UITestTimeouts.elementExistence),
-            "System passcode field did not appear.", file: file, line: line)
-        passcodeField.typeText("password\n")
+        springboard.enterSimulatorPasscode(file: file, line: line)
 
         XCTAssertTrue(
             passwordList.wait(
@@ -182,32 +198,27 @@ extension XCUIApplication {
             "Password list did not unlock after entering the device passcode.", file: file, line: line)
     }
 
+    func authenticateForSavedPasswordFill(
+        using springboard: XCUIApplication,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let authenticationReason = springboard.staticTexts["Unlock device to use saved password"]
+        XCTAssertTrue(
+            authenticationReason.waitForExistence(timeout: UITestTimeouts.navigation),
+            "Saved-password fill did not request device authentication.", file: file, line: line)
+        springboard.enterSimulatorPasscode(file: file, line: line)
+        XCTAssertTrue(
+            authenticationReason.wait(
+                for: NSPredicate(format: "exists == false"),
+                timeout: UITestTimeouts.navigation),
+            "Saved-password authentication did not finish.", file: file, line: line)
+    }
+
     func passwordItem(named name: String) -> XCUIElement {
         passwordList.cells
             .matching(identifier: "Autofill.Passwords.Item")
             .containing(.staticText, identifier: name)
             .firstMatch
-    }
-
-    func enterText(
-        _ text: String,
-        in field: XCUIElement,
-        file: StaticString = #filePath,
-        line: UInt = #line
-    ) {
-        field.tapWhenHittable(file: file, line: line)
-        field.typeText(text)
-    }
-
-    func replaceText(
-        in field: XCUIElement,
-        with text: String,
-        file: StaticString = #filePath,
-        line: UInt = #line
-    ) {
-        field.tapWhenHittable(file: file, line: line)
-        let currentValue = field.value as? String ?? ""
-        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: currentValue.count))
-        field.typeText(text)
     }
 }

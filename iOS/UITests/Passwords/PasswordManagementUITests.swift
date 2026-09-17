@@ -61,22 +61,24 @@ final class PasswordManagementUITests: UITestCase {
             app.buttons["Autofill.Passwords.Details.Edit"].tapWhenHittable()
             let detailsList = app.descendants(matching: .any)["Autofill.Passwords.Details.List"]
 
-            app.replaceText(
-                in: app.descendants(matching: .any)["Field_PasswordName"],
-                with: "Netflix Streaming")
-            app.replaceText(
-                in: app.descendants(matching: .any)["Field_Username"],
-                with: "test3@example.com")
-            app.replaceText(
-                in: app.descendants(matching: .any)["Field_Password"],
-                with: "secure?password")
-            app.replaceText(
-                in: app.descendants(matching: .any)["Field_Address"],
-                with: "netflix.com/login")
+            app.descendants(matching: .any)["Field_PasswordName"]
+                .replaceText(with: "Netflix Streaming", pressReturn: true)
+            app.descendants(matching: .any)["Field_Username"]
+                .replaceText(with: "test3@example.com", pressReturn: true)
+            app.descendants(matching: .any)["Field_Password"]
+                .replaceText(with: "secure?password", pressReturn: true)
+            app.descendants(matching: .any)["Field_Address"]
+                .replaceText(with: "netflix.com/login", pressReturn: true)
 
             let notesField = app.descendants(matching: .any)["Field_Notes"]
             detailsList.swipeUpToReveal(notesField)
-            app.replaceText(in: notesField, with: "A subscription site.")
+            notesField.replaceText(
+                with: "A subscription site.",
+                normalizedTapOffset: CGVector(dx: 0.95, dy: 0.95))
+            XCTAssertEqual(
+                notesField.value as? String,
+                "A subscription site.",
+                "Notes were not replaced before saving.")
 
             app.buttons["Autofill.Passwords.Editor.Save"].tapWhenHittable()
             XCTAssertTrue(
@@ -104,9 +106,8 @@ final class PasswordManagementUITests: UITestCase {
                 app.passwordItem(named: "Netflix Streaming").exists,
                 "Password remained visible for an unmatched search.")
 
-            app.replaceText(in: searchField, with: "Net")
+            searchField.replaceText(with: "Net")
             assertPasswordItem(named: "Netflix Streaming", username: "test3@example.com")
-            app.buttons["Cancel"].tapWhenHittable()
         }
 
         XCTContext.runActivity(named: "Verify edited details and delete the password") { _ in
@@ -150,11 +151,17 @@ final class PasswordManagementUITests: UITestCase {
     }
 
     private func assertVisibleDetails(name: String, username: String, address: String, notes: String) {
-        for value in [name, username, address, notes] {
+        for value in [name, username, address] {
             XCTAssertTrue(
                 app.staticTexts[value].waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Password details did not show '\(value)'.")
         }
+
+        let notesText = app.staticTexts[notes]
+        app.descendants(matching: .any)["Autofill.Passwords.Details.List"].swipeUp()
+        XCTAssertTrue(
+            notesText.waitForExistence(timeout: UITestTimeouts.elementExistence),
+            "Password details did not show '\(notes)'.")
     }
 
     private func assertPasswordCanBeRevealed(_ password: String) {

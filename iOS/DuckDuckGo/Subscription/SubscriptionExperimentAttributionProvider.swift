@@ -76,9 +76,3 @@ struct DefaultSubscriptionExperimentAttributionProvider: SubscriptionExperimentA
         return mergedExperiments
     }
 }
-
-struct LegacySubscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviding {
-    func attribution(from selection: DefaultSubscriptionPagesUseSubscriptionFeature.SubscriptionSelection) -> PurchaseExperimentAttribution? {
-        selection.experiment.map { .legacy($0.subscriptionExperiment) }
-    }
-}

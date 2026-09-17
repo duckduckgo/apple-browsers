@@ -21,7 +21,8 @@
   "testTargets" : [
     {
       "selectedTests" : [
-        "AppLaunchUITests"
+        "AppLaunchUITests",
+        "DuckAIIPadUITests"
       ],
       "target" : {
         "containerPath" : "container:DuckDuckGo-iOS.xcodeproj",

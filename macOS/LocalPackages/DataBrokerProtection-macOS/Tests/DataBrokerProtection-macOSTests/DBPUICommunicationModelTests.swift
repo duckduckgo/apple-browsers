@@ -63,6 +63,21 @@ final class DBPUICommunicationModelTests: XCTestCase {
         XCTAssertEqual(profileMatch.optOutSubmittedDate, submittedDate.timeIntervalSince1970)
     }
 
+    func testProfileMatchInit_whenExtractedProfileHasProfileUrl_thenProfileUrlIsExposed() {
+        // Given
+        let profileUrl = "https://example.com/profile/123"
+        let extractedProfile = ExtractedProfile(id: 1, name: "Sample Name", profileUrl: profileUrl)
+        let optOut = OptOutJobData.mock(with: extractedProfile)
+
+        // When
+        let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOut,
+                                                       dataBroker: makeUIBroker(),
+                                                       parentBrokerOptOutJobData: nil)
+
+        // Then
+        XCTAssertEqual(profileMatch.profileUrl, profileUrl)
+    }
+
     func testProfileMatchInit_whenCreatedDateIsDefault_thenResultingProfileMatchDatesAreBothBasedOnEventDates() {
 
         // Given

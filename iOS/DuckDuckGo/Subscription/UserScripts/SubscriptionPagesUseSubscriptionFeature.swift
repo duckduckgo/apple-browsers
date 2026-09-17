@@ -195,7 +195,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
          userNotificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
          expirationReminderScheduler: SubscriptionExpirationReminderScheduling? = nil,
          isExpirationReminderFeatureEnabled: @escaping () -> Bool = { false },
-         subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviding = LegacySubscriptionExperimentAttributionProvider()) {
+         subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviding) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow

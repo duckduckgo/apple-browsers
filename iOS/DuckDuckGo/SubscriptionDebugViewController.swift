@@ -922,7 +922,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                 isExpirationReminderFeatureEnabled: {
                     AppDependencyProvider.shared.featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
                 },
-                subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger)
+                subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: AppDependencyProvider.shared.featureFlagger)
             )
 
             // Create params matching what the web would send

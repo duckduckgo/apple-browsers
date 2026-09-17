@@ -44,11 +44,7 @@ final class ApplicationLockUITests: UITestCase {
                 authenticationReason.waitForExistence(timeout: UITestTimeouts.navigation),
                 "Application Lock authentication did not appear after relaunch.")
 
-            let passcodeField = springboard.secureTextFields.firstMatch
-            XCTAssertTrue(
-                passcodeField.waitForExistence(timeout: UITestTimeouts.elementExistence),
-                "System passcode field did not appear.")
-            passcodeField.typeText("password\n")
+            springboard.enterSimulatorPasscode()
 
             XCTAssertTrue(
                 app.searchEntry.wait(for: NSPredicate(format: "isHittable == true"), timeout: UITestTimeouts.navigation),

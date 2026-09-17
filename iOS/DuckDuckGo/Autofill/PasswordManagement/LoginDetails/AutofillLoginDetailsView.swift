@@ -63,6 +63,7 @@ struct AutofillLoginDetailsView: View {
             }))
         .applyInsetGroupedListStyle()
         .animation(.easeInOut, value: viewModel.viewMode)
+        .accessibilityIdentifier("Autofill.Passwords.Details.List")
     }
     
     private var editingContentView: some View {
@@ -252,6 +253,7 @@ struct AutofillLoginDetailsView: View {
                                  confirmationTitle: UserText.autofillDeleteAllPasswordsActionTitle(for: 1),
                                  confirmationMessage: viewModel.deleteMessage(),
                                  confirmationButtonTitle: UserText.autofillLoginDetailsDeleteButton,
+                                 deleteButtonAccessibilityIdentifier: "Autofill.Passwords.Details.Delete",
                                  onDelete: {
             viewModel.delete()
         })
@@ -280,6 +282,7 @@ struct AutofillLoginDetailsView: View {
                             secondaryAction: { viewModel.copyToPasteboard(.password) },
                             buttonImage: viewModel.isPasswordHidden ? DesignSystemImages.Glyphs.Size24.eye : DesignSystemImages.Glyphs.Size24.eyeClosed,
                             buttonAccessibilityLabel: viewModel.isPasswordHidden ? UserText.autofillShowPassword : UserText.autofillHidePassword,
+                            buttonAccessibilityIdentifier: "Autofill.Passwords.Details.TogglePasswordVisibility",
                             buttonAction: { viewModel.isPasswordHidden.toggle() },
                             secondaryButtonImage: DesignSystemImages.Glyphs.Size24.copy,
                             secondaryButtonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsPassword),

@@ -87,6 +87,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Provider for creating extension-specific message handlers.
     public private(set) var handlerProvider: WebExtensionHandlerProviding?
 
+    /// Talks to native messaging hosts. `nil` where hosts are unavailable, such as on iOS.
+    let nativeMessagingHandler: WebExtensionNativeMessagingHandling?
+
     /// Coordinator for managing scriptlet installation to extensions (created internally from scriptlet configuration).
     private(set) var scriptletCoordinator: WebExtensionScriptletCoordinator?
 
@@ -116,8 +119,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Shared monitor because all tabs communicate through the same embedded-extension process.
     public let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
 
-    // MARK: - AsyncStream
-
     private var continuation: AsyncStream<Void>.Continuation?
     public private(set) lazy var extensionUpdates = AsyncStream<Void> { [weak self] continuation in
         self?.continuation = continuation
@@ -143,9 +144,34 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
+                nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
                 scriptletConfiguration: ScriptletConfiguration? = nil) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
+
+        // WebKit lacks several Chrome APIs (`notifications`, `offscreen`, `idle`, …), and a
+        // top-level reference to one aborts an extension's background script. The stub script
+        // defines them. A user script on the controller's configuration reaches every page the
+        // extension owns — the background page, the action popup, the options page — where a
+        // `<script>` tag in a generated page reaches only that page. The stubs return early
+        // when neither `chrome` nor `browser` is defined, so a page that is not an extension
+        // page is left alone.
+        let stubScript = WKUserScript(source: WebExtensionAPIStubScript.source,
+                                      injectionTime: .atDocumentStart,
+                                      forMainFrameOnly: false)
+        controllerConfiguration.webViewConfiguration.userContentController.addUserScript(stubScript)
+
+        // A popup page closes itself with `window.close()`. WebKit unloads the web view but tells
+        // nobody, so the page reports the call through a script message, and the window/tab
+        // provider takes down whatever it hosted the popup in.
+        let windowCloseScript = WKUserScript(source: WebExtensionWindowCloseScript.source,
+                                             injectionTime: .atDocumentStart,
+                                             forMainFrameOnly: true)
+        controllerConfiguration.webViewConfiguration.userContentController.addUserScript(windowCloseScript)
+        let windowCloseHandler = WebExtensionWindowCloseMessageHandler()
+        controllerConfiguration.webViewConfiguration.userContentController.add(windowCloseHandler,
+                                                                                name: WebExtensionWindowCloseScript.messageHandlerName)
+
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
 
         self.windowTabProvider = windowTabProvider
@@ -159,10 +185,15 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
+        self.nativeMessagingHandler = nativeMessagingHandler
         self.scriptletConfiguration = scriptletConfiguration
         self.unloadGuard = WebExtensionUnloadGuard()
 
         super.init()
+
+        windowCloseHandler.onWindowClose = { [weak self] popupWebView in
+            self?.windowTabProvider.dismissPopup(for: popupWebView)
+        }
 
         if let scriptletConfiguration {
             let coordinator = WebExtensionScriptletCoordinator(
@@ -616,9 +647,19 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     func notifyUpdate() {
-        continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
+        NotificationCenter.default.post(name: .webExtensionsDidChangeLoadedExtensions, object: self)
     }
+}
+
+public extension Notification.Name {
+
+    /// Posted by `WebExtensionManager` when the set of loaded extensions changes.
+    ///
+    /// A notification reaches every observer, where the lifecycle delegate is a single
+    /// object. Per-window UI needs that, because each browser window keeps its own set of
+    /// extension toolbar buttons.
+    static let webExtensionsDidChangeLoadedExtensions = Notification.Name("webExtensionsDidChangeLoadedExtensions")
 }
 
 // MARK: - WKWebExtensionControllerDelegate

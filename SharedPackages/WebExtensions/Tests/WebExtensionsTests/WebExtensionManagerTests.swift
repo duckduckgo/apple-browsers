@@ -629,6 +629,29 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertFalse(context?.isInspectable == true)
     }
 
+    @MainActor
+    func testWhenManagerIsCreated_ThenAPIStubsAreInstalledAsAUserScript() {
+        let manager = makeManager()
+
+        let userScripts = manager.controller.configuration.webViewConfiguration.userContentController.userScripts
+        let stubScript = userScripts.first { $0.source == WebExtensionAPIStubScript.source }
+
+        XCTAssertNotNil(stubScript, "Expected the API stub script among the controller's user scripts")
+        XCTAssertEqual(stubScript?.injectionTime, .atDocumentStart)
+    }
+
+    @MainActor
+    func testWhenManagerIsCreated_ThenWindowCloseScriptIsInstalledForMainFramesAtDocumentStart() {
+        let manager = makeManager()
+
+        let userScripts = manager.controller.configuration.webViewConfiguration.userContentController.userScripts
+        let closeScript = userScripts.first { $0.source == WebExtensionWindowCloseScript.source }
+
+        XCTAssertNotNil(closeScript, "Expected the window close script among the controller's user scripts")
+        XCTAssertEqual(closeScript?.injectionTime, .atDocumentStart)
+        XCTAssertEqual(closeScript?.isForMainFrameOnly, true)
+    }
+
     // MARK: - Additional Helpers
 
     @MainActor

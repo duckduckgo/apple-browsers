@@ -2131,6 +2131,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"UI Tests.xctestplan",
+				"iPad UI Tests.xctestplan",
 			);
 			target = 23215268B3D7426DA0FAC923 /* UI Tests */;
 		};

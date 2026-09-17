@@ -27,7 +27,7 @@ import XCTest
 
 final class DefaultSubscriptionExperimentAttributionProviderTests: XCTestCase {
     func testWhenCollectingExperimentsThenNonSubscriptionParentsAreExcludedForPrivacy() {
-        let featureFlagger = MockFeatureFlagger(allActiveExperiments: [
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(allActiveExperiments: [
             "subscriptionExperiment": ExperimentData(
                 parentID: PrivacyFeature.privacyPro.rawValue,
                 cohortID: "treatment",
@@ -47,7 +47,7 @@ final class DefaultSubscriptionExperimentAttributionProviderTests: XCTestCase {
     }
 
     func testWhenPrivacyProExperimentsAreCollectedThenOrderingIsDeterministic() {
-        let featureFlagger = MockFeatureFlagger(allActiveExperiments: [
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(allActiveExperiments: [
             "second": ExperimentData(parentID: PrivacyFeature.privacyPro.rawValue, cohortID: "control", enrollmentDate: Date()),
             "first": ExperimentData(parentID: PrivacyFeature.privacyPro.rawValue, cohortID: "treatment", enrollmentDate: Date())
         ], featuresStub: [FeatureFlag.subscriptionConcurrentExperiments.rawValue: true])
@@ -62,7 +62,7 @@ final class DefaultSubscriptionExperimentAttributionProviderTests: XCTestCase {
     }
 
     func testWhenThereAreNoActiveExperimentsThenAttributionIsOmitted() {
-        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.subscriptionConcurrentExperiments.rawValue: true])
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(featuresStub: [FeatureFlag.subscriptionConcurrentExperiments.rawValue: true])
         let provider = DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger)
 
         XCTAssertNil(provider.attribution(from: makeSelection()))

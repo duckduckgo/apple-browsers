@@ -65,6 +65,9 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionPaidAIChatSettingsImpression
     case subscriptionIdentityRestorationSettings
     case subscriptionIdentityRestorationSettingsImpression
+    /// Fired when the user clicks Subscriber Offers in the DuckDuckGo Subscription section of the
+    /// settings sidebar, which opens the Partnerships Hub in a new tab. Sidebar clicks only —
+    /// routing to the pane from a `duck://settings` deep link does not fire it.
     case subscriptionPartnerBenefitsSettings
     case subscriptionManagementEmail
     case subscriptionManagementPlanBilling

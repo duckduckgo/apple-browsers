@@ -1672,16 +1672,18 @@ extension SettingsViewModel {
     }
 
     func openSubscriberOffers() {
-        pixelFiring?.fire(SubscriptionPartnershipsHubPixel.subscriberOffersSettingsClick, frequency: .dailyAndCount)
-
         // The hub is a regular web page, so it opens in a new browser tab rather than inside
         // Settings. A quick link keeps that navigation in DuckDuckGo instead of handing the https
         // URL to the system default browser.
         let hubURL = partnershipsHubProvider.hubURL
         guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(hubURL.absoluteString)) else {
+            // Fired below rather than above, so a click the user never gets a page from is not
+            // counted as one that opened the hub.
             assertionFailure("Could not build a quick link for \(hubURL)")
             return
         }
+
+        pixelFiring?.fire(SubscriptionPartnershipsHubPixel.subscriberOffersSettingsClick, frequency: .dailyAndCount)
         urlOpener.open(quickLinkURL)
     }
 

@@ -578,19 +578,33 @@ final class PreferencesSidebarModel: ObservableObject {
         }
     }
 
+    /// Opens the Partnerships Hub in a new tab and records the interaction.
+    ///
+    /// Subscriber Offers is a link dressed as a sidebar item, so it gets its own intent method
+    /// rather than going through `selectPane(_:)`: that keeps the pixel on the click, where the
+    /// subscription panes fire theirs too, instead of on every route to the identifier.
+    ///
+    /// `otherPlatforms`, the other link in this sidebar, predates this and works differently — its
+    /// URL is its raw value, opened by `selectPane(_:)`, which then also selects it and leaves the
+    /// pane blank. Deliberately not copied: that shape fires its pixel from pane selection, so a
+    /// deep link counts as a click. Unifying the two would move an existing pixel's trigger, so it
+    /// belongs in its own change.
+    @MainActor
+    func openSubscriberOffers() {
+        pixelFiring?.fire(SubscriptionPixel.subscriptionPartnerBenefitsSettings, frequency: .dailyAndCount)
+        Application.appDelegate.windowControllersManager.show(url: partnershipsHubProvider.hubURL,
+                                                              source: .ui,
+                                                              newTab: true)
+    }
+
     @MainActor
     func selectPane(_ identifier: PreferencePaneIdentifier) {
-        resetScrollRequest()
+        // Not a pane, so there is nothing to select: `openSubscriberOffers()` is the way in. A
+        // `duck://settings/partnershipsHub` deep link therefore does nothing rather than selecting
+        // an empty pane.
+        guard identifier != .partnershipsHub else { return }
 
-        // Opens a new tab and stays on the current pane, like the URL-backed panes below. Handled
-        // separately because the URL comes from remote config rather than from the raw value.
-        if identifier == .partnershipsHub {
-            pixelFiring?.fire(SubscriptionPixel.subscriptionPartnerBenefitsSettings, frequency: .dailyAndCount)
-            Application.appDelegate.windowControllersManager.show(url: partnershipsHubProvider.hubURL,
-                                                                  source: .ui,
-                                                                  newTab: true)
-            return
-        }
+        resetScrollRequest()
 
         // Open a new tab in case of special panes
         if identifier.rawValue.hasPrefix(URL.NavigationalScheme.https.rawValue),

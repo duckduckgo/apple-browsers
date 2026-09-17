@@ -167,9 +167,9 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case paidAIChat
     case identityTheftRestoration
     case subscriptionSettings
-    /// Opens the Partnerships Hub in a new tab rather than selecting a pane. Unlike `otherPlatforms`
-    /// its URL comes from remote config, so the raw value cannot be the URL itself and
-    /// `PreferencesSidebarModel.selectPane(_:)` resolves it instead.
+    /// Opens the Partnerships Hub in a new tab rather than selecting a pane; never becomes the
+    /// selected pane. Unlike `otherPlatforms` its URL comes from remote config, so the raw value
+    /// cannot be the URL itself — `PreferencesSidebarModel.openSubscriberOffers()` resolves it.
     case partnershipsHub
     case autofill
     case accessibility

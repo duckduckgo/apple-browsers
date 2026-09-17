@@ -158,13 +158,14 @@ struct DebugScreensListView: View {
         Section {
             ForEach(screens) { screen in
                 switch screen {
-                case .controller(let title, _):
+                case .controller(let title, _, _):
                     SettingsCellView(label: title, action: {
                         model.navigateToController(screen)
                     }, disclosureIndicator: true, isButton: true)
                     .swipeActions {
                         togglePinButton(screen)
                     }
+                    .accessibilityIdentifier(ifPresent: screen.accessibilityIdentifier)
 
                 case .view(let title, _, _):
                     NavigationLink(destination: LazyView(model.buildView(screen))) {

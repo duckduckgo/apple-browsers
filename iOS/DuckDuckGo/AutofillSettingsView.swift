@@ -33,6 +33,7 @@ struct AutofillSettingsView: View {
                 } label: {
                     CountRowView(viewModel: viewModel, autofillType: .passwords)
                 }
+                .accessibilityIdentifier("Autofill.Settings.Passwords")
 
                 if viewModel.showCreditCards {
                     Button {
@@ -152,6 +153,7 @@ struct AutofillSettingsView: View {
         .sheet(isPresented: $viewModel.isShowingActivationView) {
             AutofillExtensionSettingsActivationView()
         }
+        .accessibilityIdentifier("Autofill.Settings.List")
     }
 
     private struct CountRowView: View {

@@ -3180,7 +3180,7 @@
       }
     },
     "preferences.preparing-to-sync-v2.check-other-device-title" : {
-      "comment" : "Title shown while the joining device waits for the other device during sync set up (V2)",
+      "comment" : "Title shown when Sync setup is still waiting for the other device to finish (V2)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {

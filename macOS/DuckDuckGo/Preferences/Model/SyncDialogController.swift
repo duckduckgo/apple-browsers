@@ -839,6 +839,21 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         presentDialog(for: .prepareToSync(.twoDevicePairing))
     }
 
+    func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus) {
+        guard managementDialogModel.isSimplifiedSyncSetupV2Enabled,
+              let currentDialog = managementDialogModel.currentDialog,
+              case .prepareToSync = currentDialog else {
+            return
+        }
+
+        switch status {
+        case .waiting:
+            return
+        case .unknown:
+            presentDialog(for: .waitForOtherDevice)
+        }
+    }
+
     func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool) {
         PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(.exchange,
                                                                       flowVersion: syncSetupFlowVersion,

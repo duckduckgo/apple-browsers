@@ -2236,6 +2236,19 @@ class MainViewController: UIViewController {
 
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
 
+        // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
+        // viewDidAppear fires after this function and shows the dialog, but the editing state
+        // created here would immediately cover it.
+        // Also suppress when the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
+        // is scheduled to fire: it drives its own beginEditing, and a premature activation here
+        // causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
+        let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
+        // Resolved before the instrumentation call below, so the wide event records the mode
+        // the app decided on rather than racing the keyboard to observe it.
+        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
+            && !daxDialogsManager.subscriptionPromotionPending
+            && !chatPathCompletionPending
+
         let controller = newTabPageBuilder.makeNewTabPage(tab: tabModel,
                                                           openedAfterIdle: hatch != nil,
                                                           daxDialogFactory: newTabDaxDialogFactory)
@@ -2263,6 +2276,10 @@ class MainViewController: UIViewController {
             controller.view.alpha = 0
         }
 
+        if isNewTab && !willBeginEditing && !chatPathCompletionPending {
+            (controller as? RedesignedNewTabPageViewController)?.prepareForEntranceAnimation()
+        }
+
         addToContentContainer(controller: controller)
         viewCoordinator.logoContainer.isHidden = true
         updateAddressBarSuppressionForNewTabPage()
@@ -2274,19 +2291,6 @@ class MainViewController: UIViewController {
         refreshControls()
         updateScrollInteractionIfNeeded()
         presentContextualOnboardingDialogIfNeeded()
-
-        // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
-        // viewDidAppear fires after this function and shows the dialog, but the editing state
-        // created here would immediately cover it.
-        // Also suppress when the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
-        // is scheduled to fire: it drives its own beginEditing, and a premature activation here
-        // causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
-        let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
-        // Resolved before the instrumentation call below, so the wide event records the mode
-        // the app decided on rather than racing the keyboard to observe it.
-        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
-            && !daxDialogsManager.subscriptionPromotionPending
-            && !chatPathCompletionPending
 
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually

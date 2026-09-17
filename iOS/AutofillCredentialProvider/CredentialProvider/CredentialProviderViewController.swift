@@ -99,8 +99,7 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         _ = Self.pixelKitSetup
-        // The extension has no FeatureFlagger to read `.appRebranding`, and the flag has shipped,
-        // so opt its visuals into the rebrand unconditionally. Revert this line to restore flag-gating.
+        // The app rebrand has shipped; opt this extension's visuals into it unconditionally.
         AppRebrand.isAppRebranded = { true }
     }
 

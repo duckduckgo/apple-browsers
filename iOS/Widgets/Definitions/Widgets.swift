@@ -219,8 +219,7 @@ struct PasswordsWidget: Widget {
 struct Widgets: WidgetBundle {
 
     init() {
-        // The widget extension has no live FeatureFlagger; the app-rebrand flag has shipped,
-        // so opt the widgets' visuals into the rebrand unconditionally. Revert to restore flag-gating.
+        // The app rebrand has shipped; opt the widgets' visuals into it unconditionally.
         AppRebrand.isAppRebranded = { true }
     }
 

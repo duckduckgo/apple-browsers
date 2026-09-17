@@ -65,6 +65,7 @@ class AutofillEmptySearchView: UIView {
         installSubviews()
         installConstraints()
         decorate()
+        accessibilityIdentifier = "Autofill.Passwords.Search.NoResults"
     }
 
     required init?(coder: NSCoder) {

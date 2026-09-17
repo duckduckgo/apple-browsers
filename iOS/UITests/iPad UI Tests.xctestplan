@@ -1,0 +1,31 @@
+{
+  "configurations" : [
+    {
+      "id" : "C4B3EE4B-1AFD-4D00-94CC-A8F615F83372",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:DuckDuckGo-iOS.xcodeproj",
+      "identifier" : "84E341911E2F7EFB00BDBA6F",
+      "name" : "DuckDuckGo"
+    }
+  },
+  "testTargets" : [
+    {
+      "selectedTests" : [
+        "AppLaunchUITests"
+      ],
+      "target" : {
+        "containerPath" : "container:DuckDuckGo-iOS.xcodeproj",
+        "identifier" : "23215268B3D7426DA0FAC923",
+        "name" : "UI Tests"
+      }
+    }
+  ],
+  "version" : 1
+}

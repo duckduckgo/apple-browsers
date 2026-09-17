@@ -577,6 +577,7 @@ extension TabViewController {
         .regular(name: UserText.duckAiFeatureName,
                  accessibilityLabel: UserText.duckAiFeatureName,
                  image: DesignSystemImages.Glyphs.Size24.duckAi,
+                 accessibilityIdentifier: "Browser.Menu.DuckAI",
                  action: { [weak self] in
             PixelKit.fire(Pixel.Event.aiChatSettingsMenuNewChatTabTapped, frequency: .dailyAndCount)
             PixelKit.fire(Pixel.Event.browsingMenuAIChat)

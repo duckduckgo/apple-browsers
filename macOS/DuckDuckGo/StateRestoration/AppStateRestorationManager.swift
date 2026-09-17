@@ -44,6 +44,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
     private let tabSnapshotCleanupService: TabSnapshotCleanupService
     private var appWillRelaunchCancellable: AnyCancellable?
     private var stateChangedCancellable: AnyCancellable?
+    private var pinnedTabsCancellable: AnyCancellable?
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private let startupPreferences: StartupPreferences
     private let tabsPreferences: TabsPreferences
@@ -201,6 +202,28 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
             // saving of the state
             .sink { [weak self] _ in
                 self?.persistAppState()
+            }
+
+        // Persist immediately when any pinned tab collection changes so that a force-kill
+        // (e.g. during an app update) within the debounce window above doesn't lose pin changes.
+        // Watches both the shared manager (.shared mode) and per-window managers (.separate mode)
+        // by reacting to window list changes via switchToLatest.
+        // sync: true ensures the disk write completes before returning.
+        pinnedTabsCancellable = Application.appDelegate.windowControllersManager.$mainWindowControllers
+            .map { controllers -> AnyPublisher<Void, Never> in
+                let sharedPublisher = Application.appDelegate.pinnedTabsManager.tabCollection.$tabs
+                    .dropFirst().map { _ in () }.eraseToAnyPublisher()
+                let perWindowPublishers = controllers.compactMap { controller in
+                    controller.mainViewController.tabCollectionViewModel.pinnedTabsManager?
+                        .tabCollection.$tabs
+                        .dropFirst().map { _ in () }.eraseToAnyPublisher()
+                }
+                return Publishers.MergeMany([sharedPublisher] + perWindowPublishers).eraseToAnyPublisher()
+            }
+            .switchToLatest()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.persistAppState(sync: true)
             }
     }
 

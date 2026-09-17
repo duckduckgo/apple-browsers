@@ -131,6 +131,37 @@ class PinnedTabsTests: UITestCase {
         assertSingleWindowScenario()
     }
 
+    func test_pinnedTabs_persistAfterForcedRestart() {
+        app.disableWarnBeforeQuitting(closeSettings: false)
+        app.disableWarnBeforeClosingPinnedTabs(closeSettings: true)
+
+        app.openSite(pageTitle: "Page #1")
+        pinCurrentPage()
+
+        // Wait less than the 1-second debounce — proves the immediate-save path,
+        // not the debounce, is what keeps pins alive across a force-kill.
+        Thread.sleep(forTimeInterval: 0.5)
+
+        // Force-terminate without calling applicationWillTerminate
+        app.terminate()
+
+        app = XCUIApplication.setUp(featureFlags: featureFlags)
+        // In UITests, opensWindowOnStartupIfNeeded is false, so the app launches without a
+        // window even when state was restored. Open one to surface the restored pinned tabs.
+        app.openNewWindow()
+        XCTAssertTrue(
+            app.windows.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "App window should appear after forced restart"
+        )
+        // Use wait(for:) rather than an immediate XCTAssertEqual: the PinnedTabsView binding
+        // is set up asynchronously when the window first renders, so there is a brief delay
+        // before the radio button appears in the accessibility tree.
+        XCTAssertTrue(
+            app.wait(for: .keyPath(\.pinnedTabs.count, equalTo: 1), timeout: UITests.Timeouts.elementExistence),
+            "Pinned tab should survive a forced restart (no applicationWillTerminate)"
+        )
+    }
+
     // MARK: - Utilities
 
     private func openThreeSitesOnSameWindow() {

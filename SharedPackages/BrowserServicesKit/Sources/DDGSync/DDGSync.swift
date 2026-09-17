@@ -893,7 +893,7 @@ public class DDGSync: DDGSyncing {
     private let deviceInfoUpdateState = DeviceInfoUpdateState()
 }
 
-private final class DeviceInfoUpdateState {
+final class DeviceInfoUpdateState {
 
     // Completion can overlap with rename or account removal, so task handles are read and replaced under one lock.
     private struct TrackedTask {

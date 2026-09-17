@@ -268,6 +268,7 @@ extension LaunchOptionsHandler {
         let appGroupName = Global.appUserDefaultsGroupName
         UserDefaults(suiteName: appGroupName)?.removePersistentDomain(forName: appGroupName)
         UserDefaults(suiteName: statisticsGroupName)?.removePersistentDomain(forName: statisticsGroupName)
+        UserDefaults(suiteName: ContentBlockerStoreConstants.groupName)?.removePersistentDomain(forName: ContentBlockerStoreConstants.groupName)
         clearAppSupportFiles()
 
         // WebKit stops showing its location prompt for a host after repeated denials and keeps that across launches.

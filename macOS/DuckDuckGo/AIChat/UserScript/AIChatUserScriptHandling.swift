@@ -588,9 +588,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private static func documentContext(for tab: Tab,
                                         timeout: TimeInterval,
                                         featureFlagger: FeatureFlagger) async -> AIChatPageContextData? {
+        guard case .url(let url, _, _) = tab.content else { return nil }
+        let mimeType = await tab.webView.mimeType
+        // A local (file://) PDF is never attachable: hand back a non-attachable metadata context
+        // rather than nil, which would fall through to a markdown collect the PDF viewer never answers.
+        if DocumentPageContextProvider.isLocalDocument(mimeType: mimeType, url: url) {
+            return DocumentPageContextProvider.metadataContext(url: url, title: tab.title ?? "", attachable: false, attached: false)
+        }
         guard featureFlagger.isFeatureOn(.aiChatPdfPageContext),
-              case .url(let url, _, _) = tab.content,
-              DocumentPageContextProvider.isSupportedDocument(mimeType: await tab.webView.mimeType, url: url) else {
+              DocumentPageContextProvider.isSupportedDocument(mimeType: mimeType, url: url) else {
             return nil
         }
 

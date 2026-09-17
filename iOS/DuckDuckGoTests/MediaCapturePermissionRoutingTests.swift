@@ -1297,12 +1297,27 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let sut = makeSUT(featureFlagger: featureFlagger)
         let userScript = GeolocationUserScript(installImmediately: true)
         sut.configureSitePermissionsGeolocation(with: userScript)
-        let frame = geolocationFrame(on: sut.webView,
-                                     originURL: URL(string: "https://top-level.example/frame")!)
+        let frameInfo = WKFrameInfo.mock(isMainFrame: false,
+                                         securityOrigin: MockWKSecurityOrigin.new(url: URL(string: "https://top-level.example/frame")!),
+                                         webView: sut.webView)
+        let frame = GeolocationFrame(frameInfo)
         let activationHandler = try XCTUnwrap(userScript.activationHandler)
         XCTAssertNotNil(userScript.delegate)
         XCTAssertTrue(activationHandler(frame))
         XCTAssertNotNil(sut.makeGeolocationSitePermissionContext(for: frame))
+        var body: [String: Any] = [
+            "kind": "registerFrame",
+            "capability": GeolocationUserScript.capabilityToken,
+            "nonce": String(repeating: "a", count: 32),
+            "isSecureContext": true,
+            "isSandboxed": false,
+            "isPolicyAllowed": true
+        ]
+        let controller = WKUserContentController()
+        let registration = await userScript.userContentController(
+            controller,
+            didReceive: .mock(webView: sut.webView, frameInfo: frameInfo, body: body))
+        XCTAssertEqual((registration.0 as? [String: Any])?["enabled"] as? Bool, true)
 
         featureFlagger.enabledFeatureFlags = []
         featureFlagger.triggerUpdate()
@@ -1321,14 +1336,13 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertNil(userScript.delegate)
         XCTAssertNil(userScript.activationHandler)
 
-        let reply = await userScript.handleOneShot(
-            .getCurrentPosition,
-            body: [:],
-            frame: nil,
-            constraints: .init(isSecureContext: true, isSandboxed: false, isPolicyAllowed: true)
-        )
+        body["kind"] = "getCurrentPosition"
+        let response = await userScript.userContentController(
+            controller,
+            didReceive: .mock(webView: sut.webView, frameInfo: frameInfo, body: body))
+        let reply = try XCTUnwrap(response.0 as? [String: Any])
         XCTAssertEqual(reply["status"] as? String, "error")
-        XCTAssertEqual(reply["code"] as? Int, GeolocationPositionError.Code.positionUnavailable.rawValue)
+        XCTAssertEqual(reply["code"] as? Int, GeolocationPositionError.Code.permissionDenied.rawValue)
     }
 
     func testPreparingForDataClearingCancelsActiveGeolocationRequest() async throws {

@@ -81,6 +81,32 @@ extension WKWebViewConfiguration {
 
         self.userContentController = userContentController
         self.processPool.geolocationProvider = GeolocationProvider(processPool: self.processPool)
+
+        // Web Push PoC: install a delegate on the data store so SW-side
+        // `registration.showNotification()` calls are routed through
+        // `UNUserNotificationCenter`. Only relevant when paired with a
+        // synthetic push fired from the Debug menu.
+        if #available(macOS 13.3, *) {
+            self.websiteDataStore.ddg_setPushDelegate(WebPushNotificationDelegate.shared)
+        }
+
+        // Web Push PoC: enable WebKit's PushManager surface so our JS shim has
+        // something to monkey-patch (`PushManager` is off-by-default in this
+        // build, so `typeof PushManager === 'undefined'` and the shim no-ops).
+        if #available(macOS 13.0, *) {
+            unsafeBitCast(preferences, to: _DDGWKPreferencesSPI.self).setPushAPIEnabled(true)
+        }
+
+        // Web Push PoC: monkey-patch `PushManager.prototype` so subscribe()
+        // returns a synthetic PushSubscription instead of routing to APNs.
+        userContentController.addUserScript(WebPushJSShim.userScript())
+
+        // Web Push PoC: bridge the JS shim's subscribe/unsubscribe/isSubscribed
+        // events into an in-memory native subscription store. With-reply variant
+        // so getSubscription() can rehydrate after page reload.
+        userContentController.addScriptMessageHandler(WebPushBridge.shared,
+                                                      contentWorld: .page,
+                                                      name: WebPushBridge.messageHandlerName)
     }
 
     @MainActor

@@ -544,7 +544,16 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             }
             preview?.frame = CGRect(x: targetFrame.minX, y: targetFrame.minY, width: targetFrame.width, height: height)
         } else if tab?.link == nil {
-            createPreviewFromLogoContainerWithSize(targetFrame.size)
+            if hasInlineSearchInput(tab) {
+                // The legacy centered logo does not match the redesigned page revealed after the swipe.
+                let placeholder = UIView()
+                placeholder.backgroundColor = UIColor(designSystemColor: .background)
+                placeholder.isUserInteractionEnabled = false
+                coordinator.contentContainer.addSubview(placeholder)
+                preview = placeholder
+            } else {
+                createPreviewFromLogoContainerWithSize(targetFrame.size)
+            }
             preview?.frame = targetFrame
         }
 

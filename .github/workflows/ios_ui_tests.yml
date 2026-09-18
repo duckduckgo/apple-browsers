@@ -9,12 +9,29 @@ defaults:
 
 on:
   workflow_dispatch:
+    inputs:
+      single_test_class:
+        description: "Run one or more UITestCases (optional, space-separated, e.g. 'AppLaunchUITests')"
+        type: string
+        required: false
+      devices:
+        description: "Device family to run"
+        type: choice
+        default: both
+        options: [iphone, ipad, both]
+      user_modes:
+        description: "User mode(s): production is release-gating; internal is advance warning"
+        type: choice
+        default: production
+        options: [production, internal, both]
   schedule:
     - cron: '0 2 * * 1-5' # 2AM UTC to not clash with macOS tests run at 3AM
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - '.github/workflows/ios_ui_tests.yml'
+      - '.github/workflows/ios_run_ui_test.yml'
+      - '.github/actions/select-ios-simulator/**'
       - '.xcode-version'
       - 'SharedPackages/**'
       - 'iOS/**'
@@ -32,13 +49,92 @@ jobs:
     name: Determine if checks should run
     uses: ./.github/workflows/should_run_pr_checks.yml
 
-  ui-tests:
-    name: UI Tests
+  setup-tests:
+    name: Set up tests list
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      include: ${{ steps.matrix.outputs.include }}
+      run-production: ${{ steps.modes.outputs.run-production }}
+      run-internal: ${{ steps.modes.outputs.run-internal }}
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v6
+
+    - name: Define user modes
+      id: modes
+      working-directory: ${{ github.workspace }}
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        INPUT_MODES: ${{ inputs.user_modes }}
+      run: |
+        case "$EVENT_NAME" in
+          schedule) modes='["production", "internal"]' ;;
+          workflow_dispatch)
+            case "$INPUT_MODES" in
+              internal) modes='["internal"]' ;;
+              both) modes='["production", "internal"]' ;;
+              *) modes='["production"]' ;;
+            esac
+            ;;
+          *) modes='["production"]' ;;
+        esac
+        echo "run-production=$(jq -r 'index("production") != null' <<< "$modes")" >> "$GITHUB_OUTPUT"
+        echo "run-internal=$(jq -r 'index("internal") != null' <<< "$modes")" >> "$GITHUB_OUTPUT"
+
+    - name: Define test matrix
+      id: matrix
+      working-directory: ${{ github.workspace }}
+      env:
+        DEVICES: ${{ inputs.devices || 'both' }}
+        TEST_CLASSES: ${{ inputs.single_test_class }}
+      run: |
+        # Follow macOS class discovery; Common/Support contain helper-only base classes.
+        invalid_classes=$(grep -r 'class.*:.*XCTestCase' iOS/UITests --include='*.swift' \
+          | grep -v 'class UITestCase:' || true)
+        if [[ -n "$invalid_classes" ]]; then
+          echo "::error::UI test classes must inherit from UITestCase: $invalid_classes"
+          exit 1
+        fi
+        test_names=$(grep -rh 'class.*:.*UITestCase' iOS/UITests --include='*.swift' \
+          --exclude-dir=Common --exclude-dir=Support \
+          | sed -E 's/^[^c]*class[[:space:]]+([A-Za-z0-9_]+)[[:space:]]*:.*/\1/' | sort -u)
+        tests=$(printf '%s\n' "$test_names" | jq -Rsc 'split("\n") | map(select(length > 0))')
+        requested=$(printf '%s' "$TEST_CLASSES" | jq -Rsc '[splits("\\s+") | select(length > 0)]')
+        matrix=$(jq -cn --argjson tests "$tests" --argjson requested "$requested" --arg devices "$DEVICES" \
+          --slurpfile iphone 'iOS/UITests/UI Tests.xctestplan' \
+          --slurpfile ipad 'iOS/UITests/iPad UI Tests.xctestplan' '
+          def eligible($plan): $plan[0].testTargets[0] | ((.selectedTests // $tests) - (.skippedTests // []));
+          eligible($iphone) as $phone_tests | eligible($ipad) as $pad_tests |
+          if ($ipad[0].testTargets[0].selectedTests | type) != "array" then
+            error("iPad requires an explicit selectedTests list")
+          elif (($phone_tests + $pad_tests) - $tests | length) > 0 then
+            error("Test plans must reference known classes, not individual methods")
+          elif ($tests - ($phone_tests + $pad_tests) | length) > 0 then
+            error("A discovered test class is excluded from both device plans")
+          elif ($requested - $tests | length) > 0 then error("Unknown requested test class")
+          else {
+            include: [($tests | .[]) as $test |
+              select(($requested | length) == 0 or ($requested | index($test)) != null) |
+              {device: "iphone", "device-name": "iPhone 17", tests: $phone_tests},
+              {device: "ipad", "device-name": "iPad (A16)", tests: $pad_tests} |
+              select($devices == "both" or $devices == .device) |
+              select(.tests | index($test)) | {test: $test, device, "device-name"}]
+          } end |
+          if (.include | length) == 0 then error("No tests selected")
+          elif ($requested - [.include[].test] | length) > 0 then error("Requested class is not eligible for selected devices")
+          else . end')
+        echo "include=$(jq -c '.include' <<< "$matrix")" >> "$GITHUB_OUTPUT"
+        echo "Resolved matrix: $matrix"
+
+  build-for-testing:
+    name: Build UI Tests
+    needs: setup-tests
     runs-on: ['image:osx-tahoe-26', 'size:large']
     timeout-minutes: 45
-
+    outputs:
+      artifact-name: ${{ steps.package.outputs.artifact-name }}
     steps:
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.10.0
@@ -53,28 +149,244 @@ jobs:
     - name: Print macOS version
       run: sw_vers
 
+    - name: Set cache key hash
+      run: |
+         has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
+         if [[ "$has_only_tags" == "true" ]]; then
+           # hashFiles does not respect the working directory, so the full path must be specified
+           echo "cache_key_hash=${{ hashFiles('iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+         else
+           echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
+         fi
+
+    - name: Cache SPM
+      if: env.cache_key_hash
+      uses: actions/cache@v5
+      with:
+        path: iOS/DerivedData/SourcePackages
+        key: ${{ runner.os }}-ios-${{ env.cache_key_hash }}
+        restore-keys: |
+          ${{ runner.os }}-ios-
+
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
-    - name: Select iOS Simulator
+    - name: Restore Xcode Compilation Cache
+      if: runner.environment != 'self-hosted'
+      uses: actions/cache/restore@v5
+      with:
+        path: iOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-ios-ui-tests
+        restore-keys: |
+          xcode-compilation-cache-ios-ui-tests-
+
+    - name: Setup Bitrise Build Cache
+      uses: ./.github/actions/bitrise-build-cache
+      with:
+        enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
+        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+
+    - name: Select build simulator
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
         preferred-versions: "26.5"
+        device-name: "iPhone 17"
 
-    - name: Run UI test
+    - name: Build for testing
       run: |
-        echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
-        echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
-
-        set -o pipefail && xcodebuild test \
+        # Omitting -testPlan makes Xcode build one run configuration for every plan registered in
+        # the scheme. Workers select the device-specific .xctestrun without recompiling the app.
+        set -o pipefail && xcodebuild build-for-testing \
           -scheme "iOS UI Tests" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
-          -derivedDataPath "DerivedData" \
+          -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
-          -test-iterations 2 \
-          -retry-tests-on-failure \
-          -test-repetition-relaunch-enabled YES \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+          | tee xcodebuild.log \
           | xcbeautify
+
+    - name: Compute Compilation Cache hash
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
+      id: compilation-cache-hash
+      run: |
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v5
+      with:
+        path: iOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-ios-ui-tests-${{ steps.compilation-cache-hash.outputs.hash }}
+
+    - name: Package build products
+      id: package
+      env:
+        RUN_ID: ${{ github.run_id }}
+        RUN_ATTEMPT: ${{ github.run_attempt }}
+      run: |
+        artifact_name="ios-ui-tests-build-${RUN_ID}-${RUN_ATTEMPT}"
+        tar -czf build-products.tar.gz -C DerivedData Build/Products
+        echo "artifact-name=$artifact_name" >> "$GITHUB_OUTPUT"
+
+    - name: Upload immutable build products
+      uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: ${{ steps.package.outputs.artifact-name }}
+        path: iOS/build-products.tar.gz
+        if-no-files-found: error
+        retention-days: 7
+
+    - name: Upload build logs when the build fails
+      if: failure() || cancelled()
+      uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: ios-ui-build-logs-${{ github.run_id }}-${{ github.run_attempt }}
+        path: iOS/xcodebuild.log
+        if-no-files-found: warn
+        retention-days: 7
+
+  ui-tests-production:
+    name: UI Tests (production)
+    needs: [setup-tests, build-for-testing]
+    if: needs.setup-tests.outputs.run-production == 'true'
+    strategy:
+      # PRs run only production; allow up to eight class/device jobs at once.
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
+    uses: ./.github/workflows/ios_run_ui_test.yml
+    with:
+      test: ${{ matrix.test }}
+      device: ${{ matrix.device }}
+      device-name: ${{ matrix.device-name }}
+      user-mode: production
+      build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
+
+  ui-tests-internal:
+    name: UI Tests (internal warning)
+    needs: [setup-tests, build-for-testing]
+    if: needs.setup-tests.outputs.run-internal == 'true'
+    strategy:
+      # Keep internal at four, so scheduled/manual both-mode runs peak at twelve workers in total.
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
+    uses: ./.github/workflows/ios_run_ui_test.yml
+    with:
+      test: ${{ matrix.test }}
+      device: ${{ matrix.device }}
+      device-name: ${{ matrix.device-name }}
+      user-mode: internal
+      build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
+
+  test-report:
+    name: Report test results
+    if: always() && needs.should-run-checks.outputs.should_run == 'true'
+    needs: [should-run-checks, setup-tests, build-for-testing, ui-tests-production, ui-tests-internal]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v6
+
+    - name: Download test reports
+      uses: actions/download-artifact@v7
+      with:
+        pattern: ios-testreport-*
+        path: reports
+        merge-multiple: true
+
+    - name: Check report completeness
+      if: always()
+      working-directory: ${{ github.workspace }}
+      env:
+        MATRIX: ${{ needs.setup-tests.outputs.include }}
+        RUN_PRODUCTION: ${{ needs.setup-tests.outputs.run-production }}
+        RUN_INTERNAL: ${{ needs.setup-tests.outputs.run-internal }}
+      run: |
+        # Stable per-class/device/mode artifacts replace rerun reports, as in macOS.
+        for mode in production internal; do
+          if [[ "$mode" == production && "$RUN_PRODUCTION" != true ]] || \
+             [[ "$mode" == internal && "$RUN_INTERNAL" != true ]]; then
+            continue
+          fi
+          while IFS= read -r cell; do
+            if [[ ! -s "reports/${cell}-${mode}.xml" ]]; then
+              echo "::error::Missing report for ${cell}-${mode}."
+              exit 1
+            fi
+          done < <(jq -r '.[] | .test + "-" + .device' <<< "$MATRIX")
+        done
+        if compgen -G 'reports/*.invalid' > /dev/null; then
+          echo "::error::A UI-test job did not produce valid execution results. Check its logs and xcresult."
+          exit 1
+        fi
+
+    - name: Publish tests report
+      if: always()
+      uses: mikepenz/action-junit-report@v6
+      with:
+        check_name: Tests Report
+        report_paths: reports/*.xml
+        require_tests: true
+        check_retries: true
+        group_reports: false
+        flaky_summary: true
+        verbose_summary: false
+        include_time_in_summary: true
+        skip_annotations: true
+        fail_on_failure: false
+
+  ui-tests-gate:
+    # Branch protection should require only this stable "UI Tests" check. Internal-mode jobs remain
+    # visibly failed and rerunnable, but assertions are advance warning and do not gate this job.
+    # Missing or invalid internal reports still fail test-report above and therefore block this gate:
+    # broken reporting is workflow infrastructure failure, not an advisory product-test failure.
+    name: UI Tests
+    if: always()
+    needs: [should-run-checks, setup-tests, build-for-testing, ui-tests-production, test-report]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Verify release-gating jobs
+      working-directory: ${{ runner.temp }}
+      env:
+        SHOULD_RUN_RESULT: ${{ needs.should-run-checks.result }}
+        SHOULD_RUN: ${{ needs.should-run-checks.outputs.should_run }}
+        SETUP_RESULT: ${{ needs.setup-tests.result }}
+        BUILD_RESULT: ${{ needs.build-for-testing.result }}
+        PRODUCTION_RESULT: ${{ needs.ui-tests-production.result }}
+        REPORT_RESULT: ${{ needs.test-report.result }}
+        RUN_PRODUCTION: ${{ needs.setup-tests.outputs.run-production }}
+      run: |
+        if [[ "$SHOULD_RUN_RESULT" != success ]]; then
+          echo "::error::Determine-checks job ended with $SHOULD_RUN_RESULT."
+          exit 1
+        fi
+        if [[ "$SHOULD_RUN" != true && "$SHOULD_RUN" != false ]]; then
+          echo "::error::Determine-checks produced invalid should_run='$SHOULD_RUN'."
+          exit 1
+        fi
+        if [[ "$SHOULD_RUN" != true ]]; then
+          exit 0
+        fi
+        if [[ "$SETUP_RESULT" != success || "$BUILD_RESULT" != success || "$REPORT_RESULT" != success ]]; then
+          echo "::error::Required jobs: setup=$SETUP_RESULT, build=$BUILD_RESULT, report=$REPORT_RESULT."
+          exit 1
+        fi
+        if [[ "$RUN_PRODUCTION" == true && "$PRODUCTION_RESULT" != success ]]; then
+          echo "::error::Production UI tests ended with $PRODUCTION_RESULT."
+          exit 1
+        fi

@@ -28,7 +28,6 @@ extension URL {
         static let bangQueryName = "q"
         static let supportedBangs: Set<String> = ["ai", "aichat", "chat", "duckai"]
         static let revokeAccessPath = "/revoke-duckai-access"
-        static let chatFragment = "chat"
     }
 
     static var duckDuckGoHost: String { DuckDuckGo.host }
@@ -81,21 +80,18 @@ extension URL {
     /// Returns `true` for the bare DuckDuckGo homepage, including variants that carry only
     /// non-search query parameters (e.g. `?ia=web`, `?atb=…`). Returns `false` for SERP URLs
     /// (which require a `q=` parameter) and for sub-pages like `/settings` or `/about`.
-    public var isDuckDuckGoHomepage: Bool {
+    var isDuckDuckGoHomepage: Bool {
         guard host == DuckDuckGo.host, path.isEmpty || path == "/" else { return false }
         return queryItems?.contains { $0.name == DuckDuckGo.bangQueryName } != true
     }
 
-    /// Duck.ai's in-page chat route (`#chat`), which duckduckgo.com switches to without leaving the
-    /// document — invisible to `isDuckAIURL`, which only inspects the path and query.
-    public var isDuckAIChatFragment: Bool {
-        fragment?.lowercased().hasPrefix(DuckDuckGo.chatFragment) == true
-    }
-
-    /// The homepage as somewhere a chat can be started *from*, rather than a chat itself: Duck.ai is
-    /// served from homepage-shaped URLs (`?ia=chat`, `#chat`) that `isDuckDuckGoHomepage` accepts.
-    public var isBareDuckDuckGoHomepage: Bool {
-        isDuckDuckGoHomepage && !isDuckAIURL && !isDuckAIChatFragment
+    /// The homepage composer submits to Duck.ai with `origin=funnel_home_website`, which survives the
+    /// redirect to duck.ai and the SPA's later URL cleanup; nothing else sets it.
+    public var isDuckAIOpenedFromHomepage: Bool {
+        guard isDuckAIURL else { return false }
+        return queryItems?.contains {
+            $0.name == AIChatURLParameters.originName && $0.value == AIChatURLParameters.homepageFunnelOriginValue
+        } == true
     }
 
     /// Returns `true` if the URL points to Duck AI voice mode (`?mode=voice`).

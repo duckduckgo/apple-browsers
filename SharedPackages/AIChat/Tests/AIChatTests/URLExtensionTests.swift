@@ -364,41 +364,24 @@ final class URLExtensionTests: XCTestCase {
         XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckDuckGoHomepage)
     }
 
-    // MARK: - Duck.ai Chat Fragment Tests
+    // MARK: - Homepage Funnel Tests
 
-    func testIsDuckAIChatFragment() {
-        XCTAssertTrue(URL(string: "https://duckduckgo.com/#chat")!.isDuckAIChatFragment)
-        XCTAssertTrue(URL(string: "https://duckduckgo.com/#chat/abc123")!.isDuckAIChatFragment)
-        XCTAssertFalse(URL(string: "https://duckduckgo.com/")!.isDuckAIChatFragment)
-        XCTAssertFalse(URL(string: "https://duckduckgo.com/#settings")!.isDuckAIChatFragment)
+    /// The URL duckduckgo.com redirects to when its homepage composer hands a prompt to Duck.ai.
+    func testIsDuckAIOpenedFromHomepage() {
+        let url = URL(string: "https://duck.ai/chat?ia=chat&duckai=1&home=1&prompt=1&origin=funnel_home_website&t=h_")!
+        XCTAssertTrue(url.isDuckAIOpenedFromHomepage)
     }
 
-    /// The fragment is invisible to the path/query predicates, which is why it is checked separately.
-    func testChatFragmentIsInvisibleToTheOtherPredicates() {
-        let url = URL(string: "https://duckduckgo.com/#chat")!
-        XCTAssertTrue(url.isDuckDuckGoHomepage)
-        XCTAssertFalse(url.isDuckAIURL)
+    func testIsDuckAIOpenedFromHomepageRejectsChatsWithoutTheMarker() {
+        XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckAIOpenedFromHomepage)
+        XCTAssertFalse(URL(string: "https://duck.ai/chat?ia=chat")!.isDuckAIOpenedFromHomepage)
+        XCTAssertFalse(URL(string: "https://duck.ai/chat?ia=chat&origin=other")!.isDuckAIOpenedFromHomepage)
     }
 
-    // MARK: - Bare Homepage Tests
-
-    func testIsBareDuckDuckGoHomepage() {
-        XCTAssertTrue(URL(string: "https://duckduckgo.com/")!.isBareDuckDuckGoHomepage)
-        XCTAssertTrue(URL(string: "https://duckduckgo.com/?ia=web")!.isBareDuckDuckGoHomepage)
-    }
-
-    /// A chat is served from homepage-shaped URLs, and must not read as the homepage that opened one.
-    func testIsBareDuckDuckGoHomepageRejectsChats() {
-        XCTAssertTrue(URL(string: "https://duckduckgo.com/?ia=chat")!.isDuckDuckGoHomepage)
-        XCTAssertFalse(URL(string: "https://duckduckgo.com/?ia=chat")!.isBareDuckDuckGoHomepage)
-        XCTAssertFalse(URL(string: "https://duckduckgo.com/#chat")!.isBareDuckDuckGoHomepage)
-        XCTAssertFalse(URL(string: "https://duckduckgo.com/?ia=chat&chatID=abc123")!.isBareDuckDuckGoHomepage)
-    }
-
-    func testIsBareDuckDuckGoHomepageRejectsSERPAndOtherSites() {
-        XCTAssertFalse(URL(string: "https://duckduckgo.com/?q=test")!.isBareDuckDuckGoHomepage)
-        XCTAssertFalse(URL(string: "https://duck.ai/")!.isBareDuckDuckGoHomepage)
-        XCTAssertFalse(URL(string: "https://example.com/")!.isBareDuckDuckGoHomepage)
+    /// The marker only means something on a chat; elsewhere it is just a query parameter.
+    func testIsDuckAIOpenedFromHomepageRequiresAChat() {
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?origin=funnel_home_website")!.isDuckAIOpenedFromHomepage)
+        XCTAssertFalse(URL(string: "https://example.com/?origin=funnel_home_website")!.isDuckAIOpenedFromHomepage)
     }
 
     // MARK: - AIChatTabMetadata.shouldExcludeFromTabPicker

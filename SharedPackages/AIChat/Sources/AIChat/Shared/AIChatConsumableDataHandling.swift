@@ -112,8 +112,8 @@ public enum AIChatConversationSource: String, CaseIterable {
 
     case settings = "settings"
 
-    /// Inferred rather than stamped: no native code opens this one, so it is deduced from the tab
-    /// having loaded on the bare homepage with nothing else claiming the chat.
+    /// No native surface opens this one; it is read from the funnel marker duckduckgo.com puts on
+    /// the chat URL when its homepage hands a prompt over (`URL.isDuckAIOpenedFromHomepage`).
     case duckduckgoHomepage = "duckduckgo-homepage"
 
     /// Named for the attribution gap it measures, not "direct": the app cannot tell deliberate
@@ -142,13 +142,6 @@ public final class AIChatConversationSourceHandler: AIChatConsumableDataHandling
     public init() {}
 
     public func setData(_ data: DataType) {
-        self.data = data
-    }
-
-    /// For a source deduced from a navigation rather than from a deliberate action, so it can never
-    /// displace one a real surface staged moments earlier for the same chat.
-    public func setDataIfAbsent(_ data: DataType) {
-        guard self.data == nil else { return }
         self.data = data
     }
 

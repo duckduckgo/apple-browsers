@@ -30,6 +30,7 @@ final class DaxGreetingServiceTests: XCTestCase {
             calendar.timeZone = TimeZone(secondsFromGMT: 0)!
             return calendar
         }()
+        var language: String? = "en"
         var context = DaxGreetingContext()
         var draws: [Range<Int>] = []
         var chooseLast = false
@@ -37,6 +38,7 @@ final class DaxGreetingServiceTests: XCTestCase {
         func makeService() -> DaxGreetingService {
             DaxGreetingService(now: { self.date },
                                calendarProvider: { self.calendar },
+                               languageProvider: { self.language },
                                contextProvider: { _, _ in self.context },
                                randomIndex: { range in
                 self.draws.append(range)
@@ -47,6 +49,41 @@ final class DaxGreetingServiceTests: XCTestCase {
         func setDate(day: Int = 15, hour: Int, minute: Int = 0, second: Int = 0) {
             date = calendar.date(from: DateComponents(year: 2026, month: 9, day: day,
                                                       hour: hour, minute: minute, second: second))!
+        }
+    }
+
+    func testWhenLanguageIsNotEnglishThenWordplayIsExcludedIncludingGenericFallback() {
+        let englishOnly: Set<DaxGreeting> = [
+            .fridayDuck, .early, .scams, .cookieBreakfast, .cookieLunch, .cookieDinner,
+            .wingIt, .duckIt, .feelingDucky, .diveIn, .duckDuckHello
+        ]
+        let excludedText = Set(englishOnly.map(\.text))
+        for language: String? in ["pl", "fr-CA", nil] {
+            let inputs = Inputs()
+            inputs.language = language
+            inputs.setDate(day: 18, hour: 8)
+            inputs.context = DaxGreetingContext(isCookiePopupProtectionEnabled: true, isScamProtectionEnabled: true)
+            inputs.chooseLast = true
+            let service = inputs.makeService()
+            var history: [String] = []
+            for _ in 0..<30 {
+                let greeting = service.getNewGreeting()
+                XCTAssertFalse(excludedText.contains(greeting))
+                XCTAssertFalse(history.suffix(5).contains(greeting))
+                history.append(greeting)
+            }
+        }
+    }
+
+    func testWhenEnglishLanguageChangesThenCachedWordplayIsReplaced() {
+        for language in ["en", "en-US", "en_GB"] {
+            let inputs = Inputs()
+            inputs.language = language
+            inputs.setDate(hour: 8)
+            let service = inputs.makeService()
+            XCTAssertEqual(service.getGreeting(), DaxGreeting.early.text)
+            inputs.language = "pl"
+            XCTAssertEqual(service.getGreeting(), DaxGreeting.ready.text)
         }
     }
 
@@ -217,6 +254,7 @@ final class DaxGreetingServiceTests: XCTestCase {
             var draws = 0
             let service = DaxGreetingService(now: { inputs.date },
                                              calendarProvider: { inputs.calendar },
+                                             languageProvider: { inputs.language },
                                              contextProvider: { _, _ in inputs.context },
                                              randomIndex: { range in
                 draws += 1

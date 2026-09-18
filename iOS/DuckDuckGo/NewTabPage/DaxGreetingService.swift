@@ -47,6 +47,7 @@ final class DaxGreetingService {
         let day: Date
         let calendar: Calendar
         let appearance: DaxGreetingContext.Appearance?
+        let language: String?
     }
 
     private struct Selection {
@@ -57,6 +58,7 @@ final class DaxGreetingService {
 
     private let now: () -> Date
     private let calendarProvider: () -> Calendar
+    private let languageProvider: () -> String?
     private let contextProvider: (Date, Calendar) -> DaxGreetingContext
     private let randomIndex: (Range<Int>) -> Int
     private var selection: Selection?
@@ -64,10 +66,12 @@ final class DaxGreetingService {
 
     init(now: @escaping () -> Date = Date.init,
          calendarProvider: @escaping () -> Calendar = { Calendar.current },
+         languageProvider: @escaping () -> String? = { Bundle.main.preferredLocalizations.first },
          contextProvider: @escaping (Date, Calendar) -> DaxGreetingContext = { _, _ in DaxGreetingContext() },
          randomIndex: @escaping (Range<Int>) -> Int = { Int.random(in: $0) }) {
         self.now = now
         self.calendarProvider = calendarProvider
+        self.languageProvider = languageProvider
         self.contextProvider = contextProvider
         self.randomIndex = randomIndex
     }
@@ -138,11 +142,16 @@ extension DaxGreetingService: DaxGreetingProviding {
         let date = now()
         let calendar = calendarProvider()
         let context = contextProvider(date, calendar)
-        let groups = eligibleGroups(date: date, calendar: calendar, context: context)
+        let language = languageProvider()
+        let isEnglish = language.map { Locale(identifier: $0).languageCode == "en" } ?? false
+        let groups = eligibleGroups(date: date, calendar: calendar, context: context).map { group in
+            group.filter { isEnglish || !$0.isEnglishOnly }
+        }
         let conditions = Conditions(eligible: Set(groups.flatMap { $0 }),
                                     day: calendar.startOfDay(for: date),
                                     calendar: calendar,
-                                    appearance: context.appearance)
+                                    appearance: context.appearance,
+                                    language: language)
         if !forceRefresh, let selection,
            date >= selection.date,
            conditions == selection.conditions {
@@ -154,7 +163,7 @@ extension DaxGreetingService: DaxGreetingProviding {
         }.filter { !$0.isEmpty }
         let candidates: [DaxGreeting]
         if availableGroups.isEmpty {
-            candidates = DaxGreeting.generic.filter { !recentGreetings.contains($0) }
+            candidates = DaxGreeting.generic.filter { (isEnglish || !$0.isEnglishOnly) && !recentGreetings.contains($0) }
         } else {
             candidates = availableGroups[randomIndex(availableGroups.indices)]
         }

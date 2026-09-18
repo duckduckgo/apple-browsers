@@ -54,6 +54,16 @@ enum DaxGreeting: String, CaseIterable {
     case searchOrChat
     case duckDuckHello
 
+    var isEnglishOnly: Bool {
+        switch self {
+        case .fridayDuck, .early, .scams, .cookieBreakfast, .cookieLunch, .cookieDinner,
+             .wingIt, .duckIt, .feelingDucky, .diveIn, .duckDuckHello:
+            return true
+        default:
+            return false
+        }
+    }
+
     var text: String {
         switch self {
         case .monday: return UserText.daxGreetingMonday

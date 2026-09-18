@@ -38,6 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        runner: [image:osx-tahoe-26, general-purpose]
         include:
           - xcode-version: "26.6"
             runner: [image:osx-tahoe-26, general-purpose]

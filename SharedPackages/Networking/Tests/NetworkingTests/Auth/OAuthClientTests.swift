@@ -41,7 +41,7 @@ extension OAuthClientRefreshEvent: Equatable {
     }
 }
 
-class OAuthEventCapture {
+final class OAuthEventCapture {
     private(set) var capturedEvents: [OAuthClientRefreshEvent] = []
 
     var eventMapping: EventMapping<OAuthClientRefreshEvent> {

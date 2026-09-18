@@ -1,5 +1,5 @@
 //
-//  HTTPURLResponseExtension.swift
+//  HTTPURLResponseExtension+Testing.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //

@@ -17,7 +17,7 @@
 //
 
 import Foundation
-@testable import JWTKit
+import JWTKit
 
 @_spi(Testing)
 public struct OAuthTokensFactory {

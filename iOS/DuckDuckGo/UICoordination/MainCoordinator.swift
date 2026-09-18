@@ -437,6 +437,7 @@ final class MainCoordinator {
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             mainViewController: controller,
+            featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager,
             autoconsentPreferences: AppUserDefaults(),
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,

@@ -18,6 +18,16 @@
 
 import Foundation
 
+/// Identifies the reload operation that failed before a replacement extension context became active.
+@available(macOS 15.4, iOS 18.4, *)
+public enum WebExtensionReloadFailurePhase: String, Equatable, Sendable {
+    case unload
+    case load
+    case lightweightLoad = "light_load"
+    case fullLoad = "full_load"
+    case fallbackLoad = "fallback_load"
+}
+
 /// Events that can be fired for web extension management.
 @available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionPixelEvent {
@@ -29,6 +39,11 @@ public enum WebExtensionPixelEvent {
     case uninstallAllError(error: Error)
     case loaded
     case loadError(error: Error)
+    /// The extension manager failed to unload or load a context while reloading an extension.
+    case reloadError(type: DuckDuckGoWebExtensionType?,
+                     trigger: WebExtensionReloadTrigger,
+                     phase: WebExtensionReloadFailurePhase,
+                     error: Error)
 
     /// Fired on every consistency check (denominator for the not-loaded rate).
     case stateChecked
@@ -49,9 +64,9 @@ public enum WebExtensionPixelEvent {
     case scriptletInstallError(type: DuckDuckGoWebExtensionType, error: Error)
 
     /// CPM did not return dashboard state before a navigation's grace period expired.
-    case cpmInitializationFailed(reason: CPMMessagingFailureReason)
+    case cpmInitializationFailed(reason: CPMMessagingFailureReason, diagnostics: CPMMessagingDiagnostics? = nil)
     /// A later eligible navigation confirmed the preceding initialization failure.
-    case cpmMessagingStuck(reason: CPMMessagingFailureReason)
+    case cpmMessagingStuck(reason: CPMMessagingFailureReason, diagnostics: CPMMessagingDiagnostics? = nil)
     /// CPM messaging recovered without an intervening successful extension reload.
     case cpmMessagingRecoveredWithoutExtensionReload
     /// CPM messaging recovered after an embedded-extension reload.
@@ -66,6 +81,44 @@ public enum CPMWebExtensionPixelFrequency: Equatable, Sendable {
     case dailyAndCount
 }
 
+/// PII-free metadata shared by the iOS and macOS reload-error pixel adapters.
+@available(macOS 15.4, iOS 18.4, *)
+public struct WebExtensionReloadErrorPixelMetadata: Equatable, Sendable {
+    public static let name = "debug_web_extension_reload_failed"
+
+    public let parameters: [String: String]
+
+    public init(type: DuckDuckGoWebExtensionType?,
+                trigger: WebExtensionReloadTrigger,
+                phase: WebExtensionReloadFailurePhase,
+                error: Error) {
+        let nsError = error as NSError
+        var parameters = [
+            "extension_type": type?.shortLabel ?? "unknown",
+            "reload_trigger": trigger.pixelParameterValue,
+            "reload_phase": phase.rawValue,
+            "d": nsError.domain,
+            "e": String(nsError.code)
+        ]
+        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
+            parameters["ud"] = underlying.domain
+            parameters["ue"] = String(underlying.code)
+        }
+        self.parameters = parameters
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private extension WebExtensionReloadTrigger {
+    var pixelParameterValue: String {
+        switch self {
+        case .dataClearing: return "data_clearing"
+        case .scriptletUpdate: return "scriptlet_update"
+        case .explicit: return "explicit"
+        }
+    }
+}
+
 /// Canonical CPM pixel contract. Platform adapters preserve these names and let PixelKit apply its standard platform suffix policy.
 public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
     public let name: String
@@ -75,14 +128,14 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
     @available(macOS 15.4, iOS 18.4, *)
     public init?(event: WebExtensionPixelEvent) {
         switch event {
-        case .cpmInitializationFailed(let reason):
+        case .cpmInitializationFailed(let reason, let diagnostics):
             name = "debug_web_extension_cpm_initialization_failed_after_\(reason.rawValue)"
             frequency = .daily
-            parameters = [:]
-        case .cpmMessagingStuck(let reason):
+            parameters = diagnostics?.pixelParameters ?? [:]
+        case .cpmMessagingStuck(let reason, let diagnostics):
             name = "debug_web_extension_cpm_messaging_stuck_\(reason.rawValue)"
             frequency = .dailyAndCount
-            parameters = [:]
+            parameters = diagnostics?.pixelParameters ?? [:]
         case .cpmMessagingRecoveredWithoutExtensionReload:
             name = "debug_web_extension_cpm_messaging_recovered_without_extension_reload"
             frequency = .dailyAndCount
@@ -96,7 +149,7 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             frequency = .dailyAndCount
             parameters = [:]
         case .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
-             .uninstallAllError, .loaded, .loadError, .stateChecked, .expectedExtensionNotLoaded,
+             .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
              .scriptletValidationError, .scriptletInstalled, .scriptletInstallError:

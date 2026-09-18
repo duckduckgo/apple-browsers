@@ -36,4 +36,12 @@ public protocol WebExtensionMessageRouting: AnyObject {
     /// - Parameter message: The message to route
     /// - Returns: The result of handling the message
     func routeMessage(_ message: WebExtensionMessage) async -> WebExtensionMessageResult
+
+    /// Whether the router currently has a handler for this extension feature.
+    func hasHandler(for extensionIdentifier: String, featureName: String) -> Bool
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension WebExtensionMessageRouting {
+    func hasHandler(for extensionIdentifier: String, featureName: String) -> Bool { false }
 }

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F0C05EDC0123456789000001 /* RedesignedNewTabPageFocusedViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05EDC0123456789000002 /* RedesignedNewTabPageFocusedViewControllerTests.swift */; };
 		02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02025663298818B100E694E7 /* NetworkExtension.framework */; };
 		021440742C7FAB1900426724 /* ConfigurationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021440732C7FAB1900426724 /* ConfigurationManager.swift */; };
 		021440762C7FAB4100426724 /* ConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021440752C7FAB4100426724 /* ConfigurationStore.swift */; };
@@ -2603,6 +2604,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F0C05EDC0123456789000002 /* RedesignedNewTabPageFocusedViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedesignedNewTabPageFocusedViewControllerTests.swift; sourceTree = "<group>"; };
 		02025662298818B100E694E7 /* PacketTunnelProvider.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PacketTunnelProvider.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		02025663298818B100E694E7 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 		02025668298818B200E694E7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -8885,6 +8887,7 @@
 				A8440B0101C0DE0000000003 /* FloatingOmnibarTransitionMetricsTests.swift */,
 				E1D031AA99B743E792AF1004 /* NewTabPageSearchInputModelTests.swift */,
 				E1D031AA99B743E792AF1002 /* NewTabPageInputPresentationTests.swift */,
+				F0C05EDC0123456789000002 /* RedesignedNewTabPageFocusedViewControllerTests.swift */,
 				97D45F4B302B5FC2002388C8 /* UpdatedModelPickerFeatureTests.swift */,
 				C18390CB2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift */,
 				BBA0000000000000000A0003 /* TabInputStateTests.swift */,
@@ -13380,6 +13383,7 @@
 				A8440B0101C0DE0000000004 /* FloatingOmnibarTransitionMetricsTests.swift in Sources */,
 				E1D031AA99B743E792AF1003 /* NewTabPageSearchInputModelTests.swift in Sources */,
 				E1D031AA99B743E792AF1001 /* NewTabPageInputPresentationTests.swift in Sources */,
+				F0C05EDC0123456789000001 /* RedesignedNewTabPageFocusedViewControllerTests.swift in Sources */,
 				C18390CC2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift in Sources */,
 				BBA0000000000000000A0004 /* TabInputStateTests.swift in Sources */,
 				BBA0000000000000000D0004 /* UnifiedInputStateStoreTests.swift in Sources */,

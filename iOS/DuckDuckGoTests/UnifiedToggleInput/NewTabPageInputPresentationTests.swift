@@ -23,6 +23,14 @@ import XCTest
 
 final class NewTabPageInputPresentationTests: XCTestCase {
 
+    func testWhenOnlyRedesignedUnifiedInputIsEditingThenFocusedContentContainerIsUsed() {
+        XCTAssertTrue(NewTabPageInputPresentation.editing(usesUnifiedInput: true).usesFocusedContentContainer)
+        XCTAssertFalse(NewTabPageInputPresentation.editing(usesUnifiedInput: false).usesFocusedContentContainer)
+        XCTAssertFalse(NewTabPageInputPresentation.resting(usesUnifiedInput: true).usesFocusedContentContainer)
+        XCTAssertFalse(NewTabPageInputPresentation.resting(usesUnifiedInput: false).usesFocusedContentContainer)
+        XCTAssertFalse(NewTabPageInputPresentation.browser.usesFocusedContentContainer)
+    }
+
     func testWhenPageHasNoInlineInputThenBrowserChromeIsPreserved() {
         let configurations = [(usesUnifiedInput: false, isEditing: false),
                               (usesUnifiedInput: true, isEditing: false),

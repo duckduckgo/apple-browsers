@@ -22,10 +22,11 @@ import Foundation
 @MainActor
 protocol DaxGreetingProviding {
     func getGreeting() -> String
+    func getNewGreeting() -> String
 }
 
 /// A snapshot supplied by the integration layer. Nil means the corresponding context is unavailable.
-/// Open counts and protection events must describe today in the supplied calendar and time zone.
+/// Open counts must describe today in the supplied calendar and time zone; protection flags describe current availability.
 struct DaxGreetingContext {
     enum Appearance: Equatable {
         case light, dark
@@ -34,10 +35,10 @@ struct DaxGreetingContext {
     var appearance: Appearance?
     var isFirstOpenOfDay: Bool?
     var foregroundOpenCount: Int?
-    var hasBlockedTrackersToday: Bool?
-    var hasHandledCookiePopupsToday: Bool?
-    var hasBlockedAdsToday: Bool?
-    var hasPreventedScamToday: Bool?
+    var isTrackerProtectionEnabled: Bool?
+    var isCookiePopupProtectionEnabled: Bool?
+    var isAdBlockingEnabled: Bool?
+    var isScamProtectionEnabled: Bool?
 }
 
 /// Share one instance between NTP consumers. Cache and history reset with a new instance.
@@ -110,12 +111,12 @@ final class DaxGreetingService {
         }
 
         var features: [DaxGreeting] = []
-        if context.hasBlockedTrackersToday == true {
+        if context.isTrackerProtectionEnabled == true {
             features += [.trackersQuiet, .trackersSearch, .trackersAsk]
         }
-        if context.hasHandledCookiePopupsToday == true { features.append(.cookies) }
-        if context.hasBlockedAdsToday == true { features.append(.ads) }
-        if context.hasPreventedScamToday == true { features.append(.scams) }
+        if context.isCookiePopupProtectionEnabled == true { features.append(.cookies) }
+        if context.isAdBlockingEnabled == true { features.append(.ads) }
+        if context.isScamProtectionEnabled == true { features.append(.scams) }
 
         // Each inventory category gets one random draw, regardless of its variant count.
         return [
@@ -125,13 +126,21 @@ final class DaxGreetingService {
             context.isFirstOpenOfDay == true ? [.firstOpen] : [],
             (context.foregroundOpenCount ?? 0) >= 3 ? [.frequentHabit, .frequentSearch] : [],
             features,
-            context.hasHandledCookiePopupsToday == true ? meal : []
+            context.isCookiePopupProtectionEnabled == true ? meal : []
         ]
     }
 }
 
 extension DaxGreetingService: DaxGreetingProviding {
     func getGreeting() -> String {
+        selectGreeting(forceRefresh: false)
+    }
+
+    func getNewGreeting() -> String {
+        selectGreeting(forceRefresh: true)
+    }
+
+    private func selectGreeting(forceRefresh: Bool) -> String {
         let date = now()
         let calendar = calendarProvider()
         let context = contextProvider(date, calendar)
@@ -140,9 +149,8 @@ extension DaxGreetingService: DaxGreetingProviding {
                                     day: calendar.startOfDay(for: date),
                                     calendar: calendar,
                                     appearance: context.appearance)
-        if let selection,
+        if !forceRefresh, let selection,
            date >= selection.date,
-           date.timeIntervalSince(selection.date) < 30 * 60,
            conditions == selection.conditions {
             return selection.greeting.text
         }

@@ -50,22 +50,30 @@ final class DaxGreetingServiceTests: XCTestCase {
         }
     }
 
-    func testWhenCooldownExpiresThenCachedCallsHaveNotExtendedItOrChangedHistory() {
+    func testWhenTimePassesWithoutConditionChangesThenGreetingRemainsCached() {
         let inputs = Inputs()
         inputs.setDate(hour: 8)
         let service = inputs.makeService()
         XCTAssertEqual(service.getGreeting(), DaxGreeting.early.text)
-        for interval in [0.0, 1, 1799] {
+        for interval in [0.0, 1, 1799, 1800, 3600] {
             inputs.setDate(hour: 8)
             inputs.date += interval
             XCTAssertEqual(service.getGreeting(), DaxGreeting.early.text)
         }
         XCTAssertEqual(inputs.draws.count, 2)
-        inputs.setDate(hour: 8, minute: 30)
+        XCTAssertEqual(service.getNewGreeting(), DaxGreeting.wingIt.text)
         XCTAssertEqual(service.getGreeting(), DaxGreeting.wingIt.text)
-        inputs.setDate(hour: 9)
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.duckIt.text)
+        XCTAssertEqual(service.getNewGreeting(), DaxGreeting.duckIt.text)
         XCTAssertEqual(inputs.draws.count, 4)
+    }
+
+    func testWhenNewGreetingIsRequestedImmediatelyThenCacheIsBypassed() {
+        let inputs = Inputs()
+        inputs.setDate(hour: 8)
+        let service = inputs.makeService()
+        XCTAssertEqual(service.getNewGreeting(), DaxGreeting.early.text)
+        XCTAssertEqual(service.getNewGreeting(), DaxGreeting.wingIt.text)
+        XCTAssertEqual(service.getGreeting(), DaxGreeting.wingIt.text)
     }
 
     func testWhenTimeIsAtWindowBoundaryThenCorrectGreetingIsEligible() {
@@ -107,8 +115,7 @@ final class DaxGreetingServiceTests: XCTestCase {
         inputs.setDate(day: 18, hour: 8)
         let service = inputs.makeService()
         XCTAssertEqual(service.getGreeting(), DaxGreeting.fridaySearch.text)
-        inputs.date += 1800
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.fridayDuck.text)
+        XCTAssertEqual(service.getNewGreeting(), DaxGreeting.fridayDuck.text)
     }
 
     func testWhenAppearanceChangesOrBecomesUnavailableThenCacheRefreshes() {
@@ -152,10 +159,10 @@ final class DaxGreetingServiceTests: XCTestCase {
         XCTAssertEqual(inputs.context.foregroundOpenCount, 2)
     }
 
-    func testWhenProtectionFiresThenItsGreetingBecomesEligibleAndRemovalRefreshesCache() {
+    func testWhenProtectionIsEnabledThenItsGreetingBecomesEligibleAndDisablingRefreshesCache() {
         let cases: [(WritableKeyPath<DaxGreetingContext, Bool?>, DaxGreeting)] = [
-            (\.hasBlockedTrackersToday, .trackersAsk), (\.hasHandledCookiePopupsToday, .cookies),
-            (\.hasBlockedAdsToday, .ads), (\.hasPreventedScamToday, .scams)
+            (\.isTrackerProtectionEnabled, .trackersAsk), (\.isCookiePopupProtectionEnabled, .cookies),
+            (\.isAdBlockingEnabled, .ads), (\.isScamProtectionEnabled, .scams)
         ]
         for (key, greeting) in cases {
             let inputs = Inputs()
@@ -171,14 +178,14 @@ final class DaxGreetingServiceTests: XCTestCase {
         }
     }
 
-    func testWhenCookieProtectionFiresThenMealGreetingRequiresMatchingTimeWindow() {
+    func testWhenCookieProtectionIsEnabledThenMealGreetingRequiresMatchingTimeWindow() {
         for (hour, expected) in [(3, DaxGreeting.cookieBreakfast), (12, .cookieLunch), (18, .cookieDinner), (22, .cookies)] {
             let inputs = Inputs()
             inputs.setDate(hour: hour)
             inputs.chooseLast = true
-            inputs.context.hasHandledCookiePopupsToday = true
+            inputs.context.isCookiePopupProtectionEnabled = true
             XCTAssertEqual(inputs.makeService().getGreeting(), expected.text)
-            inputs.context.hasHandledCookiePopupsToday = false
+            inputs.context.isCookiePopupProtectionEnabled = false
             XCTAssertNotEqual(inputs.makeService().getGreeting(), expected.text)
         }
     }
@@ -194,8 +201,8 @@ final class DaxGreetingServiceTests: XCTestCase {
         let inputs = Inputs()
         inputs.setDate(day: 18, hour: 8)
         inputs.context = DaxGreetingContext(appearance: .dark, isFirstOpenOfDay: true, foregroundOpenCount: 3,
-                                           hasBlockedTrackersToday: true, hasHandledCookiePopupsToday: true,
-                                           hasBlockedAdsToday: true, hasPreventedScamToday: true)
+                                           isTrackerProtectionEnabled: true, isCookiePopupProtectionEnabled: true,
+                                           isAdBlockingEnabled: true, isScamProtectionEnabled: true)
         XCTAssertEqual(inputs.makeService().getGreeting(), DaxGreeting.fridaySearch.text)
         XCTAssertEqual(inputs.draws, [0..<7, 0..<2])
     }
@@ -205,8 +212,8 @@ final class DaxGreetingServiceTests: XCTestCase {
         for (index, greeting) in expected.enumerated() {
             let inputs = Inputs()
             inputs.setDate(hour: 23)
-            inputs.context = DaxGreetingContext(hasBlockedTrackersToday: true, hasHandledCookiePopupsToday: true,
-                                               hasBlockedAdsToday: true, hasPreventedScamToday: true)
+            inputs.context = DaxGreetingContext(isTrackerProtectionEnabled: true, isCookiePopupProtectionEnabled: true,
+                                               isAdBlockingEnabled: true, isScamProtectionEnabled: true)
             var draws = 0
             let service = DaxGreetingService(now: { inputs.date },
                                              calendarProvider: { inputs.calendar },
@@ -227,8 +234,7 @@ final class DaxGreetingServiceTests: XCTestCase {
         inputs.context.foregroundOpenCount = 3
         let service = inputs.makeService()
         XCTAssertEqual(service.getGreeting(), DaxGreeting.frequentSearch.text)
-        inputs.date += 1800
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.frequentHabit.text)
+        XCTAssertEqual(service.getNewGreeting(), DaxGreeting.frequentHabit.text)
     }
 
     func testWhenMidnightPassesWithoutEligibilityChangeThenCacheRefreshes() {
@@ -280,8 +286,7 @@ final class DaxGreetingServiceTests: XCTestCase {
         let service = inputs.makeService()
         let expected: [DaxGreeting] = [.early, .wingIt, .duckIt, .ready, .feelingDucky, .diveIn, .early, .wingIt]
         for greeting in expected {
-            XCTAssertEqual(service.getGreeting(), greeting.text)
-            inputs.date += 1800
+            XCTAssertEqual(service.getNewGreeting(), greeting.text)
         }
         XCTAssertEqual(inputs.makeService().getGreeting(), DaxGreeting.early.text)
     }

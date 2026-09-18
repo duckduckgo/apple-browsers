@@ -963,6 +963,7 @@ extension MainViewController {
     }
 
     func applyTopChromeState(renderState: UTIRenderState, isOnAITab: Bool, coordinator: UnifiedToggleInputCoordinator) {
+        updateUnifiedInputContentContainment()
         if isOnAITab, viewCoordinator.isNavigationChromeHidden {
             let chromeBackgroundState = aiTabChromeBackgroundState(for: renderState)
             applyUnifiedInputChromeBackground(chromeBackgroundState, updateWebView: false)
@@ -996,8 +997,7 @@ extension MainViewController {
     }
 
     func installUnifiedInputContentViewController() {
-        guard let coordinator = unifiedToggleInputCoordinator,
-              let container = viewCoordinator.unifiedInputContentContainer else {
+        guard let coordinator = unifiedToggleInputCoordinator else {
             return
         }
 
@@ -1024,16 +1024,17 @@ extension MainViewController {
             coordinator.dismissOmnibarKeyboard()
         }
 
-        addChild(contentVC)
-        contentVC.view.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(contentVC.view)
-        NSLayoutConstraint.activate([
-            contentVC.view.topAnchor.constraint(equalTo: container.topAnchor),
-            contentVC.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            contentVC.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            contentVC.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-        ])
-        contentVC.didMove(toParent: self)
+        updateUnifiedInputContentContainment()
+    }
+
+    func updateUnifiedInputContentContainment() {
+        guard let coordinator = unifiedToggleInputCoordinator,
+              let container = viewCoordinator.unifiedInputContentContainer else { return }
+        RedesignedNewTabPageFocusedViewController.updateContainment(
+            of: coordinator.contentViewController,
+            in: self,
+            container: container,
+            usesFocusedContainer: currentTab?.isAITab != true && newTabPageInputPresentation.usesFocusedContentContainer)
     }
 
     func installFloatingReturnKeyViewController() {

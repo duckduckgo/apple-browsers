@@ -38,6 +38,10 @@ enum NewTabPageInputPresentation: Equatable {
         return isEditing ? .editing(usesUnifiedInput: usesUnifiedInput) : .resting(usesUnifiedInput: usesUnifiedInput)
     }
 
+    var usesFocusedContentContainer: Bool {
+        self == .editing(usesUnifiedInput: true)
+    }
+
     var hidesNavigationContainer: Bool {
         if case .resting = self { return true }
         return false

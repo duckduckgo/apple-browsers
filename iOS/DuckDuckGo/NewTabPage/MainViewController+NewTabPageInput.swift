@@ -22,15 +22,20 @@ import UIKit
 
 extension MainViewController {
 
-    func updateAddressBarSuppressionForNewTabPage() {
+    var newTabPageInputPresentation: NewTabPageInputPresentation {
         let hasInlineInput = newTabPageViewController?.hasInlineSearchInput == true
-        let presentation = NewTabPageInputPresentation.resolve(
+        return NewTabPageInputPresentation.resolve(
             hasInlineInput: hasInlineInput,
             usesUnifiedInput: unifiedToggleInputCoordinator != nil,
             isLegacyInputEditing: hasInlineInput && viewCoordinator.omniBar.isTextFieldEditing,
             isUnifiedInputEditing: unifiedToggleInputCoordinator?.isOmnibarSession == true,
             isHandingOff: isAddressBarHandOffInProgress,
             isDismissing: viewCoordinator.isInlineInputDismissInProgress)
+    }
+
+    func updateAddressBarSuppressionForNewTabPage() {
+        let presentation = newTabPageInputPresentation
+        updateUnifiedInputContentContainment()
         guard viewCoordinator.newTabPageInputPresentation != presentation else { return }
         if presentation.hidesNavigationContainer || presentation.transition != .inlineInput {
             restingNewTabPageSnapshot = nil

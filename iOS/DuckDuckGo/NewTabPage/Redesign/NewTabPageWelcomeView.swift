@@ -68,7 +68,7 @@ struct NewTabPageWelcomeView: View {
 private enum Metrics {
     static let horizontalMargin: CGFloat = 16
     static let horizontalPadding: CGFloat = 10
-    static let bottomPadding: CGFloat = 12
+    static let bottomPadding: CGFloat = 20
     static let logoSize: CGFloat = 64
     static let logoToTextSpacing: CGFloat = 16
 }

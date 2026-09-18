@@ -310,7 +310,12 @@ final class SyncDialogController {
         }
     }
 
-    private func switchAccounts(recoveryKey: SyncCode.RecoveryKey) async {
+    @discardableResult
+    private func switchAccounts(recoveryKey: SyncCode.RecoveryKey) async -> Bool {
+        defer {
+            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedAccount)
+        }
+
         do {
             try await syncService.disconnect()
         } catch {
@@ -323,8 +328,9 @@ final class SyncDialogController {
             mapDevices(registeredDevices)
         } catch {
             PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedLoginError)
+            return false
         }
-        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedAccount)
+        return true
     }
 
     private func fireCodeCopiedPixel(code: String, sourceHint: SyncSetupSource?) {
@@ -954,9 +960,10 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         sendSetupEndedFailedPixel(setupRole: setupRole, reason: SyncSetupPixelKitEvent.ParameterValue.alreadyPaired)
     }
 
+    @discardableResult
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
                                                     setupRole: SyncSetupRole,
-                                                    shouldPromptBeforeSwitchingAccounts: Bool) async {
+                                                    shouldPromptBeforeSwitchingAccounts: Bool) async -> Bool {
         await handleAccountAlreadyExists(recoveryKey, shouldPromptBeforeSwitchingAccounts: shouldPromptBeforeSwitchingAccounts)
     }
 
@@ -1029,16 +1036,22 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         }
     }
 
-    private func handleAccountAlreadyExists(_ recoveryKey: SyncCode.RecoveryKey, shouldPromptBeforeSwitchingAccounts: Bool) async {
+    @discardableResult
+    private func handleAccountAlreadyExists(_ recoveryKey: SyncCode.RecoveryKey, shouldPromptBeforeSwitchingAccounts: Bool) async -> Bool {
+        defer {
+            PixelKit.fire(DebugEvent(GeneralPixel.syncLoginExistingAccountError(error: SyncError.accountAlreadyExists)))
+        }
+
         // For V2 we're intentionally not showing prompt here
         if shouldPromptBeforeSwitchingAccounts && devices.count > 1 {
             managementDialogModel.showSwitchAccountsMessage()
             PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncAskUserToSwitchAccount)
+            return false
         } else {
-            await switchAccounts(recoveryKey: recoveryKey)
+            let didSwitchAccounts = await switchAccounts(recoveryKey: recoveryKey)
             managementDialogModel.endFlow()
+            return didSwitchAccounts
         }
-        PixelKit.fire(DebugEvent(GeneralPixel.syncLoginExistingAccountError(error: SyncError.accountAlreadyExists)))
     }
 
     private func sendCodeRecognisedPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource, codeVersion: SyncSetupCodeVersion) {

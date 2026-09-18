@@ -30,6 +30,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         static let customizeButtonTrailingMargin: CGFloat = 20
         static let customizeButtonSize: CGFloat = 44
         static let contentTopInset: CGFloat = 96
+        static let entranceTranslation: CGFloat = 12
+        static let entranceDuration: TimeInterval = 0.25
     }
 
     weak var delegate: NewTabPageControllerDelegate?
@@ -40,6 +42,10 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
     var hasInlineSearchInput: Bool { true }
 
     private let blocks: [any NewTabPageBlock]
+    private var isEntranceAnimationPending = false
+    private var entranceAnimator: UIViewPropertyAnimator?
+
+    private let contentContainerView = UIView()
 
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -102,22 +108,62 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         // The page is attached with alpha 0 ahead of a contextual dialog so content cannot flash
         // for a frame first, and is expected to restore it itself.
         view.alpha = 1
+        guard isEntranceAnimationPending else { return }
+        isEntranceAnimationPending = false
+        let animator = UIViewPropertyAnimator(duration: Metrics.entranceDuration, curve: .easeOut) { [weak self] in
+            self?.restoreEntrancePose()
+        }
+        entranceAnimator = animator
+        animator.startAnimation()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        finishEntranceAnimation()
+    }
+
+    func prepareForEntranceAnimation(if shouldAnimate: Bool) {
+        guard shouldAnimate, !UIAccessibility.isReduceMotionEnabled else { return }
+        loadViewIfNeeded()
+        isEntranceAnimationPending = true
+        contentContainerView.alpha = 0
+        contentContainerView.transform = CGAffineTransform(translationX: 0, y: Metrics.entranceTranslation)
+    }
+
+    private func restoreEntrancePose() {
+        contentContainerView.alpha = 1
+        contentContainerView.transform = .identity
+    }
+
+    func finishEntranceAnimation() {
+        guard isEntranceAnimationPending || entranceAnimator != nil else { return }
+        isEntranceAnimationPending = false
+        entranceAnimator?.stopAnimation(true)
+        entranceAnimator = nil
+        restoreEntrancePose()
     }
 
     private func addSubviews() {
-        view.addSubview(scrollView)
+        view.addSubview(contentContainerView)
+        contentContainerView.addSubview(scrollView)
         scrollView.addSubview(blocksStackView)
-        view.addSubview(customizeButton)
+        contentContainerView.addSubview(customizeButton)
 
+        contentContainerView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         blocksStackView.translatesAutoresizingMaskIntoConstraints = false
         customizeButton.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            contentContainerView.topAnchor.constraint(equalTo: view.topAnchor),
+            contentContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            contentContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            contentContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+
+            scrollView.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor),
 
             blocksStackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: Metrics.contentTopInset),
             blocksStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
@@ -128,9 +174,9 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
             // thing that can make the page scroll.
             blocksStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
 
-            customizeButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor,
+            customizeButton.topAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.topAnchor,
                                                  constant: Metrics.customizeButtonTopMargin),
-            customizeButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+            customizeButton.trailingAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.trailingAnchor,
                                                       constant: -Metrics.customizeButtonTrailingMargin),
             customizeButton.widthAnchor.constraint(equalToConstant: Metrics.customizeButtonSize),
             customizeButton.heightAnchor.constraint(equalToConstant: Metrics.customizeButtonSize)
@@ -229,6 +275,9 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     }
 
     func setSearchInputEditing(_ isEditing: Bool) {
+        if isEditing {
+            finishEntranceAnimation()
+        }
         searchInputView?.alpha = isEditing ? 0 : 1
         searchInputView?.accessibilityElementsHidden = isEditing
         searchInputView?.isUserInteractionEnabled = !isEditing

@@ -22,6 +22,11 @@ import UITestingSupport
 
 final class BackgroundingUITests: UITestCase {
 
+    override var additionalLaunchEnvironment: [String: String] {
+        // Avoid XCTest's repeated animation-idle waits after backgrounding.
+        ["UITEST_DISABLE_ANIMATIONS": "1"]
+    }
+
     override func setUpWithError() throws {
         try super.setUpWithError()
         app.resetBookmarks()

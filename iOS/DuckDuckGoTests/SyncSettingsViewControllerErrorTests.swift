@@ -433,6 +433,111 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenPeerCancelsPairingThenDismissesPresentedPairingUIAndConnectingSheet() async {
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+        spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
+
+        await spyVC.controllerDidError(.syncCancelledFromOtherDevice, underlyingError: nil, setupRole: .sharer)
+
+        XCTAssertEqual(spyVC.dismissPresentedViewControllerCallCount, 1)
+        XCTAssertNil(spyVC.viewModel.connectingSheetPhase)
+        XCTAssertEqual(spyVC.presentCallCount, 1)
+    }
+
+    @MainActor
+    func testWhenLocalConfirmationIsCancelledThenClearsConnectingSheetWithoutShowingError() async {
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+        spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
+        spyVC.onPresent = { [weak spyVC] _ in
+            let continuation = spyVC?.pairingV2ConfirmationContinuation
+            spyVC?.pairingV2ConfirmationContinuation = nil
+            spyVC?.pairingV2ConfirmationAlert = nil
+            continuation?.resume(returning: false)
+        }
+
+        let confirmed = await spyVC.controllerShouldJoinPairingV2Peer(peerName: "Mac", peerKind: .ddg)
+
+        XCTAssertFalse(confirmed)
+        XCTAssertNil(spyVC.viewModel.connectingSheetPhase)
+        XCTAssertEqual(spyVC.presentCallCount, 1)
+    }
+
+    @MainActor
+    func testWhenPairingSetupIsDismissedThenRemovesScannerAndNestedQRCodeSheet() async {
+        let navigationController = UINavigationController(rootViewController: vc)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = navigationController
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        let scanner = UINavigationController(rootViewController: UIViewController())
+        vc.scanCodeNavigationController = scanner
+        scanner.modalPresentationStyle = .fullScreen
+        let qrSheet = UIViewController()
+        await withCheckedContinuation { continuation in
+            navigationController.present(scanner, animated: false) { continuation.resume() }
+        }
+        await withCheckedContinuation { continuation in
+            scanner.present(qrSheet, animated: false) { continuation.resume() }
+        }
+        XCTAssertTrue(navigationController.presentedViewController === scanner)
+        XCTAssertTrue(scanner.presentedViewController === qrSheet)
+
+        await vc.dismissPairingV2Setup()
+
+        XCTAssertNil(navigationController.presentedViewController)
+        XCTAssertNil(scanner.presentingViewController)
+        XCTAssertNil(qrSheet.presentingViewController)
+        XCTAssertNil(vc.viewModel.connectingSheetPhase)
+    }
+
+    @MainActor
+    func testWhenPairingScannerHasBeenDismissedThenCleanupPreservesUnrelatedModal() async {
+        let navigationController = UINavigationController(rootViewController: vc)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = navigationController
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        let scanner = UINavigationController(rootViewController: UIViewController())
+        vc.scanCodeNavigationController = scanner
+        await withCheckedContinuation { continuation in
+            navigationController.present(scanner, animated: false) { continuation.resume() }
+        }
+        await withCheckedContinuation { continuation in
+            navigationController.dismiss(animated: false) { continuation.resume() }
+        }
+        let unrelatedModal = UIViewController()
+        await withCheckedContinuation { continuation in
+            navigationController.present(unrelatedModal, animated: false) { continuation.resume() }
+        }
+
+        await vc.dismissPairingV2Setup()
+
+        XCTAssertTrue(navigationController.presentedViewController === unrelatedModal)
+        XCTAssertTrue(navigationController.topViewController === vc)
+        await withCheckedContinuation { continuation in
+            navigationController.dismiss(animated: false) { continuation.resume() }
+        }
+    }
+
+    @MainActor
     func testWhenControllerDidCreateSyncAccountWithoutShowingSyncEnabledThenDoesNotPresentCompletionUI() {
         let spyVC = SpySyncSettingsViewController(
             syncService: ddgSyncing,
@@ -675,6 +780,8 @@ private final class SpySyncSettingsViewController: SyncSettingsViewController {
     var dismissPresentedViewControllerCallCount = 0
     var dismissVCAndShowDeviceSyncedToastCallCount = 0
     var askForPairingConfirmationCallCount = 0
+    var presentCallCount = 0
+    var onPresent: ((UIViewController) -> Void)?
 
     override func dismissPresentedViewController(completion: (() -> Void)? = nil) {
         dismissPresentedViewControllerCallCount += 1
@@ -687,5 +794,11 @@ private final class SpySyncSettingsViewController: SyncSettingsViewController {
 
     override func askForPairingConfirmation(deviceName: String) {
         askForPairingConfirmationCallCount += 1
+    }
+
+    override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
+        presentCallCount += 1
+        onPresent?(viewControllerToPresent)
+        completion?()
     }
 }

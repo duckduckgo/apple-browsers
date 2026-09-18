@@ -186,6 +186,7 @@ enum PairingV2Error: Error, Equatable {
     case invalidCredentials
     case loginFailed
     case upgradeFailed
+    case peerCancelled
     case peerDisconnected
     case recoveryCodeDenied
     case recoveryCodeUnavailable
@@ -632,7 +633,7 @@ struct PairingV2StateMachine {
     }
 
     private mutating func failAfterPeerLeft(_ reason: PairingV2ByeReason) -> [PairingV2Command] {
-        fail(with: reason == .cancelled ? .cancelled : .peerDisconnected)
+        fail(with: reason == .cancelled ? .peerCancelled : .peerDisconnected)
     }
 
     private static func localRecoveryCodeStatus(for localClient: PairingV2LocalClient) -> PairingV2PeerStatus {

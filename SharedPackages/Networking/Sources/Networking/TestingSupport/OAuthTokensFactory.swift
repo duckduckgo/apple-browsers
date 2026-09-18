@@ -17,9 +17,9 @@
 //
 
 import Foundation
-@testable import Networking
 @testable import JWTKit
 
+@_spi(Testing)
 public struct OAuthTokensFactory {
 
     // Helper function to create an expired JWTAccessToken
@@ -141,6 +141,7 @@ public struct OAuthTokensFactory {
     }
 }
 
+@_spi(Testing)
 public extension JWTAccessToken {
 
     static var mock: Self {
@@ -160,6 +161,7 @@ public extension JWTAccessToken {
     }
 }
 
+@_spi(Testing)
 public extension JWTRefreshToken {
 
     static var mock: Self {

@@ -18,8 +18,7 @@
 
 import Foundation
 @testable import Subscription
-@testable import Networking
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
 
 public struct SubscriptionAPIMockResponseFactory {
 
@@ -39,6 +38,7 @@ public struct SubscriptionAPIMockResponseFactory {
         apiService.set(response: response, forRequest: request)
     }
 
+    @_spi(Testing)
     public static func mockConfirmPurchase(destinationMockAPIService apiService: MockAPIService, success: Bool) {
         let request = SubscriptionRequest.confirmPurchase(baseURL: SubscriptionEnvironment.ServiceEnvironment.staging.url,
                                                           accessToken: "somAccessToken",
@@ -59,6 +59,7 @@ public struct SubscriptionAPIMockResponseFactory {
         }
     }
 
+    @_spi(Testing)
     public static func mockGetTierFeatures(destinationMockAPIService apiService: MockAPIService, success: Bool, subscriptionIDs: [String]) {
         guard let request = SubscriptionRequest.subscriptionTierFeatures(baseURL: SubscriptionEnvironment.ServiceEnvironment.staging.url, subscriptionIDs: subscriptionIDs) else {
             return

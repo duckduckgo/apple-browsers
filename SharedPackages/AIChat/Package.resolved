@@ -1,13 +1,13 @@
 {
-  "originHash" : "8ec7a7948f4320f24c9b3ccca107b34bd425edcbfd3f0e6d48521dd5cfea73bf",
+  "originHash" : "1ffdf9c5408bdd13f9d3e67723e3173fe87f2e3afe2dcdb0c910012c2aba6a3d",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "e27d61495b3e8793e507a483d885b758e75c0732",
-        "version" : "17.0.0"
+        "revision" : "dfbdb5e9dea9bf076a08173f817aea0f4cfb72d8",
+        "version" : "17.4.0"
       }
     },
     {
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-asn1.git",
       "state" : {
-        "revision" : "810496cf121e525d660cd0ea89a758740476b85f",
-        "version" : "1.5.1"
+        "revision" : "3b6410f7dee09eb33cdd26260c5fd47fda19b0e2",
+        "version" : "1.7.3"
       }
     },
     {

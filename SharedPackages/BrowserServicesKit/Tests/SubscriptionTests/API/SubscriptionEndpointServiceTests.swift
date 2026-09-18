@@ -18,9 +18,8 @@
 
 import XCTest
 @testable import Subscription
-@testable import Networking
-import SubscriptionTestingUtilities
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
+@_spi(Testing) import SubscriptionTestingUtilities
 import Common
 
 final class SubscriptionEndpointServiceTests: XCTestCase {

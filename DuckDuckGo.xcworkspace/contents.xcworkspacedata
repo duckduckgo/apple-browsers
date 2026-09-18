@@ -39,6 +39,9 @@
          name = "Infrastructure">
       </FileSystemSynchronizedGroup>
       <FileRef
+         location = "group:Networking">
+      </FileRef>
+      <FileRef
          location = "group:Onboarding">
       </FileRef>
       <FileRef

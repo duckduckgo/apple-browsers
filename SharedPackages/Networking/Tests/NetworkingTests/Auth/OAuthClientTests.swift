@@ -17,9 +17,8 @@
 //
 
 import XCTest
-import NetworkingTestingUtils
 import Common
-@testable import Networking
+@_spi(Testing) @testable import Networking
 import JWTKit
 
 extension OAuthClientRefreshEvent: Equatable {

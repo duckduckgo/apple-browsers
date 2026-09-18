@@ -17,8 +17,8 @@
 //
 
 import Foundation
-import Networking
 
+@_spi(Testing)
 public extension HTTPURLResponse {
 
     static let testEtag = "test-etag"

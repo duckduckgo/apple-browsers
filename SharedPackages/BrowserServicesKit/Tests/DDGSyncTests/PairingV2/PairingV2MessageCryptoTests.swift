@@ -22,6 +22,60 @@ import XCTest
 
 final class PairingV2MessageCryptoTests: XCTestCase {
 
+    func testWhenParsingProtocolVersionThenNormalizesZeroMinorAndPreservesFutureMinor() {
+        XCTAssertEqual(PairingV2ProtocolVersion(rawValue: "2"), .v2)
+        XCTAssertEqual(PairingV2ProtocolVersion(rawValue: "2.0"), .v2)
+        XCTAssertEqual(PairingV2ProtocolVersion(rawValue: "2.1"), .v2Point1)
+        XCTAssertEqual(PairingV2ProtocolVersion.v2.rawValue, "2")
+        XCTAssertEqual(PairingV2ProtocolVersion.v2Point1.rawValue, "2.1")
+        XCTAssertEqual(PairingV2ProtocolVersion(rawValue: "2.9")?.rawValue, "2.9")
+    }
+
+    func testWhenComparingProtocolVersionsThenComparesMinorNumerically() throws {
+        let minorNine = try XCTUnwrap(PairingV2ProtocolVersion(rawValue: "2.9"))
+        let minorTen = try XCTUnwrap(PairingV2ProtocolVersion(rawValue: "2.10"))
+
+        XCTAssertLessThan(PairingV2ProtocolVersion.v2, .v2Point1)
+        XCTAssertLessThan(minorNine, minorTen)
+        XCTAssertEqual(PairingV2ProtocolVersion.v2Point1.negotiated(with: "2.10"), .v2Point1)
+    }
+
+    func testWhenCapabilityCannotBeParsedThenNegotiationFallsBackToV2() {
+        for rawValue in ["", "invalid", "1", "3.4", "2.invalid", "2.-1", "2.", "2.1.0"] {
+            XCTAssertNil(PairingV2ProtocolVersion(rawValue: rawValue), rawValue)
+            XCTAssertEqual(PairingV2ProtocolVersion.v2Point1.negotiated(with: rawValue), .v2, rawValue)
+        }
+    }
+
+    func testWhenEncryptingExistingMessageTypesThenEnvelopeRemainsV2IncludingV21Hello() throws {
+        let keyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "channel-1")
+        let crypto = PairingV2MessageCrypto()
+        let messages: [PairingV2ApplicationMessage] = [
+            .hello(.init(channelId: "channel-2", publicKey: "public-key", version: "2.1")),
+            .recoveryCodeAvailable(.init(type: "recovery_code_available", kind: .ddg, userId: "user-1")),
+            .recoveryCodeRequest(.init(type: "recovery_code_request", kind: .ddg)),
+            .recoveryCodeAwaitingConfirmation(.init(type: "recovery_code_awaiting_confirmation")),
+            .recoveryCodeConfirmed(.init(type: "recovery_code_confirmed")),
+            .recoveryCodeDenied(.init(type: "recovery_code_denied")),
+            .recoveryCodeUnavailable(.init(type: "recovery_code_unavailable")),
+            .recoveryCodeResponse(.init(recoveryCode: "recovery-code"))
+        ]
+
+        for message in messages {
+            let encrypted = try crypto.encrypt(message, recipientPublicKey: keyPair.publicKey, senderChannelID: "sender-channel")
+
+            XCTAssertEqual(message.minimumProtocolVersion, .v2, message.type)
+            XCTAssertEqual(encrypted.version, "2", message.type)
+            XCTAssertEqual(try crypto.decrypt(encrypted, privateKey: keyPair.privateKey), message)
+        }
+    }
+
+    func testWhenDecryptingUnknownMessageInFutureMinorEnvelopeThenDropsIt() throws {
+        let message = try decodeApplicationMessage(#"{"type":"future_message"}"#, envelopeVersion: "2.9")
+
+        XCTAssertNil(message)
+    }
+
     func testWhenChannelSecretIsGeneratedThenReturns32Base64URLEncodedBytesWithoutPadding() throws {
         let secret = try PairingV2ChannelSecretFactory.makeSecret()
 
@@ -59,6 +113,66 @@ final class PairingV2MessageCryptoTests: XCTestCase {
             "public_key": "public-key",
             "version": "2"
         ])
+    }
+
+    func testWhenDecodingHelloWithMissingNullOrBlankVersionThenDefaultsToV2() throws {
+        let versions: [Any?] = [nil, NSNull(), "", " \t\n"]
+        for version in versions {
+            var json: [String: Any] = ["type": "hello", "channel_id": "channel-1", "public_key": "public-key"]
+            json["version"] = version
+            let data = try JSONSerialization.data(withJSONObject: json)
+
+            let hello = try JSONDecoder.snakeCaseKeys.decode(PairingV2HelloMessage.self, from: data)
+
+            XCTAssertEqual(hello, .init(channelId: "channel-1", publicKey: "public-key", version: "2"))
+        }
+    }
+
+    func testWhenDecodingHelloWithUnrecognizedVersionThenPreservesCapabilityForNegotiation() throws {
+        for version in ["invalid", "1", "3.1", "2.invalid"] {
+            let data = try JSONSerialization.data(withJSONObject: [
+                "type": "hello", "channel_id": "channel-1", "public_key": "public-key", "version": version
+            ])
+
+            let hello = try JSONDecoder.snakeCaseKeys.decode(PairingV2HelloMessage.self, from: data)
+
+            XCTAssertEqual(hello.version, version)
+        }
+    }
+
+    func testWhenDecodingHelloWithInvalidShapeThenStillThrows() throws {
+        let invalidMessages = [
+            #"{"type":"hello","public_key":"public-key"}"#,
+            #"{"type":"hello","channel_id":"channel-1"}"#,
+            #"{"type":"hello","channel_id":"channel-1","public_key":"public-key","version":42}"#
+        ]
+        for json in invalidMessages {
+            let data = Data(json.utf8)
+
+            XCTAssertThrowsError(try JSONDecoder.snakeCaseKeys.decode(PairingV2HelloMessage.self, from: data)) { error in
+                XCTAssertTrue(error is DecodingError)
+            }
+        }
+    }
+
+    func testWhenQRCodeVersionIsMissingMalformedOrUnsupportedThenRejectsInsteadOfFallingBack() throws {
+        let versions: [Any?] = [nil, NSNull(), "", " \t\n", "invalid", "2.invalid", "2.-1", "2.", "1", "3", "3.1"]
+        for version in versions {
+            var json: [String: Any] = ["channel_id": "channel-1", "public_key": "public-key"]
+            json["version"] = version
+            let encodedPayload = Base64URL.encode(try JSONSerialization.data(withJSONObject: json))
+            let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/sync/pairing/#&code2=\(encodedPayload)"))
+
+            XCTAssertNil(PairingV2QRCodePayload(url: url), String(describing: version))
+        }
+    }
+
+    func testWhenEnvelopeVersionIsMissingThenDecodingStillThrows() throws {
+        for json in [#"{"payload":"encrypted-message"}"#, #"{"version":null,"payload":"encrypted-message"}"#] {
+            XCTAssertThrowsError(try JSONDecoder().decode(PairingV2EncryptedMessage.self, from: Data(json.utf8))) { error in
+                XCTAssertTrue(error is DecodingError)
+            }
+        }
     }
 
     func testWhenDecodingPythonReferencePairingURLThenReturnsQRCodePayload() throws {
@@ -138,7 +252,7 @@ final class PairingV2MessageCryptoTests: XCTestCase {
         XCTAssertEqual(confirmed, .recoveryCodeConfirmed(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeConfirmed)))
     }
 
-    func testWhenDecryptingUnsupportedVersionThenThrowsUnsupportedVersion() throws {
+    func testWhenEnvelopeVersionIsMalformedOrUnsupportedThenThrowsInsteadOfFallingBack() throws {
         let keyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "channel-1")
         let crypto = PairingV2MessageCrypto()
         let message = try crypto.encrypt(
@@ -147,10 +261,12 @@ final class PairingV2MessageCryptoTests: XCTestCase {
             recipientPublicKey: keyPair.publicKey,
             senderChannelID: "sender-channel"
         )
-        let unsupportedMessage = PairingV2EncryptedMessage(version: "3", payload: message.payload)
+        for version in ["", " \t\n", "invalid", "2.invalid", "2.-1", "2.", "1", "3", "3.1"] {
+            let unsupportedMessage = PairingV2EncryptedMessage(version: version, payload: message.payload)
 
-        XCTAssertThrowsError(try crypto.decrypt(unsupportedMessage, privateKey: keyPair.privateKey)) { error in
-            XCTAssertEqual(error as? PairingV2MessageCryptoError, .unsupportedVersion("3"))
+            XCTAssertThrowsError(try crypto.decrypt(unsupportedMessage, privateKey: keyPair.privateKey)) { error in
+                XCTAssertEqual(error as? PairingV2MessageCryptoError, .unsupportedVersion(version))
+            }
         }
     }
 
@@ -231,7 +347,7 @@ final class PairingV2MessageCryptoTests: XCTestCase {
         }
     }
 
-    private func decodeApplicationMessage(_ json: String) throws -> PairingV2ApplicationMessage? {
+    private func decodeApplicationMessage(_ json: String, envelopeVersion: String = "2") throws -> PairingV2ApplicationMessage? {
         let keyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "channel-1")
         let crypto = PairingV2MessageCrypto()
         let data = try XCTUnwrap(json.data(using: .utf8))
@@ -239,6 +355,7 @@ final class PairingV2MessageCryptoTests: XCTestCase {
         // which is the public half of the keypair's private key.
         let recipientPublicKey = try XCTUnwrap(SecKeyCopyPublicKey(keyPair.privateKey))
         let encryptedMessage = PairingV2EncryptedMessage(
+            version: envelopeVersion,
             payload: try JWECompactCodec().encryptRSAOAEP256(payload: data,
                                                              recipientPublicKey: recipientPublicKey,
                                                              kid: "sender-channel")

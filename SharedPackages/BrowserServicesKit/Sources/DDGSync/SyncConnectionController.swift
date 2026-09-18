@@ -702,7 +702,8 @@ public class SyncConnectionController: SyncConnectionControlling {
         case .loggedIn:
             await delegate?.controllerDidCompleteLogin(registeredDevices: coordinator.completedRegisteredDevices ?? [], isRecovery: false, setupRole: setupRole)
         case .recoveryCodeSent(let credentialKind):
-            await delegate?.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: credentialKind == .ddg)
+            let shouldWaitForDevicesToChange = credentialKind == .ddg && !coordinator.supportsRecoveryCodeDone
+            await delegate?.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: shouldWaitForDevicesToChange)
         case .alreadyConnected:
             await delegate?.controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole: setupRole)
         }

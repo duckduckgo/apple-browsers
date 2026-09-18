@@ -292,7 +292,6 @@ public protocol DDGSyncingDebuggingSupport {
     /// Fetches devices through the production mapping path and includes the source used for each displayed device.
     func fetchDevicesForDebug() async throws -> [RegisteredDeviceDebugInfo]
     func isDeviceInfoMigrationCompleteForDebug() throws -> Bool
-    func runDeviceInfoMigrationForDebug() async throws
     func resetDeviceInfoMigrationForDebug()
 }
 
@@ -310,10 +309,6 @@ public extension DDGSyncingDebuggingSupport {
     }
 
     func isDeviceInfoMigrationCompleteForDebug() throws -> Bool {
-        throw SyncError.accountNotFound
-    }
-
-    func runDeviceInfoMigrationForDebug() async throws {
         throw SyncError.accountNotFound
     }
 

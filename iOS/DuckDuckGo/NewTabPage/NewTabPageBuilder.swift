@@ -26,6 +26,7 @@ import RemoteMessaging
 import Subscription
 
 /// Builds the New Tab Page shown in a browser tab.
+@MainActor
 struct NewTabPageBuilder {
 
     let favoritesInteractionModel: FavoritesListInteracting
@@ -44,6 +45,8 @@ struct NewTabPageBuilder {
     let internalUserCommands: URLBasedDebugCommands
     let floatingUIManager: FloatingUIManaging
     let redesignFeature: NewTabPageRedesignFeatureProviding
+    let toggleModeStorage: ToggleModeStoring
+    let voiceSearchHelper: VoiceSearchHelperProtocol
 
     /// `daxDialogFactory` is supplied per page rather than stored.
     func makeNewTabPage(tab: Tab,
@@ -61,9 +64,30 @@ struct NewTabPageBuilder {
     }
 
     private func makeRedesignedNewTabPage() -> any NewTabPage {
-        RedesignedNewTabPageViewController(blocks: [
-            SwiftUIBlock(id: "daxLogo", rootView: NewTabPageDaxLogoView())
+        // The callbacks are created before their owning page; keep the back-reference weak.
+        weak var newTabPage: RedesignedNewTabPageViewController?
+        let searchInputView = NewTabPageSearchInputView(
+            model: NewTabPageSearchInputModel(readSettings: { [aiChatSettings, toggleModeStorage, voiceSearchHelper] in
+                NewTabPageSearchInputModel.Settings(
+                    isModeToggleShown: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+                    isAIChatEnabled: aiChatSettings.isAIChatEnabled,
+                    isVoiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
+                    // Must match the address bar's home-tab mode resolution.
+                    defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })
+            }),
+            onActivate: { textEntryMode in
+                newTabPage?.beginSearch(textEntryMode: textEntryMode)
+            },
+            onVoiceSearch: { textEntryMode in
+                newTabPage?.beginVoiceSearch(textEntryMode: textEntryMode)
+            })
+
+        let page = RedesignedNewTabPageViewController(blocks: [
+            NewTabPageSwiftUIBlock(id: .welcome, rootView: NewTabPageWelcomeView()),
+            NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView)
         ])
+        newTabPage = page
+        return page
     }
 
     private func makeCurrentNewTabPage(tab: Tab,

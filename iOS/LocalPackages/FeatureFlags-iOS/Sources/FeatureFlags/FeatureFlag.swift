@@ -184,9 +184,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866612283363
     case aiChatKeepSession
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866463389447
-    case showSettingsCompleteSetupSection
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866607644644
     case canPromoteImportPasswordsInPasswordManagement
 
@@ -731,8 +728,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .aiChatKeepSession:
             Config(source: .remoteReleasable(AIChatSubfeature.keepSession), supportsLocalOverriding: false)
-        case .showSettingsCompleteSetupSection:
-            Config(source: .remoteReleasable(OnboardingSubfeature.showSettingsCompleteSetupSection))
         case .canPromoteImportPasswordsInPasswordManagement:
             Config(source: .remoteReleasable(AutofillSubfeature.canPromoteImportPasswordsInPasswordManagement), supportsLocalOverriding: false)
         case .canPromoteImportPasswordsInBrowser:
@@ -975,16 +970,7 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? { config.cohortType }
 
     public var supportsLocalOverriding: Bool {
-        switch self {
-        case .showSettingsCompleteSetupSection:
-            if #available(iOS 18.2, *) {
-                return true
-            } else {
-                return false
-            }
-        default:
-            return config.supportsLocalOverriding
-        }
+        config.supportsLocalOverriding
     }
 }
 

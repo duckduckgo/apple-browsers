@@ -51,8 +51,8 @@ jobs:
       matrix:
         include:
           - xcode-version: 26.6
-            runs-on: [image:osx-tahoe-26, m4pro]
-            runner: image:osx-tahoe-26,m4pro
+            runs-on: [image:osx-tahoe-26, ui-tests]
+            runner: image:osx-tahoe-26,ui-tests
             os-version: 26
 
     timeout-minutes: 60

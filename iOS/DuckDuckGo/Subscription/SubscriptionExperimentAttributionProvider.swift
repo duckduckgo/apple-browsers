@@ -21,10 +21,12 @@ import FeatureFlags_iOS
 import PrivacyConfig
 import Subscription
 
+/// Produces experiment attribution for a subscription purchase.
 protocol SubscriptionExperimentAttributionProviding {
     func attribution(from selection: DefaultSubscriptionPagesUseSubscriptionFeature.SubscriptionSelection) -> PurchaseExperimentAttribution?
 }
 
+/// Combines experiments reported by the subscription page with active native subscription experiments.
 struct DefaultSubscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviding {
     private let featureFlagger: any FeatureFlagger
 
@@ -32,6 +34,7 @@ struct DefaultSubscriptionExperimentAttributionProvider: SubscriptionExperimentA
         self.featureFlagger = featureFlagger
     }
 
+    /// Returns legacy attribution while concurrent experiments are disabled; otherwise, returns merged FE and native attribution.
     func attribution(from selection: DefaultSubscriptionPagesUseSubscriptionFeature.SubscriptionSelection) -> PurchaseExperimentAttribution? {
         guard featureFlagger.isFeatureOn(.subscriptionConcurrentExperiments) else {
             // FE mirrors the first eligible assignment into this field for clients on the legacy contract.
@@ -48,10 +51,9 @@ struct DefaultSubscriptionExperimentAttributionProvider: SubscriptionExperimentA
         return experiments.isEmpty ? nil : .multiple(experiments)
     }
 
+    /// Returns active Privacy Pro experiments. Other parent features are not eligible for subscription attribution.
     private func activeNativeSubscriptionExperiments() -> [SubscriptionExperiment] {
         featureFlagger.allActiveExperiments
-            // This boundary prevents cohorts from unrelated parent features, including SERP experiments,
-            // from being linked to a user's subscription confirmation request.
             .filter { $0.value.parentID == PrivacyFeature.privacyPro.rawValue }
             .map {
                 SubscriptionExperiment(experimentName: $0.key, experimentCohort: $0.value.cohortID)

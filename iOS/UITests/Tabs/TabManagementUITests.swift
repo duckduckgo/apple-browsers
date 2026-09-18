@@ -22,6 +22,11 @@ import UITestingSupport
 
 final class TabManagementUITests: UITestCase {
 
+    override var additionalLaunchEnvironment: [String: String] {
+        // Avoid XCTest's repeated animation-idle timeouts in tab context menus.
+        ["UITEST_DISABLE_ANIMATIONS": "1"]
+    }
+
     func testWhenTabsAreCreatedSwitchedAndClosedThenRemainingTabIsPreserved() {
         let tabs = XCTContext.runActivity(named: "Create two tabs") { _ in
             app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
@@ -57,13 +62,6 @@ final class TabManagementUITests: UITestCase {
     }
 
     func testWhenBackIsTappedInChildTabThenChildClosesAndParentIsSelected() {
-        XCTContext.runActivity(named: "Configure the app for the WebKit context menu") { _ in
-            // Avoid XCTest's animation-idle timeouts while the WebKit context menu is open.
-            app.terminate()
-            app.launchEnvironment["UITEST_DISABLE_ANIMATIONS"] = "1"
-            app.launch()
-        }
-
         let tabs = XCTContext.runActivity(named: "Create parent and reference tabs") { _ in
             app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
             app.openNewTab()

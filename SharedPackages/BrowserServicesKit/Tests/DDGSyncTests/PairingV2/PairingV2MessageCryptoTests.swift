@@ -22,6 +22,14 @@ import XCTest
 
 final class PairingV2MessageCryptoTests: XCTestCase {
 
+    func testWhenChannelSecretIsGeneratedThenReturns32Base64URLEncodedBytesWithoutPadding() throws {
+        let secret = try PairingV2ChannelSecretFactory.makeSecret()
+
+        XCTAssertEqual(secret.count, 43)
+        XCTAssertEqual(Base64URL.decode(secret)?.count, 32)
+        XCTAssertFalse(secret.contains("="))
+    }
+
     func testWhenEncryptingHelloThenEnvelopeHasExpectedShapeAndRoundTrips() throws {
         let keyPair = try PairingV2KeyPairFactory.makeKeyPair(channelID: "channel-1")
         let crypto = PairingV2MessageCrypto()

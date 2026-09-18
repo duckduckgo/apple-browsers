@@ -38,6 +38,10 @@ class UITestCase: XCTestCase {
         []
     }
 
+    var additionalLaunchEnvironment: [String: String] {
+        [:]
+    }
+
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
@@ -52,7 +56,7 @@ class UITestCase: XCTestCase {
     }
 
     /// Relaunches without resetting defaults so tests can exercise multi-launch flows.
-    /// Internal-user mode and subclass launch arguments are applied on every launch.
+    /// Internal-user mode and subclass launch arguments/environment are applied on every launch.
     func relaunchAppPreservingState() throws {
         app.terminate()
         try configureAppLaunch(clearingState: false)
@@ -76,7 +80,8 @@ class UITestCase: XCTestCase {
         }
 
         app.launchArguments = launchArguments
-        app.launchEnvironment = ["UITEST_MODE": "1"]
+        app.launchEnvironment = additionalLaunchEnvironment
+        app.launchEnvironment["UITEST_MODE"] = "1"
     }
 
     private func isInternalUserModeEnabled() throws -> Bool {

@@ -77,6 +77,7 @@ final class MainCoordinator {
     private let keyValueStore: ThrowingKeyValueStoring
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
+    private let daxGreetingActivity: DaxGreetingActivityStore
     private let wideEvent: WideEventManaging
     private let voiceSessionStateManager: VoiceSessionStateProviding
 
@@ -188,6 +189,11 @@ final class MainCoordinator {
             onboardingProvider: onboardingSearchExperienceProvider,
             daxDialogsStatusProvider: daxDialogs
         )
+        let dailyActivityStore = DefaultBrowserPromptUserActivityKeyValueFilesStore(keyValueFilesStore: keyValueStore)
+        let daxGreetingActivity = DaxGreetingActivityStore(
+            readLastActiveDate: { dailyActivityStore.currentActivity().lastActiveDate },
+            isEnabled: { NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable })
+        self.daxGreetingActivity = daxGreetingActivity
         self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
         let appSwitcherSnapshotCleaner = AppSwitcherSnapshotCleaner()
@@ -323,6 +329,7 @@ final class MainCoordinator {
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
+                                        daxGreetingActivity: daxGreetingActivity,
                                         whatsNewRepository: whatsNewRepository,
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
@@ -681,6 +688,10 @@ final class MainCoordinator {
     }
 
     // MARK: App Lifecycle handling
+
+    func recordDaxGreetingForegroundOpen() {
+        daxGreetingActivity.recordForegroundOpen()
+    }
 
     func onForeground(isFirstForeground: Bool) {
         homePageConfiguration.handleAppForegrounded()

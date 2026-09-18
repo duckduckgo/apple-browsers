@@ -166,6 +166,7 @@ struct Foreground: ForegroundHandling {
         services.remoteMessagingService.resume()
         services.statisticsService.resume()
         services.launchTimeMetricsService.resume()
+        appDependencies.mainCoordinator.recordDaxGreetingForegroundOpen()
         services.defaultBrowserPromptService.resume()
         services.dbpService.resume()
         services.inactivityNotificationSchedulerService.resume()

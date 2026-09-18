@@ -22,21 +22,46 @@ import SwiftUI
 
 struct NewTabPageWelcomeView: View {
 
+    @ObservedObject var model: NewTabPageWelcomeModel
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var isVisible = false
+
     var body: some View {
         HStack(spacing: Metrics.logoToTextSpacing) {
             Image("Logo")
                 .resizable()
                 .frame(width: Metrics.logoSize, height: Metrics.logoSize)
-            // Proof-of-concept copy, not yet localized.
-            Text(verbatim: "Browse anything, tracker-free.")
+            Text(verbatim: model.greeting)
                 .daxTitle2()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
-                .frame(width: Metrics.textWidth, alignment: .leading)
-            Spacer(minLength: 0)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, Metrics.horizontalPadding)
         .padding(.bottom, Metrics.bottomPadding)
         .padding(.horizontal, Metrics.horizontalMargin)
+        .onAppear {
+            isVisible = true
+            refreshGreeting()
+        }
+        .onDisappear { isVisible = false }
+        .onReceive(model.contextChanges) { _ in refreshGreetingIfVisible() }
+        .onChange(of: colorScheme) { _ in refreshGreetingIfVisible() }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            refreshGreetingIfVisible()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
+            refreshGreetingIfVisible()
+        }
+    }
+
+    private func refreshGreetingIfVisible() {
+        guard isVisible else { return }
+        refreshGreeting()
+    }
+
+    private func refreshGreeting() {
+        model.refresh(appearance: colorScheme == .dark ? .dark : .light)
     }
 }
 
@@ -46,9 +71,8 @@ private enum Metrics {
     static let bottomPadding: CGFloat = 12
     static let logoSize: CGFloat = 64
     static let logoToTextSpacing: CGFloat = 16
-    static let textWidth: CGFloat = 178
 }
 
 #Preview {
-    NewTabPageWelcomeView()
+    NewTabPageWelcomeView(model: NewTabPageWelcomeModel(greetingProvider: DaxGreetingService(), updateAppearance: { _ in }))
 }

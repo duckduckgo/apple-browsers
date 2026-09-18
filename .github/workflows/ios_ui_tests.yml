@@ -259,9 +259,9 @@ jobs:
     needs: [setup-tests, build-for-testing]
     if: needs.setup-tests.outputs.run-production == 'true'
     strategy:
-      # Each mode is capped independently. When both modes run, up to eight cells may run at once.
+      # PRs run only production; allow up to eight class/device jobs at once.
       fail-fast: false
-      max-parallel: 4
+      max-parallel: 8
       matrix:
         include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
     uses: ./.github/workflows/ios_run_ui_test.yml
@@ -277,7 +277,7 @@ jobs:
     needs: [setup-tests, build-for-testing]
     if: needs.setup-tests.outputs.run-internal == 'true'
     strategy:
-      # Each mode is capped independently. When both modes run, up to eight cells may run at once.
+      # Keep internal at four, so scheduled/manual both-mode runs peak at twelve workers in total.
       fail-fast: false
       max-parallel: 4
       matrix:

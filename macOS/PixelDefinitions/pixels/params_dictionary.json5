@@ -522,5 +522,96 @@
             "settings",
             "unattributed"
         ]
+    },
+    "extension_context_loaded": {
+        "key": "context_loaded",
+        "type": "boolean",
+        "description": "Whether the CPM extension context was loaded when the failure was measured."
+    },
+    "memory_pressure_critical": {
+        "key": "critical_memory_age",
+        "type": "string",
+        "description": "Time bucket since the most recent critical memory-pressure notification.",
+        "enum": ["none", "1m", "5m", "30m", "over_30"]
+    },
+    "network_process_restarted": {
+        "key": "network_restarted",
+        "type": "boolean",
+        "description": "Whether the network process restarted before the CPM failure."
+    },
+    "extension_context_errors": {
+        "key": "context_errors",
+        "type": "string",
+        "description": "Sanitized CPM extension-context error domains and numeric codes, or none."
+    },
+    "background_view_create_count": {
+        "key": "bg_view_creations",
+        "type": "string",
+        "description": "Bucketed number of CPM background web views created.",
+        "enum": ["0", "1", "2", "3_to_5", "over_5"]
+    },
+    "background_view_alive": {
+        "key": "bg_view_alive",
+        "type": "boolean",
+        "description": "Whether the current CPM background web view was alive."
+    },
+    "background_view_leaked_count": {
+        "key": "bg_view_leaked_count",
+        "type": "string",
+        "description": "Bucketed number of CPM background web views no longer referenced by WebKit but still alive.",
+        "enum": ["0", "1", "2", "3_to_5", "over_5"]
+    },
+    "background_web_process_alive": {
+        "key": "bg_process_alive",
+        "type": "boolean",
+        "description": "Whether the CPM background web process was alive."
+    },
+    "tab_known_to_webkit": {
+        "key": "tab_in_context",
+        "type": "boolean",
+        "description": "Whether WebKit's extension context contained the failing tab."
+    },
+    "native_handler_registered": {
+        "key": "handler_registered",
+        "type": "boolean",
+        "description": "Whether the CPM native-message handler was registered."
+    },
+    "tab_controller_matches_context": {
+        "key": "tab_controller_match",
+        "type": "boolean",
+        "description": "Whether the tab and CPM context used the same web-extension controller."
+    },
+    "tab_has_extension_user_scripts": {
+        "key": "tab_has_ext_scripts",
+        "type": "boolean",
+        "description": "Whether CPM extension user scripts remained registered on the tab."
+    },
+    "background_web_process_responsive": {
+        "key": "bg_process_responsive",
+        "type": "boolean",
+        "description": "Whether WebKit reported the CPM background web process as responsive."
+    },
+    "background_events": {
+        "key": "bg_events",
+        "type": "string",
+        "description": "Bounded, sanitized CPM lifecycle timeline, including context unload and extension file removal failures with error descriptors."
+    },
+    "web_extension_type": {
+        "key": "extension_type",
+        "type": "string",
+        "description": "Web extension type whose reload failed.",
+        "enum": ["embedded", "darkMode", "adBlocking", "searchToken", "unknown"]
+    },
+    "web_extension_reload_trigger": {
+        "key": "reload_trigger",
+        "type": "string",
+        "description": "Operation that initiated the failed web extension reload.",
+        "enum": ["data_clearing", "scriptlet_update", "explicit"]
+    },
+    "web_extension_reload_phase": {
+        "key": "reload_phase",
+        "type": "string",
+        "description": "Reload operation that failed.",
+        "enum": ["unload", "load", "light_load", "full_load", "fallback_load"]
     }
 }

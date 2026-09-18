@@ -17,11 +17,31 @@
 //  limitations under the License.
 //
 
+import Combine
+import Core
+import FeatureFlags_iOS
+import PrivacyConfig
 import UIKit
 import WebExtensions
 import WebKit
-import PrivacyConfig
-import Core
+
+@available(iOS 18.4, *)
+@MainActor
+private final class IOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsProviding {
+    private let featureFlagger: FeatureFlagger
+
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
+    }
+
+    var isBackgroundDelegateProxyEnabled: Bool {
+        featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
+    }
+
+    var updatesPublisher: AnyPublisher<Void, Never> {
+        featureFlagger.updatesPublisher
+    }
+}
 
 // MARK: - AutoconsentPreferencesProviding
 
@@ -52,6 +72,7 @@ public enum WebExtensionManagerFactory {
     @MainActor
     static func makeManager(
         mainViewController: MainViewController,
+        featureFlagger: FeatureFlagger,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferences,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
@@ -61,6 +82,17 @@ public enum WebExtensionManagerFactory {
         let preferencesAdapter = AutoconsentPreferencesAdapter(preferences: autoconsentPreferences)
         let pixelFiring = iOSWebExtensionPixelFiring()
         let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+        let cpmDiagnosticsRecorder = CPMMessagingDiagnosticsRecorder(
+            tabResolver: { [weak mainViewController] tabIdentifier in
+                guard let mainViewController,
+                      let tab = mainViewController.tabManager.allTabsModel.tabs.first(where: { $0.uid == tabIdentifier }),
+                      let controller = mainViewController.tabManager.controller(for: tab) else {
+                    return nil
+                }
+                return (webView: controller.webView, extensionTab: controller)
+            },
+            featureFlags: IOSCPMDiagnosticsFeatureFlags(featureFlagger: featureFlagger)
+        )
 
         return WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
@@ -68,6 +100,7 @@ public enum WebExtensionManagerFactory {
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+            cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: preferencesAdapter,

@@ -49,6 +49,7 @@ struct PasswordGenerationPromptView: View {
                 Spacer()
                     .frame(height: Const.Size.headlineTopPadding)
                 AutofillViews.Headline(title: UserText.autofillPasswordGenerationPromptTitle)
+                    .accessibilityIdentifier("Autofill.PasswordGeneration.Prompt")
                 if #available(iOS 16.0, *) {
                     passwordView
                         .padding([.top, .bottom], passwordVerticalPadding)
@@ -136,9 +137,11 @@ struct PasswordGenerationPromptView: View {
         VStack(spacing: Const.Size.ctaVerticalSpacing) {
             AutofillViews.PrimaryButton(title: UserText.autofillPasswordGenerationPromptUseGeneratedPasswordCTA,
                                         action: viewModel.useGeneratedPasswordPressed)
+                .accessibilityIdentifier("Autofill.PasswordGeneration.UseGeneratedPassword")
 
             AutofillViews.TertiaryButton(title: UserText.autofillPasswordGenerationPromptUseOwnPasswordCTA,
                                          action: viewModel.cancelButtonPressed)
+                .accessibilityIdentifier("Autofill.PasswordGeneration.UseOwnPassword")
         }
     }
 

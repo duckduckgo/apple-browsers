@@ -104,7 +104,7 @@ jobs:
       dsym-url: ${{ steps.upload-dsyms-to-s3-test-build.outputs.dsym-url }}
 
     env:
-      RUNS_ON: bitrise-m4pro # keep this in sync with runs-on above
+      RUNS_ON: image:osx-tahoe-26,m4pro # keep this in sync with runs-on above
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       branch: ${{ inputs.branch || github.ref_name }}

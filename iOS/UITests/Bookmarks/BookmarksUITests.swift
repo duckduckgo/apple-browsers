@@ -22,6 +22,11 @@ import UITestingSupport
 
 final class BookmarksUITests: UITestCase {
 
+    override var additionalLaunchEnvironment: [String: String] {
+        // Avoid XCTest's repeated animation-idle timeouts in bookmark workflows.
+        ["UITEST_DISABLE_ANIMATIONS": "1"]
+    }
+
     override func setUpWithError() throws {
         try super.setUpWithError()
         app.resetBookmarks()
@@ -127,7 +132,6 @@ final class BookmarksUITests: UITestCase {
         let folder = bookmarksList.cells["Bookmarks.Folder"].firstMatch
 
         XCTContext.runActivity(named: "Create five tabs with four bookmarkable pages") { _ in
-            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
             for index in 0..<4 {
                 app.openURL(
                     "https://privacy-test-pages.site/\(index)",

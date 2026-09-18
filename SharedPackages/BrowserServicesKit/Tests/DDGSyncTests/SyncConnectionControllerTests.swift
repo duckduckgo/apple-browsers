@@ -504,6 +504,55 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
+    func test_startExchangeMode_whenV21PresenterCompletes_doesNotWaitForDeviceListChange() async throws {
+        dependencies.isPairingV2CodeEnabled = { true }
+        dependencies.canUseExchangeV2Point1 = { true }
+        try dependencies.secureStore.persistAccount(SyncAccount.mock)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+        let peerKeyPair = try makePeerKeyPair()
+        var payload: PairingV2QRCodePayload?
+        messageExchanger.fetchMessagesHandler = { _, sequence in
+            guard let payload else {
+                return []
+            }
+            switch sequence {
+            case 0:
+                return try Self.encryptedPresenterPeerMessages(messages: [
+                    .hello(.init(channelId: peerKeyPair.channelID,
+                                 publicKey: peerKeyPair.publicKey,
+                                 version: PairingV2ProtocolVersion.v2Point1.rawValue))
+                ], presenterPayload: payload, peerKeyPair: peerKeyPair)
+            case 1:
+                return try Self.encryptedPresenterPeerMessages(messages: [
+                    .recoveryCodeRequest(
+                        .init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest,
+                              name: "Peer",
+                              kind: .ddg)
+                    )
+                ], presenterPayload: payload, peerKeyPair: peerKeyPair, initialSequence: sequence)
+            case 2:
+                return try Self.encryptedPresenterPeerMessages(messages: [
+                    .recoveryCodeDone(.init(reason: .success))
+                ], presenterPayload: payload, peerKeyPair: peerKeyPair, initialSequence: sequence)
+            default:
+                return []
+            }
+        }
+
+        let didFinishTransmitting = expectation(description: "did finish transmitting")
+        delegate.didFinishTransmittingRecoveryKeyCalled = {
+            didFinishTransmitting.fulfill()
+        }
+
+        let pairingInfo = try await controller.startExchangeMode()
+        payload = try XCTUnwrap(PairingV2QRCodePayload(url: try XCTUnwrap(URL(string: pairingInfo.base64Code))))
+
+        await fulfillment(of: [didFinishTransmitting], timeout: 5)
+        XCTAssertEqual(delegate.didFinishTransmittingRecoveryKeyShouldWaitForDevicesToChange, false)
+    }
+
+    @MainActor
     func test_startExchangeMode_whenPairingV2PresenterCompletesForThirdPartyPeer_doesNotWaitForDeviceListChange() async throws {
         dependencies.isPairingV2CodeEnabled = { true }
         try dependencies.secureStore.persistAccount(SyncAccount.mock)

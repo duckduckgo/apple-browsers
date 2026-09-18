@@ -45,14 +45,14 @@ jobs:
   performance-tests:
     name: Performance Tests
     needs: create-notarized-app
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-26-xlarge]
         include:
           - xcode-version: 26.6
-            runner: macos-26-xlarge
+            runs-on: [image:osx-tahoe-26, ui-tests]
+            runner: image:osx-tahoe-26,ui-tests
             os-version: 26
 
     timeout-minutes: 60

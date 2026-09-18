@@ -101245,18 +101245,6 @@
         }
       }
     },
-    "preferences.subscriberOffers" : {
-      "comment" : "Title of a settings sidebar item in the DuckDuckGo Subscription section. Opens a web page listing exclusive offers from partner companies that are available to subscribers.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Subscriber Offers"
-          }
-        }
-      }
-    },
     "preferences.subscription.header" : {
       "comment" : "The section header in Preferences representing subscription features",
       "extractionState" : "extracted_with_value",

@@ -66,7 +66,8 @@ final class FireViewController: NSViewController {
 
     // UI Elements
     private lazy var transparentBackgroundView: ColorView = {
-        let view = ColorView(frame: .zero, backgroundColor: .fireBackground)
+        // Clicks used to fall through to the page and tab bar while a burn was in progress.
+        let view = ColorView(frame: .zero, backgroundColor: .fireBackground, interceptClickEvents: true)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()

@@ -31,6 +31,12 @@ import Networking
 import BrowserServicesKitTestsUtils
 import NetworkingTestingUtils
 
+private struct SubscriptionExperimentAttributionProviderStub: SubscriptionExperimentAttributionProviding {
+    func attribution(from selection: DefaultSubscriptionPagesUseSubscriptionFeature.SubscriptionSelection) -> PurchaseExperimentAttribution? {
+        nil
+    }
+}
+
 final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     
     var sut: DefaultSubscriptionPagesUseSubscriptionFeature!
@@ -77,7 +83,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             tierEventReporter: mockTierEventReporter,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator)
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub())
     }
 
     override func tearDown() {
@@ -468,7 +475,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
@@ -543,7 +551,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
@@ -583,7 +592,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
@@ -618,7 +628,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -657,7 +668,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -695,7 +707,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -734,7 +747,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -770,7 +784,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         // Invalid params - missing "id"
@@ -809,7 +824,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "monthly-plus", "change": "downgrade"]
@@ -852,7 +868,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: mockPendingTransactionHandler,
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
         
         let originURL = URL(string: "https://duckduckgo.com/subscriptions")!
@@ -911,7 +928,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionChangeSelected(params: ["id": "ddg.privacy.pro.monthly.renews.us", "change": "upgrade"], original: message)
@@ -975,7 +993,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionChangeSelected(params: ["id": "ddg.privacy.pro.monthly.renews.us", "change": "upgrade"], original: message)
@@ -1030,7 +1049,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionChangeSelected(params: ["id": "ddg.privacy.plus.yearly.renews.us", "change": "downgrade"], original: message)
@@ -1089,7 +1109,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         // No "change" parameter provided
@@ -1265,7 +1286,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             requestValidator: mockRequestValidator,
             userNotificationCenter: notificationCenter,
             expirationReminderScheduler: scheduler,
-            isExpirationReminderFeatureEnabled: isExpirationReminderFeatureEnabled
+            isExpirationReminderFeatureEnabled: isExpirationReminderFeatureEnabled,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
     }
 

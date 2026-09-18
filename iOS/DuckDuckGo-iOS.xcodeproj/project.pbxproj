@@ -1688,6 +1688,8 @@
 		BB343F392EBE1EFD00F206F5 /* SERPSettingsEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB343F382EBE1EF600F206F5 /* SERPSettingsEventHandler.swift */; };
 		BB3F734D2F321F4000461429 /* FreeTrialPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3F734C2F321F4000461429 /* FreeTrialPixelHandler.swift */; };
 		BB4A68EB6CC94473ABB68EB4 /* InactivityNotificationStateStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BC32EC2491F40BF921F07B4 /* InactivityNotificationStateStoreTests.swift */; };
+		BB5EB45F305BFD9B00F08B28 /* SubscriptionExperimentAttributionProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB5EB45E305BFD9B00F08B28 /* SubscriptionExperimentAttributionProvider.swift */; };
+		BB5EB461305BFE1D00F08B28 /* SubscriptionExperimentAttributionProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB5EB460305BFE1D00F08B28 /* SubscriptionExperimentAttributionProviderTests.swift */; };
 		BB631D162DE0D9020099977D /* DesignResourcesKitIcons in Frameworks */ = {isa = PBXBuildFile; productRef = BB631D152DE0D9020099977D /* DesignResourcesKitIcons */; };
 		BB64A3602F6AEBA4006897A2 /* SubscriptionPromoCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB64A35E2F6AEBA4006897A2 /* SubscriptionPromoCoordinatorTests.swift */; };
 		BB77957F2E9D4B4D00CF58F4 /* WinBackOfferService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB77957E2E9D4B4D00CF58F4 /* WinBackOfferService.swift */; };
@@ -4196,6 +4198,8 @@
 		BB1D99DC2EB9F3860050D8CF /* MockWinBackOfferCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWinBackOfferCoordinator.swift; sourceTree = "<group>"; };
 		BB343F382EBE1EF600F206F5 /* SERPSettingsEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SERPSettingsEventHandler.swift; sourceTree = "<group>"; };
 		BB3F734C2F321F4000461429 /* FreeTrialPixelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeTrialPixelHandler.swift; sourceTree = "<group>"; };
+		BB5EB45E305BFD9B00F08B28 /* SubscriptionExperimentAttributionProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionExperimentAttributionProvider.swift; sourceTree = "<group>"; };
+		BB5EB460305BFE1D00F08B28 /* SubscriptionExperimentAttributionProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionExperimentAttributionProviderTests.swift; sourceTree = "<group>"; };
 		BB631D142DE0D8B70099977D /* DesignResourcesKitIcons */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKitIcons; path = ../SharedPackages/Infrastructure/DesignResourcesKitIcons; sourceTree = SOURCE_ROOT; };
 		BB64A35E2F6AEBA4006897A2 /* SubscriptionPromoCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoCoordinatorTests.swift; sourceTree = "<group>"; };
 		BB77957E2E9D4B4D00CF58F4 /* WinBackOfferService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferService.swift; sourceTree = "<group>"; };
@@ -9526,6 +9530,7 @@
 			isa = PBXGroup;
 			children = (
 				BB82616E30124E2200F8A80F /* MonthlyFreeTrialExperiment.swift */,
+				BB5EB45E305BFD9B00F08B28 /* SubscriptionExperimentAttributionProvider.swift */,
 				BBA8EA4D30120A4600FE41CD /* IOSMonthlyFreeTrialDecider.swift */,
 				3666D84A30004E3E00B63F99 /* Onboarding */,
 				BB3F734C2F321F4000461429 /* FreeTrialPixelHandler.swift */,
@@ -10446,6 +10451,7 @@
 		F1BDDBFC2C340D9C00459306 /* Subscription */ = {
 			isa = PBXGroup;
 			children = (
+				BB5EB460305BFE1D00F08B28 /* SubscriptionExperimentAttributionProviderTests.swift */,
 				3666D87C3001AA9600B63F99 /* Onboarding */,
 				366A93052FCE0E3700211BA8 /* SubscriptionExpirationReminderSchedulerTests.swift */,
 				F14B81412F32615B00C39E26 /* SubscriptionPixelHandlerTests.swift */,
@@ -12498,6 +12504,7 @@
 				85582E0029D7409700E9AE35 /* SyncSettingsViewController+PDFRendering.swift in Sources */,
 				9888F77B2224980500C46159 /* FeedbackViewController.swift in Sources */,
 				EE00D2D72DFB2D4900B79E9D /* AutofillUsageStore+App.swift in Sources */,
+				BB5EB45F305BFD9B00F08B28 /* SubscriptionExperimentAttributionProvider.swift in Sources */,
 				D6E83C662B23936F006C8AFB /* SettingsDebugView.swift in Sources */,
 				564441A22D4D20D6003C53B8 /* ExperimentCohortView.swift in Sources */,
 				C1641EB12BC2F52B0012607A /* ImportPasswordsViaSyncView.swift in Sources */,
@@ -13310,6 +13317,7 @@
 				9FF967B42E0E270300E45B54 /* DefaultBrowserPromptUserTypeStoreTests.swift in Sources */,
 				C14CA6492E589F6A0060FA7B /* DaxEasterEggLogoCacheTests.swift in Sources */,
 				9F387E062EA9A1D8006861F8 /* NewAddressBarPickerModalPromptProviderTests.swift in Sources */,
+				BB5EB461305BFE1D00F08B28 /* SubscriptionExperimentAttributionProviderTests.swift in Sources */,
 				CBB4A8712FD3601400A65956 /* UnifiedSuggestionsInputsMergerTests.swift in Sources */,
 				98E563F42DE8B32D00E6E75F /* AppSettingsMock.swift in Sources */,
 				9FF967BF2E0E7F5200E45B54 /* DefaultBrowserPromptActivityKeyValueFilesStoreTests.swift in Sources */,

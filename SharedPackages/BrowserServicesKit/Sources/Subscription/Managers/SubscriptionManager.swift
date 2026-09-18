@@ -101,7 +101,7 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws -> DuckDuckGoSubscription
 
     /// Confirm a purchase with a platform signature
-    func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription
+    func confirmPurchase(signature: String, experimentAttribution: PurchaseExperimentAttribution?) async throws -> DuckDuckGoSubscription
 
     /// Closure called when an expired refresh token is detected and the Subscription login is invalid. An attempt to automatically recover it can be performed or the app can ask the user to do it manually
     typealias TokenRecoveryHandler = () async throws -> Void
@@ -808,12 +808,12 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
-    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription {
+    public func confirmPurchase(signature: String, experimentAttribution: PurchaseExperimentAttribution?) async throws -> DuckDuckGoSubscription {
         Logger.subscription.log("Confirming Purchase...")
         let accessToken = try await getTokenContainer(policy: .localValid).accessToken
         let confirmation = try await subscriptionEndpointService.confirmPurchase(accessToken: accessToken,
                                                                                  signature: signature,
-                                                                                 additionalParams: additionalParams)
+                                                                                 experimentAttribution: experimentAttribution)
         let subscription = try await ingestSubscription(confirmation.subscription)
         Logger.subscription.log("Purchase confirmed!")
         return subscription

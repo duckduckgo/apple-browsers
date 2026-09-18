@@ -103,14 +103,16 @@ public protocol SubscriptionEndpointService {
     /// Confirms a subscription purchase by validating the provided access token and signature with the backend service.
     ///
     /// This method sends the necessary data to the server to confirm the purchase,
-    /// and optionally includes additional parameters for customization.
+    /// and optionally includes experiment attribution.
     ///
     /// - Parameters:
     ///   - accessToken: A string representing the user's access token, used for authentication.
     ///   - signature: A string representing the purchase signature.
-    ///   - additionalParams: An optional dictionary of additional parameters to include in the request.
+    ///   - experimentAttribution: Experiment attribution to include in the request.
     /// - Returns: A `ConfirmPurchaseResponse` object on success
-    func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async throws -> ConfirmPurchaseResponse
+    func confirmPurchase(accessToken: String,
+                         signature: String,
+                         experimentAttribution: PurchaseExperimentAttribution?) async throws -> ConfirmPurchaseResponse
 }
 
 /// Communicates with our backend
@@ -187,11 +189,13 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
 
     // MARK: - Purchase Confirmation
 
-    public func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async throws -> ConfirmPurchaseResponse {
+    public func confirmPurchase(accessToken: String,
+                                signature: String,
+                                experimentAttribution: PurchaseExperimentAttribution?) async throws -> ConfirmPurchaseResponse {
         guard let request = SubscriptionRequest.confirmPurchase(baseURL: baseURL,
                                                                 accessToken: accessToken,
                                                                 signature: signature,
-                                                                additionalParams: additionalParams) else {
+                                                                experimentAttribution: experimentAttribution) else {
             throw SubscriptionEndpointServiceError.invalidRequest
         }
         let response = try await apiService.fetch(request: request.apiRequest)

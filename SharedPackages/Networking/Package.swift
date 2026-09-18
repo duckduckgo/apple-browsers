@@ -21,29 +21,43 @@
 import PackageDescription
 
 let package = Package(
-    name: "Waitlist-macOS",
-    platforms: [ .macOS("12.3") ],
+    name: "Networking",
+    platforms: [
+        .iOS("15.0"),
+        .macOS("12.3")
+    ],
     products: [
-        .library(name: "Waitlist-macOS", targets: ["Waitlist-macOS"]),
+        .library(name: "Networking", targets: ["Networking"]),
     ],
     dependencies: [
-        .package(path: "../../../SharedPackages/Networking"),
-        .package(path: "../SwiftUIExtensions"),
+        .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
+        .package(path: "../DDGError"),
+        .package(path: "../Common"),
+        .package(path: "../Infrastructure/SystemFrameworksExtensions"),
     ],
     targets: [
         .target(
-            name: "Waitlist-macOS",
+            name: "Networking",
             dependencies: [
-                .product(name: "Networking", package: "Networking"),
-                .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
+                .product(name: "DDGError", package: "DDGError"),
+                .product(name: "JWTKit", package: "jwt-kit"),
+                .product(name: "Common", package: "Common"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
+            ],
+            exclude: [
+                "README.md",
+                "Auth/README.md",
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .testTarget(
-            name: "WaitlistTests",
-            dependencies: ["Waitlist-macOS"]
-        )
+            name: "NetworkingTests",
+            dependencies: [
+                "Networking",
+            ]
+        ),
     ]
 )

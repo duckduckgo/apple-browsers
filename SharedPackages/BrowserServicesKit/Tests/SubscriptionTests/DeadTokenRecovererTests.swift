@@ -18,8 +18,7 @@
 
 import XCTest
 @testable import Subscription
-@testable import Networking
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
 import SubscriptionTestingUtilities
 
 final class DeadTokenRecovererTests: XCTestCase {

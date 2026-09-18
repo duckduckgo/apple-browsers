@@ -27,9 +27,8 @@ import UserNotifications
 @testable import UserScript
 @testable import Subscription
 import SubscriptionTestingUtilities
-import Networking
+@_spi(Testing) import Networking
 import BrowserServicesKitTestsUtils
-import NetworkingTestingUtils
 
 final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     

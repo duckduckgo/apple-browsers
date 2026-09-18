@@ -19,9 +19,8 @@
 import XCTest
 import Common
 @testable import Subscription
-@testable import Networking
+@_spi(Testing) @testable import Networking
 import SubscriptionTestingUtilities
-import NetworkingTestingUtils
 @_spi(Testing) import PixelKit
 @_spi(Testing) import WideEvent
 

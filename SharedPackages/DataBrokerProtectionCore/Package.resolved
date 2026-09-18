@@ -1,13 +1,13 @@
 {
-  "originHash" : "a78180ea08078c5a1a45649065a253ba4da013d4fbcff0e4a840be30aee27b00",
+  "originHash" : "63e7953909781dd4d96f61e156c1e71fc1e7309bc85b5c9206603239efbcd3ab",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "78ac8fe91528dfddaeab093dd88f8defcb13bc2a",
-        "version" : "17.1.0"
+        "revision" : "dfbdb5e9dea9bf076a08173f817aea0f4cfb72d8",
+        "version" : "17.4.0"
       }
     },
     {
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-asn1.git",
       "state" : {
-        "revision" : "a54383ada6cecde007d374f58f864e29370ba5c3",
-        "version" : "1.3.2"
+        "revision" : "3b6410f7dee09eb33cdd26260c5fd47fda19b0e2",
+        "version" : "1.7.3"
       }
     },
     {
@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-crypto.git",
       "state" : {
-        "revision" : "e8d6eba1fef23ae5b359c46b03f7d94be2f41fed",
-        "version" : "3.12.3"
+        "revision" : "95ba0316a9b733e92bb6b071255ff46263bbe7dc",
+        "version" : "3.15.1"
       }
     },
     {

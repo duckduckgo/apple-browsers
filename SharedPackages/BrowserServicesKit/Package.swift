@@ -27,8 +27,6 @@ let package = Package(
         .library(name: "PrivacyConfigTestsUtils", targets: ["PrivacyConfigTestsUtils"]),
         .library(name: "PrivacyDashboard", targets: ["PrivacyDashboard"]),
         .library(name: "Configuration", targets: ["Configuration"]),
-        .library(name: "Networking", targets: ["Networking"]),
-        .library(name: "NetworkingTestingUtils", targets: ["NetworkingTestingUtils"]),
         .library(name: "RemoteMessaging", targets: ["RemoteMessaging"]),
         .library(name: "RemoteMessagingTestsUtils", targets: ["RemoteMessagingTestsUtils"]),
         .library(name: "Navigation", targets: ["Navigation"]),
@@ -64,6 +62,7 @@ let package = Package(
         .package(path: "../Common"),
         .package(path: "../Persistence"),
         .package(path: "../PixelKit"),
+        .package(path: "../Networking"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
     ],
     targets: [
@@ -255,7 +254,7 @@ let package = Package(
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "DDGSyncCrypto", package: "sync_crypto"),
                 .product(name: "Gzip", package: "GzipSwift"),
-                "Networking",
+                .product(name: "Networking", package: "Networking"),
                 "PrivacyConfig",
             ],
             resources: [
@@ -346,31 +345,11 @@ let package = Package(
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                "Networking",
+                .product(name: "Networking", package: "Networking"),
                 "PrivacyConfig",
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
-        .target(
-            name: "Networking",
-            dependencies: [
-                .product(name: "DDGError", package: "DDGError"),
-                .product(name: "JWTKit", package: "jwt-kit"),
-                .product(name: "Common", package: "Common"),
-                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-            ],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
-        .target(
-            name: "NetworkingTestingUtils",
-            dependencies: [
-                "Networking",
             ]
         ),
         .target(
@@ -382,7 +361,6 @@ let package = Package(
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 "Configuration",
-                "Networking",
                 .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfig",
             ],
@@ -447,7 +425,8 @@ let package = Package(
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                "Networking",
+                .product(name: "Networking", package: "Networking"),
+                .product(name: "JWTKit", package: "jwt-kit"),
                 "UserScript",
                 .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "Persistence", package: "Persistence"),
@@ -466,7 +445,7 @@ let package = Package(
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                "NetworkingTestingUtils",
+                .product(name: "Networking", package: "Networking"),
             ]
         ),
         .target(
@@ -506,7 +485,7 @@ let package = Package(
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                "Networking",
+                .product(name: "Networking", package: "Networking"),
                 .product(name: "PixelKit", package: "PixelKit"),
                 "PrivacyConfig",
             ],
@@ -674,7 +653,7 @@ let package = Package(
                 "DDGSync",
                 .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfigTestsUtils",
-                "NetworkingTestingUtils"
+                .product(name: "Networking", package: "Networking"),
             ],
             resources: [
                 .copy("Resources/SyncMetadata_V3.sqlite"),
@@ -687,13 +666,6 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 .product(name: "DDGSyncCrypto", package: "sync_crypto"),
-            ]
-        ),
-        .testTarget(
-            name: "NetworkingTests",
-            dependencies: [
-                "SharedObjCTestsUtils",
-                "NetworkingTestingUtils"
             ]
         ),
         .testTarget(
@@ -791,7 +763,7 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "Configuration",
-                "NetworkingTestingUtils",
+                .product(name: "Networking", package: "Networking"),
                 .product(name: "Persistence", package: "Persistence"),
             ]
         ),
@@ -832,7 +804,8 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "Subscription",
                 "SubscriptionTestingUtilities",
-                "NetworkingTestingUtils",
+                .product(name: "Networking", package: "Networking"),
+                .product(name: "JWTKit", package: "jwt-kit"),
                 .product(name: "Persistence", package: "Persistence"),
             ]
         ),
@@ -850,8 +823,7 @@ let package = Package(
             name: "MaliciousSiteProtectionTests",
             dependencies: [
                 "SharedObjCTestsUtils",
-                "Networking",
-                "NetworkingTestingUtils",
+                .product(name: "Networking", package: "Networking"),
                 "MaliciousSiteProtection",
                 .product(name: "Clocks", package: "swift-clocks"),
             ],

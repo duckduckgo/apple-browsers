@@ -17,9 +17,9 @@
 //
 
 import Foundation
-import Networking
 import JWTKit
 
+@_spi(Testing)
 public final class MockOAuthService: OAuthService {
 
     public init() {}

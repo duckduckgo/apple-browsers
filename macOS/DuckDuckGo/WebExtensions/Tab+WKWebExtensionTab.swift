@@ -31,17 +31,18 @@ extension Tab: WKWebExtensionTab {
         case notMuted
     }
 
+    private var mainWindowController: MainWindowController? {
+        // The manager prefers the current hosting window for shared pinned tabs, but ignores it
+        // during a handoff once the source collection no longer owns the tab.
+        return Application.appDelegate.windowControllersManager.windowController(for: self)
+    }
+
     private var tabCollectionViewModel: TabCollectionViewModel? {
-        // A shared pinned tab belongs to multiple window view models, so prefer the window that
-        // currently hosts its web view. Fall back to the manager while the web view is detached.
-        let mainWindowController = webView.window?.windowController as? MainWindowController
-            ?? Application.appDelegate.windowControllersManager.windowController(for: self)
-        let mainViewController = mainWindowController?.mainViewController
-        return mainViewController?.tabCollectionViewModel
+        return mainWindowController?.mainViewController.tabCollectionViewModel
     }
 
     func window(for context: WKWebExtensionContext) -> (any WKWebExtensionWindow)? {
-        return webView.window?.windowController as? MainWindowController
+        return mainWindowController
     }
 
     private func indexInWindow(for context: WKWebExtensionContext!) -> UInt {

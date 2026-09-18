@@ -768,7 +768,7 @@ final class TabCollectionViewModel: NSObject {
         otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
         otherViewModel.selectWithoutResettingState(at: toIndex)
 
-        if case .loaded(let tab) = movedTab {
+        if case .loaded(let tab) = movedTab, let oldWebExtensionIndex {
             notifyWebExtensionTabMoved(tab, from: oldWebExtensionIndex)
         }
     }
@@ -907,7 +907,7 @@ final class TabCollectionViewModel: NSObject {
 
         let movedTab = AnyTab.loaded(tab)
         let parentTab = movedTab.parentTab
-        let oldWebExtensionIndex = webExtensionIndex(for: .unpinned(index))
+        guard let oldWebExtensionIndex = webExtensionIndex(for: .unpinned(index)) else { return }
         guard pinnedTabsManager?.pinTab(tab, from: tabCollection) == true else { return }
         didRemoveTab(movedTab, at: .unpinned(index), withParent: parentTab)
         selectPinnedTab(at: pinnedTabsCollection.tabs.count - 1)
@@ -921,7 +921,7 @@ final class TabCollectionViewModel: NSObject {
             shouldBlockPinnedTabsManagerUpdates = false
         }
 
-        let oldWebExtensionIndex = webExtensionIndex(for: .pinned(index))
+        guard let oldWebExtensionIndex = webExtensionIndex(for: .pinned(index)) else { return }
         guard let movedTab = pinnedTabsManager?.unpinTab(at: index, movingTo: tabCollection, at: 0) else {
             Logger.tabLazyLoading.error("Unable to unpin a tab")
             return
@@ -1000,7 +1000,7 @@ final class TabCollectionViewModel: NSObject {
         selectWithoutResettingState(at: newIndex)
 
         delegate?.tabCollectionViewModel(self, didMoveTabAt: index, to: newIndex)
-        if case .loaded(let tab) = movedTab {
+        if case .loaded(let tab) = movedTab, let oldWebExtensionIndex {
             notifyWebExtensionTabMoved(tab, from: oldWebExtensionIndex)
         }
     }
@@ -1111,17 +1111,28 @@ final class TabCollectionViewModel: NSObject {
 
 extension TabCollectionViewModel {
 
-    func webExtensionIndex(for index: TabIndex) -> Int {
+    func webExtensionIndex(for index: TabIndex) -> Int? {
+        guard let collection = tabCollection(for: index),
+              collection.tabs.indices.contains(index.item),
+              case .loaded = collection.tabs[index.item] else { return nil }
+
+        let loadedTabsBeforeIndex = collection.tabs[..<index.item].reduce(into: 0) { count, tab in
+            if case .loaded = tab {
+                count += 1
+            }
+        }
+
         switch index {
-        case .pinned(let index):
-            return index
-        case .unpinned(let index):
-            return (pinnedTabsCollection?.tabs.count ?? 0) + index
+        case .pinned:
+            return loadedTabsBeforeIndex
+        case .unpinned:
+            return (pinnedTabsCollection?.loadedTabs.count ?? 0) + loadedTabsBeforeIndex
         }
     }
 
     func webExtensionIndex(of tab: Tab) -> Int? {
-        indexInAllTabs(of: tab).map(webExtensionIndex(for:))
+        guard let index = indexInAllTabs(of: tab) else { return nil }
+        return webExtensionIndex(for: index)
     }
 
     func notifyWebExtensionTabMoved(_ tab: Tab, from oldIndex: Int) {

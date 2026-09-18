@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Cocoa
+import PrivacyConfig
+import SharedTestUtilities
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -66,6 +68,26 @@ final class WindowsManagerPopupTests: XCTestCase {
         XCTAssertIdentical(tabsToClose[1], secondTab)
     }
 
+    @MainActor
+    func testWhenTabModelMovesBeforeWebViewThenDestinationWindowOwnsTabForWebExtensions() {
+        let movedTab = Tab(content: .newtab)
+        let (sourceWindowController, sourceViewModel) = makeWindowController(tabs: [movedTab])
+        let (destinationWindowController, destinationViewModel) = makeWindowController(tabs: [])
+        let windowControllersManager = WindowControllersManagerMock()
+        windowControllersManager.mainWindowControllers = [sourceWindowController, destinationWindowController]
+
+        sourceWindowController.window?.contentView = movedTab.webView
+        XCTAssertIdentical(movedTab.webView.window?.windowController, sourceWindowController)
+
+        XCTAssertTrue(sourceViewModel.tabCollection.moveTab(at: 0, to: destinationViewModel.tabCollection, at: 0))
+
+        XCTAssertIdentical(windowControllersManager.windowController(for: movedTab), destinationWindowController)
+
+        windowControllersManager.mainWindowControllers = []
+        sourceWindowController.window?.contentView = nil
+        destinationViewModel.tabCollection.clearAfterMerge()
+    }
+
     // MARK: - Content Size Tests
 
     @MainActor
@@ -80,6 +102,28 @@ final class WindowsManagerPopupTests: XCTestCase {
 
         XCTAssertEqual(contentSize.width, WindowsManager.Constants.defaultPopUpWidth)
         XCTAssertEqual(contentSize.height, WindowsManager.Constants.defaultPopUpHeight)
+    }
+
+    @MainActor
+    private func makeWindowController(tabs: [Tab]) -> (MainWindowController, TabCollectionViewModel) {
+        let tabCollectionViewModel = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: tabs),
+            windowControllersManager: WindowControllersManagerMock()
+        )
+        let mainViewController = MainViewController(
+            tabCollectionViewModel: tabCollectionViewModel,
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
+            aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger())
+        )
+        let window = MockWindow(isVisible: false)
+        let windowController = MainWindowController(
+            window: window,
+            mainViewController: mainViewController,
+            fireViewModel: Application.appDelegate.fireCoordinator.fireViewModel,
+            themeManager: MockThemeManager()
+        )
+        windowController.window = window
+        return (windowController, tabCollectionViewModel)
     }
 
     @MainActor

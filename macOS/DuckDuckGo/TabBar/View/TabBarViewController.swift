@@ -1574,17 +1574,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
-        let oldWebExtensionIndex = tabCollectionViewModel.webExtensionIndex(for: sourceTab)
-        var destinationWindow: NSWindow?
+        guard let oldWebExtensionIndex = tabCollectionViewModel.webExtensionIndex(for: sourceTab) else { return }
 
         // The tab moves to a new window; it isn't closed and reopened.
         TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
             tabCollectionViewModel.remove(at: sourceTab, published: false)
-            destinationWindow = WindowsManager.openNewWindow(with: tab, droppingPoint: droppingPoint)
-        }
-        guard let destinationWindow else {
-            assertionFailure("Failed to open new window")
-            return
+            WindowsManager.openNewWindow(with: tab, droppingPoint: droppingPoint)
         }
         tabCollectionViewModel.notifyWebExtensionTabMoved(tab, from: oldWebExtensionIndex)
     }

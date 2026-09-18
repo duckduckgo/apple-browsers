@@ -400,6 +400,34 @@ extension TabCollectionViewModelTests {
     }
 
     @MainActor
+    func testWhenGettingWebExtensionIndicesThenUnloadedTabsAreExcluded() {
+        let unloadedPinnedTab = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let loadedPinnedTab = Tab(content: .newtab)
+        let pinnedTabsManager = PinnedTabsManager(tabCollection: TabCollection(tabs: [
+            .unloaded(unloadedPinnedTab),
+            .loaded(loadedPinnedTab),
+        ]))
+        let pinnedTabsManagerProvider = PinnedTabsManagerProvidingMock()
+        pinnedTabsManagerProvider.newPinnedTabsManager = pinnedTabsManager
+
+        let firstUnpinnedTab = Tab(content: .newtab)
+        let unloadedUnpinnedTab = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let secondUnpinnedTab = Tab(content: .newtab)
+        let tabCollectionViewModel = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [
+                .loaded(firstUnpinnedTab),
+                .unloaded(unloadedUnpinnedTab),
+                .loaded(secondUnpinnedTab),
+            ]),
+            pinnedTabsManagerProvider: pinnedTabsManagerProvider)
+
+        XCTAssertNil(tabCollectionViewModel.webExtensionIndex(for: .pinned(0)))
+        XCTAssertEqual(tabCollectionViewModel.webExtensionIndex(of: loadedPinnedTab), 0)
+        XCTAssertEqual(tabCollectionViewModel.webExtensionIndex(of: firstUnpinnedTab), 1)
+        XCTAssertEqual(tabCollectionViewModel.webExtensionIndex(of: secondUnpinnedTab), 2)
+    }
+
+    @MainActor
     func testWhenPinningAndUnpinningThenWebExtensionMovesAreReportedWithoutChangingIdentity() {
         let firstTab = Tab(content: .newtab)
         let movedTab = Tab(content: .newtab)

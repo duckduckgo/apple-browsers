@@ -1627,7 +1627,7 @@ extension MainViewController {
     @objc func moveTabToNewWindow(_ sender: Any?) {
         guard let (tab, index) = getActiveTabAndIndex() else { return }
 
-        let oldWebExtensionIndex = tabCollectionViewModel.webExtensionIndex(for: index)
+        guard let oldWebExtensionIndex = tabCollectionViewModel.webExtensionIndex(for: index) else { return }
         var destinationWindow: NSWindow?
 
         // The tab moves to a new window; it isn't closed and reopened.
@@ -1685,8 +1685,9 @@ extension MainViewController {
         let movedWebExtensionTabs = otherWindowControllers.flatMap { windowController in
             let viewModel = windowController.mainViewController.tabCollectionViewModel
             return viewModel.tabCollection.tabs.enumerated().compactMap { index, tab -> (Tab, Int, TabCollectionViewModel)? in
-                guard case .loaded(let tab) = tab else { return nil }
-                return (tab, viewModel.webExtensionIndex(for: .unpinned(index)), viewModel)
+                guard case .loaded(let tab) = tab,
+                      let oldIndex = viewModel.webExtensionIndex(for: .unpinned(index)) else { return nil }
+                return (tab, oldIndex, viewModel)
             }
         }
 

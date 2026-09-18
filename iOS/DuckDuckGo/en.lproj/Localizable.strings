@@ -3403,6 +3403,105 @@ https://duckduckgo.com/mac";
 /* Title for the Strict Routing setting item. */
 "network.protection.vpn.strict.routing.setting.title" = "Enforce Strict Routing (Recommended)";
 
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.ads" = "Caught a few ads trying to sneak in today.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.afternoon" = "Afternoon slump? A quick search might help.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.chatPrivately" = "Hey there, let's chat privately.";
+
+/* Dax greeting on the New Tab page. Preserve the hard line break and the space before it. */
+"new-tab-page.dax-greeting.cookieBreakfast" = "Yum! Cookie pop-ups \nare my favorite breakfast.";
+
+/* Dax greeting on the New Tab page. Preserve the hard line break and the space before it. */
+"new-tab-page.dax-greeting.cookieDinner" = "I eat cookie pop-ups \nfor dinner.";
+
+/* Dax greeting on the New Tab page. Preserve the hard line break and the space before it. */
+"new-tab-page.dax-greeting.cookieLunch" = "Yum! Cookie pop-ups \nfor lunch.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.cookies" = "Cleared a few cookie pop-ups for you.";
+
+/* Dax greeting on the New Tab page. Refers to dark mode. */
+"new-tab-page.dax-greeting.dark" = "Dark and cozy in here. Perfect time to search.";
+
+/* Dax greeting on the New Tab page. Dive refers to browsing and ducks diving. */
+"new-tab-page.dax-greeting.diveIn" = "Let's dive into the internet!";
+
+/* Dax greeting on the New Tab page. Combines DuckDuckGo and hello. */
+"new-tab-page.dax-greeting.duckDuckHello" = "DuckDuckHello!";
+
+/* Dax greeting on the New Tab page. Duck replaces a swear word playfully. */
+"new-tab-page.dax-greeting.duckIt" = "Duck it! No one's watching.";
+
+/* Dax greeting on the New Tab page. Quack (a duck sound) replaces crack in crack of dawn. */
+"new-tab-page.dax-greeting.early" = "Quack of dawn, glad you're up.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.evening" = "Evening. Got a burning question for me?";
+
+/* Dax greeting on the New Tab page. Ducky means cheerful and refers to a duck. */
+"new-tab-page.dax-greeting.feelingDucky" = "Feeling ducky? Let's dive in.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.firstOpen" = "There you are. Great to see you!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.frequentHabit" = "This is becoming a habit. A good one.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.frequentSearch" = "We've searched a lot together. What's next?";
+
+/* Dax greeting on the New Tab page. Duck replaces a swear word in an expression of relief. */
+"new-tab-page.dax-greeting.fridayDuck" = "Thank duck it's Friday!!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.fridaySearch" = "Friday! One more search before the weekend?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.justUs" = "Just us here. Ask me anything privately.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.late" = "Up late, huh? I never sleep, so ask away.";
+
+/* Dax greeting on the New Tab page. Refers to light mode; DDG means DuckDuckGo. */
+"new-tab-page.dax-greeting.light" = "Bright out here. Should have worn my DDG glasses!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.monday" = "Let's ease into Monday together.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.nobodyWatching" = "Search like nobody's watching. Because they're not.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.question" = "Hi there! Got a question for me?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.ready" = "Hey, I'm ready whenever you are.";
+
+/* Dax greeting on the New Tab page. Plays on water rolling off a duck’s back. */
+"new-tab-page.dax-greeting.scams" = "Just like water, scams roll right off my back!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.searchOrChat" = "Search or chat? I'm here for both.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.trackersAsk" = "Trackers blocked already. Ask me anything.";
+
+/* Dax greeting on the New Tab page. Preserve the trailing space. */
+"new-tab-page.dax-greeting.trackersQuiet" = "I've been blocking trackers quietly. ";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.trackersSearch" = "Trackers blocked. What should we look for today?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.wednesday" = "Halfway through the week. You're doing great!";
+
+/* Dax greeting on the New Tab page. Wing it means improvise and refers to duck wings. */
+"new-tab-page.dax-greeting.wingIt" = "Let's wing it together. Privately.";
+
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirm";
 
@@ -5563,102 +5662,3 @@ https://duckduckgo.com/windows";
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "What do you want to import?";
 
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.monday" = "Let's ease into Monday together.";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.wednesday" = "Halfway through the week. You're doing great!";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.fridaySearch" = "Friday! One more search before the weekend?";
-
-/* Dax greeting on the New Tab page. Duck replaces a swear word in an expression of relief. */
-"new-tab-page.dax-greeting.fridayDuck" = "Thank duck it's Friday!!";
-
-/* Dax greeting on the New Tab page. Quack (a duck sound) replaces crack in crack of dawn. */
-"new-tab-page.dax-greeting.early" = "Quack of dawn, glad you're up.";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.afternoon" = "Afternoon slump? A quick search might help.";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.evening" = "Evening. Got a burning question for me?";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.late" = "Up late, huh? I never sleep, so ask away.";
-
-/* Dax greeting on the New Tab page. Refers to dark mode. */
-"new-tab-page.dax-greeting.dark" = "Dark and cozy in here. Perfect time to search.";
-
-/* Dax greeting on the New Tab page. Refers to light mode; DDG means DuckDuckGo. */
-"new-tab-page.dax-greeting.light" = "Bright out here. Should have worn my DDG glasses!";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.firstOpen" = "There you are. Great to see you!";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.frequentHabit" = "This is becoming a habit. A good one.";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.frequentSearch" = "We've searched a lot together. What's next?";
-
-/* Dax greeting on the New Tab page. Preserve the trailing space. */
-"new-tab-page.dax-greeting.trackersQuiet" = "I've been blocking trackers quietly. ";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.cookies" = "Cleared a few cookie pop-ups for you.";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.ads" = "Caught a few ads trying to sneak in today.";
-
-/* Dax greeting on the New Tab page. Plays on water rolling off a duck’s back. */
-"new-tab-page.dax-greeting.scams" = "Just like water, scams roll right off my back!";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.trackersSearch" = "Trackers blocked. What should we look for today?";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.trackersAsk" = "Trackers blocked already. Ask me anything.";
-
-/* Dax greeting on the New Tab page. Preserve the hard line break and the space before it. */
-"new-tab-page.dax-greeting.cookieBreakfast" = "Yum! Cookie pop-ups \nare my favorite breakfast.";
-
-/* Dax greeting on the New Tab page. Preserve the hard line break and the space before it. */
-"new-tab-page.dax-greeting.cookieLunch" = "Yum! Cookie pop-ups \nfor lunch.";
-
-/* Dax greeting on the New Tab page. Preserve the hard line break and the space before it. */
-"new-tab-page.dax-greeting.cookieDinner" = "I eat cookie pop-ups \nfor dinner.";
-
-/* Dax greeting on the New Tab page. Wing it means improvise and refers to duck wings. */
-"new-tab-page.dax-greeting.wingIt" = "Let's wing it together. Privately.";
-
-/* Dax greeting on the New Tab page. Duck replaces a swear word playfully. */
-"new-tab-page.dax-greeting.duckIt" = "Duck it! No one's watching.";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.ready" = "Hey, I'm ready whenever you are.";
-
-/* Dax greeting on the New Tab page. Ducky means cheerful and refers to a duck. */
-"new-tab-page.dax-greeting.feelingDucky" = "Feeling ducky? Let's dive in.";
-
-/* Dax greeting on the New Tab page. Dive refers to browsing and ducks diving. */
-"new-tab-page.dax-greeting.diveIn" = "Let's dive into the internet!";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.chatPrivately" = "Hey there, let's chat privately.";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.nobodyWatching" = "Search like nobody's watching. Because they're not.";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.justUs" = "Just us here. Ask me anything privately.";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.question" = "Hi there! Got a question for me?";
-
-/* Dax greeting on the New Tab page. */
-"new-tab-page.dax-greeting.searchOrChat" = "Search or chat? I'm here for both.";
-
-/* Dax greeting on the New Tab page. Combines DuckDuckGo and hello. */
-"new-tab-page.dax-greeting.duckDuckHello" = "DuckDuckHello!";

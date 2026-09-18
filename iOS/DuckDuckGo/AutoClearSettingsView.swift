@@ -36,6 +36,7 @@ struct AutoClearSettingsView: View {
                 timingSection
             }
         }
+        .accessibilityIdentifier("Settings.List.AutoClear")
         .applySettingsListModifiers(title: UserText.settingsAutomaticallyDeleteData,
                                     displayMode: .inline,
                                     viewModel: settingsViewModel)
@@ -94,6 +95,7 @@ struct AutoClearSettingsView: View {
             ForEach(viewModel.timingOptions, id: \.self) { timing in
                 TimingOptionRow(
                     label: viewModel.timingLabel(for: timing),
+                    accessibilityIdentifier: timing.accessibilityIdentifier,
                     isSelected: viewModel.selectedTiming == timing,
                     action: {
                         viewModel.selectedTimingBinding.wrappedValue = timing
@@ -114,6 +116,7 @@ struct AutoClearSettingsView: View {
 
 private struct TimingOptionRow: View {
     let label: String
+    let accessibilityIdentifier: String
     let isSelected: Bool
     let action: () -> Void
     
@@ -139,7 +142,25 @@ private struct TimingOptionRow: View {
         .frame(maxWidth: .infinity)
         .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
         .accessibilityLabel(label)
+        .accessibilityIdentifier(accessibilityIdentifier)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+private extension AutoClearSettingsModel.Timing {
+    var accessibilityIdentifier: String {
+        switch self {
+        case .termination:
+            return "Settings.AutoClear.Timing.AppExit"
+        case .delay5min:
+            return "Settings.AutoClear.Timing.FiveMinutes"
+        case .delay15min:
+            return "Settings.AutoClear.Timing.FifteenMinutes"
+        case .delay30min:
+            return "Settings.AutoClear.Timing.ThirtyMinutes"
+        case .delay60min:
+            return "Settings.AutoClear.Timing.OneHour"
+        }
     }
 }
 

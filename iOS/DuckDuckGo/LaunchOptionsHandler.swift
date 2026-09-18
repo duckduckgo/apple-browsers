@@ -253,6 +253,8 @@ extension LaunchOptionsHandler {
         if let bundleID = Bundle.main.bundleIdentifier {
             userDefaults.removePersistentDomain(forName: bundleID)
         }
+        let appGroupName = Global.appUserDefaultsGroupName
+        UserDefaults(suiteName: appGroupName)?.removePersistentDomain(forName: appGroupName)
         UserDefaults(suiteName: statisticsGroupName)?.removePersistentDomain(forName: statisticsGroupName)
         clearAppSupportFiles()
     }

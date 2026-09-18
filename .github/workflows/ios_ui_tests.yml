@@ -149,8 +149,43 @@ jobs:
     - name: Print macOS version
       run: sw_vers
 
+    - name: Set cache key hash
+      run: |
+         has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
+         if [[ "$has_only_tags" == "true" ]]; then
+           # hashFiles does not respect the working directory, so the full path must be specified
+           echo "cache_key_hash=${{ hashFiles('iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+         else
+           echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
+         fi
+
+    - name: Cache SPM
+      if: env.cache_key_hash
+      uses: actions/cache@v5
+      with:
+        path: iOS/DerivedData/SourcePackages
+        key: ${{ runner.os }}-ios-${{ env.cache_key_hash }}
+        restore-keys: |
+          ${{ runner.os }}-ios-
+
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
+
+    - name: Restore Xcode Compilation Cache
+      if: runner.environment != 'self-hosted'
+      uses: actions/cache/restore@v5
+      with:
+        path: iOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-ios-ui-tests
+        restore-keys: |
+          xcode-compilation-cache-ios-ui-tests-
+
+    - name: Setup Bitrise Build Cache
+      uses: ./.github/actions/bitrise-build-cache
+      with:
+        enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
+        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
     - name: Select build simulator
       id: select-simulator
@@ -169,9 +204,28 @@ jobs:
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           | tee xcodebuild.log \
           | xcbeautify
+
+    - name: Compute Compilation Cache hash
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
+      id: compilation-cache-hash
+      run: |
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v5
+      with:
+        path: iOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-ios-ui-tests-${{ steps.compilation-cache-hash.outputs.hash }}
 
     - name: Package build products
       id: package

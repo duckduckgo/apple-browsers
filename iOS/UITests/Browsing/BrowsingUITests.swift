@@ -42,4 +42,16 @@ final class BrowsingUITests: UITestCase {
             app.assertPageContains("Privacy Test Pages")
         }
     }
+
+    func testSettingsCanBeOpenedFromNewTabMenu() {
+        app.openSettings()
+        app.dismissSettings()
+    }
+
+    func testSettingsCanBeOpenedFromWebpageMenu() {
+        app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
+        app.openSettings()
+        app.dismissSettings()
+        app.assertPageContains("Privacy Test Pages")
+    }
 }

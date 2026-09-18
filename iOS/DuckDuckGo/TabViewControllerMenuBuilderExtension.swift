@@ -910,7 +910,10 @@ extension TabViewController {
             image = isProtected ? DesignSystemImages.Glyphs.Size24.shieldBlocked : DesignSystemImages.Glyphs.Size24.shield
         }
 
-        return BrowsingMenuEntry.regular(name: title, image: image, action: { [weak self] in
+        return BrowsingMenuEntry.regular(name: title,
+                                         image: image,
+                                         accessibilityIdentifier: "Browser.Menu.PrivacyProtection.Toggle",
+                                         action: { [weak self] in
             self?.onToggleProtectionAction(forDomain: domain, isProtected: isProtected)
         })
     }

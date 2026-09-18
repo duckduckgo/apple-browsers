@@ -256,6 +256,7 @@ extension LaunchOptionsHandler {
         let appGroupName = Global.appUserDefaultsGroupName
         UserDefaults(suiteName: appGroupName)?.removePersistentDomain(forName: appGroupName)
         UserDefaults(suiteName: statisticsGroupName)?.removePersistentDomain(forName: statisticsGroupName)
+        UserDefaults(suiteName: ContentBlockerStoreConstants.groupName)?.removePersistentDomain(forName: ContentBlockerStoreConstants.groupName)
         clearAppSupportFiles()
     }
 

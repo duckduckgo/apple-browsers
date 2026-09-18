@@ -19,7 +19,6 @@
 
 import Foundation
 
-/// Stable identities are independent of translated copy.
 enum DaxGreeting: String, CaseIterable {
     case monday
     case wednesday

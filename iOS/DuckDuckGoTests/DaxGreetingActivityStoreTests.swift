@@ -43,7 +43,7 @@ final class DaxGreetingActivityStoreTests: XCTestCase {
         XCTAssertEqual(context.isFirstOpenOfDay, true)
         XCTAssertEqual(context.appearance, .dark)
 
-        lastActiveDate = now // The existing daily-activity recorder runs after greeting collection.
+        lastActiveDate = now
         store.recordForegroundOpen()
         store.recordForegroundOpen()
         context = store.context(at: now, calendar: calendar, appearance: nil)

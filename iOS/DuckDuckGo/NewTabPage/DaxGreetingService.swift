@@ -25,8 +25,7 @@ protocol DaxGreetingProviding {
     func getNewGreeting() -> String
 }
 
-/// A snapshot supplied by the integration layer. Nil means the corresponding context is unavailable.
-/// Open counts must describe today in the supplied calendar and time zone; protection flags describe current availability.
+/// Nil values make the corresponding greeting rules ineligible.
 struct DaxGreetingContext {
     enum Appearance: Equatable {
         case light, dark
@@ -41,8 +40,6 @@ struct DaxGreetingContext {
     var isScamProtectionEnabled: Bool?
 }
 
-/// Share one instance between NTP consumers. Cache and history reset with a new instance.
-/// This service does not observe lifecycle events or count calls as app opens.
 @MainActor
 final class DaxGreetingService {
     private struct Conditions: Equatable {
@@ -65,8 +62,6 @@ final class DaxGreetingService {
     private var selection: Selection?
     private var recentGreetings: [DaxGreeting] = []
 
-    /// The random selector must return an index in the supplied nonempty range.
-    /// The context provider is synchronous and receives the same time/calendar used for eligibility.
     init(now: @escaping () -> Date = Date.init,
          calendarProvider: @escaping () -> Calendar = { Calendar.current },
          contextProvider: @escaping (Date, Calendar) -> DaxGreetingContext = { _, _ in DaxGreetingContext() },
@@ -118,7 +113,6 @@ final class DaxGreetingService {
         if context.isAdBlockingEnabled == true { features.append(.ads) }
         if context.isScamProtectionEnabled == true { features.append(.scams) }
 
-        // Each inventory category gets one random draw, regardless of its variant count.
         return [
             weekday,
             [time],
@@ -160,7 +154,6 @@ extension DaxGreetingService: DaxGreetingProviding {
         }.filter { !$0.isEmpty }
         let candidates: [DaxGreeting]
         if availableGroups.isEmpty {
-            // Eleven generic greetings guarantee availability outside the five-item history.
             candidates = DaxGreeting.generic.filter { !recentGreetings.contains($0) }
         } else {
             candidates = availableGroups[randomIndex(availableGroups.indices)]

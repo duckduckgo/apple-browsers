@@ -668,6 +668,11 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Gates the server-rendered first paywall.
     case performanceOptimizedPaywalls
+
+    /// Gates the Subscriber Offers settings entry point; its settings carry the Partnerships Hub URL
+    /// and the NEW badge toggle. Same subfeature key as Android and Windows, so one remote config
+    /// change covers every platform.
+    case partnershipsHub
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

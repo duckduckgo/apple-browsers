@@ -1576,6 +1576,7 @@ struct UserText {
     static let paidAIChat = NSLocalizedString("preferences.paidAIChat", value: "Duck.ai", comment: "Title of the option to show the Duck.ai Pro preferences")
     static let identityTheftRestoration = NSLocalizedString("preferences.identityTheftRestoration", value: "Identity Theft Restoration", comment: "Title of the option to show the Identity Theft Restoration preferences")
     static let subscriptionSettings = NSLocalizedString("preferences.subscriptionSettings", value: "Subscription Settings", comment: "Title of the option to show the Subscription Settings preferences")
+    static let subscriberOffers = NotLocalizedString("preferences.subscriberOffers", value: "Subscriber Offers", comment: "Title of a settings sidebar item in the DuckDuckGo Subscription section. Opens a web page listing exclusive offers from partner companies that are available to subscribers.")
     static let duckPlayer = NSLocalizedString("preferences.duck-player", value: "Duck Player", comment: "Title of the option to show the Duck Player browser preferences")
     static let youTubeAdBlocking = NSLocalizedString("preferences.youtube-ad-blocking", value: "Ad Blocking", comment: "Title of the option to show the Ad Blocking preferences")
     static let adBlockingDescription = NSLocalizedString("preferences.ad-blocking.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.", comment: "Description of the Ad Blocking feature in preferences")

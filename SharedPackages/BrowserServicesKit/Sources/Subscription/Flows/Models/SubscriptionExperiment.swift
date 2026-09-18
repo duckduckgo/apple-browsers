@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+/// Identifies an experiment and cohort attributed to a subscription purchase.
 public struct SubscriptionExperiment: Codable, Equatable, Hashable {
     public let experimentName: String
     public let experimentCohort: String

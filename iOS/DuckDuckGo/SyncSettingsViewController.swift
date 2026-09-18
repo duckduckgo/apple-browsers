@@ -57,6 +57,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     let syncCredentialsAdapter: SyncCredentialsAdapter
     let syncCreditCardsAdapter: SyncCreditCardsAdapter?
     weak var scanCodeViewModel: ScanOrPasteCodeViewModel?
+    weak var scanCodeNavigationController: UINavigationController?
     var codeCollectionIntent: CodeCollectionIntent?
 
     let userAuthenticator = UserAuthenticator(reason: UserText.syncUserUserAuthenticationReason,
@@ -697,6 +698,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             await handleError(.thirdPartyAccountAlreadyUpgraded, error: nil, event: nil)
         case .syncCancelledFromOtherDevice:
             sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
+            await dismissPairingV2Setup()
             await handleError(.syncCancelledFromOtherDevice, error: nil, event: nil)
         case .failedToFetchPublicKey,
                 .failedToFetchConnectRecoveryKey,

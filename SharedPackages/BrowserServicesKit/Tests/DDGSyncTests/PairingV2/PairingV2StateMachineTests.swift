@@ -797,7 +797,7 @@ final class PairingV2StateMachineTests: XCTestCase {
 
     func testWhenV21HostAwaitingOrUnknownReceivesFailureByeThenFailsReasonAware() {
         let testCases: [(reason: PairingV2ByeReason, error: PairingV2Error)] = [
-            (.cancelled, .cancelled),
+            (.cancelled, .peerCancelled),
             (.error, .peerDisconnected),
             (.unknown("future_reason"), .peerDisconnected)
         ]
@@ -817,7 +817,7 @@ final class PairingV2StateMachineTests: XCTestCase {
     func testWhenByeArrivesDuringConfirmationThenAborts() {
         let testCases: [(reason: PairingV2ByeReason, error: PairingV2Error)] = [
             (.done, .peerDisconnected),
-            (.cancelled, .cancelled),
+            (.cancelled, .peerCancelled),
             (.error, .peerDisconnected),
             (.unknown("future_reason"), .peerDisconnected)
         ]

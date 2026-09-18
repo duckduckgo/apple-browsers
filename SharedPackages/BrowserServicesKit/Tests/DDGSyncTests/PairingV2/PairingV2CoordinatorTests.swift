@@ -335,7 +335,10 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
         try await coordinator.pollOnce()
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
         await coordinator.cancel()
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets, [secret])
         XCTAssertEqual(messageExchanger.sendAuthorizationSecrets, [secret, secret])
@@ -366,7 +369,10 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                                                         publicKey: peerKeyPair.publicKey))
                 }
                 try await coordinator.pollOnce()
+                let closeChannelExpectation = expectation(description: "Local channel closed")
+                messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
                 await coordinator.cancel()
+                await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
                 XCTAssertEqual(coordinator.negotiatedVersion, .v2)
                 XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets, [secret])
@@ -389,7 +395,10 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
         try await coordinator.pollOnce()
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
         await coordinator.cancel()
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets, [nil])
         XCTAssertEqual(messageExchanger.sendAuthorizationSecrets, [nil, nil])
@@ -614,6 +623,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let peerKeyPair = try makePeerKeyPair()
         let coordinator = makeCoordinator(syncService: syncService, messageExchanger: messageExchanger, messageCrypto: messageCrypto)
         let error = PairingV2Error.secondHello
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
         let hello = try localHello(from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto)
@@ -628,6 +639,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         try await coordinator.pollOnce()
 
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
         XCTAssertEqual(coordinator.state, .failed(error))
         XCTAssertEqual(messageExchanger.closeChannelCalls, [hello.channelId])
     }
@@ -820,20 +832,49 @@ final class PairingV2CoordinatorTests: XCTestCase {
             await confirmationGate.open()
         }
         let setup = try await makeHostWithPendingConfirmationAndQueuedBye(confirmationDelegate: confirmationDelegate)
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        setup.messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
         try await setup.coordinator.pollOnce()
         try await setup.coordinator.pollOnce() // A dismissed confirmation must not affect the finished session.
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         let sentMessages = try decryptedSentMessages(from: setup.messageExchanger,
                                                      peerPrivateKey: setup.peerKeyPair.privateKey,
                                                      messageCrypto: setup.messageCrypto)
         XCTAssertEqual(confirmationDelegate.dismissConfirmationCallCount, 1)
-        XCTAssertEqual(setup.coordinator.state, .failed(.cancelled))
+        XCTAssertEqual(setup.coordinator.state, .failed(.peerCancelled))
         XCTAssertFalse(sentMessages.contains { message in
             if case .recoveryCodeResponse = message { return true }
             return false
         })
-        XCTAssertEqual(sentMessages.last, .bye(.init(reason: .cancelled)))
+        XCTAssertEqual(sentMessages.last, .bye(.init(reason: .done)))
         XCTAssertEqual(setup.messageExchanger.closeChannelCalls, [setup.localChannelID])
+    }
+
+    func testWhenPeerLeavesDuringConfirmationThenTeardownSendsByeDoneForEveryReason() async throws {
+        for reason in [PairingV2ByeReason.done, .cancelled, .error, .unknown("future_reason")] {
+            let confirmationGate = PairingV2CoordinatorTestGate()
+            let confirmationDelegate = PairingV2ConfirmationDelegateMock()
+            confirmationDelegate.allowPeerToJoinHandler = {
+                await confirmationGate.wait()
+                return false
+            }
+            confirmationDelegate.dismissConfirmationHandler = {
+                await confirmationGate.open()
+            }
+            let setup = try await makeHostWithPendingConfirmationAndQueuedBye(confirmationDelegate: confirmationDelegate, byeReason: reason)
+            let closeChannelExpectation = expectation(description: "Local channel closed")
+            setup.messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
+
+            try await setup.coordinator.pollOnce()
+            await fulfillment(of: [closeChannelExpectation], timeout: 2)
+
+            let sentMessages = try decryptedSentMessages(from: setup.messageExchanger,
+                                                         peerPrivateKey: setup.peerKeyPair.privateKey,
+                                                         messageCrypto: setup.messageCrypto)
+            XCTAssertEqual(sentMessages.last, .bye(.init(reason: .done)))
+            XCTAssertEqual(setup.messageExchanger.closeChannelCalls, [setup.localChannelID])
+        }
     }
 
     func testWhenConfirmationIsHandledBeforeByeThenReleasesRecoveryCodeOnlyOnce() async throws {
@@ -844,6 +885,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
             return true
         }
         let setup = try await makeHostWithPendingConfirmationAndQueuedBye(confirmationDelegate: confirmationDelegate)
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        setup.messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
         let byeMessages = setup.messageExchanger.fetchMessagesStub
         setup.messageExchanger.fetchMessagesStub = []
 
@@ -857,6 +900,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         setup.messageExchanger.fetchMessagesStub = byeMessages
         try await setup.coordinator.pollOnce()
         try await setup.coordinator.pollOnce()
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         let sentMessages = try decryptedSentMessages(from: setup.messageExchanger,
                                                      peerPrivateKey: setup.peerKeyPair.privateKey,
@@ -870,7 +914,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
             return false
         }.count, 1)
         XCTAssertEqual(confirmationDelegate.dismissConfirmationCallCount, 0)
-        XCTAssertEqual(setup.coordinator.state, .failed(.cancelled))
+        XCTAssertEqual(setup.coordinator.state, .failed(.peerCancelled))
         XCTAssertEqual(setup.messageExchanger.closeChannelCalls, [setup.localChannelID])
     }
 
@@ -884,6 +928,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
             return true
         }
         let setup = try await makeHostWithPendingConfirmationAndQueuedBye(confirmationDelegate: confirmationDelegate)
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        setup.messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
         let byeMessages = setup.messageExchanger.fetchMessagesStub
         setup.messageExchanger.fetchMessagesHandler = { _, _ in
             // This poll has already checked for a confirmation result. Release the UI answer
@@ -895,6 +941,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         try await setup.coordinator.pollOnce()
         try await setup.coordinator.pollOnce()
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         let sentMessages = try decryptedSentMessages(from: setup.messageExchanger,
                                                      peerPrivateKey: setup.peerKeyPair.privateKey,
@@ -908,7 +955,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
             return false
         }.count, 1)
         XCTAssertEqual(confirmationDelegate.dismissConfirmationCallCount, 1)
-        XCTAssertEqual(setup.coordinator.state, .failed(.cancelled))
+        XCTAssertEqual(setup.coordinator.state, .failed(.peerCancelled))
         XCTAssertEqual(setup.messageExchanger.closeChannelCalls, [setup.localChannelID])
     }
 
@@ -918,6 +965,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let messageCrypto = PairingV2MessageCrypto()
         let peerKeyPair = try makePeerKeyPair()
         var operations: [String] = []
+        let closeChannelExpectation = expectation(description: "Local channel closed")
         messageExchanger.sendHandler = { messages, _ in
             operations.append("send")
             if messages.first?.version == PairingV2ProtocolVersion.v2Point1.rawValue {
@@ -926,6 +974,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         }
         messageExchanger.closeChannelHandler = { _ in
             operations.append("close")
+            closeChannelExpectation.fulfill()
         }
         let coordinator = makeCoordinator(syncService: DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies),
                                           messageExchanger: messageExchanger,
@@ -937,6 +986,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         )
         await coordinator.cancel()
         await coordinator.cancel()
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         let sentMessages = try decryptedSentMessages(from: messageExchanger,
                                                      peerPrivateKey: peerKeyPair.privateKey,
@@ -961,7 +1011,10 @@ final class PairingV2CoordinatorTests: XCTestCase {
         try await coordinator.startScanning(
             qrPayload: .init(version: "2", channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
         )
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
         await coordinator.cancel()
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         XCTAssertEqual(messageExchanger.sendCalls.flatMap(\.messages).map(\.version), ["2", "2"])
         XCTAssertEqual(messageExchanger.closeChannelCalls.count, 1)
@@ -1226,6 +1279,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
             peerKeyPair: peerKeyPair,
             messageCrypto: messageCrypto
         )
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
 
         do {
             try await coordinator.pollOnce()
@@ -1235,6 +1290,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         } catch {
             XCTFail("Expected PairingV2Error.recoveryCodePreparationFailed, got \(error)")
         }
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         XCTAssertEqual(coordinator.state, .failed(.recoveryCodePreparationFailed))
         XCTAssertEqual(messageExchanger.closeChannelCalls, [payload.channelId])
@@ -1846,7 +1902,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertEqual(messageExchanger.closeChannelCalls.count, 1)
     }
 
-    private func makeHostWithPendingConfirmationAndQueuedBye(confirmationDelegate: PairingV2ConfirmationDelegateMock) async throws -> (
+    private func makeHostWithPendingConfirmationAndQueuedBye(confirmationDelegate: PairingV2ConfirmationDelegateMock,
+                                                            byeReason: PairingV2ByeReason = .cancelled) async throws -> (
         coordinator: PairingV2Coordinator,
         messageExchanger: PairingV2MessageExchangingMock,
         messageCrypto: PairingV2MessageCrypto,
@@ -1883,7 +1940,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
             throw PairingV2CoordinatorTestError.expectedPendingConfirmation
         }
 
-        let encryptedBye = try messageCrypto.encrypt(.bye(.init(reason: .cancelled)),
+        let encryptedBye = try messageCrypto.encrypt(.bye(.init(reason: byeReason)),
                                                      recipientPublicKey: payload.publicKey,
                                                      senderChannelID: peerKeyPair.channelID)
         messageExchanger.fetchMessagesStub = [

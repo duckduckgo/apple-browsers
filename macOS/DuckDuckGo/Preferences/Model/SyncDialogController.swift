@@ -900,7 +900,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         if !isConfirmed, !wasDismissedByController {
             sendSetupEndedAbandonedPixel(setupRole: setupRole, reason: SyncSetupPixelKitEvent.ParameterValue.syncConfirmationDenied)
             managementDialogModel.endFlow()
-        } else {
+        } else if isConfirmed {
             pairingV2PeerKind = peerKind
             if let dialog = Self.postPairingConfirmationDialog(
                 isSimplifiedSyncSetupV2Enabled: managementDialogModel.isSimplifiedSyncSetupV2Enabled

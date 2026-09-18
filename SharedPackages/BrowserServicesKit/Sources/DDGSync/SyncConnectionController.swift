@@ -713,17 +713,22 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     private func shouldDismissPairingV2PresenterCode(for state: PairingV2State) -> Bool {
         switch state {
-        case .waitingForPeerStatus,
-             .hostWaitingForConfirmation,
-             .hostPreparingRecoveryCode,
+        case .hostPreparingRecoveryCode,
              .hostSendingRecoveryCode,
              .hostWaitingForJoinStatus,
              .hostJoinOutcomeUnknown,
-             .joinerWaitingForConfirmation,
              .joinerWaitingForRecoveryCode,
-             .joinerLoggingIn:
+             .joinerLoggingIn,
+             .completed(.recoveryCodeSent(credentialKind: _)),
+             .completed(.loggedIn):
             return true
-        case .idle, .waitingForPeerHello, .completed, .failed:
+        case .idle,
+             .waitingForPeerHello,
+             .waitingForPeerStatus,
+             .hostWaitingForConfirmation,
+             .joinerWaitingForConfirmation,
+             .completed(.alreadyConnected),
+             .failed:
             return false
         }
     }
@@ -947,6 +952,8 @@ public class SyncConnectionController: SyncConnectionControlling {
             return .transportFailure
         case .peerDisconnected:
             return .transportFailure
+        case .peerCancelled:
+            return .syncCancelledFromOtherDevice
         case .upgradeFailed:
             return .accountUpgradeFailed
         case .nativeCredentialAlreadyPresent:

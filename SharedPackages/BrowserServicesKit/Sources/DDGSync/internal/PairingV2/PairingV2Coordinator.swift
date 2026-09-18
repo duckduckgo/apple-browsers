@@ -495,7 +495,17 @@ final class PairingV2Coordinator {
 
         case .abort(let error):
             await dismissPendingConfirmation()
-            await closeLocalChannel(byeReason: error == .cancelled ? .cancelled : .error)
+            let byeReason: PairingV2ByeReason
+            switch error {
+            case .peerCancelled, .peerDisconnected:
+                byeReason = .done
+            case .cancelled:
+                byeReason = .cancelled
+            default:
+                byeReason = .error
+            }
+            // Report the terminal outcome without waiting for best-effort relay cleanup.
+            closeLocalChannelBestEffort(byeReason: byeReason)
         }
     }
 

@@ -91,6 +91,10 @@ class AddOrEditBookmarkViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        navigationItem.rightBarButtonItem?.accessibilityIdentifier = viewModel.bookmark.isFolder
+            ? "Bookmarks.Editor.FolderSave"
+            : "Bookmarks.Editor.Save"
+
         updateTitle()
         updateSaveButton()
 

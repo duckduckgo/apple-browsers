@@ -555,7 +555,7 @@ private final class MockMenuBookmarksInteractor: MenuBookmarksInteracting {
 private extension BrowsingMenuEntry {
 
     var name: String? {
-        guard case let .regular(name, _, _, _, _, _, _, _, _) = self else { return nil }
+        guard case let .regular(name, _, _, _, _, _, _, _, _, _) = self else { return nil }
         return name
     }
 

@@ -689,11 +689,8 @@ final class MainCoordinator {
 
     // MARK: App Lifecycle handling
 
-    func recordDaxGreetingForegroundOpen() {
-        daxGreetingActivity.recordForegroundOpen()
-    }
-
     func onForeground(isFirstForeground: Bool) {
+        daxGreetingActivity.recordForegroundOpen()
         homePageConfiguration.handleAppForegrounded()
 
         // Apply tracker animation suppression based on launch source

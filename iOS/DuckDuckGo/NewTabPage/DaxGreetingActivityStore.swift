@@ -29,7 +29,7 @@ private struct DaxGreetingActivity {
 @MainActor
 final class DaxGreetingActivityStore {
     private var activity = DaxGreetingActivity()
-    private let readLastActiveDate: () -> Date?
+    private let lastActiveDateAtLaunch: Date?
     private let now: () -> Date
     private let calendarProvider: () -> Calendar
     private let isEnabled: () -> Bool
@@ -37,17 +37,16 @@ final class DaxGreetingActivityStore {
 
     var changes: AnyPublisher<Void, Never> { changesSubject.eraseToAnyPublisher() }
 
-    init(readLastActiveDate: @escaping () -> Date? = { nil },
+    init(readLastActiveDate: () -> Date? = { nil },
          now: @escaping () -> Date = Date.init,
          calendarProvider: @escaping () -> Calendar = { .current },
          isEnabled: @escaping () -> Bool) {
-        self.readLastActiveDate = readLastActiveDate
+        lastActiveDateAtLaunch = readLastActiveDate()
         self.now = now
         self.calendarProvider = calendarProvider
         self.isEnabled = isEnabled
     }
 
-    // Called before the existing daily-activity recorder updates its last-active date.
     func recordForegroundOpen() {
         guard isEnabled() else { return }
         let date = now()
@@ -57,7 +56,8 @@ final class DaxGreetingActivityStore {
         } else {
             activity.foregroundOpenCount = 1
         }
-        let wasActiveToday = readLastActiveDate().map { calendar.isDate($0, inSameDayAs: date) } ?? false
+        let previousActiveDate = activity.lastForegroundDate ?? lastActiveDateAtLaunch
+        let wasActiveToday = previousActiveDate.map { calendar.isDate($0, inSameDayAs: date) } ?? false
         activity.isFirstOpenOfDay = activity.foregroundOpenCount == 1 && !wasActiveToday
         activity.lastForegroundDate = date
         changesSubject.send()

@@ -37,13 +37,13 @@ final class DaxGreetingActivityStoreTests: XCTestCase {
         var lastActiveDate: Date? = date(day: 14)
         let store = DaxGreetingActivityStore(readLastActiveDate: { lastActiveDate }, now: { now },
                                              calendarProvider: { self.calendar }, isEnabled: { true })
+        lastActiveDate = now
         store.recordForegroundOpen()
         var context = store.context(at: now, calendar: calendar, appearance: .dark)
         XCTAssertEqual(context.foregroundOpenCount, 1)
         XCTAssertEqual(context.isFirstOpenOfDay, true)
         XCTAssertEqual(context.appearance, .dark)
 
-        lastActiveDate = now
         store.recordForegroundOpen()
         store.recordForegroundOpen()
         context = store.context(at: now, calendar: calendar, appearance: nil)
@@ -58,6 +58,7 @@ final class DaxGreetingActivityStoreTests: XCTestCase {
         XCTAssertEqual(context.isFirstOpenOfDay, false)
 
         now = date(day: 16)
+        lastActiveDate = now
         XCTAssertEqual(nextLaunch.context(at: now, calendar: calendar, appearance: nil).foregroundOpenCount, 0)
         nextLaunch.recordForegroundOpen()
         context = nextLaunch.context(at: now, calendar: calendar, appearance: nil)

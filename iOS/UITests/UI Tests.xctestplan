@@ -20,6 +20,9 @@
   },
   "testTargets" : [
     {
+      "skippedTests" : [
+        "DuckAIIPadUITests"
+      ],
       "target" : {
         "containerPath" : "container:DuckDuckGo-iOS.xcodeproj",
         "identifier" : "23215268B3D7426DA0FAC923",

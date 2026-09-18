@@ -9,11 +9,14 @@
     }
   ],
   "defaultOptions" : {
+    "defaultTestExecutionTimeAllowance" : 300,
+    "maximumTestExecutionTimeAllowance" : 600,
     "targetForVariableExpansion" : {
       "containerPath" : "container:DuckDuckGo-iOS.xcodeproj",
       "identifier" : "84E341911E2F7EFB00BDBA6F",
       "name" : "DuckDuckGo"
-    }
+    },
+    "testTimeoutsEnabled" : true
   },
   "testTargets" : [
     {

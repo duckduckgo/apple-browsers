@@ -636,6 +636,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         } else {
             navController.modalPresentationStyle = .fullScreen
         }
+        scanCodeNavigationController = navController
         navigationController?.present(navController, animated: true)
     }
 
@@ -676,7 +677,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             return
         }
         pairingV2ConfirmationWasDismissedByController = true
-        resolvePairingV2Confirmation(false, dismissAlert: true)
+        await withCheckedContinuation { continuation in
+            resolvePairingV2Confirmation(false, dismissAlert: true) {
+                continuation.resume()
+            }
+        }
     }
 
     private func confirmPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind, setupRole: SyncSetupRole) async -> Bool {
@@ -687,12 +692,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         pairingV2ConfirmationWasDismissedByController = false
         if !isConfirmed, !wasDismissedByController {
             sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
-            if isPresentingConnectingSheet {
-                viewModel.connectingSheetPhase = nil
-            } else {
-                dismissPairingV2UIAfterDeniedConfirmation()
-            }
-        } else {
+            await dismissPairingV2Setup()
+        } else if isConfirmed {
             pairingV2PeerKind = peerKind
         }
         return isConfirmed
@@ -702,7 +703,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.syncPairingV2ConfirmationTitle, message: message, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel) { [weak self] _ in
-                self?.resolvePairingV2Confirmation(false)
+                self?.resolvePairingV2Confirmation(false, dismissAlert: true)
             })
             let confirmAction = UIAlertAction(title: UserText.syncPairingV2ConfirmationAction, style: .default) { [weak self] _ in
                 self?.resolvePairingV2Confirmation(true)
@@ -716,18 +717,24 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
-    private func resolvePairingV2Confirmation(_ isConfirmed: Bool, dismissAlert: Bool = false) {
+    private func resolvePairingV2Confirmation(_ isConfirmed: Bool, dismissAlert: Bool = false, completion: (() -> Void)? = nil) {
         guard let continuation = pairingV2ConfirmationContinuation else {
+            completion?()
             return
         }
 
         let alert = pairingV2ConfirmationAlert
         pairingV2ConfirmationContinuation = nil
         pairingV2ConfirmationAlert = nil
-        if dismissAlert {
-            alert?.dismiss(animated: true)
+        if dismissAlert, let alert, alert.presentingViewController != nil {
+            alert.dismiss(animated: true) {
+                continuation.resume(returning: isConfirmed)
+                completion?()
+            }
+        } else {
+            continuation.resume(returning: isConfirmed)
+            completion?()
         }
-        continuation.resume(returning: isConfirmed)
     }
 
     private func topmostPresentedViewController() -> UIViewController {
@@ -745,10 +752,18 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         return peerName
     }
 
-    private func dismissPairingV2UIAfterDeniedConfirmation() {
-        DispatchQueue.main.async {
-            self.dismissPresentedViewController()
+    func dismissPairingV2Setup() async {
+        // Dismiss from the presenter so both the scanner and its nested QR sheet are removed.
+        if let scanner = scanCodeNavigationController,
+           let presenter = scanner.presentingViewController,
+           presenter.presentedViewController === scanner {
+            await withCheckedContinuation { continuation in
+                presenter.dismiss(animated: true) {
+                    continuation.resume()
+                }
+            }
         }
+        viewModel.dismissConnectingSheet()
     }
 
     func simplifiedConfirmAndDisableSync() async -> Bool {

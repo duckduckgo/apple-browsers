@@ -355,15 +355,6 @@ jobs:
       with:
         ref: ${{ inputs.branch || github.ref_name }}
 
-    - name: Override RUNS_ON
-      if: runner.environment == 'self-hosted'
-      run: |
-        if [[ "${{ contains(runner.name, 'm4pro') }}" == "true" ]]; then
-          echo "RUNS_ON=bitrise:macos26-m4pro" >> $GITHUB_ENV
-        else
-          echo "RUNS_ON=bitrise:macos26-m4" >> $GITHUB_ENV
-        fi
-
     - name: Print macOS version
       run: sw_vers
 

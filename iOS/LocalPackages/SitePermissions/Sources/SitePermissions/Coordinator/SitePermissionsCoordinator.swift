@@ -101,6 +101,12 @@ public enum SitePermissionResolution: Equatable, Sendable {
     case deny(systemBlocks: [SitePermissionSystemBlock])
 }
 
+public enum SitePermissionQueryState: String, Equatable, Sendable {
+    case prompt
+    case granted
+    case denied
+}
+
 public enum SitePermissionRecovery: Equatable, Sendable {
     case toast(permissionTypes: Set<SitePermissionType>)
     case reminder(permissionTypes: Set<SitePermissionType>)

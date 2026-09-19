@@ -96,7 +96,7 @@ struct RemoteMessagingDebugRootView: View {
                 } else {
                     ForEach(model.messages, id: \.id) { message in
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("ID: \(message.id) | \(message.shown) | \(message.status)")
+                            Text("ID: \(message.id) | \(message.shown) | \(message.status) | impressions: \(message.impressionCount)")
                                 .font(.system(size: 15))
                             Text(message.json ?? "")
                                 .font(.system(size: 12))
@@ -105,7 +105,12 @@ struct RemoteMessagingDebugRootView: View {
                     }
                 }
             } header: {
-                Text("Messages")
+                HStack {
+                    Text("Messages")
+                    Spacer()
+                    Button("Refresh", action: model.fetchMessages)
+                        .font(.system(size: 14))
+                }
             } footer: {
                 Text("This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet.")
             }
@@ -244,12 +249,14 @@ struct MessageDebugModel {
     var id: String
     var shown: String
     var status: String
+    var impressionCount: Int64
     var json: String?
 
     init(_ message: RemoteMessageManagedObject) {
         id = message.id ?? "?"
         shown = message.shown ? "shown" : "not shown"
         status = Self.statusString(for: message.status)
+        impressionCount = message.impressionCount
         json = message.message
     }
 

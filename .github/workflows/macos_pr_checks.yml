@@ -437,6 +437,7 @@ jobs:
         done
 
     - name: Set RUNS_ON
+      if: always()
       run: |
         echo "RUNS_ON=${{ join(matrix.runs-on, ',') }}" >> $GITHUB_ENV
 

@@ -1389,6 +1389,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         aiChatButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
         aiChatButton.accessibilityTraits = .button
 
+        customizableButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Customizable"
+
         // This is for compatibility purposes with old OmniBar
         searchAreaView.textField.accessibilityIdentifier = "searchEntry"
         searchAreaView.textField.accessibilityTraits = .searchField

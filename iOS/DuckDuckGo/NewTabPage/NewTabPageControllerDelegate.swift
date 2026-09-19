@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Bookmarks
 import Foundation
 
@@ -35,10 +36,17 @@ protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: any NewTabPage)
     func newTabPageDidScroll(_ controller: any NewTabPage)
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction)
+
+    func newTabPageDidRequestSettings(_ controller: any NewTabPage)
+    func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode)
+    func newTabPageDidRequestVoiceSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode)
 }
 
 extension NewTabPageControllerDelegate {
     func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: any NewTabPage) { }
     func newTabPageDidScroll(_ controller: any NewTabPage) { }
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction) { }
+    func newTabPageDidRequestSettings(_ controller: any NewTabPage) { }
+    func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) { }
+    func newTabPageDidRequestVoiceSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) { }
 }

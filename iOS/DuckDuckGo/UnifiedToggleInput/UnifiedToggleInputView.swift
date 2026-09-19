@@ -564,10 +564,12 @@ final class UnifiedToggleInputView: UIView {
         attachmentsStrip.onPageContextRemove = { [weak viewModel] in viewModel?.tapToRemove() }
         attachmentsStrip.onPageContextTap = { [weak viewModel] in viewModel?.tapToAttach() }
         viewModel.$state
-            .sink { [weak self] state in self?.attachmentsStrip.setPageContextChipState(state) }
-            .store(in: &pageContextChipCancellables)
-        viewModel.$isVisible
-            .sink { [weak self] isVisible in self?.attachmentsStrip.setPageContextChipVisible(isVisible) }
+            .sink { [weak self] state in
+                if let state {
+                    self?.attachmentsStrip.setPageContextChipState(state)
+                }
+                self?.attachmentsStrip.setPageContextChipVisible(state != nil)
+            }
             .store(in: &pageContextChipCancellables)
     }
 
@@ -583,6 +585,10 @@ final class UnifiedToggleInputView: UIView {
 
     /// Edges of the visible input card, which sits inside this view's own padding. Content placed
     /// around the bar should align to these rather than to the view's edges.
+    func cardFrame(in view: UIView) -> CGRect {
+        cardView.convert(cardView.bounds, to: view)
+    }
+
     var cardTopAnchor: NSLayoutYAxisAnchor { cardView.topAnchor }
     var cardLeadingAnchor: NSLayoutXAxisAnchor { cardView.leadingAnchor }
     var cardTrailingAnchor: NSLayoutXAxisAnchor { cardView.trailingAnchor }

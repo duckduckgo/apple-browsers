@@ -211,6 +211,12 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Option to install Chrome extension during onboarding (DMG only)
     case onboardingChromeExtension
 
+    /// Allows browsing before completing onboarding.
+    case onboardingAsync
+
+    /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
+    case onboardingNonBlocking
+
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
     /// trampoline if the SPI ever misbehaves.
@@ -318,6 +324,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Context-aware page suggestions shown in the iOS contextual Duck.ai sheet
     case contextualSuggestedPrompts
 
+    /// Offers the page navigated to as an attachment, in an active contextual chat with auto-attach off
+    case contextualPagePlaceholder
+
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 
@@ -369,7 +378,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// pre-submit contextual sheet on iPhone.
     case contextualFloatingInput
 
-    /// Enables Recent Chats in the iOS address-bar Duck.ai menu.
+    /// Enables Chats in the iOS address-bar and macOS tab-bar Duck.ai menus.
     case addressBarRecentChats
 
     /// Makes the address-bar Duck.ai menu page-aware
@@ -516,9 +525,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Replaces Duck.ai's web-based chat sidebar with native UI.
     case nativeSidebar
 
-    /// macOS only. System-wide Duck.ai entry point: global keyboard shortcut and menu bar icon.
-    case promptBar
-
     /// Supports Duck.ai edit prompt from the native input field.
     case nativePromptEditing
 
@@ -619,6 +625,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
+    case canUseExchangeV2Point1
     case canWriteUnifiedDeviceList
     case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList
@@ -658,6 +665,9 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionOnboardingFreeTrialsSep2026
     case subscriptionOnboardingPaidSubsSep2026
     case onboardingSubscriptionUpsellExperiment
+
+    /// Gates the server-rendered first paywall.
+    case performanceOptimizedPaywalls
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -850,6 +860,9 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the Cookie Pop-ups Blocked promo.
     case cookiePopupsBlockedPromo
+
+    /// Kill switch for observing the Duck Player ("Watch in Duck Player?") overlay.
+    case duckPlayerOverlayPromo
 
     /// Kill switch for the "Update available" promo.
     case updateAvailablePromo

@@ -878,7 +878,11 @@ class TabViewController: UIViewController {
         self.pixelFiring = pixelFiring
         self.tabTerminationErrorPageInstrumentation = tabTerminationErrorPageInstrumentation
             ?? DefaultTabTerminationErrorPageInstrumentation(pixelFiring: pixelFiring)
-        self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
+        let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
+            privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
+            featureFlagger: featureFlagger)
+        self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger,
+                                                          performanceOptimizedPaywalls: performanceOptimizedPaywallsProvider) {
             return AppDependencyProvider.shared.subscriptionManager.isSubscriptionPurchaseEligible
         }
         

@@ -110,7 +110,9 @@ final class DuckPlayerPreferences: ObservableObject {
         duckPlayerMode != .disabled
     }
 
-    var youtubeOverlayInteracted: Bool {
+    /// Published so the Duck Player overlay promo can re-derive its visibility the moment the user
+    /// picks "Watch here" + Remember my choice, which suppresses the overlay from then on.
+    @Published var youtubeOverlayInteracted: Bool {
         didSet {
             persistor.youtubeOverlayInteracted = youtubeOverlayInteracted
         }

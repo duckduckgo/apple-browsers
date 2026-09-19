@@ -342,24 +342,13 @@ struct PermissionRowView: View {
             button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
 
             for decision in [PersistedPermissionDecision.ask, .allow, .deny] {
-                let item = button.menu?.addItem(withTitle: decisionDisplayText(for: decision), action: nil, keyEquivalent: "")
+                let item = button.menu?.addItem(withTitle: decision.localizedTitle, action: nil, keyEquivalent: "")
                 item?.representedObject = decision
             }
 
             return button
         }
         .fixedSize()
-    }
-
-    private func decisionDisplayText(for decision: PersistedPermissionDecision) -> String {
-        switch decision {
-        case .ask:
-            return UserText.permissionCenterAlwaysAsk
-        case .allow:
-            return UserText.permissionCenterAlwaysAllow
-        case .deny:
-            return UserText.permissionCenterNeverAllow
-        }
     }
 
     /// Whether this is a notification permission that hasn't been requested from the system yet
@@ -671,24 +660,13 @@ struct ExternalSchemeRowView: View {
             button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
 
             for decision in [PersistedPermissionDecision.ask, .allow, .deny] {
-                let item = button.menu?.addItem(withTitle: decisionDisplayText(for: decision), action: nil, keyEquivalent: "")
+                let item = button.menu?.addItem(withTitle: decision.localizedTitle, action: nil, keyEquivalent: "")
                 item?.representedObject = decision
             }
 
             return button
         }
         .fixedSize()
-    }
-
-    private func decisionDisplayText(for decision: PersistedPermissionDecision) -> String {
-        switch decision {
-        case .ask:
-            return UserText.permissionCenterAlwaysAsk
-        case .allow:
-            return UserText.permissionCenterAlwaysAllow
-        case .deny:
-            return UserText.permissionCenterNeverAllow
-        }
     }
 }
 

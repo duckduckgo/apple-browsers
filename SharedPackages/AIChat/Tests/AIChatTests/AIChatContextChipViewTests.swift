@@ -83,5 +83,48 @@ final class AIChatContextChipViewTests: XCTestCase {
         // Then
         XCTAssertEqual(sut.accessibilityLabel, "Updated")
     }
+
+    // MARK: - Suggested state
+
+    func testSuggestedStateWrapsThePageTitleInTheAttachOffer() {
+        // Given
+        let sut = AIChatContextChipView()
+        let pageTitle = "Magnetic confinement fusion"
+
+        // When
+        sut.configure(state: .suggested(title: pageTitle, favicon: nil))
+
+        // Then
+        let label = sut.accessibilityLabel
+        XCTAssertEqual(label, UserText.askAboutPage(title: pageTitle))
+        XCTAssertEqual(label?.contains(pageTitle), true)
+        XCTAssertNotEqual(label, pageTitle)
+    }
+
+    func testUpdateIsIgnoredInTheSuggestedState() {
+        // Given
+        let sut = AIChatContextChipView()
+        sut.configure(state: .suggested(title: "Original", favicon: nil))
+        let offerBefore = sut.accessibilityLabel
+
+        // When
+        sut.update(title: "Updated", favicon: nil)
+
+        // Then
+        XCTAssertEqual(sut.accessibilityLabel, offerBefore)
+    }
+
+    func testChipTapIsNotReceivedOverTheRemoveButton() {
+        // Given
+        let sut = AIChatContextChipView()
+        sut.configure(state: .suggested(title: "Magnetic confinement fusion", favicon: nil))
+        sut.frame = CGRect(x: 0, y: 0, width: 240, height: 44)
+        sut.layoutIfNeeded()
+
+        // Then — the 32pt button sits 10pt from the trailing edge, so its centre is (240-10-16, 22).
+        XCTAssertFalse(sut.shouldReceiveChipTap(at: CGPoint(x: 214, y: 22)))
+        XCTAssertTrue(sut.shouldReceiveChipTap(at: CGPoint(x: 100, y: 22)))
+    }
+
 }
 #endif

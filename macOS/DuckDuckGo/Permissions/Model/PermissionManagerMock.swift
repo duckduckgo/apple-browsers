@@ -91,9 +91,11 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     }
 
     func removePermission(forDomain domain: String, permissionType: PermissionType) {
+        guard hasPermissionPersisted(forDomain: domain, permissionType: permissionType) else { return }
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = nil
         savedLastModified[domain.droppingWwwPrefix(), default: [:]][permissionType] = nil
         publishPersistedPermissions()
+        permissionSubject.send((domain.droppingWwwPrefix(), permissionType, .removed))
     }
 
     var burnPermissionsCalled = false
@@ -132,10 +134,23 @@ final class PermissionManagerMock: PermissionManagerProtocol {
         lastRequest.completion(decision)
     }
 
+    func setPersistedPermissions(_ entries: [WebsitePermissionEntry]) {
+        savedPermissions = [:]
+        savedLastModified = [:]
+        for entry in entries {
+            savedPermissions[entry.domain, default: [:]][entry.permissionType] = entry.decision
+            savedLastModified[entry.domain, default: [:]][entry.permissionType] = entry.lastModified
+        }
+        publishPersistedPermissions()
+    }
+
     private func publishPersistedPermissions() {
         let entries = savedPermissions.flatMap { domain, permissions in
             permissions.map { permissionType, decision in
-                WebsitePermissionEntry(domain: domain, permissionType: permissionType, decision: decision)
+                WebsitePermissionEntry(domain: domain,
+                                       permissionType: permissionType,
+                                       decision: decision,
+                                       lastModified: savedLastModified[domain]?[permissionType])
             }
         }
         persistedPermissionsSubject.send(entries)
@@ -173,9 +188,16 @@ extension PermissionManagerMock: PermissionManagerDebugging {
 
     func removeAllPermissions() -> Int {
         removeAllPermissionsCalled = true
-        let count = savedPermissions.values.reduce(0) { $0 + $1.count }
+        let removedPermissions = savedPermissions.flatMap { domain, permissionsByType in
+            permissionsByType.keys.map { (domain: domain, type: $0) }
+        }
         savedPermissions = [:]
-        return count
+        savedLastModified = [:]
+        publishPersistedPermissions()
+        for permission in removedPermissions {
+            permissionSubject.send((permission.domain, permission.type, .removed))
+        }
+        return removedPermissions.count
     }
 
 }

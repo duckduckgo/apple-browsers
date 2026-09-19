@@ -32,11 +32,12 @@ enum FloatingUILayoutPolicy {
                                                         addressBarPosition: AddressBarPosition,
                                                         floatingBottomObscuredHeight: CGFloat,
                                                         safeAreaBottom: CGFloat,
-                                                        omnibarHeight: CGFloat) -> CGFloat {
+                                                        omnibarHeight: CGFloat,
+                                                        reservesAddressBarSpace: Bool = true) -> CGFloat {
         if isFloatingUIEnabled {
             return max(0, floatingBottomObscuredHeight - safeAreaBottom)
         }
-        return addressBarPosition.isBottom ? omnibarHeight : 0
+        return addressBarPosition.isBottom && reservesAddressBarSpace ? omnibarHeight : 0
     }
 
     /// Fraction of a bar's slide travel that is still on screen while the domain capsule morph owns the

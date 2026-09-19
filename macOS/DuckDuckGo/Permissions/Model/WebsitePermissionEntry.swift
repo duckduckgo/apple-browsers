@@ -16,8 +16,12 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 struct WebsitePermissionEntry: Equatable {
     let domain: String
     let permissionType: PermissionType
     let decision: PersistedPermissionDecision
+    /// When the user last explicitly set this decision, or `nil` for older entries.
+    var lastModified: Date?
 }

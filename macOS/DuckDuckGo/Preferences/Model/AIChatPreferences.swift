@@ -168,10 +168,6 @@ final class AIChatPreferences: ObservableObject {
         return !showShortcutInAddressBar || !openAIChatInSidebar
     }
 
-    var shouldShowPromptBarPreferences: Bool {
-        featureFlagger.isFeatureOn(.promptBar)
-    }
-
     // Native SERP AI settings (Search Assist / Hide AI Images), backed by the shared SERP settings store.
 
     var searchAssistFrequencyBinding: Binding<SearchAssistFrequency> {

@@ -375,7 +375,13 @@ extension AIChatMenu.Actions {
         AIChatMenu.Actions(
             openNewChat: { item in
                 aiChatConversationSourceHandler.setData(conversationSources.source(for: item))
-                tabOpener.openAIChatTab(with: .newChat, behavior: .newTab(selected: true))
+                let trigger: AIChatOpenTrigger
+                if case .viewAllChats = item {
+                    trigger = .chatHistory
+                } else {
+                    trigger = .newChat
+                }
+                tabOpener.openAIChatTab(with: trigger, behavior: .newTab(selected: true))
             },
             openNewVoiceChat: {
                 let sourceCollection = windowControllersManager.lastKeyMainWindowController?

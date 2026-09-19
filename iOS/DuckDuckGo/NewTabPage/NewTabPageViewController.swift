@@ -193,6 +193,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        messagesModel.setSurfaceVisible(false)
         // Must run before the parent-check below, which would zero isShowingDuckAICompletionDialog
         // and prevent the seen flag from being set (e.g. on a tab switch without editing ending).
         dismissDuckAICompletionDialogIfNeededOnEditingEnd()
@@ -212,6 +213,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         guard presentedViewController?.isBeingDismissed ?? true else {
             return
         }
+
+        messagesModel.setSurfaceVisible(true)
 
         onViewDidAppear?()
         onViewDidAppear = nil

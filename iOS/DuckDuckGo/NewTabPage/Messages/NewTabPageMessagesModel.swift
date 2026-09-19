@@ -30,6 +30,10 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     private var messagesCancellable: AnyCancellable?
     private var legacyNotificationObserver: NSObjectProtocol?
+    private var renderableHomeMessages: [HomeMessageViewModel.ViewIdentity: HomeMessage] = [:]
+    private var appearedMessageIdentities = Set<HomeMessageViewModel.ViewIdentity>()
+    private var reportedMessageIdentities = Set<HomeMessageViewModel.ViewIdentity>()
+    private var isSurfaceVisible = false
 
     private let homePageMessagesConfiguration: HomePageMessagesConfiguration
     private let notificationCenter: NotificationCenter
@@ -94,6 +98,21 @@ final class NewTabPageMessagesModel: ObservableObject {
         )
     }
 
+    func setSurfaceVisible(_ isVisible: Bool) {
+        guard isSurfaceVisible != isVisible else {
+            return
+        }
+
+        isSurfaceVisible = isVisible
+        if isVisible {
+            for identity in appearedMessageIdentities {
+                reportAppearanceIfNeeded(for: identity)
+            }
+        } else {
+            reportedMessageIdentities.removeAll()
+        }
+    }
+
     // MARK: - Private
 
     /// Reports which control the user pressed on a message, so the New Tab Page session event can
@@ -122,7 +141,34 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     private func updateHomeMessageViewModel() {
         let messages = homePageMessagesConfiguration.homeMessages
-        homeMessageViewModels = messages.compactMap(homeMessageViewModel(for:))
+        let mappedMessages = messages.compactMap { message -> (HomeMessage, HomeMessageViewModel)? in
+            guard let viewModel = homeMessageViewModel(for: message) else {
+                return nil
+            }
+            return (message, viewModel)
+        }
+        renderableHomeMessages = Dictionary(
+            uniqueKeysWithValues: mappedMessages.map { ($0.1.viewIdentity, $0.0) }
+        )
+        appearedMessageIdentities.formIntersection(renderableHomeMessages.keys)
+        reportedMessageIdentities.formIntersection(renderableHomeMessages.keys)
+        homeMessageViewModels = mappedMessages.map { $0.1 }
+    }
+
+    private func messageViewDidAppear(with identity: HomeMessageViewModel.ViewIdentity) {
+        appearedMessageIdentities.insert(identity)
+        reportAppearanceIfNeeded(for: identity)
+    }
+
+    private func reportAppearanceIfNeeded(for identity: HomeMessageViewModel.ViewIdentity) {
+        guard isSurfaceVisible,
+              !reportedMessageIdentities.contains(identity),
+              let homeMessage = renderableHomeMessages[identity] else {
+            return
+        }
+
+        reportedMessageIdentities.insert(identity)
+        didAppear(homeMessage)
     }
 
     // MARK: - HomeMessageViewModel Mapping
@@ -145,10 +191,11 @@ final class NewTabPageMessagesModel: ObservableObject {
 
         case .remoteMessage(let remoteMessage):
             let presentationContext = homePageMessagesConfiguration.presentationContext(for: message)
-
-            if homePageMessagesConfiguration.mode == .legacy {
-                // Preserve legacy map-time accounting. Coordinated mode confirms only from actual appearance.
-                homePageMessagesConfiguration.didAppear(message)
+            let viewIdentity: HomeMessageViewModel.ViewIdentity
+            if let acquisitionIdentity = presentationContext?.acquisitionIdentity {
+                viewIdentity = .coordinated(messageID: remoteMessage.id, acquisitionIdentity: acquisitionIdentity)
+            } else {
+                viewIdentity = .legacy(messageID: remoteMessage.id)
             }
 
             return HomeMessageViewModelBuilder.build(for: remoteMessage,
@@ -200,10 +247,7 @@ final class NewTabPageMessagesModel: ObservableObject {
 
                 }
             } onDidAppear: { [weak self] in
-                self?.homePageMessagesConfiguration.didAppear(
-                    message,
-                    presentationContext: presentationContext
-                )
+                self?.messageViewDidAppear(with: viewIdentity)
             }
         }
     }

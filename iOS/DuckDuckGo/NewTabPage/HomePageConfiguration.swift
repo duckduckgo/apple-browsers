@@ -68,6 +68,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     private var remoteMessagesCancellable: AnyCancellable?
     private var rmfOwnership: RMFOwnership?
     private var isRMFAdmissionEnabled: Bool
+    private var firstImpressionCheckedMessageIDs = Set<String>()
 
     var homeMessages: [HomeMessage] = []
     let mode: PromoCoordinationMode
@@ -363,7 +364,8 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
                           options: .parameters(additionalParameters(for: remoteMessage.id)))
         }
 
-        let isFirstImpression = !remoteMessagingStore.hasShownRemoteMessage(withID: remoteMessage.id)
+        let shouldCheckFirstImpression = firstImpressionCheckedMessageIDs.insert(remoteMessage.id).inserted
+        let isFirstImpression = shouldCheckFirstImpression && !remoteMessagingStore.hasShownRemoteMessage(withID: remoteMessage.id)
         if isFirstImpression {
             Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
             if remoteMessage.isMetricsEnabled {

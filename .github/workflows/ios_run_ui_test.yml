@@ -19,7 +19,7 @@ on:
 jobs:
   run-ui-test:
     name: ${{ inputs.test }} (${{ inputs.device }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})
-    runs-on: ['image:osx-tahoe-26', 'size:large']
+    runs-on: ['image:osx-tahoe-26', ui-tests]
     timeout-minutes: 45
     env:
       IOS_VERSION: "26.5"

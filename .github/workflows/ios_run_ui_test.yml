@@ -13,6 +13,7 @@ on:
       test: {description: "UITestCase class to run", required: true, type: string}
       device: {description: "Stable device key: iphone or ipad", required: true, type: string}
       device-name: {description: "Simulator name", required: true, type: string}
+      ios-version: {description: "Selected iOS simulator version", required: true, type: string}
       user-mode: {description: "production or internal", required: true, type: string}
       build-artifact-name: {description: "Immutable build artifact name", required: true, type: string}
 
@@ -22,7 +23,7 @@ jobs:
     runs-on: ['image:osx-tahoe-26', ui-tests]
     timeout-minutes: 45
     env:
-      IOS_VERSION: "26.5"
+      IOS_VERSION: ${{ inputs.ios-version }}
       TEST_CLASS: ${{ inputs.test }}
       DEVICE: ${{ inputs.device }}
       DEVICE_NAME: ${{ inputs.device-name }}

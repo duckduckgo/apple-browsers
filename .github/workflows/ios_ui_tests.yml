@@ -7,6 +7,11 @@ defaults:
   run:
     working-directory: iOS
 
+env:
+  IOS_VERSION: "26.5"
+  IPHONE_DEVICE_NAME: "iPhone 17"
+  IPAD_DEVICE_NAME: "iPad (A16)"
+
 on:
   workflow_dispatch:
     inputs:
@@ -29,9 +34,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
-      - '.github/workflows/ios_ui_tests.yml'
-      - '.github/workflows/ios_run_ui_test.yml'
-      - '.github/actions/select-ios-simulator/**'
+      - '.github/**'
       - '.xcode-version'
       - 'SharedPackages/**'
       - 'iOS/**'
@@ -102,7 +105,8 @@ jobs:
           | sed -E 's/^[^c]*class[[:space:]]+([A-Za-z0-9_]+)[[:space:]]*:.*/\1/' | sort -u)
         tests=$(printf '%s\n' "$test_names" | jq -Rsc 'split("\n") | map(select(length > 0))')
         requested=$(printf '%s' "$TEST_CLASSES" | jq -Rsc '[splits("\\s+") | select(length > 0)]')
-        matrix=$(jq -cn --argjson tests "$tests" --argjson requested "$requested" --arg devices "$DEVICES" \
+        matrix=$(jq -cn --argjson tests "$tests" --argjson requested "$requested" \
+          --arg devices "$DEVICES" --arg iphone_name "$IPHONE_DEVICE_NAME" --arg ipad_name "$IPAD_DEVICE_NAME" \
           --slurpfile iphone 'iOS/UITests/UI Tests.xctestplan' \
           --slurpfile ipad 'iOS/UITests/iPad UI Tests.xctestplan' '
           def eligible($plan): $plan[0].testTargets[0] | ((.selectedTests // $tests) - (.skippedTests // []));
@@ -117,8 +121,8 @@ jobs:
           else {
             include: [($tests | .[]) as $test |
               select(($requested | length) == 0 or ($requested | index($test)) != null) |
-              {device: "iphone", "device-name": "iPhone 17", tests: $phone_tests},
-              {device: "ipad", "device-name": "iPad (A16)", tests: $pad_tests} |
+              {device: "iphone", "device-name": $iphone_name, tests: $phone_tests},
+              {device: "ipad", "device-name": $ipad_name, tests: $pad_tests} |
               select($devices == "both" or $devices == .device) |
               select(.tests | index($test)) | {test: $test, device, "device-name"}]
           } end |
@@ -135,6 +139,7 @@ jobs:
     timeout-minutes: 45
     outputs:
       artifact-name: ${{ steps.package.outputs.artifact-name }}
+      ios-version: ${{ steps.select-simulator.outputs.ios-version }}
     steps:
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.10.0
@@ -171,15 +176,6 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
-    - name: Restore Xcode Compilation Cache
-      if: runner.environment != 'self-hosted'
-      uses: actions/cache/restore@v5
-      with:
-        path: iOS/DerivedData/CompilationCache.noindex
-        key: xcode-compilation-cache-ios-ui-tests
-        restore-keys: |
-          xcode-compilation-cache-ios-ui-tests-
-
     - name: Setup Bitrise Build Cache
       uses: ./.github/actions/bitrise-build-cache
       with:
@@ -191,8 +187,8 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.5"
-        device-name: "iPhone 17"
+        preferred-versions: ${{ env.IOS_VERSION }}
+        device-name: ${{ env.IPHONE_DEVICE_NAME }}
 
     - name: Build for testing
       run: |
@@ -208,24 +204,6 @@ jobs:
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           | tee xcodebuild.log \
           | xcbeautify
-
-    - name: Compute Compilation Cache hash
-      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
-      id: compilation-cache-hash
-      run: |
-        if [ -d "DerivedData/CompilationCache.noindex" ]; then
-          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
-          echo "hash=${hash}" >> $GITHUB_OUTPUT
-        else
-          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
-        fi
-
-    - name: Save Xcode Compilation Cache
-      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v5
-      with:
-        path: iOS/DerivedData/CompilationCache.noindex
-        key: xcode-compilation-cache-ios-ui-tests-${{ steps.compilation-cache-hash.outputs.hash }}
 
     - name: Package build products
       id: package
@@ -269,6 +247,7 @@ jobs:
       test: ${{ matrix.test }}
       device: ${{ matrix.device }}
       device-name: ${{ matrix.device-name }}
+      ios-version: ${{ needs.build-for-testing.outputs.ios-version }}
       user-mode: production
       build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
 
@@ -287,6 +266,7 @@ jobs:
       test: ${{ matrix.test }}
       device: ${{ matrix.device }}
       device-name: ${{ matrix.device-name }}
+      ios-version: ${{ needs.build-for-testing.outputs.ios-version }}
       user-mode: internal
       build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
 

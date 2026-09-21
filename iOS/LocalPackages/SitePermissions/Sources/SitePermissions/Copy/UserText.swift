@@ -157,6 +157,10 @@ enum UserText {
     }
 
     enum PermissionManagement {
+        static let titlePrefix = NotLocalizedString("sitePermissions.management.title-prefix", bundle: Bundle.module,
+                                                   value: "Permissions for",
+                                                   comment: "Title before the website domain in the on-site permission sheet.")
+
         static func title(domain: String) -> String {
             let format = NotLocalizedString("sitePermissions.management.title", bundle: Bundle.module,
                                            value: "Permissions for “%@”",

@@ -39,25 +39,19 @@ final class UnifiedSuggestionsHost {
     private var escapeHatchTopInset: CGFloat = 0
     private var contentInsets: UIEdgeInsets = .zero
     private var cancellables = Set<AnyCancellable>()
-    /// Built once on first `.favorites` render; NTP has a heavy init, so don't rebuild per body pass.
-    private var cachedFavoritesController: NewTabPageViewController?
+    let favoritesPresentation: FocusedFavoritesPresentation
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
     /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
     private var duckAISurface: UnifiedSuggestionsDuckAISurface?
 
-    private func memoizedFavoritesController() -> NewTabPageViewController? {
-        if let cachedFavoritesController { return cachedFavoritesController }
-        cachedFavoritesController = config.favoritesProvider()
-        return cachedFavoritesController
-    }
-
     func updateOpenedAfterIdle(_ openedAfterIdle: Bool) {
-        cachedFavoritesController?.setOpenedAfterIdle(openedAfterIdle)
+        favoritesPresentation.updateOpenedAfterIdle(openedAfterIdle)
     }
 
     init(config: UnifiedSuggestionsHostConfig) {
         self.config = config
+        self.favoritesPresentation = FocusedFavoritesPresentation(makeViewController: config.favoritesProvider)
         self.isAddressBarAtBottom = config.isAddressBarAtBottom
         self.listViewModel = SuggestionsListViewModel(source: config.source)
         self.viewModel = UnifiedSuggestionsViewModel(
@@ -88,7 +82,7 @@ final class UnifiedSuggestionsHost {
         let view = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
-            favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
+            favoritesPresentation: favoritesPresentation)
         let hosting = UIHostingController(rootView: view)
         hosting.view.backgroundColor = .clear
         hosting.view.translatesAutoresizingMaskIntoConstraints = false
@@ -217,6 +211,6 @@ final class UnifiedSuggestionsHost {
         hosting.rootView = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
-            favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
+            favoritesPresentation: favoritesPresentation)
     }
 }

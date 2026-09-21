@@ -392,6 +392,22 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertWebKitMediaRollback(permission: "microphone")
     }
 
+    func testWhenRemovalIsUndoneThenPermissionsSheetReopensForTheSite() {
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = allow; microphone = deny; }; }")
+        openPermissionPage()
+        openPermissionsSheet()
+        tap(element("SitePermissions.Sheet.RemovePermissions"))
+        XCTAssertTrue(element("SitePermissions.Sheet").waitForNonExistence(timeout: timeout))
+
+        tap(element("SitePermissions.Toast.Undo"))
+
+        XCTAssertTrue(element("SitePermissions.Sheet").waitForExistence(timeout: timeout))
+        assertSheetDecision("Camera", contains: "Always Allow")
+        assertSheetDecision("Microphone", contains: "Never Allow")
+        tap(element("SitePermissions.Sheet.Close"))
+        assertResult("tracks video=0 audio=0")
+    }
+
     func testWhenSiteHasAskAndPermanentDecisionsThenSettingsShowsOnlyPermanentRows() {
         launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = allow; microphone = ask; }; }")
         openPermissionPage()

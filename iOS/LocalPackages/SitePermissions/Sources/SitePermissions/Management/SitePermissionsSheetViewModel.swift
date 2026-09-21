@@ -132,6 +132,7 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
 
     private let store: SitePermissionsStore
     private let isFireMode: Bool
+    private let displayedPermissionTypes: Set<SitePermissionType>
     private let onDecisionChanged: DecisionChangedHandler
     private let onRemovePermissions: RemovePermissionsHandler
     private let onOpenSystemSettings: OpenSystemSettingsHandler
@@ -150,6 +151,7 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
 
     public init(snapshot: SitePermissionsManagementSnapshot,
                 store: SitePermissionsStore,
+                displayedPermissionTypes: Set<SitePermissionType> = [],
                 onDecisionChanged: @escaping DecisionChangedHandler = { _ in },
                 onRemovePermissions: @escaping RemovePermissionsHandler = { _ in },
                 onOpenSystemSettings: @escaping OpenSystemSettingsHandler = { _ in },
@@ -158,6 +160,7 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
         site = snapshot.site
         isFireMode = snapshot.isFireMode
         self.store = store
+        self.displayedPermissionTypes = displayedPermissionTypes
         self.onDecisionChanged = onDecisionChanged
         self.onRemovePermissions = onRemovePermissions
         self.onOpenSystemSettings = onOpenSystemSettings
@@ -255,6 +258,7 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
             entry.value == .inactive ? nil : entry.key
         })
         return Set(storedPermissions.keys)
+            .union(displayedPermissionTypes)
             .union(ephemeralPermissionTypes)
             .union(siteAllowedPermissionTypesThisVisit)
             .union(requestedPermissionTypesThisVisit)

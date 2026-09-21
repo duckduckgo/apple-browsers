@@ -32,6 +32,38 @@ import XCTest
 @MainActor
 final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
+    func testWhenPermissionRemovalUndoOutlivesPageThenOnlySavedDecisionsAreRestored() throws {
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
+        for fireTab in [false, true] {
+            for invalidation in ["none", "navigation", "processReplacement", "close"] {
+                let sut = makeSUT(fireTab: fireTab)
+                var restored = false
+                let undo = sut.makeSitePermissionsRemovalUndoAction(site: site, permissionTypes: [.camera]) {
+                    restored = true
+                }
+                switch invalidation {
+                case "navigation":
+                    sut.sitePermissionsDidStartProvisionalNavigation(sut.webView, navigation: nil)
+                    // Returning to the same site must not restore a previous visit's Fire state.
+                    sut.sitePermissionsDidCommit(sut.webView, navigation: nil)
+                case "processReplacement":
+                    sut.sitePermissionsWebContentProcessDidTerminate(sut.webView)
+                    sut.sitePermissionsDidCommit(sut.webView, navigation: nil)
+                case "close":
+                    sut.closeSitePermissions()
+                default:
+                    break
+                }
+
+                undo()
+
+                XCTAssertEqual(restored, !fireTab || invalidation == "none", "Fire: \(fireTab), invalidation: \(invalidation)")
+                XCTAssertNil(sut.presentedViewController)
+                sut.closeSitePermissions()
+            }
+        }
+    }
+
     func testWhenLastTabReferenceIsReleasedOnBackgroundQueueThenDeinitRunsOnMainThread() async {
         let didDeinit = expectation(description: "Tab deinitializes on the main thread")
         let retainedTab: Unmanaged<TabViewController> = autoreleasepool {
@@ -1884,6 +1916,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
     private func makeSUT(featureEnabled: Bool = true,
                          featureFlagger providedFeatureFlagger: MockFeatureFlagger? = nil,
+                         fireTab: Bool = false,
                          hasCommittedMainFrame: Bool = true,
                          systemAuthorizationStatus: AVAuthorizationStatus = .authorized,
                          systemPermissionClient: SystemPermissionClient? = nil,
@@ -1897,7 +1930,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let sut = TabViewController.fake(
             customWebView: { SitePermissionURLWebView(url: committedURL, configuration: $0) },
             featureFlagger: featureFlagger,
-            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions)
+            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
+            fireTab: fireTab
         )
         let dependencies = SitePermissionsDependencies(
             store: store ?? SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring()),

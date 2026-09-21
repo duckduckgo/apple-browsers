@@ -381,12 +381,62 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         }
     }
 
+    func testExplicitRequestDoesNotReadLaterDraftProvider() async {
+        let script = makeScript()
+        let attached = context(tabId: "submitted")
+        requestProvider = { XCTFail("Submitted request must not read a later draft"); return nil }
+        let delivered = expectation(description: "Captured prompt dispatched")
+        webView.onPrompt = { _ in delivered.fulfill() }
+        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+                            tabAttachmentRequest: .init(contexts: { [attached] }, didConsume: {}))
+        await fulfillment(of: [delivered], timeout: 1)
+        XCTAssertEqual(webView.prompts.last?.pageContext, .multiple([attached]))
+    }
+
+    func testDeliveryRevalidatesContextsAfterAwait() async {
+        let script = makeScript()
+        let attached = context(tabId: "submitted")
+        let delivered = expectation(description: "Prompt dispatched without invalidated context")
+        webView.onPrompt = { _ in delivered.fulfill() }
+        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+                            tabAttachmentRequest: .init(contexts: { [attached] }, didConsume: {}, validate: { _ in [] }))
+        await fulfillment(of: [delivered], timeout: 1)
+        XCTAssertNil(webView.prompts.last?.pageContext)
+    }
+
+    func testMissingBrokerReleasesRequestWithoutConsumingIt() async {
+        let script = makeScript()
+        script.broker = nil
+        let released = expectation(description: "Unavailable dispatch releases request")
+        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+                            tabAttachmentRequest: .init(contexts: { [self.context(tabId: "other")] },
+                                                        didConsume: { XCTFail("Missing broker must not consume") },
+                                                        cancel: { released.fulfill() }))
+        await fulfillment(of: [released], timeout: 1)
+    }
+
+    func testCancellationReleasesProviderWithoutWaitingForLateResult() async {
+        let script = makeScript()
+        let gate = ContextGate(started: expectation(description: "Provider started"))
+        let released = expectation(description: "Provider cancelled")
+        released.assertForOverFulfill = false
+        script.submitPrompt("cancelled", images: nil, modelId: nil, tools: nil,
+                            tabAttachmentRequest: .init(contexts: { await gate.wait() },
+                                                        didConsume: { XCTFail("Cancelled request must not consume") },
+                                                        cancel: { released.fulfill() }))
+        await fulfillment(of: [gate.started], timeout: 1)
+        script.cancelPendingTabContextSubmission()
+        await fulfillment(of: [released], timeout: 1)
+        gate.resume([])
+        XCTAssertTrue(webView.prompts.isEmpty)
+    }
+
     private func makeScript() -> AIChatUserScript {
         let script = makeTestUserScript()
         let feature = AIChatContextualAttachMoreTabsFeature(
             featureFlagger: featureFlagger, aiChatSettings: MockAIChatSettingsProvider())
         script.attachedTabContextsProvider = { [weak self] in
-            feature.makeRequest { self?.requestProvider?() }
+            MultiTabAttachmentContext(feature: feature).makeRequest { self?.requestProvider?() }
         }
         script.webView = webView
         script.broker = broker

@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Combine
 import Core
 import UIKit
 import XCTest
@@ -161,4 +162,495 @@ final class MultiTabAttachmentTests: XCTestCase {
         UTIAttachmentPolicy(attachmentLimits: nil, attachmentUsage: nil, pendingAttachments: attachments.map { .tab($0) }, model: nil,
                             maximumTabAttachmentCount: limit, currentPageTabID: "current", isCurrentPageAttached: currentPageAttached)
     }
+}
+
+@MainActor
+final class MultiTabAttachmentWaiterTests: XCTestCase {
+    func testWhenStartEmitsSynchronouslyThenReturnsFirstValue() async {
+        let subject = PassthroughSubject<Int, Never>()
+
+        let result = await MultiTabAttachmentWaiter.firstValue(
+            from: subject.eraseToAnyPublisher(),
+            timeout: 1,
+            afterSubscription: {
+                subject.send(42)
+                subject.send(99)
+            }
+        )
+
+        guard case .value(let value) = result else {
+            XCTFail("Expected the first published value")
+            return
+        }
+        XCTAssertEqual(value, 42)
+    }
+
+    func testWhenPublisherCompletesWithoutValueThenReturnsFinished() async {
+        let publisher = Empty<Int, Never>().eraseToAnyPublisher()
+
+        let result = await MultiTabAttachmentWaiter.firstValue(from: publisher, timeout: 1)
+
+        guard case .finished = result else {
+            XCTFail("Expected publisher completion without a value")
+            return
+        }
+    }
+
+    func testWhenTimeoutExpiresThenReturnsTimedOutAndCancelsSubscription() async {
+        let subject = PassthroughSubject<Int, Never>()
+        let cancelled = expectation(description: "Subscription cancelled on timeout")
+        let publisher = subject.handleEvents(receiveCancel: { cancelled.fulfill() }).eraseToAnyPublisher()
+
+        let result = await MultiTabAttachmentWaiter.firstValue(from: publisher, timeout: 0)
+
+        guard case .timedOut = result else {
+            XCTFail("Expected timeout")
+            return
+        }
+        await fulfillment(of: [cancelled], timeout: 1)
+    }
+
+    func testWhenTaskIsCancelledThenReturnsCancelledAndCancelsSubscription() async {
+        let subject = PassthroughSubject<Int, Never>()
+        let started = expectation(description: "Collection started")
+        let cancelled = expectation(description: "Subscription cancelled with task")
+        let publisher = subject.handleEvents(receiveCancel: { cancelled.fulfill() }).eraseToAnyPublisher()
+        let task = Task { @MainActor in
+            await MultiTabAttachmentWaiter.firstValue(
+                from: publisher,
+                timeout: 60,
+                afterSubscription: {
+                    started.fulfill()
+                }
+            )
+        }
+        defer { task.cancel() }
+        await fulfillment(of: [started], timeout: 1)
+
+        task.cancel()
+        let result = await task.value
+
+        guard case .cancelled = result else {
+            XCTFail("Expected cancellation")
+            return
+        }
+        await fulfillment(of: [cancelled], timeout: 1)
+    }
+}
+
+@MainActor
+final class MultiTabAttachmentPreparationTests: XCTestCase {
+    func testCoordinatorTransfersPreparationBeforeClearingDraft() async throws {
+        let fixture = AttachmentPreparationFixture()
+        let coordinator = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false,
+                                                        preferences: AttachedTabPreferences(), contextualStart: .expandedPreSubmit)
+        coordinator.configureTabAttachments(source: fixture.source, feature: fixture.feature)
+        let started = expectation(description: "Attachment starts preparation")
+        fixture.collect = { [unowned fixture] _ in
+            let result = await MultiTabAttachmentWaiter.firstValue(
+                from: fixture.results.eraseToAnyPublisher(),
+                timeout: 1,
+                afterSubscription: {
+                    started.fulfill()
+                }
+            )
+            if case .value(let value) = result { return value }
+            return .cancelled
+        }
+        coordinator.viewController.addAttachment(.tab(.init(tabId: fixture.tab.uid, title: "Page", url: fixture.url)))
+        await fulfillment(of: [started], timeout: 1)
+        let request = try XCTUnwrap(coordinator.takeTabAttachmentRequest())
+        coordinator.unifiedToggleInputVCDidChangeAttachments(coordinator.viewController)
+        XCTAssertNil(coordinator.takeTabAttachmentRequest(), "A layout notification must not re-create transferred preparation")
+        coordinator.clearAttachments()
+        let send = Task { await request.contexts() }
+        fixture.results.send(.collected(fixture.pageContext()))
+        let contexts = await send.value
+        XCTAssertEqual(contexts.map(\.tabId), [fixture.tab.uid])
+        XCTAssertEqual(fixture.collectionCount, 1)
+        XCTAssertTrue(coordinator.viewController.currentAttachments.isEmpty)
+        request.cancel()
+    }
+
+    func testCoordinatorRemovalCancelsWaitingPreparation() async throws {
+        let fixture = AttachmentPreparationFixture()
+        let coordinator = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false,
+                                                        preferences: AttachedTabPreferences(), contextualStart: .expandedPreSubmit)
+        coordinator.configureTabAttachments(source: fixture.source, feature: fixture.feature)
+        let started = expectation(description: "Preparation started")
+        let cancelled = expectation(description: "Removed attachment cancelled")
+        fixture.collect = { [unowned fixture] _ in
+            let result = await MultiTabAttachmentWaiter.firstValue(
+                from: fixture.results.eraseToAnyPublisher(),
+                timeout: 1,
+                afterSubscription: {
+                    started.fulfill()
+                }
+            )
+            if case .cancelled = result { cancelled.fulfill() }
+            return .cancelled
+        }
+        let attachment = UnifiedToggleInputTabAttachment(tabId: fixture.tab.uid, title: "Page", url: fixture.url)
+        coordinator.viewController.addAttachment(.tab(attachment))
+        await fulfillment(of: [started], timeout: 1)
+        coordinator.removeAttachment(id: attachment.id)
+        await fulfillment(of: [cancelled], timeout: 1)
+        XCTAssertNil(coordinator.takeTabAttachmentRequest())
+    }
+
+    func testPreparedResultIsReusedAtSend() async throws {
+        let fixture = AttachmentPreparationFixture()
+        let preparation = try XCTUnwrap(fixture.prepare())
+        let prepared = await preparation.value()
+        let request = try XCTUnwrap(fixture.context.makeRequest(preparations: [preparation]))
+        let sent = await request.contexts()
+        XCTAssertEqual(sent, [try XCTUnwrap(prepared)])
+        XCTAssertEqual(fixture.collectionCount, 1)
+        request.didConsume()
+        let cancelledResult = await preparation.value()
+        XCTAssertNil(cancelledResult)
+    }
+
+    func testSendWaitsForExistingPreparationWithoutDuplicatingCollection() async throws {
+        let fixture = AttachmentPreparationFixture()
+        let started = expectation(description: "Preparation started")
+        fixture.collect = { [unowned fixture] _ in
+            let result = await MultiTabAttachmentWaiter.firstValue(
+                from: fixture.results.eraseToAnyPublisher(),
+                timeout: 1,
+                afterSubscription: {
+                    started.fulfill()
+                }
+            )
+            if case .value(let context) = result { return context }
+            return .cancelled
+        }
+        let preparation = try XCTUnwrap(fixture.prepare())
+        await fulfillment(of: [started], timeout: 1)
+        let send = Task { await preparation.value() }
+        fixture.results.send(.collected(fixture.pageContext()))
+        let result = await send.value
+        XCTAssertEqual(result?.tabId, fixture.tab.uid)
+        XCTAssertEqual(fixture.collectionCount, 1)
+    }
+
+    func testErrorAndTimeoutRetryExactlyOnceAtSend() async throws {
+        for outcome in [MultiTabAttachmentCollectionResult.failed, .timedOut] {
+            let fixture = AttachmentPreparationFixture()
+            fixture.collect = { _ in outcome }
+            let preparation = try XCTUnwrap(fixture.prepare())
+            let result = await preparation.value()
+            XCTAssertNil(result)
+            XCTAssertEqual(fixture.collectionCount, 2)
+        }
+    }
+
+    func testSendRetriesFailureOfPreparationItWasAwaiting() async throws {
+        let fixture = AttachmentPreparationFixture()
+        let started = expectation(description: "First collection started")
+        fixture.collect = { [unowned fixture] _ in
+            if fixture.collectionCount > 1 { return .collected(fixture.pageContext()) }
+            let result = await MultiTabAttachmentWaiter.firstValue(
+                from: fixture.results.eraseToAnyPublisher(),
+                timeout: 1,
+                afterSubscription: {
+                    started.fulfill()
+                }
+            )
+            if case .value(let value) = result { return value }
+            return .cancelled
+        }
+        let preparation = try XCTUnwrap(fixture.prepare())
+        let send = Task { await preparation.value() }
+        await fulfillment(of: [started], timeout: 1)
+        fixture.results.send(.failed)
+        let result = await send.value
+        XCTAssertEqual(result?.tabId, fixture.tab.uid)
+        XCTAssertEqual(fixture.collectionCount, 2)
+    }
+
+    func testEmptyUnavailableAndCancelledDoNotRetry() async throws {
+        for outcome in [MultiTabAttachmentCollectionResult.empty, .unavailable, .cancelled] {
+            let fixture = AttachmentPreparationFixture()
+            fixture.collect = { _ in outcome }
+            let preparation = try XCTUnwrap(fixture.prepare())
+            let result = await preparation.value()
+            XCTAssertNil(result)
+            XCTAssertEqual(fixture.collectionCount, 1)
+        }
+    }
+
+    func testUnloadedTabKeepsChipWithoutCollectingOrRetrying() async throws {
+        let fixture = AttachmentPreparationFixture()
+        fixture.hasPage = false
+        var removed = false
+        let preparation = try XCTUnwrap(fixture.prepare { removed = $0 == nil })
+        let result = await preparation.value()
+        XCTAssertNil(result)
+        XCTAssertFalse(removed)
+        XCTAssertEqual(fixture.collectionCount, 0)
+    }
+
+    func testExistingNavigationFinishesBeforeCollectionStarts() async throws {
+        let fixture = AttachmentPreparationFixture()
+        fixture.isLoading = true
+        fixture.isLoaded = false
+        let preparation = try XCTUnwrap(fixture.prepare())
+        let waiting = expectation(description: "Waiting for navigation")
+        fixture.onNavigationSubscription = { waiting.fulfill() }
+        let send = Task { await preparation.value() }
+        await fulfillment(of: [waiting], timeout: 1)
+        XCTAssertEqual(fixture.collectionCount, 0)
+        fixture.isLoading = false
+        fixture.isLoaded = true
+        fixture.changes.send()
+        let result = await send.value
+        XCTAssertNotNil(result)
+        XCTAssertEqual(fixture.collectionCount, 1)
+    }
+
+    func testSameAddressNavigationInvalidatesPreparedResult() async throws {
+        let fixture = AttachmentPreparationFixture()
+        let preparation = try XCTUnwrap(fixture.prepare())
+        let prepared = await preparation.value()
+        let original = try XCTUnwrap(prepared)
+        let operation = preparation.operationID
+        fixture.navigationID = UUID()
+        fixture.collect = { [unowned fixture] _ in .collected(fixture.pageContext(content: "Replacement")) }
+        XCTAssertNil(preparation.validated(original))
+        preparation.refresh()
+        let replacement = await preparation.value()
+        XCTAssertNotEqual(preparation.operationID, operation)
+        XCTAssertEqual(replacement?.content, "Replacement")
+        XCTAssertEqual(fixture.collectionCount, 2)
+    }
+
+    func testLateResultFromReplacedNavigationCannotReachSend() async throws {
+        let fixture = AttachmentPreparationFixture()
+        let oldStarted = expectation(description: "Old collection started")
+        let replacementStarted = expectation(description: "Replacement collection started")
+        var finishOld: CheckedContinuation<MultiTabAttachmentCollectionResult, Never>?
+        fixture.collect = { [unowned fixture] _ in
+            if fixture.collectionCount > 1 {
+                replacementStarted.fulfill()
+                return .collected(fixture.pageContext(content: "Replacement"))
+            }
+            return await withCheckedContinuation { continuation in
+                finishOld = continuation
+                oldStarted.fulfill()
+            }
+        }
+        let preparation = try XCTUnwrap(fixture.prepare())
+        let send = Task { await preparation.value() }
+        await fulfillment(of: [oldStarted], timeout: 1)
+        fixture.navigationID = UUID()
+        fixture.changes.send()
+        await fulfillment(of: [replacementStarted], timeout: 1)
+        finishOld?.resume(returning: .collected(fixture.pageContext(content: "Old")))
+        let context = await send.value
+        XCTAssertEqual(context?.content, "Replacement")
+        XCTAssertEqual(fixture.collectionCount, 2)
+    }
+
+    func testEligibleNavigationUpdatesChipWithoutDependingOnAutoAttachSetting() async throws {
+        let fixture = AttachmentPreparationFixture()
+        let changed = expectation(description: "Attachment metadata follows source")
+        let nextURL = URL(string: "https://example.com/next")!
+        let preparation = try XCTUnwrap(fixture.prepare { updated in
+            if updated?.url == nextURL { changed.fulfill() }
+        })
+        _ = await preparation.value()
+        fixture.url = nextURL
+        fixture.navigationID = UUID()
+        fixture.tab.link = Link(title: "Next page", url: nextURL)
+        await fulfillment(of: [changed], timeout: 1)
+        let context = await preparation.value()
+        XCTAssertEqual(preparation.attachment.title, "Next page")
+        XCTAssertEqual(context?.url, nextURL.absoluteString)
+        XCTAssertEqual(fixture.collectionCount, 2)
+    }
+
+    func testNavigationTimeoutDoesNotStartExtraction() async {
+        let fixture = AttachmentPreparationFixture()
+        fixture.isLoading = true
+        fixture.isLoaded = false
+        let preparation = MultiTabAttachmentPreparation(attachment: .init(tabId: fixture.tab.uid, title: "Page", url: fixture.url),
+                                                         tab: fixture.tab, source: fixture.source, navigationTimeout: 0,
+                                                         isEnabled: { true }, onChange: { _ in })
+        let result = await preparation.value()
+        XCTAssertNil(result)
+        XCTAssertEqual(fixture.collectionCount, 0)
+    }
+
+    func testFlagDisabledWhileCollectingPreventsRetryAndDelivery() async throws {
+        let fixture = AttachmentPreparationFixture()
+        let started = expectation(description: "Collection started")
+        fixture.collect = { [unowned fixture] _ in
+            let result = await MultiTabAttachmentWaiter.firstValue(
+                from: fixture.results.eraseToAnyPublisher(),
+                timeout: 1,
+                afterSubscription: {
+                    started.fulfill()
+                }
+            )
+            if case .value(let result) = result { return result }
+            return .cancelled
+        }
+        let preparation = try XCTUnwrap(fixture.prepare())
+        let request = try XCTUnwrap(fixture.context.makeRequest(preparations: [preparation]))
+        let send = Task { await request.contexts() }
+        await fulfillment(of: [started], timeout: 1)
+        fixture.feature.state = .unavailable
+        fixture.results.send(.failed)
+        let contexts = await send.value
+        XCTAssertTrue(contexts.isEmpty)
+        XCTAssertEqual(fixture.collectionCount, 1)
+        request.cancel()
+    }
+
+    func testClosedTabRemovesChipAndCannotDeliverPreparedResult() async throws {
+        let fixture = AttachmentPreparationFixture()
+        let removed = expectation(description: "Closed tab removed")
+        let preparation = try XCTUnwrap(fixture.prepare { if $0 == nil { removed.fulfill() } })
+        let prepared = await preparation.value()
+        let original = try XCTUnwrap(prepared)
+        fixture.tabs.send([])
+        await fulfillment(of: [removed], timeout: 1)
+        XCTAssertNil(preparation.validated(original))
+    }
+
+    func testNavigationToIneligibleDestinationRemovesChip() async throws {
+        let fixture = AttachmentPreparationFixture()
+        var removed = false
+        let preparation = try XCTUnwrap(fixture.prepare { removed = $0 == nil })
+        fixture.url = URL(string: "https://duck.ai/")!
+        preparation.refresh()
+        XCTAssertTrue(removed)
+        let cancelledResult = await preparation.value()
+        XCTAssertNil(cancelledResult)
+    }
+
+    func testRemovingAndReattachingDoesNotReuseOldOperation() async throws {
+        let fixture = AttachmentPreparationFixture()
+        let first = try XCTUnwrap(fixture.prepare())
+        _ = await first.value()
+        first.cancel()
+        let second = try XCTUnwrap(fixture.prepare())
+        _ = await second.value()
+        XCTAssertNotEqual(first.attachment.id, second.attachment.id)
+        XCTAssertEqual(fixture.collectionCount, 2)
+    }
+
+    func testFeatureDisabledAtEntryDoesNotPrepare() {
+        let fixture = AttachmentPreparationFixture()
+        fixture.feature.state = .unavailable
+        XCTAssertNil(fixture.prepare())
+        XCTAssertEqual(fixture.collectionCount, 0)
+    }
+
+    func testFireSourceCollectsItsOwnFireTab() async throws {
+        let fixture = AttachmentPreparationFixture(mode: .fire, fireTab: true)
+        let preparation = try XCTUnwrap(fixture.prepare())
+        let context = await preparation.value()
+        XCTAssertEqual(context?.tabId, fixture.tab.uid)
+        XCTAssertEqual(fixture.collectionCount, 1)
+    }
+
+    func testWrongBrowsingModeCannotPrepareEvenIfSourceReturnsTab() {
+        let fixture = AttachmentPreparationFixture(mode: .fire)
+        XCTAssertNil(fixture.prepare())
+        XCTAssertEqual(fixture.collectionCount, 0)
+    }
+
+    func testRequestRevalidatesEarlierResultAfterWaitingForLaterTab() async throws {
+        let first = AttachmentPreparationFixture()
+        let second = AttachmentPreparationFixture()
+        let firstPreparation = try XCTUnwrap(first.prepare())
+        let secondStarted = expectation(description: "Second collection waiting")
+        second.collect = { [unowned second] _ in
+            let result = await MultiTabAttachmentWaiter.firstValue(
+                from: second.results.eraseToAnyPublisher(),
+                timeout: 1,
+                afterSubscription: {
+                    secondStarted.fulfill()
+                }
+            )
+            if case .value(let context) = result { return context }
+            return .cancelled
+        }
+        let secondPreparation = try XCTUnwrap(second.prepare())
+        let request = try XCTUnwrap(first.context.makeRequest(preparations: [firstPreparation, secondPreparation]))
+        let send = Task { await request.contexts() }
+        await fulfillment(of: [secondStarted], timeout: 1)
+        first.navigationID = UUID()
+        second.results.send(.collected(second.pageContext()))
+        let results = await send.value
+        XCTAssertEqual(results.map(\.tabId), [second.tab.uid])
+        request.cancel()
+    }
+}
+
+@MainActor
+private final class AttachmentPreparationFixture {
+    let tab: Tab
+    lazy var tabs = CurrentValueSubject<[Tab], Never>([tab])
+    let changes = PassthroughSubject<Void, Never>()
+    let results = PassthroughSubject<MultiTabAttachmentCollectionResult, Never>()
+    let feature = MutableAttachmentFeature()
+    private let pageObject = NSObject()
+    var navigationID = UUID()
+    var url = URL(string: "https://example.com/page")!
+    var isLoading = false
+    var isLoaded = true
+    var hasPage = true
+    var collectionCount = 0
+    var collect: ((URL) async -> MultiTabAttachmentCollectionResult)?
+    var onNavigationSubscription: (() -> Void)?
+    let mode: BrowsingMode
+
+    init(mode: BrowsingMode = .normal, fireTab: Bool = false) {
+        self.mode = mode
+        tab = Tab(uid: UUID().uuidString, link: Link(title: "Page", url: URL(string: "https://example.com/page")!), fireTab: fireTab)
+    }
+
+    lazy var source = MultiTabAttachmentSource(currentTabID: "current", mode: mode, tabsProvider: { [unowned self] in self.tabs.value },
+                                               tabsPublisher: tabs.eraseToAnyPublisher(), pageProvider: { [unowned self] _ in
+        guard self.hasPage else { return nil }
+        return MultiTabAttachmentPage(state: { [unowned self] in
+            .init(identity: .init(webView: ObjectIdentifier(self.pageObject), navigation: self.navigationID),
+                  url: self.url, isLoading: self.isLoading, isLoaded: self.isLoaded, isAttachable: true)
+        }, changes: self.changes.handleEvents(receiveSubscription: { [unowned self] _ in
+            self.onNavigationSubscription?()
+        }).eraseToAnyPublisher(), collect: { [unowned self] url, isValid in
+            guard isValid() else { return .unavailable }
+            self.collectionCount += 1
+            if let collect = self.collect { return await collect(url) }
+            return .collected(self.pageContext())
+        })
+    })
+
+    lazy var context = MultiTabAttachmentContext(source: source, feature: feature)
+
+    func prepare(onChange: @escaping (UnifiedToggleInputTabAttachment?) -> Void = { _ in }) -> MultiTabAttachmentPreparation? {
+        context.prepare(.init(tabId: tab.uid, title: "Page", url: url), onChange: onChange)
+    }
+
+    func pageContext(content: String = "Content") -> AIChatPageContextData {
+        AIChatPageContextData(title: "Page", favicon: [], url: url.absoluteString, content: content,
+                              truncated: false, fullContentLength: content.count)
+    }
+}
+
+private final class MutableAttachmentFeature: AIChatContextualAttachMoreTabsFeatureProviding {
+    var state: AIChatContextualAttachMoreTabsState = .available(maximumTabAttachmentCount: 3)
+}
+
+private final class AttachedTabPreferences: AIChatPreferencesPersisting {
+    var selectedReasoningEffort: String?
+    var selectedModelId: String?
+    var selectedModelShortName: String?
+    var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }

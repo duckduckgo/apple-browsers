@@ -25,4 +25,7 @@ struct MultiTabAttachmentRequest {
     /// only the current page may omit it. Preparation and its timeouts belong to the provider.
     let contexts: @MainActor () async -> [AIChatPageContextData]
     let didConsume: @MainActor () -> Void
+    var cancel: @MainActor () -> Void = {}
+    /// Rechecks page and feature validity immediately before payload construction.
+    var validate: @MainActor ([AIChatPageContextData]) -> [AIChatPageContextData] = { $0 }
 }

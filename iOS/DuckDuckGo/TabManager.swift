@@ -351,6 +351,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let mode = tab.mode
         return MultiTabAttachmentSource(currentTabID: tab.uid, mode: mode, tabsProvider: { [weak self] in
             self?.tabsModel(for: mode).tabs ?? []
+        }, tabsPublisher: tabsModel(for: mode).tabsPublisher, pageProvider: { [weak self] tab in
+            self?.controller(for: tab)?.makeMultiTabAttachmentPage()
         })
     }
 

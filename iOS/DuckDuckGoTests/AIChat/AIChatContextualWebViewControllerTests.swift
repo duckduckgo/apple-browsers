@@ -28,6 +28,67 @@ import WebKit
 
 final class AIChatContextualWebViewControllerTests: XCTestCase {
 
+    @MainActor
+    func testQueuedFirstPromptKeepsItsRequestUntilFrontendIsReady() async {
+        let sut = makeAttachmentSubmissionController()
+        let script = makeTestUserScript()
+        let collected = expectation(description: "Captured request collected")
+        var collectionCount = 0
+        script.attachedTabContextsProvider = { XCTFail("Queued prompt must not read a later draft"); return nil }
+        sut.submitPrompt("first", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil,
+                         tabAttachmentRequest: .init(contexts: {
+            collectionCount += 1
+            collected.fulfill()
+            return []
+        }, didConsume: {}))
+        sut.configureContentHandler(with: script)
+        sut.webView(WKWebView(), didFinish: nil)
+        XCTAssertEqual(collectionCount, 0)
+        sut.markFrontendAsReady()
+        await fulfillment(of: [collected], timeout: 1)
+        XCTAssertEqual(collectionCount, 1)
+        sut.cancelPendingTabAttachmentPrompt()
+    }
+
+    @MainActor
+    func testCancelledQueuedPromptCannotCollectAfterReadiness() async {
+        let sut = makeAttachmentSubmissionController()
+        var cancelled = false
+        sut.submitPrompt("first", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil,
+                         tabAttachmentRequest: .init(contexts: { XCTFail("Cancelled prompt must not collect"); return [] },
+                                                     didConsume: {}, cancel: { cancelled = true }))
+        sut.cancelPendingTabAttachmentPrompt()
+        XCTAssertTrue(cancelled)
+        let script = makeTestUserScript()
+        script.attachedTabContextsProvider = { XCTFail("Cancelled prompt must not read draft"); return nil }
+        sut.configureContentHandler(with: script)
+        sut.webView(WKWebView(), didFinish: nil)
+        sut.markFrontendAsReady()
+        await Task.yield()
+    }
+
+    @MainActor
+    func testQueuedRequestIsReleasedOnControllerTeardown() async {
+        var sut: AIChatContextualWebViewController? = makeAttachmentSubmissionController()
+        let released = expectation(description: "Queued request released")
+        sut?.submitPrompt("first", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil,
+                          tabAttachmentRequest: .init(contexts: { XCTFail("Discarded request must not collect"); return [] },
+                                                      didConsume: {}, cancel: { released.fulfill() }))
+        sut = nil
+        await fulfillment(of: [released], timeout: 1)
+    }
+
+    @MainActor
+    private func makeAttachmentSubmissionController() -> AIChatContextualWebViewController {
+        AIChatContextualWebViewController(aiChatSettings: MockAIChatSettingsProvider(),
+                                          privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                          contentBlockingAssetsPublisher: Empty().eraseToAnyPublisher(),
+                                          featureDiscovery: MockFeatureDiscovery(), featureFlagger: MockFeatureFlagger(),
+                                          downloadHandler: StubDownloadHandler(), getPageContext: nil,
+                                          pixelHandler: StubContextualModePixelHandler(),
+                                          onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder())
+    }
+
     // MARK: - Tests
 
     @MainActor

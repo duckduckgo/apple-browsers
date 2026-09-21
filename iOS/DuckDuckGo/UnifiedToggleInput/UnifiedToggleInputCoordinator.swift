@@ -206,6 +206,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
     private var attachmentController: UTIAttachmentController!
+    private var tabAttachmentContext: MultiTabAttachmentContext?
+    private var tabAttachmentPreparations: [UUID: MultiTabAttachmentPreparation] = [:]
+    private var transferredTabAttachmentIDs = Set<UUID>()
+    private var isSynchronizingTabAttachments = false
     private var tabAttachmentSource: MultiTabAttachmentSource?
     private var tabAttachmentFeature: AIChatContextualAttachMoreTabsFeatureProviding?
     var isCurrentPageSelected: (() -> Bool)?
@@ -707,6 +711,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         syncInputModeFromExternalSource(state.toggleMode)
 
         attachmentController.replaceAllAttachments(with: state.attachments)
+        synchronizeTabAttachmentPreparations()
 
         // Always sync the live model store from per-tab state — including nil values —
         // so the previous tab's selections don't leak through preferences. With the
@@ -908,6 +913,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if wasEditing { applyEditMode() }
         showExpanded(prefilledText: prompt, inputMode: .aiChat, activatesInput: true)
         attachmentController.replaceAllAttachments(with: attachments)
+        synchronizeTabAttachmentPreparations()
     }
 
     func endEditMode() {
@@ -1697,9 +1703,57 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func configureTabAttachments(source: MultiTabAttachmentSource?, feature: AIChatContextualAttachMoreTabsFeatureProviding) {
+        tabAttachmentPreparations.values.forEach { $0.cancel() }
+        tabAttachmentPreparations.removeAll()
         tabAttachmentSource = source
         tabAttachmentFeature = feature
+        tabAttachmentContext = MultiTabAttachmentContext(source: source, feature: feature)
+        synchronizeTabAttachmentPreparations()
         updateImageButtonVisibility()
+    }
+
+    private func synchronizeTabAttachmentPreparations() {
+        guard case .available = tabAttachmentFeature?.state else { return }
+        guard !isSynchronizingTabAttachments else { return }
+        isSynchronizingTabAttachments = true
+        defer { isSynchronizingTabAttachments = false }
+        let attachments = viewController.currentAttachments.compactMap(\.tabAttachment)
+        let ids = Set(attachments.map(\.id))
+        transferredTabAttachmentIDs.formIntersection(ids)
+        for id in Array(tabAttachmentPreparations.keys) where !ids.contains(id) {
+            tabAttachmentPreparations.removeValue(forKey: id)?.cancel()
+        }
+        for attachment in attachments where tabAttachmentPreparations[attachment.id] == nil && !transferredTabAttachmentIDs.contains(attachment.id) {
+            let preparation = tabAttachmentContext?.prepare(attachment) { [weak self] updated in
+                guard let self, self.viewController.currentAttachments.contains(where: { $0.id == attachment.id }) else { return }
+                if let updated {
+                    self.viewController.replaceAttachment(id: attachment.id, with: .tab(updated))
+                    self.persistDraftToStore()
+                } else {
+                    self.removeAttachment(id: attachment.id)
+                }
+            }
+            if viewController.currentAttachments.contains(where: { $0.id == attachment.id }) {
+                tabAttachmentPreparations[attachment.id] = preparation
+            } else {
+                preparation?.cancel()
+            }
+        }
+    }
+
+    func discardTabAttachments() {
+        for attachment in viewController.currentAttachments where attachment.isTab {
+            removeAttachment(id: attachment.id)
+        }
+    }
+
+    func takeTabAttachmentRequest() -> MultiTabAttachmentRequest? {
+        guard case .available = tabAttachmentFeature?.state else { return nil }
+        synchronizeTabAttachmentPreparations()
+        let preparations = viewController.currentAttachments.compactMap { tabAttachmentPreparations[$0.id] }
+        transferredTabAttachmentIDs.formUnion(preparations.map { $0.attachment.id })
+        tabAttachmentPreparations.removeAll()
+        return tabAttachmentContext?.makeRequest(preparations: preparations)
     }
 
     var onPageContextAttachRequested: (() -> Void)?
@@ -1935,6 +1989,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             // Ahead of the collapse below, which takes the keyboard and the surface with it.
             delegate?.unifiedToggleInputDidSubmitPromptToBoundChat()
         }
+        let tabAttachmentRequest = isContextualChatState ? userScript?.attachedTabContextsProvider?() : nil
         clearAttachments()
         if isOmnibarNewAIChatPrompt {
             viewController.prepareToolbarSubmitStyleForDismissal()
@@ -1949,7 +2004,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         }
         if let userScript {
             let didSendBridgeMessage = userScript.canDispatchBridgeMessages
-            userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
+            userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, tabAttachmentRequest: tabAttachmentRequest)
             delegate?.unifiedToggleInputDidSubmitDuckAIPrompt(origin: pixelReporter.currentPromptOrigin())
             recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
         } else {
@@ -2000,6 +2055,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVCDidChangeAttachments(_ vc: UnifiedToggleInputViewController) {
+        synchronizeTabAttachmentPreparations()
         attachmentsChangeSubject.send()
         updateImageButtonEnabledState()
         updateFloatingReturnKeyState()

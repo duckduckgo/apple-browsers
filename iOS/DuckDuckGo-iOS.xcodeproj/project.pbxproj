@@ -415,6 +415,7 @@
 		5DDEB594FB2295F620665B87 /* LaunchMetricsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD7A450A1D2385D44C640F0 /* LaunchMetricsModel.swift */; };
 		5F94A9DD9D48374FDBD4EC49 /* RebrandedAddToDockTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3E2B5140E5464B0AA21D09 /* RebrandedAddToDockTutorialView.swift */; };
 		60F0888B646078A1C54D7C2E /* SearchTokenRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CBE907E9CAC75F8561B75D4 /* SearchTokenRequestTests.swift */; };
+		627245DC3F2A4454A5C45C67 /* MultiTabAttachmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 401C74C51B7044B4AD76B9BC /* MultiTabAttachmentTests.swift */; };
 		64C0847679ED02196F3D425D /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 3D0759507C5E488826CC23DC /* WideEvent */; };
 		652A1E08DFB4460E2E44DEAF /* WebViewInputAccessoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA13CC2BC37C33434640638 /* WebViewInputAccessoryTests.swift */; };
 		652CEDE62D89B71300235B4C /* FaviconsHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 652CEDE52D89B70C00235B4C /* FaviconsHelperTests.swift */; };
@@ -1884,7 +1885,6 @@
 		CB781CE230138F52008DCD80 /* UnifiedToggleInputToolbarViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CE130138F52008DCD80 /* UnifiedToggleInputToolbarViewTests.swift */; };
 		CB781CE430138F52008DCD90 /* UnifiedToggleInputCoordinatorPerTabStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CE330138F52008DCD90 /* UnifiedToggleInputCoordinatorPerTabStateTests.swift */; };
 		CB781CE630138F52008DCDA0 /* UnifiedToggleInputTestDoubles.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CE530138F52008DCDA0 /* UnifiedToggleInputTestDoubles.swift */; };
-		627245DC3F2A4454A5C45C67 /* MultiTabAttachmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 401C74C51B7044B4AD76B9BC /* MultiTabAttachmentTests.swift */; };
 		CB781CE83019069B008DCD60 /* UTIAttachmentControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CE73019069B008DCD60 /* UTIAttachmentControllerTests.swift */; };
 		CB781CEA301A8048008DCD60 /* AIChatContextualFloatingInputFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CE9301A8048008DCD60 /* AIChatContextualFloatingInputFeatureTests.swift */; };
 		CB781CF6301BDBB7008DCD60 /* DuckAIAddressBarEntryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CF5301BDBB7008DCD60 /* DuckAIAddressBarEntryTests.swift */; };
@@ -2616,6 +2616,7 @@
 		37FD780E2A29E28B00B36DB1 /* SyncErrorHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorHandler.swift; sourceTree = "<group>"; };
 		3901A00979D78E26EF811EEA /* SubscriptionOnboardingSectionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingSectionTests.swift; sourceTree = "<group>"; };
 		392856D96DBE03E4E18EFCF8 /* RebrandedOnboardingAddressBarPositionPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RebrandedOnboardingAddressBarPositionPicker.swift; sourceTree = "<group>"; };
+		401C74C51B7044B4AD76B9BC /* MultiTabAttachmentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTabAttachmentTests.swift; sourceTree = "<group>"; };
 		40D67C082BD4927358D771DB /* RebrandedAppIconPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RebrandedAppIconPicker.swift; sourceTree = "<group>"; };
 		42B3909758A14A3195A9325F /* AIChatUserScriptMultiTabTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptMultiTabTests.swift; sourceTree = "<group>"; };
 		46DD3D592D0A29F400F33D49 /* CrashReportSenderExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashReportSenderExtensions.swift; sourceTree = "<group>"; };
@@ -4205,7 +4206,6 @@
 		CB781CE130138F52008DCD80 /* UnifiedToggleInputToolbarViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputToolbarViewTests.swift; sourceTree = "<group>"; };
 		CB781CE330138F52008DCD90 /* UnifiedToggleInputCoordinatorPerTabStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputCoordinatorPerTabStateTests.swift; sourceTree = "<group>"; };
 		CB781CE530138F52008DCDA0 /* UnifiedToggleInputTestDoubles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputTestDoubles.swift; sourceTree = "<group>"; };
-		401C74C51B7044B4AD76B9BC /* MultiTabAttachmentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTabAttachmentTests.swift; sourceTree = "<group>"; };
 		CB781CE73019069B008DCD60 /* UTIAttachmentControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIAttachmentControllerTests.swift; sourceTree = "<group>"; };
 		CB781CE9301A8048008DCD60 /* AIChatContextualFloatingInputFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualFloatingInputFeatureTests.swift; sourceTree = "<group>"; };
 		CB781CF5301BDBB7008DCD60 /* DuckAIAddressBarEntryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIAddressBarEntryTests.swift; sourceTree = "<group>"; };

@@ -378,7 +378,7 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
         let selections = attachedSelectionsPayload
-        submitWithTabContexts(currentPageContext: pageContext) { context in
+        submitWithTabContexts(currentPageContext: pageContext, request: attachedTabContextsProvider?()) { context in
             AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId,
                                            pageContext: context, selections: selections, reasoningEffort: reasoningEffort)
         }
@@ -395,9 +395,22 @@ final class AIChatUserScript: NSObject, Subfeature {
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData? = nil,
                       reasoningEffort: AIChatReasoningEffort? = nil) {
+        submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+                     pageContext: pageContext, reasoningEffort: reasoningEffort,
+                     tabAttachmentRequest: attachedTabContextsProvider?())
+    }
+
+    func submitPrompt(_ prompt: String,
+                      images: [AIChatNativePrompt.NativePromptImage]?,
+                      files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData? = nil,
+                      reasoningEffort: AIChatReasoningEffort? = nil,
+                      tabAttachmentRequest: MultiTabAttachmentRequest?) {
         let currentPageContext = pageContext ?? attachedPageContextProvider?()
         let selections = attachedSelectionsPayload
-        submitWithTabContexts(currentPageContext: currentPageContext, didSubmit: onPromptSubmitted) { context in
+        submitWithTabContexts(currentPageContext: currentPageContext, request: tabAttachmentRequest, didSubmit: onPromptSubmitted) { context in
             AIChatNativePrompt.queryPrompt(
                 prompt,
                 autoSubmit: true,
@@ -412,9 +425,9 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     private func submitWithTabContexts(currentPageContext: AIChatPageContextData?,
+                                       request: MultiTabAttachmentRequest?,
                                        didSubmit: (() -> Void)? = nil,
                                        makePayload: @escaping (AIChatPageContextPayload?) -> AIChatNativePrompt) {
-        let request = attachedTabContextsProvider?()
         guard request != nil || pendingTabContextSubmission != nil else {
             pushPrompt(makePayload(currentPageContext.map(AIChatPageContextPayload.single)))
             didSubmit?()
@@ -428,6 +441,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         let sourceWebView = webView
         pendingTabContextSubmission = Task { @MainActor [weak self, weak sourceWebView] in
             defer {
+                request?.cancel()
                 if self?.latestTabContextSubmissionID == submissionID {
                     self?.pendingTabContextSubmission = nil
                 }
@@ -436,13 +450,18 @@ final class AIChatUserScript: NSObject, Subfeature {
                 await previous?.value
             }, onCancel: {
                 previous?.cancel()
+                Task { @MainActor in request?.cancel() }
             })
             guard !Task.isCancelled, self?.tabContextSubmissionGeneration == generation else { return }
-            let contexts = await request?.contexts() ?? []
+            let contexts = await withTaskCancellationHandler(operation: {
+                await request?.contexts() ?? []
+            }, onCancel: {
+                Task { @MainActor in request?.cancel() }
+            })
             guard !Task.isCancelled, let self, self.tabContextSubmissionGeneration == generation,
                   self.webView === sourceWebView else { return }
 
-            let context = self.pageContextPayload(currentPageContext: currentPageContext, tabContexts: contexts)
+            let context = self.pageContextPayload(currentPageContext: currentPageContext, tabContexts: request?.validate(contexts) ?? [])
             guard self.pushPrompt(makePayload(context)) else { return }
             request?.didConsume()
             didSubmit?()

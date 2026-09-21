@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Combine
 import Foundation
 
 struct MultiTabAttachmentCandidate: Equatable {
@@ -32,6 +33,8 @@ struct MultiTabAttachmentSource {
     let currentTabID: TabUID
     let mode: BrowsingMode
     let tabsProvider: () -> [Tab]
+    var tabsPublisher: AnyPublisher<[Tab], Never>?
+    var pageProvider: (Tab) -> MultiTabAttachmentPage? = { _ in nil }
 
     func candidates() -> [MultiTabAttachmentCandidate] {
         var seen = Set<TabUID>()

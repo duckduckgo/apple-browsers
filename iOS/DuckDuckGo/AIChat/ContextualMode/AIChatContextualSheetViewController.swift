@@ -1138,7 +1138,14 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler: AIChatContentHandling) {
+        persistentUTIHost?.discardTabAttachments()
+        webViewController?.cancelPendingTabAttachmentPrompt()
         delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
+    }
+
+    func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling) {
+        persistentUTIHost?.discardTabAttachments()
+        webViewController?.cancelPendingTabAttachmentPrompt()
     }
 
     func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: AIChatContentHandling) {

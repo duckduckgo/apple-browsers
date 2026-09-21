@@ -24,7 +24,7 @@ The HTML and both JSON files in [the demo resources](../DuckDuckGo/Resources/Pag
 these JSON files directly, so the checked-in examples and preloaded inputs stay identical.
 The menu and generator are Debug-only; this branch is a prototype for local testing.
 
-The page is the earlier simplified Spokeo-style opt-out form. Both fields are populated,
+The page is a simplified Spokeo-style opt-out form. Both fields are populated,
 verification is locally simulated as complete, and the submit button works. The broker
 recipe has completed navigation, two fills, and the two simulated verification actions.
 Its next action, `submit-removal`, still refers to `#remove-listing`. That ID no longer exists;
@@ -39,7 +39,7 @@ not a live site or a saved copy of it. All field values are fictional.
 - [pir-demo-broker.json](../DuckDuckGo/Resources/PageAnalysisPrototype/pir-demo-broker.json): recipe containing the stale click.
 - [pir-demo-progress.json](../DuckDuckGo/Resources/PageAnalysisPrototype/pir-demo-progress.json): five completed actions, then the failed click.
 - **Page DOM**: captured evidence with input values omitted.
-- **Diagnostics**: model attempts, validation, and the captured context.
+- **Diagnostics**: proposal attempts, validation results, and the exact model instructions and latest request.
 
 ## Input and output
 
@@ -69,13 +69,29 @@ all authored fields, including existing extraction or email-confirmation setting
 invent new extraction schemas or verification logic; `wait` and `unsupported` return no action.
 Diagnostic status/reason/validation fields are separate from the emitted PIR action JSON.
 
+## What the model does
+
+The pipeline is: **PIR recipe + runner position + page capture → eligible actions → model intent
+→ live validation → one PIR action JSON**.
+
+Code enumerates supported fills and clicks from the current DOM. The Foundation Model chooses
+an intent and explains it using the sequence and page evidence. Code then resolves the original
+DOM node, derives its selector, and validates the resulting action with PIR's existing decoder.
+The prompt contains no Spokeo-specific rules or expected answer. Open **Diagnostics** to inspect
+what was sent and why a proposal passed or failed validation.
+
+This fixture deliberately has one eligible click. It demonstrates the generation and validation
+path for a stale selector; it does not establish reliability across brokers or ambiguous pages.
+The input recipe and runner position are simulated. Production integration would need real
+execution outcomes, recovery limits, and PIR's existing completion checks.
+
 ## Implementation and limits
 
-- `PageAnalysisDebugMenu.swift`: the input/output UI, cancellation, bounded prompt construction,
-  Foundation Models generation, and one optional repair attempt after structural rejection.
+- `PageAnalysisDebugMenu.swift`: bundled-demo loading, input/output UI, cancellation, context
+  budgeting, model calls, and one optional retry after structural rejection.
 - `PageAnalysisSnapshot.swift`: bounded main-document capture and live selector validation.
-- `PageAnalysisPIRAction.swift`: runner-context parsing, constrained action choices, binding
-  validation, and action serialization through the real PIR Step decoder/encoder.
+- `PageAnalysisPIRAction.swift`: the generated intent schema, model instructions and request,
+  runner-context parsing, candidate validation, and PIR Step serialization.
 
 Requires Xcode 27 / Swift 6.4 and macOS 27 with the on-device model available. Older compilers,
 older macOS releases, and non-Debug builds do not expose the prototype.

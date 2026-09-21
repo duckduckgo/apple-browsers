@@ -25,8 +25,7 @@ struct UnifiedSuggestionsView: View {
 
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
-    /// Built lazily by the host for the `.favorites` state; nil when favorites aren't supported (Duck.ai).
-    let favoritesProvider: () -> NewTabPageViewController?
+    let favoritesPresentation: FocusedFavoritesPresentation
 
     var body: some View {
         // The chrome (escape hatch + sync-promo) is pinned to the bar by the container (it rides the
@@ -69,7 +68,7 @@ struct UnifiedSuggestionsView: View {
         // Favorites renders on top; the list is hidden + non-interactive beneath it.
         ZStack {
             listLayer
-            overlayLayer
+            SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: isShowingFavorites)
         }
     }
 
@@ -101,23 +100,6 @@ struct UnifiedSuggestionsView: View {
     private var isShowingFavorites: Bool {
         if case .favorites = viewModel.content { return true }
         return false
-    }
-
-    /// Favorites stays mounted like the list and toggles a plain `.opacity` — NOT an insert/remove
-    /// `.transition` (which snaps when interrupted by rapid Search↔Duck.ai toggling). Its opacity is
-    /// instant (`.animation(nil)`): the incoming list fades in, but favorites must not linger visibly
-    /// over Duck.ai while the crossfade runs.
-    @ViewBuilder
-    private var overlayLayer: some View {
-        if let controller = favoritesProvider() {
-            // Extend under the top safe area so the frame stays static; the top inset is delivered to
-            // the nested NTP's own scroll view as a content inset (animatable), not as a frame move.
-            SuggestionsFavoritesView(controller: controller)
-                .ignoresSafeArea(.container, edges: .top)
-                .opacity(isShowingFavorites ? 1 : 0)
-                .animation(nil, value: isShowingFavorites)
-                .allowsHitTesting(isShowingFavorites)
-        }
     }
 
     private var isShowingLogo: Bool {

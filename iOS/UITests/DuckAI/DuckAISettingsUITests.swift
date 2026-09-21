@@ -22,7 +22,7 @@ import UITestingSupport
 
 final class DuckAISettingsUITests: DuckAIUITestCase {
 
-    func testDuckAISettingsRowFollowsMasterToggleAndOpensDuckAIInNewTab() {
+    func testDuckAISettingsRowFollowsPrimaryToggleAndOpensDuckAIInNewTab() {
         let duckAISettings = app.aiFeaturesSettingsList.buttons["Settings.AIFeatures.DuckAISettings"]
 
         XCTContext.runActivity(named: "Disable and restore the Duck.ai settings section") { _ in

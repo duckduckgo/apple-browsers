@@ -48,6 +48,45 @@ final class ActionRequestEncodingTests: XCTestCase {
         XCTAssertEqual(rawActionPayload["someNewField"] as? String, "hello-world")
     }
 
+    func testWhenExecuteScriptActionOmitsFailSilently_thenItDefaultsToFalse() throws {
+        let stepJSON = """
+            {
+                "stepType": "scan",
+                "actions": [
+                    {
+                        "actionType": "executeScript",
+                        "id": "execute-script-1",
+                        "script": "document.body.dataset.result = 'ok';"
+                    }
+                ]
+            }
+            """
+        let step = try JSONDecoder().decode(Step.self, from: Data(stepJSON.utf8))
+        let action = try XCTUnwrap(step.actions.first as? ExecuteScriptAction)
+
+        XCTAssertFalse(action.failSilently)
+    }
+
+    func testWhenExecuteScriptActionSetsFailSilently_thenItIsDecoded() throws {
+        let stepJSON = """
+            {
+                "stepType": "scan",
+                "actions": [
+                    {
+                        "actionType": "executeScript",
+                        "id": "execute-script-1",
+                        "script": "document.body.dataset.result = 'ok';",
+                        "failSilently": true
+                    }
+                ]
+            }
+            """
+        let step = try JSONDecoder().decode(Step.self, from: Data(stepJSON.utf8))
+        let action = try XCTUnwrap(step.actions.first as? ExecuteScriptAction)
+
+        XCTAssertTrue(action.failSilently)
+    }
+
     func testWhenExecuteScriptActionDoesNotContainRawJSON_thenActionRequestEncodingFallsBackToTypedAction() throws {
         let action = ExecuteScriptAction(id: "execute-script-1",
                                          actionType: .executeScript,

@@ -486,6 +486,50 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertEqual(element("Settings.SitePermissions.Global.geolocation").value as? String, "Never Allow")
     }
 
+    func testWhenSettingsVoiceSearchMicrophoneIsDeniedThenReminderDismissesAndOpensSystemSettings() {
+        launchApp()
+        openVoiceSearchSettings()
+        enablePrivateVoiceSearch()
+        answerSystemAlert(for: "microphone", allow: false)
+
+        let reminder = element("SitePermissions.Reminder")
+        XCTAssertTrue(reminder.waitForExistence(timeout: timeout))
+        XCTAssertEqual(element("SitePermissions.Reminder.Title").label, "DuckDuckGo needs to access your microphone")
+        XCTAssertTrue(app.staticTexts["Microphone permissions are needed if you want to use our private voice features."].exists)
+        XCTAssertFalse(element("SitePermissions.Reminder.HideVoiceSearch").exists)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)).tap()
+        XCTAssertTrue(reminder.waitForNonExistence(timeout: timeout))
+
+        enablePrivateVoiceSearch()
+        tap(element("SitePermissions.Reminder.Cancel"))
+        XCTAssertTrue(reminder.waitForNonExistence(timeout: timeout))
+        assertNoSystemAlert()
+
+        enablePrivateVoiceSearch()
+        tap(element("SitePermissions.Reminder.ChangePermissions"))
+        XCTAssertTrue(XCUIApplication(bundleIdentifier: "com.apple.Preferences").wait(for: .runningForeground, timeout: timeout))
+    }
+
+    func testWhenSettingsVoiceSearchMicrophoneIsDeniedWithFeatureOffThenLegacyAlertIsUsed() {
+        launchApp(flagEnabled: false)
+        openVoiceSearchSettings()
+        enablePrivateVoiceSearch()
+        answerSystemAlert(for: "microphone", allow: false)
+
+        let alert = app.alerts["Microphone Access Required"]
+        XCTAssertTrue(alert.waitForExistence(timeout: timeout))
+        XCTAssertTrue(alert.staticTexts["Please allow Microphone access in iOS System Settings for DuckDuckGo to use voice features."].exists)
+        XCTAssertEqual(alert.buttons.count, 1)
+        XCTAssertFalse(element("SitePermissions.Reminder").exists)
+        tap(alert.buttons["OK"])
+        XCTAssertTrue(alert.waitForNonExistence(timeout: timeout))
+
+        enablePrivateVoiceSearch()
+        XCTAssertTrue(alert.waitForExistence(timeout: timeout))
+        assertNoSystemAlert()
+        tap(alert.buttons["OK"])
+    }
+
     private func showAndCancelVoicePermissionReminder(duckAI: Bool, isVoiceChat: Bool) {
         prepareVoiceSearchWithDeniedMicrophone()
         openEmptyVoiceSearchInput(duckAI: duckAI)
@@ -553,12 +597,32 @@ final class SitePermissionsXCUITests: XCTestCase {
 
     private func openVoiceSearchSettings() {
         openSettings()
-        let accessibility = app.staticTexts["Accessibility"]
-        scrollTo(accessibility)
+        let accessibility = app.buttons.matching(identifier: "Accessibility").firstMatch
+        // Use overlapping viewports: a full-screen swipe can jump past this row near the top of Main Settings.
+        for _ in 0..<12 {
+            if accessibility.exists && accessibility.isHittable && app.frame.contains(accessibility.frame) { break }
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+                .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)))
+        }
         tap(accessibility)
         XCTAssertTrue(app.navigationBars["Accessibility"].waitForExistence(timeout: timeout))
         XCTAssertTrue(app.staticTexts["Private Voice Search"].exists)
         XCTAssertTrue(voiceSearchSwitch.waitForHittable(timeout: timeout))
+    }
+
+    private func enablePrivateVoiceSearch() {
+        let row = app.cells.containing(.staticText, identifier: "Private Voice Search").firstMatch
+        XCTAssertTrue(row.waitForHittable(timeout: timeout), app.debugDescription)
+        let toggle = row.switches.firstMatch
+        XCTAssertTrue(toggle.waitForHittable(timeout: timeout), row.debugDescription)
+        XCTAssertTrue(["0", "1"].contains(toggle.value as? String ?? ""), toggle.debugDescription)
+        // SwiftUI can expose nested switch elements; tap the trailing control rather than the row's label.
+        let switchControl = toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5))
+        if toggle.value as? String == "1" {
+            switchControl.tap()
+            XCTAssertEqual(toggle.value as? String, "0")
+        }
+        switchControl.tap()
     }
 
     private var voiceSearchSwitch: XCUIElement {

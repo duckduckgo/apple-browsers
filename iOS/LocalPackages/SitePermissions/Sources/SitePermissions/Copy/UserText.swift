@@ -148,6 +148,9 @@ enum UserText {
         static let hideVoiceSearch = NotLocalizedString("sitePermissions.voice-search.reminder.hide", bundle: Bundle.module,
                                                         value: "Hide Voice Search",
                                                         comment: "Button that turns off Voice Search in DuckDuckGo.")
+        static let settingsBody = NotLocalizedString("sitePermissions.voice-search.settings-reminder.body", bundle: Bundle.module,
+                                                     value: "Microphone permissions are needed if you want to use our private voice features.",
+                                                     comment: "Body of the reminder shown when enabling Private Voice Search in Settings while iOS microphone access is blocked.")
     }
 
     enum VoiceChatPermissionRecovery {

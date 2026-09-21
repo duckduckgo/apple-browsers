@@ -227,7 +227,7 @@ enum ChallengeVision {
     private nonisolated static func recognizeChallengeLabel(in image: CGImage) -> ChallengeLabel? {
         guard !Task.isCancelled else { return nil }
         let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .fast
+        request.recognitionLevel = .accurate
         request.usesLanguageCorrection = false
         let handler = VNImageRequestHandler(cgImage: image)
         guard (try? handler.perform([request])) != nil else { return nil }

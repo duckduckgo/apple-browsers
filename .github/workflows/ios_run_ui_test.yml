@@ -1,5 +1,8 @@
 name: iOS - Run UI Test
 
+# Reusable helper that runs a single UITestCase class, on one simulator, in one user mode.
+# Called by ios_ui_tests.yml once per (device × test) matrix combination, per user-mode leg.
+
 permissions:
   contents: read
 
@@ -10,23 +13,44 @@ defaults:
 on:
   workflow_call:
     inputs:
-      test: {description: "UITestCase class to run", required: true, type: string}
-      device: {description: "Stable device key: iphone or ipad", required: true, type: string}
-      device-name: {description: "Simulator name", required: true, type: string}
-      ios-version: {description: "Selected iOS simulator version", required: true, type: string}
-      user-mode: {description: "production or internal", required: true, type: string}
-      build-artifact-name: {description: "Immutable build artifact name", required: true, type: string}
+      test:
+        description: "The UITestCase class to run"
+        required: true
+        type: string
+      device:
+        description: "Stable device key: iphone or ipad"
+        required: true
+        type: string
+      device-name:
+        description: "Simulator name"
+        required: true
+        type: string
+      ios-version:
+        description: "Selected iOS simulator version"
+        required: true
+        type: string
+      user-mode:
+        description: "'production' = production behaviour (release-gating). 'internal' = isInternalUser=true (advance warning, non-gating)."
+        required: true
+        type: string
+      build-artifact-name:
+        description: "Immutable build artifact name"
+        required: true
+        type: string
 
 jobs:
   run-ui-test:
     name: ${{ inputs.test }} (${{ inputs.device }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})
     runs-on: ['image:osx-tahoe-26', ui-tests]
 
-    # Match macOS: internal-mode failures are advance warning and must not fail the workflow.
-    # This belongs inside the reusable workflow because a caller job using `uses:` cannot set it.
+    # Internal-mode failures are advance warning for features still gated to internal users; they
+    # must not fail the overall workflow. Setting continue-on-error here (a normal job inside the
+    # reusable workflow) is what makes the calling leg pass on internal failures — a job that
+    # `uses:` a reusable workflow cannot set continue-on-error itself.
     continue-on-error: ${{ inputs.user-mode == 'internal' }}
 
     timeout-minutes: 45
+
     env:
       IOS_VERSION: ${{ inputs.ios-version }}
       TEST_CLASS: ${{ inputs.test }}
@@ -97,7 +121,7 @@ jobs:
         fi
         find DerivedData/Build/Products -type f -name "$pattern" -print -quit > xctestrun-path
 
-    - name: Run UI test
+    - name: Run UI Tests
       id: run-ui-tests
       env:
         DESTINATION: ${{ steps.select-simulator.outputs.destination }}
@@ -106,15 +130,15 @@ jobs:
         xctestrun_path=$(<xctestrun-path)
         set -o pipefail && env TEST_RUNNER_INTERNAL_USER_MODE="$INTERNAL_USER_MODE" \
           xcodebuild test-without-building \
-            -xctestrun "$xctestrun_path" \
-            -destination "$DESTINATION" \
-            -resultBundlePath TestResults.xcresult \
-            -test-iterations 2 \
-            -retry-tests-on-failure \
-            -test-repetition-relaunch-enabled YES \
-            "-only-testing:UI Tests/$TEST_CLASS" \
-          | tee ui-tests.log \
-          | xcbeautify
+          -xctestrun "$xctestrun_path" \
+          -destination "$DESTINATION" \
+          -resultBundlePath TestResults.xcresult \
+          -test-iterations 2 \
+          -retry-tests-on-failure \
+          -test-repetition-relaunch-enabled YES \
+          "-only-testing:UI Tests/$TEST_CLASS" \
+        | tee ui-tests.log \
+        | xcbeautify
 
     - name: Prepare test report
       if: always() && steps.checkout.outcome == 'success'
@@ -130,6 +154,7 @@ jobs:
           exit 1
         fi
         xcbeautify --report junit --report-path reports --junit-report-filename "$file" < ui-tests.log
+        # Replace the default test suite name with the test id for better grouping in the test report
         sed -i '' "s/Selected tests/${test_id}/" "reports/$file"
         test_count=$(xmllint --xpath 'count(//testcase)' "reports/$file")
         if [[ "$test_count" == 0 ]]; then
@@ -144,12 +169,14 @@ jobs:
         fi
         rm "$invalid"
 
+    # Upload test report as artifact for the test-report job
+    # that publishes a combined report for all test cases
     - name: Upload test report
       if: always()
       uses: ./.github/actions/upload-artifact-with-retry
       with:
-        name: ios-testreport-${{ inputs.test }}-${{ inputs.device }}-${{ inputs.user-mode }}
-        path: iOS/reports/*
+        name: "ios-testreport-${{ inputs.test }}-${{ inputs.device }}-${{ inputs.user-mode }}"
+        path: "iOS/reports/*"
         if-no-files-found: error
         retention-days: 1
 
@@ -157,7 +184,7 @@ jobs:
       if: always()
       uses: ./.github/actions/upload-artifact-with-retry
       with:
-        name: ios-uitest-logs-${{ inputs.test }}-${{ inputs.device }}-${{ inputs.user-mode }}-attempt${{ github.run_attempt }}
+        name: "ios-uitest-logs-${{ inputs.test }}-${{ inputs.device }}-${{ inputs.user-mode }}-attempt${{ github.run_attempt }}"
         path: |
           iOS/ui-tests.log
           iOS/TestResults.xcresult

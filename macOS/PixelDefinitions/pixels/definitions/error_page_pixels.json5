@@ -4,13 +4,13 @@
         "owners": ["ayoy"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain", "channel"]
+        "parameters": ["appVersion", "pixelSource", "channel", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain", "channel"]
     },
     "m_mac_errorpageshown_webkittermination": {
         "description": "Fired when an error page is shown due to a WebKit web content process termination.",
         "owners": ["ayoy"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

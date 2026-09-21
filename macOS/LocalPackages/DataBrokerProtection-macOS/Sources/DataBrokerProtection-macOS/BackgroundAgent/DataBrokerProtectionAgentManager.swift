@@ -23,6 +23,7 @@ import FoundationExtensions
 import BrowserServicesKit
 import Configuration
 import PixelKit
+import WideEvent
 import AppKitExtensions
 import os.log
 import Freemium

@@ -17,16 +17,27 @@
 //  limitations under the License.
 //
 
+import AIChat
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import UIKit
 
 /// A New Tab Page built as a vertical stack of independent blocks.
 final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
 
+    private enum Metrics {
+        static let customizeButtonTopMargin: CGFloat = 10
+        static let customizeButtonTrailingMargin: CGFloat = 20
+        static let customizeButtonSize: CGFloat = 44
+        static let contentTopInset: CGFloat = 96
+    }
+
     weak var delegate: NewTabPageControllerDelegate?
     weak var chromeDelegate: BrowserChromeDelegate?
 
     var isDragging: Bool { scrollView.isDragging }
+
+    var hasInlineSearchInput: Bool { true }
 
     private let blocks: [any NewTabPageBlock]
 
@@ -42,6 +53,19 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         return stackView
     }()
 
+    private lazy var customizeButton: CircularButton = {
+        let button = CircularButton()
+        button.isShadowHidden = true
+        button.setImage(DesignSystemImages.Glyphs.Size24.options, for: .normal)
+        button.setColors(foreground: UIColor(designSystemColor: .iconsSecondary),
+                         background: UIColor(designSystemColor: .controlsFillPrimary),
+                         pressedForeground: UIColor(designSystemColor: .iconsSecondary),
+                         pressedBackground: UIColor(designSystemColor: .controlsFillTertiary))
+        button.accessibilityLabel = UserText.newTabPageCustomizationTitle
+        button.addTarget(self, action: #selector(customizeButtonTapped), for: .touchUpInside)
+        return button
+    }()
+
     init(blocks: [any NewTabPageBlock]) {
         self.blocks = blocks
         super.init(nibName: nil, bundle: nil)
@@ -55,9 +79,21 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = UIColor(designSystemColor: .alertYellow)
+        view.backgroundColor = UIColor(designSystemColor: .background)
         addSubviews()
         installBlocks()
+    }
+
+    @objc private func customizeButtonTapped() {
+        let model = NewTabPageCustomizationModel()
+        model.reportOpening()
+        let customizationViewController = NewTabPageCustomizationViewController(model: model)
+        customizationViewController.onAllSettingsSelected = { [weak self] in
+            guard let self else { return }
+            delegate?.newTabPageDidRequestSettings(self)
+        }
+
+        present(customizationViewController, animated: true)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -71,9 +107,11 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
     private func addSubviews() {
         view.addSubview(scrollView)
         scrollView.addSubview(blocksStackView)
+        view.addSubview(customizeButton)
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         blocksStackView.translatesAutoresizingMaskIntoConstraints = false
+        customizeButton.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -81,14 +119,21 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
-            blocksStackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            blocksStackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: Metrics.contentTopInset),
             blocksStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
             blocksStackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
             blocksStackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
 
             // Pinning the content width to the visible width leaves block heights as the only
             // thing that can make the page scroll.
-            blocksStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
+            blocksStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+
+            customizeButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor,
+                                                 constant: Metrics.customizeButtonTopMargin),
+            customizeButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+                                                      constant: -Metrics.customizeButtonTrailingMargin),
+            customizeButton.widthAnchor.constraint(equalToConstant: Metrics.customizeButtonSize),
+            customizeButton.heightAnchor.constraint(equalToConstant: Metrics.customizeButtonSize)
         ])
     }
 
@@ -100,6 +145,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
             blocksStackView.addArrangedSubview(blockController.view)
             blockController.didMove(toParent: self)
         }
+    }
+
+    func beginSearch(textEntryMode: TextEntryMode) {
+        delegate?.newTabPageDidRequestSearch(self, textEntryMode: textEntryMode)
+    }
+
+    func beginVoiceSearch(textEntryMode: TextEntryMode) {
+        delegate?.newTabPageDidRequestVoiceSearch(self, textEntryMode: textEntryMode)
     }
 
     func dismiss() {
@@ -167,4 +220,20 @@ extension RedesignedNewTabPageViewController: NewTabPageOnboardingPresenting {
     func refreshContextualOnboardingDialogLayout() {}
 
     func dismissDuckAICompletionDialogIfNeededOnEditingEnd() {}
+}
+
+extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
+
+    var searchInputView: UIView? {
+        blocks.first { $0.id == .searchInput }?.viewController.view
+    }
+
+    func setSearchInputEditing(_ isEditing: Bool) {
+        searchInputView?.alpha = isEditing ? 0 : 1
+        searchInputView?.accessibilityElementsHidden = isEditing
+        searchInputView?.isUserInteractionEnabled = !isEditing
+        scrollView.isScrollEnabled = !isEditing
+        customizeButton.alpha = isEditing ? 0 : 1
+        customizeButton.isUserInteractionEnabled = !isEditing
+    }
 }

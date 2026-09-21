@@ -440,7 +440,7 @@ extension TabCollectionViewModelTests {
 
         // Select and remove childTab2
         tabCollectionViewModel.selectPrevious()
-        _ = tabCollectionViewModel.removeSelected()
+        _ = tabCollectionViewModel.closeSelected()
 
         XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.tab, childTab1)
     }
@@ -453,7 +453,7 @@ extension TabCollectionViewModelTests {
         tabCollectionViewModel.appendNewTab()
         let selectedTab = tabCollectionViewModel.selectedTabViewModel?.tab
 
-        _ = tabCollectionViewModel.removeSelected()
+        _ = tabCollectionViewModel.closeSelected()
 
         XCTAssertFalse(tabCollectionViewModel.tabCollection.contains(tab: selectedTab!))
     }

@@ -129,15 +129,19 @@ final class UTIFooterCardViewTests: XCTestCase {
         XCTAssertGreaterThan(needed, label.font.lineHeight * 1.5)
     }
 
-    /// The reset line beside a CTA has to stay on one line; a card with the pill gone can spend two.
-    func test_subtitle_allowsTwoLinesOnlyWithoutACTA() {
+    /// The reset line beside a CTA has to stay on one line; a card with the pill gone can spend two,
+    /// while the longer model-switch notice can spend three.
+    func test_subtitle_usesTheLineLimitForItsMessageLayout() {
         let sut = UTIFooterCardView()
 
         sut.configure(with: makeMessage(), animateIcon: false)
         XCTAssertEqual(subtitleLabel(in: sut)?.numberOfLines, 1)
 
-        sut.configure(with: makeSwitchNotice(), animateIcon: false)
+        sut.configure(with: makeMessage(primaryAction: nil), animateIcon: false)
         XCTAssertEqual(subtitleLabel(in: sut)?.numberOfLines, 2)
+
+        sut.configure(with: makeSwitchNotice(), animateIcon: false)
+        XCTAssertEqual(subtitleLabel(in: sut)?.numberOfLines, 3)
     }
 
     /// The switch notice's copy has to actually need the second line at phone width, or allowing it
@@ -357,7 +361,7 @@ final class UTIFooterCardViewTests: XCTestCase {
 
     /// The Create Image switch card: a headline over body copy, with no CTA to compete for width.
     private func makeSwitchNotice(
-        subtitle: String = "Mistral can't create images. Its extra privacy protections won't apply until you switch back."
+        subtitle: String = "Mistral can't create images. Zero Provider Visibility won't apply until you switch back."
     ) -> UTIFooterMessage {
         UTIFooterMessage(icon: .modelSwitch,
                          title: "Now using 5.6 Luna",

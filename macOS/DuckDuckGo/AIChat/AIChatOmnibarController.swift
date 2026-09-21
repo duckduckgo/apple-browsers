@@ -1306,7 +1306,7 @@ final class AIChatOmnibarController {
     func viewAllChats() {
         PixelKit.fire(AIChatPixel.aiChatViewAllChatsClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
         aiChatConversationSourceHandler.setData(.omnibarViewAllChats)
-        aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
+        aiChatTabOpener.openAIChatTab(with: .chatHistory, behavior: .newTab(selected: true))
     }
 
     /// Fallback when no window can host the modal: opens the customize URL in a tab.

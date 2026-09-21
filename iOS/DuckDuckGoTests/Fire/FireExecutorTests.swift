@@ -30,7 +30,7 @@ import SitePermissions
 import DDGSync
 import WKAbstractions
 import BrowserServicesKitTestsUtils
-@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 
 @MainActor
 final class FireExecutorTests: XCTestCase {

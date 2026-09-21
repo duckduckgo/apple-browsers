@@ -435,24 +435,38 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             historyStore.save(record)
             notifyRecordChanged(for: promoId, record: record)
             // External visibility is not gated by checkRules; retract conflicting internal promos shown earlier.
-            hideInternalPromosConflictingWithCurrentVisibility()
-        } else if externalVisiblePromoIds.remove(promoId) != nil {
-            applyResult(delegate.resultWhenHidden, toRecordFor: promoId)
+            let hideTasks = hideInternalPromosConflictingWithCurrentVisibility()
+            Task { @MainActor in
+                for task in hideTasks {
+                    await task.value
+                }
+                delegate.promoServiceDidApplyVisibility(true)
+            }
+        } else {
+            if externalVisiblePromoIds.remove(promoId) != nil {
+                applyResult(delegate.resultWhenHidden, toRecordFor: promoId)
+            }
+            Task { @MainActor in
+                delegate.promoServiceDidApplyVisibility(false)
+            }
         }
     }
 
     /// Retracts visible internal promos that would fail `checkRules` now that an external promo may be visible.
-    private func hideInternalPromosConflictingWithCurrentVisibility() {
+    private func hideInternalPromosConflictingWithCurrentVisibility() -> [Task<Void, Never>] {
         dispatchPrecondition(condition: .onQueue(stateQueue))
+        var hideTasks: [Task<Void, Never>] = []
         let visiblePromos = Array(activeSessions.keys)
         for promoID in visiblePromos {
             guard activeSessions[promoID] != nil,
                   let promo = promos.first(where: { $0.id == promoID }),
                   promo.delegate is InternalPromoDelegate else { continue }
-            if !checkRules(for: promo) {
-                recordResultAndCleanup(promoId: promoID, result: .noChange)
+            if !checkRules(for: promo),
+               let hideTask = recordResultAndCleanup(promoId: promoID, result: .noChange) {
+                hideTasks.append(hideTask)
             }
         }
+        return hideTasks
     }
 
     /// Processes buffered triggers after all delegates are registered, if the deferral window has ended,
@@ -630,15 +644,16 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         recordResultAndCleanup(promoId: promoId, result: .noChange)
     }
 
-    private func recordResultAndCleanup(promoId: String, result: PromoResult) {
+    @discardableResult
+    private func recordResultAndCleanup(promoId: String, result: PromoResult) -> Task<Void, Never>? {
         guard isOnStateQueue else {
             stateQueue.async { [weak self] in
                 self?.recordResultAndCleanup(promoId: promoId, result: result)
             }
-            return
+            return nil
         }
-        guard var session = activeSessions[promoId] else { return }
-        if session.isResultRecorded { return }
+        guard var session = activeSessions[promoId] else { return nil }
+        if session.isResultRecorded { return nil }
 
         session.isResultRecorded = true
         activeSessions[promoId] = session
@@ -657,7 +672,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         activeSessions.removeValue(forKey: promoId)
 
         let delegate = session.delegate
-        Task { @MainActor in
+        return Task { @MainActor in
             delegate.hide()
         }
     }

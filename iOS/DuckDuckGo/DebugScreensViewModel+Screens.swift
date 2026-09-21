@@ -259,7 +259,11 @@ extension DebugScreensViewModel {
             }),
             .controller(title: "Subscription", { dependencies in
                 let subscriptionDebugViewController = self.debugStoryboard.instantiateViewController(identifier: "SubscriptionDebugViewController") { coder in
-                    SubscriptionDebugViewController(coder: coder, subscriptionDataReporter: dependencies.subscriptionDataReporter)
+                    SubscriptionDebugViewController(
+                        coder: coder,
+                        subscriptionDataReporter: dependencies.subscriptionDataReporter,
+                        debugSettings: SubscriptionDebugSettingsUserDefaultsPersistor(keyValueStore: dependencies.keyValueStore)
+                    )
                 }
                 subscriptionDebugViewController.keyValueStore = dependencies.keyValueStore
                 return subscriptionDebugViewController

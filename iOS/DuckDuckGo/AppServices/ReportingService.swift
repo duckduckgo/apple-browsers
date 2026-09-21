@@ -181,7 +181,6 @@ final class ReportingService {
             await subscriptionDataReporter.saveWidgetAdded()
         }
         reportFailedCompilationsPixelIfNeeded()
-        AppDependencyProvider.shared.persistentPixel.sendQueuedPixels { _ in }
     }
 
     // MARK: - Suspend
@@ -308,7 +307,7 @@ struct DefaultSubscriptionStateProvider: SubscriptionStateProviding {
     let subscriptionManager: SubscriptionManager
 
     func isFreeTrial() async -> Bool {
-        (try? await subscriptionManager.getSubscription())?.hasActiveTrialOffer ?? false
+        await subscriptionManager.isOnFreeTrial()
     }
 
     var isActive: Bool {

@@ -543,6 +543,87 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         }
     }
 
+    func testWhenPermissionIsRevokedThenPendingRequestsAreDeniedAndOtherPermissionsContinue() throws {
+        let harness = try Harness()
+        var responder: ((SitePermissionPromptDecision) -> Void)?
+        var resolutions = [SitePermissionResolution]()
+        var microphonePromptCount = 0
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            responder = respond
+        }, completion: { resolutions.append($0) })
+        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, _ in
+            XCTFail("The revoked queued request must not prompt")
+        }, completion: { resolutions.append($0) })
+        harness.coordinator.request(harness.request([.microphone]), promptHandler: { _, respond in
+            microphonePromptCount += 1
+            respond(.denyOnce)
+        }, completion: { _ in })
+
+        harness.store.setPersistentDecision(.deny, for: .camera, at: harness.site)
+        harness.coordinator.revokeManagementSessionState(for: [.camera], at: harness.site)
+        responder?(.allowWhileUsingSite)
+
+        XCTAssertEqual(resolutions, [.deny(systemBlocks: []), .deny(systemBlocks: [])])
+        XCTAssertEqual(microphonePromptCount, 1)
+        XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .deny)
+    }
+
+    func testWhenPermissionIsRemovedDuringSystemAuthorizationThenLateGrantIsIgnored() async throws {
+        let harness = try Harness()
+        harness.systemStates[.camera] = .notDetermined
+        let authorizationStarted = expectation(description: "OS authorization starts")
+        let resultReported = expectation(description: "OS result is reported")
+        var authorizationContinuation: CheckedContinuation<SystemPermissionAuthorizationState, Never>?
+        harness.authorizationRequester = { _ in
+            authorizationStarted.fulfill()
+            return await withCheckedContinuation { authorizationContinuation = $0 }
+        }
+        harness.eventHandler = { _ in resultReported.fulfill() }
+        var resolutions = [SitePermissionResolution]()
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: { resolutions.append($0) })
+
+        await fulfillment(of: [authorizationStarted], timeout: 1)
+        harness.coordinator.removeManagementSessionState(for: [.camera], at: harness.site)
+        XCTAssertEqual(resolutions, [.deny(systemBlocks: [])])
+        try XCTUnwrap(authorizationContinuation).resume(returning: .authorized)
+        await fulfillment(of: [resultReported], timeout: 1)
+
+        XCTAssertEqual(resolutions, [.deny(systemBlocks: [])])
+        XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).ephemeralPermissionTypes.isEmpty)
+        XCTAssertNil(harness.store.decision(for: .camera, at: harness.site))
+    }
+
+    func testWhenPermissionIsRevokedDuringRecoveryThenCompletionIsNotDeliveredAgain() throws {
+        let harness = try Harness()
+        harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
+        harness.systemStates[.camera] = .denied
+        var finishRecovery: (() -> Void)?
+        harness.recoveryHandler = { _, completion in finishRecovery = completion }
+        var cancellationCount = 0
+        harness.cancellationHandler = { cancellationCount += 1 }
+        var completionCount = 0
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
+            XCTFail("Stored Allow must not prompt")
+        }, completion: { _ in completionCount += 1 })
+        XCTAssertEqual(completionCount, 1)
+        var microphonePrompted = false
+        harness.coordinator.request(harness.request([.microphone]), promptHandler: { _, respond in
+            microphonePrompted = true
+            respond(.denyOnce)
+        }, completion: { _ in })
+
+        harness.coordinator.revokeManagementSessionState(for: [.camera], at: harness.site)
+        harness.coordinator.removeManagementSessionState(for: [.camera], at: harness.site)
+        XCTAssertEqual(cancellationCount, 1)
+        XCTAssertFalse(microphonePrompted)
+        try XCTUnwrap(finishRecovery)()
+
+        XCTAssertEqual(completionCount, 1)
+        XCTAssertTrue(microphonePrompted)
+    }
+
     func testWhenNavigationOccursDuringOSRequestThenLateResultIsDroppedButCommittedAllowRemains() async throws {
         let harness = try Harness()
         harness.systemStates[.camera] = .notDetermined
@@ -1045,6 +1126,7 @@ private final class Harness {
     ]
     var authorizationRequester: (SitePermissionType) async -> SystemPermissionAuthorizationState = { _ in .authorized }
     var recoveryHandler: SitePermissionsCoordinator.RecoveryHandler = { _, completion in completion() }
+    var cancellationHandler: () -> Void = {}
     var eventHandler: SitePermissionsCoordinator.EventHandler = { _ in }
 
     lazy var coordinator = SitePermissionsCoordinator(
@@ -1070,6 +1152,7 @@ private final class Harness {
             }
             recoveryHandler(recovery, completion)
         },
+        cancellationHandler: { [weak self] in self?.cancellationHandler() },
         eventHandler: { [weak self] event in
             self?.eventHandler(event)
         })

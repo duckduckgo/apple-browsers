@@ -167,6 +167,7 @@ final class NavigationBarViewController: NSViewController {
     private var cancellables = Set<AnyCancellable>()
 
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
+    private let brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinating
     private let featureFlagger: FeatureFlagger
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
     private let searchPreferences: SearchPreferences
@@ -198,8 +199,8 @@ final class NavigationBarViewController: NSViewController {
 
     private let networkProtectionButtonModel: NetworkProtectionNavBarButtonModel
 
-    private var isOnboardingFinished: Bool {
-        OnboardingActionsManager.isOnboardingFinished && Application.appDelegate.onboardingContextualDialogsManager.state == .onboardingCompleted
+    private var isOnboardingReadyForPrompts: Bool {
+        Application.appDelegate.isOnboardingReadyForPrompts
     }
 
     private let sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
@@ -237,6 +238,7 @@ final class NavigationBarViewController: NSViewController {
                        networkProtectionStatusReporter: NetworkProtectionStatusReporter,
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
+                       brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinating = NSApp.delegateTyped.brokenSitePromptPresentationCoordinator,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
                        adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
                        searchPreferences: SearchPreferences,
@@ -275,6 +277,7 @@ final class NavigationBarViewController: NSViewController {
                 networkProtectionStatusReporter: networkProtectionStatusReporter,
                 autofillPopoverPresenter: autofillPopoverPresenter,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
+                brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
                 featureFlagger: featureFlagger,
                 adBlockingAvailability: adBlockingAvailability,
                 searchPreferences: searchPreferences,
@@ -311,6 +314,7 @@ final class NavigationBarViewController: NSViewController {
         networkProtectionStatusReporter: NetworkProtectionStatusReporter,
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
+        brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinating,
         featureFlagger: FeatureFlagger,
         adBlockingAvailability: AdBlockingAvailabilityProviding,
         searchPreferences: SearchPreferences,
@@ -368,6 +372,7 @@ final class NavigationBarViewController: NSViewController {
         self.permissionManager = permissionManager
         self.fireproofDomains = fireproofDomains
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
+        self.brokenSitePromptPresentationCoordinator = brokenSitePromptPresentationCoordinator
         self.featureFlagger = featureFlagger
         self.adBlockingAvailability = adBlockingAvailability
         self.searchPreferences = searchPreferences
@@ -1598,7 +1603,7 @@ final class NavigationBarViewController: NSViewController {
     @objc private func attemptToShowBrokenSitePrompt(_ sender: Notification) {
         guard brokenSitePromptLimiter.shouldShowToast(),
               let url = tabCollectionViewModel.selectedTabViewModel?.tab.url, !url.isDuckDuckGo,
-              isOnboardingFinished
+              isOnboardingReadyForPrompts
         else { return }
         showBrokenSitePrompt()
     }
@@ -1619,9 +1624,12 @@ final class NavigationBarViewController: NSViewController {
         },
                                                           onDismiss: {
             self.brokenSitePromptLimiter.didDismissToast()
+            // Fires from viewDidDisappear on every close path, including the CTA, so it is the promo's single hide signal.
+            self.brokenSitePromptPresentationCoordinator.promptDidHide()
         }
         )
         popoverMessage.show(onParent: self, relativeTo: privacyButton, behavior: .semitransient)
+        brokenSitePromptPresentationCoordinator.promptDidShow()
     }
 
     func toggleDownloadsPopover(keepButtonVisible: Bool) {

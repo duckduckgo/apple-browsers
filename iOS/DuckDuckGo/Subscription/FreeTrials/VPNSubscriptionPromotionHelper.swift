@@ -81,7 +81,7 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
     ///   - featureFlagger: The feature flagging service. Defaults to the shared instance.
     ///   - subscriptionManager: The subscription manager. Defaults to the shared instance.
     ///   - freeTrialBadgePersistor: The persistor for tracking promotion views. Defaults to an instance using UserDefaults and a custom key prefix.
-    ///   - pixelFiring: The pixel firing service. Defaults to Pixel.self.
+    ///   - pixelFiring: The pixel firing service. Defaults to PixelKit.shared.
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "vpn-menu-item"),

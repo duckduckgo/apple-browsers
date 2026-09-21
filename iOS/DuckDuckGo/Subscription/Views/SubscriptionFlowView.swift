@@ -24,9 +24,10 @@ import Core
 import DataBrokerProtection_iOS
 import PrivacyConfig
 import VPN
+import PixelKit
 
 struct SubscriptionFlowView: View {
-        
+
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel: SubscriptionFlowViewModel
     
@@ -39,6 +40,10 @@ struct SubscriptionFlowView: View {
     // Local View State
     @State private var errorMessageType: SubscriptionTransactionErrorAlert.MessageType = .general
     @State private var isPresentingError: Bool = false
+
+    // MARK: - Onboarding state
+
+    @State private var onboardingFlow: SubscriptionOnboardingFlowViewModel?
 
     enum Constants {
         static let empty = ""
@@ -62,19 +67,9 @@ struct SubscriptionFlowView: View {
                                                                                                      isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser, featureFlagger: featureFlagger)).navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
-        if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
-            NavigationLink(
-                destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
-                    .edgesIgnoringSafeArea(.bottom)
-                    .navigationViewStyle(.stack)),
-                isActive: $isShowingDBP,
-                label: { EmptyView() }
-            )
-        } else {
-            NavigationLink(destination: LazyView(SubscriptionPIRMoveToDesktopView().navigationViewStyle(.stack)),
-                           isActive: $isShowingDBP,
-                           label: { EmptyView() })
-        }
+        NavigationLink(destination: LazyView(pirDestination.navigationViewStyle(.stack)),
+                       isActive: $isShowingDBP,
+                       label: { EmptyView() })
 
         baseView
             .toolbar {
@@ -165,6 +160,15 @@ struct SubscriptionFlowView: View {
         .onChange(of: viewModel.state.shouldGoBackToSettings) { _ in
             dismiss()
         }
+
+        .task(id: viewModel.state.shouldPresentOnboarding) {
+            await startOnboarding()
+        }
+
+        .sheet(item: $onboardingFlow, onDismiss: { viewModel.onboardingFinished() }) { flow in
+            SubscriptionOnboardingLauncher.launch(flow: flow)
+                .onFirstAppear { viewModel.didPresentOnboarding() }
+        }
         
         .onFirstAppear {
             setUpAppearances()
@@ -196,6 +200,36 @@ struct SubscriptionFlowView: View {
             if viewModel.state.transactionStatus != .idle {
                 PurchaseInProgressView(status: getTransactionStatus())
             }
+        }
+    }
+
+    // MARK: - Onboarding
+
+    @MainActor
+    private func startOnboarding() async {
+        guard viewModel.state.shouldPresentOnboarding, onboardingFlow == nil else { return }
+        guard let persistor = viewModel.onboardingPersistor else {
+            PixelKit.fire(SubscriptionPixel.subscriptionOnboardingLaunchFailure(.missingPersistor), frequency: .dailyAndCount)
+            return
+        }
+        guard let flow = await SubscriptionOnboardingFlowViewModel.postCheckout(
+            persistor: persistor,
+            isPIRAvailable: viewModel.isPIRAvailable,
+            subscriptionManager: viewModel.subscriptionManager,
+            onFinish: { onboardingFlow = nil },
+            onRequestDuckAIChat: viewModel.onRequestDuckAIChat,
+            pirScreen: { pirDestination }) else { return }
+        onboardingFlow = flow
+    }
+
+    /// Shared by the hidden PIR `NavigationLink` above and the onboarding flow's `pirScreen`.
+    @ViewBuilder
+    private var pirDestination: some View {
+        if viewModel.isPIREnabled, let provider = viewModel.dataBrokerProtectionViewControllerProvider {
+            DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: provider)
+                .edgesIgnoringSafeArea(.bottom)
+        } else {
+            SubscriptionPIRMoveToDesktopView()
         }
     }
 

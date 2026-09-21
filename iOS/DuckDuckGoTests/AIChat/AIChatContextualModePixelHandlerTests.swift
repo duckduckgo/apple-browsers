@@ -503,7 +503,7 @@ final class AIChatContextualModePixelHandlerTests {
         let sut = AIChatContextualModePixelHandler(
             firePixel: { _ in },
             firePixelWithParameters: { _, _ in },
-            fireSelectionPixel: { event, frequency in
+            firePixelKitEvent: { event, frequency in
                 firedEventName = event.name
                 firedParameters = event.parameters
                 firedFrequency = frequency
@@ -523,7 +523,7 @@ final class AIChatContextualModePixelHandlerTests {
         let sut = AIChatContextualModePixelHandler(
             firePixel: { _ in },
             firePixelWithParameters: { _, _ in },
-            fireSelectionPixel: { _, _ in didFire = true }
+            firePixelKitEvent: { _, _ in didFire = true }
         )
 
         sut.firePromptSubmittedWithSelections(count: count)
@@ -537,7 +537,7 @@ final class AIChatContextualModePixelHandlerTests {
         var firedEventNames: [String] = []
         let sut = AIChatContextualModePixelHandler(
             firePixel: { _ in },
-            fireSelectionPixel: { event, frequency in
+            firePixelKitEvent: { event, frequency in
                 #expect(frequency == .dailyAndCount)
                 firedEventNames.append(event.name)
             }
@@ -555,6 +555,26 @@ final class AIChatContextualModePixelHandlerTests {
             AIChatContextualSelectionPixel.toolDeliveryTimedOut.name
         ])
         #expect(AIChatContextualSelectionPixel.attached.namePrefix == .none)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Address bar Recent Chats selection fires a daily and count PixelKit event", .timeLimit(.minutes(1)))
+    func address_bar_recent_chats_selection_fires_pixel() {
+        var firedEventNames: [String] = []
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in Issue.record("Must use PixelKit") },
+            firePixelKitEvent: { event, frequency in
+                #expect(frequency == .dailyAndCount)
+                #expect(event.parameters == nil)
+                #expect(event.standardParameters == nil)
+                #expect(event.platformSuffixPolicy == .standard)
+                #expect(event.namePrefix == .platformDefault)
+                firedEventNames.append(event.name)
+            })
+
+        sut.fireAddressBarMenuRecentChatsSelected()
+
+        #expect(firedEventNames == ["aichat_contextual_address_bar_menu_all_chats_selected"])
     }
 
     @Test("Concurrent reset and navigation calls are thread-safe")

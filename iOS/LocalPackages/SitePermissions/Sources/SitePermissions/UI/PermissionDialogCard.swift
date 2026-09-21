@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import SwiftUI
 
 private enum PermissionDialogCardConstants {
@@ -28,6 +29,7 @@ private enum PermissionDialogCardConstants {
 struct PermissionDialogCard<Content: View>: View {
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     private let width: CGFloat
     private let accessibilityIdentifier: String
@@ -66,7 +68,17 @@ struct PermissionDialogCard<Content: View>: View {
         content
             .padding(PermissionDialogCardConstants.padding)
             .frame(width: width)
-            .background(.regularMaterial)
+            .background {
+                if reduceTransparency {
+                    Color(designSystemColor: .backgroundSheets)
+                } else if #available(iOS 26.0, *) {
+                    Color.clear.glassEffect(
+                        .regular,
+                        in: RoundedRectangle(cornerRadius: PermissionDialogCardConstants.cornerRadius, style: .continuous))
+                } else {
+                    Rectangle().fill(.regularMaterial)
+                }
+            }
             .clipShape(RoundedRectangle(cornerRadius: PermissionDialogCardConstants.cornerRadius, style: .continuous))
             .shadow(color: shadowColors.primary, radius: 16, x: 0, y: 8)
             .shadow(color: shadowColors.secondary, radius: 6, x: 0, y: 2)

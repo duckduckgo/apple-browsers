@@ -31,6 +31,7 @@ import DataBrokerProtection_iOS
 import RemoteMessaging
 import PageRefreshMonitor
 import PixelKit
+import WideEvent
 import PixelExperimentKit
 import PrivacyConfig
 import Networking
@@ -59,7 +60,6 @@ protocol DependencyProvider {
     var serverInfoObserver: ConnectionServerInfoObserver { get }
     var connectionErrorObserver: ConnectionErrorObserver { get }
     var vpnSettings: VPNSettings { get }
-    var persistentPixel: PersistentPixelFiring { get }
     var wideEvent: WideEventManaging { get }
     var freeTrialConversionService: FreeTrialConversionInstrumentationService { get }
     var subscriptionManager: any SubscriptionManager { get }
@@ -67,6 +67,9 @@ protocol DependencyProvider {
     var subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
     var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging { get }
+    var internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProvider { get }
+    var internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider { get }
+    var subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging { get }
 }
 
 /// Provides dependencies for objects that are not directly instantiated
@@ -95,6 +98,7 @@ final class AppDependencyProvider: DependencyProvider {
     var subscriptionManager: any SubscriptionManager
     var tokenHandlerProvider: any SubscriptionTokenHandling
     let subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling
+    let subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging = SubscriptionOnboardingSessionState()
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
@@ -107,9 +111,10 @@ final class AppDependencyProvider: DependencyProvider {
     lazy var connectionErrorObserver: ConnectionErrorObserver = ConnectionErrorObserverThroughSession()
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
-    let persistentPixel: PersistentPixelFiring = PersistentPixel()
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
+    let internalFeedbackAttachmentsProvider = InternalFeedbackAttachmentsProvider()
+    let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
 
     private init() {
@@ -317,7 +322,6 @@ final class AppDependencyProvider: DependencyProvider {
         vpnFeatureVisibility = DefaultNetworkProtectionVisibility(authenticationStateProvider: authenticationStateProvider)
         networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,
                                                                               featureFlagger: featureFlagger,
-                                                                              persistentPixel: persistentPixel,
                                                                               settings: vpnSettings,
                                                                               wideEvent: wideEvent,
                                                                               freeTrialConversionService: freeTrialConversionService

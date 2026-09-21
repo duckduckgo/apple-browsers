@@ -29,6 +29,7 @@ public struct SitePermissionDialogView: View {
         static let cardWidth: CGFloat = 300
         static let contentHorizontalPadding: CGFloat = 8
         static let iconSize: CGFloat = 24
+        static let iconSpacing: CGFloat = 8
         static let iconContainerSize: CGFloat = 48
         static let iconContainerCornerRadius: CGFloat = 12
         static let headerSpacing: CGFloat = 16
@@ -53,8 +54,10 @@ public struct SitePermissionDialogView: View {
                              accessibilityIdentifier: "SitePermissions.Dialog") {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: Constants.headerSpacing) {
-                    if let icon = viewModel.icon {
-                        iconView(for: icon)
+                    HStack(spacing: Constants.iconSpacing) {
+                        ForEach(viewModel.icons, id: \.self) { icon in
+                            iconView(for: icon)
+                        }
                     }
                     title
                 }

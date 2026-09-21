@@ -23,155 +23,93 @@ final class QuickFeedbackDiagnosticsCollectorTests: XCTestCase {
 
     private func makeCollector(
         tabAndWindowCountProvider: TabAndWindowCountProviding? = nil,
+        memoryUsageMonitor: MemoryUsageMonitoring = StubMemoryUsageMonitor(),
         launchDate: Date = Date()
     ) -> QuickFeedbackDiagnosticsCollector {
         QuickFeedbackDiagnosticsCollector(
             tabAndWindowCountProvider: tabAndWindowCountProvider,
-            memoryUsageMonitor: StubMemoryUsageMonitor(),
+            memoryUsageMonitor: memoryUsageMonitor,
             launchDate: launchDate
         )
     }
 
-    // MARK: - Header
+    // MARK: - Collected Fields
 
-    func testWhenCollectingDiagnosticsThenOutputStartsWithSentinelHeader() {
-        let collector = makeCollector()
-        let result = collector.collectDiagnostics()
+    func testWhenCollectingDiagnosticsThenHardwareAndSessionFieldsArePresent() {
+        let fields = makeCollector().collectDiagnostics()
 
-        XCTAssertTrue(result.hasPrefix("--- Diagnostics (auto-collected) ---"))
+        XCTAssertNotNil(fields["GPU"], "Diagnostics should include the GPU")
+        XCTAssertNotNil(fields["Disk"], "Diagnostics should include free disk space")
+        XCTAssertNotNil(fields["Session"], "Diagnostics should include the session length")
     }
 
-    // MARK: - Required Fields
+    func testWhenCollectingDiagnosticsThenMemoryReportsBrowserWebContentAndTotal() {
+        let monitor = StubMemoryUsageMonitor(
+            webContentBytes: 250 * 1_048_576,
+            webContentProcessCount: 3
+        )
+        let memory = makeCollector(memoryUsageMonitor: monitor).collectDiagnostics()["Memory"]
 
-    func testWhenCollectingDiagnosticsThenOutputContainsAppVersion() {
-        let collector = makeCollector()
-        let result = collector.collectDiagnostics()
-
-        XCTAssertTrue(result.contains("App Version:"), "Diagnostics should include the app version line")
+        XCTAssertNotNil(memory)
+        XCTAssertTrue(memory?.contains("400 MB browser") == true, "Memory should report the browser's own usage")
+        XCTAssertTrue(memory?.contains("250 MB web content (3 processes)") == true, "Memory should report Web Content usage")
+        XCTAssertTrue(memory?.contains("GB total") == true, "Memory should report the total available")
     }
 
-    func testWhenCollectingDiagnosticsThenOutputContainsMacOSVersion() {
-        let collector = makeCollector()
-        let result = collector.collectDiagnostics()
+    func testWhenCollectingDiagnosticsThenValuesReportedAsDeviceInfoFieldsAreOmitted() {
+        let fields = makeCollector().collectDiagnostics()
 
-        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-        let expectedVersion = "\(osVersion.majorVersion).\(osVersion.minorVersion).\(osVersion.patchVersion)"
-        XCTAssertTrue(result.contains("macOS: \(expectedVersion)"))
+        XCTAssertNil(fields["App Version"])
+        XCTAssertNil(fields["macOS"])
+        XCTAssertNil(fields["Architecture"])
     }
 
-    func testWhenCollectingDiagnosticsThenOutputContainsArchitecture() {
-        let collector = makeCollector()
-        let result = collector.collectDiagnostics()
+    // MARK: - Tab And Window Counts
 
-        XCTAssertTrue(result.contains("Architecture:"), "Diagnostics should include the architecture line")
-        #if arch(arm64)
-        XCTAssertTrue(result.contains("arm64"))
-        #elseif arch(x86_64)
-        XCTAssertTrue(result.contains("x86_64"))
-        #endif
+    func testWhenTabCountProviderIsNilThenCountsAreOmitted() {
+        let fields = makeCollector(tabAndWindowCountProvider: nil).collectDiagnostics()
+
+        XCTAssertNil(fields["Tabs"])
+        XCTAssertNil(fields["Windows"])
     }
 
-    func testWhenCollectingDiagnosticsThenOutputContainsMemory() {
-        let collector = makeCollector()
-        let result = collector.collectDiagnostics()
+    func testWhenTabCountProviderExistsThenCountsAreReportedSeparately() {
+        let provider = MockTabAndWindowCountProvider(tabCount: 42, windowCount: 3)
+        let fields = makeCollector(tabAndWindowCountProvider: provider).collectDiagnostics()
 
-        XCTAssertTrue(result.contains("Memory:"), "Diagnostics should include the memory line")
-        XCTAssertTrue(result.contains("GB total"), "Memory should include total GB")
+        XCTAssertEqual(fields["Tabs"], "42")
+        XCTAssertEqual(fields["Windows"], "3")
     }
 
-    func testWhenCollectingDiagnosticsThenOutputContainsGPU() {
-        let collector = makeCollector()
-        let result = collector.collectDiagnostics()
+    func testWhenTabCountIsZeroThenCountsAreStillReported() {
+        let provider = MockTabAndWindowCountProvider(tabCount: 0, windowCount: 0)
+        let fields = makeCollector(tabAndWindowCountProvider: provider).collectDiagnostics()
 
-        XCTAssertTrue(result.contains("GPU:"), "Diagnostics should include the GPU line")
+        XCTAssertEqual(fields["Tabs"], "0")
+        XCTAssertEqual(fields["Windows"], "0")
     }
 
-    func testWhenCollectingDiagnosticsThenOutputContainsDisk() {
-        let collector = makeCollector()
-        let result = collector.collectDiagnostics()
+    func testWhenTabCountProviderIsDeallocatedThenCountsAreOmitted() {
+        var provider: MockTabAndWindowCountProvider? = MockTabAndWindowCountProvider(tabCount: 5, windowCount: 2)
+        let collector = makeCollector(tabAndWindowCountProvider: provider!)
+        provider = nil
 
-        XCTAssertTrue(result.contains("Disk:"), "Diagnostics should include the disk line")
+        let fields = collector.collectDiagnostics()
+
+        XCTAssertNil(fields["Tabs"], "Counts should be omitted once the provider has gone")
+        XCTAssertNil(fields["Windows"])
     }
 
-    func testWhenCollectingDiagnosticsThenOutputContainsSession() {
-        let collector = makeCollector()
-        let result = collector.collectDiagnostics()
+    // MARK: - Values
 
-        XCTAssertTrue(result.contains("Session:"), "Diagnostics should include the session line")
-    }
+    func testWhenCollectingDiagnosticsThenNoValueIsEmpty() {
+        let provider = MockTabAndWindowCountProvider(tabCount: 3, windowCount: 1)
+        let fields = makeCollector(tabAndWindowCountProvider: provider).collectDiagnostics()
 
-    // MARK: - Tab Count
-
-    func testWhenTabCountProviderIsNilThenOutputDoesNotContainTabsLine() {
-        let collector = makeCollector(tabAndWindowCountProvider: nil)
-        let result = collector.collectDiagnostics()
-
-        XCTAssertFalse(result.contains("Tabs:"))
-    }
-
-    func testWhenTabCountProviderExistsThenOutputContainsTabsAndWindows() {
-        let mockProvider = MockTabAndWindowCountProvider(tabCount: 42, windowCount: 3)
-        let collector = makeCollector(tabAndWindowCountProvider: mockProvider)
-        let result = collector.collectDiagnostics()
-
-        XCTAssertTrue(result.contains("Tabs: 42 tabs / 3 windows"))
-    }
-
-    func testWhenTabCountIsZeroThenOutputContainsZeroCounts() {
-        let mockProvider = MockTabAndWindowCountProvider(tabCount: 0, windowCount: 0)
-        let collector = makeCollector(tabAndWindowCountProvider: mockProvider)
-        let result = collector.collectDiagnostics()
-
-        XCTAssertTrue(result.contains("Tabs: 0 tabs / 0 windows"))
-    }
-
-    func testWhenCollectingDiagnosticsThenMemoryIncludesBrowserUsage() {
-        let collector = makeCollector()
-        let result = collector.collectDiagnostics()
-
-        XCTAssertTrue(result.contains("browser"), "Memory line should include browser memory usage")
-    }
-
-    func testWhenTabCountProviderIsDeallocatedThenOutputDoesNotContainTabsLine() {
-        var mockProvider: MockTabAndWindowCountProvider? = MockTabAndWindowCountProvider(tabCount: 5, windowCount: 2)
-        let collector = makeCollector(tabAndWindowCountProvider: mockProvider!)
-        mockProvider = nil
-
-        let result = collector.collectDiagnostics()
-
-        XCTAssertFalse(result.contains("Tabs:"), "Should omit tabs when provider is deallocated")
-    }
-
-    // MARK: - Field Ordering
-
-    func testWhenCollectingDiagnosticsWithProviderThenFieldsAreInExpectedOrder() {
-        let mockProvider = MockTabAndWindowCountProvider(tabCount: 3, windowCount: 1)
-        let collector = makeCollector(tabAndWindowCountProvider: mockProvider)
-        let lines = collector.collectDiagnostics().components(separatedBy: "\n")
-
-        guard lines.count >= 9 else {
-            XCTFail("Expected at least 9 lines but got \(lines.count)")
-            return
+        XCTAssertFalse(fields.isEmpty)
+        for (key, value) in fields {
+            XCTAssertFalse(value.isEmpty, "\(key) should never be reported as an empty string")
         }
-
-        XCTAssertTrue(lines[0].hasPrefix("--- Diagnostics"))
-        XCTAssertTrue(lines[1].hasPrefix("App Version:"))
-        XCTAssertTrue(lines[2].hasPrefix("macOS:"))
-        XCTAssertTrue(lines[3].hasPrefix("Architecture:"))
-        XCTAssertTrue(lines[4].hasPrefix("GPU:"))
-        XCTAssertTrue(lines[5].hasPrefix("Memory:"))
-        XCTAssertTrue(lines[6].hasPrefix("Disk:"))
-        XCTAssertTrue(lines[7].hasPrefix("Tabs:"))
-        XCTAssertTrue(lines[8].hasPrefix("Session:"))
-    }
-
-    // MARK: - Line Structure
-
-    func testWhenCollectingDiagnosticsThenOutputIsNewlineSeparated() {
-        let collector = makeCollector()
-        let lines = collector.collectDiagnostics().components(separatedBy: "\n")
-
-        XCTAssertGreaterThanOrEqual(lines.count, 8, "Should have at least sentinel + version + OS + arch + GPU + memory + disk + session")
     }
 }
 
@@ -188,12 +126,20 @@ private final class MockTabAndWindowCountProvider: TabAndWindowCountProviding {
 }
 
 private struct StubMemoryUsageMonitor: MemoryUsageMonitoring {
+    let webContentBytes: UInt64?
+    let webContentProcessCount: Int?
+
+    init(webContentBytes: UInt64? = nil, webContentProcessCount: Int? = nil) {
+        self.webContentBytes = webContentBytes
+        self.webContentProcessCount = webContentProcessCount
+    }
+
     func getCurrentMemoryUsage() -> MemoryUsageMonitor.MemoryReport {
         MemoryUsageMonitor.MemoryReport(
             residentBytes: 500 * 1_048_576,
             physFootprintBytes: 400 * 1_048_576,
-            webContentBytes: nil,
-            webContentProcessCount: nil
+            webContentBytes: webContentBytes,
+            webContentProcessCount: webContentProcessCount
         )
     }
 }

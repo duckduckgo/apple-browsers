@@ -48,6 +48,9 @@
          location = "group:PixelKit">
       </FileRef>
       <FileRef
+         location = "group:WideEvent">
+      </FileRef>
+      <FileRef
          location = "group:ScreenTimeDataCleaner">
       </FileRef>
       <FileRef
@@ -58,6 +61,9 @@
       </FileRef>
       <FileRef
          location = "group:SnapshotTestingSupport">
+      </FileRef>
+      <FileRef
+         location = "group:UITestingSupport">
       </FileRef>
       <FileRef
          location = "group:UIComponents">

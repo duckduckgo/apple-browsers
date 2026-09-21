@@ -29,6 +29,7 @@ import Core
 import os.log
 import Networking
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
@@ -117,6 +118,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     var onBackToSettings: (() -> Void)? { get set }
     var onFeatureSelected: ((SubscriptionEntitlement) -> Void)? { get set }
     var onActivateSubscription: (() -> Void)? { get set }
+    var onPurchaseCompleted: (() -> Void)? { get set }
 
     func with(broker: UserScriptMessageBroker)
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler?
@@ -221,6 +223,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     var onBackToSettings: (() -> Void)?
     var onFeatureSelected: ((SubscriptionEntitlement) -> Void)?
     var onActivateSubscription: (() -> Void)?
+    var onPurchaseCompleted: (() -> Void)?
 
     struct FeatureSelection: Codable {
         let productFeature: SubscriptionEntitlement
@@ -596,6 +599,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             if let preference = pendingScheduleNotification, let scheduler = expirationReminderScheduler {
                 await scheduler.scheduleReminder(daysBeforeCancel: preference.daysBeforeCancel)
             }
+            onPurchaseCompleted?()
 
         case .failure(let error):
             Logger.subscription.error("App store complete subscription purchase error: \(error, privacy: .public)")
@@ -888,6 +892,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         onSetSubscription = nil
         onActivateSubscription = nil
         onBackToSettings = nil
+        onPurchaseCompleted = nil
     }
 
     private func fireFreemiumUpsellPixel() {

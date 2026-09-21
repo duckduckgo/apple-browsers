@@ -88,7 +88,7 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
     /// - Parameters:
     ///   - featureFlagger: The feature flagging service. Defaults to the shared instance.
     ///   - subscriptionManager: The subscription manager. Defaults to the shared instance.
-    ///   - pixelFiring: The pixel firing service. Defaults to Pixel.self.
+    ///   - pixelFiring: The pixel firing service. Defaults to PixelKit.shared.
     ///   - statisticsStore: The statistics store. Defaults to StatisticsUserDefaults.
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,

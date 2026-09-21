@@ -40,6 +40,7 @@ import SERPSettings
 import Networking
 import FeatureFlags_iOS
 import PixelKit
+import SitePermissions
 
 enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
@@ -161,6 +162,7 @@ final class SettingsViewModel: ObservableObject {
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     let keyValueStore: ThrowingKeyValueStoring
+    lazy var subscriptionOnboardingSession = AppDependencyProvider.shared.subscriptionOnboardingSession
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
@@ -170,7 +172,19 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
     var onRequestOpenDuckAIChat: (() -> Void)?
+    /// `nil` unless a real `MainViewController` is available; the onboarding flow falls back to `SubscriptionOnboardingDuckAIChatLauncher` when unset.
+    var onRequestOnboardingDuckAIChat: ((String?) -> Bool)?
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
+    @MainActor private var sitePermissionsStore: SitePermissionsStore?
+    @MainActor private var sitePermissionsEventHandler: (SitePermissionsEvent) -> Void = { _ in }
+    @MainActor private var sitePermissionsRevocationHandler: (SitePermissionKey, Set<SitePermissionType>) -> Void = { _, _ in }
+
+    @MainActor
+    private(set) lazy var sitePermissionsSettingsViewModel = SettingsSitePermissionsViewModel(
+        store: sitePermissionsStore ?? SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
+        isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.sitePermissions) },
+        callbacks: makeSitePermissionsCallbacks()
+    )
 
     // View State
     @Published private(set) var state: SettingsState
@@ -203,6 +217,13 @@ final class SettingsViewModel: ObservableObject {
 
     var meetsLocaleRequirement: Bool {
         runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
+    }
+
+    /// Whether this customer can use PIR: the feature flag is on and the app exposes a PIR view controller.
+    var isPIRAvailable: Bool {
+        PIRAvailability.isAvailable(isPIREnabled: isPIREnabled,
+                                    meetsLocaleRequirement: meetsLocaleRequirement,
+                                    provider: dataBrokerProtectionViewControllerProvider)
     }
 
     var canShowFreemiumPIRSettingsEntryPoint: Bool {
@@ -1085,6 +1106,62 @@ final class SettingsViewModel: ObservableObject {
         startForwardingAdapterWillChangeEvents(lastTabShortcutAdapter)
     }
 
+    @MainActor
+    func configureSitePermissions(store: SitePermissionsStore,
+                                  eventHandler: @escaping (SitePermissionsEvent) -> Void,
+                                  revocationHandler: @escaping (SitePermissionKey, Set<SitePermissionType>) -> Void) {
+        sitePermissionsStore = store
+        sitePermissionsEventHandler = eventHandler
+        sitePermissionsRevocationHandler = revocationHandler
+    }
+
+    @MainActor
+    private func makeSitePermissionsCallbacks() -> SettingsSitePermissionsViewModel.Callbacks {
+        Self.makeSitePermissionsCallbacks(
+            eventHandler: sitePermissionsEventHandler,
+            revocationHandler: sitePermissionsRevocationHandler
+        )
+    }
+
+    @MainActor
+    static func makeSitePermissionsCallbacks(
+        eventHandler: @escaping (SitePermissionsEvent) -> Void,
+        revocationHandler: @escaping (SitePermissionKey, Set<SitePermissionType>) -> Void
+    ) -> SettingsSitePermissionsViewModel.Callbacks {
+        var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+        callbacks.didOpen = {
+            eventHandler(.settingsSitePermissionsOpen)
+        }
+        callbacks.didChangeGlobalDefault = { permissionType, decision in
+            eventHandler(
+                .settingsSitePermissionsGlobalChanged(type: permissionType, to: decision)
+            )
+        }
+        callbacks.didChangeSiteDecision = { permissionType, from, to in
+            eventHandler(
+                .permissionCenterChanged(type: permissionType, from: from, to: to)
+            )
+        }
+        callbacks.didOpenSystemSettings = {
+            eventHandler(
+                .permissionSystemSettingsOpened(type: .cameraAndMicrophone)
+            )
+        }
+        callbacks.didRequestRevocation = { site, permissionTypes in
+            revocationHandler(site, permissionTypes)
+        }
+        callbacks.didRemoveSite = {
+            eventHandler(.permissionRemoveSite)
+        }
+        callbacks.didRemoveAll = {
+            eventHandler(.permissionRemoveAll)
+        }
+        callbacks.didUndoRemoval = {
+            eventHandler(.permissionRemoveUndo)
+        }
+        return callbacks
+    }
+
     deinit {
         subscriptionSignOutObserver = nil
         textZoomObserver = nil
@@ -1150,6 +1227,7 @@ extension SettingsViewModel {
             voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
             speechRecognitionAvailable: voiceSearchHelper.isSpeechRecognizerAvailable,
             loginsEnabled: featureFlagger.isFeatureOn(.autofillAccessCredentialManagement),
+            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
             networkProtectionConnected: false,
             subscription: SettingsState.defaults.subscription,
             sync: getSyncState(),
@@ -1199,6 +1277,7 @@ extension SettingsViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self else { return }
+                self.state.sitePermissionsEnabled = self.featureFlagger.isFeatureOn(.sitePermissions)
                 // Refresh the UI for every flag flip so the contingency notice
                 // (which reads `adBlockingAvailability.isRemotelyDisabled` live)
                 // re-renders even for users with explicit storage who skip the
@@ -1560,7 +1639,7 @@ extension SettingsViewModel {
     private func isFeatureAvailableForNewBadge(_ feature: NewBadgeFeature) -> Bool {
         switch feature {
         case .personalInformationRemoval:
-            return isPIREnabled && meetsLocaleRequirement && dataBrokerProtectionViewControllerProvider != nil
+            return isPIRAvailable
         }
     }
 

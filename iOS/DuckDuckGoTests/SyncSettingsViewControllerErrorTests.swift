@@ -97,24 +97,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenSimplifiedSyncSetupV2IsDisabledThenSyncUIVersionIsV1() {
-        XCTAssertEqual(vc.syncUIVersion, "v1")
-        XCTAssertEqual(vc.uiVersionParameters, [PixelParameters.uiVersion: "v1"])
-    }
-
-    @MainActor
-    func testWhenSimplifiedSyncSetupV2IsEnabledThenSyncUIVersionIsV2() {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.simplifiedSyncSetupV2])
-        let vc = SyncSettingsViewController(
-            syncService: ddgSyncing,
-            syncBookmarksAdapter: syncBookmarksAdapter,
-            syncCredentialsAdapter: syncCredentialsAdapter,
-            syncCreditCardsAdapter: syncCreditCardsAdapter,
-            syncPausedStateManager: errorHandler,
-            featureFlagger: featureFlagger,
-            syncAutoRestoreHandler: syncAutoRestoreHandler
-        )
-
+    func testWhenSyncSettingsAreShownThenSyncUIVersionIsV2() {
         XCTAssertEqual(vc.syncUIVersion, "v2")
         XCTAssertEqual(vc.uiVersionParameters, [PixelParameters.uiVersion: "v2"])
     }
@@ -467,8 +450,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenV1ConnectCreatesAccountWithSimplifiedV2LayoutThenCompletionShowsSuccess() {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.simplifiedSyncSetupV2])
+    func testWhenLegacyConnectCreatesAccountWithConnectingSheetThenCompletionShowsSuccess() {
         let spyVC = SpySyncSettingsViewController(
             syncService: ddgSyncing,
             syncBookmarksAdapter: syncBookmarksAdapter,
@@ -569,7 +551,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenV2AccountConflictHasMultipleDevicesThenSwitchesWithoutPrompting() async throws {
+    func testWhenAccountConflictHasMultipleDevicesThenSwitchesWithoutPrompting() async throws {
         vc.viewModel.devices = [
             SyncSettingsViewModel.Device(id: "1", name: "iPhone", type: "iPhone", isThisDevice: true),
             SyncSettingsViewModel.Device(id: "2", name: "Macbook Pro", type: "Macbook Pro", isThisDevice: false)

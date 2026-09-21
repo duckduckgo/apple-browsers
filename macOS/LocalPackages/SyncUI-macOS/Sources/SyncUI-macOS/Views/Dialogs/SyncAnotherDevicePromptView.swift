@@ -37,6 +37,7 @@ struct SyncAnotherDevicePromptView: View {
                 }
             }
         } buttons: {
+            Spacer()
             Button {
                 Task {
                     await model.delegate?.syncThisDeviceOnlyFromPrompt()

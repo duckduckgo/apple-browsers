@@ -189,7 +189,7 @@ extension DataImportViewController: DataImportViewModelDelegate {
         presentDocumentPicker()
     }
 
-    func dataImportViewModelDidRequestPresentDataPicker(_ viewModel: DataImportViewModel, contents: Core.ImportArchiveContents) {
+    func dataImportViewModelDidRequestPresentDataPicker(_ viewModel: DataImportViewModel, contents: ImportArchiveContents) {
         presentDataTypePicker(for: contents)
     }
 

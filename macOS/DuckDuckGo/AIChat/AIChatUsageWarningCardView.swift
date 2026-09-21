@@ -398,10 +398,8 @@ final class AIChatUsageWarningCardView: NSView {
     }
 
     func update(with notice: AIChatCreateImageModelSwitchNotice) {
-        let title = UserText.aiChatCreateImageModelSwitchTitle(notice.newModelShortName)
-        let subtitle = notice.previousModelHasExtraPrivacyProtections
-            ? UserText.aiChatCreateImageModelSwitchPrivacySubtitle(notice.previousModelShortName)
-            : UserText.aiChatCreateImageModelSwitchSubtitle(notice.previousModelShortName)
+        let title = notice.localizedTitle
+        let subtitle = notice.localizedSubtitle
 
         applyModelSwitchIcon()
         titleLabel.maximumNumberOfLines = 2

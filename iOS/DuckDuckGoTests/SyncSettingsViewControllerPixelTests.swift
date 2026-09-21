@@ -71,7 +71,7 @@ final class SyncSettingsViewControllerPixelTests {
     @available(iOS 16, macOS 13, *)
     @Test("scanQRCodeScreenShown fires the scan-QR screen pixel", .timeLimit(.minutes(1)))
     func scanQRCodeScreenShownFiresScanQRScreenPixel() {
-        let vc = makeViewController(source: "test_source", enabledFeatureFlags: [.simplifiedSyncSetupV2])
+        let vc = makeViewController(source: "test_source", enabledFeatureFlags: [])
 
         vc.scanQRCodeScreenShown()
 
@@ -89,7 +89,7 @@ final class SyncSettingsViewControllerPixelTests {
     @available(iOS 16, macOS 13, *)
     @Test("barcodeScreenShown fires the barcode screen pixel", .timeLimit(.minutes(1)))
     func barcodeScreenShownFiresBarcodeScreenPixel() {
-        let vc = makeViewController(source: "test_source", enabledFeatureFlags: [.simplifiedSyncSetupV2])
+        let vc = makeViewController(source: "test_source", enabledFeatureFlags: [])
 
         vc.barcodeScreenShown()
 
@@ -107,7 +107,7 @@ final class SyncSettingsViewControllerPixelTests {
     @available(iOS 16, macOS 13, *)
     @Test("Another-device prompt dismissal fires the dismissed pixel", .timeLimit(.minutes(1)))
     func anotherDevicePromptDismissalFiresDismissedPixel() {
-        let vc = makeViewController(source: "test_source", enabledFeatureFlags: [.simplifiedSyncSetupV2])
+        let vc = makeViewController(source: "test_source", enabledFeatureFlags: [])
 
         vc.fireSyncSetupPixel(event: .anotherDevicePromptDismissed)
 

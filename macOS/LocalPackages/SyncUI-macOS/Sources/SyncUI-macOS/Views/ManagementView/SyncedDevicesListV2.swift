@@ -81,6 +81,21 @@ struct SyncedDevicesListV2: View {
             hoveredDevice = hovering ? device : nil
         }
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(accessibilityIdentifier(for: device))
+    }
+
+    private func accessibilityIdentifier(for device: SyncDevice) -> String {
+        if device.isCurrent {
+            return "SyncSettings.deviceRow.current"
+        }
+        switch device.kind {
+        case .current, .desktop:
+            return "SyncSettings.deviceRow.desktop"
+        case .mobile:
+            return "SyncSettings.deviceRow.mobile"
+        case .thirdParty:
+            return "SyncSettings.deviceRow.thirdParty"
+        }
     }
 
     @ViewBuilder

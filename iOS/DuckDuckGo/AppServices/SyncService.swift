@@ -84,6 +84,7 @@ final class SyncService {
         sync = DDGSync(
             dataProvidersSource: syncDataProviders,
             errorEvents: SyncErrorHandler(),
+            unifiedDeviceListEvents: UnifiedDeviceListPixelHandler(),
             privacyConfigurationManager: privacyConfigurationManager,
             keyValueStore: keyValueStore,
             environment: environment,
@@ -97,8 +98,14 @@ final class SyncService {
                 isPairingV2CodeEnabled: {
                     featureFlagger.isFeatureOn(for: FeatureFlag.syncCanShowV2ConnectCode)
                 },
+                canUseExchangeV2Point1: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncCanUseExchangeV2Point1)
+                },
                 canWriteUnifiedDeviceList: {
                     featureFlagger.isFeatureOn(for: FeatureFlag.syncCanWriteUnifiedDeviceList)
+                },
+                canUsePatchEndpointForLegacyDeviceRename: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncCanUsePatchEndpointForLegacyDeviceRename)
                 },
                 canReadUnifiedDeviceList: {
                     featureFlagger.isFeatureOn(for: FeatureFlag.syncCanReadUnifiedDeviceList)

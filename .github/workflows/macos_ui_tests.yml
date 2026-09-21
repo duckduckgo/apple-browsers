@@ -315,8 +315,6 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ needs.setup-tests.outputs.start-timestamp }}
-        # Compare against the string 'true'. A job output is always a string, so a comparison
-        # against the boolean true casts it to NaN and never matches.
         pixel-name: ${{ (needs.setup-tests.outputs.all-os-versions == 'true') && 'm_ci_apple_duration_macos_ui_tests_all' || 'm_ci_apple_duration_macos_ui_tests_latest' }}
 
   notify-failure:

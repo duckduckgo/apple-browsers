@@ -232,8 +232,10 @@ jobs:
         if-no-files-found: warn
         retention-days: 7
 
+  # Match macOS by running each user mode as a separate reusable-workflow matrix. Internal-mode
+  # failures remain non-gating through continue-on-error inside ios_run_ui_test.yml.
   ui-tests-production:
-    name: UI Tests (production)
+    name: UI Tests
     needs: [setup-tests, build-for-testing]
     if: needs.setup-tests.outputs.run-production == 'true'
     strategy:
@@ -252,7 +254,7 @@ jobs:
       build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
 
   ui-tests-internal:
-    name: UI Tests (internal warning)
+    name: UI Tests
     needs: [setup-tests, build-for-testing]
     if: needs.setup-tests.outputs.run-internal == 'true'
     strategy:
@@ -329,44 +331,3 @@ jobs:
         include_time_in_summary: true
         skip_annotations: true
         fail_on_failure: false
-
-  ui-tests-gate:
-    # Branch protection should require only this stable "UI Tests" check. Internal-mode jobs remain
-    # visibly failed and rerunnable, but assertions are advance warning and do not gate this job.
-    # Missing or invalid internal reports still fail test-report above and therefore block this gate:
-    # broken reporting is workflow infrastructure failure, not an advisory product-test failure.
-    name: UI Tests
-    if: always()
-    needs: [should-run-checks, setup-tests, build-for-testing, ui-tests-production, test-report]
-    runs-on: ubuntu-latest
-    steps:
-    - name: Verify release-gating jobs
-      working-directory: ${{ runner.temp }}
-      env:
-        SHOULD_RUN_RESULT: ${{ needs.should-run-checks.result }}
-        SHOULD_RUN: ${{ needs.should-run-checks.outputs.should_run }}
-        SETUP_RESULT: ${{ needs.setup-tests.result }}
-        BUILD_RESULT: ${{ needs.build-for-testing.result }}
-        PRODUCTION_RESULT: ${{ needs.ui-tests-production.result }}
-        REPORT_RESULT: ${{ needs.test-report.result }}
-        RUN_PRODUCTION: ${{ needs.setup-tests.outputs.run-production }}
-      run: |
-        if [[ "$SHOULD_RUN_RESULT" != success ]]; then
-          echo "::error::Determine-checks job ended with $SHOULD_RUN_RESULT."
-          exit 1
-        fi
-        if [[ "$SHOULD_RUN" != true && "$SHOULD_RUN" != false ]]; then
-          echo "::error::Determine-checks produced invalid should_run='$SHOULD_RUN'."
-          exit 1
-        fi
-        if [[ "$SHOULD_RUN" != true ]]; then
-          exit 0
-        fi
-        if [[ "$SETUP_RESULT" != success || "$BUILD_RESULT" != success || "$REPORT_RESULT" != success ]]; then
-          echo "::error::Required jobs: setup=$SETUP_RESULT, build=$BUILD_RESULT, report=$REPORT_RESULT."
-          exit 1
-        fi
-        if [[ "$RUN_PRODUCTION" == true && "$PRODUCTION_RESULT" != success ]]; then
-          echo "::error::Production UI tests ended with $PRODUCTION_RESULT."
-          exit 1
-        fi

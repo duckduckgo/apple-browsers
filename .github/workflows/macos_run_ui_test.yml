@@ -149,6 +149,7 @@ jobs:
       uses: actions/download-artifact@v7
       with:
         pattern: DuckDuckGo-${{ env.release-type }}-*.app.tar.xz
+        path: ${{ github.workspace }}/macOS
 
     - name: Set cache key hash
       run: |

@@ -37,7 +37,7 @@ struct AutofillCopyableRow: View {
     
     var buttonImage: UIImage?
     var buttonAccessibilityLabel: String?
-    var buttonAccessibilityIdentifier: String? = nil
+    var buttonAccessibilityIdentifier: String?
     var buttonAction: (() -> Void)?
     
     var secondaryButtonImage: UIImage?

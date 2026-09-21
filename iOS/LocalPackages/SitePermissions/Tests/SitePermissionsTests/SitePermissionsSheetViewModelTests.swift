@@ -54,6 +54,21 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         XCTAssertTrue(harness.makeViewModel(snapshot: globallyDeniedWithoutRequest).rows.isEmpty)
     }
 
+    func testWhenUndoReopensTransientPermissionsThenRowsAskAgainWithoutRestoringGrants() throws {
+        let harness = try Harness()
+        let snapshot = harness.snapshot()
+        let sut = SitePermissionsSheetViewModel(snapshot: snapshot,
+                                                 store: harness.store,
+                                                 displayedPermissionTypes: [.camera, .microphone, .location])
+
+        sut.refresh(with: snapshot)
+
+        XCTAssertEqual(sut.rows.map(\.permissionType), [.location, .camera, .microphone])
+        XCTAssertTrue(sut.rows.allSatisfy { $0.selectedOption == .askEachTime && $0.captureState == .inactive })
+        XCTAssertTrue(harness.store.permissions(for: harness.site).isEmpty)
+        XCTAssertFalse(snapshot.showsMenuEntry)
+    }
+
     func testAllThreeSheetStatesAreRepresentable() throws {
         let harness = try Harness()
 

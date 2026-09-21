@@ -222,7 +222,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211969496845106?focus=true
     case blackFridayCampaign
 
-    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1217309584411551
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218699650746481
     case partnershipsHub
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477844148

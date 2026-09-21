@@ -148,7 +148,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218354517064977
     case performanceOptimizedPaywalls
 
-    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1217309584411551
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218699650746472
     case partnershipsHub
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213569392605475

@@ -225,7 +225,7 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
 
     func isCurrentPageAttachable() -> Bool {
         let url = currentURLProvider()
-        if let url, isLocalDocument(url) { return false }
+        if let url, url.isFileURL { return false }
         if let url, isDocumentTab(url) { return true }
         guard let policy = attachabilityPolicyProvider() else { return true }
         return policy.verdict(url: url, mimeType: url.flatMap { mimeTypeProvider($0) }).isAttachable
@@ -279,10 +279,10 @@ private extension AIChatPageContextHandler {
     /// gate and the standalone sheet-open/navigation measurement.
     @discardableResult
     func firePreventedIfNonAttachable(for url: URL?, trigger: PageContextExtractionTrigger) -> Bool {
-        // Local (file://) PDFs are never attachable — independent of the blocklist config.
-        if let url, isLocalDocument(url) {
-            Logger.aiChat.debug("[PageContext] 🚫 gate: prevented attach (local document)")
-            fireExtractionPixel(.prevented(PageContextExtractionOutcome.localDocumentCategory), trigger: trigger, latency: nil)
+        // Local (file://) pages are never attachable — independent of the blocklist config.
+        if let url, url.isFileURL {
+            Logger.aiChat.debug("[PageContext] 🚫 gate: prevented attach (local file)")
+            fireExtractionPixel(.prevented(PageContextExtractionOutcome.localFileCategory), trigger: trigger, latency: nil)
             return true
         }
         if let url, isDocumentTab(url) { return false }
@@ -299,14 +299,9 @@ private extension AIChatPageContextHandler {
 
     /// Whether this tab's page goes to Duck.ai as document bytes rather than markdown.
     func isDocumentTab(_ url: URL) -> Bool {
-        !isLocalDocument(url)
+        !url.isFileURL
             && isDocumentContextEnabled()
             && DocumentPageContextProvider.isSupportedDocument(mimeType: mimeTypeProvider(url), url: url)
-    }
-
-    /// A PDF opened from disk. Excluded from page context regardless of the PDF feature flag.
-    func isLocalDocument(_ url: URL) -> Bool {
-        DocumentPageContextProvider.isLocalDocument(mimeType: mimeTypeProvider(url), url: url)
     }
 
     /// A document context with no bytes: the chip can name the tab, and the bytes follow once

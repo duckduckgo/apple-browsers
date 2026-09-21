@@ -57,22 +57,6 @@ final class DocumentPageContextProviderTests: XCTestCase {
         XCTAssertFalse(DocumentPageContextProvider.isSupportedDocument(mimeType: nil, url: URL(string: "https://example.com/page")!))
     }
 
-    // MARK: - isLocalDocument
-
-    func testLocalPDFIsALocalDocument() {
-        let fileURL = URL(string: "file:///Users/me/spec.pdf")!
-        XCTAssertTrue(DocumentPageContextProvider.isLocalDocument(mimeType: "application/pdf", url: fileURL))
-        XCTAssertTrue(DocumentPageContextProvider.isLocalDocument(mimeType: nil, url: fileURL),
-                      "Falls back to the extension when the MIME type wasn't captured")
-    }
-
-    func testRemotePDFAndLocalNonPDFAreNotLocalDocuments() {
-        XCTAssertFalse(DocumentPageContextProvider.isLocalDocument(mimeType: "application/pdf", url: url))
-        XCTAssertFalse(DocumentPageContextProvider.isLocalDocument(mimeType: nil, url: url))
-        XCTAssertFalse(DocumentPageContextProvider.isLocalDocument(mimeType: "text/html", url: URL(string: "file:///Users/me/page.html")!))
-        XCTAssertFalse(DocumentPageContextProvider.isLocalDocument(mimeType: nil, url: URL(string: "file:///Users/me/page.html")!))
-    }
-
     // MARK: - makeDocumentContext
 
     func testAttachesDocumentBytes() async throws {

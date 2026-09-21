@@ -789,23 +789,47 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertTrue(handler.isCurrentPageAttachable())
     }
 
-    func testWhenLocalPDFThenIsCurrentPageNotAttachable() {
-        let fileURL = URL(string: "file:///Users/me/spec.pdf")!
-        let withBlocklist = makeHandler(
+    func testWhenLocalFileThenIsCurrentPageNotAttachable() {
+        let localPDF = makeHandler(
             attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
-            currentURLProvider: { fileURL },
+            currentURLProvider: { URL(string: "file:///Users/me/spec.pdf") },
             mimeTypeProvider: { _ in "application/pdf" },
             isDocumentContextEnabled: { true }
         )
-        let withoutBlocklist = makeHandler(
+        let localPDFWithoutBlocklist = makeHandler(
             attachabilityPolicyProvider: { nil },
-            currentURLProvider: { fileURL },
+            currentURLProvider: { URL(string: "file:///Users/me/spec.pdf") },
             mimeTypeProvider: { _ in "application/pdf" },
             isDocumentContextEnabled: { true }
+        )
+        let localHTML = makeHandler(
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { URL(string: "file:///Users/me/page.html") },
+            mimeTypeProvider: { _ in "text/html" }
         )
 
-        XCTAssertFalse(withBlocklist.isCurrentPageAttachable())
-        XCTAssertFalse(withoutBlocklist.isCurrentPageAttachable(), "Local PDFs are excluded even without the blocklist config")
+        XCTAssertFalse(localPDF.isCurrentPageAttachable())
+        XCTAssertFalse(localPDFWithoutBlocklist.isCurrentPageAttachable(), "Local files are excluded even without the blocklist config")
+        XCTAssertFalse(localHTML.isCurrentPageAttachable())
+    }
+
+    func testWhenLocalHTMLThenCollectionIsPrevented() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { URL(string: "file:///Users/me/page.html") },
+            mimeTypeProvider: { _ in "text/html" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        let didTrigger = handler.triggerContextCollection(trigger: .tabContent)
+
+        XCTAssertFalse(didTrigger)
+        XCTAssertEqual(mockScript.collectCallCount, 0)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("localFile"))
     }
 
     func testWhenLocalPDFThenCollectionIsPreventedWithoutReadingBytes() {
@@ -847,7 +871,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertNil(received)
         XCTAssertFalse(didReadDocument)
         XCTAssertEqual(mockScript.collectCallCount, 0)
-        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("localDocument"))
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("localFile"))
     }
 
     func testWhenDocumentTabAndFlagOffThenBlocklistStillPreventsCollection() {

@@ -552,6 +552,21 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     static func extractPageContext(from tab: Tab,
                                    timeout: TimeInterval = 5,
                                    featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) async -> AIChatPageContextData? {
+        // A local (file://) page is never attachable: hand back a non-attachable context rather
+        // than nil, which callers would treat as "nothing to attach" or fall through to a collect.
+        if case .url(let url, _, _) = tab.content, url.isFileURL {
+            return AIChatPageContextData(
+                title: tab.title ?? "",
+                favicon: [],
+                url: url.absoluteString,
+                content: "",
+                truncated: false,
+                fullContentLength: 0,
+                attachable: false,
+                mimeType: await tab.webView.mimeType ?? AIChatPageContextData.htmlMIMEType
+            )
+        }
+
         // A document tab (PDF) is handed over as bytes — the user script can't read it, so this
         // bypasses collection entirely. Covers both consumers: the sidebar's `@` picker
         // (`getAIChatTabContent`) and the omnibar's submit path.
@@ -588,15 +603,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private static func documentContext(for tab: Tab,
                                         timeout: TimeInterval,
                                         featureFlagger: FeatureFlagger) async -> AIChatPageContextData? {
-        guard case .url(let url, _, _) = tab.content else { return nil }
-        let mimeType = await tab.webView.mimeType
-        // A local (file://) PDF is never attachable: hand back a non-attachable metadata context
-        // rather than nil, which would fall through to a markdown collect the PDF viewer never answers.
-        if DocumentPageContextProvider.isLocalDocument(mimeType: mimeType, url: url) {
-            return DocumentPageContextProvider.metadataContext(url: url, title: tab.title ?? "", attachable: false, attached: false)
-        }
         guard featureFlagger.isFeatureOn(.aiChatPdfPageContext),
-              DocumentPageContextProvider.isSupportedDocument(mimeType: mimeType, url: url) else {
+              case .url(let url, _, _) = tab.content,
+              DocumentPageContextProvider.isSupportedDocument(mimeType: await tab.webView.mimeType, url: url) else {
             return nil
         }
 

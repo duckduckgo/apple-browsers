@@ -52,13 +52,6 @@ public enum DocumentPageContextProvider {
         return url.pathExtension.lowercased() == "pdf"
     }
 
-    /// A document opened from disk (`file://`). Local PDFs are excluded from page context per
-    /// security triage — they never go to Duck.ai as page context (the explicit file-attachment
-    /// flow is unaffected).
-    public static func isLocalDocument(mimeType: String?, url: URL) -> Bool {
-        url.isFileURL && isSupportedDocument(mimeType: mimeType, url: url)
-    }
-
     @MainActor
     public static func makeDocumentContext(webView: MainResourceDataProviding,
                                            url: URL,

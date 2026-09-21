@@ -57,7 +57,7 @@ jobs:
     continue-on-error: ${{ inputs.user-mode == 'internal' }}
 
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.runner }}-${{ inputs.test }}-${{ inputs.user-mode }}-${{ inputs.build-type }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ join(inputs.runner, ',') }}-${{ inputs.test }}-${{ inputs.user-mode }}-${{ inputs.build-type }}
       cancel-in-progress: true
 
     timeout-minutes: 120

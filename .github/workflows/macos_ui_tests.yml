@@ -101,7 +101,7 @@ jobs:
   # This job sets up the matrix strategy arguments for the ui-tests jobs
   setup-tests:
     name: Set up tests list
-    runs-on: macos-26
+    runs-on: ubuntu-latest
 
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
@@ -123,9 +123,6 @@ jobs:
         with:
           ref: ${{ inputs.branch || github.sha }}
 
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Start measuring duration
         id: start-duration
         uses: ./.github/actions/measure-duration
@@ -139,15 +136,13 @@ jobs:
           all_os_versions="${{ inputs.all_os_versions || 'true' }}"
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" || "$all_os_versions" == "false" ]]; then
             all_os_versions='false'
-            runner='["macos-26-xlarge"]'
-            include='[{"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.6"}]'
+            include='[{"runner": ["image:osx-tahoe-26", "ui-tests"], "os-version": "26", "xcode-version": "26.6"}]'
           else
             all_os_versions='true'
-            runner='["macos-14-xlarge", "macos-15-xlarge", "macos-26-xlarge"]'
             include=$(jq -c <<< '[
               {"runner": "macos-14-xlarge", "os-version": "14", "xcode-version": "16.2"},
               {"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "26.2"},
-              {"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.6"}
+              {"runner": ["image:osx-tahoe-26", "ui-tests"], "os-version": "26", "xcode-version": "26.6"}
             ]')
           fi
           echo "all-os-versions=${all_os_versions}" >> $GITHUB_OUTPUT
@@ -236,7 +231,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: ${{ fromJSON(needs.setup-tests.outputs.runner) }}
         test: ${{ fromJSON(needs.setup-tests.outputs.test) }}
         include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
     uses: ./.github/workflows/macos_run_ui_test.yml

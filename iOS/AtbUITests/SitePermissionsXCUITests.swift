@@ -337,12 +337,12 @@ final class SitePermissionsXCUITests: XCTestCase {
 
         openPermissionsSheet()
         tap(element("SitePermissions.Sheet.Geolocation"))
-        tap(element("SitePermissions.Sheet.Geolocation.neverAllow"))
+        tap(app.buttons["Never Allow"])
         tap(element("SitePermissions.Sheet.Close"))
         assertResult("watch error 1")
         openPermissionsSheet()
         tap(element("SitePermissions.Sheet.Geolocation"))
-        tap(element("SitePermissions.Sheet.Geolocation.alwaysAllow"))
+        tap(app.buttons["Always Allow"])
         tap(element("SitePermissions.Sheet.Close"))
         request("location")
         try simulateLocation(latitude: 51.5007, longitude: -0.1246)
@@ -358,12 +358,24 @@ final class SitePermissionsXCUITests: XCTestCase {
         launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = allow; microphone = deny; geolocation = allow; }; }")
         openPermissionPage()
         openPermissionsSheet()
-        for option in ["neverAllow", "askEachTime"] {
+        let sheetScreenshot = XCTAttachment(screenshot: app.screenshot())
+        sheetScreenshot.name = "Permissions sheet"
+        sheetScreenshot.lifetime = .keepAlways
+        add(sheetScreenshot)
+        var selectedOption = "Always Allow"
+        for option in ["Never Allow", "Ask Each Time"] {
             tap(element("SitePermissions.Sheet.Camera"))
-            tap(element("SitePermissions.Sheet.Camera.\(option)"))
-            assertSheetDecision("Camera", contains: option == "neverAllow" ? "Never Allow" : "Ask Each Time")
+            XCTAssertTrue(app.buttons[selectedOption].waitForExistence(timeout: timeout))
+            XCTAssertTrue(app.buttons[selectedOption].isSelected)
+            let pickerScreenshot = XCTAttachment(screenshot: app.screenshot())
+            pickerScreenshot.name = "Permission picker - \(selectedOption)"
+            pickerScreenshot.lifetime = .keepAlways
+            add(pickerScreenshot)
+            tap(app.buttons[option])
+            assertSheetDecision("Camera", contains: option)
             assertSheetDecision("Microphone", contains: "Never Allow")
             assertSheetDecision("Geolocation", contains: "Always Allow")
+            selectedOption = option
         }
         tap(element("SitePermissions.Sheet.Close"))
         openPermissionSettings()
@@ -603,11 +615,11 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertFalse(caption.exists)
         assertSheetDecision(row, contains: "Never Allow")
         tap(element("SitePermissions.Sheet.\(row)"))
-        tap(element("SitePermissions.Sheet.\(row).neverAllow"))
+        tap(app.buttons["Never Allow"])
         XCTAssertFalse(caption.exists)
 
         tap(element("SitePermissions.Sheet.\(row)"))
-        tap(element("SitePermissions.Sheet.\(row).askEachTime"))
+        tap(app.buttons["Ask Each Time"])
         assertSheetDecision(row, contains: "Ask Each Time")
         XCTAssertTrue(caption.waitForExistence(timeout: timeout))
         XCTAssertEqual(caption.label, "Reload the page for changes to take effect.")

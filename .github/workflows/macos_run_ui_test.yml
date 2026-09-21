@@ -13,7 +13,8 @@ on:
   workflow_call:
     inputs:
       runner:
-        description: "Runner label to run on (e.g. 'macos-26-xlarge')"
+        # A workflow_call input cannot be an array, so the caller passes toJSON of its label list.
+        description: "JSON array of runner labels, as a string. Examples: '[\"macos-15-xlarge\"]', '[\"image:osx-tahoe-26\",\"ui-tests\"]'."
         required: true
         type: string
       os-version:
@@ -48,7 +49,7 @@ jobs:
     # ' / ' and the UI splits that path on ' / ', so a '/' here would break the name into fake tree
     # nodes. It is also used to build the report filename, where '/' is a path separator.
     name: ${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})
-    runs-on: ${{ inputs.runner }}
+    runs-on: ${{ fromJSON(inputs.runner) }}
 
     # Internal-mode failures are advance warning for features still gated to internal users; they
     # must not fail the overall workflow. Setting continue-on-error here (a normal job inside the
@@ -57,7 +58,7 @@ jobs:
     continue-on-error: ${{ inputs.user-mode == 'internal' }}
 
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ join(inputs.runner, ',') }}-${{ inputs.test }}-${{ inputs.user-mode }}-${{ inputs.build-type }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ join(fromJSON(inputs.runner), ',') }}-${{ inputs.test }}-${{ inputs.user-mode }}-${{ inputs.build-type }}
       cancel-in-progress: true
 
     timeout-minutes: 120

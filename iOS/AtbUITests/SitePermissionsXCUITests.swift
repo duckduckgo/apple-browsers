@@ -223,6 +223,57 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertResult("tracks video=1 audio=0")
     }
 
+    func testWhenPrivateVoiceSearchLosesMicrophoneAccessThenReminderCanCancelOrHideVoiceSearch() {
+        prepareVoiceSearchWithDeniedMicrophone()
+        openEmptyVoiceSearchInput(duckAI: false)
+        tap(element("Browser.OmniBar.Button.VoiceSearch"))
+        assertVoicePermissionReminder(isVoiceChat: false)
+
+        tap(element("SitePermissions.Reminder.Cancel"))
+        XCTAssertTrue(element("SitePermissions.Reminder").waitForNonExistence(timeout: timeout))
+        XCTAssertTrue(element("Browser.OmniBar.Button.VoiceSearch").waitForHittable(timeout: timeout))
+        assertNoPermissionPrompt()
+        tap(element("Browser.OmniBar.Button.VoiceSearch"))
+        assertVoicePermissionReminder(isVoiceChat: false)
+        tap(element("SitePermissions.Reminder.HideVoiceSearch"))
+        XCTAssertTrue(element("SitePermissions.Reminder").waitForNonExistence(timeout: timeout))
+        XCTAssertTrue(element("Browser.OmniBar.Button.VoiceSearch").waitForNonExistence(timeout: timeout))
+        tap(element("UnifiedToggleInput.Button.Dismiss"))
+        assertResult("tracks video=0 audio=0")
+        openVoiceSearchSettings()
+        XCTAssertEqual(voiceSearchSwitch.value as? String, "0")
+    }
+
+    func testWhenDuckAIDictationLosesMicrophoneAccessThenPrivateVoiceSearchReminderAppears() {
+        prepareVoiceSearchWithDeniedMicrophone()
+        openEmptyVoiceSearchInput(duckAI: true)
+        tap(element("Browser.OmniBar.Button.VoiceSearch"))
+        assertVoicePermissionReminder(isVoiceChat: false)
+
+        tap(element("SitePermissions.Reminder.Cancel"))
+        XCTAssertTrue(element("SitePermissions.Reminder").waitForNonExistence(timeout: timeout))
+        XCTAssertTrue(element("Browser.OmniBar.Button.VoiceSearch").waitForHittable(timeout: timeout))
+        assertNoPermissionPrompt()
+        tap(element("UnifiedToggleInput.Button.Dismiss"))
+        assertResult("NotAllowedError 1")
+        assertResult("tracks video=0 audio=0")
+    }
+
+    func testWhenDuckAIVoiceChatLosesMicrophoneAccessThenVoiceChatReminderAppearsWithoutOpeningChat() {
+        prepareVoiceSearchWithDeniedMicrophone()
+        openEmptyVoiceSearchInput(duckAI: true)
+        tap(element("AIChat.Toolbar.Button.Submit"))
+        assertVoicePermissionReminder(isVoiceChat: true)
+
+        tap(element("SitePermissions.Reminder.Cancel"))
+        XCTAssertTrue(element("SitePermissions.Reminder").waitForNonExistence(timeout: timeout))
+        XCTAssertTrue(element("Browser.OmniBar.Button.VoiceSearch").waitForHittable(timeout: timeout))
+        assertNoPermissionPrompt()
+        tap(element("UnifiedToggleInput.Button.Dismiss"))
+        assertResult("NotAllowedError 1")
+        assertResult("tracks video=0 audio=0")
+    }
+
     func testWhenCombinedMediaIsAllowedThenBothSystemPromptsAppearAndBothDecisionsPersist() {
         launchApp()
         openPermissionPage()
@@ -440,7 +491,104 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertEqual(element("Settings.SitePermissions.Global.geolocation").value as? String, "Never Allow")
     }
 
-    private func launchApp(flagEnabled: Bool = true, seedPermissions: String? = nil) {
+    private func prepareVoiceSearchWithDeniedMicrophone() {
+        launchApp(additionalArguments: ["-ff.utiDuckAIWarnings", "false"])
+        enableDuckAIInput()
+        openVoiceSearchSettings()
+        XCTAssertEqual(voiceSearchSwitch.value as? String, "0")
+        tap(voiceSearchSwitch)
+        answerSystemAlert(for: "microphone", allow: true)
+        let voiceSearchEnabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == '1'"), object: voiceSearchSwitch)
+        XCTAssertEqual(XCTWaiter.wait(for: [voiceSearchEnabled], timeout: timeout), .completed)
+        closeSettings()
+
+        // Keep the enabled preference while arranging the same iOS denial as revoking access in Settings.
+        app.terminate()
+        app.resetAuthorizationStatus(for: .microphone)
+        app.launchArguments.removeAll { $0 == "-clearAllDefaults" }
+        app.launch()
+        XCTAssertTrue(element("searchEntry").waitForHittable(timeout: timeout))
+        openPermissionPage()
+        requestMedia("microphone")
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        answerSystemAlert(for: "microphone", allow: false)
+        assertResult("NotAllowedError 1")
+        assertResult("tracks video=0 audio=0")
+        openVoiceSearchSettings()
+        XCTAssertEqual(voiceSearchSwitch.value as? String, "1")
+        closeSettings()
+    }
+
+    private func enableDuckAIInput() {
+        openMenu()
+        tap(app.buttons["Settings"])
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
+        let aiFeatures = app.staticTexts["AI Features"]
+        scrollTo(aiFeatures)
+        tap(aiFeatures)
+        XCTAssertTrue(app.navigationBars["AI Features"].waitForExistence(timeout: timeout))
+        let enableToggle = element("Settings.AIFeatures.EnableToggle")
+        scrollTo(enableToggle)
+        XCTAssertTrue(enableToggle.waitForHittable(timeout: timeout))
+        if enableToggle.value as? String == "0" {
+            tap(enableToggle)
+        }
+        XCTAssertEqual(enableToggle.value as? String, "1")
+        let searchAndDuckAI = element("Settings.AIFeatures.Picker.SearchAndDuckAI")
+        scrollTo(searchAndDuckAI)
+        tap(searchAndDuckAI)
+        closeSettings()
+        tap(element("searchEntry"))
+        XCTAssertTrue(element("AddressBar.Button.DuckAI").waitForHittable(timeout: timeout))
+        tap(element("UnifiedToggleInput.Button.Dismiss"))
+    }
+
+    private func openVoiceSearchSettings() {
+        openMenu()
+        tap(app.buttons["Settings"])
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
+        let accessibility = app.staticTexts["Accessibility"]
+        scrollTo(accessibility)
+        tap(accessibility)
+        XCTAssertTrue(app.navigationBars["Accessibility"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(app.staticTexts["Private Voice Search"].exists)
+        XCTAssertTrue(voiceSearchSwitch.waitForHittable(timeout: timeout))
+    }
+
+    private var voiceSearchSwitch: XCUIElement {
+        // The labeled row also has the switch trait, but only its nested control handles taps.
+        app.switches["Private Voice Search"].switches.firstMatch
+    }
+
+    private func openEmptyVoiceSearchInput(duckAI: Bool) {
+        tap(element("searchEntry"))
+        tap(element("Browser.OmniBar.Button.ClearText"))
+        tap(element(duckAI ? "AddressBar.Button.DuckAI" : "AddressBar.Button.Search"))
+        let placeholder = duckAI ? "Ask anything privately" : "Search or enter address"
+        XCTAssertTrue(app.staticTexts[placeholder].waitForExistence(timeout: timeout))
+        XCTAssertTrue(element("Browser.OmniBar.Button.VoiceSearch").waitForHittable(timeout: timeout))
+    }
+
+    private func assertVoicePermissionReminder(isVoiceChat: Bool) {
+        XCTAssertTrue(element("SitePermissions.Reminder").waitForExistence(timeout: timeout))
+        XCTAssertEqual(element("SitePermissions.Reminder.Title").label, "DuckDuckGo needs to access your microphone")
+        let body = isVoiceChat
+            ? "Microphone permissions are needed if you want to use Voice Chat in Duck.ai."
+            : "Microphone permissions are needed if you want to use our Private Voice Search."
+        XCTAssertTrue(app.staticTexts[body].exists)
+        XCTAssertEqual(element("SitePermissions.Reminder.ChangePermissions").label, "Change Permissions")
+        XCTAssertEqual(element("SitePermissions.Reminder.Cancel").label, "Cancel")
+        if isVoiceChat {
+            XCTAssertFalse(element("SitePermissions.Reminder.HideVoiceSearch").exists)
+        } else {
+            XCTAssertEqual(element("SitePermissions.Reminder.HideVoiceSearch").label, "Hide Voice Search")
+        }
+        XCTAssertFalse(element("SitePermissions.Dialog").exists)
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+        assertNoSystemAlert()
+    }
+
+    private func launchApp(flagEnabled: Bool = true, seedPermissions: String? = nil, additionalArguments: [String] = []) {
         app.launchArguments = [
             "-clearAllDefaults", "isRunningUITests",
             "-isOnboardingCompleted", "true", "-isInternalUser", "true",
@@ -451,6 +599,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         if let seedPermissions {
             app.launchArguments += ["-sitePermissionsTestSeed", seedPermissions]
         }
+        app.launchArguments += additionalArguments
         app.launchEnvironment = [
             "UITEST_MODE": "1", "BASE_URL": "http://127.0.0.1:\(port)", "PIXEL_BASE_URL": "http://127.0.0.1:\(port)"
         ]

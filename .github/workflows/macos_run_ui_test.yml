@@ -258,7 +258,7 @@ jobs:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ui-tests-${{ steps.compilation-cache-hash.outputs.hash }}
 
-    - name: Extract and Copy app to /DerivedData
+    - name: Extract and Copy app to DerivedData
       working-directory: macOS
       run: |
         tar -xf DuckDuckGo-*.app.tar.xz
@@ -273,7 +273,7 @@ jobs:
           fi
         fi
 
-        mv -f "${{ env.app-name }}.app" "../DerivedData/Build/Products/Review/${{ env.app-name }}.app"
+        mv -f "${{ env.app-name }}.app" "DerivedData/Build/Products/Review/${{ env.app-name }}.app"
 
     - name: Run UI Tests
       id: run-ui-tests

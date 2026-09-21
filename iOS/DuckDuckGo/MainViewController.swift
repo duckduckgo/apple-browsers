@@ -1126,6 +1126,11 @@ class MainViewController: UIViewController {
 
     func updatePreviewForCurrentTab(completion: (() -> Void)? = nil) {
         assert(Thread.isMainThread)
+        // Returning by swipe also needs chrome and screen geometry when the NTP was left
+        // through the tab switcher, which otherwise only saves a content-sized thumbnail.
+        if newTabPageViewController?.hasInlineSearchInput == true {
+            swipeTabsCoordinator?.updateFullScreenSnapshotForCurrentTab()
+        }
         
         if !viewCoordinator.logoContainer.isHidden,
            self.tabManager.current()?.link == nil,

@@ -392,11 +392,21 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         swipeOverlayView?.alpha = 0
     }
 
+    func updateFullScreenSnapshotForCurrentTab() {
+        guard !floatingUIManager.isFloatingUIEnabled,
+              let tab = tabsModel.currentTab else { return }
+        // Tab-switcher entry can dismiss editing synchronously in the same run loop.
+        // Capture the restored layout rather than the last rendered focused frame.
+        coordinator.superview.layoutIfNeeded()
+        guard let snapshot = makeFullScreenSnapshot(afterScreenUpdates: true) else { return }
+        tabPreviewsSource.updateFullScreenSnapshot(snapshot, forTab: tab)
+    }
+
     /// Renders the live `MainViewController.view` (`coordinator.superview`) into a `UIImage`,
     /// transiently zeroing the overlay's alpha so the overlay doesn't appear in its own
     /// snapshot. The alpha flip happens entirely within a single synchronous block, so UIKit
     /// only paints once — no visible flash.
-    private func makeFullScreenSnapshot() -> UIImage? {
+    private func makeFullScreenSnapshot(afterScreenUpdates: Bool = false) -> UIImage? {
         let superview = coordinator.superview
         guard superview.bounds.width > 0, superview.bounds.height > 0 else { return nil }
 
@@ -406,7 +416,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
         let renderer = UIGraphicsImageRenderer(size: superview.bounds.size)
         return renderer.image { _ in
-            superview.drawHierarchy(in: superview.bounds, afterScreenUpdates: false)
+            superview.drawHierarchy(in: superview.bounds, afterScreenUpdates: afterScreenUpdates)
         }
     }
 

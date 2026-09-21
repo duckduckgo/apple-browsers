@@ -297,6 +297,34 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertNoPermissionPrompt()
     }
 
+    func testWhenCombinedMediaHasSystemCameraDenialThenNeitherTrackIsGrantedAndMicrophoneWorksIndependently() {
+        launchApp()
+        openPermissionPage()
+        requestMedia("camera and microphone")
+        assertSiteDialog(permission: "camera and microphone")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemCameraAlert(allow: false)
+        answerSystemAlert(for: "microphone", allow: true)
+        XCTAssertTrue(element("SitePermissions.Toast").staticTexts[
+            "DuckDuckGo couldn’t give camera access to this site"].waitForExistence(timeout: timeout))
+        assertResult("NotAllowedError 1")
+        assertResult("tracks video=0 audio=0")
+        reloadPermissionPage()
+
+        requestMedia("camera and microphone")
+        dismissReminder(for: "camera")
+        assertResult("NotAllowedError 1")
+        assertResult("tracks video=0 audio=0")
+        openPermissionsSheet()
+        assertSheetDecision("Camera", contains: "Always Allow")
+        assertSheetDecision("Microphone", contains: "Always Allow")
+        tap(element("SitePermissions.Sheet.Close"))
+        requestMedia("microphone")
+        assertResult("success 2")
+        assertResult("tracks video=0 audio=1")
+        assertNoPermissionPrompt()
+    }
+
     func testWhenCombinedMediaHasSystemMicrophoneDenialThenNeitherTrackIsGrantedAndCameraWorksIndependently() {
         launchApp()
         openPermissionPage()
@@ -304,6 +332,8 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
         answerSystemCameraAlert(allow: true)
         answerSystemAlert(for: "microphone", allow: false)
+        XCTAssertTrue(element("SitePermissions.Toast").staticTexts[
+            "DuckDuckGo couldn’t give microphone access to this site"].waitForExistence(timeout: timeout))
         assertResult("NotAllowedError 1")
         assertResult("tracks video=0 audio=0")
         reloadPermissionPage()
@@ -311,6 +341,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         requestMedia("camera and microphone")
         dismissReminder(for: "microphone")
         assertResult("NotAllowedError 1")
+        assertResult("tracks video=0 audio=0")
         openPermissionsSheet()
         assertSheetDecision("Camera", contains: "Always Allow")
         assertSheetDecision("Microphone", contains: "Always Allow")

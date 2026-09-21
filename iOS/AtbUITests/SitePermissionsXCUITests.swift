@@ -734,7 +734,8 @@ final class SitePermissionsXCUITests: XCTestCase {
         let menu = element("Settings.SitePermissions.Global.\(permission)").buttons.firstMatch
         XCTAssertTrue(menu.waitForExistence(timeout: timeout))
         menu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-        tap(element("Settings.SitePermissions.Global.\(permission).\(decision)"))
+        // System menu options expose their labels without the SwiftUI identifiers on iOS 27.
+        tap(app.buttons[decision == "deny" ? "Never Allow" : "Ask Each Time"])
     }
 
     private func assertWebKitMediaRollback(permission: String) {

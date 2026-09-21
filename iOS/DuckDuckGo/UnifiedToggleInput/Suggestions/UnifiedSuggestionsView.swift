@@ -85,16 +85,10 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var listLayer: some View {
-        SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
-                            isAddressBarAtBottom: isAddressBarAtBottom)
-            .opacity(isShowingList ? 1 : 0)
-            // Fade *in* on a mode change, but snap *out* — otherwise the recents list lingers over the
-            // Search favorites/logo (which snap in instantly) when toggling away from Duck.ai.
-            .animation(isShowingList ? .easeInOut(duration: 0.2) : nil, value: isShowingList)
-            // Fade out with the collapse (like the logo) so a list→favorites dismiss hands off to the
-            // NTP favorites instead of snapping away when the host is hidden.
-            .modifier(DismissFade(isFadingOut: viewModel.isFadingOut))
-            .allowsHitTesting(isShowingList)
+        FocusedSuggestionsView(viewModel: viewModel.listViewModel(for: activeListKind),
+                               isAddressBarAtBottom: isAddressBarAtBottom,
+                               isVisible: isShowingList,
+                               isFadingOut: viewModel.isFadingOut)
     }
 
     private var isShowingFavorites: Bool {
@@ -142,7 +136,7 @@ struct UnifiedSuggestionsView: View {
                 .animation(nil, value: isShowingLogo)
                 // On dismiss it fades out (the NTP content takes over) — a separate opacity so the
                 // toggle's instant show/hide above is unaffected.
-                .modifier(DismissFade(isFadingOut: viewModel.isFadingOut))
+                .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
                 .allowsHitTesting(false)
         }
         .ignoresSafeArea(.container, edges: .top)
@@ -175,20 +169,5 @@ struct UnifiedSuggestionsView: View {
         static let bottomBarGap: CGFloat = 56
         /// Mirrors `FocusedDaxLogoView`'s height — used to find the logo's top for the overlap check.
         static let logoHeight: CGFloat = 162
-    }
-}
-
-/// Fades transient content (logo, suggestion list) out as the host collapses back to the NTP, so it
-/// hands off to the NTP content instead of snapping away. Favorites are excluded — they hand off via
-/// the embedded-copy reveal, not a fade.
-///
-/// One-directional: only the fade-*out* (false→true) animates. The reset (true→false, on the next
-/// focus) snaps, so the logo reappears instantly instead of replaying a fade-in.
-private struct DismissFade: ViewModifier {
-    let isFadingOut: Bool
-    func body(content: Content) -> some View {
-        content
-            .opacity(isFadingOut ? 0 : 1)
-            .animation(isFadingOut ? .easeInOut(duration: 0.2) : nil, value: isFadingOut)
     }
 }

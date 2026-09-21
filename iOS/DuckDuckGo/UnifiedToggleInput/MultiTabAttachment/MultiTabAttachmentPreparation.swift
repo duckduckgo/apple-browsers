@@ -84,6 +84,17 @@ final class MultiTabAttachmentPreparation: TabObserver {
         !isCancelled && tab.mode == source.mode && source.tabsProvider().contains { $0 === tab }
     }
 
+    /// Once a message has received valid context, eligible navigation must not discard it while other tabs finish.
+    var canDeliverPreparedContext: Bool {
+        guard isEnabled(), isSourceValid, let link = tab.link,
+              !AIChatTabMetadata.shouldExcludeFromTabPicker(link.url) else { return false }
+        let state = source.pageProvider(tab)?.state()
+        if let state, !state.isLoading, !state.isAttachable {
+            return false
+        }
+        return !AIChatTabMetadata.shouldExcludeFromTabPicker(state?.url ?? link.url)
+    }
+
     func refresh() {
         guard !isCancelled else { return }
         guard isSourceValid, let link = tab.link,

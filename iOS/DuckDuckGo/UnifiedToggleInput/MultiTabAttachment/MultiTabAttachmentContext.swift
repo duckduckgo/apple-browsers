@@ -49,14 +49,12 @@ final class MultiTabAttachmentContext {
 
     func makeRequest(preparations: [MultiTabAttachmentPreparation]) -> MultiTabAttachmentRequest? {
         guard !preparations.isEmpty else { return nil }
-        var operations: [TabUID: UUID] = [:]
         return makeRequest {
             MultiTabAttachmentRequest(contexts: {
                 var results: [AIChatPageContextData] = []
                 for preparation in preparations {
                     guard !Task.isCancelled else { return [] }
                     if let context = await preparation.value() {
-                        operations[preparation.tab.uid] = preparation.operationID
                         results.append(context)
                     }
                 }
@@ -66,10 +64,8 @@ final class MultiTabAttachmentContext {
             }, cancel: {
                 preparations.forEach { $0.cancel() }
             }, validate: { contexts in
-                contexts.compactMap { context in
-                    guard let preparation = preparations.first(where: { $0.tab.uid == context.tabId }),
-                          operations[preparation.tab.uid] == preparation.operationID else { return nil }
-                    return preparation.validated(context)
+                contexts.filter { context in
+                    preparations.first(where: { $0.tab.uid == context.tabId })?.canDeliverPreparedContext == true
                 }
             })
         }

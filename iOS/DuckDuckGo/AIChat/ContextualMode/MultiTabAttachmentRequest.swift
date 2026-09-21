@@ -26,6 +26,6 @@ struct MultiTabAttachmentRequest {
     let contexts: @MainActor () async -> [AIChatPageContextData]
     let didConsume: @MainActor () -> Void
     var cancel: @MainActor () -> Void = {}
-    /// Rechecks page and feature validity immediately before payload construction.
+    /// Rechecks source eligibility and feature availability without requiring collected pages to remain unchanged.
     var validate: @MainActor ([AIChatPageContextData]) -> [AIChatPageContextData] = { $0 }
 }

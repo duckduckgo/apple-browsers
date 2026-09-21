@@ -562,10 +562,86 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
         XCTAssertEqual(fixture.collectionCount, 0)
     }
 
-    func testRequestRevalidatesEarlierResultAfterWaitingForLaterTab() async throws {
+    func testWhenEarlierTabReloadsWhileWaitingForLaterTabThenRequestKeepsReceivedContext() async throws {
+        try await assertRequestAfterReceivingFirstContext { first, preparation in
+            first.navigationID = UUID()
+            first.isLoading = true
+            first.isLoaded = false
+            preparation.refresh()
+        }
+    }
+
+    func testWhenEarlierTabNavigatesWhileWaitingForLaterTabThenRequestKeepsReceivedContext() async throws {
+        try await assertRequestAfterReceivingFirstContext { first, preparation in
+            first.navigationID = UUID()
+            first.url = try XCTUnwrap(URL(string: "https://example.com/another-article"))
+            first.tab.link = Link(title: "Another article", url: first.url)
+            first.isLoading = true
+            first.isLoaded = false
+            preparation.refresh()
+        }
+    }
+
+    func testWhenReplacementContextFinishesWhileWaitingForLaterTabThenRequestKeepsReceivedContext() async throws {
+        try await assertRequestAfterReceivingFirstContext { first, preparation in
+            first.navigationID = UUID()
+            first.url = try XCTUnwrap(URL(string: "https://example.com/another-article"))
+            first.tab.link = Link(title: "Another article", url: first.url)
+            first.collect = { [unowned first] _ in .collected(first.pageContext(content: "Replacement")) }
+            preparation.refresh()
+            let replacement = await preparation.value()
+            XCTAssertEqual(replacement?.content, "Replacement")
+        }
+    }
+
+    func testWhenEarlierTabClosesWhileWaitingForLaterTabThenRequestOmitsItsContext() async throws {
+        try await assertRequestAfterReceivingFirstContext(expectedContextCount: 1) { first, _ in
+            first.tabs.send([])
+        }
+    }
+
+    func testWhenEarlierTabBecomesIneligibleWhileWaitingForLaterTabThenRequestOmitsItsContext() async throws {
+        try await assertRequestAfterReceivingFirstContext(expectedContextCount: 1) { first, _ in
+            first.url = try XCTUnwrap(URL(string: "https://duck.ai/"))
+        }
+    }
+
+    func testWhenEarlierPreparationIsCancelledWhileWaitingForLaterTabThenRequestOmitsItsContext() async throws {
+        try await assertRequestAfterReceivingFirstContext(expectedContextCount: 1) { _, preparation in
+            preparation.cancel()
+        }
+    }
+
+    func testWhenFeatureIsDisabledWhileWaitingForLaterTabThenRequestOmitsAllContexts() async throws {
+        try await assertRequestAfterReceivingFirstContext(expectedContextCount: 0) { first, _ in
+            first.feature.state = .unavailable
+        }
+    }
+
+    func testWhenTabIsReattachedWhileWaitingForLaterTabThenRequestKeepsItsOriginalPreparation() async throws {
+        try await assertRequestAfterReceivingFirstContext { first, preparation in
+            first.collect = { [unowned first] _ in .collected(first.pageContext(content: "Reattached")) }
+            let reattached = try XCTUnwrap(first.prepare())
+            defer { reattached.cancel() }
+            XCTAssertNotEqual(reattached.attachment.id, preparation.attachment.id)
+            let replacement = await reattached.value()
+            XCTAssertEqual(replacement?.content, "Reattached")
+        }
+    }
+
+    private func assertRequestAfterReceivingFirstContext(
+        expectedContextCount: Int = 2,
+        file: StaticString = #filePath,
+        line: UInt = #line,
+        change: (AttachmentPreparationFixture, MultiTabAttachmentPreparation) async throws -> Void
+    ) async throws {
         let first = AttachmentPreparationFixture()
         let second = AttachmentPreparationFixture()
         let firstPreparation = try XCTUnwrap(first.prepare())
+        let prepared = await firstPreparation.value()
+        let original = try XCTUnwrap(prepared)
+        // Avoid the initial tab-list replay being mistaken for the request reading the second preparation.
+        second.source.tabsPublisher = nil
         let secondStarted = expectation(description: "Second collection waiting")
         second.collect = { [unowned second] _ in
             let result = await MultiTabAttachmentWaiter.firstValue(
@@ -580,13 +656,25 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
         }
         let secondPreparation = try XCTUnwrap(second.prepare())
         let request = try XCTUnwrap(first.context.makeRequest(preparations: [firstPreparation, secondPreparation]))
-        let send = Task { await request.contexts() }
+        defer { request.cancel() }
         await fulfillment(of: [secondStarted], timeout: 1)
-        first.navigationID = UUID()
-        second.results.send(.collected(second.pageContext()))
+
+        // Reading the second preparation's state at Send means the request has already received the first result.
+        let receivingSecond = expectation(description: "Request received first context and is waiting for second")
+        second.onStateRead = { [unowned second] in
+            second.onStateRead = nil
+            receivingSecond.fulfill()
+        }
+        let send = Task { await request.contexts() }
+        defer { send.cancel() }
+        await fulfillment(of: [receivingSecond], timeout: 1)
+        try await change(first, firstPreparation)
+        let secondContext = second.pageContext()
+        second.results.send(.collected(secondContext))
         let results = await send.value
-        XCTAssertEqual(results.map(\.tabId), [second.tab.uid])
-        request.cancel()
+        let expected = Array([original, secondContext.withTabId(second.tab.uid)].suffix(expectedContextCount))
+        XCTAssertEqual(results, expected, file: file, line: line)
+        XCTAssertEqual(request.validate(results), expected, file: file, line: line)
     }
 }
 
@@ -606,6 +694,7 @@ private final class AttachmentPreparationFixture {
     var collectionCount = 0
     var collect: ((URL) async -> MultiTabAttachmentCollectionResult)?
     var onNavigationSubscription: (() -> Void)?
+    var onStateRead: (() -> Void)?
     let mode: BrowsingMode
 
     init(mode: BrowsingMode = .normal, fireTab: Bool = false) {
@@ -617,8 +706,9 @@ private final class AttachmentPreparationFixture {
                                                tabsPublisher: tabs.eraseToAnyPublisher(), pageProvider: { [unowned self] _ in
         guard self.hasPage else { return nil }
         return MultiTabAttachmentPage(state: { [unowned self] in
-            .init(identity: .init(webView: ObjectIdentifier(self.pageObject), navigation: self.navigationID),
-                  url: self.url, isLoading: self.isLoading, isLoaded: self.isLoaded, isAttachable: true)
+            self.onStateRead?()
+            return .init(identity: .init(webView: ObjectIdentifier(self.pageObject), navigation: self.navigationID),
+                         url: self.url, isLoading: self.isLoading, isLoaded: self.isLoaded, isAttachable: true)
         }, changes: self.changes.handleEvents(receiveSubscription: { [unowned self] _ in
             self.onNavigationSubscription?()
         }).eraseToAnyPublisher(), collect: { [unowned self] url, isValid in

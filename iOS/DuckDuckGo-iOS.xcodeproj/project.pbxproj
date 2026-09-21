@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F0C05EDC0123456789000001 /* RedesignedNewTabPageFocusedViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05EDC0123456789000002 /* RedesignedNewTabPageFocusedViewControllerTests.swift */; };
 		02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02025663298818B100E694E7 /* NetworkExtension.framework */; };
 		021440742C7FAB1900426724 /* ConfigurationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021440732C7FAB1900426724 /* ConfigurationManager.swift */; };
 		021440762C7FAB4100426724 /* ConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021440752C7FAB4100426724 /* ConfigurationStore.swift */; };
@@ -2295,6 +2294,7 @@
 		F0A1B2C3D4E5F60718293B03 /* FloatingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293A03 /* FloatingUITests.swift */; };
 		F0A1B2C3D4E5F60718293B10 /* FloatingUIXCUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293A10 /* FloatingUIXCUITests.swift */; };
 		F0A200012F31000100BAD001 /* NewBadgeVisibilityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A200002F31000100BAD001 /* NewBadgeVisibilityManagerTests.swift */; };
+		F0C05EDC0123456789000001 /* RedesignedNewTabPageFocusedViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C05EDC0123456789000002 /* RedesignedNewTabPageFocusedViewControllerTests.swift */; };
 		F101D53CD31E95F9C9FE2AC1 /* UnifiedToggleInputCoordinatorAttachmentLimitsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD3EE389CF6162AB1F6B023 /* UnifiedToggleInputCoordinatorAttachmentLimitsTests.swift */; };
 		F103073B1E7C91330059FEC7 /* BookmarksDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = F103073A1E7C91330059FEC7 /* BookmarksDataSource.swift */; };
 		F1075C921E9EF827006BE8A8 /* UserDefaultsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1075C911E9EF827006BE8A8 /* UserDefaultsExtension.swift */; };
@@ -2604,7 +2604,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		F0C05EDC0123456789000002 /* RedesignedNewTabPageFocusedViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedesignedNewTabPageFocusedViewControllerTests.swift; sourceTree = "<group>"; };
 		02025662298818B100E694E7 /* PacketTunnelProvider.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PacketTunnelProvider.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		02025663298818B100E694E7 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 		02025668298818B200E694E7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -4882,6 +4881,7 @@
 		F0A1B2C3D4E5F60718293A03 /* FloatingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingUITests.swift; sourceTree = "<group>"; };
 		F0A1B2C3D4E5F60718293A10 /* FloatingUIXCUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingUIXCUITests.swift; sourceTree = "<group>"; };
 		F0A200002F31000100BAD001 /* NewBadgeVisibilityManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewBadgeVisibilityManagerTests.swift; sourceTree = "<group>"; };
+		F0C05EDC0123456789000002 /* RedesignedNewTabPageFocusedViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedesignedNewTabPageFocusedViewControllerTests.swift; sourceTree = "<group>"; };
 		F0E6B4C53D4E5F6A70819203 /* AIChatRecentChatsMenuViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatRecentChatsMenuViewModelTests.swift; sourceTree = "<group>"; };
 		F103073A1E7C91330059FEC7 /* BookmarksDataSource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksDataSource.swift; sourceTree = "<group>"; };
 		F1075C911E9EF827006BE8A8 /* UserDefaultsExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtension.swift; sourceTree = "<group>"; };

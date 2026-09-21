@@ -7,7 +7,6 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            "channel",
             "errorCode",
             "errorDomain",
             "underlyingErrorCode",

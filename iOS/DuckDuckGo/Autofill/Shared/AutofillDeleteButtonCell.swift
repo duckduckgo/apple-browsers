@@ -24,7 +24,7 @@ struct AutofillDeleteButtonCell: View {
     let confirmationTitle: String
     var confirmationMessage: String = ""
     var confirmationButtonTitle: String
-    var deleteButtonAccessibilityIdentifier: String? = nil
+    var deleteButtonAccessibilityIdentifier: String?
     let onDelete: () -> Void
     
     @State private var actionSheetConfirmDeletePresented: Bool = false

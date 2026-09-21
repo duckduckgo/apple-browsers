@@ -145,32 +145,10 @@ jobs:
         echo "First attempt to sync code signing assets failed. Retrying..."
         bundle exec fastlane sync_signing_ci
 
-    - name: Download and unzip artifact
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        max_attempts=3
-        retry_delay=10
-
-        for attempt in $(seq 1 $max_attempts); do
-          echo "Attempt $attempt of $max_attempts"
-          rm -rf build-download-temp
-          mkdir build-download-temp
-          if gh run download "${{ github.run_id }}" --dir build-download-temp; then
-            echo "Download successful"
-            mv build-download-temp/* .
-            rm -rf build-download-temp
-            exit 0
-          fi
-          rm -rf build-download-temp
-          if [[ $attempt -lt $max_attempts ]]; then
-            echo "Download failed, retrying in ${retry_delay}s..."
-            sleep $retry_delay
-            retry_delay=$((retry_delay * 2))
-          fi
-        done
-        echo "All download attempts failed"
-        exit 1
+    - name: Download app artifact
+      uses: actions/download-artifact@v7
+      with:
+        pattern: DuckDuckGo-${{ env.release-type }}-*.app.tar.xz
 
     - name: Set cache key hash
       run: |

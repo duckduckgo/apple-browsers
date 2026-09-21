@@ -146,7 +146,7 @@ jobs:
         name: ios-testreport-${{ inputs.test }}-${{ inputs.device }}-${{ inputs.user-mode }}
         path: iOS/reports/*
         if-no-files-found: error
-        retention-days: 7
+        retention-days: 1
 
     - name: Upload test logs
       if: always()

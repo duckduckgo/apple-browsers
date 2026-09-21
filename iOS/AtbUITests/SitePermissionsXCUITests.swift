@@ -106,24 +106,15 @@ final class SitePermissionsXCUITests: XCTestCase {
     }
 
     func testWhenNeverAllowIsSavedThenRequestsAreDeniedUntilResetInSheet() {
-        launchApp()
-        openPermissionPage()
-        requestCamera()
-        tap(element("SitePermissions.Dialog.NeverAllow"))
-        assertResult("NotAllowedError 1")
+        assertReloadCaptionAfterResettingPermission("camera", row: "Camera")
+    }
 
-        reloadPermissionPage()
-        requestCamera()
-        assertResult("NotAllowedError 1")
-        assertNoPermissionPrompt()
-        openPermissionsSheet()
-        tap(element("SitePermissions.Sheet.Camera"))
-        tap(element("SitePermissions.Sheet.Camera.askEachTime"))
-        XCTAssertTrue(element("SitePermissions.Sheet.ReloadCaption").waitForExistence(timeout: timeout))
-        tap(element("SitePermissions.Sheet.Close"))
-        reloadPermissionPage()
-        requestCamera()
-        assertSiteDialog()
+    func testWhenMicrophoneChangesInSheetThenReloadCaptionAppearsAndReloadUsesNewDecision() {
+        assertReloadCaptionAfterResettingPermission("microphone", row: "Microphone")
+    }
+
+    func testWhenLocationChangesInSheetThenReloadCaptionAppearsAndReloadUsesNewDecision() {
+        assertReloadCaptionAfterResettingPermission("location", row: "Geolocation")
     }
 
     func testWhenAllowOnceIsChosenThenGrantEndsOnReloadAndSiteIsNotListed() {
@@ -479,6 +470,51 @@ final class SitePermissionsXCUITests: XCTestCase {
     private func reloadPermissionPage() {
         tap(app.webViews.buttons["Reload fixture"])
         assertResult("ready")
+    }
+
+    private func assertReloadCaptionAfterResettingPermission(_ permission: String, row: String) {
+        launchApp()
+        openPermissionPage()
+        let request = app.webViews.buttons["Request \(permission)"]
+        let deniedResult = permission == "location" ? "location error 1 1" : "NotAllowedError 1"
+        tap(request)
+        assertSiteDialog(permission: permission)
+        tap(element("SitePermissions.Dialog.NeverAllow"))
+        assertResult(deniedResult)
+
+        reloadPermissionPage()
+        tap(request)
+        assertResult(deniedResult)
+        assertNoPermissionPrompt()
+        openPermissionsSheet()
+        let caption = element("SitePermissions.Sheet.ReloadCaption")
+        XCTAssertFalse(caption.exists)
+        assertSheetDecision(row, contains: "Never Allow")
+        tap(element("SitePermissions.Sheet.\(row)"))
+        tap(element("SitePermissions.Sheet.\(row).neverAllow"))
+        XCTAssertFalse(caption.exists)
+
+        tap(element("SitePermissions.Sheet.\(row)"))
+        tap(element("SitePermissions.Sheet.\(row).askEachTime"))
+        assertSheetDecision(row, contains: "Ask Each Time")
+        XCTAssertTrue(caption.waitForExistence(timeout: timeout))
+        XCTAssertEqual(caption.label, "Reload the page for changes to take effect.")
+        tap(element("SitePermissions.Sheet.Close"))
+        // Changing the saved choice does not automatically retry the old request.
+        assertResult(deniedResult)
+        assertNoPermissionPrompt()
+
+        reloadPermissionPage()
+        openPermissionsSheet()
+        assertSheetDecision(row, contains: "Ask Each Time")
+        XCTAssertFalse(caption.exists)
+        tap(element("SitePermissions.Sheet.Close"))
+        tap(request)
+        assertSiteDialog(permission: permission)
+        assertNoSystemAlert()
+        tap(element("SitePermissions.Dialog.NeverAllow"))
+        assertResult(deniedResult)
+        assertResult("tracks video=0 audio=0")
     }
 
     private func requestCamera() {

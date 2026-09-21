@@ -163,7 +163,8 @@ jobs:
     name: Build UI Tests
     runs-on: ['image:osx-tahoe-26', ui-tests]
 
-    needs: setup-tests
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
 
     timeout-minutes: 45
 

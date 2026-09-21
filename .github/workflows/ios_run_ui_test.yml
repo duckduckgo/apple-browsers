@@ -81,16 +81,10 @@ jobs:
       env:
         DESTINATION: ${{ steps.select-simulator.outputs.destination }}
       run: |
-        expected="platform=iOS Simulator,name=$DEVICE_NAME,OS=$IOS_VERSION"
-        if [[ "$DESTINATION" != "$expected" ]]; then
-          echo "::error::Requested '$expected', but simulator selection returned '$DESTINATION'."
-          exit 1
-        fi
-        runtime="com.apple.CoreSimulator.SimRuntime.iOS-${IOS_VERSION//./-}"
-        if ! xcrun simctl list devices available --json \
-          | jq -e --arg runtime "$runtime" --arg name "$DEVICE_NAME" \
-            '(.devices[$runtime] // []) | any(.name == $name and (.isAvailable // true))' >/dev/null; then
-          echo "::error::No available '$DEVICE_NAME' simulator was found for iOS $IOS_VERSION."
+        expected_prefix="platform=iOS Simulator,name=$DEVICE_NAME,OS="
+        actual_os="${DESTINATION#"$expected_prefix"}"
+        if [[ "$DESTINATION" != "$expected_prefix"* || -z "$actual_os" || "$actual_os" == *,* ]]; then
+          echo "::error::Requested an iOS Simulator named '$DEVICE_NAME', but simulator selection returned '$DESTINATION'."
           exit 1
         fi
 

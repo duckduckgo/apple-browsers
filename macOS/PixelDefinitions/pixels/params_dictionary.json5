@@ -338,6 +338,7 @@
             "getCaptchaInfo",
             "solveCaptcha",
             "condition",
+            "executeScript",
             "unknown"
         ]
     },

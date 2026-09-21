@@ -36,7 +36,7 @@ jobs:
 
     name: Create Release Branch
 
-    runs-on: macos-26-xlarge
+    runs-on: [image:osx-tahoe-26, m4pro]
     timeout-minutes: 10
 
     outputs:
@@ -104,7 +104,7 @@ jobs:
     name: Increment Build Number
 
     needs: [ create_release_branch, run_tests ]
-    runs-on: macos-26-xlarge
+    runs-on: [image:osx-tahoe-26, m4pro]
     timeout-minutes: 10
 
     outputs:

@@ -84,6 +84,7 @@ enum CCFSuccessData {
     case fillForm
     case click
     case expectation
+    case executeScript
     case getCaptchaInfo(GetCaptchaInfoResponse)
     case solveCaptcha(SolveCaptchaResponse)
     case conditionSuccess(ConditionSuccessResponse)
@@ -119,6 +120,8 @@ struct CCFSuccessResponse: Decodable {
             self.response = .click
         case .expectation:
             self.response = .expectation
+        case .executeScript:
+            self.response = .executeScript
         case .emailConfirmation:
             self.response = nil // Email confirmation is done on the native side. We shouldn't have a response here
         case .generateEmail:

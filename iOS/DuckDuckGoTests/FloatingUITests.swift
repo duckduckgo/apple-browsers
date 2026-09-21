@@ -220,6 +220,24 @@ final class FloatingUIPullToRefreshTests: XCTestCase {
         XCTAssertEqual(PullToRefreshViewAdapter.pullableViewRestingOffset(isRefreshing: true, isFloatingUIEnabled: false), 0)
     }
 
+    func testPullToRefreshObservesWebViewPanRecognizerWithoutAddingCompetingRecognizer() {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        let gestureRecognizerCount = webView.scrollView.gestureRecognizers?.count
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+
+        withExtendedLifetime(adapter) {
+            XCTAssertEqual(webView.scrollView.gestureRecognizers?.count, gestureRecognizerCount)
+        }
+    }
+
     func testApplyingRefreshBackgroundUpdatesEveryVisibleWebViewLayer() {
         let webView = WKWebView()
         let refreshBackgroundColor = UIColor.red

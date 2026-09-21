@@ -48,11 +48,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: [image:osx-tahoe-26, size:large]
+      runs-on: [image:osx-tahoe-26, general-purpose]
       timeout-minutes: 45
 
       env:
-        RUNS_ON: bitrise:macos26-m4 # keep this in sync with runs-on above
+        RUNS_ON: image:osx-tahoe-26,general-purpose # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       outputs:
@@ -70,15 +70,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: recursive
-
-      - name: Override RUNS_ON
-        if: runner.environment == 'self-hosted'
-        run: |
-          if [[ "${{ contains(runner.name, 'm4pro') }}" == "true" ]]; then
-            echo "RUNS_ON=bitrise:macos26-m4pro" >> $GITHUB_ENV
-          else
-            echo "RUNS_ON=bitrise:macos26-m4" >> $GITHUB_ENV
-          fi
 
       - name: Print macOS version
         run: sw_vers
@@ -223,11 +214,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: [image:osx-tahoe-26, size:large]
+      runs-on: [image:osx-tahoe-26, general-purpose]
       timeout-minutes: 45
 
       env:
-        RUNS_ON: bitrise:macos26-m4 # keep this in sync with runs-on above
+        RUNS_ON: image:osx-tahoe-26,general-purpose # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       steps:
@@ -241,15 +232,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: recursive
-
-      - name: Override RUNS_ON
-        if: runner.environment == 'self-hosted'
-        run: |
-          if [[ "${{ contains(runner.name, 'm4pro') }}" == "true" ]]; then
-            echo "RUNS_ON=bitrise:macos26-m4pro" >> $GITHUB_ENV
-          else
-            echo "RUNS_ON=bitrise:macos26-m4" >> $GITHUB_ENV
-          fi
 
       - name: Print macOS version
         run: sw_vers
@@ -445,7 +427,7 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: [image:osx-tahoe-26, size:large]
+      runs-on: [image:osx-tahoe-26, general-purpose]
       timeout-minutes: 30
 
       defaults:

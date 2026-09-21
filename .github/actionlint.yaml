@@ -9,7 +9,7 @@ self-hosted-runner:
   labels:
     - apple
     - xcode-27
-    - bitrise:*
     - image:osx-tahoe-26
-    - size:large
-    - size:xlarge
+    - general-purpose
+    - ui-tests
+    - m4pro

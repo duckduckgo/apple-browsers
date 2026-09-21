@@ -1,0 +1,9 @@
+{
+  "stepIndex": 0,
+  "completedActionCount": 5,
+  "failedActionID": "submit-removal",
+  "availableData": [
+    "fetchedEmail.email",
+    "extractedProfile.profileUrl"
+  ]
+}

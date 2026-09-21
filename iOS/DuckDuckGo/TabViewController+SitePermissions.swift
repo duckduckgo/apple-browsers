@@ -490,7 +490,7 @@ extension TabViewController {
 
     private func presentSitePermissionsManagement(displayedPermissionTypes: Set<SitePermissionType>) {
         guard sitePermissionsState.managementHostingController == nil,
-              featureFlagger.isFeatureOn(.sitePermissions),
+              isSitePermissionsEnabled,
               let site = currentSitePermissionKey(),
               let dependencies = sitePermissionsDependenciesProvider(),
               let coordinator = makeSitePermissionsCoordinatorIfNeeded(dependencies: dependencies) else {

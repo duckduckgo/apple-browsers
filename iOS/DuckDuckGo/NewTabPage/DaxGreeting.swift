@@ -64,6 +64,10 @@ enum DaxGreeting: String, CaseIterable {
         }
     }
 
+    var requiresAIChat: Bool {
+        self == .chatPrivately || self == .searchOrChat
+    }
+
     var text: String {
         switch self {
         case .monday: return UserText.daxGreetingMonday

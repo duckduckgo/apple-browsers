@@ -38,6 +38,7 @@ struct DaxGreetingContext {
     var isCookiePopupProtectionEnabled: Bool?
     var isAdBlockingEnabled: Bool?
     var isScamProtectionEnabled: Bool?
+    var isAIChatEnabled: Bool?
 }
 
 @MainActor
@@ -144,10 +145,14 @@ extension DaxGreetingService: DaxGreetingProviding {
         let context = contextProvider(date, calendar)
         let language = languageProvider()
         let isEnglish = language.map { Locale(identifier: $0).languageCode == "en" } ?? false
-        let groups = eligibleGroups(date: date, calendar: calendar, context: context).map { group in
-            group.filter { isEnglish || !$0.isEnglishOnly }
+        func isEligible(_ greeting: DaxGreeting) -> Bool {
+            (isEnglish || !greeting.isEnglishOnly) && (context.isAIChatEnabled == true || !greeting.requiresAIChat)
         }
-        let conditions = Conditions(eligible: Set(groups.flatMap { $0 }),
+        let generic = DaxGreeting.generic.filter(isEligible)
+        let groups = eligibleGroups(date: date, calendar: calendar, context: context).map { group in
+            group.filter(isEligible)
+        }
+        let conditions = Conditions(eligible: Set(groups.flatMap { $0 } + generic),
                                     day: calendar.startOfDay(for: date),
                                     calendar: calendar,
                                     appearance: context.appearance,
@@ -161,9 +166,14 @@ extension DaxGreetingService: DaxGreetingProviding {
         let availableGroups = groups.map { group in
             group.filter { !recentGreetings.contains($0) }
         }.filter { !$0.isEmpty }
-        let candidates: [DaxGreeting]
+        var candidates: [DaxGreeting]
         if availableGroups.isEmpty {
-            candidates = DaxGreeting.generic.filter { (isEnglish || !$0.isEnglishOnly) && !recentGreetings.contains($0) }
+            candidates = generic.filter { !recentGreetings.contains($0) }
+            var history = recentGreetings
+            while candidates.isEmpty {
+                history.removeFirst()
+                candidates = generic.filter { !history.contains($0) }
+            }
         } else {
             candidates = availableGroups[randomIndex(availableGroups.indices)]
         }

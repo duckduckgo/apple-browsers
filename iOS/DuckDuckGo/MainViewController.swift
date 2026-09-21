@@ -172,6 +172,7 @@ class MainViewController: UIViewController {
         activityStore: daxGreetingActivity,
         privacyConfigurationManager: privacyConfigurationManager,
         appSettings: appSettings,
+        aiChatSettings: aiChatSettings,
         adBlockingAvailability: adBlockingAvailability,
         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
         featureFlagger: featureFlagger,

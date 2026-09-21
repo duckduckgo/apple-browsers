@@ -31,7 +31,7 @@ final class DaxGreetingServiceTests: XCTestCase {
             return calendar
         }()
         var language: String? = "en"
-        var context = DaxGreetingContext()
+        var context = DaxGreetingContext(isAIChatEnabled: true)
         var draws: [Range<Int>] = []
         var chooseLast = false
 
@@ -52,6 +52,57 @@ final class DaxGreetingServiceTests: XCTestCase {
         }
     }
 
+    func testWhenAIChatIsDisabledOrUnavailableThenChatGreetingsAreExcluded() {
+        for language in ["en", "pl"] {
+            for enabled: Bool? in [false, nil] {
+                let inputs = Inputs()
+                inputs.setDate(hour: 8)
+                inputs.language = language
+                inputs.context.isAIChatEnabled = enabled
+                let service = inputs.makeService()
+                var previous: String?
+                for _ in 0..<30 {
+                    let greeting = service.getNewGreeting()
+                    XCTAssertNotEqual(greeting, DaxGreeting.chatPrivately.text)
+                    XCTAssertNotEqual(greeting, DaxGreeting.searchOrChat.text)
+                    XCTAssertNotEqual(greeting, previous)
+                    previous = greeting
+                }
+            }
+        }
+    }
+
+    func testWhenAIChatIsDisabledThenCachedChatGreetingIsReplaced() {
+        for target in [DaxGreeting.chatPrivately, .searchOrChat] {
+            let inputs = Inputs()
+            inputs.setDate(hour: 8)
+            let service = DaxGreetingService(now: { inputs.date },
+                                             calendarProvider: { inputs.calendar },
+                                             languageProvider: { "pl" },
+                                             contextProvider: { _, _ in inputs.context },
+                                             randomIndex: { range in
+                min(target == .chatPrivately ? 1 : 5, range.upperBound - 1)
+            })
+            XCTAssertEqual(service.getGreeting(), target.text)
+            inputs.context.isAIChatEnabled = false
+            let greeting = service.getGreeting()
+            XCTAssertNotEqual(greeting, DaxGreeting.chatPrivately.text)
+            XCTAssertNotEqual(greeting, DaxGreeting.searchOrChat.text)
+        }
+    }
+
+    func testWhenAIChatIsDisabledThenQuestionGreetingsRemainEligible() {
+        let inputs = Inputs()
+        inputs.context.isAIChatEnabled = false
+        inputs.setDate(hour: 18)
+        XCTAssertEqual(inputs.makeService().getGreeting(), DaxGreeting.evening.text)
+        inputs.setDate(hour: 23)
+        XCTAssertEqual(inputs.makeService().getGreeting(), DaxGreeting.late.text)
+        inputs.context.isTrackerProtectionEnabled = true
+        inputs.chooseLast = true
+        XCTAssertEqual(inputs.makeService().getGreeting(), DaxGreeting.trackersAsk.text)
+    }
+
     func testWhenLanguageIsNotEnglishThenWordplayIsExcludedIncludingGenericFallback() {
         let englishOnly: Set<DaxGreeting> = [
             .fridayDuck, .early, .scams, .cookieBreakfast, .cookieLunch, .cookieDinner,
@@ -62,7 +113,7 @@ final class DaxGreetingServiceTests: XCTestCase {
             let inputs = Inputs()
             inputs.language = language
             inputs.setDate(day: 18, hour: 8)
-            inputs.context = DaxGreetingContext(isCookiePopupProtectionEnabled: true, isScamProtectionEnabled: true)
+            inputs.context = DaxGreetingContext(isCookiePopupProtectionEnabled: true, isScamProtectionEnabled: true, isAIChatEnabled: true)
             inputs.chooseLast = true
             let service = inputs.makeService()
             var history: [String] = []

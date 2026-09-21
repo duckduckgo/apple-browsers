@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import FeatureFlags_iOS
 import PrivacyConfig
@@ -27,6 +28,7 @@ enum DaxGreetingServiceFactory {
     static func makeService(activityStore: DaxGreetingActivityStore?,
                             privacyConfigurationManager: PrivacyConfigurationManaging,
                             appSettings: AppSettings,
+                            aiChatSettings: AIChatSettingsProvider,
                             adBlockingAvailability: AdBlockingAvailabilityProviding,
                             maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
                             featureFlagger: FeatureFlagger,
@@ -35,6 +37,7 @@ enum DaxGreetingServiceFactory {
             let appearance = appearanceProvider()
             var context = activityStore?.context(at: date, calendar: calendar, appearance: appearance)
                 ?? DaxGreetingContext(appearance: appearance)
+            context.isAIChatEnabled = aiChatSettings.isAIChatEnabled
             let privacyConfig = privacyConfigurationManager.privacyConfig
             context.isTrackerProtectionEnabled = privacyConfig.isEnabled(featureKey: .contentBlocking)
             context.isCookiePopupProtectionEnabled = appSettings.cookiePopupPreference.isBlockingEnabled

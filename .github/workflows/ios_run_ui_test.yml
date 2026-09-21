@@ -21,6 +21,11 @@ jobs:
   run-ui-test:
     name: ${{ inputs.test }} (${{ inputs.device }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})
     runs-on: ['image:osx-tahoe-26', ui-tests]
+
+    # Match macOS: internal-mode failures are advance warning and must not fail the workflow.
+    # This belongs inside the reusable workflow because a caller job using `uses:` cannot set it.
+    continue-on-error: ${{ inputs.user-mode == 'internal' }}
+
     timeout-minutes: 45
     env:
       IOS_VERSION: ${{ inputs.ios-version }}

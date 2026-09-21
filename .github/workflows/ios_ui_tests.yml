@@ -221,7 +221,7 @@ jobs:
         name: ${{ steps.package.outputs.artifact-name }}
         path: iOS/build-products.tar.gz
         if-no-files-found: error
-        retention-days: 7
+        retention-days: 1
 
     - name: Upload build logs when the build fails
       if: failure() || cancelled()

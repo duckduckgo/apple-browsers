@@ -18,34 +18,27 @@
 //
 
 import Foundation
-import PrivacyConfig
 import Common
 import Core
-import FeatureFlags_iOS
 
 /// Provides access to the iPad Duck.ai bar controls (the address-bar model picker).
 protocol IPadDuckAIControlsFeatureProviding {
     /// Whether the iPad Duck.ai bar controls are available.
     ///
-    /// Returns `true` only when both conditions are met:
-    /// - The `iPadDuckAIBarControls` feature flag is enabled
-    /// - The device is NOT an iPhone (i.e. iPad or other large-screen devices)
+    /// Returns `true` when the device is NOT an iPhone (i.e. iPad or other large-screen devices).
     var isAvailable: Bool { get }
 }
 
 /// Determines availability of the iPad Duck.ai bar controls feature.
 struct IPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding {
 
-    private let featureFlagger: any FeatureFlagger
     private let devicePlatform: DevicePlatformProviding.Type
 
-    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
-        self.featureFlagger = featureFlagger
+    init(devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
         self.devicePlatform = devicePlatform
     }
 
     var isAvailable: Bool {
-        featureFlagger.isFeatureOn(.iPadDuckAIBarControls) && !devicePlatform.isIphone
+        !devicePlatform.isIphone
     }
 }

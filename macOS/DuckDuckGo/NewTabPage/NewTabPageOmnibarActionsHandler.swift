@@ -262,7 +262,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
 
         NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPageViewAllChats)
-        tabOpener.openNewAIChat(in: behavior)
+        tabOpener.openAIChatTab(with: .chatHistory, behavior: behavior)
     }
 
     @MainActor

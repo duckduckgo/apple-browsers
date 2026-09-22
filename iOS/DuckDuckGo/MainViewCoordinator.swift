@@ -112,6 +112,59 @@ class MainViewCoordinator {
         isInMinimalChromeLayout = enabled
     }
 
+    private(set) var newTabPageInputPresentation: NewTabPageInputPresentation = .browser
+    private(set) var isInlineInputDismissInProgress = false
+
+    private var isNavigationBarContainerHiddenByLayout = false
+    private var isNavigationBarContainerInteractionEnabledByLayout = true
+
+    @MainActor
+    func setNewTabPageInputPresentation(_ presentation: NewTabPageInputPresentation) {
+        guard newTabPageInputPresentation != presentation else { return }
+        if newTabPageInputPresentation.transition == .inlineInput, presentation.transition != .inlineInput {
+            stopInFlightOmnibarDismiss(runningInterruptCleanup: true)
+        }
+        if !newTabPageInputPresentation.hidesNavigationContainer {
+            isNavigationBarContainerInteractionEnabledByLayout = navigationBarContainer.isUserInteractionEnabled
+        }
+        newTabPageInputPresentation = presentation
+        navigationBarCollectionView.isHidden = presentation.hidesRestingOmnibar
+        if presentation.reservesAddressBarSpace {
+            ensureBottomOmnibarAttachedToToolbarIfNeeded()
+        } else {
+            returnOmnibarToNavigationContainerIfNeeded()
+        }
+        applyNavigationBarContainerVisibility(updatesInteraction: true)
+        applyContentContainerTopAnchorForCurrentState()
+        updateStatusBackgroundAnchors()
+    }
+
+    private func setNavigationBarContainerHidden(_ hidden: Bool, updatesAlpha: Bool = true) {
+        isNavigationBarContainerHiddenByLayout = hidden
+        if updatesAlpha {
+            navigationBarContainer.alpha = hidden ? 0 : 1
+            isNavigationBarContainerInteractionEnabledByLayout = !hidden
+        }
+        // Legacy hide-only calls must not reset interaction or an in-flight alpha animation.
+        applyNavigationBarContainerVisibility(updatesInteraction: updatesAlpha)
+    }
+
+    private func applyNavigationBarContainerVisibility(updatesInteraction: Bool) {
+        navigationBarContainer.isHidden = isNavigationBarContainerHiddenByLayout || newTabPageInputPresentation.hidesNavigationContainer
+        if newTabPageInputPresentation.hidesNavigationContainer {
+            navigationBarContainer.isUserInteractionEnabled = false
+        } else if updatesInteraction {
+            navigationBarContainer.isUserInteractionEnabled = isNavigationBarContainerInteractionEnabledByLayout
+        }
+    }
+
+    private func updateStatusBackgroundAnchors() {
+        let usesSafeArea = addressBarPosition.isBottom || !newTabPageInputPresentation.reservesAddressBarSpace || isNavigationChromeHidden
+        constraints.statusBackgroundToNavigationBarContainerBottom.isActive = false
+        constraints.statusBackgroundBottomToSafeAreaTop.isActive = usesSafeArea
+        constraints.statusBackgroundToNavigationBarContainerBottom.isActive = !usesSafeArea
+    }
+
     // The default after creating the hiearchy is top
     var addressBarPosition: AddressBarPosition = .top
 
@@ -199,9 +252,7 @@ class MainViewCoordinator {
     /// this pose: the focus transition zeroes it, so only re-hosting can put it back — and only
     /// while nothing else owns the surface, since a rotation can rebuild this layout mid-focus.
     private func applyOmnibarHostedInNavigationContainerPose() {
-        navigationBarContainer.isHidden = false
-        navigationBarContainer.alpha = 1
-        navigationBarContainer.isUserInteractionEnabled = true
+        setNavigationBarContainerHidden(false)
 
         let surfaceOwnedElsewhere = isNavigationChromeHidden || isUnifiedToggleInputVisible
         navigationBarCollectionView.alpha = surfaceOwnedElsewhere ? 0 : 1
@@ -213,6 +264,9 @@ class MainViewCoordinator {
 
     func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {
         addressBarPosition = position
+        if !newTabPageInputPresentation.reservesAddressBarSpace {
+            updateStatusBackgroundAnchors()
+        }
         applyContentContainerTopAnchorForCurrentState()
         // Default before any branch runs; only the toolbar-attach path below overrides it, so
         // readers within this pass can't see a stale value.
@@ -238,7 +292,7 @@ class MainViewCoordinator {
             // web scroll edge sits at the screen bottom and content doesn't move when the bars hide.
             setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
         case .bottom:
-            guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+            guard newTabPageInputPresentation.reservesAddressBarSpace, FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
                 isFloatingUIEnabled: isFloatingUIEnabled,
                 addressBarPosition: position,
                 isUnifiedToggleInputVisible: isUnifiedToggleInputVisible,
@@ -255,9 +309,7 @@ class MainViewCoordinator {
             toolbar.refreshMaterialBackdrop()
             omniBar.barView.alpha = 1
             omniBar.barView.isUserInteractionEnabled = true
-            navigationBarContainer.isHidden = true
-            navigationBarContainer.alpha = 0
-            navigationBarContainer.isUserInteractionEnabled = false
+            setNavigationBarContainerHidden(true)
             superview.bringSubviewToFront(toolbar)
             setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
             isOmnibarInToolbar = true
@@ -265,7 +317,7 @@ class MainViewCoordinator {
     }
 
     func ensureBottomOmnibarAttachedToToolbarIfNeeded() {
-        guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+        guard newTabPageInputPresentation.reservesAddressBarSpace, FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
             isFloatingUIEnabled: isFloatingUIEnabled,
             addressBarPosition: addressBarPosition,
             isUnifiedToggleInputVisible: isUnifiedToggleInputVisible,
@@ -277,9 +329,7 @@ class MainViewCoordinator {
         constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight, isFloating: isFloatingUIEnabled)
         omniBar.barView.alpha = 1
         omniBar.barView.isUserInteractionEnabled = true
-        navigationBarContainer.isHidden = true
-        navigationBarContainer.alpha = 0
-        navigationBarContainer.isUserInteractionEnabled = false
+        setNavigationBarContainerHidden(true)
         superview.bringSubviewToFront(toolbar)
         isOmnibarInToolbar = true
     }
@@ -324,6 +374,9 @@ class MainViewCoordinator {
         }
 
         addressBarPosition = position
+        if !newTabPageInputPresentation.reservesAddressBarSpace {
+            updateStatusBackgroundAnchors()
+        }
         applyContentContainerTopAnchorForCurrentState()
     }
 
@@ -331,7 +384,7 @@ class MainViewCoordinator {
         guard addressBarPosition.isBottom else { return }
 
         if isUnifiedToggleInputVisible {
-            navigationBarContainer.isHidden = false
+            setNavigationBarContainerHidden(false, updatesAlpha: false)
             setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
             return
         }
@@ -340,7 +393,7 @@ class MainViewCoordinator {
             // Keep the bottom omnibar attached while hiding chrome.
             // Visibility is handled via alpha/offset animations in MainViewController.
         } else {
-            navigationBarContainer.isHidden = true
+            setNavigationBarContainerHidden(true, updatesAlpha: false)
         }
 
         setContentContainerBottomAnchorMode(requesting: .safeArea)
@@ -372,7 +425,7 @@ class MainViewCoordinator {
         constraints.navigationBarContainerTop.isActive = active
         constraints.progressBarTop?.isActive = active
         constraints.topSlideContainerBottomToNavigationBarBottom.isActive = active
-        constraints.statusBackgroundToNavigationBarContainerBottom.isActive = active
+        constraints.statusBackgroundToNavigationBarContainerBottom.isActive = active && newTabPageInputPresentation.reservesAddressBarSpace
     }
 
     func setAddressBarBottomActive(_ active: Bool) {
@@ -534,6 +587,7 @@ class MainViewCoordinator {
     /// `resigningInput` is invoked once the animator owns the container's position. Resigning any
     /// earlier hands the container to the keyboard's animation, which lands it short of the pill.
     func hideUnifiedToggleInputOmnibar(reattachingOmnibar: Bool = true,
+                                       transition: NewTabPageInputPresentation.Transition = .omnibar,
                                        contentSnapshot: UIView? = nil,
                                        additionalAnimations: (() -> Void)? = nil,
                                        interruptCleanup: (() -> Void)? = nil,
@@ -548,17 +602,24 @@ class MainViewCoordinator {
             installOmnibarDismissContentSnapshot(contentSnapshot)
         }
         omnibarDismissInterruptCleanup = interruptCleanup
+        isInlineInputDismissInProgress = transition == .inlineInput
         if isFloatingUIEnabled {
             hideFocusedStateBackground()
         }
 
         let animator = UIViewPropertyAnimator(duration: MainViewController.Constants.omnibarTransitionDuration(isBottom: addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled), curve: .easeInOut) { [weak self] in
-            self?.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
+            switch transition {
+            case .omnibar:
+                self?.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
+            case .inlineInput:
+                self?.unifiedToggleInputContainer.alpha = 0
+            }
             additionalAnimations?()
         }
         animator.addCompletion { [weak self] position in
             guard let self else { return }
             self.omnibarDismissAnimator = nil
+            self.isInlineInputDismissInProgress = false
             // Interrupted / superseded: still drop transient dismiss chrome, but skip finish so a concurrent show wins.
             guard position == .end else {
                 self.performOmnibarDismissInterruptCleanup()
@@ -682,7 +743,7 @@ class MainViewCoordinator {
     }
 
     private var shouldHostOmnibarInFloatingToolbarAfterUTIExit: Bool {
-        FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+        newTabPageInputPresentation.reservesAddressBarSpace && FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
             isFloatingUIEnabled: isFloatingUIEnabled,
             addressBarPosition: addressBarPosition,
             isUnifiedToggleInputVisible: false,
@@ -765,7 +826,7 @@ class MainViewCoordinator {
     /// header and the home indicator. Idempotent.
     func setAITabBottomChromeHidden(_ hidden: Bool) {
         guard navigationBarContainer.isHidden != hidden else { return }
-        navigationBarContainer.isHidden = hidden
+        setNavigationBarContainerHidden(hidden, updatesAlpha: false)
         applyAITabCollapsedTopSeparatorVisibility()
         if hidden {
             setContentContainerBottomAnchorMode(requesting: .safeArea)
@@ -818,8 +879,8 @@ class MainViewCoordinator {
             navigationBarCollectionView.isUserInteractionEnabled = true
             activateBaseContentContainerTopAnchor()
             if !addressBarPosition.isBottom {
-                constraints.statusBackgroundBottomToSafeAreaTop.isActive = false
-                constraints.statusBackgroundToNavigationBarContainerBottom.isActive = true
+                constraints.statusBackgroundBottomToSafeAreaTop.isActive = !newTabPageInputPresentation.reservesAddressBarSpace
+                constraints.statusBackgroundToNavigationBarContainerBottom.isActive = newTabPageInputPresentation.reservesAddressBarSpace
             } else {
                 constraints.navigationBarContainerBottom.constant = 0
             }
@@ -965,6 +1026,12 @@ class MainViewCoordinator {
     }
 
     private func activateBaseContentContainerTopAnchor() {
+        // A hidden container still reserves space when used as the content anchor.
+        guard newTabPageInputPresentation.reservesAddressBarSpace else {
+            setContentContainerTopAnchorMode(.safeArea)
+            return
+        }
+
         // Floating UI spans content to the screen top for both bar positions; chrome is reserved via obscured insets.
         let useFloatingTop = isFloatingUIEnabled
             && !isUnifiedToggleInputVisible

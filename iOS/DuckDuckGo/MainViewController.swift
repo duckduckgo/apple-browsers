@@ -164,6 +164,20 @@ class MainViewController: UIViewController {
     }()
 
     var newTabPageViewController: (any NewTabPage)?
+    var isAddressBarHandOffInProgress = false
+    var restingNewTabPageSnapshot: (image: UIImage, frame: CGRect, viewportSize: CGSize)?
+
+    private var daxGreetingAppearance: DaxGreetingContext.Appearance?
+    private let daxGreetingActivity: DaxGreetingActivityStore?
+    private lazy var daxGreetingService = DaxGreetingServiceFactory.makeService(
+        activityStore: daxGreetingActivity,
+        privacyConfigurationManager: privacyConfigurationManager,
+        appSettings: appSettings,
+        aiChatSettings: aiChatSettings,
+        adBlockingAvailability: adBlockingAvailability,
+        maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
+        featureFlagger: featureFlagger,
+        appearanceProvider: { [weak self] in self?.daxGreetingAppearance })
 
     private lazy var newTabPageBuilder = NewTabPageBuilder(favoritesInteractionModel: favoritesViewModel,
                                                            homePageMessagesConfiguration: homePageConfiguration,
@@ -180,7 +194,12 @@ class MainViewController: UIViewController {
                                                            subscriptionManager: subscriptionManager,
                                                            internalUserCommands: internalUserCommands,
                                                            floatingUIManager: floatingUIManager,
-                                                           redesignFeature: NewTabPageRedesignFeature(featureFlagger: featureFlagger))
+                                                           redesignFeature: NewTabPageRedesignFeature(featureFlagger: featureFlagger),
+                                                           toggleModeStorage: toggleModeStorage,
+                                                           voiceSearchHelper: voiceSearchHelper,
+                                                           daxGreetingProvider: daxGreetingService,
+                                                           daxGreetingChanges: daxGreetingActivity?.changes ?? Empty().eraseToAnyPublisher(),
+                                                           updateDaxGreetingAppearance: { [weak self] in self?.daxGreetingAppearance = $0 })
 
     var tabsBarController: TabsBarViewController?
     var suggestionTrayController: SuggestionTrayViewController?
@@ -351,7 +370,7 @@ class MainViewController: UIViewController {
     }
 
     private var lastWindowControlsRowState: (sharesRow: Bool, tabsBarHidden: Bool, topInset: CGFloat) = (false, false, -1)
-    private lazy var isWindowControlsRowEnabled = WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)
+    private lazy var isWindowControlsRowEnabled = WindowControlsRowLayout.isEnabled()
     private var lastForegroundEntryDate = Date.distantPast
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
     private var currentNTPEscapeHatch: EscapeHatchModel?
@@ -633,6 +652,7 @@ class MainViewController: UIViewController {
         fireExecutor: FireExecuting,
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         privacyStats: PrivacyStatsProviding,
+        daxGreetingActivity: DaxGreetingActivityStore? = nil,
         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
         whatsNewRepository: WhatsNewMessageRepository,
@@ -734,6 +754,7 @@ class MainViewController: UIViewController {
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.privacyStats = privacyStats
+        self.daxGreetingActivity = daxGreetingActivity
         self.fireExecutor = fireExecutor
         self.devicePlatform = devicePlatform
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
@@ -1069,6 +1090,11 @@ class MainViewController: UIViewController {
                                                     },
                                                     isPaidAIChatEnabledProvider: { [weak self] in
                                                         self?.isPaidAIChatEnabledForSwipe ?? false
+                                                    },
+                                                    hasInlineSearchInput: { [weak self] tab in
+                                                        guard let self, tab?.isAITab != true, tab?.link == nil,
+                                                              !(tab?.fireTab ?? self.isCurrentTabFireTab()) else { return false }
+                                                        return NewTabPageRedesignFeature(featureFlagger: self.featureFlagger).isAvailable
                                                     }) { [weak self] tab in
 
             guard tab !== self?.tabManager.currentTabsModel.currentTab else {
@@ -1117,6 +1143,11 @@ class MainViewController: UIViewController {
 
     func updatePreviewForCurrentTab(completion: (() -> Void)? = nil) {
         assert(Thread.isMainThread)
+        // Returning by swipe also needs chrome and screen geometry when the NTP was left
+        // through the tab switcher, which otherwise only saves a content-sized thumbnail.
+        if newTabPageViewController?.hasInlineSearchInput == true {
+            swipeTabsCoordinator?.updateFullScreenSnapshotForCurrentTab()
+        }
         
         if !viewCoordinator.logoContainer.isHidden,
            self.tabManager.current()?.link == nil,
@@ -1808,41 +1839,10 @@ class MainViewController: UIViewController {
         }
     }
 
-    private func adjustNewTabPageSafeAreaInsets(for addressBarPosition: AddressBarPosition) {
-        let bottomInset = newTabPageBottomAdditionalSafeAreaInset(for: addressBarPosition)
-        switch addressBarPosition {
-        case .top:
-            // In floating top mode the NTP spans behind the glass omnibar; inset its content so it
-            // rests below the bar while still being able to underflow it on scroll.
-            let topInset = isFloatingTopContentBehindBar ? viewCoordinator.omniBar.barView.expectedHeight * currentBarsVisibility : 0
-            newTabPageViewController?.additionalSafeAreaInsets = .init(top: topInset, left: 0, bottom: bottomInset, right: 0)
-        case .bottom:
-            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: bottomInset, right: 0)
-        }
-    }
-
-    private func newTabPageBottomAdditionalSafeAreaInset(for addressBarPosition: AddressBarPosition) -> CGFloat {
-        FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
-            isFloatingUIEnabled: isFloatingUIEnabled,
-            addressBarPosition: addressBarPosition,
-            floatingBottomObscuredHeight: floatingWebViewBottomObscuredHeight(for: 1),
-            safeAreaBottom: view.safeAreaInsets.bottom,
-            omnibarHeight: viewCoordinator.omniBar.barView.expectedHeight
-        )
-    }
-
-    /// Scales the floating-top NTP content inset with chrome visibility so it collapses to zero in
-    /// lock-step as the bar hides, matching the web view's underflow behaviour. No-op outside
-    /// floating top mode.
-    private func updateFloatingTopNewTabPageInset(for barsVisibilityPercent: CGFloat) {
-        guard isFloatingTopContentBehindBar else { return }
-        newTabPageViewController?.additionalSafeAreaInsets.top = viewCoordinator.omniBar.barView.expectedHeight * barsVisibilityPercent
-    }
-
     /// True when content (web/NTP) is laid out spanning behind the glass omnibar in floating top
     /// mode, matching the coordinator's content-container top anchor. The unified toggle input owns
     /// its own top layout, so the floating-top inset must not be applied while it's active.
-    private var isFloatingTopContentBehindBar: Bool {
+    var isFloatingTopContentBehindBar: Bool {
         FloatingUILayoutPolicy.shouldApplyFloatingTopContentInset(
             isFloatingUIEnabled: isFloatingUIEnabled,
             addressBarPosition: appSettings.currentAddressBarPosition,
@@ -2259,6 +2259,19 @@ class MainViewController: UIViewController {
 
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
 
+        // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
+        // viewDidAppear fires after this function and shows the dialog, but the editing state
+        // created here would immediately cover it.
+        // Also suppress when the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
+        // is scheduled to fire: it drives its own beginEditing, and a premature activation here
+        // causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
+        let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
+        // Resolved before the instrumentation call below, so the wide event records the mode
+        // the app decided on rather than racing the keyboard to observe it.
+        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
+            && !daxDialogsManager.subscriptionPromotionPending
+            && !chatPathCompletionPending
+
         let controller = newTabPageBuilder.makeNewTabPage(tab: tabModel,
                                                           openedAfterIdle: hatch != nil,
                                                           daxDialogFactory: newTabDaxDialogFactory)
@@ -2286,8 +2299,12 @@ class MainViewController: UIViewController {
             controller.view.alpha = 0
         }
 
+        (controller as? RedesignedNewTabPageViewController)?.prepareForEntranceAnimation(
+            if: isNewTab && !willBeginEditing && !chatPathCompletionPending)
+
         addToContentContainer(controller: controller)
         viewCoordinator.logoContainer.isHidden = true
+        updateAddressBarSuppressionForNewTabPage()
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
         // This has to happen after the new tab controller is created so that it knows to set the buttons correctly
@@ -2296,19 +2313,6 @@ class MainViewController: UIViewController {
         refreshControls()
         updateScrollInteractionIfNeeded()
         presentContextualOnboardingDialogIfNeeded()
-
-        // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
-        // viewDidAppear fires after this function and shows the dialog, but the editing state
-        // created here would immediately cover it.
-        // Also suppress when the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
-        // is scheduled to fire: it drives its own beginEditing, and a premature activation here
-        // causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
-        let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
-        // Resolved before the instrumentation call below, so the wide event records the mode
-        // the app decided on rather than racing the keyboard to observe it.
-        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
-            && !daxDialogsManager.subscriptionPromotionPending
-            && !chatPathCompletionPending
 
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
@@ -2391,10 +2395,13 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func removeHomeScreen() {
+        restingNewTabPageSnapshot = nil
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
+        isAddressBarHandOffInProgress = false
         clearEscapeHatch()
+        updateAddressBarSuppressionForNewTabPage()
     }
 
     @IBAction func onFirePressed() {
@@ -3077,6 +3084,8 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.endEditing()
         deactivateUnifiedToggleInputOmnibarSession(animated: animated)
         refreshOmniBar()
+        finishNewTabPageInputHandoff()
+        updateAddressBarSuppressionForNewTabPage()
     }
 
     private var isModeToggleInAIChatMode: Bool {
@@ -3524,6 +3533,7 @@ class MainViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        updateAddressBarSuppressionForNewTabPage()
         updateWindowControlsRowMetricsIfNeeded()
         ViewHighlighter.updatePositions()
         omniBar.refreshCustomizableButton()
@@ -5842,6 +5852,9 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool) {
+        // Unified input bypasses this callback; its reveal is in activateFromOmnibarIfNeeded.
+        revealAddressBarForEditing()
+
         if tapped {
             revealFloatingChromeImmediately()
         }
@@ -5988,7 +6001,7 @@ extension MainViewController: OmniBarDelegate {
         currentTab?.onShareAction(forLink: link, fromView: targetView)
     }
 
-    private func openAIChatFromAddressBar(prefilledText: String?, source: AIChatEntryPointSource = .addressBarIcon) {
+    func openAIChatFromAddressBar(prefilledText: String?, source: AIChatEntryPointSource = .addressBarIcon) {
 
         let isEditing: Bool
         let textFieldValue: String?
@@ -6033,6 +6046,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onDidBeginEditing() {
+        finishNewTabPageInputHandoff()
         // Omnibar got focus. Lift minimal chrome bar above keyboard.
         dismissFloatingContextualInputIfPresented()
         refreshMinimalChromeBottomAnchor()
@@ -6054,6 +6068,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onDidEndEditing() {
+        finishNewTabPageInputHandoff()
         // Restore the tab's committed mode — the user may have toggled without submitting.
         if let tab = tabManager.currentTabsModel.currentTab {
             viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tab))
@@ -7979,7 +7994,12 @@ extension MainViewController {
         if !themeColorManager.updateThemeColor() {
             updateStatusBarBackgroundColor()
         }
-        refreshSettledFloatingGlassAppearance()
+        // Rebuilding the glass detaches its controls and can dismiss an opening button menu.
+        // Unrelated trait changes must preserve that hierarchy.
+        if traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle
+            || traitCollection.accessibilityContrast != previousTraitCollection?.accessibilityContrast {
+            refreshSettledFloatingGlassAppearance()
+        }
         updateFindInPage()
 
         revealChromeIfPinned()

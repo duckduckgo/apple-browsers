@@ -67,6 +67,9 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public let stageCalculator: StageDurationCalculator
     public var webViewHandler: WebViewHandler?
     public var actionsHandler: ActionsHandler?
+#if DEBUG
+    @MainActor public var debugRecovery: DebugPIRRecoverySession?
+#endif
     public let runnerContinuation = SubJobRunnerContinuationState<Void>()
     public var extractedProfile: ExtractedProfile?
     private let operationAwaitTime: TimeInterval

@@ -31,7 +31,7 @@ public enum OptOutType: String, Codable, Equatable, Sendable {
 public struct Step: Codable, Sendable {
     public let type: StepType
     let optOutType: OptOutType?
-    let actions: [Action]
+    public let actions: [Action]
 
     enum CodingKeys: String, CodingKey {
         case actions, stepType, scanType, optOutType

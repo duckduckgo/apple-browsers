@@ -333,6 +333,9 @@ public extension ContentScopeFeatureToggles {
 }
 
 public final class WebViewHandlerMock: NSObject, WebViewHandler {
+#if DEBUG
+    @MainActor public var webViewForInspection: WKWebView?
+#endif
     public var wasInitializeWebViewCalled = false
     public var wasLoadCalledWithURL: URL?
     public var wasWaitForWebViewLoadCalled = false

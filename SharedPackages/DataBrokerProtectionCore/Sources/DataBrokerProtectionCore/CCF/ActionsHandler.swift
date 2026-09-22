@@ -67,6 +67,22 @@ public class ActionsHandler {
         }
     }
 
+#if DEBUG
+    /// Uses the live action list, including actions inserted by conditions and previous runtime changes.
+    func debugRecoveryStep() throws -> (json: String, index: Int)? {
+        guard let index = lastExecutedActionIndex, actions.indices.contains(index) else { return nil }
+        let data = try JSONEncoder().encode(Step(type: stepType, actions: actions))
+        guard let json = String(data: data, encoding: .utf8) else { throw CocoaError(.fileReadInapplicableStringEncoding) }
+        return (json, index)
+    }
+
+    func replaceCurrentActionForDebugRecovery(_ action: Action, expectedID: String) -> Bool {
+        guard let index = lastExecutedActionIndex, actions.indices.contains(index), actions[index].id == expectedID else { return false }
+        actions[index] = action
+        return true
+    }
+#endif
+
     // MARK: - Factory Methods
 
     /// Creates an ActionsHandler for scan steps - always uses all actions

@@ -210,7 +210,8 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                 .targetting(self)
             NSMenuItem(title: "Test Firing Weekly Pixels", action: #selector(DataBrokerProtectionDebugMenu.testFireWeeklyPixels))
                 .targetting(self)
-            NSMenuItem(title: "Run Personal Information Removal Debug Mode", action: #selector(DataBrokerProtectionDebugMenu.runCustomJSON))
+            NSMenuItem(title: "Run Personal Information Removal Debug Mode", action: #selector(DataBrokerProtectionDebugMenu.runCustomJSON),
+                       keyEquivalent: [.control, .option, .command, "r"])
                 .targetting(self)
             NSMenuItem(title: "Reset All State and Delete All Data", action: #selector(DataBrokerProtectionDebugMenu.deleteAllDataAndStopAgent))
                 .targetting(self)
@@ -491,6 +492,11 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         let viewController = DataBrokerRunCustomJSONViewController(authenticationManager: authenticationManager,
                                                                    featureFlagger: DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger),
                                                                    applicationNameForUserAgentProvider: { WebViewUserAgentProvider.applicationNameForUserAgent })
+#if DEBUG && compiler(>=6.4) && canImport(FoundationModels)
+        if #available(macOS 27.0, *) {
+            viewController.recoveryFactory = { @MainActor in PageAnalysisPIRRecovery.makeSession() }
+        }
+#endif
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered,

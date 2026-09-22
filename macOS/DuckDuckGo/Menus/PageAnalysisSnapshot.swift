@@ -38,6 +38,8 @@ struct PageAnalysisSnapshot: Codable {
         let role: String
         let type: String
         let label: String
+        let landmark: String
+        let surroundingText: String
         let autocomplete: String
         let form: String
         let required: Bool
@@ -62,7 +64,7 @@ struct PageAnalysisSnapshot: Codable {
 
     // Run in an isolated content world so page JavaScript cannot replace the built-ins we call.
     // No values, HTML, action URLs, cookies, or persistent identifiers are collected.
-    // Structural selectors and node references stay outside the model prompt.
+    // DOM selectors and node references stay outside the model prompt.
     static func targetValidationScript(captureID: String, elementID: String) throws -> String {
         let arguments = try JSONSerialization.data(withJSONObject: [captureID, elementID])
         guard let json = String(data: arguments, encoding: .utf8) else {
@@ -98,7 +100,24 @@ struct PageAnalysisSnapshot: Codable {
             const labels = Array.from(element.labels || []).slice(0, 3).map(labelText).join(' ');
             return clean(element.getAttribute('aria-label') || labelledBy.trim() || labels.trim()
                 || element.getAttribute('placeholder') || element.getAttribute('title')
+                || (element.matches('input[type="submit"],input[type="button"]') ? element.value : '')
                 || (element.matches('form') ? 'Form' : labelText(element)));
+        };
+        const landmark = element => {
+            const region = element.closest('dialog,[role="dialog"],main,[role="main"],footer,[role="contentinfo"],nav,[role="navigation"],header,[role="banner"]');
+            const role = region?.getAttribute('role') || region?.localName || '';
+            return ({contentinfo: 'footer', nav: 'navigation', banner: 'header'})[role] || role;
+        };
+        const surroundingText = element => {
+            // Small local context distinguishes an entry button from an unrelated footer expansion.
+            // labelText excludes all editable values and hidden text.
+            const ownLabel = label(element);
+            for (let parent = element.parentElement, depth = 0; parent && depth < 3; parent = parent.parentElement, depth++) {
+                if (parent.matches('body,html,main,footer,nav,header')) break;
+                const text = labelText(parent);
+                if (text && text !== ownLabel) return text;
+            }
+            return '';
         };
         const selector = 'form,input:not([type="hidden"]),textarea,select,button,a[href],summary,iframe,frame,'
             + '[role="button"],[role="link"],[role="checkbox"],[role="combobox"],[role="textbox"],'
@@ -119,11 +138,48 @@ struct PageAnalysisSnapshot: Codable {
         candidates.sort((first, second) => priority(first) - priority(second));
         const captureID = Array.from(crypto.getRandomValues(new Uint32Array(4)), word => word.toString(16)).join('-');
         const targets = new Map();
-        const path = element => {
+        const selectorOptions = element => {
+            const tag = CSS.escape(element.localName);
+            const options = [];
+            if (element.id) options.push('#' + CSS.escape(element.id));
+            // Do not use field values or URLs as selector attributes.
+            for (const attribute of ['name', 'data-testid', 'data-test', 'aria-label', 'type']) {
+                const value = element.getAttribute(attribute);
+                if (value) options.push(tag + '[' + attribute + '=' + CSS.escape(value) + ']');
+            }
+            const classes = Array.from(element.classList).slice(0, 8).map(value => '.' + CSS.escape(value));
+            const classOptions = classes.map(value => tag + value);
+            for (let first = 0; first < classes.length; first++) {
+                for (let second = first + 1; second < classes.length; second++) {
+                    classOptions.push(tag + classes[first] + classes[second]);
+                }
+            }
+            if (classes.length > 2) classOptions.push(tag + classes.join(''));
+            options.push(...classOptions.sort((first, second) => first.length - second.length), tag);
+            return options;
+        };
+        const uniqueSelector = element => {
+            const identifiesTarget = selector => {
+                const matches = document.querySelectorAll(selector);
+                return matches.length === 1 && matches[0] === element;
+            };
+            const options = selectorOptions(element);
+            const direct = options.find(identifiesTarget);
+            if (direct) return direct;
+
+            // Try a short, named ancestor scope before relying on sibling positions.
+            for (let parent = element.parentElement, depth = 0; parent && depth < 5; parent = parent.parentElement, depth++) {
+                for (const scope of selectorOptions(parent)) {
+                    const scoped = options.map(option => scope + ' ' + option).find(identifiesTarget);
+                    if (scoped) return scoped;
+                }
+            }
             const parts = [];
             for (let node = element; node && node.nodeType === Node.ELEMENT_NODE; node = node.parentElement) {
                 const index = Array.from(node.parentElement?.children || [node]).indexOf(node) + 1;
-                parts.unshift(node.localName + ':nth-child(' + index + ')');
+                parts.unshift(CSS.escape(node.localName) + ':nth-child(' + index + ')');
+                const selector = parts.join(' > ');
+                if (identifiesTarget(selector)) return selector;
             }
             return parts.join(' > ');
         };
@@ -134,7 +190,8 @@ struct PageAnalysisSnapshot: Codable {
             return {
                 id, tag: element.localName,
                 role: clean(element.getAttribute('role'), 30), type: clean(element.type || element.getAttribute('type'), 30),
-                label: label(element), autocomplete: clean(element.getAttribute('autocomplete'), 100), form: forms.get(element.form || element.closest('form')) || '',
+                label: label(element), landmark: landmark(element), surroundingText: surroundingText(element),
+                autocomplete: clean(element.getAttribute('autocomplete'), 100), form: forms.get(element.form || element.closest('form')) || '',
                 required: element.required === true || element.getAttribute('aria-required') === 'true',
                 disabled: element.matches(':disabled') || element.getAttribute('aria-disabled') === 'true',
                 invalid: element.getAttribute('aria-invalid') === 'true' || (element.willValidate === true && !element.validity.valid),
@@ -150,9 +207,7 @@ struct PageAnalysisSnapshot: Codable {
             const id = forms.get(element) || 'e' + (index + 1);
             const state = describe(element, id);
             const form = element.form;
-            const selector = path(element);
-            const formSelector = form ? path(form) : 'body';
-            targets.set(id, {element, form, state, selector, formSelector});
+            targets.set(id, {element, form, state});
             return state;
         });
         // Re-resolve the original node and compare current state, including native validity.
@@ -161,11 +216,14 @@ struct PageAnalysisSnapshot: Codable {
             const target = targets.get(id);
             const fail = error => JSON.stringify({error});
             if (expectedCapture !== captureID || !target) return fail('Unknown or expired capture reference.');
-            const {element, form, state, selector, formSelector} = target;
+            const {element, form, state} = target;
             if (!element.isConnected || !visible(element) || element.form !== form
                 || JSON.stringify(describe(element, id)) !== JSON.stringify(state)) {
                 return fail('The target or its form state changed. Analyze again.');
             }
+            // Generate only for the selected node, after checking its captured identity and state.
+            const selector = uniqueSelector(element);
+            const formSelector = form ? uniqueSelector(form) : 'body';
             const matches = document.querySelectorAll(selector);
             if (matches.length !== 1 || matches[0] !== element) return fail('The selector no longer identifies the captured node.');
             const roots = document.querySelectorAll(formSelector);

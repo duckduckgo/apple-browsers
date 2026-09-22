@@ -42,6 +42,9 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public let stageCalculator: StageDurationCalculator
     public var webViewHandler: WebViewHandler?
     public var actionsHandler: ActionsHandler?
+#if DEBUG
+    @MainActor public var debugRecovery: DebugPIRRecoverySession?
+#endif
     public let runnerContinuation = SubJobRunnerContinuationState<[ExtractedProfile]>()
     public var extractedProfile: ExtractedProfile?
     private let operationAwaitTime: TimeInterval

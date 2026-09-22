@@ -80,6 +80,10 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     func executeNextStep() async
     func executeCurrentAction() async
 
+#if DEBUG
+    @MainActor var debugRecovery: DebugPIRRecoverySession? { get }
+#endif
+
     func resetRetriesCount()
 }
 
@@ -272,6 +276,12 @@ public extension SubJobWebRunning {
             try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
         }
 
+#if DEBUG
+        if await debugRecovery?.replacementActionID == action.id, !shouldRunNextStep() || Task.isCancelled {
+            await failAsCancelledAndTearDown()
+            return
+        }
+#endif
         let request: CCFRequestData = .userData(
             context.profileQuery,
             self.extractedProfile,
@@ -465,6 +475,10 @@ public extension SubJobWebRunning {
     }
 
     func success(actionId: String, actionType: ActionType) async {
+#if DEBUG
+        guard await acceptDebugRecoveryCallback(actionID: actionId) else { return }
+        await recordDebugRecoveryExecution(actionID: actionId)
+#endif
         recordDebugEvent(kind: .actionResponse,
                          actionType: actionType,
                          details: DebugHelper.prettyPrintedJSON(from: ["actionId": actionId, "actionType": actionType.rawValue]))
@@ -549,6 +563,10 @@ public extension SubJobWebRunning {
     }
 
     func onError(error: Error) async {
+#if DEBUG
+        if case DataBrokerProtectionError.actionFailed(let actionID, _) = error,
+           !(await acceptDebugRecoveryCallback(actionID: actionID)) { return }
+#endif
         recordDebugEvent(kind: .actionResponse,
                          actionType: actionsHandler?.currentAction()?.actionType,
                          details: errorDetails(error))
@@ -592,9 +610,18 @@ public extension SubJobWebRunning {
             return
         }
 
+#if DEBUG
+        if await debugRecovery?.replacementActionID == actionsHandler?.currentAction()?.id,
+           await debugRecovery?.replacementActionID != nil {
+            retriesCountOnError = 0 // A generated replacement is executed at most once.
+        }
+#endif
         if retriesCountOnError > 0 {
             await executeCurrentAction()
         } else {
+#if DEBUG
+            if await attemptDebugRecovery(after: error) { return }
+#endif
             await webViewHandler?.finish()
             failed(with: error)
         }

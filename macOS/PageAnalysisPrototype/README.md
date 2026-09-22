@@ -2,9 +2,59 @@
 
 A Debug-only Foundation Models proof of concept: read a broker recipe, runner position,
 and the current page DOM; propose one PIR action that can continue or repair the flow.
-It generates JSON only and does not execute actions or make removal requests.
+The standalone inspector is a dry run. The opt-in recovery toggle in the real PIR debug view
+executes validated replacement actions on the broker site.
 
-## Demo
+## Recovery in the real PIR debug runner
+
+1. Set up PIR locally so the broker list is populated. If needed, run
+   `./scripts/toggle-macos-debug-deployment.sh on`, rebuild, and complete PIR setup.
+2. Open **Debug → Personal Information Removal → Run Personal Information Removal Debug Mode**
+   (**Control–Option–Command–R**). Enable **Recover failed actions with on-device model**.
+   The checkbox is off by default and applies to both scan and opt-out runs from this window.
+3. Select a broker and enter the profile to scan. First run the unmodified recipe to establish
+   that the broker and your test data work.
+4. In the debug view's JSON editor, change only the selector in a single-element native-button
+   `click` action, e.g. change `elements[0].selector` to `#intentionally-missing-button`.
+   Keep the action ID, element type, and all later extraction/expectation steps intact.
+   Edit a local copy in this view; do not change the shared broker database.
+5. Run the scan, or select an extracted profile and run its opt-out with the edited recipe.
+   The existing retry runs first. An action timeout currently takes up to 60 seconds per attempt.
+   Then look for **[PIR Recovery]** rows in the event log. Select their details to see the
+   model proposal, validation result, replacement JSON, and whether the replacement succeeded.
+6. The generator returns one ordinary PIR `Action`. The runner replaces the failed action in
+   memory and executes it through its existing `runNextAction` path. `replacement-executed`
+   means the interaction ran; following authored actions establish progress, and the original
+   extraction/confirmation logic decides whether the scan or opt-out succeeded.
+
+The runner supplies the actual action cursor, dynamically inserted actions, and available binding
+names. It captures its own live web view, not the browser's selected tab. One recovery invocation
+is allowed per job, with at most two model proposals if the first fails structural validation.
+The generated replacement executes once. A failure, unsupported proposal, unavailable model,
+changed document, cancellation, or exhausted job timeout falls back to normal failure handling.
+The checkbox does not affect scheduled/background jobs or non-Debug builds.
+
+This first integration repairs target selectors for **single-element click or fillForm actions**.
+Fills must preserve the original supported binding (first/last name, fetched email, or profile URL);
+multi-field fills, extraction schemas, navigation, CAPTCHA, and email verification are not repaired.
+Already valid populated fields are not overwritten. Authored action options are retained, and the
+page/target is validated when generation finishes. Execution uses PIR's normal delays and failure handling. The repaired
+JSON is used only in memory; the input broker recipe remains unchanged.
+
+For live recovery, the model receives the failed action, the preceding action, and the next two
+authored actions, with an explicit objective derived from the next form when applicable. DOM
+evidence includes control labels, bounded surrounding text, and page landmarks, with editable
+values omitted. Footer and navigation controls are excluded for opening the next authored form;
+if that is where a site's legitimate entry control lives, this prototype declines recovery.
+There is no separate execution or outcome-checking layer. `webViewForInspection` exposes the
+runner's existing web view for DOM capture; it does not create another browser or run actions.
+
+Filter Xcode's console for `[PIR Recovery]` to see lifecycle phases, or `[PageAnalysis]` for inference
+phases and token counts. Page-derived details are private in system logs; full details remain in the
+existing local debug event view. Keep configured job timeouts in mind when choosing a broker with
+many slow actions. No request is made to an external model service.
+
+## Standalone dry-run demo
 
 1. Check out `sam/pir-foundation-model-demo`, open `DuckDuckGo.xcworkspace` in Xcode 27,
    and run the **macOS Browser** scheme in Debug on macOS 27. Enable Apple Intelligence
@@ -32,6 +82,9 @@ the current button uses `.responsive-button`. The defect is in the recipe, not t
 
 The model chooses the appropriate captured control; code derives a selector from its live
 DOM node and emits a normal PIR action. The input does not contain the replacement selector.
+Selectors prefer unique IDs, attributes, and classes, then a short ancestor scope. Positional
+paths are a fallback and stop as soon as they uniquely identify the selected node. Code checks
+the selector against the live node and, for form controls, its form scope before returning it.
 Manual submission reaches a local confirmation-email page and sends nothing. Reload before
 repeating the demo. This is an independent reconstruction from the checked-in Spokeo recipe,
 not a live site or a saved copy of it. All field values are fictional.
@@ -82,13 +135,14 @@ what was sent and why a proposal passed or failed validation.
 
 This fixture deliberately has one eligible click. It demonstrates the generation and validation
 path for a stale selector; it does not establish reliability across brokers or ambiguous pages.
-The input recipe and runner position are simulated. Production integration would need real
-execution outcomes, recovery limits, and PIR's existing completion checks.
+The standalone fixture uses simulated progress. The opt-in debug runner integration described
+above uses actual execution outcomes and recovery limits; it is not enabled in production.
 
 ## Implementation and limits
 
-- `PageAnalysisDebugMenu.swift`: bundled-demo loading, input/output UI, cancellation, context
-  budgeting, model calls, and one optional retry after structural rejection.
+- `PageAnalysisDebugMenu.swift`: bundled-demo loading, input/output UI, and cancellation.
+- `PageAnalysisPIRRecovery.swift`: shared context budgeting, model calls, bounded proposal retry,
+  live target revalidation, and the real-runner adapter.
 - `PageAnalysisSnapshot.swift`: bounded main-document capture and live selector validation.
 - `PageAnalysisPIRAction.swift`: the generated intent schema, model instructions and request,
   runner-context parsing, candidate validation, and PIR Step serialization.
@@ -102,7 +156,7 @@ code checks disabled/invalid/populated state, live node identity, form scope, un
 and document identity. Prompt size is bounded by token counting and DOM trimming. Generation
 uses the on-device model's normal guardrails and has no network fallback.
 
-The caller supplies the execution history; the inspector is not connected to PIR's runner.
-A usable action JSON object does not establish execution, progress, or opt-out success.
-Runner integration and production reliability remain future work. Logs include phase/timing
-and token counts, not raw page text or model output; filter Xcode for `[PageAnalysis]`.
+The standalone inspector still uses manually supplied history. The live debug runner uses actual
+runtime state and injects the app's generator through `DebugPIRRecoverySession` in Core.
+`PageAnalysisPIRRecovery.swift` owns the shared generator and its live-runner adapter. Production
+reliability, broader action support, and broker-specific semantic validation remain future work.

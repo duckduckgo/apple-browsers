@@ -289,6 +289,16 @@ struct DataBrokerRunCustomJSONView: View {
                     .help(Text(verbatim: "Applies the scan and opt-out job timeouts shown below."))
                 }
 
+#if DEBUG
+                if viewModel.recoveryFactory != nil {
+                    Toggle("Recover failed actions with on-device model", isOn: $viewModel.usesModelRecovery)
+                        .toggleStyle(.checkbox)
+                        .disabled(viewModel.isProgressActive)
+                    Text("Scan and opt-out · one recovery per job · validated replacements execute automatically. See [PIR Recovery] in the event log.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+#endif
                 if jsonText.isEmpty {
                     Text("Please enter broker JSON to enable scan")
                         .font(.caption)

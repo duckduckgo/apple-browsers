@@ -112,7 +112,6 @@ private final class PageAnalysisWindowController: NSWindowController, NSWindowDe
     private let outputView = NSTextView()
     private var analysisTask: Task<Void, Never>?
     private var requestID: UUID?
-    private static let contentWorld = WKContentWorld.world(name: "DuckDuckGo.Debug.PageAnalysis")
     private static let logger = Logger(subsystem: "com.duckduckgo.macos.browser", category: "PageAnalysis")
 
     init(webViewProvider: @escaping () -> WKWebView?) {
@@ -365,181 +364,43 @@ private final class PageAnalysisWindowController: NSWindowController, NSWindowDe
                 self.statusLabel.stringValue = "The tab closed before capture. Select a loaded page and try again."
                 return
             }
-            await self.performAnalysis(webView: webView, url: url, model: model, context: context, identifier: identifier)
+            await self.performAnalysis(webView: webView, context: context, identifier: identifier)
         }
     }
 
-    private func performAnalysis(webView: WKWebView, url: URL, model: SystemLanguageModel,
+    private func performAnalysis(webView: WKWebView,
                                  context: PageAnalysisPIRContext, identifier: UUID) async {
         defer {
-            if self.requestID == identifier {
-                self.setBusy(false)
-                self.analysisTask = nil
-                self.requestID = nil
+            if requestID == identifier {
+                setBusy(false)
+                analysisTask = nil
+                requestID = nil
             }
         }
+        let generator = PageAnalysisPIRGenerator(shouldContinue: { [weak self] in self?.requestID == identifier }, progress: { [weak self] phase in
+            self?.statusLabel.stringValue = phase + "…"
+        }, diagnostics: { [weak self] text in
+            self?.diagnosticsView.string = "PIR DRY RUN — NOTHING EXECUTED\n\n" + text
+        }, capture: { [weak self] text in
+            self?.captureView.string = text
+            self?.hasCapture = true
+            self?.selectInput()
+        })
         do {
-            try Task.checkCancellation()
-            var snapshot = try await runPhase("DOM capture", identifier: identifier) {
-                let value = try await webView.evaluateJavaScript(PageAnalysisSnapshot.script, in: nil, contentWorld: Self.contentWorld)
-                guard let json = value as? String else { throw AnalysisError.message("Could not capture this page.") }
-                return try JSONDecoder().decode(PageAnalysisSnapshot.self, from: Data(json.utf8))
-            }
-            captureView.string = try snapshot.json()
-            hasCapture = true
-            selectInput()
+            let preview = try await generator.generate(in: webView, context: context)
+            guard requestID == identifier else { return }
+            outputView.string = try preview.action?.json() ?? "No action emitted (\(preview.status.rawValue)).\n\(preview.reason)\n\(preview.validation)"
+            outputView.scrollToBeginningOfDocument(nil)
+            hasOutput = true
             selectResult()
-            let modelInstructions = Instructions(PageAnalysisPIRPrompt.instructions)
-            let instructionTokens = try await runPhase("Instruction token count", identifier: identifier) {
-                try await model.tokenCount(for: modelInstructions)
-            }
-            let schemaTokens = try await runPhase("Schema token count", identifier: identifier) {
-                try await model.tokenCount(for: PageAnalysisPIRProposal.generationSchema)
-            }
-            let inputBudget = model.contextSize - instructionTokens - schemaTokens
-                - PageAnalysisPIRPrompt.maximumResponseTokens - PageAnalysisPIRPrompt.contextReserveTokens
-            var textPrompt = Prompt(try PageAnalysisPIRPrompt.request(snapshot: snapshot, context: context))
-            var inputTokens = try await runPhase("DOM text token count", identifier: identifier) {
-                try await model.tokenCount(for: textPrompt)
-            }
-            while inputTokens > inputBudget && !snapshot.elements.isEmpty {
-                try Task.checkCancellation()
-                snapshot.elements.removeLast(min(10, snapshot.elements.count))
-                textPrompt = Prompt(try PageAnalysisPIRPrompt.request(snapshot: snapshot, context: context))
-                inputTokens = try await runPhase("DOM text token count", identifier: identifier) {
-                    try await model.tokenCount(for: textPrompt)
-                }
-            }
-            guard inputTokens <= inputBudget else {
-                throw AnalysisError.message("The PIR context exceeds the model window. Supply a shorter action sequence.")
-            }
-            try Task.checkCancellation()
-            guard self.requestID == identifier else { return }
-            let evidence = try snapshot.json()
-            Self.logger.notice("[PageAnalysis] run=\(identifier.uuidString, privacy: .public) budget instructions=\(instructionTokens) schema=\(schemaTokens) prompt=\(inputTokens) context=\(model.contextSize) elements=\(snapshot.elements.count)")
-            self.captureView.string = evidence
-            self.diagnosticsView.string = "ANALYSIS INPUT\n\(evidence)"
-            let rendered = try await self.generateNextAction(webView: webView, url: url, snapshot: snapshot, context: context,
-                                                        model: model, inputBudget: inputBudget, identifier: identifier)
-            try Task.checkCancellation()
-            try await runPhase("Document validation after inference", identifier: identifier) {
-                try await self.validateDocument(webView, url: url, timeOrigin: snapshot.documentTimeOrigin)
-            }
-            guard self.requestID == identifier else { return }
-            self.outputView.string = rendered
-            self.outputView.scrollToBeginningOfDocument(nil)
-            self.hasOutput = true
-            self.selectResult()
-            self.statusLabel.stringValue = "Finished · \(snapshot.title). Generate again after changing the page or inputs."
-            Self.logger.notice("[PageAnalysis] run=\(identifier.uuidString, privacy: .public) completed")
+            statusLabel.stringValue = "Finished. Generate again after changing the page or inputs."
         } catch {
-            guard self.requestID == identifier, !Task.isCancelled else { return }
-            self.outputView.string = "No action generated.\n\n\(error.localizedDescription)"
-            self.hasOutput = true
-            self.selectResult()
-            self.diagnosticsView.string += "\n\nERROR\n\(error.localizedDescription)"
-            self.statusLabel.stringValue = "Generation failed. See the output for details."
-        }
-    }
-
-    private func runPhase<Value>(_ phase: String, identifier: UUID, operation: () async throws -> Value) async throws -> Value {
-        try Task.checkCancellation()
-        let started = ContinuousClock.now
-        statusLabel.stringValue = "\(phase)…"
-        Self.logger.notice("[PageAnalysis] run=\(identifier.uuidString, privacy: .public) phase=\(phase, privacy: .public) started")
-        do {
-            let value = try await operation()
-            try Task.checkCancellation()
-            let elapsed = String(describing: started.duration(to: .now))
-            Self.logger.notice("[PageAnalysis] run=\(identifier.uuidString, privacy: .public) phase=\(phase, privacy: .public) completed elapsed=\(elapsed, privacy: .public)")
-            return value
-        } catch {
-            try Task.checkCancellation()
-            let nsError = error as NSError
-            // Error messages can embed page text. Log only the domain/code; show details in the inspector.
-            Self.logger.error("[PageAnalysis] run=\(identifier.uuidString, privacy: .public) phase=\(phase, privacy: .public) failed domain=\(nsError.domain, privacy: .public) code=\(nsError.code)")
-            throw AnalysisError.message("\(phase): \(error.localizedDescription)")
-        }
-    }
-
-    private func generateNextAction(webView: WKWebView, url: URL, snapshot: PageAnalysisSnapshot, context: PageAnalysisPIRContext,
-                                    model: SystemLanguageModel, inputBudget: Int,
-                                    identifier: UUID) async throws -> String {
-        var feedback: String?
-        var attempts: [String] = []
-        var nextAction = "No action emitted."
-        for attempt in 1...2 {
-            try await validateDocument(webView, url: url, timeOrigin: snapshot.documentTimeOrigin)
-            // Retry in a fresh session so the first transcript does not consume the remaining context.
-            let request = try PageAnalysisPIRPrompt.request(snapshot: snapshot, context: context, feedback: feedback)
-            let prompt = Prompt(request)
-            let promptDiagnostics = "MODEL INSTRUCTIONS\n\(PageAnalysisPIRPrompt.instructions)\n\nMODEL REQUEST\n\(request)"
-            diagnosticsView.string = (attempts + [promptDiagnostics]).joined(separator: "\n\n")
-            let tokens = try await runPhase("PIR attempt token count", identifier: identifier) {
-                try await model.tokenCount(for: prompt)
-            }
-            guard tokens <= inputBudget else {
-                diagnosticsView.string += "\n\nRetry skipped: validation feedback exceeds the remaining input budget."
-                break
-            }
-            let session = LanguageModelSession(model: model, instructions: Instructions(PageAnalysisPIRPrompt.instructions))
-            let response = try await runPhase("PIR next-action generation (attempt \(attempt))", identifier: identifier) {
-                try await session.respond(to: prompt, generating: PageAnalysisPIRProposal.self,
-                                          options: GenerationOptions(samplingMode: .greedy, maximumResponseTokens: PageAnalysisPIRPrompt.maximumResponseTokens))
-            }
-            Self.logger.notice("[PageAnalysis] run=\(identifier.uuidString, privacy: .public) actualInputTokens=\(response.usage.input.totalTokenCount) actualOutputTokens=\(response.usage.output.totalTokenCount)")
-            try await validateDocument(webView, url: url, timeOrigin: snapshot.documentTimeOrigin)
-            let preview = try await runPhase("PIR action validation", identifier: identifier) {
-                try await self.validateProposal(response.content, snapshot: snapshot, context: context, webView: webView)
-            }
-            nextAction = try preview.action?.json() ?? "No action emitted (\(preview.status.rawValue)).\n\(preview.reason)\n\(preview.validation)"
-            attempts.append("ATTEMPT \(attempt)\n" + (try preview.json()))
-            // Preserve the first rejection even if the repair is canceled or fails.
-            diagnosticsView.string = "PIR DRY RUN — NOTHING EXECUTED\n\n" + (attempts + [promptDiagnostics]).joined(separator: "\n\n")
-            guard attempt == 1, preview.status == .rejected else { break }
-            do {
-                if response.content.kind == .configuredAction {
-                    _ = try PageAnalysisPIRActionBuilder.configuredPayload(response.content, context: context)
-                } else {
-                    _ = try PageAnalysisPIRActionBuilder.validate(response.content, snapshot: snapshot, context: context)
-                }
-                break // Live target changed or PIR decoding failed: retrying stale evidence cannot fix that.
-            } catch {
-                feedback = "Rejected kind=\(response.content.kind), elementID=\(response.content.elementID.prefix(30)), "
-                    + "binding=\(response.content.binding), configuredActionID=\(response.content.configuredActionID.prefix(60)): "
-                    + String(error.localizedDescription.prefix(240))
-                    + " Choose a different eligible candidate or pause. Do not repeat the rejected action."
-            }
-        }
-        return nextAction
-    }
-
-    private func validateProposal(_ proposal: PageAnalysisPIRProposal, snapshot: PageAnalysisSnapshot,
-                                  context: PageAnalysisPIRContext, webView: WKWebView) async throws -> PageAnalysisPIRPreview {
-        guard proposal.kind == .fillForm || proposal.kind == .click else {
-            return PageAnalysisPIRActionBuilder.preview(proposal, snapshot: snapshot, context: context, target: nil)
-        }
-        do {
-            _ = try PageAnalysisPIRActionBuilder.validate(proposal, snapshot: snapshot, context: context)
-            let script = try PageAnalysisSnapshot.targetValidationScript(captureID: snapshot.captureID, elementID: proposal.elementID)
-            let value = try await webView.evaluateJavaScript(script, in: nil, contentWorld: Self.contentWorld)
-            guard let json = value as? String else {
-                throw PageAnalysisPIRValidationError.message("The captured document or target expired. Analyze again.")
-            }
-            let target = try JSONDecoder().decode(PageAnalysisPIRActionBuilder.Target.self, from: Data(json.utf8))
-            return PageAnalysisPIRActionBuilder.preview(proposal, snapshot: snapshot, context: context, target: target)
-        } catch {
-            try Task.checkCancellation()
-            return PageAnalysisPIRActionBuilder.preview(proposal, snapshot: snapshot, context: context,
-                                                            target: nil, rejection: error.localizedDescription)
-        }
-    }
-
-    private func validateDocument(_ webView: WKWebView, url: URL, timeOrigin: Double) async throws {
-        try Task.checkCancellation()
-        let currentTimeOrigin = try await webView.evaluateJavaScript("performance.timeOrigin", in: nil, contentWorld: Self.contentWorld) as? Double
-        guard !webView.isLoading, webView.url == url, currentTimeOrigin == timeOrigin else {
-            throw AnalysisError.message("The page navigated during analysis. Analyze it again.")
+            guard requestID == identifier, !Task.isCancelled else { return }
+            outputView.string = "No action generated.\n\n\(error.localizedDescription)"
+            hasOutput = true
+            selectResult()
+            diagnosticsView.string += "\n\nERROR\n\(error.localizedDescription)"
+            statusLabel.stringValue = "Generation failed. See the output for details."
         }
     }
 
@@ -574,14 +435,5 @@ private final class PageAnalysisWindowController: NSWindowController, NSWindowDe
         selectResult()
     }
 
-    private enum AnalysisError: LocalizedError {
-        case message(String)
-
-        var errorDescription: String? {
-            switch self {
-            case .message(let message): return message
-            }
-        }
-    }
 }
 #endif

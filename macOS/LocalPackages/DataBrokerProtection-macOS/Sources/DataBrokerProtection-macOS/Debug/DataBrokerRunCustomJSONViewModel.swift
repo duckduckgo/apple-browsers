@@ -182,6 +182,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var presetsText: String = ""
     @Published var presets: [ProfilePreset] = []
     @Published var usesConfiguredTimeouts = true
+#if DEBUG
+    @Published var usesModelRecovery = false
+    var recoveryFactory: (@MainActor () -> DebugPIRRecoverySession)?
+#endif
 
     var alert: AlertUI?
     var selectedDataBroker: DataBroker?
@@ -351,6 +355,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 executionConfig: self.brokerJobExecutionConfig,
                                 shouldRunNextStep: { true }
                             )
+#if DEBUG
+                            runner.debugRecovery = usesModelRecovery ? recoveryFactory?() : nil
+#endif
                             let extractedProfiles = try await self.withOptionalTimeout(scanTimeout) {
                                 try await runner.scan(showWebView: true) { true }
                             }
@@ -453,6 +460,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     shouldRunNextStep: { true }
                 )
 
+#if DEBUG
+                runner.debugRecovery = usesModelRecovery ? recoveryFactory?() : nil
+#endif
                 try await self.withOptionalTimeout(optOutTimeout) {
                     try await runner.optOut(extractedProfile: scanResult.extractedProfile,
                                             showWebView: true) { true }
@@ -604,7 +614,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             timestamp: Date(),
             kind: kind,
             profileQueryLabel: profileQueryLabel,
-            summary: summary,
+            summary: details.hasPrefix("[PIR Recovery]") ? String(details.prefix(while: { $0 != "\n" })) : summary,
             details: details
         )
         Task { @MainActor in

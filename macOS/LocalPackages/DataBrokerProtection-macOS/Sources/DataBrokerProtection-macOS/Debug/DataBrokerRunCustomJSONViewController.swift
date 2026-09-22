@@ -38,12 +38,18 @@ public final class DataBrokerRunCustomJSONViewController: NSViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+#if DEBUG
+    public var recoveryFactory: (@MainActor () -> DebugPIRRecoverySession)?
+#endif
+
     public override func loadView() {
-        let contentView = DataBrokerRunCustomJSONView(
-            viewModel: DataBrokerRunCustomJSONViewModel(authenticationManager: authenticationManager,
-                                                        featureFlagger: featureFlagger,
-                                                        applicationNameForUserAgentProvider: applicationNameForUserAgentProvider)
-        )
+        let viewModel = DataBrokerRunCustomJSONViewModel(authenticationManager: authenticationManager,
+                                                       featureFlagger: featureFlagger,
+                                                       applicationNameForUserAgentProvider: applicationNameForUserAgentProvider)
+#if DEBUG
+        viewModel.recoveryFactory = recoveryFactory
+#endif
+        let contentView = DataBrokerRunCustomJSONView(viewModel: viewModel)
         let hostingController = NSHostingController(rootView: contentView)
         hostingController.view.autoresizingMask = [.width, .height]
         self.view = hostingController.view

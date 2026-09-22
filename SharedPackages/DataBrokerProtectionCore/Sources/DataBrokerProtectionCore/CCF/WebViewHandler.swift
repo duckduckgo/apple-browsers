@@ -25,6 +25,10 @@ import Common
 import os.log
 
 public protocol WebViewHandler: NSObject {
+#if DEBUG
+    /// The existing job web view, exposed only for debug page inspection. No separate web view is created.
+    @MainActor var webViewForInspection: WKWebView? { get }
+#endif
     func initializeWebView(showWebView: Bool) async
     func load(url: URL) async throws
     func takeSnaphost(path: String, fileName: String) async throws
@@ -36,6 +40,12 @@ public protocol WebViewHandler: NSObject {
     func setCookies(_ cookies: [HTTPCookie]) async
 }
 
+#if DEBUG
+public extension WebViewHandler {
+    @MainActor var webViewForInspection: WKWebView? { nil }
+}
+#endif
+
 @MainActor
 public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
     private var activeContinuation: CheckedContinuation<Void, Error>?
@@ -46,6 +56,10 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     private var userContentController: DataBrokerUserContentController?
 
     private var webView: WebView?
+
+#if DEBUG
+    public var webViewForInspection: WKWebView? { webView }
+#endif
 
 #if os(macOS)
     private var urlObservation: NSKeyValueObservation?

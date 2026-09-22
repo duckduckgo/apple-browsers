@@ -24,8 +24,16 @@ import SwiftUI
 struct RedesignedFavoritesView: View {
     @ObservedObject var model: FavoritesViewModel
     @State private var isExpanded = false
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: 5)
-    private let collapsedCount = 10
+    @State private var availableWidth: CGFloat = 0
+    @ScaledMetric(relativeTo: .caption) private var minimumTileWidth: CGFloat = 64
+
+    private var columnCount: Int {
+        RedesignedNewTabPageLayout.favoriteColumnCount(width: availableWidth, minimumTileWidth: minimumTileWidth)
+    }
+    private var columns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: columnCount)
+    }
+    private var collapsedCount: Int { columnCount * 2 }
 
     private var hasOverflow: Bool { model.allFavorites.count > collapsedCount }
 
@@ -77,7 +85,20 @@ struct RedesignedFavoritesView: View {
                     .buttonStyle(.plain)
                 }
             }
-
+            .background {
+                GeometryReader { geometry in
+                    Color.clear.preference(key: FavoritesWidthPreferenceKey.self, value: geometry.size.width)
+                }
+            }
+            .onPreferenceChange(FavoritesWidthPreferenceKey.self) { availableWidth = $0 }
         }
+    }
+}
+
+private struct FavoritesWidthPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat { 0 }
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }

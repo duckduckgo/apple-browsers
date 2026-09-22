@@ -56,6 +56,9 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         return view
     }()
 
+    private let contentRegionGuide = UILayoutGuide()
+    private var contentRegionConstraints: [NSLayoutConstraint] = []
+
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.alwaysBounceVertical = true
@@ -116,8 +119,22 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
 
-        let isLandscape = view.bounds.width > view.bounds.height
-        contentTopConstraint.constant = isLandscape ? Metrics.customizeButtonTopMargin : Metrics.portraitContentTopInset
+        let available = view.bounds.inset(by: view.safeAreaInsets)
+        let frame = RedesignedNewTabPageLayout.contentFrame(
+            in: available,
+            avoiding: RedesignedNewTabPageLayout.activeReservedFrames(in: view),
+            prefersTrailing: view.effectiveUserInterfaceLayoutDirection == .rightToLeft)
+        let values = [frame.minX, frame.minY, frame.width, frame.height]
+        for (constraint, value) in zip(contentRegionConstraints, values) where constraint.constant != value {
+            constraint.constant = value
+        }
+        let hasLimitedHeight = frame.width > frame.height || frame.height < 500
+        contentTopConstraint.constant = hasLimitedHeight ? Metrics.customizeButtonTopMargin : Metrics.portraitContentTopInset
+    }
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        view.setNeedsLayout()
     }
 
     @objc private func customizeButtonTapped() {
@@ -175,6 +192,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
 
     private func addSubviews() {
         view.addSubview(contentContainerView)
+        contentContainerView.addLayoutGuide(contentRegionGuide)
+        contentRegionConstraints = [
+            contentRegionGuide.leftAnchor.constraint(equalTo: contentContainerView.leftAnchor),
+            contentRegionGuide.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
+            contentRegionGuide.widthAnchor.constraint(equalToConstant: 0),
+            contentRegionGuide.heightAnchor.constraint(equalToConstant: 0)
+        ]
+        NSLayoutConstraint.activate(contentRegionConstraints)
         contentContainerView.addSubview(scrollView)
         scrollView.addSubview(blocksStackView)
         contentContainerView.addSubview(customizeButton)
@@ -190,10 +215,11 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
             contentContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             contentContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
-            scrollView.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: contentRegionGuide.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: contentRegionGuide.bottomAnchor),
+            // The usable region includes safe areas and, on Duo, active camera/fold clearance.
+            scrollView.leadingAnchor.constraint(equalTo: contentRegionGuide.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: contentRegionGuide.trailingAnchor),
 
             contentTopConstraint,
             blocksStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
@@ -204,9 +230,9 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
             // thing that can make the page scroll.
             blocksStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
 
-            customizeButton.topAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.topAnchor,
+            customizeButton.topAnchor.constraint(equalTo: contentRegionGuide.topAnchor,
                                                  constant: Metrics.customizeButtonTopMargin),
-            customizeButton.trailingAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.trailingAnchor,
+            customizeButton.trailingAnchor.constraint(equalTo: contentRegionGuide.trailingAnchor,
                                                       constant: -Metrics.customizeButtonTrailingMargin),
             customizeButton.widthAnchor.constraint(equalToConstant: Metrics.customizeButtonSize),
             customizeButton.heightAnchor.constraint(equalToConstant: Metrics.customizeButtonSize)

@@ -335,21 +335,19 @@ extension Preferences {
                 }
 
                 // SECTION: Permissions
-                if featureFlagger.isFeatureOn(.autoplayPolicy) {
-                    PreferencePaneSection(UserText.permissionsSection) {
-                        PreferencePaneSubSection {
-                            HStack {
-                                Picker(UserText.autoplayLabel, selection: $autoplayModel.autoplayBlockingMode) {
-                                    ForEach(AutoplayBlockingMode.allCases, id: \.self) { mode in
-                                        Text(mode.description).tag(mode)
-                                    }
+                PreferencePaneSection(UserText.permissionsSection) {
+                    PreferencePaneSubSection {
+                        HStack {
+                            Picker(UserText.autoplayLabel, selection: $autoplayModel.autoplayBlockingMode) {
+                                ForEach(AutoplayBlockingMode.allCases, id: \.self) { mode in
+                                    Text(mode.description).tag(mode)
                                 }
                             }
-                            TextMenuItemCaption(UserText.autoplayCaption)
                         }
+                        TextMenuItemCaption(UserText.autoplayCaption)
                     }
-                    .id(PreferencesScrollAnchor.permissions)
                 }
+                .id(PreferencesScrollAnchor.permissions)
             }
             .sheet(isPresented: isPresentingAddToDockDemoVideo) {
                 PreferencesVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,

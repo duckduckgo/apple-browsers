@@ -28,7 +28,8 @@ public struct SitePermissionsSheetView: View {
 
     private enum Constants {
         static let horizontalPadding: CGFloat = 16
-        static let topPadding: CGFloat = 14
+        // 17pt grabber area + 20pt title gap, minus the 12pt inset from centering the title beside the 44pt close button.
+        static let topPadding: CGFloat = 25
         static let headerSpacing: CGFloat = 12
         static let bottomPadding: CGFloat = 12
         static let closeButtonTapTarget: CGFloat = 44

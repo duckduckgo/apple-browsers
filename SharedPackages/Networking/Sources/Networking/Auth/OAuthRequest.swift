@@ -321,6 +321,10 @@ public struct OAuthRequest {
         return OAuthRequest(apiRequest: request)
     }
 
+    /// Refresh tokens rotate on every use, but the backend keeps the just-consumed refresh token valid for a ~1h grace
+    /// period so a retried request after a lost/failed response reuses the same token instead of being rejected.
+    /// See: Tech Design "Chromium: Token ownership, lifecycle and refresh" (Asana task 1218002294983304).
+    /// https://dub.duckduckgo.com/duckduckgo/ddg/blob/main/components/auth/docs/AuthAPIV2Documentation.md#access-token
     static func refreshAccessToken(baseURL: URL, clientID: String, refreshToken: String) -> OAuthRequest? {
         guard clientID.isEmpty == false,
               refreshToken.isEmpty == false else { return nil }
@@ -334,7 +338,8 @@ public struct OAuthRequest {
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .get,
                                          queryItems: queryItems,
-                                         timeoutInterval: 20.0) else {
+                                         timeoutInterval: 20.0,
+                                         retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
         return OAuthRequest(apiRequest: request)

@@ -865,7 +865,6 @@ extension Pixel {
         case remoteMessageShown
         case remoteMessageShownUnique
         case remoteMessageDismissed
-        case remoteMessageAutoDismissed
         case remoteMessageActionClicked
         case remoteMessagePrimaryActionClicked
         case remoteMessageSecondaryActionClicked
@@ -2857,7 +2856,6 @@ extension Pixel.Event {
         case .remoteMessageShown: return "m_remote_message_shown"
         case .remoteMessageShownUnique: return "m_remote_message_shown_unique"
         case .remoteMessageDismissed: return "m_remote_message_dismissed"
-        case .remoteMessageAutoDismissed: return "m_remote_message_auto_dismissed"
         case .remoteMessageActionClicked: return "m_remote_message_action_clicked"
         case .remoteMessagePrimaryActionClicked: return "m_remote_message_primary_action_clicked"
         case .remoteMessageSecondaryActionClicked: return "m_remote_message_secondary_action_clicked"

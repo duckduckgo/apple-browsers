@@ -276,6 +276,7 @@
 		36F6195C2F68657100CBF121 /* DataClearingPixelsReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F6195B2F68657100CBF121 /* DataClearingPixelsReporterTests.swift */; };
 		36F619602F686F3300CBF121 /* DataClearingWideEventServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F6195F2F686F3300CBF121 /* DataClearingWideEventServiceTests.swift */; };
 		3712091E2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3712091D2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* RemoteMessageAutoDismissedPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5B /* RemoteMessageAutoDismissedPixel.swift */; };
 		373608902ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3736088F2ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift */; };
 		373608932ABB432600629E7F /* FavoritesDisplayMode+UserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373608912ABB430D00629E7F /* FavoritesDisplayMode+UserDefaults.swift */; };
 		374E76062EF56B3900F8AADE /* BrowserServicesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 374E76052EF56B3900F8AADE /* BrowserServicesKit */; };
@@ -2870,6 +2871,7 @@
 		36F6195B2F68657100CBF121 /* DataClearingPixelsReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixelsReporterTests.swift; sourceTree = "<group>"; };
 		36F6195F2F686F3300CBF121 /* DataClearingWideEventServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingWideEventServiceTests.swift; sourceTree = "<group>"; };
 		3712091D2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingStoreErrorHandling.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5B /* RemoteMessageAutoDismissedPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessageAutoDismissedPixel.swift; sourceTree = "<group>"; };
 		372A0FEF2B2389590033BF7F /* SyncMetricsEventsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMetricsEventsHandler.swift; sourceTree = "<group>"; };
 		3736088F2ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesDisplayModeStorage.swift; sourceTree = "<group>"; };
 		373608912ABB430D00629E7F /* FavoritesDisplayMode+UserDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FavoritesDisplayMode+UserDefaults.swift"; sourceTree = "<group>"; };
@@ -9083,6 +9085,7 @@
 				C1B7B52128941F2A0098FD6A /* RemoteMessagingClient.swift */,
 				3768D8462C2CC98C004120AE /* RemoteMessagingConfigMatcherProvider.swift */,
 				3712091D2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift */,
+				A1B2C3D4E5F60718293A4B5B /* RemoteMessageAutoDismissedPixel.swift */,
 			);
 			name = RemoteMessaging;
 			sourceTree = "<group>";
@@ -12821,6 +12824,7 @@
 				C1EA86602C74CB6C00E8604D /* SyncPromoView.swift in Sources */,
 				1E4FAA6627D8DFC800ADC5B3 /* CompleteDownloadRowViewModel.swift in Sources */,
 				3712091E2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* RemoteMessageAutoDismissedPixel.swift in Sources */,
 				C14C7EB02EF2A9C200ABCDC0 /* AIChatContextualQuickAction.swift in Sources */,
 				83004E862193E5ED00DA013C /* TabViewControllerMenuBuilderExtension.swift in Sources */,
 				D6AD810C260500010000A0A1 /* YouTubeAdBlockPicker.swift in Sources */,

@@ -51,7 +51,7 @@ public final class RemoteMessageAutoDismissEventHandling: EventMapping<RemoteMes
         super.init { event, _, _, _ in
             switch event {
             case .messageAutoDismissed(let messageID):
-                Pixel.fire(pixel: .remoteMessageAutoDismissed, withAdditionalParameters: [PixelParameters.message: messageID])
+                PixelKit.fire(RemoteMessageAutoDismissedPixel.messageAutoDismissed(messageID: messageID))
             }
         }
     }

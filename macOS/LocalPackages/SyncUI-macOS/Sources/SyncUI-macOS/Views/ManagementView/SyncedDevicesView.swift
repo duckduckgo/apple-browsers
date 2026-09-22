@@ -63,7 +63,7 @@ struct SyncedDeviceIcon: View {
             return .syncedDeviceDesktop
         case .mobile:
             return .syncedDeviceMobile
-        case .thirdParty:
+        case .thirdParty, .unknown:
             return .syncAllDevices
         }
     }
@@ -76,6 +76,8 @@ struct SyncedDeviceIcon: View {
             return "SyncSettings.syncedDevice.mobile"
         case .thirdParty:
             return "SyncSettings.syncedDevice.thirdParty"
+        case .unknown:
+            return "SyncSettings.syncedDevice.unknown"
         }
     }
 

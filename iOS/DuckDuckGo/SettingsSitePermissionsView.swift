@@ -191,7 +191,7 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
             ($0, store.globalDefault(for: $0))
         })
         siteRecords = Dictionary(uniqueKeysWithValues: store.storedSites.compactMap { site in
-            let permissions = store.permissions(for: site).filter { $0.value != .ask }
+            let permissions = store.permissions(for: site)
             return permissions.isEmpty ? nil : (site, permissions)
         })
         storedSites = siteRecords.keys.sorted {

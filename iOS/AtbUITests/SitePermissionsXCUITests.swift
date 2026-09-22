@@ -408,19 +408,40 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertResult("tracks video=0 audio=0")
     }
 
-    func testWhenSiteHasAskAndPermanentDecisionsThenSettingsShowsOnlyPermanentRows() {
-        launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = allow; microphone = ask; }; }")
+    func testWhenSavedPermissionsAreResetToAskThenSettingsKeepsExplicitDecisions() {
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = allow; microphone = deny; }; }")
         openPermissionPage()
         openPermissionsSheet()
         assertSheetDecision("Camera", contains: "Always Allow")
+        assertSheetDecision("Microphone", contains: "Never Allow")
+        tap(element("SitePermissions.Sheet.Microphone"))
+        tap(app.buttons["Ask Each Time"])
         assertSheetDecision("Microphone", contains: "Ask Each Time")
         tap(element("SitePermissions.Sheet.Close"))
         openPermissionSettings()
         tap(element("Settings.SitePermissions.Site.127.0.0.1"))
 
         XCTAssertTrue(element("Settings.SitePermissions.Site.camera").waitForExistence(timeout: timeout))
-        XCTAssertFalse(element("Settings.SitePermissions.Site.microphone").exists)
+        XCTAssertEqual(element("Settings.SitePermissions.Site.camera").value as? String, "Always Allow")
+        XCTAssertEqual(element("Settings.SitePermissions.Site.microphone").value as? String, "Ask Each Time")
         XCTAssertFalse(element("Settings.SitePermissions.Site.geolocation").exists)
+
+        let cameraPicker = element("Settings.SitePermissions.Site.camera").buttons.firstMatch
+        XCTAssertTrue(cameraPicker.waitForExistence(timeout: timeout))
+        cameraPicker.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        tap(app.buttons["Ask Each Time"])
+        XCTAssertEqual(element("Settings.SitePermissions.Site.camera").value as? String, "Ask Each Time")
+        tap(app.navigationBars.buttons["Site Permissions"])
+        tap(element("Settings.SitePermissions.Site.127.0.0.1"))
+        XCTAssertEqual(element("Settings.SitePermissions.Site.camera").value as? String, "Ask Each Time")
+        XCTAssertEqual(element("Settings.SitePermissions.Site.microphone").value as? String, "Ask Each Time")
+        XCTAssertFalse(element("Settings.SitePermissions.Site.geolocation").exists)
+        tap(app.navigationBars.buttons["Site Permissions"])
+        closeSettings()
+        openPermissionsSheet()
+        assertSheetDecision("Camera", contains: "Ask Each Time")
+        assertSheetDecision("Microphone", contains: "Ask Each Time")
+        XCTAssertFalse(element("SitePermissions.Sheet.Geolocation").exists)
     }
 
     func testWhenFlagIsOffThenCombinedMediaUsesWebKitDespiteSavedDenials() {

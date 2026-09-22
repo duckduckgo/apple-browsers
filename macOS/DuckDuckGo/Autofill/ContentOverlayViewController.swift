@@ -21,17 +21,17 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import enum UserScript.UserScriptError
 import FoundationExtensions
 import PixelKit
 import PrivacyConfig
 import SecureStorage
 import WebKit
-import enum UserScript.UserScriptError
 
 @MainActor
 public final class ContentOverlayViewController: NSViewController, EmailManagerRequestDelegate {
 
-    @IBOutlet var webView: WKWebView!
+    var webView: WKWebView!
     private var topAutofillUserScript: OverlayAutofillUserScript?
     private var appearanceCancellable: AnyCancellable?
 
@@ -62,8 +62,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         return model
     }()
 
-    init?(
-        coder: NSCoder,
+    init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         featureFlagger: FeatureFlagger,
@@ -75,11 +74,11 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         self.featureFlagger = featureFlagger
         self.tld = tld
         self.pinningManager = pinningManager
-        super.init(coder: coder)
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        fatalError("\(type(of: self)): Bad initializer")
     }
 
     lazy var passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
@@ -91,6 +90,10 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     private let pinningManager: PinningManager
 
     lazy var usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
+
+    public override func loadView() {
+        view = NSView(frame: .zero)
+    }
 
     public override func viewDidLoad() {
         initWebView()

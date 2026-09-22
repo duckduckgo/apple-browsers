@@ -20,6 +20,7 @@ import Navigation
 @_spi(Testing) import PixelKit
 import PrivacyConfig
 @_spi(Testing) import SharedTestUtilities
+import WebExtensions
 import WebKit
 import XCTest
 
@@ -52,5 +53,44 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
 
         // No pixel should be fired for a navigation that never started loading.
         pixelMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    /// A redirect replaces `navigationAction`, but CPM attribution must continue to describe the
+    /// logical navigation's initiating action.
+    @MainActor
+    func testCPMNavigationKindUsesInitialSessionRestorationActionAfterRedirect() {
+        let webView = WKWebView()
+        let frame = FrameInfo.mainFrame(for: webView)
+        let initialAction = NavigationAction(
+            request: URLRequest(url: URL(string: "https://example.com/restored")!),
+            navigationType: .sessionRestoration,
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: false,
+            sourceFrame: frame,
+            targetFrame: frame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+        let redirectAction = NavigationAction(
+            request: URLRequest(url: URL(string: "https://example.com/redirected")!),
+            navigationType: .redirect(.server),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: [initialAction],
+            isUserInitiated: false,
+            sourceFrame: frame,
+            targetFrame: frame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+        let navigation = Navigation(
+            identity: NavigationIdentity(nil),
+            responders: ResponderChain(responderRefs: []),
+            state: .started,
+            redirectHistory: [initialAction, redirectAction],
+            isCurrent: true
+        )
+
+        XCTAssertEqual(navigation.cpmMessagingNavigationKind, .sessionRestoration)
     }
 }

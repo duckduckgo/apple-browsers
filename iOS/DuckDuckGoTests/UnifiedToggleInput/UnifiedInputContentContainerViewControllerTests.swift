@@ -65,7 +65,6 @@ private final class MockUnifiedInputSwitchBarHandler: SwitchBarHandling {
     var currentText: String = ""
     var currentToggleState: TextEntryMode = .search
     var isVoiceSearchEnabled = false
-    var isAIVoiceChatEnabled = false
     var hasUserInteractedWithText = false
     var isCurrentTextValidURL = false
     var buttonState: SwitchBarButtonState = .noButtons

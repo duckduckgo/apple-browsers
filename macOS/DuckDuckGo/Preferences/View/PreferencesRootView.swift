@@ -26,6 +26,7 @@ import SwiftUIExtensions
 import SyncUI_macOS
 import PrivacyConfig
 import PixelKit
+import WideEvent
 import Subscription
 import SubscriptionUI
 import AIChat
@@ -49,9 +50,18 @@ enum Preferences {
     }
 
     struct RootViewV2: View {
+        private struct ScrollViewID: Hashable {
+            enum DetailPane: Hashable {
+                case websitePermission(WebsitePermissionCategory)
+            }
+
+            let pane: PreferencePaneIdentifier
+            let detailPane: DetailPane?
+        }
 
         @ObservedObject var model: PreferencesSidebarModel
         @ObservedObject var themeManager: ThemeManager
+        @StateObject private var websitePermissionsModel: WebsitePermissionsViewModel
 
         var purchaseSubscriptionModel: PreferencesPurchaseSubscriptionModel?
         var personalInformationRemovalModel: PreferencesPersonalInformationRemovalModel?
@@ -72,6 +82,18 @@ enum Preferences {
             themeManager.theme.colorsProvider
         }
 
+        private var scrollViewID: ScrollViewID {
+            let detailPane: ScrollViewID.DetailPane?
+            switch model.selectedPane {
+            case .websitePermissions:
+                detailPane = websitePermissionsModel.viewState.detailModel.map { .websitePermission($0.viewState.category) }
+            default:
+                detailPane = nil
+            }
+
+            return ScrollViewID(pane: model.selectedPane, detailPane: detailPane)
+        }
+
         init(
             model: PreferencesSidebarModel,
             subscriptionManager: SubscriptionManager,
@@ -80,6 +102,7 @@ enum Preferences {
             aiChatURLSettings: AIChatRemoteSettingsProvider,
             wideEvent: WideEventManaging,
             pinningManager: PinningManager,
+            permissionManager: PermissionManagerProtocol,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
@@ -94,6 +117,8 @@ enum Preferences {
             self.themeManager = themeManager
             self.aiChatURLSettings = aiChatURLSettings
             self.wideEvent = wideEvent
+            self._websitePermissionsModel = StateObject(wrappedValue: WebsitePermissionsViewModel(permissionManager: permissionManager,
+                                                                                                 featureFlagger: featureFlagger))
             self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
             self.blackFridayCampaignProvider = blackFridayCampaignProvider
             self.pixelHandler = pixelHandler
@@ -120,6 +145,7 @@ enum Preferences {
                             Spacer()
                         }
                     }
+                    .id(scrollViewID)
                     .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
                     .accessibilityIdentifier("Settings.ScrollView")
                     // `onReceive`, not `onChange`: a deep-linked request lands before this view's first body
@@ -133,11 +159,15 @@ enum Preferences {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(colorsProvider.settingsBackgroundColor))
             .environment(\.designSystemPalette, themeManager.designColorPalette)
+            .onChange(of: model.selectedPane) { selectedPane in
+                guard selectedPane != .websitePermissions else { return }
+                websitePermissionsModel.send(action: .closeDetail)
+            }
         }
 
         private func scroll(_ proxy: ScrollViewProxy, to anchor: PreferencesScrollAnchor) {
             DispatchQueue.main.async {
-                proxy.scrollTo(anchor, anchor: nil)
+                proxy.scrollTo(anchor, anchor: .top)
                 model.resetScrollRequest()
             }
         }
@@ -199,6 +229,8 @@ enum Preferences {
                     AccessibilityView(model: model.accessibilityPreferences)
                 case .duckPlayer:
                     DuckPlayerView(model: model.duckPlayerPreferences)
+                case .websitePermissions:
+                    PreferencesWebsitePermissionsView(model: websitePermissionsModel)
                 case .otherPlatforms:
                     // Opens a new tab
                     Spacer()
@@ -211,6 +243,7 @@ enum Preferences {
             .frame(maxWidth: Const.paneContentWidth, maxHeight: .infinity, alignment: .topLeading)
             .padding(.vertical, Const.panePaddingVertical)
             .padding(.horizontal, Const.panePaddingHorizontal)
+            .id(PreferencesScrollAnchor.top)
         }
 
         private func makePurchaseSubscriptionViewModel() -> PreferencesPurchaseSubscriptionModel {
@@ -407,4 +440,5 @@ enum Preferences {
             }
         }
     }
+
 }

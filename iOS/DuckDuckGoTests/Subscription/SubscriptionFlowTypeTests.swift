@@ -18,6 +18,10 @@
 //
 
 import XCTest
+import BrowserServicesKit
+import Common
+import Subscription
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 
 final class SubscriptionFlowTypeTests: XCTestCase {
@@ -75,4 +79,47 @@ final class SubscriptionFlowTypeTests: XCTestCase {
         // Then
         XCTAssertNil(flowType.impressionPixel)
     }
+}
+
+final class SubscribeFlowInitialURLBuilderTests: XCTestCase {
+
+    private let purchaseURL = URL(string: "https://duckduckgo.com/subscriptions")!
+    private let performanceOptimizedPaywallURL = URL(string: "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=false")!
+    private let performanceOptimizedPaywalls = MockPerformanceOptimizedPaywallsProvider()
+
+    func testWhenPerformanceOptimizedPaywallsAreEnabledAndUserIsNotSubscribedThenReturnsPerformanceOptimizedPaywallURL() {
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.resultURL = purchaseURL
+
+        let initialURL = SubscribeFlowInitialURLBuilder.makeInitialURL(
+            redirectURLComponents: nil,
+            landingURL: nil,
+            subscriptionManager: subscriptionManager,
+            tld: TLD(),
+            performanceOptimizedPaywalls: performanceOptimizedPaywalls
+        )
+
+        XCTAssertEqual(initialURL, performanceOptimizedPaywallURL)
+    }
+
+    func testWhenPerformanceOptimizedPaywallsAreEnabledAndUserIsSubscribedThenReturnsLegacyPurchaseURL() {
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.resultURL = purchaseURL
+        subscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable))
+
+        let initialURL = SubscribeFlowInitialURLBuilder.makeInitialURL(
+            redirectURLComponents: nil,
+            landingURL: nil,
+            subscriptionManager: subscriptionManager,
+            tld: TLD(),
+            performanceOptimizedPaywalls: performanceOptimizedPaywalls
+        )
+
+        XCTAssertEqual(initialURL, purchaseURL)
+    }
+}
+
+private struct MockPerformanceOptimizedPaywallsProvider: PerformanceOptimizedPaywallsProviding {
+    let isEnabled = true
+    let paths = SubscriptionURL.PerformanceOptimizedPaywallPaths.default
 }

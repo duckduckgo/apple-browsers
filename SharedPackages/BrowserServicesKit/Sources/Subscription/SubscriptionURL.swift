@@ -158,7 +158,7 @@ extension SubscriptionURL {
             url = url.appendingParameter(name: AttributionParameter.origin, value: origin)
         }
         if let featurePage = featurePage {
-            url = url.appendingParameter(name: "featurePage", value: featurePage)
+            url = url.appendingParameter(name: QueryParameter.featurePage, value: featurePage)
         }
         return URLComponents(url: url, resolvingAgainstBaseURL: false)
     }
@@ -204,6 +204,19 @@ extension SubscriptionURL {
     public enum FeaturePage {
         public static let winback = "winback"
     }
+
+    /// Query item names the subscription pages read off the URL they are opened with.
+    enum QueryParameter {
+        static let featurePage = "featurePage"
+        /// Whether the user is eligible for a free trial. Always stated on a pre-rendered paywall.
+        static let trial = "trial"
+        /// Only ever `false`, and only when the offering excludes Personal Information Removal.
+        static let personalInformationRemoval = "pir"
+
+        /// The names a pre-rendered paywall URL states for itself, and so drops from the URL it is
+        /// built from. Every other query item is carried over.
+        static let rewritten = [featurePage, trial, personalInformationRemoval]
+    }
 }
 
 fileprivate extension URL {
@@ -229,7 +242,14 @@ extension URL {
         if let queryItems = components.queryItems, !queryItems.isEmpty {
             // `experiment_mobileannualtrials2_ios` is the monthly free-trial experiment cohort param;
             // like `origin` it's appended to loaded URLs and must be ignored when matching screens.
-            components.queryItems = queryItems.filter { !["environment", "origin", "using", "experiment_mobileannualtrials2_ios"].contains($0.name) }
+            // `trial` and `pir` pick what a pre-rendered paywall reveals, not which page it is.
+            let ignoredNames = ["environment",
+                                "origin",
+                                "using",
+                                "experiment_mobileannualtrials2_ios",
+                                SubscriptionURL.QueryParameter.trial,
+                                SubscriptionURL.QueryParameter.personalInformationRemoval]
+            components.queryItems = queryItems.filter { !ignoredNames.contains($0.name) }
             if components.queryItems?.isEmpty ?? true {
                 components.queryItems = nil
             }

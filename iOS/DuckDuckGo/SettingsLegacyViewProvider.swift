@@ -32,6 +32,7 @@ import AIChat
 import DataBrokerProtection_iOS
 import Subscription
 import WebExtensions
+import PixelKit
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -243,7 +244,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         case .legacy(let importScreen):
             return makeDataImportViewController(importScreen: importScreen, delegate: delegate)
         case .hub:
-            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: importScreen.importHubEntryPointParameters)
+            PixelKit.fire(Pixel.Event.importHubEntryTapped, options: .parameters(importScreen.importHubEntryPointParameters))
             return DataImportHubViewController(syncService: syncService,
                                                 keyValueStore: keyValueStore,
                                                 bookmarksDatabase: bookmarksDatabase,

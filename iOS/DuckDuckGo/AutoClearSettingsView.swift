@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import Core
 import DuckUI
+import PixelKit
 
 struct AutoClearSettingsView: View {
     
@@ -40,7 +41,7 @@ struct AutoClearSettingsView: View {
                                     viewModel: settingsViewModel)
         .modifier(ScrollBounceBehaviorModifier())
         .onFirstAppear {
-            Pixel.fire(pixel: .settingsDataClearingClearDataOpen)
+            PixelKit.fire(Pixel.Event.settingsDataClearingClearDataOpen)
         }
         .onDisappear {
             viewModel.onViewDismiss()

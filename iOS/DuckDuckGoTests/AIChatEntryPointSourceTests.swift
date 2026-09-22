@@ -72,16 +72,32 @@ struct AIChatEntryPointSourceTests {
     @available(iOS 16, *)
     @Test("A front-end open request from the search results page resolves to serp", .timeLimit(.minutes(1)))
     func serpOpenRequestResolves() {
-        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: URL.ddg.host) == .serp)
+        let serp = URL(string: "https://duckduckgo.com/?q=test&ia=web")!
+        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: URL.ddg.host, pageURL: serp) == .serp)
+        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: URL.ddg.host, pageURL: nil) == .serp)
+    }
+
+    @available(iOS 16, *)
+    @Test("A front-end open request from the homepage resolves to ddg_homepage", .timeLimit(.minutes(1)))
+    func homepageOpenRequestResolves() {
+        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: URL.ddg.host, pageURL: homepage) == .ddgHomepage)
+    }
+
+    /// `duckduckgo.com/?ia=chat` has the homepage's shape but is a Duck.ai page, so it keeps the host mapping.
+    @available(iOS 16, *)
+    @Test("A front-end open request from a duckduckgo.com chat page is not a homepage entry", .timeLimit(.minutes(1)))
+    func chatPageOpenRequestIsNotHomepage() {
+        let chatOnDDG = URL(string: "https://duckduckgo.com/?ia=chat")!
+        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: URL.ddg.host, pageURL: chatOnDDG) == .serp)
     }
 
     /// Returning nil leaves the caller's own fallback in place rather than mislabelling the entry.
     @available(iOS 16, *)
     @Test("Other hosts have no front-end open request source", .timeLimit(.minutes(1)))
     func otherHostsResolveToNil() {
-        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: URL.duckAi.host) == nil)
-        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: "localhost:8080") == nil)
-        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: nil) == nil)
+        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: URL.duckAi.host, pageURL: URL.duckAi) == nil)
+        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: "localhost:8080", pageURL: nil) == nil)
+        #expect(AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: nil, pageURL: nil) == nil)
     }
 
     /// The raw values are a dashboard contract: renaming one silently breaks its series.
@@ -99,5 +115,36 @@ struct AIChatEntryPointSourceTests {
         #expect(AIChatEntryPointSource.directURL.rawValue == "direct_url")
         #expect(AIChatEntryPointSource.returnToChatCard.rawValue == "return_to_chat_card")
         #expect(AIChatEntryPointSource.tabSwitcherExistingChat.rawValue == "tab_switcher_existing_chat")
+        #expect(AIChatEntryPointSource.ddgHomepage.rawValue == "ddg_homepage")
+    }
+
+    // MARK: - In-page navigations
+
+    private let homepage = URL(string: "https://duckduckgo.com/")!
+    private let duckAIChat = URL(string: "https://duck.ai/chat?ia=chat&origin=funnel_home_website&q=hello&prompt=1")!
+
+    @available(iOS 16, *)
+    @Test("A navigation the DuckDuckGo homepage starts into Duck.ai resolves to ddg_homepage", .timeLimit(.minutes(1)))
+    func homepageNavigationResolves() {
+        let homepageWithParams = URL(string: "https://duckduckgo.com/?atb=v550-1")!
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: homepage, to: duckAIChat) == .ddgHomepage)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: homepageWithParams, to: duckAIChat) == .ddgHomepage)
+    }
+
+    /// Only the homepage is attributed; links into Duck.ai from other pages stay unattributed on purpose.
+    @available(iOS 16, *)
+    @Test("Navigations from other pages have no in-page source", .timeLimit(.minutes(1)))
+    func otherPagesResolveToNil() {
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: URL(string: "https://duckduckgo.com/?q=test")!, to: duckAIChat) == nil)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: URL(string: "https://example.com/")!, to: duckAIChat) == nil)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: URL(string: "https://duckduckgo.com/?ia=chat")!, to: duckAIChat) == nil)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: nil, to: duckAIChat) == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("Homepage navigations that do not reach Duck.ai have no in-page source", .timeLimit(.minutes(1)))
+    func homepageToWebResolvesToNil() {
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: homepage, to: URL(string: "https://example.com/")!) == nil)
+        #expect(AIChatEntryPointSource.forInPageNavigation(from: homepage, to: URL(string: "https://duckduckgo.com/?q=test")!) == nil)
     }
 }

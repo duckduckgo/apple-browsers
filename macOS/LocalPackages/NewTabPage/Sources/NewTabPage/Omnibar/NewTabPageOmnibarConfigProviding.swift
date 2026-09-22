@@ -42,6 +42,17 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     var isImageGenerationEnabled: Bool { get }
 
+    /// Whether Create Image activation is resolved natively, including automatic model switching.
+    var isUpdatedCreateImageEnabled: Bool { get }
+
+    /// The accessible image-capable model selected natively for an updated Create Image submission.
+    @MainActor
+    var imageGenerationModelId: String? { get }
+
+    /// Switches to an accessible image-capable model when needed and returns native-localized notice copy.
+    @MainActor
+    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch?
+
     var isWebSearchEnabled: Bool { get }
 
     /// Whether the "Customize Responses" tool is shown in the NTP omnibar Tools menu.

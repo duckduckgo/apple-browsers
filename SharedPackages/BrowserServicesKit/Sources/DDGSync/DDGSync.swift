@@ -25,6 +25,7 @@ import Foundation
 import os.log
 import Persistence
 import PrivacyConfig
+import Security
 
 public class DDGSync: DDGSyncing {
 
@@ -84,10 +85,12 @@ public class DDGSync: DDGSyncing {
 
     public weak var dataProvidersSource: DataProvidersSource?
     private var customOperations: [any SyncCustomOperation] = []
+    private let deviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating
 
     /// This is the constructor intended for use by app clients.
     public convenience init(dataProvidersSource: DataProvidersSource,
                             errorEvents: EventMapping<SyncError>,
+                            unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent>? = nil,
                             privacyConfigurationManager: PrivacyConfigurationManaging,
                             keyValueStore: ThrowingKeyValueStoring,
                             environment: ServerEnvironment = .production,
@@ -98,6 +101,7 @@ public class DDGSync: DDGSyncing {
             privacyConfigurationManager: privacyConfigurationManager,
             keyValueStore: keyValueStore,
             errorEvents: errorEvents,
+            unifiedDeviceListEvents: unifiedDeviceListEvents,
             syncFeatureFlags: syncFeatureFlags,
             shouldPreserveAccountWhenSyncDisabled: shouldPreserveAccountWhenSyncDisabled
         )
@@ -109,8 +113,13 @@ public class DDGSync: DDGSyncing {
             throw SyncError.accountAlreadyExists
         }
 
-        let account = try await dependencies.account.createAccount(deviceName: deviceName, deviceType: deviceType)
-        try updateAccount(account)
+        let result = try await dependencies.account.createAccount(deviceName: deviceName, deviceType: deviceType)
+        try updateAccount(result.account)
+        if result.didPublishDeviceInfo {
+            deviceInfoMigrationCoordinator.recordSuccessfulUnifiedWrite(for: result.account)
+        } else {
+            scheduleDeviceInfoMigration(for: result.account)
+        }
         scheduler.requestSyncImmediately()
     }
 
@@ -123,6 +132,7 @@ public class DDGSync: DDGSyncing {
         try updateAccount(result.account)
         persistRecoveredThirdPartyScopedPasswordIfAvailable(from: result.accessCredentials, account: result.account)
         updateProtectedKeysCache(with: result.keys)
+        scheduleDeviceInfoMigration(for: result.account)
         scheduler.requestSyncImmediately()
         return result.devices
     }
@@ -242,23 +252,47 @@ public class DDGSync: DDGSyncing {
             throw SyncError.accountNotFound
         }
 
+        let wasDeviceInfoMigrationRunning = deviceInfoUpdateState.isMigrationRunning
         do {
-            return try await dependencies.account.fetchDevicesForAccount(account)
+            let result = try await dependencies.account.fetchDevicesForAccount(account)
+            fireUnifiedReadObservations(result.unifiedReadObservations, for: account)
+            if result.needsCurrentDeviceInfoRepair && !wasDeviceInfoMigrationRunning {
+                scheduleCurrentDeviceInfoRepair(for: account)
+            }
+            return result.devices
         } catch {
             throw handleUnauthenticatedAndMap(error)
         }
     }
 
     public func updateDeviceName(_ name: String) async throws -> [RegisteredDevice] {
+        let isUnifiedWriteEnabled = dependencies.syncFeatureFlags.canWriteUnifiedDeviceList()
+        deviceInfoUpdateState.setRenameInProgress(true)
+        defer { deviceInfoUpdateState.setRenameInProgress(false) }
+        await deviceInfoUpdateState.cancelAllAndWait()
+
         guard let account = try dependencies.secureStore.account() else {
             throw SyncError.accountNotFound
         }
 
         do {
+            if isUnifiedWriteEnabled {
+                return try await deviceInfoMigrationCoordinator.renameCurrentDevice(to: name,
+                                                                                     for: account,
+                                                                                     mode: .unified)
+            }
+
+            if dependencies.syncFeatureFlags.canUsePatchEndpointForLegacyDeviceRename() {
+                return try await deviceInfoMigrationCoordinator.renameCurrentDevice(to: name,
+                                                                                     for: account,
+                                                                                     mode: .legacyOnly)
+            }
+
             let result = try await dependencies.account.refreshToken(account, deviceName: name)
             try dependencies.secureStore.persistAccount(result.account)
             persistRecoveredThirdPartyScopedPasswordIfAvailable(from: result.accessCredentials, account: result.account)
             updateProtectedKeysCache(with: result.keys)
+            scheduleDeviceInfoMigration(for: result.account)
             return result.devices
         } catch {
             throw handleUnauthenticatedAndMap(error)
@@ -290,6 +324,49 @@ public class DDGSync: DDGSyncing {
         dependencies.updateServerEnvironment(serverEnvironment)
         authState = .initializing
         initializeIfNeeded()
+    }
+
+    public func ensureAccountInfoKeyForDebug() async throws -> Int {
+        guard let account = try dependencies.secureStore.account() else {
+            throw SyncError.accountNotFound
+        }
+
+        return try await dependencies.scopedAccess.ensureAccountInfoProtectedKeys(for: account).count
+    }
+
+    public func validateAccountInfoKeyForDebug() async throws -> (refreshedKeyID: String, reloadedKeyID: String, keySizeInBits: Int) {
+        guard let account = try dependencies.secureStore.account() else {
+            throw SyncError.accountNotFound
+        }
+
+        let refreshedKey = try await dependencies.accountInfoKeys.refreshKey(for: account)
+        let reloadedKey = try await dependencies.accountInfoKeys.loadKey(for: account)
+        return (refreshedKeyID: refreshedKey.kid,
+                reloadedKeyID: reloadedKey.kid,
+                keySizeInBits: SecKeyGetBlockSize(reloadedKey.publicKey) * 8)
+    }
+
+    public func fetchDevicesForDebug() async throws -> [RegisteredDeviceDebugInfo] {
+        guard let account = try dependencies.secureStore.account() else {
+            throw SyncError.accountNotFound
+        }
+
+        do {
+            return try await dependencies.account.fetchDevicesForAccount(account).debugDevices
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
+
+    public func isDeviceInfoMigrationCompleteForDebug() throws -> Bool {
+        guard let account = try dependencies.secureStore.account() else {
+            throw SyncError.accountNotFound
+        }
+        return deviceInfoMigrationCoordinator.hasCompletedMigration(for: account)
+    }
+
+    public func resetDeviceInfoMigrationForDebug() {
+        deviceInfoMigrationCoordinator.reset()
     }
 
     public func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String {
@@ -327,6 +404,7 @@ public class DDGSync: DDGSyncing {
             }
             cacheScopedPasswordInBackground(result.scopedPassword)
             updateProtectedKeysCache(with: result.protectedKeys)
+            scheduleDeviceInfoMigration(for: result.account)
             scheduler.requestSyncImmediately()
             return result.devices
         } catch {
@@ -374,6 +452,7 @@ public class DDGSync: DDGSyncing {
     init(dataProvidersSource: DataProvidersSource, dependencies: SyncDependencies) {
         self.dataProvidersSource = dataProvidersSource
         self.dependencies = dependencies
+        self.deviceInfoMigrationCoordinator = dependencies.createDeviceInfoMigrationCoordinator()
 
         featureFlagsCancellable = Publishers.Merge(
             self.dependencies.privacyConfigurationManager.updatesPublisher,
@@ -442,7 +521,10 @@ public class DDGSync: DDGSyncing {
 
             var didRemoveAccount = false
             do {
+                deviceInfoUpdateState.cancelAll()
                 try dependencies.secureStore.removeAccount()
+                clearAccountInfoKeyCache(for: storedAccount)
+                deviceInfoMigrationCoordinator.reset()
                 didRemoveAccount = true
             } catch {
                 dependencies.errorEvents.fire(.failedToRemoveAccount, error: error)
@@ -476,6 +558,9 @@ public class DDGSync: DDGSyncing {
 
         do {
             try updateAccount(account)
+            if isSyncEngineReady {
+                scheduleDeviceInfoMigration(for: account)
+            }
         } catch {
             dependencies.errorEvents.fire(.failedToSetupEngine, error: error)
         }
@@ -603,12 +688,79 @@ public class DDGSync: DDGSyncing {
             return
         }
 
-        guard let encodedKeys = try? JSONEncoder.snakeCaseKeys.encode(keys.removingDuplicateWrappingIdentities()) else {
+        let keysToCache = keys.preservingCachedWrappersForMatchingKeys(cachedProtectedKeys())
+        guard let encodedKeys = try? JSONEncoder.snakeCaseKeys.encode(keysToCache) else {
             try? dependencies.secureStore.removeProtectedKeys()
             return
         }
 
         try? dependencies.secureStore.persistProtectedKeys(encodedKeys)
+    }
+
+    private func cachedProtectedKeys() -> [ProtectedKey] {
+        guard let data = try? dependencies.secureStore.protectedKeys() else {
+            return []
+        }
+        return (try? JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: data)) ?? []
+    }
+
+    private func scheduleDeviceInfoMigration(for account: SyncAccount) {
+        let deviceInfoMigrationCoordinator = deviceInfoMigrationCoordinator
+        deviceInfoUpdateState.scheduleMigration {
+            await deviceInfoMigrationCoordinator.migrateCurrentDeviceIfNeeded(for: account)
+        }
+    }
+
+    private func fireUnifiedReadObservations(_ observations: [UnifiedDeviceListReadObservation],
+                                             for account: SyncAccount) {
+        let canReportOwnRowFallback = dependencies.syncFeatureFlags.canWriteUnifiedDeviceList()
+        var missingDeviceInfoReason: UnifiedDeviceListEvent.DeviceInfoFallbackReason?
+        for observation in observations {
+            switch observation {
+            case .event(let event):
+                if !canReportOwnRowFallback {
+                    switch event {
+                    case .ownRowResolvedLegacy, .ownRowResolvedPlaceholder:
+                        continue
+                    default:
+                        break
+                    }
+                }
+                dependencies.unifiedDeviceListEvents.fire(event)
+            case .ownRowMissingDeviceInfo(.legacy):
+                guard canReportOwnRowFallback else {
+                    continue
+                }
+                let reason = missingDeviceInfoReason ?? ownRowMissingDeviceInfoReason(for: account)
+                missingDeviceInfoReason = reason
+                dependencies.unifiedDeviceListEvents.fire(.ownRowResolvedLegacy(reason))
+            case .ownRowMissingDeviceInfo(.placeholder):
+                guard canReportOwnRowFallback else {
+                    continue
+                }
+                let reason = missingDeviceInfoReason ?? ownRowMissingDeviceInfoReason(for: account)
+                missingDeviceInfoReason = reason
+                dependencies.unifiedDeviceListEvents.fire(.ownRowResolvedPlaceholder(reason))
+            }
+        }
+    }
+
+    private func ownRowMissingDeviceInfoReason(for account: SyncAccount) -> UnifiedDeviceListEvent.DeviceInfoFallbackReason {
+        deviceInfoMigrationCoordinator.hasCompletedMigration(for: account) ? .blobAbsent : .notPublishedYet
+    }
+
+    private func scheduleCurrentDeviceInfoRepair(for account: SyncAccount) {
+        guard dependencies.syncFeatureFlags.canWriteUnifiedDeviceList(),
+              let currentAccount = try? dependencies.secureStore.account(),
+              currentAccount.userId == account.userId,
+              currentAccount.deviceId == account.deviceId else {
+            return
+        }
+        let deviceInfoMigrationCoordinator = deviceInfoMigrationCoordinator
+        deviceInfoUpdateState.scheduleRepair {
+            Logger.sync.debug("Sync-UnifiedDevices: scheduling current device_info repair")
+            await deviceInfoMigrationCoordinator.repairCurrentDeviceInfo(for: currentAccount)
+        }
     }
 
     private func persistRecoveredThirdPartyScopedPasswordIfAvailable(from accessCredentials: [AccessCredential]?, account: SyncAccount) {
@@ -671,6 +823,8 @@ public class DDGSync: DDGSyncing {
     }
 
     private func removeAccount(reason: SyncError.AccountRemovedReason) throws {
+        let account = try? dependencies.secureStore.account()
+        deviceInfoUpdateState.cancelAll()
         dependencies.scheduler.isEnabled = false
         startSyncCancellable?.cancel()
         syncQueueCancellable?.cancel()
@@ -685,8 +839,20 @@ public class DDGSync: DDGSyncing {
         syncQueue = nil
         authState = .inactive
         try dependencies.secureStore.removeAccount()
+        clearAccountInfoKeyCache(for: account)
+        deviceInfoMigrationCoordinator.reset()
         try dependencies.keyValueStore.set(nil, forKey: Constants.syncEnabledKey)
         dependencies.errorEvents.fire(.accountRemoved(reason))
+    }
+
+    private func clearAccountInfoKeyCache(for account: SyncAccount?) {
+        guard let account else {
+            return
+        }
+        let accountInfoKeys = dependencies.accountInfoKeys
+        Task {
+            await accountInfoKeys.clearCachedKey(for: account)
+        }
     }
 
     private func handleUnauthenticatedAndMap(_ error: Error,
@@ -724,4 +890,105 @@ public class DDGSync: DDGSyncing {
     private var syncQueueCancellable: AnyCancellable?
     private var syncDidFinishCancellable: AnyCancellable?
     private var syncQueueRequestErrorCancellable: AnyCancellable?
+    private let deviceInfoUpdateState = DeviceInfoUpdateState()
+}
+
+final class DeviceInfoUpdateState {
+
+    // Background tasks clear their handles on completion; synchronize that cleanup with scheduling and cancellation
+    private struct TrackedTask {
+        let id: UUID
+        let task: Task<Void, Never>
+    }
+
+    private let lock = NSLock()
+    private var migrationTask: TrackedTask?
+    private var repairTask: TrackedTask?
+    private var isRenameInProgress = false
+    private var hasAttemptedRepair = false
+
+    var isMigrationRunning: Bool {
+        lock.withLock { migrationTask != nil }
+    }
+
+    func setRenameInProgress(_ isInProgress: Bool) {
+        lock.withLock {
+            isRenameInProgress = isInProgress
+        }
+    }
+
+    func scheduleMigration(_ operation: @escaping () async -> Void) {
+        lock.withLock {
+            guard migrationTask == nil else {
+                return
+            }
+
+            let taskID = UUID()
+            migrationTask = TrackedTask(id: taskID, task: Task { [weak self] in
+                await operation()
+                self?.clearMigrationTask(withID: taskID)
+            })
+        }
+    }
+
+    func scheduleRepair(_ operation: @escaping () async -> Void) {
+        lock.withLock {
+            guard migrationTask == nil,
+                  repairTask == nil,
+                  !isRenameInProgress,
+                  !hasAttemptedRepair else {
+                return
+            }
+
+            // A failed best-effort repair retries on a later app launch, not on every device-list poll.
+            hasAttemptedRepair = true
+            let taskID = UUID()
+            repairTask = TrackedTask(id: taskID, task: Task { [weak self] in
+                await operation()
+                self?.clearRepairTask(withID: taskID)
+            })
+        }
+    }
+
+    func cancelAll() {
+        let tasks = lock.withLock { () -> (migration: TrackedTask?, repair: TrackedTask?) in
+            let tasks = (migration: migrationTask, repair: repairTask)
+            migrationTask = nil
+            repairTask = nil
+            hasAttemptedRepair = false
+            return tasks
+        }
+        tasks.migration?.task.cancel()
+        tasks.repair?.task.cancel()
+    }
+
+    func cancelAllAndWait() async {
+        let tasks = lock.withLock { (migration: migrationTask, repair: repairTask) }
+        tasks.migration?.task.cancel()
+        tasks.repair?.task.cancel()
+        await tasks.migration?.task.value
+        await tasks.repair?.task.value
+
+        lock.withLock {
+            hasAttemptedRepair = false
+        }
+    }
+
+    private func clearMigrationTask(withID taskID: UUID) {
+        lock.withLock {
+            guard migrationTask?.id == taskID else {
+                return
+            }
+            migrationTask = nil
+        }
+    }
+
+    private func clearRepairTask(withID taskID: UUID) {
+        lock.withLock {
+            guard repairTask?.id == taskID else {
+                return
+            }
+            repairTask = nil
+        }
+    }
 }

@@ -80,7 +80,7 @@ extension URL {
     /// Returns `true` for the bare DuckDuckGo homepage, including variants that carry only
     /// non-search query parameters (e.g. `?ia=web`, `?atb=…`). Returns `false` for SERP URLs
     /// (which require a `q=` parameter) and for sub-pages like `/settings` or `/about`.
-    var isDuckDuckGoHomepage: Bool {
+    public var isDuckDuckGoHomepage: Bool {
         guard host == DuckDuckGo.host, path.isEmpty || path == "/" else { return false }
         return queryItems?.contains { $0.name == DuckDuckGo.bangQueryName } != true
     }

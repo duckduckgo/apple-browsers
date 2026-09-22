@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -108,5 +109,75 @@ final class DuckAIChromeButtonsVisibilityManagerTests: XCTestCase {
         other.migrateVisibilityForMenuButtonLayoutIfNeeded()
 
         XCTAssertTrue(other.isHidden(.duckAI))
+    }
+}
+
+final class TabBarViewControllerChatsMenuTests: XCTestCase {
+
+    @MainActor
+    func testWhenRegularWindowThenObservedChatsValueIsUsed() {
+        XCTAssertTrue(TabBarViewController.chatsMenuItemIsEnabled(
+            inFireWindow: false,
+            nativeStorageHandler: nil,
+            observedRegularWindowValue: true
+        ))
+        XCTAssertFalse(TabBarViewController.chatsMenuItemIsEnabled(
+            inFireWindow: false,
+            nativeStorageHandler: nil,
+            observedRegularWindowValue: false
+        ))
+    }
+
+    @MainActor
+    func testWhenFireWindowHasNoNativeChatsThenChatsItemIsDisabled() throws {
+        let storageHandler = try DuckAiNativeStorageHandler(.memory())
+
+        XCTAssertFalse(TabBarViewController.chatsMenuItemIsEnabled(
+            inFireWindow: true,
+            nativeStorageHandler: storageHandler,
+            observedRegularWindowValue: true
+        ))
+    }
+
+    @MainActor
+    func testWhenFireWindowHasNativeChatsThenChatsItemIsEnabled() throws {
+        let storageHandler = try DuckAiNativeStorageHandler(.memory())
+        try storageHandler.putChat(chatId: "chat", data: Data())
+
+        XCTAssertTrue(TabBarViewController.chatsMenuItemIsEnabled(
+            inFireWindow: true,
+            nativeStorageHandler: storageHandler,
+            observedRegularWindowValue: false
+        ))
+    }
+
+    @MainActor
+    func testWhenFireWindowsHaveDifferentNativeStorageThenChatsAvailabilityIsIsolated() throws {
+        let registry = BurnerDuckAiStorageRegistry()
+        let firstWindow = BurnerMode(isBurner: true)
+        let secondWindow = BurnerMode(isBurner: true)
+        let firstWindowStorage = try XCTUnwrap(registry.handler(for: firstWindow))
+        let secondWindowStorage = try XCTUnwrap(registry.handler(for: secondWindow))
+        try firstWindowStorage.putChat(chatId: "chat", data: Data())
+
+        XCTAssertTrue(TabBarViewController.chatsMenuItemIsEnabled(
+            inFireWindow: true,
+            nativeStorageHandler: firstWindowStorage,
+            observedRegularWindowValue: false
+        ))
+        XCTAssertFalse(TabBarViewController.chatsMenuItemIsEnabled(
+            inFireWindow: true,
+            nativeStorageHandler: secondWindowStorage,
+            observedRegularWindowValue: true
+        ))
+    }
+
+    @MainActor
+    func testWhenFireWindowNativeStorageIsUnavailableThenChatsItemIsEnabled() {
+        XCTAssertTrue(TabBarViewController.chatsMenuItemIsEnabled(
+            inFireWindow: true,
+            nativeStorageHandler: nil,
+            observedRegularWindowValue: false
+        ))
     }
 }

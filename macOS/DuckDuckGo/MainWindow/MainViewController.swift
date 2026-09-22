@@ -177,6 +177,11 @@ final class MainViewController: NSViewController {
         self.pinningManager = pinningManager
         self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
 
+        let duckAiNativeStorageHandler = if tabCollectionViewModel.isBurner {
+            NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: tabCollectionViewModel.burnerMode)
+        } else {
+            NSApp.delegateTyped.duckAiNativeStorageHandler
+        }
         tabBarViewController = TabBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
@@ -184,8 +189,9 @@ final class MainViewController: NSViewController {
             activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel,
             featureFlagger: featureFlagger,
             aiChatMenuConfig: aiChatMenuConfig,
+            nativeStorageHandler: duckAiNativeStorageHandler,
             tabDragAndDropManager: tabDragAndDropManager,
-            autoconsentStatsPopoverCoordinator: NSApp.delegateTyped.autoconsentStatsPopoverCoordinator
+            cookiePopupsBlockedPromoDelegate: NSApp.delegateTyped.cookiePopupsBlockedPromoDelegate
         )
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
 
@@ -246,6 +252,7 @@ final class MainViewController: NSViewController {
             dockPreferences: dockPreferences,
             accessibilityPreferences: accessibilityPreferences,
             duckPlayer: duckPlayer,
+            permissionManager: permissionManager,
             pinningManager: pinningManager,
             adBlockingAvailability: adBlockingAvailability
         )
@@ -334,10 +341,6 @@ final class MainViewController: NSViewController {
             ),
             historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
         )
-        // Fire Windows resolve to their own isolated handler, so a burner omnibar reads none of the
-        // regular session's Duck.ai storage.
-        let duckAiNativeStorageHandler = NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: tabCollectionViewModel.burnerMode)
-            ?? NSApp.delegateTyped.duckAiNativeStorageHandler
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,
             surface: .addressBar,
@@ -467,6 +470,7 @@ final class MainViewController: NSViewController {
     }
 
     func windowWillClose() {
+        navigationBarViewController.windowWillClose()
         closeFloatingAIChatsForCurrentWindow()
         viewEventsCancellables.removeAll()
         aiChatOmnibarContainerViewController.cleanup()
@@ -600,11 +604,19 @@ final class MainViewController: NSViewController {
     }
 
     func openNewDuckAIChatTab() {
+        openDuckAIChatTab(with: .newChat, source: .tabBarButton)
+    }
+
+    func openDuckAIChatHistory() {
+        openDuckAIChatTab(with: .chatHistory, source: .tabBarChats)
+    }
+
+    private func openDuckAIChatTab(with trigger: AIChatOpenTrigger, source: AIChatConversationSource) {
         let behavior: LinkOpenBehavior = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
             ? .currentTab
             : .newTab(selected: true)
-        aiChatConversationSourceHandler.setData(.tabBarButton)
-        NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: behavior)
+        aiChatConversationSourceHandler.setData(source)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: trigger, behavior: behavior)
     }
 
     private func wireToggleReferenceToAIChatTextContainer() {

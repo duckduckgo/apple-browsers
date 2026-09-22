@@ -21,6 +21,7 @@ import Foundation
 import AuthenticationServices
 import Core
 import BrowserServicesKit
+import PixelKit
 
 @available(iOS 18.0, *)
 protocol AutofillExtensionEnableCoordinatorDelegate: AnyObject {
@@ -78,8 +79,8 @@ final class AutofillExtensionEnableCoordinator {
     }
 
     func enableExtension() async -> AutofillExtensionEnableResult {
-        Pixel.fire(pixel: .autofillExtensionSettingsTurnOnTapped,
-                   withAdditionalParameters: [PixelParameters.source: pixelSource])
+        PixelKit.fire(Pixel.Event.autofillExtensionSettingsTurnOnTapped,
+                      options: .parameters([PixelParameters.source: pixelSource]))
 
         // Check throttle state
         if isEnableRequestThrottled {
@@ -87,8 +88,8 @@ final class AutofillExtensionEnableCoordinator {
                 // Still throttled - redirect to settings
                 delegate?.autofillExtensionEnableCoordinator(self, shouldDisableAuth: true)
                 try? await settingsHelper.openCredentialProviderAppSettings()
-                Pixel.fire(pixel: .autofillExtensionSettingsTurnOnThrottled,
-                           withAdditionalParameters: [PixelParameters.source: pixelSource])
+                PixelKit.fire(Pixel.Event.autofillExtensionSettingsTurnOnThrottled,
+                              options: .parameters([PixelParameters.source: pixelSource]))
                 return .throttled
             }
             // Throttle expired
@@ -104,8 +105,8 @@ final class AutofillExtensionEnableCoordinator {
             // User chose "Not Now" - throttle future requests
             startEnableRequestThrottle()
             delegate?.autofillExtensionEnableCoordinator(self, shouldDisableAuth: false)
-            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnCancelled,
-                       withAdditionalParameters: [PixelParameters.source: pixelSource])
+            PixelKit.fire(Pixel.Event.autofillExtensionSettingsTurnOnCancelled,
+                          options: .parameters([PixelParameters.source: pixelSource]))
             return .cancelled
         }
 
@@ -113,15 +114,15 @@ final class AutofillExtensionEnableCoordinator {
         let state = await credentialStore.state()
         if state.isEnabled {
             delegate?.autofillExtensionEnableCoordinator(self, shouldDisableAuth: false)
-            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnSuccess,
-                       withAdditionalParameters: [PixelParameters.source: pixelSource])
+            PixelKit.fire(Pixel.Event.autofillExtensionSettingsTurnOnSuccess,
+                          options: .parameters([PixelParameters.source: pixelSource]))
             return .success
         } else {
             // User chose to enable but extension not enabled - guide user to settings
             try? await settingsHelper.openCredentialProviderAppSettings()
             startEnableRequestThrottle()
-            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnFailed,
-                       withAdditionalParameters: [PixelParameters.source: pixelSource])
+            PixelKit.fire(Pixel.Event.autofillExtensionSettingsTurnOnFailed,
+                          options: .parameters([PixelParameters.source: pixelSource]))
             return .failed
         }
     }
@@ -153,7 +154,7 @@ final class AutofillExtensionEnableCoordinator {
 
     func openSettings() async throws {
         try await settingsHelper.openCredentialProviderAppSettings()
-        Pixel.fire(pixel: .autofillExtensionSettingsTurnOffTapped, withAdditionalParameters: [PixelParameters.source: pixelSource])
+        PixelKit.fire(Pixel.Event.autofillExtensionSettingsTurnOffTapped, options: .parameters([PixelParameters.source: pixelSource]))
     }
 
     private func invalidateEnableRetryTimer() {

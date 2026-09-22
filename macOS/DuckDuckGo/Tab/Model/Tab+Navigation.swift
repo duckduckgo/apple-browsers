@@ -37,11 +37,12 @@ extension Tab: NavigationResponder {
             // Re-collect page context/signals once a page finishes loading (sidebar suggestions)
             .weak(nullable: self.pageContext),
 
+            .weak(nullable: self.tabCrashRecovery),
+
             // Pop-ups and Navigation Key Modifiers handling
             .weak(nullable: self.popupHandling),
             .strong(NavigationPixelNavigationResponder(featureFlagger: featureFlagger)),
             .weak(nullable: self.brokenSiteInfo),
-            .weak(nullable: self.tabCrashRecovery),
 
             // redirect to SERP for non-valid domains entered by user
             // should be before `self` to avoid Tab presenting an error screen
@@ -94,9 +95,6 @@ extension Tab: NavigationResponder {
             .strong(nullable: makeReleaseNotesNavigationResponder(args: args)),
 
             .weak(nullable: self.networkProtection),
-
-            // Internal Feedback Form
-            .weak(nullable: self.internalFeedbackForm),
 
             // Tab Suspension
             .weak(nullable: self.tabSuspension),

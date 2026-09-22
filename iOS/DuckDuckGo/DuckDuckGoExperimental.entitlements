@@ -18,7 +18,7 @@
 		<string>group.com.duckduckgo.experimental.contentblocker</string>
 		<string>group.com.duckduckgo.experimental.database</string>
 		<string>group.com.duckduckgo.experimental.netp</string>
-		<string>group.com.duckduckgo.experimental.statistics</string>
+		<string>$(STATISTICS_APP_GROUP)</string>
 		<string>group.com.duckduckgo.experimental.vault</string>
 	</array>
 	<key>keychain-access-groups</key>

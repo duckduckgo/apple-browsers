@@ -93,14 +93,16 @@ class PrivacyIconView: UIView {
         shieldAnimationView.translatesAutoresizingMaskIntoConstraints = false
         shieldAnimationView.contentMode = .scaleAspectFit
         shieldAnimationView.backgroundBehavior = .pauseAndRestore
-        shieldAnimationView.configuration = LottieConfiguration(renderingEngine: .mainThread)
+        // The Core Animation engine is needed for the Repeater that fans the trackers-blocked
+        // confetti out around the shield; the main-thread engine skips it and draws a single dot.
+        shieldAnimationView.configuration = LottieConfiguration(renderingEngine: .automatic)
         addSubview(shieldAnimationView)
 
         shieldDotAnimationView = LottieAnimationView(frame: bounds)
         shieldDotAnimationView.translatesAutoresizingMaskIntoConstraints = false
         shieldDotAnimationView.contentMode = .scaleAspectFit
         shieldDotAnimationView.backgroundBehavior = .pauseAndRestore
-        shieldDotAnimationView.configuration = LottieConfiguration(renderingEngine: .mainThread)
+        shieldDotAnimationView.configuration = LottieConfiguration(renderingEngine: .automatic)
         addSubview(shieldDotAnimationView)
 
         // Static image view for Dax logo and other images

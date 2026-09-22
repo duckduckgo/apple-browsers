@@ -19,6 +19,12 @@ appId: com.duckduckgo.mobile.ios
     id: "Browser.OmniBar.Button.AIChat"
 
 - runFlow:
+    when:
+        visible: "New Chat"
+    commands:
+        - tapOn: "New Chat"
+
+- runFlow:
     file: dismiss_chat_open_modals.yaml
 
 - assertVisible: "Close tab"

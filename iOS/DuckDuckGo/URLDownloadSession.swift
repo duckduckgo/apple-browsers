@@ -20,6 +20,7 @@
 import Core
 import Foundation
 import WebKit
+import PixelKit
 
 class URLDownloadSession: NSObject, DownloadSession {
     private var session: URLSession?
@@ -72,7 +73,7 @@ extension URLDownloadSession: URLSessionTaskDelegate, URLSessionDownloadDelegate
             try FileManager.default.moveItem(at: location, to: tmpURL)
             self.location = tmpURL
         } catch {
-            Pixel.fire(pixel: .missingDownloadedFile, error: error)
+            PixelKit.fire(Pixel.Event.missingDownloadedFile.withError(error))
             assertionFailure("Failed to rename file in temp dir - downloaded file is missing")
         }
     }

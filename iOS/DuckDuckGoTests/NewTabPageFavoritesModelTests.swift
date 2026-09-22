@@ -25,18 +25,25 @@ import Common
 import Persistence
 @testable import Core
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 final class NewTabPageFavoritesModelTests: XCTestCase {
     private let favoriteDataSource = MockNewTabPageFavoriteDataSource()
+    private var pixelKitMock: PixelKitMock!
+
+    override func setUp() {
+        super.setUp()
+        pixelKitMock = PixelKitMock()
+    }
 
     override func tearDown() {
-        PixelFiringMock.tearDown()
+        pixelKitMock = nil
     }
 
     func testReturnsAllFavoritesWhenCustomizationDisabled() {
         favoriteDataSource.favorites.append(contentsOf: Array(repeating: Favorite.stub(), count: 10))
         let sut = createSUT()
-        
+
         XCTAssertEqual(sut.allFavorites.count, 10)
     }
 
@@ -45,8 +52,8 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
 
         sut.favoriteSelected(Favorite(id: "", title: "", domain: "", urlObject: URL(string: "https://foo.bar")))
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.favoriteLaunchedNTP.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.favoriteLaunchedNTPDaily.name)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.favoriteLaunchedNTP.name })
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.favoriteLaunchedNTPDaily.name })
     }
 
     func testFiresPixelsOnFavoriteSelectedInFocussedState() {
@@ -54,8 +61,8 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
 
         sut.favoriteSelected(Favorite(id: "", title: "", domain: "", urlObject: URL(string: "https://foo.bar")))
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.favoriteLaunchedWebsite.name)
-        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo?.pixelName)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.favoriteLaunchedWebsite.name })
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.favoriteLaunchedNTPDaily.name })
     }
 
     func testFiresPixelOnFavoriteDeleted() {
@@ -66,7 +73,7 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
 
         sut.deleteFavorite(favorite)
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.homeScreenDeleteFavorite.name)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.homeScreenDeleteFavorite.name })
     }
 
     func testFiresPixelOnFavoriteEdited() {
@@ -77,7 +84,16 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
 
         sut.editFavorite(favorite)
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.homeScreenEditFavorite.name)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.homeScreenEditFavorite.name })
+    }
+
+    func testFiresPixelOnceWhenFavoritesReordered() {
+        let sut = createSUT()
+
+        sut.favoritesReordered()
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["new-tab-page_favorites_reorder"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.frequency, .dailyAndCount)
     }
 
     private func createSUT(isFocussedState: Bool = false) -> FavoritesViewModel {
@@ -85,8 +101,7 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
                            favoriteDataSource: favoriteDataSource,
                            faviconLoader: MockFavoritesFaviconLoading(),
                            faviconsCache: MockFavoritesFaviconCaching(),
-                           pixelFiring: PixelFiringMock.self,
-                           dailyPixelFiring: PixelFiringMock.self)
+                           pixelFiring: pixelKitMock)
     }
 
     // MARK: - Reordering (regression for m_d_favorites_list_index_not_matching_bookmark)
@@ -147,8 +162,7 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
                                      favoriteDataSource: adapter,
                                      faviconLoader: MockFavoritesFaviconLoading(),
                                      faviconsCache: MockFavoritesFaviconCaching(),
-                                     pixelFiring: PixelFiringMock.self,
-                                     dailyPixelFiring: PixelFiringMock.self)
+                                     pixelFiring: pixelKitMock)
         // `adapter` retains `model`, keeping the Core Data stack alive for the test's lifetime.
         return (sut, adapter, db, recorder)
     }

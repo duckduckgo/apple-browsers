@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import DesignResourcesKitIcons
 import os.log
 import UIKit
 import WebKit
@@ -33,7 +34,9 @@ struct AIChatPageContext: Equatable {
 
     init(contextData: AIChatPageContextData, favicon: UIImage?) {
         self.title = contextData.title
-        self.favicon = favicon
+        self.favicon = contextData.mimeType == AIChatPageContextData.pdfMIMEType
+            ? DesignSystemImages.Color.Size24.filePDF
+            : favicon
         self.contextData = contextData
     }
 

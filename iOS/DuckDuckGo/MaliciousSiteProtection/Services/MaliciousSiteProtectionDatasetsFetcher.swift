@@ -26,6 +26,7 @@ import Combine
 import PrivacyConfig
 import CombineSchedulers
 import FeatureFlags_iOS
+import PixelKit
 
 protocol MaliciousSiteProtectionDatasetsFetching {
     @MainActor
@@ -297,7 +298,7 @@ extension MaliciousSiteProtectionDatasetsFetcher {
                 try backgroundTaskScheduler.submit(task)
             } catch {
                 Logger.MaliciousSiteProtection.datasetsFetcher.error("Failed scheduling background task for \(datasetType.rawValue)")
-                Pixel.fire(pixel: .backgroundTaskSubmissionFailed, error: error, withAdditionalParameters: [PixelParameters.backgroundTaskCategory: "maliciousSiteProtection"])
+                PixelKit.fire(Pixel.Event.backgroundTaskSubmissionFailed.withError(error), options: .parameters([PixelParameters.backgroundTaskCategory: "maliciousSiteProtection"]))
             }
         }
 

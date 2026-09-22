@@ -19,7 +19,7 @@
 
 import Foundation
 import AIChat
-import PixelKit
+import WideEvent
 
 enum DuckAIWideEventFlowScope: Hashable {
     case tab(TabUID)

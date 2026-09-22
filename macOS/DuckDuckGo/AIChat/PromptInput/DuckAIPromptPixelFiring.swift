@@ -48,6 +48,10 @@ enum DuckAIPromptPixelEvent: Equatable {
     /// its own origin, so the event itself carries none.
     case modelPickerShown
     case reasoningPickerShown
+    case createImageModelSwitched(fromModelId: String, toModelId: String, fromModelPrivacyPreserving: Bool)
+    case createImageModelSwitchNoticeDismissed
+    case createImageUnavailable
+    case createImageSubmittedWithUnsupportedModel
     /// The native upsell dialog was shown after a gated pick. Carries the origin because it varies
     /// per picker within a surface.
     case subscriptionUpsellShown(origin: String)
@@ -64,10 +68,23 @@ struct AddressBarPromptPixelHandler: DuckAIPromptPixelFiring {
     func fire(_ event: DuckAIPromptPixelEvent) {
         switch event {
         case .voiceChatOpened:
-            PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNative, frequency: .dailyAndStandard, includeAppVersionParameter: true)
+            PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNative,
+                          frequency: Self.frequency(for: event),
+                          includeAppVersionParameter: true)
         default:
             guard let pixel = Self.addressBarPixel(for: event) else { return }
-            PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            PixelKit.fire(pixel, frequency: Self.frequency(for: event), includeAppVersionParameter: true)
+        }
+    }
+
+    static func frequency(for event: DuckAIPromptPixelEvent) -> PixelKit.Frequency {
+        switch event {
+        case .voiceChatOpened:
+            return .dailyAndStandard
+        case .createImageUnavailable:
+            return .daily
+        default:
+            return .dailyAndCount
         }
     }
 
@@ -100,6 +117,16 @@ struct AddressBarPromptPixelHandler: DuckAIPromptPixelFiring {
             .aiChatAddressBarModelPickerShown(origin: SubscriptionFunnelOrigin.addressBarModelPicker.rawValue)
         case .reasoningPickerShown:
             .aiChatAddressBarReasoningPickerShown(origin: SubscriptionFunnelOrigin.addressBarReasoningDropdown.rawValue)
+        case .createImageModelSwitched(let fromModelId, let toModelId, let fromModelPrivacyPreserving):
+            .aiChatAddressBarCreateImageModelSwitched(fromModelId: fromModelId,
+                                                      toModelId: toModelId,
+                                                      fromModelPrivacyPreserving: fromModelPrivacyPreserving)
+        case .createImageModelSwitchNoticeDismissed:
+            .aiChatAddressBarCreateImageModelSwitchNoticeDismissed
+        case .createImageUnavailable:
+            .aiChatAddressBarCreateImageUnavailable
+        case .createImageSubmittedWithUnsupportedModel:
+            .aiChatAddressBarCreateImageSubmittedWithUnsupportedModel
         case .subscriptionUpsellShown(let origin):
             .aiChatAddressBarSubscriptionUpsellShown(origin: origin)
         case .subscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType, let origin):

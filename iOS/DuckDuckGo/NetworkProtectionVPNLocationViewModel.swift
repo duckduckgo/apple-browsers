@@ -21,6 +21,7 @@ import Foundation
 import Combine
 import VPN
 import Core
+import PixelKit
 
 final class NetworkProtectionVPNLocationViewModel: ObservableObject {
     private let locationListRepository: NetworkProtectionLocationListRepository
@@ -50,18 +51,18 @@ final class NetworkProtectionVPNLocationViewModel: ObservableObject {
     }
 
     func onViewAppeared() async {
-        Pixel.fire(pixel: .networkProtectionGeoswitchingOpened)
+        PixelKit.fire(Pixel.Event.networkProtectionGeoswitchingOpened)
         await reloadList()
     }
 
     func onNearestItemSelection() async {
-        DailyPixel.fireDailyAndCount(pixel: .networkProtectionGeoswitchingSetNearest, pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+        PixelKit.fire(Pixel.Event.networkProtectionGeoswitchingSetNearest, frequency: .legacyDailyAndCount)
         settings.selectedLocation = .nearest
         await reloadList()
     }
 
     func onCountryItemSelection(id: String, cityId: String? = nil) async {
-        DailyPixel.fireDailyAndCount(pixel: .networkProtectionGeoswitchingSetCustom, pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+        PixelKit.fire(Pixel.Event.networkProtectionGeoswitchingSetCustom, frequency: .legacyDailyAndCount)
         let location = NetworkProtectionSelectedLocation(country: id, city: cityId)
         settings.selectedLocation = .location(location)
         await reloadList()
@@ -71,8 +72,8 @@ final class NetworkProtectionVPNLocationViewModel: ObservableObject {
     private func reloadList() async {
         guard let list = try? await locationListRepository.fetchLocationList() else { return }
         if list.isEmpty {
-            DailyPixel.fireDailyAndCount(pixel: .networkProtectionGeoswitchingNoLocations,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.networkProtectionGeoswitchingNoLocations,
+                          frequency: .legacyDailyAndCount)
         }
         let selectedLocation = self.settings.selectedLocation
         let isNearestSelected = selectedLocation == .nearest

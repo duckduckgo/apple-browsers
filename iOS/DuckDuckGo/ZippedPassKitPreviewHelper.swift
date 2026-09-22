@@ -23,19 +23,20 @@ import FoundationExtensions
 import Foundation
 import UIKit
 import PassKit
+import PixelKit
 import ZIPFoundation
 import os.log
 
 class ZippedPassKitPreviewHelper: FilePreview {
     private weak var viewController: UIViewController?
     private let filePath: URL
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
     required convenience init(_ filePath: URL, viewController: UIViewController) {
-        self.init(filePath, viewController: viewController, pixelFiring: Pixel.self)
+        self.init(filePath, viewController: viewController, pixelFiring: PixelKit.shared)
     }
 
-    init(_ filePath: URL, viewController: UIViewController, pixelFiring: PixelFiring.Type) {
+    init(_ filePath: URL, viewController: UIViewController, pixelFiring: (any PixelKitFiring)?) {
         self.filePath = filePath
         self.viewController = viewController
         self.pixelFiring = pixelFiring
@@ -49,23 +50,23 @@ class ZippedPassKitPreviewHelper: FilePreview {
             // ZIP-side failures (missing file, corrupt archive) mean no pass bytes reached PassKit, mirroring
             // the file-read failure path in PassKitPreviewHelper.preview().
             Logger.general.error("Can't present passkit: \(error.localizedDescription, privacy: .public)")
-            pixelFiring.fire(.walletPassPreviewFailed,
-                             withAdditionalParameters: [PassKitPreviewHelper.reasonParameterKey: "no_data_supplied"])
+            pixelFiring?.fire(Pixel.Event.walletPassPreviewFailed,
+                              options: .parameters([PassKitPreviewHelper.reasonParameterKey: "no_data_supplied"]))
             return
         }
 
         guard !entries.isEmpty else {
             Logger.general.error("Can't present passkit: empty passes archive")
-            pixelFiring.fire(.walletPassPreviewFailed,
-                             withAdditionalParameters: [PassKitPreviewHelper.reasonParameterKey: "no_data_supplied"])
+            pixelFiring?.fire(Pixel.Event.walletPassPreviewFailed,
+                              options: .parameters([PassKitPreviewHelper.reasonParameterKey: "no_data_supplied"]))
             return
         }
 
         let passes: [PKPass] = entries.compactMap({ try? PKPass(data: $0) })
         guard !passes.isEmpty, let controller = PKAddPassesViewController(passes: passes) else {
             Logger.general.error("Can't present passkit: No valid passes in passes file")
-            pixelFiring.fire(.walletPassPreviewFailed,
-                             withAdditionalParameters: [PassKitPreviewHelper.reasonParameterKey: "parse_error"])
+            pixelFiring?.fire(Pixel.Event.walletPassPreviewFailed,
+                              options: .parameters([PassKitPreviewHelper.reasonParameterKey: "parse_error"]))
             return
         }
 

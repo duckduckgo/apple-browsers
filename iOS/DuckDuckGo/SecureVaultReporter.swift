@@ -24,17 +24,18 @@ import Common
 import FoundationExtensions
 import SecureStorage
 import os.log
+import PixelKit
 
 final class SecureVaultKeyStoreEventMapper: EventMapping<SecureStorageKeyStoreEvent> {
      public init() {
          super.init { event, _, _, _ in
              switch event {
              case .l1KeyMigration:
-                 Pixel.fire(pixel: .secureVaultL1KeyMigration)
+                 PixelKit.fire(Pixel.Event.secureVaultL1KeyMigration)
              case .l2KeyMigration:
-                 Pixel.fire(pixel: .secureVaultL2KeyMigration)
+                 PixelKit.fire(Pixel.Event.secureVaultL2KeyMigration)
              case .l2KeyPasswordMigration:
-                 Pixel.fire(pixel: .secureVaultL2KeyPasswordMigration)
+                 PixelKit.fire(Pixel.Event.secureVaultL2KeyPasswordMigration)
              case .databaseRecreation:
                  break
              }
@@ -76,11 +77,11 @@ final class SecureVaultReporter: SecureVaultReporting {
                     Logger.general.error("SecureVault attempt to access keystore while device is locked: \(error.localizedDescription, privacy: .public)")
                     return
                 }
-                DailyPixel.fire(pixel: .secureVaultInitFailedError, error: error, withAdditionalParameters: pixelParams)
+                PixelKit.fire(Pixel.Event.secureVaultInitFailedError.withError(error), frequency: .legacyDailyByError, options: .parameters(pixelParams))
             case .failedToOpenDatabase(let error):
-                DailyPixel.fire(pixel: .secureVaultFailedToOpenDatabaseError, error: error, withAdditionalParameters: pixelParams)
+                PixelKit.fire(Pixel.Event.secureVaultFailedToOpenDatabaseError.withError(error), frequency: .legacyDailyByError, options: .parameters(pixelParams))
             default:
-                DailyPixel.fire(pixel: .secureVaultError, error: error)
+                PixelKit.fire(Pixel.Event.secureVaultError.withError(error), frequency: .legacyDailyByError)
 
             }
         }

@@ -30,6 +30,7 @@ import DDGSync
 import os.log
 import DataBrokerProtection_iOS
 import VPN
+import PixelKit
 
 struct VPNEntryPoint {
     let screenSource: VPNConnectionWideEventData.ScreenSource
@@ -550,13 +551,24 @@ extension MainViewController {
                                                   darkReaderFeatureSettings: darkReaderFeatureSettings,
                                                   adBlockingAvailability: adBlockingAvailability)
 
+        settingsViewModel.configureSitePermissions(
+            store: tabManager.sitePermissionsStore,
+            eventHandler: { [sitePermissionsPixelHandler = tabManager.sitePermissionsPixelHandler] event in
+                sitePermissionsPixelHandler.fire(event)
+            },
+            revocationHandler: { [weak self] site, permissionTypes in
+                self?.tabManager.revokeSitePermissions(permissionTypes, for: site)
+            }
+        )
+
         settingsViewModel.autoClearActionDelegate = self
         settingsViewModel.onRequestOpenDuckAIChat = { [weak self] in
             self?.dismiss(animated: true) {
                 self?.loadUrlInNewTab(.duckAiSettings, inheritedAttribution: nil)
             }
         }
-        Pixel.fire(pixel: .settingsPresented)
+        settingsViewModel.onRequestOnboardingDuckAIChat = { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
+        PixelKit.fire(Pixel.Event.settingsPresented)
 
         func doLaunch() {
             if let navigationController = self.presentedViewController as? UINavigationController,

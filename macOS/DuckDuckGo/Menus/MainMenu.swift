@@ -36,6 +36,7 @@ import SubscriptionUI
 import SwiftUI
 import Utilities
 import VPN
+import WebExtensions
 import WebKit
 
 // MARK: - LazyBookmarkFolderMenuDelegate
@@ -219,7 +220,7 @@ final class MainMenu: NSMenu {
     let sendFeedbackMenuItem = NSMenuItem(title: UserText.sendFeedback, action: #selector(AppDelegate.openFeedback))
         .withImage(DesignSystemImages.Glyphs.Size12.feedback)
 
-    let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
+    let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.showAbout))
         .withImage(DesignSystemImages.Glyphs.Size12.info)
 
     private let featureFlagger: FeatureFlagger
@@ -662,6 +663,7 @@ final class MainMenu: NSMenu {
         alwaysShowFirstTimeQuitSurvey.state = quitSurveyPersistor.alwaysShowQuitSurvey ? .on : .off
     }
 
+    @MainActor
     private func updateWebExtensionsMenuItem() {
         guard let debugMenuItem = items.first(where: { item in item.title == Self.debugMenuTitle }),
               let debugSubmenu = debugMenuItem.submenu else {
@@ -669,10 +671,14 @@ final class MainMenu: NSMenu {
         }
 
         if #available(macOS 15.4, *) {
-            if let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            if let webExtensionManager = NSApp.delegateTyped.webExtensionManager,
+               let cpmMessagingHealthMonitor = webExtensionManager.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor {
                 if webExtensionsMenuItem == nil {
                     webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
-                        .submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
+                        .submenu(WebExtensionsDebugMenu(
+                            webExtensionManager: webExtensionManager,
+                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
+                        ))
                 }
                 if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {
                     debugSubmenu.insertItem(webExtensionsMenuItem, at: max(0, debugSubmenu.items.count - 3))
@@ -941,7 +947,7 @@ final class MainMenu: NSMenu {
             // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Clear WebKit Cache", action: #selector(AppDelegate.debugClearWebViewCache)).withAccessibilityIdentifier("MainMenu.clearWebKitCache")
             NSMenuItem(title: "Data Import")
-                .submenu(DataImportDebugMenu(title: "Data Import"))
+                .submenu(DataImportDebugMenu(title: "Data Import", pinningManager: pinningManager))
             NSMenuItem(title: "Favicons") {
                 NSMenuItem(title: "Clear In-Memory Cache", action: #selector(AppDelegate.debugClearFaviconsCache)).withAccessibilityIdentifier("MainMenu.clearFaviconsCache")
                 NSMenuItem(title: "Inspect", action: #selector(MainViewController.inspectFavicons(_:))).withAccessibilityIdentifier("MainMenu.inspectFavicons")
@@ -969,7 +975,6 @@ final class MainMenu: NSMenu {
                     NSMenuItem(title: "Reset app launch flag", action: #selector(MainViewController.debugResetCookiePopupProtectionOptInLaunchFlag))
                 }
                 NSMenuItem(title: "NTP widget") {
-                    NSMenuItem(title: "Show feature awareness dialog for NTP widget", action: #selector(AppDelegate.debugShowFeatureAwarenessDialogForNTPWidget))
                     NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))
                     NSMenuItem(title: "Clear blockedCookiesPopoverSeen flag", action: #selector(AppDelegate.debugClearBlockedCookiesPopoverSeenFlag))
                     NSMenuItem(title: "Reset widgetNewLabelFirstShownDate", action: #selector(AppDelegate.debugResetWidgetNewLabelFirstShownDateKey))

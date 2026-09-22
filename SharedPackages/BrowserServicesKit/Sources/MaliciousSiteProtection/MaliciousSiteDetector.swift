@@ -92,8 +92,7 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
 
     /// Evaluates the given URL to determine its malicious category (e.g., phishing, malware).
     public func evaluate(_ url: URL) async -> ThreatKind? {
-        guard let canonicalHost = url.canonicalHost(),
-              let canonicalUrl = url.canonicalURL() else { return .none }
+        guard let canonicalHost = url.canonicalHost() else { return .none }
         let supportedThreats = supportedThreatsProvider()
 
         let hostHash = canonicalHost.sha256
@@ -112,6 +111,9 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
 
         // Return no threats if no matching hash prefixes are found in the database.
         guard !hashPrefixMatchingThreatKinds.isEmpty else { return .none }
+
+        // Canonicalization copies the full URL, which can be very large. Only do it for hosts that need URL matching.
+        guard let canonicalUrl = url.canonicalURL() else { return .none }
 
         // 2. Check local Filter Sets.
         // The filter set acts as a local cache of some database entries, containing

@@ -75,6 +75,227 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertNil(signupBody["credential_id"])
     }
 
+    func testWhenCreatingAccountWithUnifiedWriteEnabledThenSignupIncludesKeysAndDeviceInfo() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let protectedKey = makeAccountInfoProtectedKey()
+        accountInfoKeyFactory.makeProtectedKeysStub = [protectedKey]
+        let deviceInfoCodec = DeviceInfoCodingMock()
+        let events = UnifiedDeviceListEventMappingMock()
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            accountInfoKeyFactory: accountInfoKeyFactory,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            unifiedDeviceListEvents: events,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.signup] = makeJSONRequest("""
+        {
+            "user_id": "user-1",
+            "token": "token-1"
+        }
+        """)
+
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+
+        let signupBody = try makeSignupBody(from: api)
+        let keys = try XCTUnwrap(signupBody["keys"] as? [[String: Any]])
+        let key = try XCTUnwrap(keys.first)
+        XCTAssertEqual(signupBody["device_info"] as? String, deviceInfoCodec.encryptUsingProtectedKeyStub)
+        XCTAssertEqual(signupBody["device_name"] as? String, "encrypted_iPhone")
+        XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
+        XCTAssertEqual(key["kid"] as? String, protectedKey.kid)
+        XCTAssertEqual(key["purpose"] as? String, ProtectedKeyPurpose.accountInfo)
+        XCTAssertEqual(key["encrypted_with"] as? String, SyncCredentialID.defaultCredential)
+        XCTAssertEqual(accountInfoKeyFactory.makeProtectedKeysCalls.count, 1)
+        XCTAssertNil(accountInfoKeyFactory.makeProtectedKeysCalls.first?.thirdPartyMainKey)
+        XCTAssertEqual(deviceInfoCodec.encryptUsingProtectedKeyCalls.first?.deviceInfo,
+                       DeviceInfo(name: "iPhone", type: "iOS"))
+        XCTAssertEqual(deviceInfoCodec.encryptUsingProtectedKeyCalls.first?.protectedKey.kid, protectedKey.kid)
+        XCTAssertTrue(result.didPublishDeviceInfo)
+        XCTAssertEqual(events.events, [
+            .accountInfoKeyCreateSuccess,
+            .ownRowDeviceInfoFirstWriteSuccess
+        ])
+    }
+
+    func testWhenCreatingAccountWithUnifiedWriteDisabledThenSignupOmitsKeysAndDeviceInfo() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        accountInfoKeyFactory.makeProtectedKeysStub = [makeAccountInfoProtectedKey()]
+        let deviceInfoCodec = DeviceInfoCodingMock()
+        let events = UnifiedDeviceListEventMappingMock()
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            accountInfoKeyFactory: accountInfoKeyFactory,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            unifiedDeviceListEvents: events,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canWriteUnifiedDeviceList: { false })
+        api.fakeRequests[endpoints.signup] = makeJSONRequest("""
+        {
+            "user_id": "user-1",
+            "token": "token-1"
+        }
+        """)
+
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+
+        let signupBody = try makeSignupBody(from: api)
+        XCTAssertNil(signupBody["keys"])
+        XCTAssertNil(signupBody["device_info"])
+        XCTAssertEqual(signupBody["device_name"] as? String, "encrypted_iPhone")
+        XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
+        XCTAssertTrue(accountInfoKeyFactory.makeProtectedKeysCalls.isEmpty)
+        XCTAssertTrue(deviceInfoCodec.encryptUsingProtectedKeyCalls.isEmpty)
+        XCTAssertFalse(result.didPublishDeviceInfo)
+        XCTAssertTrue(events.events.isEmpty)
+    }
+
+    func testWhenDeviceInfoEncryptionFailsThenSignupFallsBackToLegacyFields() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        accountInfoKeyFactory.makeProtectedKeysStub = [makeAccountInfoProtectedKey()]
+        let deviceInfoCodec = DeviceInfoCodingMock()
+        deviceInfoCodec.encryptUsingProtectedKeyError = DeviceInfoCodecError.invalidPayload
+        let events = UnifiedDeviceListEventMappingMock()
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            accountInfoKeyFactory: accountInfoKeyFactory,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            unifiedDeviceListEvents: events,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.signup] = makeJSONRequest("""
+        {
+            "user_id": "user-1",
+            "token": "token-1"
+        }
+        """)
+
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+
+        let signupBody = try makeSignupBody(from: api)
+        XCTAssertNil(signupBody["keys"])
+        XCTAssertNil(signupBody["device_info"])
+        XCTAssertEqual(signupBody["device_name"] as? String, "encrypted_iPhone")
+        XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.signup])
+        XCTAssertFalse(result.didPublishDeviceInfo)
+        XCTAssertEqual(events.events, [.ownRowDeviceInfoFirstWriteFailed(.encryptFailed)])
+    }
+
+    func testWhenAccountInfoKeyGenerationFailsThenSignupFallsBackToSingleLegacyRequest() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        accountInfoKeyFactory.makeProtectedKeysError = AccountManagerTestError.accountInfoKeyGenerationFailed
+        let deviceInfoCodec = DeviceInfoCodingMock()
+        let events = UnifiedDeviceListEventMappingMock()
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            accountInfoKeyFactory: accountInfoKeyFactory,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            unifiedDeviceListEvents: events,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.signup] = makeJSONRequest("""
+        {
+            "user_id": "user-1",
+            "token": "token-1"
+        }
+        """)
+
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+
+        let signupBody = try makeSignupBody(from: api)
+        XCTAssertNil(signupBody["keys"])
+        XCTAssertNil(signupBody["device_info"])
+        XCTAssertEqual(signupBody["device_name"] as? String, "encrypted_iPhone")
+        XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
+        XCTAssertEqual(accountInfoKeyFactory.makeProtectedKeysCalls.count, 1)
+        XCTAssertTrue(deviceInfoCodec.encryptUsingProtectedKeyCalls.isEmpty)
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.signup])
+        XCTAssertFalse(result.didPublishDeviceInfo)
+        XCTAssertEqual(events.events, [.accountInfoKeyCreateFailed(.mintFailed)])
+    }
+
+    func testWhenEnrichedSignupRequestFailsThenErrorIsPropagatedWithoutLegacyRetry() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        accountInfoKeyFactory.makeProtectedKeysStub = [makeAccountInfoProtectedKey()]
+        let deviceInfoCodec = DeviceInfoCodingMock()
+        let events = UnifiedDeviceListEventMappingMock()
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            accountInfoKeyFactory: accountInfoKeyFactory,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            unifiedDeviceListEvents: events,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canWriteUnifiedDeviceList: { true })
+        let signupRequest = HTTPRequestingMock()
+        signupRequest.error = URLError(.timedOut)
+        api.fakeRequests[endpoints.signup] = signupRequest
+
+        do {
+            _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+            XCTFail("Expected signup request failure")
+        } catch {
+            XCTAssertEqual((error as? URLError)?.code, .timedOut)
+        }
+
+        let signupBody = try makeSignupBody(from: api)
+        XCTAssertNotNil(signupBody["keys"])
+        XCTAssertEqual(signupBody["device_info"] as? String, deviceInfoCodec.encryptUsingProtectedKeyStub)
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.signup])
+        XCTAssertEqual(signupRequest.executeCallCount, 1)
+        XCTAssertEqual(events.events, [.accountInfoKeyCreateFailed(.requestFailed)])
+    }
+
+    func testWhenDeviceInfoExceedsServerLimitThenSignupFallsBackToLegacyFields() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        accountInfoKeyFactory.makeProtectedKeysStub = [makeAccountInfoProtectedKey()]
+        let deviceInfoCodec = DeviceInfoCodingMock()
+        deviceInfoCodec.encryptUsingProtectedKeyStub = String(repeating: "a",
+                                                              count: DeviceInfo.maximumEncryptedLength + 1)
+        let events = UnifiedDeviceListEventMappingMock()
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            accountInfoKeyFactory: accountInfoKeyFactory,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            unifiedDeviceListEvents: events,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.signup] = makeJSONRequest("""
+        {
+            "user_id": "user-1",
+            "token": "token-1"
+        }
+        """)
+
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+
+        let signupBody = try makeSignupBody(from: api)
+        XCTAssertNil(signupBody["keys"])
+        XCTAssertNil(signupBody["device_info"])
+        XCTAssertEqual(signupBody["device_name"] as? String, "encrypted_iPhone")
+        XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
+        XCTAssertFalse(result.didPublishDeviceInfo)
+        XCTAssertEqual(events.events, [.ownRowDeviceInfoFirstWriteFailed(.encryptFailed)])
+    }
+
     func testWhenDecodingLoginResultWithoutScopedFieldsThenDecodingSucceeds() throws {
         let json = """
         {
@@ -317,6 +538,144 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(result.devices.map(\.type), ["iOS"])
     }
 
+    func testWhenUnifiedReadIsEnabledThenLoginMapsDevicesV2() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let mapper = RegisteredDeviceMappingMock()
+        let accountInfoKeys = AccountInfoKeyManagingMock()
+        mapper.registeredDevicesHandler = {
+            XCTAssertEqual(accountInfoKeys.preloadKeyCalls.count, 1)
+        }
+        var readFlagCallCount = 0
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            registeredDeviceMapper: mapper,
+                                            accountInfoKeys: accountInfoKeys,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: {
+                                                readFlagCallCount += 1
+                                                return true
+                                            })
+        api.fakeRequests[endpoints.login] = makeJSONRequest("""
+        {
+            "devices": [
+                {
+                    "id": "legacy-device",
+                    "name": "encrypted_Legacy",
+                    "type": "encrypted_desktop"
+                }
+            ],
+            "devices_v2": [
+                {
+                    "id": "unified-device",
+                    "name": "encrypted_Unified",
+                    "type": "encrypted_browser",
+                    "info": "encrypted-info",
+                    "credential_id": "3party"
+                }
+            ],
+            "token": "token-1",
+            "protected_encryption_key": "",
+            "keys": [
+                {
+                    "kid": "account-info-key",
+                    "encrypted_private_key": "encrypted-private-key",
+                    "public_key": {
+                        "alg": "RSA-OAEP-256",
+                        "e": "AQAB",
+                        "kty": "RSA",
+                        "n": "modulus"
+                    },
+                    "encrypted_with": "3party",
+                    "purpose": "account_info"
+                }
+            ],
+            "access_credentials": [
+                {
+                    "id": "3party",
+                    "scope": "sync",
+                    "encrypted_3party_credential": "encrypted-credential"
+                }
+            ]
+        }
+        """)
+
+        let result = try await accountManager.login(.init(userId: "user-1", primaryKey: Data()),
+                                                    deviceName: "iPhone",
+                                                    deviceType: "iOS")
+
+        XCTAssertEqual(mapper.registeredDevicesCallEntryIDs, ["unified-device"])
+        XCTAssertEqual(mapper.unifiedReadEnabledValues, [true])
+        XCTAssertTrue(mapper.defaultCredentialLoginEntryIDs.isEmpty)
+        XCTAssertEqual(result.devices.map(\.id), ["unified-device"])
+        XCTAssertEqual(readFlagCallCount, 1)
+        let keyLoad = try XCTUnwrap(accountInfoKeys.preloadKeyCalls.first)
+        XCTAssertEqual(accountInfoKeys.preloadKeyCalls.count, 1)
+        XCTAssertEqual(keyLoad.protectedKeys.map(\.kid), ["account-info-key"])
+        XCTAssertEqual(keyLoad.accessCredentials.map(\.id), ["3party"])
+        XCTAssertEqual(keyLoad.account.userId, result.account.userId)
+    }
+
+    func testWhenUnifiedReadIsDisabledThenLoginMapsLegacyDevices() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let mapper = RegisteredDeviceMappingMock()
+        let accountInfoKeys = AccountInfoKeyManagingMock()
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            registeredDeviceMapper: mapper,
+                                            accountInfoKeys: accountInfoKeys,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { false })
+        api.fakeRequests[endpoints.login] = makeJSONRequest("""
+        {
+            "devices": [
+                {
+                    "id": "legacy-device",
+                    "name": "encrypted_Legacy",
+                    "type": "encrypted_desktop"
+                }
+            ],
+            "devices_v2": [
+                {
+                    "id": "unified-device",
+                    "name": "encrypted_Unified",
+                    "type": "encrypted_browser",
+                    "info": "encrypted-info",
+                    "credential_id": "3party"
+                }
+            ],
+            "token": "token-1",
+            "protected_encryption_key": "",
+            "keys": [
+                {
+                    "kid": "account-info-key",
+                    "encrypted_private_key": "encrypted-private-key",
+                    "public_key": {
+                        "alg": "RSA-OAEP-256",
+                        "e": "AQAB",
+                        "kty": "RSA",
+                        "n": "modulus"
+                    },
+                    "encrypted_with": "ddg",
+                    "purpose": "account_info"
+                }
+            ]
+        }
+        """)
+
+        let result = try await accountManager.login(.init(userId: "user-1", primaryKey: Data()),
+                                                    deviceName: "iPhone",
+                                                    deviceType: "iOS")
+
+        XCTAssertTrue(mapper.registeredDevicesCallEntryIDs.isEmpty)
+        XCTAssertEqual(mapper.defaultCredentialLoginEntryIDs, ["legacy-device"])
+        XCTAssertEqual(result.devices.map(\.id), ["legacy-device"])
+        XCTAssertTrue(accountInfoKeys.preloadKeyCalls.isEmpty)
+    }
+
     func testWhenLoggingInWithScopedAccessCredentialsEnabledThenLoginRequestIncludesSyncScope() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
@@ -363,6 +722,40 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertNil(loginBody["scope"])
     }
 
+    func testWhenLoggingInWithUnifiedWriteEnabledThenLoginUsesLegacyMetadataOnly() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        accountInfoKeyFactory.makeProtectedKeysStub = [makeAccountInfoProtectedKey()]
+        let deviceInfoCodec = DeviceInfoCodingMock()
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            accountInfoKeyFactory: accountInfoKeyFactory,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.login] = makeJSONRequest("""
+        {
+            "devices": [],
+            "token": "token-1",
+            "protected_encryption_key": ""
+        }
+        """)
+
+        _ = try await accountManager.login(.init(userId: "user-1", primaryKey: Data()),
+                                           deviceName: "iPhone",
+                                           deviceType: "iOS")
+
+        let loginBody = try makeLoginBody(from: api)
+        XCTAssertNil(loginBody["keys"])
+        XCTAssertNil(loginBody["device_info"])
+        XCTAssertEqual(loginBody["device_name"] as? String, "encrypted_iPhone")
+        XCTAssertEqual(loginBody["device_type"] as? String, "encrypted_iOS")
+        XCTAssertTrue(accountInfoKeyFactory.makeProtectedKeysCalls.isEmpty)
+        XCTAssertTrue(deviceInfoCodec.encryptUsingProtectedKeyCalls.isEmpty)
+    }
+
     func testWhenRefreshingTokenWithoutAccessCredentialsThenResultAccessCredentialsIsNil() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
@@ -383,7 +776,133 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertNil(result.accessCredentials)
     }
 
-    func testWhenFetchingDevicesWithScopedAccessEnabledThenPrefersEntriesV2OverLegacyEntries() async throws {
+    func testWhenEncodingUpdateDevicesParametersThenUsesPatchContractShape() throws {
+        let deviceUpdate = UpdateDevices.Update(
+            id: "device-1",
+            name: "encrypted-name",
+            type: "encrypted-type",
+            info: "encrypted-info")
+        let parameters = UpdateDevices.Parameters(updates: [deviceUpdate])
+
+        let data = try JSONEncoder.snakeCaseKeys.encode(parameters)
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let updates = try XCTUnwrap(body["updates"] as? [[String: Any]])
+        let encodedUpdate = try XCTUnwrap(updates.first)
+
+        XCTAssertEqual(updates.count, 1)
+        XCTAssertEqual(encodedUpdate["id"] as? String, "device-1")
+        XCTAssertEqual(encodedUpdate["name"] as? String, "encrypted-name")
+        XCTAssertEqual(encodedUpdate["type"] as? String, "encrypted-type")
+        XCTAssertEqual(encodedUpdate["info"] as? String, "encrypted-info")
+    }
+
+    func testWhenEncodingUpdateDevicesParametersWithoutInfoThenOmitsInfo() throws {
+        let deviceUpdate = UpdateDevices.Update(
+            id: "device-1",
+            name: "encrypted-name",
+            type: "encrypted-type",
+            info: nil)
+        let parameters = UpdateDevices.Parameters(updates: [deviceUpdate])
+
+        let data = try JSONEncoder.snakeCaseKeys.encode(parameters)
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let updates = try XCTUnwrap(body["updates"] as? [[String: Any]])
+        let encodedUpdate = try XCTUnwrap(updates.first)
+
+        XCTAssertEqual(Set(encodedUpdate.keys), ["id", "name", "type"])
+    }
+
+    func testWhenDecodingUpdateDevicesResultThenMapsLegacyAndUnifiedDevices() throws {
+        let json = """
+        {
+            "devices": [
+                {
+                    "id": "device-1",
+                    "name": "encrypted-name",
+                    "type": "encrypted-type",
+                    "jwt_iat": "2026-06-23T10:00:00Z"
+                }
+            ],
+            "devices_v2": [
+                {
+                    "id": "device-1",
+                    "name": "encrypted-name",
+                    "type": "encrypted-type",
+                    "info": "encrypted-info",
+                    "jwt_iat": "2026-06-23T10:00:00Z",
+                    "credential_id": "ddg"
+                }
+            ]
+        }
+        """
+
+        let result = try JSONDecoder.snakeCaseKeys.decode(UpdateDevices.Result.self, from: Data(json.utf8))
+
+        XCTAssertEqual(result.devices.map(\.id), ["device-1"])
+        XCTAssertNil(result.devices.first?.info)
+        XCTAssertNil(result.devices.first?.credentialId)
+        XCTAssertEqual(result.devicesV2.map(\.id), ["device-1"])
+        XCTAssertEqual(result.devicesV2.first?.info, "encrypted-info")
+        XCTAssertEqual(result.devicesV2.first?.credentialId, SyncCredentialID.defaultCredential)
+    }
+
+    func testWhenUpdatingDeviceThenUsesAuthenticatedPatchAndDecodesResponse() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let mapper = RegisteredDeviceMappingMock()
+        var readFlagCallCount = 0
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            registeredDeviceMapper: mapper,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: {
+                                                readFlagCallCount += 1
+                                                return true
+                                            })
+        api.fakeRequests[endpoints.devices] = makeJSONRequest("""
+        {
+            "devices": [
+                {
+                    "id": "legacy-device",
+                    "name": "encrypted-legacy-name",
+                    "type": "encrypted-legacy-type"
+                }
+            ],
+            "devices_v2": [
+                {
+                    "id": "unified-device",
+                    "name": "encrypted-name",
+                    "type": "encrypted-type",
+                    "info": "encrypted-info",
+                    "jwt_iat": "2026-06-23T10:00:00Z",
+                    "credential_id": "ddg"
+                }
+            ]
+        }
+        """)
+
+        let result = try await accountManager.updateDevice(makeDeviceUpdate(), for: makeAccount(primaryKey: Data()))
+
+        let requestArguments = try XCTUnwrap(api.createRequestCallArgs.last)
+        let requestBody = try XCTUnwrap(requestArguments.body)
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: requestBody) as? [String: Any])
+        let updates = try XCTUnwrap(body["updates"] as? [[String: Any]])
+        XCTAssertEqual(requestArguments.url, endpoints.devices)
+        XCTAssertEqual(requestArguments.method, .patch)
+        XCTAssertEqual(requestArguments.headers["Authorization"], "Bearer token-1")
+        XCTAssertEqual(requestArguments.contentType, "application/json")
+        XCTAssertEqual(updates.first?["id"] as? String, "device-1")
+        XCTAssertEqual(updates.first?["name"] as? String, "encrypted-name")
+        XCTAssertEqual(updates.first?["type"] as? String, "encrypted-type")
+        XCTAssertEqual(updates.first?["info"] as? String, "encrypted-info")
+        XCTAssertEqual(mapper.registeredDevicesCallEntryIDs, ["unified-device"])
+        XCTAssertEqual(mapper.unifiedReadEnabledValues, [true])
+        XCTAssertEqual(result.map(\.id), ["unified-device"])
+        XCTAssertEqual(readFlagCallCount, 1)
+    }
+
+    func testWhenUnifiedReadIsDisabledThenUpdatingDeviceMapsLegacyResponse() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let mapper = RegisteredDeviceMappingMock()
@@ -391,7 +910,97 @@ final class AccountManagerTests: XCTestCase {
                                             api: api,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { false })
+        api.fakeRequests[endpoints.devices] = makeJSONRequest("""
+        {
+            "devices": [
+                {
+                    "id": "legacy-device",
+                    "name": "encrypted-legacy-name",
+                    "type": "encrypted-legacy-type"
+                }
+            ],
+            "devices_v2": [
+                {
+                    "id": "unified-device",
+                    "name": "encrypted-name",
+                    "type": "encrypted-type",
+                    "info": "encrypted-info",
+                    "credential_id": "ddg"
+                }
+            ]
+        }
+        """)
+
+        let devices = try await accountManager.updateDevice(makeDeviceUpdate(), for: makeAccount(primaryKey: Data()))
+
+        XCTAssertEqual(mapper.registeredDevicesCallEntryIDs, ["legacy-device"])
+        XCTAssertEqual(devices.map(\.id), ["legacy-device"])
+    }
+
+    func testWhenUpdatingDeviceWithoutTokenThenThrowsNoToken() async {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
                                             isScopedAccessCredentialsEnabled: { true })
+
+        await assertThrowsError(SyncError.noToken) {
+            try await accountManager.updateDevice(makeDeviceUpdate(),
+                                                  for: makeAccount(primaryKey: Data(), token: nil))
+        }
+
+        XCTAssertTrue(api.createRequestCallArgs.isEmpty)
+    }
+
+    func testWhenUpdatingDeviceResponseHasNoBodyThenThrowsNoResponseBody() async {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            isScopedAccessCredentialsEnabled: { true })
+        api.fakeRequests[endpoints.devices] = HTTPRequestingMock(result: .init(data: nil, response: .init()))
+
+        await assertThrowsError(SyncError.noResponseBody) {
+            try await accountManager.updateDevice(makeDeviceUpdate(), for: makeAccount(primaryKey: Data()))
+        }
+    }
+
+    func testWhenUpdatingDeviceResponseIsInvalidThenThrowsUnableToDecodeResponse() async {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            isScopedAccessCredentialsEnabled: { true })
+        api.fakeRequests[endpoints.devices] = makeJSONRequest("""
+        {
+            "devices": []
+        }
+        """)
+
+        await assertThrowsError(SyncError.unableToDecodeResponse("Failed to decode devices update")) {
+            try await accountManager.updateDevice(makeDeviceUpdate(), for: makeAccount(primaryKey: Data()))
+        }
+    }
+
+    func testWhenFetchingDevicesWithScopedAccessEnabledThenPrefersEntriesV2OverLegacyEntries() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let mapper = RegisteredDeviceMappingMock()
+        var readFlagCallCount = 0
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            registeredDeviceMapper: mapper,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: {
+                                                readFlagCallCount += 1
+                                                return false
+                                            })
         api.fakeRequests[devicesURL(for: endpoints)] = makeJSONRequest("""
         {
             "devices": {
@@ -414,10 +1023,13 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        let devices = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let result = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let devices = result.devices
 
         XCTAssertEqual(mapper.registeredDevicesCallEntryIDs, ["v2-device"])
+        XCTAssertEqual(mapper.unifiedReadEnabledValues, [false])
         XCTAssertEqual(devices.map(\.id), ["v2-device"])
+        XCTAssertEqual(readFlagCallCount, 1)
         XCTAssertFalse(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
     }
 
@@ -445,14 +1057,15 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        let devices = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let result = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let devices = result.devices
 
         XCTAssertEqual(mapper.registeredDevicesCallEntryIDs, ["legacy-device"])
         XCTAssertEqual(devices.map(\.id), ["legacy-device"])
         XCTAssertFalse(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
     }
 
-    func testWhenFetchingDevicesWithScopedAccessEnabledThenFallsBackUndecryptableEntriesWithoutLogout() async throws {
+    func testWhenFetchingDevicesWithUnifiedReadEnabledThenFallsBackUndecryptableEntriesWithoutLogout() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         var crypter = CryptingMock()
@@ -462,7 +1075,8 @@ final class AccountManagerTests: XCTestCase {
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: crypter,
-                                            isScopedAccessCredentialsEnabled: { true })
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { true })
         api.fakeRequests[devicesURL(for: endpoints)] = makeJSONRequest("""
         {
             "devices": {
@@ -484,12 +1098,57 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        let devices = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let result = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let devices = result.devices
 
         XCTAssertEqual(devices.map(\.id), ["third-party-device", "native-device"])
         XCTAssertEqual(devices.map(\.name), ["Browser", "Unknown"])
         XCTAssertEqual(devices.map(\.type), ["unknown", "unknown"])
         XCTAssertEqual(devices.map(\.credentialId), [SyncCredentialID.thirdParty, SyncCredentialID.defaultCredential])
+        XCTAssertFalse(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
+    }
+
+    func testWhenFetchingDevicesWithScopedAccessEnabledAndUnifiedReadDisabledThenRetainsFallbackEntriesWithoutLogout() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        var crypter = CryptingMock()
+        crypter._base64DecodeAndDecrypt = { _ in
+            throw SyncError.failedToDecryptValue("test")
+        }
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: crypter,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { false })
+        api.fakeRequests[devicesURL(for: endpoints)] = makeJSONRequest("""
+        {
+            "devices": {
+                "entries_v2": [
+                    {
+                        "id": "third-party-device",
+                        "name": "undecryptable-name",
+                        "type": "undecryptable-type",
+                        "info": "ignored-device-info",
+                        "credential_id": "3party"
+                    },
+                    {
+                        "id": "native-device",
+                        "name": "undecryptable-name",
+                        "type": "undecryptable-type",
+                        "info": "ignored-device-info",
+                        "credential_id": "ddg"
+                    }
+                ]
+            }
+        }
+        """)
+        let result = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+
+        XCTAssertEqual(result.devices.map(\.id), ["third-party-device", "native-device"])
+        XCTAssertEqual(result.devices.map(\.name), ["Browser", "Unknown"])
+        XCTAssertEqual(result.devices.map(\.type), ["unknown", "unknown"])
+        XCTAssertEqual(result.devices.map(\.credentialId), [SyncCredentialID.thirdParty, SyncCredentialID.defaultCredential])
+        XCTAssertFalse(result.needsCurrentDeviceInfoRepair)
         XCTAssertFalse(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
     }
 
@@ -523,21 +1182,37 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        let devices = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let result = try await accountManager.fetchDevicesForAccount(makeAccount(primaryKey: Data()))
+        let devices = result.devices
 
         XCTAssertTrue(devices.isEmpty)
         XCTAssertTrue(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
     }
 
-    private func makeAccount(primaryKey: Data) -> SyncAccount {
+    private func makeDeviceUpdate() -> UpdateDevices.Update {
+        UpdateDevices.Update(id: "device-1",
+                             name: "encrypted-name",
+                             type: "encrypted-type",
+                             info: "encrypted-info")
+    }
+
+    private func makeAccount(primaryKey: Data, token: String? = "token-1") -> SyncAccount {
         SyncAccount(deviceId: "device-1",
                     deviceName: "iPhone",
                     deviceType: "ios",
                     userId: "user-1",
                     primaryKey: primaryKey,
                     secretKey: Data(repeating: 0x2, count: 32),
-                    token: "token-1",
+                    token: token,
                     state: .active)
+    }
+
+    private func makeAccountInfoProtectedKey() -> ProtectedKey {
+        ProtectedKey(kid: "account-info-key",
+                     encryptedPrivateKey: "encrypted-private-key",
+                     publicKey: .mock,
+                     encryptedWith: SyncCredentialID.defaultCredential,
+                     purpose: ProtectedKeyPurpose.accountInfo)
     }
 
     private func makeJSONRequest(_ json: String) -> HTTPRequestingMock {
@@ -545,7 +1220,7 @@ final class AccountManagerTests: XCTestCase {
     }
 
     private func devicesURL(for endpoints: Endpoints) -> URL {
-        endpoints.syncGet.appendingPathComponent("devices")
+        endpoints.devices
     }
 
     private func makeSignupBody(from api: RemoteAPIRequestCreatingMock) throws -> [String: Any] {
@@ -562,18 +1237,50 @@ final class AccountManagerTests: XCTestCase {
 
 }
 
+private enum AccountManagerTestError: Error {
+    case accountInfoKeyGenerationFailed
+}
+
+private final class DeviceInfoCodingMock: DeviceInfoCoding {
+
+    private(set) var encryptUsingProtectedKeyCalls: [(deviceInfo: DeviceInfo, protectedKey: ProtectedKey)] = []
+    var encryptUsingProtectedKeyStub = "encrypted-device-info"
+    var encryptUsingProtectedKeyError: Error?
+
+    func encrypt(_ deviceInfo: DeviceInfo, using protectedKey: ProtectedKey) throws -> String {
+        encryptUsingProtectedKeyCalls.append((deviceInfo: deviceInfo, protectedKey: protectedKey))
+        if let encryptUsingProtectedKeyError {
+            throw encryptUsingProtectedKeyError
+        }
+        return encryptUsingProtectedKeyStub
+    }
+
+    func decrypt(_ encryptedDeviceInfo: String, using key: AccountInfoKey) throws -> DeviceInfo {
+        throw DeviceInfoCodecError.invalidPayload
+    }
+}
+
 private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {
 
     private(set) var registeredDevicesCallEntryIDs: [String] = []
+    private(set) var unifiedReadEnabledValues: [Bool] = []
+    private(set) var defaultCredentialLoginEntryIDs: [String] = []
+    var registeredDevicesHandler: (() -> Void)?
 
-    func registeredDevices(from entries: [RegisteredDeviceEntry], account: SyncAccount) async -> [RegisteredDevice] {
+    func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
+                                          account: SyncAccount,
+                                          isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult {
+        registeredDevicesHandler?()
         registeredDevicesCallEntryIDs = entries.map(\.id)
-        return entries.map { entry in
+        unifiedReadEnabledValues.append(isUnifiedReadEnabled)
+        let devices = entries.map { entry in
             RegisteredDevice(id: entry.id,
                              name: entry.name ?? "",
                              type: entry.type ?? "",
                              credentialId: entry.credentialId)
         }
+        return RegisteredDeviceMappingResult(devices: devices,
+                                             needsCurrentDeviceInfoRepair: false)
     }
 
     func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice? {
@@ -587,10 +1294,11 @@ private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {
                           encryptedName: String,
                           encryptedType: String?,
                           primaryKey: Data) -> RegisteredDevice? {
-        RegisteredDevice(id: id,
-                         name: encryptedName,
-                         type: encryptedType ?? "",
-                         credentialId: SyncCredentialID.defaultCredential)
+        defaultCredentialLoginEntryIDs.append(id)
+        return RegisteredDevice(id: id,
+                                name: encryptedName,
+                                type: encryptedType ?? "",
+                                credentialId: SyncCredentialID.defaultCredential)
     }
 
 }

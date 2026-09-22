@@ -21,6 +21,7 @@ import UIKit
 import Persistence
 import SwiftUI
 import Core
+import PixelKit
 
 class ImportPasswordsPromptViewController: UIViewController {
 
@@ -47,7 +48,7 @@ class ImportPasswordsPromptViewController: UIViewController {
 
         setupView()
 
-        Pixel.fire(pixel: .importCredentialsFlowStarted)
+        PixelKit.fire(Pixel.Event.importCredentialsFlowStarted)
     }
 
     private func setupView() {
@@ -69,7 +70,7 @@ extension ImportPasswordsPromptViewController: UISheetPresentationControllerDele
         manager.incrementCredentialsImportPromptPresentationCount()
         self.completion?(false)
 
-        Pixel.fire(pixel: .importCredentialsFlowCancelled)
+        PixelKit.fire(Pixel.Event.importCredentialsFlowCancelled)
     }
 }
 
@@ -86,7 +87,7 @@ extension ImportPasswordsPromptViewController: ImportPasswordsPromptViewModelDel
         self.dismiss(animated: true) { [weak self] in
             self?.completion?(false)
         }
-        Pixel.fire(pixel: .importCredentialsPromptNeverAgainClicked)
+        PixelKit.fire(Pixel.Event.importCredentialsPromptNeverAgainClicked)
     }
     
     func importPasswordsPromptViewModelDidDismiss(_ viewModel: ImportPasswordsPromptViewModel) {
@@ -94,7 +95,7 @@ extension ImportPasswordsPromptViewController: ImportPasswordsPromptViewModelDel
         self.dismiss(animated: true) { [weak self] in
             self?.completion?(false)
         }
-        Pixel.fire(pixel: .importCredentialsFlowCancelled)
+        PixelKit.fire(Pixel.Event.importCredentialsFlowCancelled)
     }
 
     func importPasswordsPromptViewModelDidResizeContent(_ viewModel: ImportPasswordsPromptViewModel, contentHeight: CGFloat) {

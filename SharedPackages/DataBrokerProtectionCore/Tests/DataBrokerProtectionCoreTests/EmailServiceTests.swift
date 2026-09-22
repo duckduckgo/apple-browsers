@@ -102,6 +102,44 @@ final class EmailServiceTests: XCTestCase {
         }
     }
 
+    func testWhenTheServerRejectsTheRequest_thenTheErrorCarriesTheServerMessage() async {
+        let body = Data("INVALID_REQUEST: Invalid dataBroker parameter".utf8)
+        MockURLProtocol.requestHandlerQueue.append({ _ in (HTTPURLResponse.badRequest, body) })
+
+        let sut = EmailService(urlSession: mockURLSession,
+                               authenticationManager: mockAuthenticationManager,
+                               settings: DataBrokerProtectionSettings(defaults: .standard),
+                               servicePixel: servicePixel)
+
+        do {
+            _ = try await sut.getEmail(dataBrokerURL: "fakeBroker", attemptId: UUID())
+            XCTFail("Expected an error to be thrown")
+        } catch {
+            XCTAssertEqual(error as? EmailError,
+                           .httpError(statusCode: 400, message: "INVALID_REQUEST: Invalid dataBroker parameter"))
+            XCTAssertEqual(error.localizedDescription, "Email HTTP error 400")
+            XCTAssertEqual((error as? EmailError)?.debugDescription,
+                           "Email HTTP error 400: INVALID_REQUEST: Invalid dataBroker parameter")
+        }
+    }
+
+    func testWhenTheServerRejectsTheRequestWithNoBody_thenTheErrorKeepsTheStatusCodeOnly() async {
+        MockURLProtocol.requestHandlerQueue.append({ _ in (HTTPURLResponse.badRequest, Data()) })
+
+        let sut = EmailService(urlSession: mockURLSession,
+                               authenticationManager: mockAuthenticationManager,
+                               settings: DataBrokerProtectionSettings(defaults: .standard),
+                               servicePixel: servicePixel)
+
+        do {
+            _ = try await sut.getEmail(dataBrokerURL: "fakeBroker", attemptId: UUID())
+            XCTFail("Expected an error to be thrown")
+        } catch {
+            XCTAssertEqual(error.localizedDescription, "Email HTTP error 400")
+            XCTAssertEqual((error as? EmailError)?.debugDescription, "Email HTTP error 400")
+        }
+    }
+
     func testWhenEmailExtractingIsUnknown_thenUnknownErrorIsThrown() async {
         let responseDictionary = ["status": "unknown"]
         let responseData = try? JSONSerialization.data(withJSONObject: responseDictionary, options: .prettyPrinted)

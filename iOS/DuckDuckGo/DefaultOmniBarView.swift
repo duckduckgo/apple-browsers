@@ -61,6 +61,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var fireButton: UIButton! { fireButtonView }
     var refreshButton: UIButton! { searchAreaView.reloadButton }
     var customizableButton: UIButton! { searchAreaView.customizableButton }
+    var urlSeparatorView: UIView { searchAreaView.separatorView }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
     var searchContainer: UIView! { searchAreaContainerView }
     var expectedHeight: CGFloat {
@@ -351,7 +352,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }()
 
     var onAIChatSendPressed: (() -> Void)?
-    var isAIVoiceChatEnabled: Bool = false
 
     let modelPickerButton: UIButton = {
         var config = UIButton.Configuration.plain()
@@ -392,7 +392,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the model picker chip (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the model picker chip.
     var isModelPickerEnabled: Bool = false {
         didSet { refreshModelPickerVisibility() }
     }
@@ -443,7 +443,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the reasoning picker chip (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the reasoning picker chip.
     var isReasoningPickerEnabled: Bool = false {
         didSet { refreshReasoningPickerVisibility() }
     }
@@ -486,7 +486,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the tool picker chip (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the tool picker chip.
     var isToolPickerEnabled: Bool = false {
         didSet { refreshToolPickerVisibility() }
     }
@@ -610,7 +610,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the attach button (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the attach button.
     var isAttachButtonEnabled: Bool = false {
         didSet { refreshAttachButtonVisibility() }
     }
@@ -767,17 +767,34 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         var view = UIVisualEffectView()
         UITraitCollection(userInterfaceStyle: configuration.interfaceStyle).performAsCurrent {
             if #available(iOS 26.0, *) {
-                // The embedded field carries the same material blur as the rest of the chrome.
-                let effect = UIGlassEffect(style: .regular)
-                if configuration.fireMode {
-                    effect.tintColor = UIColor(singleUseColor: .fireModeBackground)
+                if configuration.kind == .embedded {
+                    // Native regular material, tinted so it still reads as our surface colour.
+                    view = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+                    let tintView = UIView()
+                    tintView.backgroundColor = UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground)
+                    tintView.translatesAutoresizingMaskIntoConstraints = false
+                    view.contentView.addSubview(tintView)
+                    NSLayoutConstraint.activate([
+                        tintView.topAnchor.constraint(equalTo: view.contentView.topAnchor),
+                        tintView.leadingAnchor.constraint(equalTo: view.contentView.leadingAnchor),
+                        tintView.trailingAnchor.constraint(equalTo: view.contentView.trailingAnchor),
+                        tintView.bottomAnchor.constraint(equalTo: view.contentView.bottomAnchor)
+                    ])
+                } else {
+                    let effect = UIGlassEffect(style: .regular)
+                    if configuration.fireMode {
+                        effect.tintColor = UIColor(singleUseColor: .fireModeBackground)
+                    }
+                    view = UIVisualEffectView(effect: effect)
                 }
-                view = UIVisualEffectView(effect: effect)
                 view.cornerConfiguration = .capsule()
             }
         }
         if configuration.kind == .embedded {
             view.overrideUserInterfaceStyle = configuration.interfaceStyle
+            // `cornerConfiguration` only shapes glass effects; a classic UIBlurEffect needs a
+            // manual capsule radius, kept in sync with its height in `applyOmnibarCornerStyle()`.
+            view.clipsToBounds = true
         }
         return view
     }
@@ -899,6 +916,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
             setFieldBackgroundColor(.clear)
             searchAreaContainerView.layoutIfNeeded()
+            // The new glassEffect has no corner radius yet; only layoutSubviews() sets it otherwise.
+            applyOmnibarCornerStyle()
         }
     }
 
@@ -1311,17 +1330,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 ? UIColor(singleUseColor: .fireModeAccent).cgColor
                 : UIColor(designSystemColor: .accentPrimary).cgColor
         } else {
-            // Floating UI off (production): preserve the original fire-mode fill so the
-            // fire-mode omnibar colour is unchanged from `main`.
-            setFieldBackgroundColor(fireMode
-                ? UIColor(singleUseColor: .fireModeCardBackground)
-                : restingFieldBackgroundColor)
+            // Floating UI off (production): use the same fire-mode fill as the floating field so the
+            // field stays legible against the surrounding chrome in dark mode.
+            setFieldBackgroundColor(opaqueFieldBackgroundColor)
             activeOutlineView.layer.borderColor = fireMode
                 ? UIColor(singleUseColor: .fireModeAccent).cgColor
                 : UIColor(designSystemColor: .accentPrimary).cgColor
         }
         let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
         searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
+        // Stack siblings of searchAreaContainerView, so the loop above misses them — same override needed.
+        leadingButtonsContainer.overrideUserInterfaceStyle = style
+        trailingButtonsContainer.overrideUserInterfaceStyle = style
         if isBottomFloatingField, !isFloatingMinimalChromeBar, !fireMode, let embeddedGlassInterfaceStyle {
             glassEffect.overrideUserInterfaceStyle = embeddedGlassInterfaceStyle
         }
@@ -1382,6 +1402,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         aiChatButton.accessibilityLabel = UserText.duckAiFeatureName
         aiChatButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
         aiChatButton.accessibilityTraits = .button
+
+        customizableButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Customizable"
 
         // This is for compatibility purposes with old OmniBar
         searchAreaView.textField.accessibilityIdentifier = "searchEntry"
@@ -1725,6 +1747,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaView.layer.cornerRadius = cornerRadius
         activeOutlineView.layer.cornerRadius = cornerRadius + Metrics.activeBorderWidth
 
+        // The embedded field's classic UIBlurEffect ignores `cornerConfiguration`; radius it by hand.
+        if glassEffectConfiguration?.kind == .embedded {
+            glassEffect.layer.cornerRadius = glassEffect.bounds.height / 2
+        }
+
         // The pre-iOS 26 blur fallback needs an explicit capsule radius (iOS 26 uses `.capsule()`).
         if #unavailable(iOS 26.0) {
             for glass in [leadingButtonsGlassView, trailingButtonsGlassView].compactMap({ $0 }) {
@@ -1756,7 +1783,7 @@ private extension DefaultOmniBarView {
 
     var opaqueFieldBackgroundColor: UIColor {
         fireMode
-            ? UIColor(singleUseColor: .fireModeBackground)
+            ? UIColor(singleUseColor: .fireModeFieldBackground)
             : restingFieldBackgroundColor
     }
 }
@@ -2380,7 +2407,7 @@ extension DefaultOmniBarView {
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
-        } else if !hasText && attachments.isEmpty && isAIVoiceChatEnabled {
+        } else if !hasText && attachments.isEmpty {
             aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.voice, for: .normal)
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)

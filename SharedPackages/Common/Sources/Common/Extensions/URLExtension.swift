@@ -675,12 +675,14 @@ extension URL {
      }
 
     public func canonicalURL() -> URL? {
-        // Step 1: Remove tab (0x09), CR (0x0d), and LF (0x0a) characters
-        var urlString = self.absoluteString.filter { $0 != "\t" && $0 != "\r" && $0 != "\n" }
+        // Remove the fragment before copying or transforming the URL: fragments can contain very large payloads.
+        let absoluteString = self.absoluteString
+        let fragmentStart = absoluteString.range(of: "#")?.lowerBound ?? absoluteString.endIndex
 
-        // Step 2: Remove the fragment
-        if let fragmentRange = urlString.range(of: "#") {
-            urlString.removeSubrange(fragmentRange.lowerBound..<urlString.endIndex)
+        // Steps 1 and 2: Remove tab (0x09), CR (0x0d), LF (0x0a), and the fragment.
+        var urlString = String(absoluteString[..<fragmentStart])
+        if urlString.contains(where: { $0 == "\t" || $0 == "\r" || $0 == "\n" }) {
+            urlString = urlString.filter { $0 != "\t" && $0 != "\r" && $0 != "\n" }
         }
 
         // Step 3: Repeatedly percent-unescape the URL until it has no more percent-escapes

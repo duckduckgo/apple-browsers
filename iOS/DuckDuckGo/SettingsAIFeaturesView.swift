@@ -27,6 +27,7 @@ import FoundationExtensions
 import Networking
 import AIChat
 import SERPSettings
+import PixelKit
 
 struct SettingsAIFeaturesView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -51,8 +52,9 @@ struct SettingsAIFeaturesView: View {
                 viewModel.onRequestDismissSettings?()
             }.foregroundColor(Color(designSystemColor: .textPrimary))) : AnyView(EmptyView()))
         .onAppear {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisplayed,
-                                         withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .aiChat))
+            PixelKit.fire(Pixel.Event.aiChatSettingsDisplayed,
+                          frequency: .dailyAndCount,
+                          options: .parameters(viewModel.featureDiscovery.addToParams([:], forFeature: .aiChat)))
         }
     }
 

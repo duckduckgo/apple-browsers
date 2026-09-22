@@ -193,7 +193,7 @@ struct SyncWithAnotherDeviceView: View {
                         .frame(height: 28)
                     }
                     Button {
-                        model.delegate?.copyCode()
+                        model.delegate?.copyCode(codeForDisplayOrPasting)
                         showCopyConfirmation = true
                     } label: {
                         HStack {

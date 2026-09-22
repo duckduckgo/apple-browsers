@@ -26,11 +26,21 @@ import WebKit
 struct WebExtensionsDebugView: View {
 
     let webExtensionManager: WebExtensionManaging
+    let cpmMessagingHealthMonitor: CPMMessagingHealthMonitor
 
     @State private var installedExtensions: [InstalledExtension] = []
     @State private var showDocumentPicker = false
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var isCPMBreakageSimulationEnabled: Bool
+
+    init(webExtensionManager: WebExtensionManaging, cpmMessagingHealthMonitor: CPMMessagingHealthMonitor) {
+        self.webExtensionManager = webExtensionManager
+        self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
+        self._isCPMBreakageSimulationEnabled = State(
+            initialValue: cpmMessagingHealthMonitor.isCPMMessagingBreakageSimulationEnabled
+        )
+    }
 
     var body: some View {
         List {
@@ -88,6 +98,13 @@ struct WebExtensionsDebugView: View {
             darkReaderSection
 
             scriptletInfoSection
+
+            Section("CPM") {
+                Toggle("Simulate CPM Messaging Breakage", isOn: $isCPMBreakageSimulationEnabled)
+                    .onChange(of: isCPMBreakageSimulationEnabled) { _, isEnabled in
+                        cpmMessagingHealthMonitor.setBreakageSimulationEnabled(isEnabled)
+                    }
+            }
 
             if !installedExtensions.isEmpty {
                 Section {

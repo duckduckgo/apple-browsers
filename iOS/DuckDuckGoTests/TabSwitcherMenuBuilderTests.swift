@@ -268,28 +268,6 @@ class DefaultTabSwitcherMenuBuilderTests: XCTestCase {
         XCTAssertTrue(actions.contains(title: UserText.tabSwitcherSelectTabs(withCount: 1)))
         XCTAssertTrue(actions.contains(title: UserText.closeTabs(withCount: 1)))
         XCTAssertTrue(actions.contains(title: UserText.tabSwitcherCloseOtherTabs(withCount: 2)))
-        XCTAssertFalse(actions.contains(title: UserText.tabSwitcherDeleteTabAndData))
-    }
-
-    func testLongPressMenu_whenFloatingWebPageTab_showsDesignActionsInOrder() {
-        let state = TabSwitcherLongPressMenuState(
-            pressedCount: 1,
-            totalCount: 3,
-            pressedContainsWebPages: true,
-            isEditing: false,
-            title: "example.com",
-            shouldShowDeleteTabAndData: true)
-        let actions = flatActions(builder.longPressMenuItems(state: state, actions: noopLongPressActions))
-
-        XCTAssertEqual(actions.map(\.title), [
-            UserText.shareLinks(withCount: 1),
-            UserText.bookmarkSelectedTabs(withCount: 1),
-            UserText.tabSwitcherSelectTabs(withCount: 1),
-            UserText.closeTabs(withCount: 1),
-            UserText.tabSwitcherCloseOtherTabs(withCount: 2),
-            UserText.tabSwitcherDeleteTabAndData,
-        ])
-        XCTAssertTrue(actions.last?.attributes.contains(.destructive) == true)
     }
 
     func testLongPressMenu_homePageTab_hidesShareAndBookmarkButShowsSelect() {

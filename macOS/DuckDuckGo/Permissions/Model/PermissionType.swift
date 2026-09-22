@@ -19,7 +19,9 @@
 import AppKit
 import CommonObjCExtensions
 import DesignResourcesKitIcons
+import FeatureFlags_macOS
 import Foundation
+import PrivacyConfig
 import WebKit
 
 enum PermissionType: Hashable {
@@ -75,6 +77,16 @@ enum PermissionType: Hashable {
 
 extension PermissionType {
 
+    /// Duck.ai's native voice flow overrides microphone decisions at read time, so permission
+    /// editors hide that row while the override is active. The saved decision is kept for rollback.
+    func isUserEditable(forDomain domain: String, nativeVoiceFlowEnabled: Bool) -> Bool {
+        !(self == .microphone && domain == URL.duckAi.host && nativeVoiceFlowEnabled)
+    }
+
+    func isUserEditable(forDomain domain: String, featureFlagger: FeatureFlagger) -> Bool {
+        isUserEditable(forDomain: domain, nativeVoiceFlowEnabled: featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow))
+    }
+
     static var permissionsUpdatedExternally: [PermissionType] {
         return [.camera, .microphone, .geolocation, .notification]
     }
@@ -93,6 +105,10 @@ extension PermissionType {
         case .popups:
             return false
         }
+    }
+
+    var editableDecisions: [PersistedPermissionDecision] {
+        canPersistDeniedDecision ? [.ask, .allow, .deny] : [.ask, .allow]
     }
 
     var isExternalScheme: Bool {

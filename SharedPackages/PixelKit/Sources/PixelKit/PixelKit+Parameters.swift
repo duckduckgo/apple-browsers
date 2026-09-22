@@ -129,13 +129,7 @@ public extension Error {
             return first
         }
 
-        if let sqlErrorCode = nsError.userInfo["SQLiteResultCode"] as? NSNumber {
-            params[PixelKit.Parameters.underlyingErrorSQLiteCode] = "\(sqlErrorCode.intValue)"
-        }
-
-        if let sqlExtendedErrorCode = nsError.userInfo["SQLiteExtendedResultCode"] as? NSNumber {
-            params[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode] = "\(sqlExtendedErrorCode.intValue)"
-        }
+        params.merge(nsError.sqliteResultCodeParameters) { _, new in new }
 
         return params
     }

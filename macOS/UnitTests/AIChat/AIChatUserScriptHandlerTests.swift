@@ -1690,6 +1690,7 @@ struct AIChatConversationSourcePixelTests {
         "tab-bar-button",
         "ask-about-page",
         "tab-bar-sidebar",
+        "tab-bar-chats",
         "address-bar",
         "address-bar-suggestion",
         "address-bar-context-menu",
@@ -1775,6 +1776,14 @@ struct AIChatConversationSourcePixelTests {
         let resolved = [AIChatMenuNewChatItem.openDuckAI, .newChat, .viewAllChats]
             .map { sources.source(for: $0).rawValue }
         #expect(resolved == ["main-menu-open-duck-ai", "main-menu-new-chat", "main-menu-view-all-chats"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Tab-bar New Chat and Chats use distinct sources", .timeLimit(.minutes(1)))
+    func testTabBarNewChatAndChatsAreDistinct() {
+        #expect(AIChatConversationSource.tabBarButton.rawValue == "tab-bar-button")
+        #expect(AIChatConversationSource.tabBarChats.rawValue == "tab-bar-chats")
+        #expect(AIChatConversationSource.tabBarButton != .tabBarChats)
     }
 
     @available(iOS 16, macOS 13, *)

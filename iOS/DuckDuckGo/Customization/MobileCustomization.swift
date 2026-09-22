@@ -23,6 +23,7 @@ import Persistence
 import DesignResourcesKitIcons
 import UIKit
 import Core
+import PixelKit
 import VPN
 
 /// Handles logic and persistence of customization options.  iPad is not supported so this returns false for `isEnabled` on iPad.
@@ -180,7 +181,7 @@ class MobileCustomization {
 
     var toolbarButtonOptions: [Button] {
         var buttons = Self.toolbarButtons
-        if voiceShortcutFeature.isAvailable && isDuckAIEnabled() {
+        if isDuckAIEnabled() {
             buttons.append(.duckAIVoice)
         }
         return buttons
@@ -188,7 +189,7 @@ class MobileCustomization {
 
     var addressBarButtonOptions: [Button] {
         var buttons = Self.addressBarButtons
-        if voiceShortcutFeature.isAvailable && isDuckAIEnabled() {
+        if isDuckAIEnabled() {
             buttons.append(.duckAIVoice)
         }
         return buttons
@@ -216,8 +217,7 @@ class MobileCustomization {
     private let keyValueStore: ThrowingKeyValueStoring
     private let isPad: Bool
     private let postChangeNotification: (State) -> Void
-    private let pixelFiring: PixelFiring.Type
-    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
+    private let pixelFiring: (any PixelKitFiring)?
     private let connectionStatusObserver: ConnectionStatusObserver?
     private let isDuckAIEnabled: () -> Bool
 
@@ -239,15 +239,13 @@ class MobileCustomization {
          postChangeNotification: @escaping ((State) -> Void) = {
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: $0)
          },
-         pixelFiring: PixelFiring.Type = Pixel.self,
-         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          connectionStatusObserver: ConnectionStatusObserver? = nil,
          isDuckAIEnabled: @escaping () -> Bool = { true }) {
         self.keyValueStore = keyValueStore
         self.isPad = isPad
         self.postChangeNotification = postChangeNotification
         self.pixelFiring = pixelFiring
-        self.voiceShortcutFeature = voiceShortcutFeature
         self.connectionStatusObserver = connectionStatusObserver
         self.isDuckAIEnabled = isDuckAIEnabled
     }
@@ -275,28 +273,28 @@ class MobileCustomization {
     }
 
     func fireAddressBarCustomizationStartedPixel() {
-        pixelFiring.fire(.customizationAddressBarStarted, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.customizationAddressBarStarted)
     }
 
     func fireAddressBarCustomizationSelectedPixel(oldValue: Button) {
         // Use all cases for this check as we don't want to return the default unless it was actually selected
         if oldValue != current(forKey: .addressBarButton, containedIn: Button.allCases, Self.addressBarDefault) {
-            pixelFiring.fire(.customizationAddressBarSelected, withAdditionalParameters: [
+            pixelFiring?.fire(Pixel.Event.customizationAddressBarSelected, options: .parameters([
                 "selected": state.currentAddressBarButton.rawValue
-            ])
+            ]))
         }
     }
 
     func fireToolbarCustomizationStartedPixel() {
-        pixelFiring.fire(.customizationToolbarStarted, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.customizationToolbarStarted)
     }
 
     func fireToolbarCustomizationSelectedPixel(oldValue: Button) {
         // Use all cases for this check as we don't want to return the default unless it was actually selected
         if oldValue != current(forKey: .toolbarButton, containedIn: Button.allCases, Self.toolbarDefault) {
-            pixelFiring.fire(.customizationToolbarSelected, withAdditionalParameters: [
+            pixelFiring?.fire(Pixel.Event.customizationToolbarSelected, options: .parameters([
                 "selected": state.currentToolbarButton.rawValue
-            ])
+            ]))
         }
     }
 

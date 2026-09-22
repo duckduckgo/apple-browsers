@@ -580,6 +580,42 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "image-capable")
     }
 
+    func testAvailabilityRefreshPreservesCatalogAndChoicesWithoutFetchingForBothPickerVariants() async {
+        for updated in [true, false] {
+            subscriptionManager.hasAppStoreProductsAvailable = true
+            sut = makeSUT(isUpdatedModelPickerEnabled: updated)
+            sut.models = [makeModel(id: "free", access: true, supportedReasoningEffort: [.none, .low]),
+                          makeModel(id: "paid", access: false)]
+            sut.updateSelectedModel("free", isNewChatContext: true)
+            sut.updateSelectedReasoningMode(.reasoning)
+            for available in [false, true] {
+                let refresh = expectation(description: "availability refreshed")
+                sut.onModelsUpdated = { refresh.fulfill() }
+                subscriptionManager.hasAppStoreProductsAvailable = available
+                await fulfillment(of: [refresh], timeout: 1)
+
+                XCTAssertEqual(sut.allowsSubscriptionUpsell, available)
+                XCTAssertEqual(sut.models.map(\.id), ["free", "paid"])
+                XCTAssertEqual(sut.persistedModelId, "free")
+                XCTAssertEqual(sut.selectedReasoningMode, .reasoning)
+                XCTAssertEqual(modelsService.fetchCount, 0)
+                if !updated { XCTAssertEqual(sut.freeTrialEligibility, .unknown) }
+            }
+            sut.onModelsUpdated = nil
+        }
+    }
+
+    func testAvailabilityNotificationReReadsManagerEligibilityInsteadOfPublisherValue() async {
+        subscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
+        let refresh = expectation(description: "availability refreshed")
+        sut.onModelsUpdated = { refresh.fulfill() }
+
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        await fulfillment(of: [refresh], timeout: 1)
+
+        XCTAssertTrue(sut.allowsSubscriptionUpsell)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(isUpdatedModelPickerEnabled: Bool) -> UTIModelStore {
@@ -639,5 +675,10 @@ private final class StubModelsService: AIChatModelsProviding {
 
     var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
 
-    func fetchModels() async throws -> AIChatModelsResponse { try result.get() }
+    private(set) var fetchCount = 0
+
+    func fetchModels() async throws -> AIChatModelsResponse {
+        fetchCount += 1
+        return try result.get()
+    }
 }

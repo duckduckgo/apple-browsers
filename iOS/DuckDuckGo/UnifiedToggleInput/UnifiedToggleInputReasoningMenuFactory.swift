@@ -34,28 +34,34 @@ struct UnifiedToggleInputReasoningMenuFactory {
         selectedMode: AIChatReasoningMode?,
         userTier: AIChatUserTier,
         freeTrialEligibility: FreeTrialEligibility = .unknown,
+        allowsSubscriptionUpsell: Bool = true,
         onSelect: @escaping (AIChatReasoningMode) -> Void
     ) -> UIMenu? {
+        guard model.supportsReasoningPicker,
+              allowsSubscriptionUpsell || model.accessibleReasoningModes.count > 1 else { return nil }
         if isUpdatedModelPickerEnabled {
             return makeUpdatedMenu(
                 model: model,
                 selectedMode: selectedMode,
                 userTier: userTier,
                 freeTrialEligibility: freeTrialEligibility,
+                allowsSubscriptionUpsell: allowsSubscriptionUpsell,
                 onSelect: onSelect)
         }
 
-        return makeLegacyMenu(model: model, selectedMode: selectedMode, onSelect: onSelect)
+        return makeLegacyMenu(model: model, selectedMode: selectedMode, allowsSubscriptionUpsell: allowsSubscriptionUpsell, onSelect: onSelect)
     }
 
     private func makeLegacyMenu(
         model: AIChatModel,
         selectedMode: AIChatReasoningMode?,
+        allowsSubscriptionUpsell: Bool,
         onSelect: @escaping (AIChatReasoningMode) -> Void
     ) -> UIMenu? {
         guard model.supportsReasoningPicker else { return nil }
 
-        let actions = model.availableReasoningModes.map { mode in
+        let modes = allowsSubscriptionUpsell ? model.availableReasoningModes : model.accessibleReasoningModes
+        let actions = modes.map { mode in
             UIAction(
                 title: mode.unifiedToggleInputTitle,
                 subtitle: mode.unifiedToggleInputSubtitle,
@@ -74,6 +80,7 @@ struct UnifiedToggleInputReasoningMenuFactory {
         selectedMode: AIChatReasoningMode?,
         userTier: AIChatUserTier,
         freeTrialEligibility: FreeTrialEligibility,
+        allowsSubscriptionUpsell: Bool,
         onSelect: @escaping (AIChatReasoningMode) -> Void
     ) -> UIMenu? {
         guard model.supportsReasoningPicker else { return nil }
@@ -84,7 +91,7 @@ struct UnifiedToggleInputReasoningMenuFactory {
             makeUpdatedAction(mode: mode, selectedMode: selectedMode, isGated: false, onSelect: onSelect)
         }
 
-        if !gatedModes.isEmpty {
+        if allowsSubscriptionUpsell && !gatedModes.isEmpty {
             let gatedActions = gatedModes.map { mode in
                 makeUpdatedAction(mode: mode, selectedMode: selectedMode, isGated: true, onSelect: onSelect)
             }

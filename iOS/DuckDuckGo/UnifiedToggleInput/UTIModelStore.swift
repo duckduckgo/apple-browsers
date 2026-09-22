@@ -37,6 +37,18 @@ final class UTIModelStore {
     var attachmentLimits: AIChatAttachmentTierLimits?
     private(set) var freeTrialEligibility: FreeTrialEligibility = .unknown
 
+    let upsellPolicy: DuckAISubscriptionUpsellPolicy
+
+    var allowsSubscriptionUpsell: Bool {
+        upsellPolicy.allowsUpsell(for: subscriptionState.userTier)
+    }
+
+    var isReasoningPickerAvailable: Bool {
+        guard let selectedModel else { return false }
+        return selectedModel.supportsReasoningPicker
+            && (allowsSubscriptionUpsell || selectedModel.accessibleReasoningModes.count > 1)
+    }
+
     private let modelsService: AIChatModelsProviding
     private(set) var preferences: AIChatPreferencesPersisting
     private let subscriptionManager: any SubscriptionManager
@@ -57,11 +69,12 @@ final class UTIModelStore {
         self.modelsService = modelsService
         self.preferences = preferences
         self.subscriptionManager = subscriptionManager
+        self.upsellPolicy = DuckAISubscriptionUpsellPolicy(subscriptionManager: subscriptionManager)
         self.isUpdatedModelPickerEnabled = isUpdatedModelPickerEnabled
         if isUpdatedModelPickerEnabled {
-            // Only the updated picker labels gated models and reasoning efforts based on trial eligibility.
-            subscribeToAppStoreProductAvailability()
+            updateFreeTrialEligibilityFromSubscriptionCache()
         }
+        subscribeToAppStoreProductAvailability()
     }
 
     var persistedModelId: String? {
@@ -135,7 +148,7 @@ final class UTIModelStore {
 
     func fetchModels() {
         if isUpdatedModelPickerEnabled {
-            updateFreeTrialEligibilityFromSubscriptionCache(notifyOnChange: false)
+            updateFreeTrialEligibilityFromSubscriptionCache()
         }
         modelsFetchTask?.cancel()
         modelsFetchTask = Task { [weak self] in
@@ -164,13 +177,17 @@ final class UTIModelStore {
         subscriptionManager.hasAppStoreProductsAvailablePublisher
             .sink { [weak self] _ in
                 Task { @MainActor [weak self] in
-                    self?.updateFreeTrialEligibilityFromSubscriptionCache(notifyOnChange: true)
+                    guard let self else { return }
+                    if self.isUpdatedModelPickerEnabled {
+                        self.updateFreeTrialEligibilityFromSubscriptionCache()
+                    }
+                    self.onModelsUpdated?()
                 }
             }
             .store(in: &cancellables)
     }
 
-    private func updateFreeTrialEligibilityFromSubscriptionCache(notifyOnChange: Bool) {
+    private func updateFreeTrialEligibilityFromSubscriptionCache() {
         let updatedEligibility: FreeTrialEligibility
         if !subscriptionManager.isSubscriptionPurchaseEligible {
             updatedEligibility = .unknown
@@ -178,11 +195,7 @@ final class UTIModelStore {
             updatedEligibility = subscriptionManager.isUserEligibleForFreeTrial() ? .eligible : .ineligible
         }
 
-        guard updatedEligibility != freeTrialEligibility else { return }
         freeTrialEligibility = updatedEligibility
-        if notifyOnChange {
-            onModelsUpdated?()
-        }
     }
 
     func updateSelectedModel(_ modelId: String, isNewChatContext: Bool) {

@@ -195,7 +195,7 @@ public struct SitePermissionsSheetView: View {
                     .font(.body)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(Color(designSystemColor: .iconsTertiary))
                         .accessibilityHidden(true)
                 }

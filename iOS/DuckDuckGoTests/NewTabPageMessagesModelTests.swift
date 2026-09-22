@@ -58,6 +58,34 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         pixelKitMock = nil
     }
 
+    func testWhenRedesignedPageLoadsThenMessagesSubscribeOnceAndFollowLiveUpdates() {
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [])
+        let messages = createSUT(configuration: configuration)
+        let pageModel = NewTabPageViewModel(fireTab: false, pixelFiring: nil)
+        var page: RedesignedNewTabPageViewController? = RedesignedNewTabPageViewController(
+            blocks: [], pageModel: pageModel, messagesModel: messages)
+        page?.setEscapeHatch(nil)
+        XCTAssertEqual(configuration.subscriptionCount, 0)
+
+        page?.loadViewIfNeeded()
+        page?.loadViewIfNeeded()
+        XCTAssertEqual(configuration.subscriptionCount, 1)
+        XCTAssertTrue(messages.homeMessageViewModels.isEmpty)
+        XCTAssertEqual(configuration.didAppearCallCount, 0)
+
+        configuration.homeMessages = [.placeholder]
+        configuration.sendContentDidChange()
+        XCTAssertEqual(messages.homeMessageViewModels.count, 1)
+        configuration.homeMessages = []
+        configuration.sendContentDidChange()
+        XCTAssertTrue(messages.homeMessageViewModels.isEmpty)
+        XCTAssertEqual(configuration.refreshCallCount, 0)
+
+        weak var weakPage = page
+        page = nil
+        XCTAssertNil(weakPage)
+    }
+
     func testUpdatesOnNotification() {
         let sut = createSUT()
 
@@ -411,6 +439,7 @@ private final class CoordinatedMessagesConfigurationMock: HomePageMessagesConfig
     private let contentDidChangeSubject = PassthroughSubject<Void, Never>()
     private let arbiterLease: PromoQueueRemoteMessageArbiterLease
 
+    private(set) var subscriptionCount = 0
     private(set) var refreshCallCount = 0
     private(set) var didAppearCallCount = 0
     private(set) var dismissCallCount = 0
@@ -418,7 +447,9 @@ private final class CoordinatedMessagesConfigurationMock: HomePageMessagesConfig
     private(set) var lastDismissedContext: HomeMessagePresentationContext?
 
     var contentDidChangePublisher: AnyPublisher<Void, Never> {
-        contentDidChangeSubject.eraseToAnyPublisher()
+        contentDidChangeSubject
+            .handleEvents(receiveSubscription: { [weak self] _ in self?.subscriptionCount += 1 })
+            .eraseToAnyPublisher()
     }
 
     init(homeMessages: [HomeMessage]) {

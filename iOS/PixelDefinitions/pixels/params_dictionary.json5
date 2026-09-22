@@ -556,6 +556,12 @@
         "type": "boolean",
         "description": "Whether WebKit reported the CPM background web process as responsive."
     },
+    "cpm_recovery_from": {
+        "key": "recovery_from",
+        "type": "string",
+        "enum": ["initialization_failed", "messaging_stuck"],
+        "description": "Whether the recovered episode had only an initialization failure or had been confirmed stuck."
+    },
     "background_events": {
         "key": "bg_events",
         "type": "string",

@@ -68,11 +68,17 @@ public enum WebExtensionPixelEvent {
     /// A later eligible navigation confirmed the preceding initialization failure.
     case cpmMessagingStuck(reason: CPMMessagingFailureReason, diagnostics: CPMMessagingDiagnostics? = nil)
     /// CPM messaging recovered without an intervening successful extension reload.
-    case cpmMessagingRecoveredWithoutExtensionReload
+    case cpmMessagingRecoveredWithoutExtensionReload(from: CPMMessagingRecoverySource)
     /// CPM messaging recovered after an embedded-extension reload.
-    case cpmMessagingRecoveredAfterExtensionReload
+    case cpmMessagingRecoveredAfterExtensionReload(from: CPMMessagingRecoverySource)
     /// The first CPM measurement using a successful extension-reload generation also failed.
     case cpmMessagingExtensionReloadFailed
+}
+
+/// Failure state of the episode immediately before recovery.
+public enum CPMMessagingRecoverySource: String, Sendable {
+    case initializationFailed = "initialization_failed"
+    case messagingStuck = "messaging_stuck"
 }
 
 /// Reporting cadence shared by both platform CPM pixel adapters.
@@ -136,14 +142,14 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "debug_web_extension_cpm_messaging_stuck_\(reason.rawValue)"
             frequency = .dailyAndCount
             parameters = diagnostics?.pixelParameters ?? [:]
-        case .cpmMessagingRecoveredWithoutExtensionReload:
+        case .cpmMessagingRecoveredWithoutExtensionReload(let source):
             name = "debug_web_extension_cpm_messaging_recovered_without_extension_reload"
             frequency = .dailyAndCount
-            parameters = [:]
-        case .cpmMessagingRecoveredAfterExtensionReload:
+            parameters = ["recovery_from": source.rawValue]
+        case .cpmMessagingRecoveredAfterExtensionReload(let source):
             name = "debug_web_extension_cpm_messaging_recovered_after_extension_reload"
             frequency = .dailyAndCount
-            parameters = [:]
+            parameters = ["recovery_from": source.rawValue]
         case .cpmMessagingExtensionReloadFailed:
             name = "debug_web_extension_cpm_messaging_extension_reload_failed"
             frequency = .dailyAndCount

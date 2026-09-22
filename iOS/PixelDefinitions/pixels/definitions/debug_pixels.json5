@@ -245,14 +245,14 @@
         "owners": ["mallexxx"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "cpm_recovery_from"]
     },
     "debug_web_extension_cpm_messaging_recovered_after_extension_reload": {
         "description": "Fires when CPM recovers on a previously failed tab or from a stuck episode after the extension reloads.",
         "owners": ["mallexxx"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "cpm_recovery_from"]
     },
     "debug_web_extension_cpm_messaging_extension_reload_failed": {
         "description": "Fires when the first CPM measurement using a successful extension-reload generation also times out.",

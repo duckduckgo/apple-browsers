@@ -438,7 +438,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private func closeEpisodeForCurrentGeneration() {
         guard let episode, episode.reloadGeneration == nil else { return }
         if episode.isStuck {
-            pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload)
+            pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload(from: .messagingStuck))
         }
         self.episode = nil
     }
@@ -685,10 +685,11 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
         let didThisMeasurementFail = record.state == .failed
         if episode.isStuck || didThisMeasurementFail || episode.failedTabIdentifiers.contains(measurement.tabIdentifier) {
+            let source: CPMMessagingRecoverySource = episode.isStuck ? .messagingStuck : .initializationFailed
             if episode.reloadGeneration != nil {
-                pixelFiring.fire(.cpmMessagingRecoveredAfterExtensionReload)
+                pixelFiring.fire(.cpmMessagingRecoveredAfterExtensionReload(from: source))
             } else {
-                pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload)
+                pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload(from: source))
             }
         }
         self.episode = nil

@@ -24,7 +24,11 @@ final class FloatingDomainCapsuleController {
 
     static let handoffStart: CGFloat = 0.60
 
-    static let handoffBandHalfWidth: CGFloat = 0.02
+    /// End of the bar<->pill crossfade band (`[handoffStart, handoffEnd]`). Both are geometry-locked
+    /// throughout this band — the bar is pinned on screen and the pill sits at the bar's full frame —
+    /// so widening the fade here can't make either visibly creep; it only slows the alpha handoff down
+    /// enough that a fast scroll renders several blended frames instead of a one-frame cut.
+    static let handoffEnd: CGFloat = 0.85
 
     /// Gap between the pill and the adjacent screen edge at rest. Used by the bottom capsule, and
     /// by the top capsule only as a fallback before the expanded frame is known (see `restCenterY`).
@@ -220,10 +224,7 @@ final class FloatingDomainCapsuleController {
         if reduceMotion {
             return max(0, min(1, 1 - p))
         }
-        let bandStart = Self.handoffStart - Self.handoffBandHalfWidth
-        let bandEnd = Self.handoffStart + Self.handoffBandHalfWidth
-        guard bandEnd > bandStart else { return p < Self.handoffStart ? 1 : 0 }
-        return 1 - ((p - bandStart) / (bandEnd - bandStart)).clamped(to: 0...1)
+        return 1 - FloatingUILayoutPolicy.rampedProgress(p, from: Self.handoffStart, to: Self.handoffEnd)
     }
 
     /// Interpolates the pill's real width/height/vertical-centre (and capsule corner radius) between

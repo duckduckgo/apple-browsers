@@ -1791,19 +1791,16 @@ class MainViewController: UIViewController {
 
     private func chromeAlpha(for percent: CGFloat) -> CGFloat {
         guard isFloatingCapsuleActive, !UIAccessibility.isReduceMotionEnabled else { return percent }
-        let handoffStart = FloatingDomainCapsuleController.handoffStart
-        let halfWidth = FloatingDomainCapsuleController.handoffBandHalfWidth
-        return rampedProgress(percent, from: handoffStart - halfWidth, to: handoffStart + halfWidth)
+        return FloatingUILayoutPolicy.rampedProgress(
+            percent,
+            from: FloatingDomainCapsuleController.handoffStart,
+            to: FloatingDomainCapsuleController.handoffEnd
+        )
     }
 
     private func toolbarAlpha(for percent: CGFloat) -> CGFloat {
         guard viewCoordinator.isOmnibarInToolbar else { return percent }
         return chromeAlpha(for: percent)
-    }
-
-    private func rampedProgress(_ percent: CGFloat, from start: CGFloat, to end: CGFloat) -> CGFloat {
-        guard end > start else { return percent < end ? 0 : 1 }
-        return ((percent - start) / (end - start)).clamped(to: 0...1)
     }
 
     private func currentTabSelectionAlpha(for chromeAlpha: CGFloat) -> CGFloat {
@@ -4616,10 +4613,13 @@ extension MainViewController: BrowserChromeDelegate {
         static let duration = 0.1
 
         /// Longer than `duration` so the floating capsule morph is legible; the pill grows/moves into
-        static let morphCollapseDuration = 0.25
+        /// `smoothstep` rather than `easeOutCubic`: cubic front-loads its motion into the first frames,
+        /// which used to compress almost all of the (now much wider) bar<->pill crossfade into 2-3
+        /// frames; smoothstep spreads it evenly so a fast scroll still renders several blended frames.
+        static let morphCollapseDuration = 0.30
         static let morphExpandDuration = 0.34
 
-        static let morphCollapseCurve = ChromeMorphAnimator.Curve.easeOutCubic
+        static let morphCollapseCurve = ChromeMorphAnimator.Curve.smoothstep
 
         static let morphExpandCurve = ChromeMorphAnimator.Curve.spring(dampingRatio: 0.82, naturalFrequency: 8.84)
 
@@ -4698,11 +4698,16 @@ extension MainViewController: BrowserChromeDelegate {
             let baseDuration = isExpanding
                 ? ChromeAnimationConstants.morphExpandDuration
                 : collapseDuration
+            // Debug -> Slow Animations sets `window.layer.speed`, which slows every other CA
+            // animation on screen; this display-link scrub integrates wall-clock time instead, so it
+            // would otherwise run at full speed while everything around it crawls. Scale the target
+            // duration by the same factor so the morph can be inspected frame by frame like the rest.
+            let slowAnimationsScale = 1 / Double(max(view.window?.layer.speed ?? 1, 0.01))
 
             chromeMorphAnimator.animate(
                 from: fromPercent,
                 to: percent,
-                duration: animationDuration ?? baseDuration * Double(durationScale),
+                duration: (animationDuration ?? baseDuration * Double(durationScale)) * slowAnimationsScale,
                 curve: isExpanding
                     ? ChromeAnimationConstants.morphExpandCurve
                     : ChromeAnimationConstants.morphCollapseCurve,
@@ -4748,7 +4753,10 @@ extension MainViewController: BrowserChromeDelegate {
         }
         let reduceMotion = UIAccessibility.isReduceMotionEnabled
         let buttonCollapseProgress = isFloatingCapsuleActive && !reduceMotion
-            ? ((1 - percent) / (1 - FloatingDomainCapsuleController.handoffStart)).clamped(to: 0...1)
+            ? FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(
+                barsVisibilityPercent: percent,
+                handoffEnd: FloatingDomainCapsuleController.handoffEnd
+              )
             : 0
         let panelHeight = viewCoordinator.toolbar.setButtonRowCollapseProgress(
             buttonCollapseProgress,
@@ -5018,10 +5026,15 @@ extension MainViewController: BrowserChromeDelegate {
     /// Current visibility fraction of the chrome bars (1.0 = fully visible, 0.0 = hidden).
     /// We track the driven fraction directly rather than reading a container's alpha: with the
     /// floating capsule morph, `chromeAlpha(for:)` keeps the chrome alpha at 0 through the resize
-    /// band and only fades it in over `[handoffStart, 1]`, so container alpha no longer reflects the
-    /// real fraction mid-transition. Call sites that reapply visibility need the true fraction.
+    /// band and only fades it in over `[handoffStart, handoffEnd]`, so container alpha no longer
+    /// reflects the real fraction mid-transition. Call sites that reapply visibility need the true
+    /// fraction.
     var currentBarsVisibility: CGFloat {
         chromeMorphAnimator.isAnimating ? chromeMorphAnimator.currentValue : lastChromeVisibilityPercent
+    }
+
+    var isAnimatingBarsVisibility: Bool {
+        chromeMorphAnimator.isAnimating
     }
 
     func restoreCurrentBarsVisibilityAfterLayoutRefresh() {

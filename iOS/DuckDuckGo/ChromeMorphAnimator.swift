@@ -74,6 +74,11 @@ final class ChromeMorphAnimator {
     private var displayLink: CADisplayLink?
     private var startTimestamp: CFTimeInterval = 0
     private var hasStartTimestamp = false
+    /// Timestamp of the last tick actually processed, so a retarget mid-flight (`animate` called
+    /// again while a link is already running) can carry the clock over instead of restarting it —
+    /// otherwise the new link's first tick only records a timestamp and returns, and a caller that
+    /// retargets every frame (e.g. scroll tracking) would never see `currentValue` advance.
+    private var lastTickTimestamp: CFTimeInterval?
     private var duration: CFTimeInterval = 0
     private var fromValue: CGFloat = 0
     private var toValue: CGFloat = 0
@@ -98,6 +103,9 @@ final class ChromeMorphAnimator {
                  curve: Curve = .smoothstep,
                  onProgress: @escaping (CGFloat) -> Void,
                  onComplete: @escaping () -> Void) {
+        // A retarget carries the clock over (see `lastTickTimestamp`); read it before `cancel()`
+        // tears down the current link.
+        let carriedOverTimestamp = displayLink != nil ? lastTickTimestamp : nil
         cancel()
 
         guard duration > 0 else {
@@ -114,13 +122,20 @@ final class ChromeMorphAnimator {
         self.onProgress = onProgress
         self.onComplete = onComplete
         currentValue = from
-        hasStartTimestamp = false
+
+        if let carriedOverTimestamp {
+            startTimestamp = carriedOverTimestamp
+            hasStartTimestamp = true
+        } else {
+            hasStartTimestamp = false
+        }
 
         let link = CADisplayLink(target: WeakDisplayLinkProxy(target: self), selector: #selector(WeakDisplayLinkProxy.tick(_:)))
         link.add(to: .main, forMode: .common)
         displayLink = link
 
-        // Apply the starting state immediately; the elapsed clock starts on the first tick.
+        // Apply the starting state immediately; the elapsed clock starts on the first tick (or,
+        // for a carried-over retarget, continues from where the previous run's clock left off).
         onProgress(from)
     }
 
@@ -138,9 +153,11 @@ final class ChromeMorphAnimator {
         guard hasStartTimestamp else {
             startTimestamp = link.timestamp
             hasStartTimestamp = true
+            lastTickTimestamp = link.timestamp
             return
         }
 
+        lastTickTimestamp = link.timestamp
         let elapsed = link.timestamp - startTimestamp
         let t = max(0, min(1, duration > 0 ? elapsed / duration : 1))
 

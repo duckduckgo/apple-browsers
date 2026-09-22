@@ -731,6 +731,38 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
             ))
         }
     }
+
+    func testWhenAtOrBelowHandoffStartThenRampedProgressIsZero() {
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(0.6, from: 0.6, to: 0.85), 0, accuracy: 0.001)
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(0.4, from: 0.6, to: 0.85), 0, accuracy: 0.001)
+    }
+
+    func testWhenAtOrAboveHandoffEndThenRampedProgressIsOne() {
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(0.85, from: 0.6, to: 0.85), 1, accuracy: 0.001)
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(1, from: 0.6, to: 0.85), 1, accuracy: 0.001)
+    }
+
+    func testWhenInsideTheHandoffBandThenRampedProgressIsLinear() {
+        // Midway between 0.6 and 0.85 (0.725) should read as halfway through the ramp.
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(0.725, from: 0.6, to: 0.85), 0.5, accuracy: 0.001)
+    }
+
+    func testWhenInsideTheHandoffBandThenToolbarButtonRowIsAlreadyFullyCollapsed() {
+        for percent in [CGFloat(0.85), 0.75, 0.6, 0.0] {
+            XCTAssertEqual(
+                FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: percent, handoffEnd: 0.85),
+                1,
+                accuracy: 0.001,
+                "the button row must have finished collapsing by handoffEnd, at percent \(percent)"
+            )
+        }
+    }
+
+    func testWhenAboveHandoffEndThenToolbarButtonRowCollapseTracksPercent() {
+        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 1, handoffEnd: 0.85), 0, accuracy: 0.001)
+        // Halfway between handoffEnd (0.85) and 1.0 (0.925) should be halfway collapsed.
+        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 0.925, handoffEnd: 0.85), 0.5, accuracy: 0.001)
+    }
 }
 
 final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
@@ -1277,6 +1309,24 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
         XCTAssertEqual(obscured, padding + controller.capsuleHeight, accuracy: 0.001)
         XCTAssertLessThan(obscured, insets.bottom + FloatingDomainCapsuleController.restEdgePadding + controller.capsuleHeight)
     }
+
+    func testWhenInsideTheHandoffBandThenPillFadesInWhileHoldingTheBarFrame() {
+        let midBandPercent = (FloatingDomainCapsuleController.handoffStart + FloatingDomainCapsuleController.handoffEnd) / 2
+        let button = update(barsVisibilityPercent: midBandPercent)
+
+        XCTAssertEqual(button?.alpha ?? -1, 0.5, accuracy: 0.01)
+        // Both bar and pill are geometry-locked throughout the band: the pill already sits at the
+        // bar's full expanded size, so widening the fade can't make either visibly creep.
+        XCTAssertEqual(button?.bounds.width ?? 0, expandedFrame.width, accuracy: 0.5)
+        XCTAssertEqual(button?.bounds.height ?? 0, expandedFrame.height, accuracy: 0.5)
+    }
+
+    func testWhenAtHandoffEndThenPillIsHidden() {
+        update(barsVisibilityPercent: FloatingDomainCapsuleController.handoffEnd)
+
+        XCTAssertEqual(capsuleButton?.alpha ?? -1, 0, accuracy: 0.001)
+        XCTAssertEqual(capsuleButton?.isHidden, true)
+    }
 }
 
 final class FloatingDomainCapsuleGeometryTests: XCTestCase {
@@ -1735,5 +1785,41 @@ final class ChromeMorphAnimatorCurveTests: XCTestCase {
             XCTAssertLessThanOrEqual(curve.value(at: CGFloat(step) / 100), 1.0)
         }
         XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.01)
+    }
+}
+
+final class ChromeMorphAnimatorRetargetTests: XCTestCase {
+
+    // `animate()` cancels any running link and starts a fresh one whose first tick only records a
+    // timestamp; a caller that retargets every frame (scroll tracking mid fast-scroll catch-up)
+    // would therefore never see `currentValue` advance unless the clock carries over the retarget.
+    func testWhenRetargetedEveryFrameThenValueStillAdvances() {
+        let animator = ChromeMorphAnimator()
+        var latestValue: CGFloat = 0
+        var didComplete = false
+
+        animator.animate(from: 0, to: 1, duration: 0.2, curve: .smoothstep,
+                          onProgress: { latestValue = $0 },
+                          onComplete: { didComplete = true })
+
+        let deadline = Date().addingTimeInterval(2)
+        while latestValue < 0.05, Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.016))
+        }
+        XCTAssertGreaterThan(latestValue, 0, "the initial run should already be progressing")
+
+        // Retarget on (roughly) every remaining frame, as `floatingDidScroll` would while a catch-up
+        // is in flight during continued scrolling.
+        var retargetCount = 0
+        while latestValue < 0.95, Date() < deadline, retargetCount < 40 {
+            animator.animate(from: animator.currentValue, to: 1, duration: 0.2, curve: .smoothstep,
+                              onProgress: { latestValue = $0 },
+                              onComplete: { didComplete = true })
+            retargetCount += 1
+            RunLoop.current.run(until: Date().addingTimeInterval(0.016))
+        }
+
+        XCTAssertGreaterThan(latestValue, 0.95, "value must keep advancing across repeated same-frame retargets, not stall")
+        XCTAssertTrue(didComplete)
     }
 }

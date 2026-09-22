@@ -91,14 +91,14 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
         public let permissionType: SitePermissionType
         public let decision: SitePermissionDecision
         public let captureState: SitePermissionCaptureState
-        public let options: [SitePermissionPickerOption]
-        public let selectedOption: SitePermissionPickerOption
         public let iconState: IconState
         public let title: String
         public let stateText: String
         public let accessibilityValue: String
 
         public var id: SitePermissionType { permissionType }
+        public var options: [SitePermissionPickerOption] { [.askEachTime, .alwaysAllow, .neverAllow] }
+        public var selectedOption: SitePermissionPickerOption { decision.pickerOption }
     }
 
     public typealias DecisionChangedHandler = (SitePermissionDecisionChange) -> Void
@@ -281,9 +281,7 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
     private func makeRow(for permissionType: SitePermissionType) -> Row {
         let decision = storedPermissions[permissionType] ?? .ask
         let captureState = captureStates[permissionType] ?? .inactive
-        let options: [SitePermissionPickerOption] = [.askEachTime, .alwaysAllow, .neverAllow]
-        let selectedOption = decision.pickerOption
-        let stateText = UserText.PermissionManagement.title(for: selectedOption)
+        let stateText = UserText.PermissionManagement.title(for: decision.pickerOption)
         let accessibilityValue: String
         switch captureState {
         case .active:
@@ -297,8 +295,6 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
         return Row(permissionType: permissionType,
                    decision: decision,
                    captureState: captureState,
-                   options: options,
-                   selectedOption: selectedOption,
                    iconState: iconState(decision: decision, captureState: captureState),
                    title: UserText.PermissionManagement.title(for: permissionType),
                    stateText: stateText,

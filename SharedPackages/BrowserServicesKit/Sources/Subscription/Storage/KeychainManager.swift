@@ -138,6 +138,9 @@ public final class KeychainManager: KeychainManaging {
             } else if let dataFromBacklog = self.writingBacklog[key] {
                 Logger.keychainManager.log("Data for key \(key, privacy: .public) retrieved from writing backlog")
                 return dataFromBacklog
+            } else {
+                Logger.keychainManager.log("Keychain unavailable and no backlog data for key \(key, privacy: .public), deferring")
+                throw AccountKeychainAccessError.keychainLookupFailure(errSecNotAvailable)
             }
 
             var query = attributes

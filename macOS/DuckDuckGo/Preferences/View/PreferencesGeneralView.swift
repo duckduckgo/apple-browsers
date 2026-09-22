@@ -37,6 +37,8 @@ extension Preferences {
         @ObservedObject var maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences
         @ObservedObject var autoplayModel: AutoplayPreferences
         @ObservedObject var dockModel: DockPreferencesModel
+        /// Opens the Website Permissions pane, where the all-sites autoplay setting now lives.
+        let showWebsitePermissions: () -> Void
         @State private var showingCustomHomePageSheet = false
         let featureFlagger = NSApp.delegateTyped.featureFlagger
         let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
@@ -56,6 +58,29 @@ extension Preferences {
             guard tabsModel.pinnedTabsMode != newMode else { return }
             tabsModel.pinnedTabsMode = newMode
             firePinnedTabsPixel(newMode)
+        }
+
+        /// The all-sites autoplay setting has moved to Website Permissions, so General points at it
+        /// rather than editing it. Kept behind the flag so a rollback restores the picker here.
+        private var autoplayMovedNotice: some View {
+            VStack(alignment: .leading, spacing: 1) {
+                TextMenuItemCaption(UserText.autoplayMovedCaption)
+                TextButton(UserText.autoplayMovedLink, action: showWebsitePermissions)
+                    .accessibilityIdentifier("PreferencesGeneralView.showWebsitePermissions")
+            }
+        }
+
+        private var autoplayPicker: some View {
+            VStack(alignment: .leading, spacing: 1) {
+                HStack {
+                    Picker(UserText.autoplayLabel, selection: $autoplayModel.autoplayBlockingMode) {
+                        ForEach(AutoplayBlockingMode.allCases, id: \.self) { mode in
+                            Text(mode.description).tag(mode)
+                        }
+                    }
+                }
+                TextMenuItemCaption(UserText.autoplayCaption)
+            }
         }
 
         private var isPresentingAddToDockDemoVideo: Binding<Bool> {
@@ -338,14 +363,11 @@ extension Preferences {
                 if featureFlagger.isFeatureOn(.autoplayPolicy) {
                     PreferencePaneSection(UserText.permissionsSection) {
                         PreferencePaneSubSection {
-                            HStack {
-                                Picker(UserText.autoplayLabel, selection: $autoplayModel.autoplayBlockingMode) {
-                                    ForEach(AutoplayBlockingMode.allCases, id: \.self) { mode in
-                                        Text(mode.description).tag(mode)
-                                    }
-                                }
+                            if featureFlagger.isFeatureOn(.websitePermissionsSettings) {
+                                autoplayMovedNotice
+                            } else {
+                                autoplayPicker
                             }
-                            TextMenuItemCaption(UserText.autoplayCaption)
                         }
                     }
                     .id(PreferencesScrollAnchor.permissions)

@@ -204,7 +204,8 @@ enum Preferences {
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 autoplayModel: NSApp.delegateTyped.autoplayPreferences,
-                                dockModel: model.dockPreferences)
+                                dockModel: model.dockPreferences,
+                                showWebsitePermissions: { model.selectPane(.websitePermissions) })
                 case .sync:
                     SyncView()
                 case .appearance:

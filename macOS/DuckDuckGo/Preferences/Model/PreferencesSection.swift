@@ -320,4 +320,8 @@ struct PreferencesDestination: Hashable {
     static var generalPermissions: PreferencesDestination {
         PreferencesDestination(pane: .general, scrollAnchor: .permissions)
     }
+
+    static var websitePermissions: PreferencesDestination {
+        PreferencesDestination(pane: .websitePermissions, scrollAnchor: nil)
+    }
 }

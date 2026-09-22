@@ -137,18 +137,6 @@ final class AIChatElicitationCoordinatorTests: XCTestCase {
         XCTAssertEqual(secondResult, .decline)
     }
 
-    func testWhenCancelAllThenEveryPendingPromptResolvesAsCancel() async throws {
-        let first = elicit(toolName: "alpha")
-        let second = elicit(toolName: "beta")
-        try await waitForPending(count: 2)
-
-        coordinator.cancelAll()
-
-        let results = await [first.value, second.value]
-        XCTAssertEqual(results, [.cancel, .cancel])
-        XCTAssertTrue(coordinator.pendingPrompts.isEmpty)
-    }
-
     // MARK: -
 
     private func elicit(toolName: String = "alpha",

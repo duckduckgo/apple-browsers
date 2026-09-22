@@ -96,8 +96,4 @@ public final class AIChatElicitationCoordinator {
         entry.continuation.resume(returning: result)
         return true
     }
-
-    public func cancelAll() {
-        for id in order { complete(id: id, result: .cancel) }
-    }
 }

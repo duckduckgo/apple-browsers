@@ -395,7 +395,7 @@ private final class SpyBrowserTool: BrowserTool {
     }
 }
 
-final class InMemoryPermissionStore: BrowserToolPermissionStoring {
+private final class InMemoryPermissionStore: BrowserToolPermissionStoring {
     private(set) var storedDecisions: [String: BrowserToolPermissionState] = [:]
 
     func state(forToolNamed name: String) -> BrowserToolPermissionState {

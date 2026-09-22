@@ -90,21 +90,18 @@ final class ListOpenTabsBrowserTool: BrowserTool {
         }
 
         let tabs = (collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs
-        let items: [JSONValue] = tabs
-            .compactMap { tab -> JSONValue? in
-                // Only pages with a URL are listed, and never Duck.ai itself.
-                guard case .url(let url, _, _) = tab.content, !url.isDuckAIURL else { return nil }
-                return [
-                    "tabId": .string(tab.uuid),
-                    "title": .string(tab.title ?? url.host ?? ""),
-                    "url": .string(url.absoluteString),
-                    "isCurrentTab": .bool(tab.uuid == context.ownerTabID),
-                    "isAttachable": .bool(!AIChatTabMetadata.shouldExcludeFromTabPicker(url))
-                ]
-            }
-            .prefix(limit)
-            .map { $0 }
+        // Only pages with a URL are listed, and never Duck.ai itself.
+        let pages: [JSONValue] = tabs.compactMap { tab in
+            guard case .url(let url, _, _) = tab.content, !url.isDuckAIURL else { return nil }
+            return [
+                "tabId": .string(tab.uuid),
+                "title": .string(tab.title ?? url.host ?? ""),
+                "url": .string(url.absoluteString),
+                "isCurrentTab": .bool(tab.uuid == context.ownerTabID),
+                "isAttachable": .bool(!AIChatTabMetadata.shouldExcludeFromTabPicker(url))
+            ]
+        }
 
-        return .success(["tabs": .array(items)])
+        return .success(["tabs": .array(Array(pages.prefix(limit)))])
     }
 }

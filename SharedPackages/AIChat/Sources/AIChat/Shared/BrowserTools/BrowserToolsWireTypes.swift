@@ -248,7 +248,7 @@ public struct MCPTextContentBlock: Encodable, Equatable {
 
 /// Pushed as the `elicitation/create` subscription event. The correlation `id` rides in the params
 /// because a subscription event has no envelope id of its own.
-public struct MCPElicitationCreateParams: Encodable, Equatable {
+public struct MCPElicitationCreateParams: Encodable, Equatable, Sendable {
     public let id: String
     public let mode: String
     public let message: String
@@ -270,7 +270,7 @@ public enum MCPElicitationAction: String, Equatable, Sendable {
 
 /// The front end's answer. Lenient: an unreadable `action` decodes as an unknown string, which the
 /// invoker treats as `cancel`, so a shape mismatch fails the call instead of hanging it.
-public struct MCPElicitationResult: Codable, Equatable {
+public struct MCPElicitationResult: Codable, Equatable, Sendable {
     public let action: String
     public let content: JSONValue?
 
@@ -292,7 +292,7 @@ public struct MCPElicitationResult: Codable, Equatable {
 
 /// Inbound `elicitation/response`. `result` is optional so a malformed answer still correlates by
 /// `id` and completes the prompt as `cancel`.
-public struct AIChatElicitationResponseRequest: Decodable, Equatable {
+public struct AIChatElicitationResponseRequest: Decodable, Equatable, Sendable {
     public let id: String
     public let result: MCPElicitationResult?
 

@@ -544,25 +544,31 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.
     /// Internal-only while the front end is in development.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserTools
 
-    /// Gates the `listOpenTabs` browser tool. https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
+    /// Gates the `listOpenTabs` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolListOpenTabs
 
-    /// Gates the `searchHistory` browser tool. https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
+    /// Gates the `searchHistory` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolSearchHistory
 
-    /// Gates the `switchToTab` browser tool. https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
+    /// Gates the `switchToTab` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolSwitchToTab
 
-    /// Gates the `readTabContent` browser tool. https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
+    /// Gates the `readTabContent` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolReadTabContent
 
-    /// Gates the `findInPage` browser tool. https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
+    /// Gates the `findInPage` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolFindInPage
 
-    /// Gates the `highlightInPage` browser tool. https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117?focus=true
+    /// Gates the `highlightInPage` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolHighlightInPage
 
     /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).

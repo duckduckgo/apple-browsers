@@ -280,8 +280,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
 
-    /// App-wide because a sidebar and its host tab share one session, while each web view gets
-    /// its own `AIChatUserScript`.
     let aiChatBrowserToolsService: AIChatBrowserToolsService
     let aiChatPreferences: AIChatPreferences
     let promptBarPreferences: PromptBarPreferences
@@ -890,7 +888,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
         aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
-                                                             windowControllersManager: windowControllersManager)
+                                                              windowControllersManager: windowControllersManager)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)

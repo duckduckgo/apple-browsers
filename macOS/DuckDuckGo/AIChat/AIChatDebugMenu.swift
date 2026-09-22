@@ -76,7 +76,6 @@ final class AIChatDebugMenu: NSMenu {
 
     private var browserToolsPanel: BrowserToolsDebugPanel?
 
-    /// Stands in for the Duck.ai front end, which cannot drive the browser tools bridge yet.
     @MainActor
     @objc func openBrowserToolsPanel() {
         let panel = browserToolsPanel

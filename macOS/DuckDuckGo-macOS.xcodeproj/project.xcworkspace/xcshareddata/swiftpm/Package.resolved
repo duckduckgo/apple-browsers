@@ -1,5 +1,5 @@
 {
-  "originHash" : "d50aee3b0b1db23ddcec91bc93f27625b4fd1e5d96eedeea486e7aa9198736dc",
+  "originHash" : "68b4c2aa06257235ced4279ff7391cfc3c67d26c2cd3b78902837661786d9387",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "0588e183b931c0710dceb9d77cbbda9333d9c222",
-        "version" : "17.7.0"
+        "revision" : "00020614eb9d7492c11001880193faf053f52852",
+        "version" : "17.9.0"
       }
     },
     {
@@ -105,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/gumob/PunycodeSwift.git",
       "state" : {
-        "revision" : "30a462bdb4398ea835a3585472229e0d74b36ba5",
-        "version" : "3.0.0"
+        "revision" : "de703481cf48b859a04bac8ef1d98217b9c97aa9",
+        "version" : "4.0.3"
       }
     },
     {

@@ -304,6 +304,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
 }
 
 enum PreferencesScrollAnchor: Hashable {
+    case top
     case permissions
 }
 

@@ -23,9 +23,16 @@ import DesignResourcesKitIcons
 struct WebsitePermissionsViewState: Equatable {
     var recents: [RecentRow] = []
     var rows: [Row] = []
+    var detailModel: WebsitePermissionDetailViewModel?
 
     var hasRecents: Bool {
         !recents.isEmpty
+    }
+}
+
+extension WebsitePermissionsViewState {
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.recents == rhs.recents && lhs.rows == rhs.rows && lhs.detailModel === rhs.detailModel
     }
 }
 

@@ -34,6 +34,8 @@ struct RedesignedFocusedSearchModulesView: View {
             .padding(.horizontal, 16)
             .padding(.top, 20)
             .padding(.bottom, 16)
+            .frame(maxWidth: RedesignedNewTabPageLayout.maximumContentWidth)
+            .frame(maxWidth: .infinity)
         }
         .background(Color(designSystemColor: .background))
     }

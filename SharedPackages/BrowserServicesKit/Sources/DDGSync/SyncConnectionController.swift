@@ -719,7 +719,7 @@ public class SyncConnectionController: SyncConnectionControlling {
              .hostJoinOutcomeUnknown,
              .joinerWaitingForRecoveryCode,
              .joinerLoggingIn,
-             .completed(.recoveryCodeSent(credentialKind: _)),
+             .completed(.recoveryCodeSent),
              .completed(.loggedIn):
             return true
         case .idle,

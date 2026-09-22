@@ -95,6 +95,8 @@ struct SyncedDevicesListV2: View {
             return "SyncSettings.deviceRow.mobile"
         case .thirdParty:
             return "SyncSettings.deviceRow.thirdParty"
+        case .unknown:
+            return "SyncSettings.deviceRow.unknown"
         }
     }
 
@@ -131,6 +133,8 @@ struct SyncedDeviceIconV2: View {
         case .mobile:
             return DesignSystemImages.Glyphs.Size16.deviceMobile
         case .thirdParty:
+            return DesignSystemImages.Glyphs.Size16.globe
+        case .unknown:
             return DesignSystemImages.Glyphs.Size16.deviceAll
         }
     }
@@ -143,6 +147,8 @@ struct SyncedDeviceIconV2: View {
             return "SyncSettings.syncedDevice.mobile"
         case .thirdParty:
             return "SyncSettings.syncedDevice.thirdParty"
+        case .unknown:
+            return "SyncSettings.syncedDevice.unknown"
         }
     }
 

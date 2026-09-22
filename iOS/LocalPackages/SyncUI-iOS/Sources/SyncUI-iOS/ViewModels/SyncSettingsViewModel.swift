@@ -85,12 +85,19 @@ public class SyncSettingsViewModel: ObservableObject {
         public let credentialId: String?
         public let isThisDevice: Bool
 
-        // Keep these values aligned with DDGSync.SyncCredentialID without coupling SyncUI_iOS to DDGSync.
+        // Keep these values aligned with DDGSync.SyncCredentialID and the RegisteredDeviceMapper
+        // placeholder type without coupling SyncUI_iOS to DDGSync.
         public static let defaultCredentialId = "ddg"
         public static let thirdPartyCredentialId = "3party"
+        public static let unknownDeviceType = "unknown"
 
         public var isThirdParty: Bool {
             credentialId == Self.thirdPartyCredentialId
+        }
+
+        /// The device's metadata could not be decrypted, so its real type is not known.
+        public var isUnknownType: Bool {
+            type == Self.unknownDeviceType
         }
 
         public init(id: String, name: String, type: String, credentialId: String? = nil, isThisDevice: Bool) {

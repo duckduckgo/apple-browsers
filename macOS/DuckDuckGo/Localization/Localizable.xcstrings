@@ -82372,6 +82372,18 @@
         }
       }
     },
+    "permission.center.autoplay.disclaimer.website-permissions.link" : {
+      "comment" : "Clickable label in the autoplay disclaimer UI that opens the Website Permissions settings pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Settings → Website Permissions → Autoplay."
+          }
+        }
+      }
+    },
     "permission.center.external.apps" : {
       "comment" : "Permission center header for external app permissions",
       "extractionState" : "extracted_with_value",
@@ -99021,6 +99033,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Остановить видео со звуком"
+          }
+        }
+      }
+    },
+    "preferences.autoplay.moved.caption" : {
+      "comment" : "Caption in General preferences telling the user where the autoplay setting now lives",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Autoplay settings moved to Website Permissions."
+          }
+        }
+      }
+    },
+    "preferences.autoplay.moved.link" : {
+      "comment" : "Button in General preferences that opens the Website Permissions settings pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Website Permissions"
           }
         }
       }

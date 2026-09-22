@@ -293,7 +293,7 @@ class BarsAnimatorFloatingTests: XCTestCase {
         XCTAssertLessThan(percent, 0.1, "1pt of overscroll must not reveal a large slice of the chrome")
     }
 
-    func testWhenScrollOffsetAdvancesFullTravelInOneUpdateThenBarsAnimateQuicklyToHidden() {
+    func testWhenScrollOffsetAdvancesFullTravelInOneUpdateThenBarsAnimateToHidden() {
         let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
 
@@ -307,7 +307,9 @@ class BarsAnimatorFloatingTests: XCTestCase {
         XCTAssertEqual(sut.barsState, .hidden)
         XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0))
         XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated)
-        XCTAssertEqual(delegate.lastAnimationDuration, BarsAnimator.Metrics.floatingFastStepAnimationDuration)
+        // No explicit duration override: the delegate scales the morph duration itself from how
+        // much of the transition this jump skipped, so a full-travel jump gets the full morph.
+        XCTAssertNil(delegate.lastAnimationDuration)
 
         let visibilityUpdateCount = delegate.receivedMessages.count
         sut.didScroll(in: scrollView)

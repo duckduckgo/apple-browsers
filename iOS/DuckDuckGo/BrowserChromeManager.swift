@@ -42,6 +42,11 @@ protocol BrowserChromeDelegate: AnyObject {
 
     var isFloatingChromeEnabled: Bool { get }
 
+    /// True while a floating chrome morph (the display-link scrub driven by `setBarsVisibility`) is
+    /// still running. Lets scroll tracking tell an in-flight catch-up apart from a settled state, so
+    /// it can retarget the running morph instead of cancelling and snapping it.
+    var isAnimatingBarsVisibility: Bool { get }
+
     /// Pins any in-flight floating chrome morph to its currently rendered visibility so scroll
     /// tracking can take over. No-op when not morphing; must not re-fire settled chrome side effects.
     func pinFloatingChromeMorphIfNeeded()
@@ -66,6 +71,8 @@ protocol BrowserChromeDelegate: AnyObject {
 extension BrowserChromeDelegate {
 
     var isFloatingChromeEnabled: Bool { false }
+
+    var isAnimatingBarsVisibility: Bool { false }
 
     var currentBarsVisibility: CGFloat { isToolbarHidden ? 0 : 1 }
 

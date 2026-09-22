@@ -279,6 +279,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatConversationSourceHandler = AIChatConversationSourceHandler()
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
+
+    let aiChatBrowserToolsService: AIChatBrowserToolsService
     let aiChatPreferences: AIChatPreferences
     let promptBarPreferences: PromptBarPreferences
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
@@ -884,6 +886,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
+
+        aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
+                                                              windowControllersManager: windowControllersManager)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
@@ -2310,6 +2315,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 isPairingV2CodeEnabled: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanShowV2ConnectCode)
+                },
+                canUseExchangeV2Point1: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanUseExchangeV2Point1)
                 },
                 canWriteUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanWriteUnifiedDeviceList)

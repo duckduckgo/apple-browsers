@@ -322,6 +322,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     var isDragging: Bool { newTabPageViewModel.isDragging }
 
+    var hasInlineSearchInput: Bool { false }
+
     weak var chromeDelegate: BrowserChromeDelegate?
     weak var delegate: NewTabPageControllerDelegate?
 

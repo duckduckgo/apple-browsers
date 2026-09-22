@@ -665,17 +665,67 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertEqual(migrationCall.account.deviceId, SyncAccount.mock.deviceId)
     }
 
-    func testWhenDebugMigrationIsResetThenItCanRunAgain() async throws {
-        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
-        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
-        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+    func testWhenMigrationCompletesDuringCancellationThenAnotherMigrationCanRun() async {
+        let state = DeviceInfoUpdateState()
+        for _ in 0..<25 {
+            let started = expectation(description: "Migration started")
+            let (gate, continuation) = AsyncStream<Void>.makeStream()
+            state.scheduleMigration {
+                started.fulfill()
+                for await _ in gate {}
+            }
+            await fulfillment(of: [started], timeout: 1)
 
-        try await syncService.runDeviceInfoMigrationForDebug()
-        syncService.resetDeviceInfoMigrationForDebug()
-        try await syncService.runDeviceInfoMigrationForDebug()
+            async let cancellation: Void = state.cancelAllAndWait()
+            continuation.finish()
+            await cancellation
 
-        XCTAssertEqual(migrationCoordinator.calls.count, 2)
-        XCTAssertEqual(migrationCoordinator.resetCallCount, 1)
+            XCTAssertFalse(state.isMigrationRunning)
+        }
+    }
+
+    func testWhenCancelledMigrationFinishesAfterReplacementThenReplacementRemainsTracked() async {
+        let state = DeviceInfoUpdateState()
+        let started = expectation(description: "Original migration started")
+        let cancelled = expectation(description: "Original migration cancelled")
+        let (gate, continuation) = AsyncStream<Void>.makeStream()
+        // Awaiting an independent task keeps the original operation alive after cancellation.
+        let releaseOriginal = Task { for await _ in gate {} }
+        defer { continuation.finish() }
+        state.scheduleMigration {
+            await withTaskCancellationHandler {
+                started.fulfill()
+                await releaseOriginal.value
+            } onCancel: {
+                cancelled.fulfill()
+            }
+        }
+        await fulfillment(of: [started], timeout: 1)
+        let cancellation = Task { await state.cancelAllAndWait() }
+        await fulfillment(of: [cancelled], timeout: 1)
+        state.cancelAll()
+
+        let replacementStarted = expectation(description: "Replacement migration started")
+        let replacementCancelled = expectation(description: "Replacement migration cancelled")
+        let (replacementGate, replacementContinuation) = AsyncStream<Void>.makeStream()
+        defer { replacementContinuation.finish() }
+        state.scheduleMigration {
+            await withTaskCancellationHandler {
+                replacementStarted.fulfill()
+                for await _ in replacementGate {}
+            } onCancel: {
+                replacementCancelled.fulfill()
+            }
+        }
+        await fulfillment(of: [replacementStarted], timeout: 1)
+
+        continuation.finish()
+        await cancellation.value
+        XCTAssertTrue(state.isMigrationRunning)
+
+        await state.cancelAllAndWait()
+        await fulfillment(of: [replacementCancelled], timeout: 1)
+        XCTAssertFalse(state.isMigrationRunning)
     }
 
     func testWhenUnifiedReadObservationsAreReturnedThenTheyFireWithoutRequiringWriteFlag() async throws {

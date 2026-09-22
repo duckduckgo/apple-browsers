@@ -47,7 +47,7 @@ struct SaveRecoveryPDFView: View {
                             .frame(width: 155, height: 28)
                     }
                     Button {
-                        viewModel.delegate?.saveRecoveryPDF()
+                        viewModel.delegate?.saveRecoveryPDF(requiresAuthentication: true)
                     } label: {
                         Text(UserText.recoveryPDFSavePDFButton)
                             .frame(width: 155, height: 28)
@@ -72,3 +72,13 @@ struct SaveRecoveryPDFView: View {
         .frame(width: 420)
     }
 }
+
+#if DEBUG
+#Preview("Default") {
+    let model = ManagementDialogModel()
+    model.isAppRebranded = true
+    let code = String(repeating: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ", count: 3)
+    return SaveRecoveryPDFView(code: code)
+        .environmentObject(model)
+}
+#endif

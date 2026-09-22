@@ -392,7 +392,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the model picker chip (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the model picker chip.
     var isModelPickerEnabled: Bool = false {
         didSet { refreshModelPickerVisibility() }
     }
@@ -443,7 +443,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the reasoning picker chip (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the reasoning picker chip.
     var isReasoningPickerEnabled: Bool = false {
         didSet { refreshReasoningPickerVisibility() }
     }
@@ -486,7 +486,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the tool picker chip (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the tool picker chip.
     var isToolPickerEnabled: Bool = false {
         didSet { refreshToolPickerVisibility() }
     }
@@ -610,7 +610,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the attach button (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the attach button.
     var isAttachButtonEnabled: Bool = false {
         didSet { refreshAttachButtonVisibility() }
     }
@@ -768,9 +768,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         UITraitCollection(userInterfaceStyle: configuration.interfaceStyle).performAsCurrent {
             if #available(iOS 26.0, *) {
                 if configuration.kind == .embedded {
-                    // Flat fill: the chrome underneath is already glass.
-                    view = UIVisualEffectView(effect: nil)
-                    view.backgroundColor = UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground)
+                    // Native regular material, tinted so it still reads as our surface colour.
+                    view = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+                    let tintView = UIView()
+                    tintView.backgroundColor = UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground)
+                    tintView.translatesAutoresizingMaskIntoConstraints = false
+                    view.contentView.addSubview(tintView)
+                    NSLayoutConstraint.activate([
+                        tintView.topAnchor.constraint(equalTo: view.contentView.topAnchor),
+                        tintView.leadingAnchor.constraint(equalTo: view.contentView.leadingAnchor),
+                        tintView.trailingAnchor.constraint(equalTo: view.contentView.trailingAnchor),
+                        tintView.bottomAnchor.constraint(equalTo: view.contentView.bottomAnchor)
+                    ])
                 } else {
                     let effect = UIGlassEffect(style: .regular)
                     if configuration.fireMode {
@@ -783,20 +792,13 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
         if configuration.kind == .embedded {
             view.overrideUserInterfaceStyle = configuration.interfaceStyle
+            // `cornerConfiguration` only shapes glass effects; a classic UIBlurEffect needs a
+            // manual capsule radius, kept in sync with its height in `applyOmnibarCornerStyle()`.
+            view.clipsToBounds = true
         }
         return view
     }
 
-    private static var defaultSupportsButtonMenusInGlass: Bool {
-#if targetEnvironment(simulator)
-        let version = ProcessInfo.processInfo.operatingSystemVersion
-        return version.majorVersion != 26 || version.minorVersion > 5
-#else
-        return true
-#endif
-    }
-
-    private let supportsButtonMenusInGlass: Bool
     private var glassEffectConstraints: [NSLayoutConstraint] = []
     private var floatingHostToContainerConstraints: [NSLayoutConstraint] = []
     private var floatingHostToGlassContentConstraints: [NSLayoutConstraint] = []
@@ -832,14 +834,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         Self.init(isFloatingUIEnabled: false)
     }
 
-    convenience init(isFloatingUIEnabled: Bool) {
-        self.init(isFloatingUIEnabled: isFloatingUIEnabled,
-                  supportsButtonMenusInGlass: Self.defaultSupportsButtonMenusInGlass)
-    }
-
-    init(isFloatingUIEnabled: Bool, supportsButtonMenusInGlass: Bool) {
+    init(isFloatingUIEnabled: Bool) {
         self.isFloatingUIEnabled = isFloatingUIEnabled
-        self.supportsButtonMenusInGlass = supportsButtonMenusInGlass
         self.searchAreaView = DefaultOmniBarSearchView(centersContentVertically: isFloatingUIEnabled)
         if isFloatingUIEnabled {
             self.searchAreaContainerView = SearchAreaContainerView()
@@ -870,11 +866,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     func makeGlass() {
         guard isFloatingUIEnabled else {
-            makeOpaque()
-            return
-        }
-        // iOS 26.5 Simulator glass breaks button menus.
-        if !supportsButtonMenusInGlass {
             makeOpaque()
             return
         }
@@ -925,6 +916,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
             setFieldBackgroundColor(.clear)
             searchAreaContainerView.layoutIfNeeded()
+            // The new glassEffect has no corner radius yet; only layoutSubviews() sets it otherwise.
+            applyOmnibarCornerStyle()
         }
     }
 
@@ -1753,6 +1746,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaContainerView.layer.cornerRadius = cornerRadius
         searchAreaView.layer.cornerRadius = cornerRadius
         activeOutlineView.layer.cornerRadius = cornerRadius + Metrics.activeBorderWidth
+
+        // The embedded field's classic UIBlurEffect ignores `cornerConfiguration`; radius it by hand.
+        if glassEffectConfiguration?.kind == .embedded {
+            glassEffect.layer.cornerRadius = glassEffect.bounds.height / 2
+        }
 
         // The pre-iOS 26 blur fallback needs an explicit capsule radius (iOS 26 uses `.capsule()`).
         if #unavailable(iOS 26.0) {

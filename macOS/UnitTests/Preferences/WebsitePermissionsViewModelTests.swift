@@ -319,6 +319,49 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         withExtendedLifetime(cancellable) {}
     }
 
+    // MARK: - Detail
+
+    func testWhenOpeningDetailAfterPermissionsLoadThenDetailIsPrepopulated() throws {
+        let model = createSUT(entries: [
+            WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .allow, lastModified: nil),
+            WebsitePermissionEntry(domain: "location.com", permissionType: .geolocation, decision: .allow, lastModified: nil),
+        ])
+        waitForViewStateUpdate(model) {
+            model.send(action: .onAppear)
+        }
+
+        model.send(action: .openDetail(.camera))
+        let detailModel = try XCTUnwrap(model.viewState.detailModel)
+
+        XCTAssertEqual(detailModel.viewState.sites.map(\.domain), ["example.com"])
+    }
+
+    func testWhenOpeningAndClosingDetailThenViewStateTracksNavigation() {
+        let model = createSUT()
+
+        model.send(action: .openDetail(.camera))
+        XCTAssertEqual(model.viewState.detailModel?.viewState.category, .camera)
+
+        model.send(action: .closeDetail)
+        XCTAssertNil(model.viewState.detailModel)
+    }
+
+    func testWhenPermissionsUpdateThenSelectedDetailModelIsPreserved() throws {
+        let model = createSUT()
+        waitForViewStateUpdate(model) {
+            model.send(action: .onAppear)
+        }
+        model.send(action: .openDetail(.camera))
+        let detailModel = try XCTUnwrap(model.viewState.detailModel)
+
+        waitForViewStateUpdate(model) {
+            permissionManager.setPermission(.allow, forDomain: "example.com", permissionType: .camera)
+        }
+
+        XCTAssertTrue(model.viewState.detailModel === detailModel)
+        XCTAssertEqual(model.viewState.rows.first { $0.category == .camera }?.count, 1)
+    }
+
     private func createSUT(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {
         permissionManager.setPersistedPermissions(entries)
         return WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: featureFlagger)
@@ -335,4 +378,5 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         wait(for: [expectation], timeout: 1)
         withExtendedLifetime(cancellable) {}
     }
+
 }

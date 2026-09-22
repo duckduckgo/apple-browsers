@@ -512,10 +512,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
     case onboardingToggleAffectsNtpAndDdg
 
-    /// Enables the native Duck.ai bar controls (model picker) in the iPad address bar's
-    /// expanded Duck.ai input area.
-    case iPadDuckAIBarControls
-
     /// Enables the macOS native "Customize Responses" UI (omnibar + New Tab Page entry points).
     case customizeResponses
 
@@ -625,6 +621,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
+    case canUseExchangeV2Point1
     case canWriteUnifiedDeviceList
     case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList

@@ -220,6 +220,24 @@ final class FloatingUIPullToRefreshTests: XCTestCase {
         XCTAssertEqual(PullToRefreshViewAdapter.pullableViewRestingOffset(isRefreshing: true, isFloatingUIEnabled: false), 0)
     }
 
+    func testPullToRefreshObservesWebViewPanRecognizerWithoutAddingCompetingRecognizer() {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        let gestureRecognizerCount = webView.scrollView.gestureRecognizers?.count
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+
+        withExtendedLifetime(adapter) {
+            XCTAssertEqual(webView.scrollView.gestureRecognizers?.count, gestureRecognizerCount)
+        }
+    }
+
     func testApplyingRefreshBackgroundUpdatesEveryVisibleWebViewLayer() {
         let webView = WKWebView()
         let refreshBackgroundColor = UIColor.red
@@ -525,6 +543,32 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         ), 52)
     }
 
+    func testWhenInlineInputHidesLegacyBottomAddressBarThenNoExtraBottomSpaceIsReserved() {
+        let inset = FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: false,
+            addressBarPosition: .bottom,
+            floatingBottomObscuredHeight: 96,
+            safeAreaBottom: 34,
+            omnibarHeight: 52,
+            reservesAddressBarSpace: false
+        )
+
+        XCTAssertEqual(inset, 0)
+    }
+
+    func testWhenInlineInputHidesFloatingAddressBarThenVisibleToolbarSpaceIsStillReserved() {
+        let inset = FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: true,
+            addressBarPosition: .bottom,
+            floatingBottomObscuredHeight: 96,
+            safeAreaBottom: 34,
+            omnibarHeight: 52,
+            reservesAddressBarSpace: false
+        )
+
+        XCTAssertEqual(inset, 62)
+    }
+
     func testWhenBarsVisibleThenBottomObscuredHeightIsToolbarSlot() {
         let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
             barsVisibilityPercent: 1,
@@ -692,7 +736,7 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
 final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
     private func makeBarView(isFloatingUIEnabled: Bool) -> DefaultOmniBarView {
-        DefaultOmniBarView(isFloatingUIEnabled: isFloatingUIEnabled, supportsButtonMenusInGlass: true)
+        DefaultOmniBarView.create(isFloatingUIEnabled: isFloatingUIEnabled)
     }
 
     private func firstGlassView(in view: UIView) -> UIVisualEffectView? {
@@ -712,14 +756,6 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
             return host
         }
         return view.subviews.lazy.compactMap(floatingContentHost(in:)).first
-    }
-
-    func testWhenButtonMenusDoNotSupportGlassThenFloatingFieldIsOpaque() throws {
-        let barView = DefaultOmniBarView(isFloatingUIEnabled: true, supportsButtonMenusInGlass: false)
-        let searchContainer = try XCTUnwrap(barView.searchContainer)
-
-        XCTAssertNil(firstGlassView(in: searchContainer))
-        XCTAssertFalse(searchContainer.backgroundColor == .clear)
     }
 
     func testWhenFloatingMinimalChromeBarEnabledThenLeadingAndTrailingGlassGroupsAreAddedAndRemoved() {

@@ -4626,55 +4626,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sync & Backup ist Ende-zu-Ende-verschlüsselt. macOS wird dich um eine Authentifizierungsmethode bitten."
+            "value" : "Du musst dich authentifizieren, um Sync & Backup zu aktivieren. macOS wird dich um eine Authentifizierungsmethode bitten."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Sync & Backup is end-to-end encrypted. macOS will ask for an authentication method."
+            "value" : "You need to authenticate to turn on Sync & Backup. macOS will ask for an authentication method."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sync & Backup está cifrado de extremo a extremo. macOS te pedirá un método de autenticación."
+            "value" : "Debes autenticarte para activar Sync & Backup. macOS te pedirá un método de autenticación."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sync & Backup est crypté de bout en bout. macOS vous demandera de choisir une méthode d'authentification."
+            "value" : "Tu dois t’authentifier pour activer Sync & Backup. macOS te demandera de choisir une méthode d’authentification."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sync & Backup è crittografato end-to-end. macOS ti chiederà un metodo di autenticazione."
+            "value" : "Devi autenticarti per attivare Sync & Backup. macOS ti chiederà un metodo di autenticazione."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sync & Backup is end-to-end versleuteld. macOS zal je vragen om een verificatiemethode."
+            "value" : "Je moet je verifiëren om Sync & Backup in te schakelen. macOS zal je vragen om een verificatiemethode."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Funkcja Sync & Backup jest objęta szyfrowaniem typu end-to-end. System macOS poprosi o wybranie metody uwierzytelniania."
+            "value" : "Musisz się uwierzytelnić, aby włączyć Sync & Backup. System macOS poprosi o wybranie metody uwierzytelniania."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Sync & Backup é encriptado ponto a ponto. O macOS irá pedir um método de autenticação."
+            "value" : "Precisas de te autenticar para ativar o Sync & Backup. O macOS irá pedir um método de autenticação."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Функция Sync & Backup защищена сквозным шифрованием. macOS запросит выбор способа аутентификации."
+            "value" : "Чтобы включить Sync & Backup, пройди аутентификацию. macOS запросит выбор способа аутентификации."
           }
         }
       }
@@ -4686,55 +4686,115 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Authentifizieren, um Sync & Backup zu aktivieren"
+            "value" : "Bitte versuche es noch einmal!"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Authenticate to enable Sync & Backup"
+            "value" : "Please give it another try!"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Autentícate para activar Sync & Backup"
+            "value" : "¡Vuelve a intentarlo!"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Authentifiez-vous pour activer Sync & Backup"
+            "value" : "Essaie à nouveau !"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Autenticati per abilitare Sync & Backup"
+            "value" : "Riprova!"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verifieer je identiteit om Sync & Backup in te schakelen"
+            "value" : "Probeer het nog eens!"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Uwierzytelnij się, aby włączyć Sync & Backup"
+            "value" : "Spróbuj jeszcze raz!"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Autentica-te para ativar Sync & Backup"
+            "value" : "Experimenta novamente!"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Пройдите аутентификацию, чтобы включить Sync & Backup"
+            "value" : "Попробуй еще раз!"
+          }
+        }
+      }
+    },
+    "preferences.sync.authentication-cancelled-v2.try-again-button" : {
+      "comment" : "Button to retry device authentication from the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erneut versuchen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intentar de nuevo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réessayer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riprova"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probeer het opnieuw"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spróbuj ponownie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tentar novamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повторите попытку"
           }
         }
       }
@@ -6779,6 +6839,66 @@
         }
       }
     },
+    "preferences.sync.success-v2.copied-code-button" : {
+      "comment" : "Confirmation shown on the copy button after copying the recovery code in the Sync success dialog (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopiert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copied"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copié"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gekopieerd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skopiowano"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопировано"
+          }
+        }
+      }
+    },
     "preferences.sync.success-v2.copy-code-button" : {
       "comment" : "Button to copy the recovery code in the Sync success dialog (V2)",
       "extractionState" : "extracted_with_value",
@@ -7319,126 +7439,6 @@
         }
       }
     },
-    "preferences.sync.sync-with-another-device-v2.enter-step-1-detail" : {
-      "comment" : "Emphasized DuckDuckGo product name in the first code entry instruction (V2)",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DuckDuckGo-App"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "DuckDuckGo App"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aplicación DuckDuckGo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Application DuckDuckGo"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App DuckDuckGo"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DuckDuckGo-app"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aplikacja DuckDuckGo"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aplicação DuckDuckGo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Приложение DuckDuckGo"
-          }
-        }
-      }
-    },
-    "preferences.sync.sync-with-another-device-v2.enter-step-1-prefix" : {
-      "comment" : "First part of the first code entry instruction, before the DuckDuckGo product name (V2)",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Öffne ein weiteres"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Open another"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abre otro"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ouvrir un autre"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apri un altro"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open een andere"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otwórz inną"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abre outro"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открой другой"
-          }
-        }
-      }
-    },
     "preferences.sync.sync-with-another-device-v2.enter-step-3" : {
       "comment" : "Third pairing instruction when entering a code from another device (V2)",
       "extractionState" : "extracted_with_value",
@@ -7746,55 +7746,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo"
+            "value" : "DuckDuckGo-App"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "DuckDuckGo"
+            "value" : "DuckDuckGo App"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo"
+            "value" : "Aplicación DuckDuckGo"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo"
+            "value" : "Application DuckDuckGo"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo"
+            "value" : "App DuckDuckGo"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo"
+            "value" : "DuckDuckGo-app"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo"
+            "value" : "Aplikację DuckDuckGo"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo"
+            "value" : "Aplicação DuckDuckGo"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo"
+            "value" : "Приложение DuckDuckGo"
           }
         }
       }
@@ -7806,37 +7806,37 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Öffne auf deinem Smartphone"
+            "value" : "Öffne auf deinem Smartphone die"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "On your phone, open"
+            "value" : "On your phone, open the"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "En el teléfono, abre"
+            "value" : "En el teléfono, abre la"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sur ton téléphone, ouvre"
+            "value" : "Sur ton téléphone, ouvre l'"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sul telefono, apri"
+            "value" : "Sul telefono, apri l'"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open op je telefoon"
+            "value" : "Open op je telefoon de"
           }
         },
         "pl" : {
@@ -7848,7 +7848,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No teu telemóvel, abre"
+            "value" : "No teu telemóvel, abre a"
           }
         },
         "ru" : {
@@ -8155,6 +8155,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Перейди в"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.step-4" : {
+      "comment" : "Fourth pairing instruction, reminding the user to keep the dialog open (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schließe dieses Fenster nicht, während die Verbindung hergestellt wird"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t close this window while connecting"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No cierres esta ventana mientras se conecta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne ferme pas cette fenêtre pendant la connexion"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non chiudere questa finestra durante la connessione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sluit dit venster niet tijdens het verbinden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podczas łączenia nie zamykaj tego okna"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não feches esta janela enquanto estabeleces a ligação"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не закрывай это окно во время подключения"
           }
         }
       }

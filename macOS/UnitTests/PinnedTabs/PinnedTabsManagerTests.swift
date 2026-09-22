@@ -19,7 +19,7 @@
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
-class PinnedTabsManagerTests: XCTestCase {
+final class PinnedTabsManagerTests: XCTestCase {
 
     func testInitialState() throws {
         let manager = PinnedTabsManager()
@@ -31,10 +31,12 @@ class PinnedTabsManagerTests: XCTestCase {
     func testPinning() throws {
         let manager = PinnedTabsManager()
         let tab = Tab("https://duck.com")
+        let sourceCollection = TabCollection(tabs: [tab])
 
         XCTAssertFalse(manager.isTabPinned(tab))
-        manager.pin(tab)
+        manager.pinTab(tab, from: sourceCollection)
         XCTAssertTrue(manager.isTabPinned(tab))
+        XCTAssertTrue(sourceCollection.tabs.isEmpty)
         XCTAssertTrue(manager.isDomainPinned("duck.com"))
         XCTAssertEqual(manager.pinnedDomains, ["duck.com"])
     }
@@ -47,7 +49,7 @@ class PinnedTabsManagerTests: XCTestCase {
 
         let manager = PinnedTabsManager(tabCollection: .init(tabs: [tabA, tabB]))
 
-        manager.pin(tabC, at: 1)
+        manager.pinTab(tabC, from: nil, at: 1)
         XCTAssertEqual(manager.tabCollection.loadedTabs, [tabA, tabC, tabB])
     }
 
@@ -57,9 +59,11 @@ class PinnedTabsManagerTests: XCTestCase {
         let tabB = Tab("https://b.com")
 
         let manager = PinnedTabsManager(tabCollection: .init(tabs: [tabA, tabB]))
+        let destinationCollection = TabCollection()
 
-        let unpinnedTab = manager.unpinTab(at: 1)
+        let unpinnedTab = manager.unpinTab(at: 1, movingTo: destinationCollection, at: 0)
         XCTAssertEqual(unpinnedTab, .loaded(tabB))
+        XCTAssertEqual(destinationCollection.tabs, [.loaded(tabB)])
         XCTAssertFalse(manager.isTabPinned(tabB))
         XCTAssertFalse(manager.isDomainPinned("b.com"))
     }
@@ -70,6 +74,7 @@ class PinnedTabsManagerTests: XCTestCase {
         let tabB = Tab("https://b.com")
 
         let manager = PinnedTabsManager(tabCollection: .init(tabs: [tabA, tabB]))
+        let destinationCollection = TabCollection()
 
         var events: [Int] = []
         let cancellable = manager.didUnpinTabPublisher
@@ -77,7 +82,7 @@ class PinnedTabsManagerTests: XCTestCase {
                 events.append(index)
             }
 
-        _ = manager.unpinTab(at: 1)
+        _ = manager.unpinTab(at: 1, movingTo: destinationCollection, at: 0)
 
         cancellable.cancel()
 
@@ -91,6 +96,7 @@ class PinnedTabsManagerTests: XCTestCase {
         let tabB = Tab("https://b.com")
 
         let manager = PinnedTabsManager(tabCollection: .init(tabs: [tabA, tabB]))
+        let destinationCollection = TabCollection()
 
         var events: [Int] = []
         let cancellable = manager.didUnpinTabPublisher
@@ -98,7 +104,7 @@ class PinnedTabsManagerTests: XCTestCase {
                 events.append(index)
             }
 
-        _ = manager.unpinTab(at: 100)
+        _ = manager.unpinTab(at: 100, movingTo: destinationCollection, at: 0)
 
         cancellable.cancel()
 
@@ -112,7 +118,7 @@ class PinnedTabsManagerTests: XCTestCase {
 
         XCTAssertTrue(manager.tabViewModels.isEmpty)
 
-        manager.pin(tab)
+        manager.pinTab(tab, from: nil)
 
         XCTAssertNotNil(manager.tabViewModels[tab.uuid])
         XCTAssertNotNil(manager.tabViewModel(at: 0))

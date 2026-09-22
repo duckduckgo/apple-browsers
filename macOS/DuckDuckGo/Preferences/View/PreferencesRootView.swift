@@ -50,6 +50,14 @@ enum Preferences {
     }
 
     struct RootViewV2: View {
+        private struct ScrollViewID: Hashable {
+            enum DetailPane: Hashable {
+                case websitePermission(WebsitePermissionCategory)
+            }
+
+            let pane: PreferencePaneIdentifier
+            let detailPane: DetailPane?
+        }
 
         @ObservedObject var model: PreferencesSidebarModel
         @ObservedObject var themeManager: ThemeManager
@@ -72,6 +80,18 @@ enum Preferences {
         let pinningManager: PinningManager
         private var colorsProvider: ColorsProviding {
             themeManager.theme.colorsProvider
+        }
+
+        private var scrollViewID: ScrollViewID {
+            let detailPane: ScrollViewID.DetailPane?
+            switch model.selectedPane {
+            case .websitePermissions:
+                detailPane = websitePermissionsModel.viewState.detailModel.map { .websitePermission($0.viewState.category) }
+            default:
+                detailPane = nil
+            }
+
+            return ScrollViewID(pane: model.selectedPane, detailPane: detailPane)
         }
 
         init(
@@ -125,6 +145,7 @@ enum Preferences {
                             Spacer()
                         }
                     }
+                    .id(scrollViewID)
                     .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
                     .accessibilityIdentifier("Settings.ScrollView")
                     // `onReceive`, not `onChange`: a deep-linked request lands before this view's first body
@@ -138,11 +159,15 @@ enum Preferences {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(colorsProvider.settingsBackgroundColor))
             .environment(\.designSystemPalette, themeManager.designColorPalette)
+            .onChange(of: model.selectedPane) { selectedPane in
+                guard selectedPane != .websitePermissions else { return }
+                websitePermissionsModel.send(action: .closeDetail)
+            }
         }
 
         private func scroll(_ proxy: ScrollViewProxy, to anchor: PreferencesScrollAnchor) {
             DispatchQueue.main.async {
-                proxy.scrollTo(anchor, anchor: nil)
+                proxy.scrollTo(anchor, anchor: .top)
                 model.resetScrollRequest()
             }
         }
@@ -218,6 +243,7 @@ enum Preferences {
             .frame(maxWidth: Const.paneContentWidth, maxHeight: .infinity, alignment: .topLeading)
             .padding(.vertical, Const.panePaddingVertical)
             .padding(.horizontal, Const.panePaddingHorizontal)
+            .id(PreferencesScrollAnchor.top)
         }
 
         private func makePurchaseSubscriptionViewModel() -> PreferencesPurchaseSubscriptionModel {

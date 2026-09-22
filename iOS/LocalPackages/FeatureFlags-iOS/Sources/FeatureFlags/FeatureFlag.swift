@@ -510,9 +510,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218316798217456?focus=true
     case aiChatChromeMenuButtonIPad
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216000794365770?focus=true
-    case iPadDuckAIBarControls
-
     /// Warns Duck.ai users in the unified toggle input as they approach their usage limits, using the
     /// snapshot the web app writes into the reserved `usageLimits` native-storage entry.
     case utiDuckAIWarnings
@@ -531,6 +528,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114767?focus=true
     case syncCanShowV2ConnectCode
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218374779115676?focus=true
+    case syncCanUseExchangeV2Point1
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064244?focus=true
     case syncCanWriteUnifiedDeviceList
@@ -773,8 +773,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle))
         case .forgetAllInSettings:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.forgetAllInSettings))
-        case .iPadDuckAIBarControls:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadDuckAIBarControls))
         case .utiDuckAIWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings))
         case .attributedMetrics:
@@ -955,6 +953,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow))
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
+        case .syncCanUseExchangeV2Point1:
+            Config(source: .remoteReleasable(SyncSubfeature.canUseExchangeV2Point1))
         case .syncCanWriteUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canWriteUnifiedDeviceList))
         case .syncCanUsePatchEndpointForLegacyDeviceRename:

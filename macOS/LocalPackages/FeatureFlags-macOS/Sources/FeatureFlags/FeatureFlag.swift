@@ -241,9 +241,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214960575971803?focus=true
     case addressBarIMEConfirmFix
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477623612
-    case dataImportNewExperience
-
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1217589459874947
     case dataImportDataDirectoryAccess
 
@@ -520,6 +517,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114765?focus=true
     case syncCanShowV2ConnectCode
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218374779115683?focus=true
+    case syncCanUseExchangeV2Point1
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064249?focus=true
     case syncCanWriteUnifiedDeviceList
 
@@ -741,8 +741,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .addressBarIMEConfirmFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.addressBarIMEConfirmFix))
-        case .dataImportNewExperience:
-            Config(source: .remoteReleasable(DataImportSubfeature.newDataImportExperience))
         case .dataImportDataDirectoryAccess:
             Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.dataDirectoryAccess))
         case .attributedMetrics:
@@ -902,6 +900,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow), category: .sync)
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
+        case .syncCanUseExchangeV2Point1:
+            Config(source: .remoteReleasable(SyncSubfeature.canUseExchangeV2Point1), category: .sync)
         case .syncCanWriteUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canWriteUnifiedDeviceList), category: .sync)
         case .syncCanUsePatchEndpointForLegacyDeviceRename:
@@ -911,7 +911,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList), category: .sync)
         case .simplifiedSyncSetupV2:
-            Config(source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2), category: .sync)
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2), category: .sync)
         case .bookmarksReorderByName:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:

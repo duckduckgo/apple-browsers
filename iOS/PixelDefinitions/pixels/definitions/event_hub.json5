@@ -343,5 +343,21 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+    },
+    // Immediate adwall detections. Governed by the shared base `event-hub` config, so they
+    // arrive on every platform once the feature is enabled.
+    "webTelemetry_adwall": {
+        "description": "Fired once per detection of an adwall on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "webTelemetry_admiralAdwall": {
+        "description": "Fired once per detection of an Admiral-served adwall on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

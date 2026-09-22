@@ -3569,7 +3569,9 @@ extension TabViewController: WKNavigationDelegate {
                 completion(false)
                 return
             }
-            for await assets in userContentController.$contentBlockingAssets.values {
+            let updates = userContentController.$contentBlockingAssets
+                .combineLatest(featureFlagger.updatesPublisher.prepend(()))
+            for await (assets, _) in updates.values {
                 let geolocationScriptInstalled = (assets?.userScripts as? UserScripts)?.geolocationUserScript != nil
                 if !Self.shouldWaitForContentBlockingAssets(
                     assetsInstalled: assets != nil,

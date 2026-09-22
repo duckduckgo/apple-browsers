@@ -207,6 +207,7 @@ final class UserScripts: UserScriptsProvider {
             findInPageScript,
             fullScreenVideoScript,
             mediaCaptureUserScript,
+            geolocationUserScript?.policyScript,
             geolocationUserScript,
             autofillUserScript,
             loginFormDetectionScript,
@@ -240,18 +241,19 @@ final class UserScripts: UserScriptsProvider {
     
     @MainActor
     func loadWKUserScripts() async -> [WKUserScript] {
-        return await withTaskGroup(of: WKUserScriptBox.self) { @MainActor group in
-            var wkUserScripts = [WKUserScript]()
-            userScripts.forEach { userScript in
+        return await withTaskGroup(of: (Int, WKUserScriptBox).self) { @MainActor group in
+            var indexedScripts = [(Int, WKUserScriptBox)]()
+            for (index, userScript) in userScripts.enumerated() {
                 group.addTask { @MainActor in
-                    await userScript.makeWKUserScript()
+                    (index, await userScript.makeWKUserScript())
                 }
             }
             for await result in group {
-                wkUserScripts.append(result.wkUserScript)
+                indexedScripts.append(result)
             }
 
-            return wkUserScripts
+            // Preserve dependencies between scripts even when source preparation finishes out of order.
+            return indexedScripts.sorted { $0.0 < $1.0 }.map { $0.1.wkUserScript }
         }
     }
 

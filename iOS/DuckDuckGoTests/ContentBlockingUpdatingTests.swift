@@ -24,6 +24,7 @@ import Core
 import TrackerRadarKit
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
+import UserScript
 @testable import SitePermissions
 @testable import DuckDuckGo
 
@@ -126,6 +127,48 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenSitePermissionsIsDisabledBeforeFirstAssetsThenPendingSERPNavigationResumes() async throws {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+        let tab = TabViewController.fake(featureFlagger: flagger)
+        tab.specialErrorPageNavigationHandler.delegate = nil
+        defer { tab.prepareForDataClearing() }
+        let config = try XCTUnwrap(tab.privacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)
+        config.enabledFeaturesForVersions = [:]
+        let controller = try XCTUnwrap(tab.webView.configuration.userContentController as? UserContentController)
+        XCTAssertNil(controller.contentBlockingAssets)
+
+        let resumed = expectation(description: "Flag rollback resumes pending SERP navigation")
+        resumed.assertForOverFulfill = true
+        var decisions = [Bool]()
+        let subscriptionsBeforeWait = flagger.updatesPublisherSubscriptionCount
+        XCTAssertTrue(tab.shouldWaitUntilContentBlockingIsLoaded({ shouldContinue in
+            decisions.append(shouldContinue)
+            resumed.fulfill()
+        }, for: URL(string: "https://duckduckgo.com/?q=maps")!))
+        let pendingTask = try XCTUnwrap(tab.sitePermissionsState.contentBlockingWaitTasks.values.first)
+        defer { pendingTask.cancel() }
+        // Wait for the new navigation waiter to subscribe before changing the flag.
+        for _ in 0..<100 where flagger.updatesPublisherSubscriptionCount == subscriptionsBeforeWait {
+            await Task.yield()
+        }
+        XCTAssertGreaterThan(flagger.updatesPublisherSubscriptionCount, subscriptionsBeforeWait)
+        XCTAssertTrue(decisions.isEmpty)
+
+        flagger.enabledFeatureFlags = []
+        flagger.triggerUpdate()
+
+        await fulfillment(of: [resumed], timeout: 3)
+        pendingTask.cancel()
+        await pendingTask.value
+        XCTAssertEqual(decisions, [true])
+        XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
+        XCTAssertNil(controller.contentBlockingAssets)
+        flagger.triggerUpdate()
+        await Task.yield()
+        XCTAssertEqual(decisions, [true])
+    }
+
+    @MainActor
     func testWhenFlagChangesWithoutContentUpdateThenNextDocumentUsesMatchingGeolocationAPI() async throws {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
         let tab = TabViewController.fake(featureFlagger: flagger,
@@ -150,12 +193,32 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             await fulfillment(of: [installed], timeout: 10)
             subscription.cancel()
 
+            let policySource = GeolocationUserScript().policyScript.source
+            let policyIndices = controller.userScripts.indices.filter { controller.userScripts[$0].source.contains(policySource) }
+            XCTAssertEqual(policyIndices.count, isEnabled ? 1 : 0)
+            if isEnabled {
+                let scripts = try XCTUnwrap(controller.contentBlockingAssets?.userScripts as? UserScripts)
+                let geolocationScript = try XCTUnwrap(scripts.geolocationUserScript)
+                let policyIndex = try XCTUnwrap(policyIndices.first)
+                let pageIndex = try XCTUnwrap(controller.userScripts.firstIndex { $0.source.contains(geolocationScript.source) })
+                XCTAssertEqual(policyIndex + 1, pageIndex)
+                XCTAssertEqual(geolocationScript.policyScript.getContentWorld(), .defaultClient)
+                XCTAssertEqual(geolocationScript.getContentWorld(), .page)
+            }
+
             let loaded = expectation(description: "New document loaded")
             navigationDelegate.didFinishNavigation = { _, _ in loaded.fulfill() }
             tab.webView.loadHTMLString("<html><body>Geolocation rollback</body></html>", baseURL: nil)
             await fulfillment(of: [loaded], timeout: 10)
             let hasShim: Bool? = try await tab.webView.evaluateJavaScript("typeof window.__ddgSitePermissionsGeolocation !== 'undefined'")
             XCTAssertEqual(hasShim, isEnabled)
+            let hasPolicy = try await tab.webView.callAsyncJavaScript(
+                "return typeof globalThis.__ddgSitePermissionsGeolocationPolicy !== 'undefined';",
+                arguments: [:], in: nil, contentWorld: .defaultClient)
+            XCTAssertEqual(hasPolicy as? Bool, isEnabled)
+            let hasPagePolicy: Bool? = try await tab.webView.evaluateJavaScript(
+                "typeof globalThis.__ddgSitePermissionsGeolocationPolicy !== 'undefined'")
+            XCTAssertEqual(hasPagePolicy, false)
         }
     }
 
@@ -190,17 +253,19 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testGeolocationUserScriptRegistrationFollowsSitePermissionsFlag() {
+    func testGeolocationUserScriptRegistrationFollowsSitePermissionsFlag() async throws {
         let sourceProvider = makeScriptSourceProvider()
+        let geolocationUserScript = GeolocationUserScript()
 
         let disabledScripts = UserScripts(
             with: sourceProvider,
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [])
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+            geolocationUserScript: geolocationUserScript
         )
         XCTAssertNil(disabledScripts.geolocationUserScript)
         XCTAssertFalse(disabledScripts.userScripts.contains { $0 is GeolocationUserScript })
+        XCTAssertFalse(disabledScripts.userScripts.contains { $0 is GeolocationPolicyUserScript })
 
-        let geolocationUserScript = GeolocationUserScript()
         let enabledScripts = UserScripts(
             with: sourceProvider,
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]),
@@ -208,6 +273,15 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         )
         XCTAssertTrue(enabledScripts.geolocationUserScript === geolocationUserScript)
         XCTAssertTrue(enabledScripts.userScripts.contains { ($0 as? GeolocationUserScript) === geolocationUserScript })
+        let pageIndex = try XCTUnwrap(enabledScripts.userScripts.firstIndex { $0 === geolocationUserScript })
+        let policyIndex = try XCTUnwrap(enabledScripts.userScripts.firstIndex { $0 === geolocationUserScript.policyScript })
+        XCTAssertEqual(policyIndex + 1, pageIndex)
+        let wkScripts = await enabledScripts.loadWKUserScripts()
+        XCTAssertEqual(wkScripts.count, enabledScripts.userScripts.count)
+        XCTAssertEqual(wkScripts[policyIndex].source, geolocationUserScript.policyScript.makeWKUserScriptSync().source)
+        XCTAssertEqual(wkScripts[pageIndex].source, geolocationUserScript.makeWKUserScriptSync().source)
+        XCTAssertEqual(geolocationUserScript.policyScript.getContentWorld(), .defaultClient)
+        XCTAssertEqual(geolocationUserScript.getContentWorld(), .page)
 
         let tabEnabledWithDifferentGlobalFlag = UserScripts(
             with: sourceProvider,
@@ -216,6 +290,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             geolocationUserScript: geolocationUserScript
         )
         XCTAssertTrue(tabEnabledWithDifferentGlobalFlag.geolocationUserScript === geolocationUserScript)
+        XCTAssertTrue(tabEnabledWithDifferentGlobalFlag.userScripts.contains { $0 === geolocationUserScript.policyScript })
 
         let tabDisabledWithDifferentGlobalFlag = UserScripts(
             with: sourceProvider,
@@ -224,6 +299,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             geolocationUserScript: geolocationUserScript
         )
         XCTAssertNil(tabDisabledWithDifferentGlobalFlag.geolocationUserScript)
+        XCTAssertFalse(tabDisabledWithDifferentGlobalFlag.userScripts.contains { $0 is GeolocationPolicyUserScript })
 
         let nonTabScripts = UserScripts(
             with: sourceProvider,
@@ -231,6 +307,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         )
         XCTAssertNil(nonTabScripts.geolocationUserScript)
         XCTAssertFalse(nonTabScripts.userScripts.contains { $0 is GeolocationUserScript })
+        XCTAssertFalse(nonTabScripts.userScripts.contains { $0 is GeolocationPolicyUserScript })
     }
 
     @MainActor
@@ -249,6 +326,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         ).sink { content in
             let userScripts = content.makeUserScripts(content.sourceProvider)
             receivedScripts.append((userScripts.mediaCaptureUserScript, userScripts.geolocationUserScript))
+            XCTAssertEqual(userScripts.userScripts.filter { $0 is GeolocationPolicyUserScript }.count,
+                           userScripts.geolocationUserScript == nil ? 0 : 1)
             if receivedScripts.count == 2 {
                 flagUpdateReceived.fulfill()
             }

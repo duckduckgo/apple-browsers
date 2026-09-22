@@ -99038,25 +99038,13 @@
       }
     },
     "preferences.autoplay.moved.caption" : {
-      "comment" : "Caption in General preferences telling the user where the autoplay setting now lives",
+      "comment" : "Caption in General preferences telling the user where the autoplay setting now lives, %@ is the name of the Website Permissions settings pane and is a link to it",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Autoplay settings moved to Website Permissions."
-          }
-        }
-      }
-    },
-    "preferences.autoplay.moved.link" : {
-      "comment" : "Button in General preferences that opens the Website Permissions settings pane",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Show Website Permissions"
+            "value" : "Autoplay settings moved to %@."
           }
         }
       }

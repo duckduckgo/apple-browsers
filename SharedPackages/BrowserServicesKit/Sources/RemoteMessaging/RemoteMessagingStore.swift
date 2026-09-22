@@ -440,6 +440,9 @@ extension RemoteMessagingStore {
                     if shown {
                         message.firstShownDate = message.firstShownDate ?? Date()
                         message.impressionCount += 1
+                        Logger.remoteMessaging.info(
+                            "Remote message impression count updated: \(id, privacy: .public), count: \(message.impressionCount, privacy: .public)"
+                        )
                     }
                     try context.save()
                 } catch {

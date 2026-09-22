@@ -87,6 +87,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     /// Supplies the content for the contextual dialogs. Currently only EOJ but we will refactor step by step and "strangle" providing content by DaxDialogs.HomeSpec.
     private let contextualContentProvider: ContextualOnboardingContentProviding
 
+    static let remoteMessageSurfaceDidChange = Notification.Name("NewTabPageRemoteMessageSurfaceDidChange")
+    private(set) var isRemoteMessageSurfacePresented = false
+
     var onViewDidAppear: (() -> Void)?
 
     init(isFocussedState: Bool,
@@ -149,6 +152,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
         assignFavoriteModelActions()
         assignSessionInstrumentationActions()
+        messagesModel.onMessageViewAppeared = { [weak self] in
+            self?.notifyRemoteMessageSurfaceChanged()
+        }
     }
 
     private func assignSessionInstrumentationActions() {
@@ -189,11 +195,13 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateDaxDialogTopInsetIfNeeded()
+        notifyRemoteMessageSurfaceChanged()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        messagesModel.setSurfaceVisible(false)
+        isRemoteMessageSurfacePresented = false
+        notifyRemoteMessageSurfaceChanged()
         // Must run before the parent-check below, which would zero isShowingDuckAICompletionDialog
         // and prevent the seen flag from being set (e.g. on a tab switch without editing ending).
         dismissDuckAICompletionDialogIfNeededOnEditingEnd()
@@ -214,7 +222,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
             return
         }
 
-        messagesModel.setSurfaceVisible(true)
+        isRemoteMessageSurfacePresented = true
+        notifyRemoteMessageSurfaceChanged()
 
         onViewDidAppear?()
         onViewDidAppear = nil
@@ -425,6 +434,16 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private func presentSubscriptionPromotionIfPending() {
         guard daxDialogsManager.subscriptionPromotionPending else { return }
         showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
+    }
+
+    // MARK: - RMF
+
+    func hasAppearedRemoteMessage(withID messageID: String) -> Bool {
+        messagesModel.hasAppearedRemoteMessage(withID: messageID)
+    }
+
+    private func notifyRemoteMessageSurfaceChanged() {
+        NotificationCenter.default.post(name: Self.remoteMessageSurfaceDidChange, object: self)
     }
 
     // MARK: -

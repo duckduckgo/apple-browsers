@@ -30,10 +30,8 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     private var messagesCancellable: AnyCancellable?
     private var legacyNotificationObserver: NSObjectProtocol?
-    private var renderableHomeMessages: [HomeMessageViewModel.ViewIdentity: HomeMessage] = [:]
     private var appearedMessageIdentities = Set<HomeMessageViewModel.ViewIdentity>()
-    private var reportedMessageIdentities = Set<HomeMessageViewModel.ViewIdentity>()
-    private var isSurfaceVisible = false
+    var onMessageViewAppeared: (() -> Void)?
 
     private let homePageMessagesConfiguration: HomePageMessagesConfiguration
     private let notificationCenter: NotificationCenter
@@ -91,25 +89,10 @@ final class NewTabPageMessagesModel: ObservableObject {
         )
     }
 
-    func didAppear(_ homeMessage: HomeMessage) {
-        homePageMessagesConfiguration.didAppear(
-            homeMessage,
-            presentationContext: homePageMessagesConfiguration.presentationContext(for: homeMessage)
-        )
-    }
-
-    func setSurfaceVisible(_ isVisible: Bool) {
-        guard isSurfaceVisible != isVisible else {
-            return
-        }
-
-        isSurfaceVisible = isVisible
-        if isVisible {
-            for identity in appearedMessageIdentities {
-                reportAppearanceIfNeeded(for: identity)
-            }
-        } else {
-            reportedMessageIdentities.removeAll()
+    /// Hierarchy participation is only a readiness signal. The browser controller decides visibility.
+    func hasAppearedRemoteMessage(withID messageID: String) -> Bool {
+        homeMessageViewModels.contains {
+            $0.messageId == messageID && appearedMessageIdentities.contains($0.viewIdentity)
         }
     }
 
@@ -141,34 +124,14 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     private func updateHomeMessageViewModel() {
         let messages = homePageMessagesConfiguration.homeMessages
-        let mappedMessages = messages.compactMap { message -> (HomeMessage, HomeMessageViewModel)? in
-            guard let viewModel = homeMessageViewModel(for: message) else {
-                return nil
-            }
-            return (message, viewModel)
-        }
-        renderableHomeMessages = Dictionary(
-            uniqueKeysWithValues: mappedMessages.map { ($0.1.viewIdentity, $0.0) }
-        )
-        appearedMessageIdentities.formIntersection(renderableHomeMessages.keys)
-        reportedMessageIdentities.formIntersection(renderableHomeMessages.keys)
-        homeMessageViewModels = mappedMessages.map { $0.1 }
+        homeMessageViewModels = messages.compactMap(homeMessageViewModel(for:))
+        appearedMessageIdentities.formIntersection(homeMessageViewModels.map(\.viewIdentity))
     }
 
     private func messageViewDidAppear(with identity: HomeMessageViewModel.ViewIdentity) {
+        guard homeMessageViewModels.contains(where: { $0.viewIdentity == identity }) else { return }
         appearedMessageIdentities.insert(identity)
-        reportAppearanceIfNeeded(for: identity)
-    }
-
-    private func reportAppearanceIfNeeded(for identity: HomeMessageViewModel.ViewIdentity) {
-        guard isSurfaceVisible,
-              !reportedMessageIdentities.contains(identity),
-              let homeMessage = renderableHomeMessages[identity] else {
-            return
-        }
-
-        reportedMessageIdentities.insert(identity)
-        didAppear(homeMessage)
+        onMessageViewAppeared?()
     }
 
     // MARK: - HomeMessageViewModel Mapping

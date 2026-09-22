@@ -99,7 +99,7 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         )
 
         XCTAssertFalse(store.hasShownRemoteMessage(withID: message.id))
-        await model.markRemoteMessageAsShown()
+        await model.markRemoteMessageAsShown(for: .newTabPage)
         XCTAssertTrue(store.hasShownRemoteMessage(withID: message.id))
     }
 
@@ -114,10 +114,180 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             navigateToSoftwareUpdateHandler: { }
         )
 
-        await model.markRemoteMessageAsShown()
-        await model.markRemoteMessageAsShown()
+        await model.markRemoteMessageAsShown(for: .newTabPage)
+        await model.markRemoteMessageAsShown(for: .newTabPage)
 
         XCTAssertEqual(store.updateRemoteMessageCalls, 2)
+    }
+
+    func testWhenTabBarMessageIsMarkedForNewTabPageThenNoImpressionIsRecorded() async throws {
+        store.scheduledRemoteMessage = RemoteMessageModel(
+            id: "tab_bar_message",
+            surfaces: .tabBar,
+            content: .small(titleText: "test", descriptionText: "desc"),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: false
+        )
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { }
+        )
+
+        await model.markRemoteMessageAsShown(for: .newTabPage)
+
+        XCTAssertEqual(store.updateRemoteMessageCalls, 0)
+        XCTAssertNil(model.newTabPageRemoteMessage)
+        XCTAssertNotNil(model.tabBarRemoteMessage)
+    }
+
+    func testWhenSupportedTabBarMessageIsMarkedAsShownThenAnImpressionIsRecorded() async throws {
+        store.scheduledRemoteMessage = RemoteMessageModel(
+            id: "tab_bar_message",
+            surfaces: .tabBar,
+            content: .bigSingleAction(titleText: "Help Us Improve!",
+                                      descriptionText: "Description",
+                                      placeholder: .announce,
+                                      imageUrl: nil,
+                                      primaryActionText: "Test",
+                                      primaryAction: .survey(value: "www.survey.com")),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: false
+        )
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { }
+        )
+
+        await model.markRemoteMessageAsShown(for: .tabBar)
+
+        XCTAssertEqual(store.updateRemoteMessageCalls, 1)
+    }
+
+    func testWhenLegacyTabBarSurveyUsesDefaultSurfaceThenItsImpressionIsRecorded() async throws {
+        store.scheduledRemoteMessage = RemoteMessageModel(
+            id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
+            surfaces: .newTabPage,
+            content: .bigSingleAction(titleText: "Help Us Improve!",
+                                      descriptionText: "Description",
+                                      placeholder: .announce,
+                                      imageUrl: nil,
+                                      primaryActionText: "Test",
+                                      primaryAction: .survey(value: "www.survey.com")),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: false
+        )
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { }
+        )
+
+        await model.markRemoteMessageAsShown(for: .tabBar)
+
+        XCTAssertEqual(store.updateRemoteMessageCalls, 1)
+        XCTAssertEqual(store.capturedSurfaces, [.newTabPage, .tabBar])
+    }
+
+    func testWhenDualSurfaceMessageIsMarkedOnEachSurfaceThenEachAppearanceIsRecorded() async throws {
+        store.scheduledRemoteMessage = RemoteMessageModel(
+            id: "dual_surface_message",
+            surfaces: [.newTabPage, .tabBar],
+            content: .bigSingleAction(titleText: "Help Us Improve!",
+                                      descriptionText: "Description",
+                                      placeholder: .announce,
+                                      imageUrl: nil,
+                                      primaryActionText: "Test",
+                                      primaryAction: .survey(value: "www.survey.com")),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: false
+        )
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { }
+        )
+
+        XCTAssertNotNil(model.newTabPageRemoteMessage)
+        XCTAssertNotNil(model.tabBarRemoteMessage)
+
+        await model.markRemoteMessageAsShown(for: .newTabPage)
+        await model.markRemoteMessageAsShown(for: .tabBar)
+
+        XCTAssertEqual(store.updateRemoteMessageCalls, 2)
+    }
+
+    func testWhenUnsupportedPromoMessageIsMarkedAsShownThenNoImpressionIsRecorded() async throws {
+        store.scheduledRemoteMessage = RemoteMessageModel(
+            id: "unsupported_promo",
+            surfaces: .newTabPage,
+            content: .promoSingleAction(titleText: "Promo",
+                                        descriptionText: "Description",
+                                        placeholder: .announce,
+                                        imageUrl: nil,
+                                        actionText: "Open",
+                                        action: .url(value: "https://example.com")),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: false
+        )
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { }
+        )
+
+        await model.markRemoteMessageAsShown(for: .newTabPage)
+
+        XCTAssertEqual(store.updateRemoteMessageCalls, 0)
+    }
+
+    func testWhenMessageIsNoLongerScheduledThenStaleModelIsNotCounted() async throws {
+        store.scheduledRemoteMessage = RemoteMessageModel(
+            id: message.id,
+            surfaces: [.newTabPage, .tabBar],
+            content: message.content,
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: false
+        )
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { }
+        )
+        XCTAssertNotNil(model.newTabPageRemoteMessage)
+        XCTAssertNotNil(model.tabBarRemoteMessage)
+        store.scheduledRemoteMessage = nil
+
+        await model.markRemoteMessageAsShown(for: .newTabPage)
+
+        XCTAssertEqual(store.updateRemoteMessageCalls, 0)
+        XCTAssertNil(model.newTabPageRemoteMessage)
+        XCTAssertNil(model.tabBarRemoteMessage)
     }
 
     func testWhenMessageIsForTabBar_thenCorrectPublisherIsSet() {

@@ -70,6 +70,7 @@ class MainViewCoordinator {
     var unifiedInputContentContainer: UIView!
     /// Owned so a subsequent show can cancel an in-flight dismiss and skip the stale completion.
     private var omnibarDismissAnimator: UIViewPropertyAnimator?
+    var isOmnibarDismissInProgress: Bool { omnibarDismissAnimator != nil }
     /// Stationary focused-content snapshot retained until dismiss ends or is interrupted.
     private var omnibarDismissContentSnapshot: UIView?
     /// Extra cleanup when dismiss is stopped mid-flight (e.g. NTP chrome restore); cleared on re-focus.

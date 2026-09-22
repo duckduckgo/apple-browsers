@@ -421,24 +421,80 @@ struct HomePageConfigurationTests {
     }
 
     @available(iOS 16, *)
-    @Test("Only the first appearance is confirmed across background and foreground", .timeLimit(.minutes(1)))
-    func appearanceIsIdentityCheckedAndConfirmedOnce() {
+    @Test("Every coordinated appearance is counted while queue history is confirmed once", .timeLimit(.minutes(1)))
+    func repeatedAppearanceCountsMetricsDisabledImpressions() async {
+        let message = makeRemoteMessage(id: "message")
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
+        let (shownPersistenceEvents, shownPersistenceContinuation) = AsyncStream.makeStream(of: String.self)
+        defer { shownPersistenceContinuation.finish() }
+        store.onShownPersistence = { shownPersistenceContinuation.yield($0) }
+        let gate = MockPromoGate()
+        let sut = makeCoordinatedConfiguration(store: store, gate: gate)
+        sut.prepareForNTP(openedAfterIdle: false)
+
+        #expect(!sut.reportVisibleRemoteMessage(expectedMessageID: "different-message"))
+        #expect(store.updatedShownMessageIDs.isEmpty)
+        #expect(sut.reportVisibleRemoteMessage(expectedMessageID: message.id))
+        #expect(sut.reportVisibleRemoteMessage(expectedMessageID: message.id))
+        sut.handleAppBackgrounded()
+        sut.handleAppForegrounded()
+        #expect(sut.reportVisibleRemoteMessage(expectedMessageID: message.id))
+        var shownPersistenceIterator = shownPersistenceEvents.makeAsyncIterator()
+        for _ in 0..<3 {
+            #expect(await shownPersistenceIterator.next() == message.id)
+        }
+
+        #expect(gate.cooldownPolicy.recordConfirmedRemoteMessageAppearanceCallCount == 1)
+        #expect(store.hasShownRemoteMessageCallCount == 1)
+        #expect(store.updatedShownMessageIDs == ["message", "message", "message"])
+        #expect(sut.currentRemoteMessageID == message.id)
+    }
+
+    @available(iOS 16, *)
+    @Test("A visible message that reaches its cap is removed before it can be counted", .timeLimit(.minutes(1)))
+    func cappedVisibleMessageIsRemovedBeforeReporting() {
         let message = makeRemoteMessage(id: "message")
         let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
         let gate = MockPromoGate()
         let sut = makeCoordinatedConfiguration(store: store, gate: gate)
         sut.prepareForNTP(openedAfterIdle: false)
-        let context = sut.presentationContext(for: .remoteMessage(remoteMessage: message))
+        store.isScheduledMessageExpired = true
 
-        sut.didAppear(.remoteMessage(remoteMessage: message), presentationContext: context)
-        sut.didAppear(.remoteMessage(remoteMessage: message), presentationContext: context)
-        sut.handleAppBackgrounded()
-        sut.handleAppForegrounded()
-        sut.didAppear(.remoteMessage(remoteMessage: message), presentationContext: context)
+        #expect(!sut.reportVisibleRemoteMessage(expectedMessageID: message.id))
+        #expect(sut.currentRemoteMessageID == nil)
+        #expect(sut.homeMessages.isEmpty)
+        #expect(gate.arbiter.snapshot.owner == nil)
+        #expect(store.updatedShownMessageIDs.isEmpty)
+    }
 
-        #expect(gate.cooldownPolicy.recordConfirmedRemoteMessageAppearanceCallCount == 1)
-        #expect(store.hasShownRemoteMessageCallCount == 1)
-        #expect(sut.presentationContext(for: .remoteMessage(remoteMessage: message)) == context)
+    @Test("A stale legacy message is removed and signals the message model")
+    func staleLegacyMessagePublishesRemoval() {
+        let notificationCenter = NotificationCenter()
+        let message = makeRemoteMessage(id: "message")
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
+        let sut = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            notificationCenter: notificationCenter
+        )
+        var changeNotificationCount = 0
+        let observer = notificationCenter.addObserver(
+            forName: RemoteMessagingStore.Notifications.remoteMessagesDidChange,
+            object: nil,
+            queue: nil
+        ) { _ in
+            MainActor.assumeIsolated {
+                changeNotificationCount += 1
+            }
+        }
+        defer { notificationCenter.removeObserver(observer) }
+        store.isScheduledMessageExpired = true
+
+        #expect(!sut.reportVisibleRemoteMessage(expectedMessageID: message.id))
+        #expect(changeNotificationCount == 1)
+        #expect(sut.currentRemoteMessageID == nil)
+        #expect(sut.homeMessages.isEmpty)
     }
 
     @available(iOS 16, *)
@@ -513,6 +569,7 @@ struct HomePageConfigurationTests {
             Issue.record("Expected shown persistence to be invoked")
             return
         }
+        await waitForMainActorQueue()
 
         sut.handleAppBackgrounded()
         sut.handleAppForegrounded()
@@ -520,7 +577,7 @@ struct HomePageConfigurationTests {
 
         #expect(history.recordedDates == [now])
         #expect(store.hasShownRemoteMessageCallCount == 1)
-        #expect(store.updatedShownMessageIDs == ["message"])
+        #expect(store.updatedShownMessageIDs == ["message", "message"])
         #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
         #expect(sut.presentationContext(for: .remoteMessage(remoteMessage: message)) == context)
         #expect(arbiter.snapshot.owner == owner)
@@ -1015,7 +1072,8 @@ private final class MockPromoGate: PromoGating {
     }
 }
 
-private final class FilteredRemoteMessagingStore: RemoteMessagingStoring {
+@MainActor
+private final class FilteredRemoteMessagingStore: @preconcurrency RemoteMessagingStoring {
     var afterIdleMessage: RemoteMessageModel?
     var noTriggerMessage: RemoteMessageModel?
     var shownMessageIDs: Set<String> = []

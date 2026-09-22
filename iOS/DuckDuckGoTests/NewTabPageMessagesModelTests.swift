@@ -107,7 +107,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertEqual(second.homeMessageViewModels.count, 1)
     }
 
-    func testCoordinatedCallbacksRoundTripCapturedPresentationContext() async throws {
+    func testCoordinatedCallbacksCapturePresentationContextWithoutPersistingAppearance() async throws {
         let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
         let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
         let sut = createSUT(configuration: configuration)
@@ -117,10 +117,91 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         viewModel.onDidAppear()
         await viewModel.onDidClose(.close)
 
-        XCTAssertEqual(configuration.lastAppearedContext, configuration.presentationContext)
+        XCTAssertNil(configuration.lastAppearedContext)
         XCTAssertEqual(configuration.lastDismissedContext, configuration.presentationContext)
-        XCTAssertEqual(configuration.didAppearCallCount, 1)
+        XCTAssertEqual(configuration.didAppearCallCount, 0)
         XCTAssertEqual(configuration.dismissCallCount, 1)
+    }
+
+    func testMappingAloneDoesNotMarkRemoteMessageAsAppeared() throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+
+        sut.load()
+
+        _ = try XCTUnwrap(sut.homeMessageViewModels.first)
+        XCTAssertFalse(sut.hasAppearedRemoteMessage(withID: "foo"))
+    }
+
+    func testMessageAppearanceSignalsReadinessWithoutPersistingAppearance() throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+        var appearanceSignalCount = 0
+        sut.onMessageViewAppeared = { appearanceSignalCount += 1 }
+
+        sut.load()
+        let viewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+
+        viewModel.onDidAppear()
+
+        XCTAssertTrue(sut.hasAppearedRemoteMessage(withID: "foo"))
+        XCTAssertEqual(appearanceSignalCount, 1)
+        XCTAssertEqual(configuration.didAppearCallCount, 0)
+    }
+
+    func testRemappingTheSameIdentityRetainsAppearanceReadiness() throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+        sut.load()
+
+        let viewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+        viewModel.onDidAppear()
+
+        configuration.homeMessages = [message]
+        configuration.sendContentDidChange()
+
+        XCTAssertTrue(sut.hasAppearedRemoteMessage(withID: "foo"))
+    }
+
+    func testRemovingMessageDropsAppearanceReadiness() throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+        sut.load()
+
+        let viewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+        viewModel.onDidAppear()
+        XCTAssertTrue(sut.hasAppearedRemoteMessage(withID: "foo"))
+
+        configuration.homeMessages = []
+        configuration.sendContentDidChange()
+
+        XCTAssertFalse(sut.hasAppearedRemoteMessage(withID: "foo"))
+    }
+
+    func testReplacingMessageDoesNotReuseStaleAppearanceReadiness() throws {
+        let firstMessage = HomeMessage.mockRemote(id: "first",
+                                                   withType: .small(titleText: "First", descriptionText: "Description"))
+        let secondMessage = HomeMessage.mockRemote(id: "second",
+                                                    withType: .small(titleText: "Second", descriptionText: "Description"))
+        let configuration = HomePageMessagesConfigurationMock(homeMessages: [firstMessage])
+        let sut = createSUT(configuration: configuration)
+        sut.load()
+
+        let firstViewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+        firstViewModel.onDidAppear()
+        XCTAssertTrue(sut.hasAppearedRemoteMessage(withID: "first"))
+
+        configuration.homeMessages = [secondMessage]
+        notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange,
+                                object: nil)
+
+        firstViewModel.onDidAppear()
+        XCTAssertFalse(sut.hasAppearedRemoteMessage(withID: "first"))
+        XCTAssertFalse(sut.hasAppearedRemoteMessage(withID: "second"))
     }
 
     // MARK: Callbacks
@@ -498,10 +579,12 @@ extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
 }
 
 private extension HomeMessage {
-    static func mockRemote(withType type: RemoteMessageModelType, isMetricsEnabled: Bool = true) -> Self {
+    static func mockRemote(id: String = "foo",
+                           withType type: RemoteMessageModelType,
+                           isMetricsEnabled: Bool = true) -> Self {
         HomeMessage.remoteMessage(
             remoteMessage: .init(
-                id: "foo",
+                id: id,
                 surfaces: .newTabPage,
                 content: type,
                 matchingRules: [],

@@ -37,12 +37,22 @@ import WebKit
 final class NewTabPageWebViewModel: NSObject {
     let newTabPageUserScript: NewTabPageUserScript
     let webView: WebView
+    private let activeRemoteMessageModel: ActiveRemoteMessageModel
     private let newTabPageLoadMetrics: NewTabPageLoadMetrics
     private var cancellables: Set<AnyCancellable> = []
+    private var selectedTabID: String?
+    private var remoteMessageImpression: RemoteMessageImpression?
+    private var isRemoteMessageVisibilityCheckScheduled = false
+
+    private struct RemoteMessageImpression: Equatable {
+        let tabID: String
+        let messageID: String
+    }
 
     init(featureFlagger: FeatureFlagger, actionsManager: NewTabPageActionsManager, activeRemoteMessageModel: ActiveRemoteMessageModel, newTabPageLoadMetrics: NewTabPageLoadMetrics) {
         newTabPageUserScript = NewTabPageUserScript()
         actionsManager.registerUserScript(newTabPageUserScript)
+        self.activeRemoteMessageModel = activeRemoteMessageModel
 
         let configuration = WKWebViewConfiguration()
         configuration.applyNewTabPageWebViewConfiguration(with: featureFlagger, newTabPageUserScript: newTabPageUserScript)
@@ -59,16 +69,42 @@ final class NewTabPageWebViewModel: NSObject {
 
         webView.publisher(for: \.window)
             .map { $0 != nil }
-            .sink { [weak activeRemoteMessageModel] isOnScreen in
+            .sink { [weak self] isOnScreen in
                 if isOnScreen && OnboardingActionsManager.isOnboardingFinished && AppDelegate.isNewUser {
                     PixelKit.fire(GeneralPixel.newTabInitial, frequency: .legacyInitial)
                 }
-                activeRemoteMessageModel?.isViewOnScreen = isOnScreen
                 if isOnScreen {
                     NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+                } else {
+                    self?.remoteMessageImpression = nil
                 }
+                self?.scheduleRemoteMessageVisibilityCheck()
             }
             .store(in: &cancellables)
+
+        activeRemoteMessageModel.$newTabPageRemoteMessage
+            .sink { [weak self] _ in self?.scheduleRemoteMessageVisibilityCheck() }
+            .store(in: &cancellables)
+
+        let visibilityNotifications = [NSWindow.didChangeOcclusionStateNotification,
+                                       NSWindow.didMiniaturizeNotification,
+                                       NSWindow.didDeminiaturizeNotification,
+                                       NSWindow.didBeginSheetNotification,
+                                       NSWindow.didEndSheetNotification,
+                                       NSApplication.didBecomeActiveNotification,
+                                       NSApplication.didResignActiveNotification]
+        for name in visibilityNotifications {
+            NotificationCenter.default.publisher(for: name)
+                .sink { [weak self] notification in
+                    guard let self else { return }
+                    if let window = notification.object as? NSWindow, window !== webView.window { return }
+                    if name == NSApplication.didResignActiveNotification {
+                        remoteMessageImpression = nil
+                    }
+                    scheduleRemoteMessageVisibilityCheck()
+                }
+                .store(in: &cancellables)
+        }
 
         NotificationCenter.default.publisher(for: .newTabPageSectionsAvailabilityDidChange)
             .receive(on: DispatchQueue.main)
@@ -84,6 +120,44 @@ final class NewTabPageWebViewModel: NSObject {
         }
     }
 
+    func updateRemoteMessageVisibility(selectedTabID: String?) {
+        self.selectedTabID = selectedTabID
+        if selectedTabID == nil {
+            remoteMessageImpression = nil
+        }
+        scheduleRemoteMessageVisibilityCheck()
+    }
+
+    private func scheduleRemoteMessageVisibilityCheck() {
+        guard !isRemoteMessageVisibilityCheckScheduled else { return }
+        isRemoteMessageVisibilityCheckScheduled = true
+        // Publishers can fire before their new value or the view hierarchy has settled.
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            isRemoteMessageVisibilityCheckScheduled = false
+            await reportRemoteMessageIfVisible()
+        }
+    }
+
+    private func reportRemoteMessageIfVisible() async {
+        guard let selectedTabID,
+              NSApp.isActive,
+              let window = webView.window,
+              window.isVisible, !window.isMiniaturized,
+              window.occlusionState.contains(.visible),
+              window.attachedSheet == nil,
+              !webView.isHiddenOrHasHiddenAncestor, !webView.visibleRect.isEmpty,
+              !webView.isLoading,
+              let message = activeRemoteMessageModel.newTabPageRemoteMessage,
+              activeRemoteMessageModel.isMessageSupported(message) else {
+            remoteMessageImpression = nil
+            return
+        }
+        let impression = RemoteMessageImpression(tabID: selectedTabID, messageID: message.id)
+        guard remoteMessageImpression != impression else { return }
+        remoteMessageImpression = impression
+        await activeRemoteMessageModel.markRemoteMessageAsShown(for: .newTabPage)
+    }
 }
 
 extension NewTabPageWebViewModel: WKUIDelegate {
@@ -111,6 +185,7 @@ extension NewTabPageWebViewModel: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         newTabPageLoadMetrics.onNTPDidPresent()
+        scheduleRemoteMessageVisibilityCheck()
     }
 }
 

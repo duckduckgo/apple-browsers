@@ -336,6 +336,7 @@ final class BrowserTabViewController: NSViewController {
     override func viewWillDisappear() {
         super.viewWillDisappear()
 
+        _newTabPageWebViewModel?.updateRemoteMessageVisibility(selectedTabID: nil)
         cancellables.removeAll()
     }
 
@@ -374,6 +375,7 @@ final class BrowserTabViewController: NSViewController {
         super.viewDidAppear()
 
         subscribeToNotifications()
+        updateNewTabPageRemoteMessageVisibility()
     }
 
     @objc
@@ -1301,6 +1303,7 @@ final class BrowserTabViewController: NSViewController {
         scheduleHoverLabelUpdatesForUrl(nil)
         defer {
             adjustFirstResponderAfterAddingContentViewIfNeeded()
+            updateNewTabPageRemoteMessageVisibility()
         }
 
         if let tabID = tabViewModel?.tab.uuid {
@@ -1381,6 +1384,12 @@ final class BrowserTabViewController: NSViewController {
         guard tabViewModel?.tabContent == .newtab else { return }
 
         newTabPageLoadMetrics.onNTPAlreadyPresented()
+    }
+
+    private func updateNewTabPageRemoteMessageVisibility() {
+        // Each window reuses one NTP web view, so selecting another NTP need not change its window.
+        let tabID = tabViewModel?.tabContent == .newtab && !tabCollectionViewModel.isBurner ? tabViewModel?.tab.uuid : nil
+        _newTabPageWebViewModel?.updateRemoteMessageVisibility(selectedTabID: tabID)
     }
 
     func showTabContentForSettings(pane: PreferencePaneIdentifier?) {

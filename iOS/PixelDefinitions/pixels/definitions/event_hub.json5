@@ -33,129 +33,39 @@
         "parameters": ["appVersion"]
     },
     "webTelemetry_youtube_adBlocker_day": {
-        "description": "Daily bucketed count of YouTube ad-blocker-challenge detections, with the user's login state at detection time. Fired by the eventHub feature at the end of each 1-day period. Successor to the retired m_web_extension_adblocking_detected_ad_blocker_daily pixel.",
+        "description": "Daily bucketed count of YouTube ad-blocker-challenge detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed detection count for the period (e.g. \"0\", \"1+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "loginState",
-                "type": "string",
-                "description": "User's YouTube login state at detection time, as percent-encoded JSON (e.g. %22logged-in%22)"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubLoginState", "eventHubAttributionPeriod"]
     },
     "webTelemetry_youtube_playabilityError_day": {
-        "description": "Daily bucketed count of YouTube playability-error detections, with the user's login state at detection time. Fired by the eventHub feature at the end of each 1-day period. Successor to the retired m_web_extension_adblocking_detected_playability_error_daily pixel.",
+        "description": "Daily bucketed count of YouTube playability-error detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed detection count for the period (e.g. \"0\", \"1+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "loginState",
-                "type": "string",
-                "description": "User's YouTube login state at detection time, as percent-encoded JSON (e.g. %22logged-in%22)"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubLoginState", "eventHubAttributionPeriod"]
     },
     "webTelemetry_youtube_videoAd_day": {
-        "description": "Daily bucketed count of YouTube video-ad detections, with the user's login state at detection time. Fired by the eventHub feature at the end of each 1-day period. Successor to the retired m_web_extension_adblocking_detected_video_ad_daily pixel.",
+        "description": "Daily bucketed count of YouTube video-ad detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed detection count for the period (e.g. \"0\", \"1+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "loginState",
-                "type": "string",
-                "description": "User's YouTube login state at detection time, as percent-encoded JSON (e.g. %22logged-in%22)"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubLoginState", "eventHubAttributionPeriod"]
     },
     "webTelemetry_youtube_staticAd_day": {
-        "description": "Daily bucketed count of YouTube static-ad detections, with the user's login state at detection time. Fired by the eventHub feature at the end of each 1-day period. Successor to the retired m_web_extension_adblocking_detected_static_ad_daily pixel.",
+        "description": "Daily bucketed count of YouTube static-ad detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed detection count for the period (e.g. \"0\", \"1+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "loginState",
-                "type": "string",
-                "description": "User's YouTube login state at detection time, as percent-encoded JSON (e.g. %22logged-in%22)"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubLoginState", "eventHubAttributionPeriod"]
     },
     "webTelemetry_youtube_buffering_day": {
-        "description": "Daily bucketed count of YouTube playback-buffering detections, with the user's login state at detection time. Fired by the eventHub feature at the end of each 1-day period. Successor to the retired m_web_extension_adblocking_detected_buffering_daily pixel.",
+        "description": "Daily bucketed count of YouTube playback-buffering detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed detection count for the period (e.g. \"0\", \"1+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "loginState",
-                "type": "string",
-                "description": "User's YouTube login state at detection time, as percent-encoded JSON (e.g. %22logged-in%22)"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubLoginState", "eventHubAttributionPeriod"]
     },
     // Captcha pixels use an immediate trigger, so they carry neither a bucketed `count` nor an
     // `attributionPeriod` — EventHub fires one pixel per detection with no aggregation or deduplication.
@@ -187,8 +97,50 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "webTelemetry_captcha_datadome": {
+        "description": "Fired once per detection of a DataDome challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "webTelemetry_captcha_imperva": {
+        "description": "Fired once per detection of an Imperva challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "webTelemetry_captcha_arkose": {
+        "description": "Fired once per detection of an Arkose Labs (FunCaptcha) challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "webTelemetry_captcha_geetest": {
+        "description": "Fired once per detection of a GeeTest challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "webTelemetry_captcha_awswaf": {
+        "description": "Fired once per detection of an AWS WAF challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "webTelemetry_captcha_perimeterx": {
+        "description": "Fired once per detection of a PerimeterX challenge on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "webTelemetry_captcha_other": {
-        "description": "Fired once per detection of a captcha challenge that matches no known provider. Fired immediately by the eventHub feature, without aggregation.",
+        "description": "Fired once per detection of a captcha challenge that matches no known provider on a page. Fired immediately by the eventHub feature, without aggregation.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
@@ -197,323 +149,215 @@
     // Entries below come from the shared base `event-hub` feature config rather than the Apple override,
     // so they arrive on every platform once the feature is enabled.
     "eventHub_baseline_day": {
-        "description": "Daily bucketed count of periods in which EventHub ran at all. Serves as the denominator for the other eventHub telemetry — it counts nothing beyond the period itself. Fired by the eventHub feature at the end of each 1-day period.",
+        "description": "Daily bucketed count of periods in which EventHub ran at all. Serves as the denominator for the other eventHub telemetry — it counts nothing beyond the period itself. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "baseline",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBaseline", "eventHubAttributionPeriod"]
     },
     "eventHub_baseline_week": {
-        "description": "Weekly bucketed count of periods in which EventHub ran at all. Serves as the denominator for the other eventHub telemetry — it counts nothing beyond the period itself. Fired by the eventHub feature at the end of each 7-day period.",
+        "description": "Weekly bucketed count of periods in which EventHub ran at all. Serves as the denominator for the other eventHub telemetry — it counts nothing beyond the period itself. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "baseline",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBaseline", "eventHubAttributionPeriod"]
     },
     "webTelemetry_adwalls_day": {
-        "description": "Daily bucketed count of adwall detections across all sites. Fired by the eventHub feature at the end of each 1-day period.",
+        "description": "Daily bucketed count of adwall detections across all pages. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "adwallCount",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubAdwallCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_adwalls_week": {
-        "description": "Weekly bucketed count of adwall detections across all sites. Fired by the eventHub feature at the end of each 7-day period.",
+        "description": "Weekly bucketed count of adwall detections across all pages. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "adwallCount",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubAdwallCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_admiralAdwalls_day": {
-        "description": "Daily bucketed count of Admiral adwall detections across all sites. Fired by the eventHub feature at the end of each 1-day period.",
+        "description": "Daily bucketed count of Admiral-served adwall detections across all pages. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "admiralAdwallCount",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubAdmiralAdwallCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_admiralAdwalls_week": {
-        "description": "Weekly bucketed count of Admiral adwall detections across all sites. Fired by the eventHub feature at the end of each 7-day period.",
+        "description": "Weekly bucketed count of Admiral-served adwall detections across all pages. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "admiralAdwallCount",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubAdmiralAdwallCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_recaptcha_day": {
-        "description": "Daily bucketed count of page loads where a Google reCAPTCHA challenge was detected. Fired by the eventHub feature at the end of each 1-day period.",
+        "description": "Daily bucketed count of page loads where a Google reCAPTCHA challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_recaptcha_week": {
-        "description": "Weekly bucketed count of page loads where a Google reCAPTCHA challenge was detected. Fired by the eventHub feature at the end of each 7-day period.",
+        "description": "Weekly bucketed count of page loads where a Google reCAPTCHA challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_hcaptcha_day": {
-        "description": "Daily bucketed count of page loads where an hCaptcha challenge was detected. Fired by the eventHub feature at the end of each 1-day period.",
+        "description": "Daily bucketed count of page loads where an hCaptcha challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_hcaptcha_week": {
-        "description": "Weekly bucketed count of page loads where an hCaptcha challenge was detected. Fired by the eventHub feature at the end of each 7-day period.",
+        "description": "Weekly bucketed count of page loads where an hCaptcha challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_turnstile_day": {
-        "description": "Daily bucketed count of page loads where a Cloudflare Turnstile challenge was detected. Fired by the eventHub feature at the end of each 1-day period.",
+        "description": "Daily bucketed count of page loads where a Cloudflare Turnstile challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_turnstile_week": {
-        "description": "Weekly bucketed count of page loads where a Cloudflare Turnstile challenge was detected. Fired by the eventHub feature at the end of each 7-day period.",
+        "description": "Weekly bucketed count of page loads where a Cloudflare Turnstile challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_cloudflare_day": {
-        "description": "Daily bucketed count of page loads where a Cloudflare interstitial challenge was detected. Fired by the eventHub feature at the end of each 1-day period.",
+        "description": "Daily bucketed count of page loads where a Cloudflare interstitial challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_cloudflare_week": {
-        "description": "Weekly bucketed count of page loads where a Cloudflare interstitial challenge was detected. Fired by the eventHub feature at the end of each 7-day period.",
+        "description": "Weekly bucketed count of page loads where a Cloudflare interstitial challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+    },
+    "webTelemetry_captcha_datadome_day": {
+        "description": "Daily bucketed count of page loads where a DataDome challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+    },
+    "webTelemetry_captcha_datadome_week": {
+        "description": "Weekly bucketed count of page loads where a DataDome challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+    },
+    "webTelemetry_captcha_imperva_day": {
+        "description": "Daily bucketed count of page loads where an Imperva challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+    },
+    "webTelemetry_captcha_imperva_week": {
+        "description": "Weekly bucketed count of page loads where an Imperva challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+    },
+    "webTelemetry_captcha_arkose_day": {
+        "description": "Daily bucketed count of page loads where an Arkose Labs (FunCaptcha) challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+    },
+    "webTelemetry_captcha_arkose_week": {
+        "description": "Weekly bucketed count of page loads where an Arkose Labs (FunCaptcha) challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+    },
+    "webTelemetry_captcha_geetest_day": {
+        "description": "Daily bucketed count of page loads where a GeeTest challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+    },
+    "webTelemetry_captcha_geetest_week": {
+        "description": "Weekly bucketed count of page loads where a GeeTest challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+    },
+    "webTelemetry_captcha_awswaf_day": {
+        "description": "Daily bucketed count of page loads where an AWS WAF challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+    },
+    "webTelemetry_captcha_awswaf_week": {
+        "description": "Weekly bucketed count of page loads where an AWS WAF challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+    },
+    "webTelemetry_captcha_perimeterx_day": {
+        "description": "Daily bucketed count of page loads where a PerimeterX challenge was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+    },
+    "webTelemetry_captcha_perimeterx_week": {
+        "description": "Weekly bucketed count of page loads where a PerimeterX challenge was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_other_day": {
-        "description": "Daily bucketed count of page loads where a captcha challenge that matches no known provider was detected. Fired by the eventHub feature at the end of each 1-day period.",
+        "description": "Daily bucketed count of page loads where a captcha challenge that matches no known provider was detected. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_captcha_other_week": {
-        "description": "Weekly bucketed count of page loads where a captcha challenge that matches no known provider was detected. Fired by the eventHub feature at the end of each 7-day period.",
+        "description": "Weekly bucketed count of page loads where a captcha challenge that matches no known provider was detected. Fired by the eventHub feature at the end of each 7-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "count",
-                "type": "string",
-                "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-                "pattern": "^\\d+(-\\d+|\\+)?$"
-            },
-            {
-                "key": "attributionPeriod",
-                "type": "integer",
-                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
-            }
-        ]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
+    },
+    // Immediate adwall detections. Governed by the shared base `event-hub` config, so they
+    // arrive on every platform once the feature is enabled.
+    "webTelemetry_adwall": {
+        "description": "Fired once per detection of an adwall on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "webTelemetry_admiralAdwall": {
+        "description": "Fired once per detection of an Admiral-served adwall on a page. Fired immediately by the eventHub feature, without aggregation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

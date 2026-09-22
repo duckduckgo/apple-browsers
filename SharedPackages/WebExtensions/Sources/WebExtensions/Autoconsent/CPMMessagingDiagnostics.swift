@@ -18,13 +18,28 @@
 
 import Foundation
 
-/// Attribution collected around a Web Extension messaging failure that attribute it to one of the known WebKit failure modes.
-///
-/// Every field is optional: the snapshot is best-effort and a missing value must never block the pixel.
-/// `pixelParameters` renders the struct as bucketed, PII-free pixel parameters.
+/// App-owned launch facts shared with CPM diagnostics; does not read or persist application state.
+public struct CPMAppSessionDiagnostics {
+    public enum VersionChange: String, Sendable {
+        case updated
+        case downgraded
+    }
+
+    public let appVersionChange: VersionChange?
+    public let launchDate: Date
+
+    public init(appVersionChange: VersionChange?, launchDate: Date) {
+        self.appVersionChange = appVersionChange
+        self.launchDate = launchDate
+    }
+}
+
+/// Best-effort state attached to Web Extension messaging failures. Unavailable facts are omitted.
 public struct CPMMessagingDiagnostics: Equatable, Sendable {
 
     public var extensionContextLoaded: Bool?
+    public var appVersionChange: CPMAppSessionDiagnostics.VersionChange?
+    public var secondsSinceAppLaunch: TimeInterval?
     public var secondsSinceCriticalMemoryPressure: TimeInterval?
     public var networkProcessRestarted: Bool?
     /// `WKWebExtensionContext.errors` domain/code pairs, including the immediate underlying error when present.
@@ -102,6 +117,8 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
     // MARK: - Pixel parameters
 
     public enum ParameterName {
+        public static let appVersionChange = "app_version_change"
+        public static let appLaunchAge = "app_launch_age"
         public static let extensionContextLoaded = "context_loaded"
         public static let memoryPressureCritical = "critical_memory_age"
         public static let networkProcessRestarted = "network_restarted"
@@ -124,6 +141,8 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
     /// Bucketed, PII-free representation for pixel parameters. Unknown facts are omitted.
     public var pixelParameters: [String: String] {
         var parameters: [String: String] = [:]
+        parameters[ParameterName.appVersionChange] = appVersionChange?.rawValue
+        parameters[ParameterName.appLaunchAge] = secondsSinceAppLaunch.map(Self.ageBucket)
 
         parameters[ParameterName.extensionContextLoaded] = extensionContextLoaded.map(String.init)
         parameters[ParameterName.memoryPressureCritical] = Self.memoryPressureBucket(secondsSinceCriticalMemoryPressure)

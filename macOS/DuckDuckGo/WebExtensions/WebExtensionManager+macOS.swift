@@ -82,7 +82,8 @@ enum WebExtensionManagerFactory {
                 }
                 return nil
             },
-            featureFlags: MacOSCPMDiagnosticsFeatureFlags(featureFlagger: Application.appDelegate.featureFlagger)
+            featureFlags: MacOSCPMDiagnosticsFeatureFlags(featureFlagger: Application.appDelegate.featureFlagger),
+            appSession: Application.appDelegate.cpmAppSessionDiagnostics
         )
 
         let manager = WebExtensionManager(

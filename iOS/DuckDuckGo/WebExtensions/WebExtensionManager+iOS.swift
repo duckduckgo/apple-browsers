@@ -72,6 +72,7 @@ public enum WebExtensionManagerFactory {
     @MainActor
     static func makeManager(
         mainViewController: MainViewController,
+        appSession: AppSessionInfo? = nil,
         featureFlagger: FeatureFlagger,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferences,
@@ -91,7 +92,16 @@ public enum WebExtensionManagerFactory {
                 }
                 return (webView: controller.webView, extensionTab: controller)
             },
-            featureFlags: IOSCPMDiagnosticsFeatureFlags(featureFlagger: featureFlagger)
+            featureFlags: IOSCPMDiagnosticsFeatureFlags(featureFlagger: featureFlagger),
+            appSession: appSession.map { session in
+                let change: CPMAppSessionDiagnostics.VersionChange?
+                switch session.appVersionChange {
+                case .updated: change = .updated
+                case .downgraded: change = .downgraded
+                case nil: change = nil
+                }
+                return CPMAppSessionDiagnostics(appVersionChange: change, launchDate: session.launchDate)
+            }
         )
 
         return WebExtensionManager(

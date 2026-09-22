@@ -76,7 +76,9 @@
             "tab_controller_matches_context",
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
-            "background_events"
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
         ]
     },
     "debug_web_extension_cpm_initialization_failed_after_other": {
@@ -99,7 +101,9 @@
             "tab_controller_matches_context",
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
-            "background_events"
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
         ]
     },
     "debug_web_extension_cpm_initialization_failed_after_tab_crash": {
@@ -122,7 +126,9 @@
             "tab_controller_matches_context",
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
-            "background_events"
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
         ]
     },
     "debug_web_extension_cpm_initialization_failed_after_extension_reload": {
@@ -145,7 +151,9 @@
             "tab_controller_matches_context",
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
-            "background_events"
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
         ]
     },
     "debug_web_extension_cpm_messaging_stuck_session_restoration": {
@@ -168,7 +176,9 @@
             "tab_controller_matches_context",
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
-            "background_events"
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
         ]
     },
     "debug_web_extension_cpm_messaging_stuck_tab_crash": {
@@ -191,7 +201,9 @@
             "tab_controller_matches_context",
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
-            "background_events"
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
         ]
     },
     "debug_web_extension_cpm_messaging_stuck_extension_reload": {
@@ -214,7 +226,9 @@
             "tab_controller_matches_context",
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
-            "background_events"
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
         ]
     },
     "debug_web_extension_cpm_messaging_stuck_other": {
@@ -237,7 +251,9 @@
             "tab_controller_matches_context",
             "tab_has_extension_user_scripts",
             "background_web_process_responsive",
-            "background_events"
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
         ]
     },
     "debug_web_extension_cpm_messaging_recovered_without_extension_reload": {

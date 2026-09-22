@@ -55,6 +55,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     struct BackgroundEvent: Equatable {
         enum Kind: Equatable {
             case contextLoad
+            case extensionUpdated
             case viewCreated
             case viewDeallocated
             case processDied(CPMBackgroundProcessTerminationReason?)
@@ -73,6 +74,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
 
     /// Ordered background lifecycle events since `contextWillLoad` (oldest first), capped at `maximumRecordedEvents`.
     private(set) var backgroundEvents: [BackgroundEvent] = []
+    private var latestExtensionUpdateEvent: BackgroundEvent?
     static let maximumRecordedEvents = 40
     /// How many of the most recent events the pixel carries.
     static let maximumEventsInPixel = 12
@@ -85,6 +87,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
 
     private let tabResolver: TabResolver
     private let now: () -> Date
+    private let appSession: CPMAppSessionDiagnostics?
 
     private weak var context: WKWebExtensionContext?
     private var contextGeneration = UUID()
@@ -112,7 +115,9 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     public init(tabResolver: @escaping TabResolver,
                 observesMemoryPressure: Bool = true,
                 featureFlags: (any CPMDiagnosticsFeatureFlagsProviding)? = nil,
-                now: @escaping () -> Date = Date.init) {
+                now: @escaping () -> Date = Date.init,
+                appSession: CPMAppSessionDiagnostics? = nil) {
+        self.appSession = appSession
         self.tabResolver = tabResolver
         self.featureFlags = featureFlags
         self.now = now
@@ -166,6 +171,13 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
 
     // MARK: - Lifecycle facts
 
+    /// Called only after replacing an installed extension with a newly installed version, not on first install or reload.
+    public func extensionDidUpdate(type: DuckDuckGoWebExtensionType) {
+        guard type == .embedded else { return }
+        record(.extensionUpdated)
+        latestExtensionUpdateEvent = backgroundEvents.last
+    }
+
     /// Call right before `WKWebExtensionController.load(_:)` for the embedded extension context.
     public func contextWillLoad(_ context: WKWebExtensionContext) {
         if let contextErrorsObserver {
@@ -181,7 +193,8 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         previousBackgroundWebProcessIdentifier = nil
         networkProcessIdentifierAtLastBackgroundViewCreation = nil
         lastBackgroundWebViewCreatedAt = nil
-        backgroundEvents = []
+        // Preserve the latest update across context reloads, without carrying over old-context callbacks.
+        backgroundEvents = [latestExtensionUpdateEvent].compactMap { $0 }
         backgroundProcessIsUnresponsive = false
         record(.contextLoad)
         networkProcessIdentifierAtLoad = Self.networkProcessIdentifier(for: context)
@@ -350,6 +363,8 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     public func snapshot() -> CPMMessagingDiagnostics {
         pruneDeallocatedBackgroundWebViews()
         var diagnostics = CPMMessagingDiagnostics()
+        diagnostics.appVersionChange = appSession?.appVersionChange
+        diagnostics.secondsSinceAppLaunch = appSession.map { max(0, now().timeIntervalSince($0.launchDate)) }
         diagnostics.extensionContextLoaded = context?.isLoaded ?? false
         diagnostics.secondsSinceCriticalMemoryPressure = lastCriticalMemoryPressureAt.map { now().timeIntervalSince($0) }
         diagnostics.extensionContextErrors = currentContextErrors()
@@ -483,6 +498,7 @@ extension CPMMessagingDiagnosticsRecorder.BackgroundEvent.Kind: CustomStringConv
     var description: String {
         switch self {
         case .contextLoad: return "load"
+        case .extensionUpdated: return "extension_updated"
         case .viewCreated: return "view"
         case .viewDeallocated: return "dealloc"
         case .processDied(let reason): return "died_\(reason?.description ?? "unknown")"

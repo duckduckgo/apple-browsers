@@ -35,6 +35,26 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
         ])
     }
 
+    func testWhenRecorderIsRecreatedThenAppLaunchAgeDoesNotReset() {
+        var date = Date(timeIntervalSince1970: 1000)
+        let session = CPMAppSessionDiagnostics(appVersionChange: nil, launchDate: date)
+        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, now: { date }, appSession: session)
+        XCTAssertEqual(recorder.snapshot().pixelParameters["app_launch_age"], "30s")
+        date += 60
+        let replacement = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, now: { date }, appSession: session)
+        XCTAssertEqual(recorder.snapshot().pixelParameters["app_launch_age"], "2m")
+        XCTAssertEqual(replacement.snapshot().pixelParameters["app_launch_age"], "2m")
+        XCTAssertNil(replacement.snapshot().pixelParameters["app_version_change"])
+    }
+
+    func testWhenAppWasUpdatedThenSnapshotIncludesOnlyVersionChangeAndBucket() {
+        let date = Date(timeIntervalSince1970: 1000)
+        let session = CPMAppSessionDiagnostics(appVersionChange: .updated, launchDate: date)
+        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, now: { date }, appSession: session)
+        XCTAssertEqual(recorder.snapshot().pixelParameters["app_version_change"], "updated")
+        XCTAssertEqual(recorder.snapshot().pixelParameters["app_launch_age"], "30s")
+    }
+
     func testWhenParameterNamesAreSerializedThenUsesCompactKeys() {
         XCTAssertEqual([
             Name.extensionContextLoaded, Name.memoryPressureCritical, Name.networkProcessRestarted,
@@ -159,6 +179,35 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
 final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
 
     private var createdTestExtensionDirs: [URL] = []
+
+    func testWhenContextReloadsThenSessionEventsKeepTheirOriginalAges() async throws {
+        var date = Date(timeIntervalSince1970: 1000)
+        let session = CPMAppSessionDiagnostics(appVersionChange: nil, launchDate: date)
+        date += 60
+        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false,
+                                                      now: { date }, appSession: session)
+        recorder.extensionDidUpdate(type: .embedded)
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+        XCTAssertEqual(recorder.snapshot().pixelParameters["bg_events"], "extension_updated@30s,load@30s")
+        XCTAssertEqual(recorder.snapshot().pixelParameters["app_launch_age"], "2m")
+
+        date += 60
+        recorder.contextWillLoad(context)
+        XCTAssertEqual(recorder.snapshot().pixelParameters["bg_events"], "extension_updated@2m,load@30s")
+        XCTAssertEqual(recorder.snapshot().pixelParameters["app_launch_age"], "5m")
+    }
+
+    func testWhenOtherExtensionUpdatesOrCPMReloadsThenNoUpdateEventIsAdded() async throws {
+        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+        recorder.extensionDidUpdate(type: .adBlockingExtension)
+        recorder.contextWillLoad(context)
+        XCTAssertEqual(recorder.snapshot().backgroundEvents.map(\.token), ["load"])
+        recorder.extensionDidUpdate(type: .embedded)
+        XCTAssertEqual(recorder.snapshot().backgroundEvents.map(\.token), ["load", "extension_updated"])
+    }
 
     func testWhenContextErrorIsRecordedThenDescriptorCarriesCodesNotText() async throws {
         let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)

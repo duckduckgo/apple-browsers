@@ -591,6 +591,18 @@
         "type": "boolean",
         "description": "Whether WebKit reported the CPM background web process as responsive."
     },
+    "cpm_app_version_change": {
+        "key": "app_version_change",
+        "type": "string",
+        "enum": ["updated", "downgraded"],
+        "description": "Direction of the app version/build change since the previous observed launch. Fixed for the session; omitted when unchanged or no previous version is available. Versions are not sent."
+    },
+    "cpm_app_launch_age": {
+        "key": "app_launch_age",
+        "type": "string",
+        "description": "Time since app startup, not extension load or foregrounding. Buckets: 30s (<30s), 1m (30-<60s), 2m (1-<2m), 5m (2-<5m), 15m (5-<15m), over_15 (>=15m). Exact time is not sent.",
+        "enum": ["30s", "1m", "2m", "5m", "15m", "over_15"]
+    },
     "cpm_recovery_from": {
         "key": "recovery_from",
         "type": "string",
@@ -600,7 +612,7 @@
     "background_events": {
         "key": "bg_events",
         "type": "string",
-        "description": "Bounded, sanitized CPM lifecycle timeline, oldest first, including context unload and extension file removal failures with error descriptors. Each token@age entry uses the first matching age bucket relative to the snapshot: 30s (<30s), 1m (<60s), 2m (<120s), 5m (<300s), 15m (<900s), over_15 (>=900s). Order and repeated events within a bucket are preserved; exact ages are not sent."
+        "description": "Bounded, sanitized CPM lifecycle timeline, oldest first, including extension_updated (successful replacement of an installed CPM version, not first install or reload; latest update survives context reloads), context unload and extension file removal failures with error descriptors. Each token@age entry uses the first matching age bucket relative to the snapshot: 30s (<30s), 1m (<60s), 2m (<120s), 5m (<300s), 15m (<900s), over_15 (>=900s). Order and repeated events within a bucket are preserved; exact ages are not sent."
     },
     "web_extension_type": {
         "key": "extension_type",

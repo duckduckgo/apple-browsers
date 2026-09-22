@@ -488,5 +488,45 @@
         "type": "string",
         "description": "Bucketed count of tabs last viewed 22+ days ago.",
         "enum": ["0", "1-5", "6-10", "11-20", "21+"]
+    },
+    "eventHubAttributionPeriod": {
+        "key": "attributionPeriod",
+        "type": "integer",
+        "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+    },
+    "eventHubBucketedCount": {
+        "key": "count",
+        "type": "string",
+        "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubDetectionCount": {
+        "key": "count",
+        "type": "string",
+        "description": "Bucketed detection count for the period (e.g. \"0\", \"1+\")",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubLoginState": {
+        "key": "loginState",
+        "type": "string",
+        "description": "User's YouTube login state at detection time, as percent-encoded JSON (e.g. %22logged-in%22)"
+    },
+    "eventHubBaseline": {
+        "key": "baseline",
+        "type": "string",
+        "description": "Bucketed count for the period (\"0+\")",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubAdwallCount": {
+        "key": "adwallCount",
+        "type": "string",
+        "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubAdmiralAdwallCount": {
+        "key": "admiralAdwallCount",
+        "type": "string",
+        "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
     }
 }

@@ -475,19 +475,19 @@ extension AppDelegate {
 
     @objc func openImportBookmarksWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportFlowLauncher(pinningManager: self.pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+            DataImportFlowLauncher(pinningManager: self.pinningManager).launchDataImport()
         }
     }
 
     @objc func openImportPasswordsWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportFlowLauncher(pinningManager: self.pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+            DataImportFlowLauncher(pinningManager: self.pinningManager).launchDataImport()
         }
     }
 
     @objc func openImportBrowserDataWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportFlowLauncher(pinningManager: self.pinningManager).launchDataImport(isDataTypePickerExpanded: false)
+            DataImportFlowLauncher(pinningManager: self.pinningManager).launchDataImport()
         }
     }
 

@@ -69,7 +69,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     private let newTabPageViewModel: NewTabPageViewModel
     private let messagesModel: NewTabPageMessagesModel
-    private let favoritesModel: FavoritesViewModel
+    let favoritesModel: FavoritesViewModel
     private let associatedTab: Tab
 
     private var hostingController: UIHostingController<AnyView>?

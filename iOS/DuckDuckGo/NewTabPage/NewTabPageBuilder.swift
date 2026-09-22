@@ -25,6 +25,7 @@ import Core
 import Onboarding
 import RemoteMessaging
 import Subscription
+import SwiftUI
 
 /// Builds the New Tab Page shown in a browser tab.
 @MainActor
@@ -86,13 +87,38 @@ struct NewTabPageBuilder {
                 newTabPage?.beginVoiceSearch(textEntryMode: textEntryMode)
             })
 
+        let favoritesModel = FavoritesViewModel(
+            isFocussedState: false,
+            favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: favoritesInteractionModel),
+            faviconLoader: faviconLoader,
+            faviconsCache: faviconsCache)
+        favoritesModel.onFavoriteURLSelected = { [internalUserCommands] favorite in
+            guard let newTabPage else { return }
+            if let url = favorite.url.flatMap(URL.init(string:)), internalUserCommands.handle(url: url) {
+                return
+            }
+            newTabPage.delegate?.newTabPageDidSelectFavorite(newTabPage, favorite: favorite)
+        }
+        favoritesModel.onFavoriteEdit = { favorite in
+            guard let newTabPage else { return }
+            newTabPage.delegate?.newTabPageDidEditFavorite(newTabPage, favorite: favorite)
+        }
+        favoritesModel.onFaviconMissing = {
+            guard let newTabPage else { return }
+            newTabPage.delegate?.newTabPageDidRequestFaviconsFetcherOnboarding(newTabPage)
+        }
+
         let page = RedesignedNewTabPageViewController(blocks: [
             NewTabPageSwiftUIBlock(id: .welcome, rootView: NewTabPageWelcomeView(
                 model: NewTabPageWelcomeModel(greetingProvider: daxGreetingProvider,
                                              contextChanges: daxGreetingChanges,
                                              updateAppearance: updateDaxGreetingAppearance))),
-            NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView)
-        ])
+            NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView),
+            NewTabPageSwiftUIBlock(id: .favorites, rootView: RedesignedFavoritesView(model: favoritesModel)
+                .padding(.horizontal, 16)
+                .padding(.top, 20)
+                .padding(.bottom, 16))
+        ], favoritesModel: favoritesModel)
         newTabPage = page
         return page
     }

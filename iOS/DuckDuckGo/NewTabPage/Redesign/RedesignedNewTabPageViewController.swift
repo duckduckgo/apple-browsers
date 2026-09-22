@@ -42,6 +42,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
     var hasInlineSearchInput: Bool { true }
 
     private let blocks: [any NewTabPageBlock]
+    private let favoritesModel: FavoritesViewModel?
+    private var areFavoritesHidden = false
     private var isEntranceAnimationPending = false
     private var entranceAnimator: UIViewPropertyAnimator?
 
@@ -72,8 +74,9 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         return button
     }()
 
-    init(blocks: [any NewTabPageBlock]) {
+    init(blocks: [any NewTabPageBlock], favoritesModel: FavoritesViewModel? = nil) {
         self.blocks = blocks
+        self.favoritesModel = favoritesModel
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -220,20 +223,24 @@ extension RedesignedNewTabPageViewController: HomeScreenTransitionSource {
     var rootContainerView: UIView { view }
 }
 
-/// The logo and favorites blocks are not hosted on this page yet.
+/// The logo is not hosted on this page; favorites participate in the existing content handoff.
 extension RedesignedNewTabPageViewController: NewTabPageContentHandoff {
 
     var isShowingLogo: Bool { false }
 
-    var isShowingFavorites: Bool { false }
+    var isShowingFavorites: Bool { restingContentIsFavorites && !areFavoritesHidden }
 
     var restingContentIsLogo: Bool { false }
 
-    var restingContentIsFavorites: Bool { false }
+    var restingContentIsFavorites: Bool { favoritesModel?.isEmpty == false }
 
     func setLogoHidden(_ hidden: Bool) {}
 
-    func setFavoritesHidden(_ hidden: Bool) {}
+    func setFavoritesHidden(_ hidden: Bool) {
+        areFavoritesHidden = hidden
+        // Preserve the block's space while focused content covers the resting page.
+        blocks.first { $0.id == .favorites }?.viewController.view.alpha = hidden ? 0 : 1
+    }
 }
 
 extension RedesignedNewTabPageViewController: NewTabPageChromeAdapting {

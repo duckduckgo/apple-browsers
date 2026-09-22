@@ -1030,11 +1030,13 @@ extension MainViewController {
     func updateUnifiedInputContentContainment() {
         guard let coordinator = unifiedToggleInputCoordinator,
               let container = viewCoordinator.unifiedInputContentContainer else { return }
+        let usesFocusedContainer = currentTab?.isAITab != true && newTabPageInputPresentation.usesFocusedContentContainer
+        coordinator.contentViewController.usesRedesignedNewTabPageLayout = usesFocusedContainer
         RedesignedNewTabPageFocusedViewController.updateContainment(
             of: coordinator.contentViewController,
             in: self,
             container: container,
-            usesFocusedContainer: currentTab?.isAITab != true && newTabPageInputPresentation.usesFocusedContentContainer)
+            usesFocusedContainer: usesFocusedContainer)
     }
 
     func installFloatingReturnKeyViewController() {

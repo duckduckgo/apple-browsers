@@ -40,6 +40,8 @@ final class UnifiedSuggestionsHost {
     private var contentInsets: UIEdgeInsets = .zero
     private var cancellables = Set<AnyCancellable>()
     let favoritesPresentation: FocusedFavoritesPresentation
+    private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
+    private var redesignedPresentationCancellable: AnyCancellable?
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
     /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
@@ -82,7 +84,8 @@ final class UnifiedSuggestionsHost {
         let view = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
-            favoritesPresentation: favoritesPresentation)
+            favoritesPresentation: favoritesPresentation,
+            showsRedesignedSearchModules: redesignedSearchPresentation?.showsSearchModules ?? false)
         let hosting = UIHostingController(rootView: view)
         hosting.view.backgroundColor = .clear
         hosting.view.translatesAutoresizingMaskIntoConstraints = false
@@ -101,7 +104,27 @@ final class UnifiedSuggestionsHost {
         hostingController = hosting
     }
 
-    var isShowingLogo: Bool { viewModel.isShowingLogo }
+    func setUsesRedesignedNewTabPageLayout(_ enabled: Bool) {
+        guard enabled != (redesignedSearchPresentation != nil) else { return }
+        redesignedPresentationCancellable = nil
+        if enabled {
+            let presentation = RedesignedFocusedSearchPresentation(
+                inputsPublisher: config.inputsPublisher,
+                dismissPublisher: viewModel.$dismissBehavior.eraseToAnyPublisher(),
+                fireTabPublisher: viewModel.$isFireTab.eraseToAnyPublisher())
+            redesignedSearchPresentation = presentation
+            redesignedPresentationCancellable = presentation.$showsSearchModules
+                .sink { [weak self] showsSearchModules in
+                    // Use the emitted value: @Published sends before the stored value changes.
+                    self?.rebuildRootView(showsRedesignedSearchModules: showsSearchModules)
+                }
+        } else {
+            redesignedSearchPresentation = nil
+            rebuildRootView()
+        }
+    }
+
+    var isShowingLogo: Bool { viewModel.isShowingLogo && redesignedSearchPresentation?.showsSearchModules != true }
     var isShowingFavorites: Bool { viewModel.isShowingFavorites }
 
     /// Fire tabs render the fire empty state instead of the Dax logo for the empty (`.logo`) state.
@@ -193,6 +216,8 @@ final class UnifiedSuggestionsHost {
     }
 
     func tearDown() {
+        redesignedPresentationCancellable = nil
+        redesignedSearchPresentation = nil
         cancellables.removeAll()
         onContentChanged = nil
         config.source.tearDown()
@@ -206,11 +231,12 @@ final class UnifiedSuggestionsHost {
 
     // MARK: - Private
 
-    private func rebuildRootView() {
+    private func rebuildRootView(showsRedesignedSearchModules: Bool? = nil) {
         guard let hosting = hostingController else { return }
         hosting.rootView = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
-            favoritesPresentation: favoritesPresentation)
+            favoritesPresentation: favoritesPresentation,
+            showsRedesignedSearchModules: showsRedesignedSearchModules ?? redesignedSearchPresentation?.showsSearchModules ?? false)
     }
 }

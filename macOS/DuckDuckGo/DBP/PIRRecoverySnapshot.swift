@@ -1,5 +1,5 @@
 //
-//  PageAnalysisSnapshot.swift
+//  PIRRecoverySnapshot.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@
 import Foundation
 
 /// A bounded, read-only inventory. IDs refer to retained nodes in an isolated content world for live target validation.
-struct PageAnalysisSnapshot: Codable {
+struct PIRRecoverySnapshot: Codable {
     let captureID: String
     let title: String
     let origin: String
@@ -70,7 +70,7 @@ struct PageAnalysisSnapshot: Codable {
         guard let json = String(data: arguments, encoding: .utf8) else {
             throw CocoaError(.fileReadInapplicableStringEncoding)
         }
-        return "globalThis.__ddgPageAnalysisTarget?.(...\(json))"
+        return "globalThis.__ddgPIRRecoveryTarget?.(...\(json))"
     }
 
     static let script = #"""
@@ -212,7 +212,7 @@ struct PageAnalysisSnapshot: Codable {
         });
         // Re-resolve the original node and compare current state, including native validity.
         // No selector text or JavaScript comes from the model.
-        globalThis.__ddgPageAnalysisTarget = (expectedCapture, id) => {
+        globalThis.__ddgPIRRecoveryTarget = (expectedCapture, id) => {
             const target = targets.get(id);
             const fail = error => JSON.stringify({error});
             if (expectedCapture !== captureID || !target) return fail('Unknown or expired capture reference.');

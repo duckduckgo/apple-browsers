@@ -1219,17 +1219,6 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
-            #if DEBUG && compiler(>=6.4) && canImport(FoundationModels)
-            if #available(macOS 27.0, *) {
-                NSMenuItem(title: "On-Device Page Analysis").submenu(PageAnalysisDebugMenu(webViewProvider: {
-                    let controller = NSApp.keyWindow?.nextResponder as? MainWindowController
-                        ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController
-                    return controller?.mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.webView
-                }, openDemoPage: { url in
-                    Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
-                }))
-            }
-            #endif
             NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
             if StandardApplicationBuildType().isSparkleBuild {
                 NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard, internalUserDecider: internalUserDecider))

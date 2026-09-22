@@ -1,5 +1,5 @@
 //
-//  PageAnalysisPIRRecoveryTests.swift
+//  PIRRecoveryTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import XCTest
 
 @available(macOS 27.0, *)
 @MainActor
-final class PageAnalysisPIRRecoveryTests: XCTestCase {
+final class PIRRecoveryTests: XCTestCase {
     private let formAction: [String: Any] = [
         "id": "fill", "actionType": "fillForm", "selector": "#removal",
         "elements": [["type": "firstName", "selector": ".//input[@name='first']"]]
@@ -56,11 +56,11 @@ final class PageAnalysisPIRRecoveryTests: XCTestCase {
         ]
         for fixture in fixtures {
             let webView = await load(fixture.html)
-            let capture = try await webView.evaluateJavaScript(PageAnalysisSnapshot.script, in: nil, contentWorld: .page)
+            let capture = try await webView.evaluateJavaScript(PIRRecoverySnapshot.script, in: nil, contentWorld: .page)
             let json = try XCTUnwrap(capture as? String)
-            let snapshot = try JSONDecoder().decode(PageAnalysisSnapshot.self, from: Data(json.utf8))
+            let snapshot = try JSONDecoder().decode(PIRRecoverySnapshot.self, from: Data(json.utf8))
             let target = try XCTUnwrap(snapshot.elements.first { $0.label == "Recover" })
-            let script = try PageAnalysisSnapshot.targetValidationScript(captureID: snapshot.captureID, elementID: target.id)
+            let script = try PIRRecoverySnapshot.targetValidationScript(captureID: snapshot.captureID, elementID: target.id)
             let result = try await webView.evaluateJavaScript(script, in: nil, contentWorld: .page)
             let resultJSON = try XCTUnwrap(result as? String)
             let selection = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(resultJSON.utf8)) as? [String: String])
@@ -72,12 +72,12 @@ final class PageAnalysisPIRRecoveryTests: XCTestCase {
 
     func testWhenCapturedNodeIsReplacedThenRejectsIdenticalSelector() async throws {
         let webView = await load("<button id='next'>Recover</button>")
-        let capture = try await webView.evaluateJavaScript(PageAnalysisSnapshot.script, in: nil, contentWorld: .page)
-        let snapshot = try JSONDecoder().decode(PageAnalysisSnapshot.self, from: Data(XCTUnwrap(capture as? String).utf8))
+        let capture = try await webView.evaluateJavaScript(PIRRecoverySnapshot.script, in: nil, contentWorld: .page)
+        let snapshot = try JSONDecoder().decode(PIRRecoverySnapshot.self, from: Data(XCTUnwrap(capture as? String).utf8))
         let target = try XCTUnwrap(snapshot.elements.first { $0.label == "Recover" })
         _ = try await webView.evaluateJavaScript("document.querySelector('button').outerHTML = '<button id=next>Recover</button>'",
                                                 in: nil, contentWorld: .page)
-        let script = try PageAnalysisSnapshot.targetValidationScript(captureID: snapshot.captureID, elementID: target.id)
+        let script = try PIRRecoverySnapshot.targetValidationScript(captureID: snapshot.captureID, elementID: target.id)
         let result = try await webView.evaluateJavaScript(script, in: nil, contentWorld: .page)
         XCTAssertTrue(try XCTUnwrap(result as? String).contains("The target or its form state changed"))
     }
@@ -88,9 +88,9 @@ final class PageAnalysisPIRRecoveryTests: XCTestCase {
         <input value="private-field-value"><div contenteditable="true">private-edited-text</div>
         </section></main><footer><button>View more</button></footer>
         """)
-        let value = try await webView.evaluateJavaScript(PageAnalysisSnapshot.script, in: nil, contentWorld: .page)
+        let value = try await webView.evaluateJavaScript(PIRRecoverySnapshot.script, in: nil, contentWorld: .page)
         let json = try XCTUnwrap(value as? String)
-        let snapshot = try JSONDecoder().decode(PageAnalysisSnapshot.self, from: Data(json.utf8))
+        let snapshot = try JSONDecoder().decode(PIRRecoverySnapshot.self, from: Data(json.utf8))
         let button = try XCTUnwrap(snapshot.elements.first { $0.label == "Continue" })
         XCTAssertEqual(button.landmark, "main")
         XCTAssertTrue(button.surroundingText.contains("Remove your personal listing"))
@@ -101,10 +101,9 @@ final class PageAnalysisPIRRecoveryTests: XCTestCase {
         let later: [String: Any] = ["id": "later", "actionType": "navigate", "url": "https://example.invalid/later"]
         let distant = later.merging(["id": "distant"]) { _, new in new }
         let data = try JSONSerialization.data(withJSONObject: ["stepType": "optOut", "actions": [broken, formAction, later, distant]])
-        let context = try PageAnalysisPIRContext(json: XCTUnwrap(String(data: data, encoding: .utf8)), runtimeJSON: """
-        {"stepIndex":0,"completedActionCount":0,"availableData":[],"failedActionID":"broken","isLiveRecovery":true}
-        """)
-        let candidates = PageAnalysisPIRActionBuilder.candidates(snapshot: snapshot, context: context)
+        let context = try PIRRecoveryContext(stepJSON: XCTUnwrap(String(data: data, encoding: .utf8)), completedActionCount: 0,
+                                             failedActionID: "broken", availableData: [])
+        let candidates = PIRRecoveryActionBuilder.candidates(snapshot: snapshot, context: context)
         XCTAssertEqual(candidates.map(\.elementID), [button.id])
         XCTAssertTrue(context.recoveryObjective.contains("firstName"))
         XCTAssertFalse(try context.modelSequenceJSON().contains("distant"))

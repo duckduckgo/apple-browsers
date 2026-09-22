@@ -7,17 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		DAEF4805D6924A8189C5B3F2 /* PageAnalysisPrototype in Resources */ = {isa = PBXBuildFile; fileRef = DAEF4805D6924A8189C5B3F1 /* PageAnalysisPrototype */; };
-		DAEF4805D6924A8189C5B3F3 /* PageAnalysisPrototype in Resources */ = {isa = PBXBuildFile; fileRef = DAEF4805D6924A8189C5B3F1 /* PageAnalysisPrototype */; };
 
-		B00E66C2425D4BCC8CE6232C /* PageAnalysisSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E6689EDC6D247B2A75B7E3E /* PageAnalysisSnapshot.swift */; };
-		133A981A5FB6472689E3384A /* PageAnalysisPIRAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53764C0A3C654155A6B28FA1 /* PageAnalysisPIRAction.swift */; };
-		709DCF87BE6B48D6B82701A2 /* PageAnalysisPIRRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 709DCF87BE6B48D6B82701A1 /* PageAnalysisPIRRecovery.swift */; };
-		F2056665935A48F38D1C1032 /* PageAnalysisSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E6689EDC6D247B2A75B7E3E /* PageAnalysisSnapshot.swift */; };
-		219CF8554FAD41B38F7570D6 /* PageAnalysisPIRAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53764C0A3C654155A6B28FA1 /* PageAnalysisPIRAction.swift */; };
-		709DCF87BE6B48D6B82701A3 /* PageAnalysisPIRRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 709DCF87BE6B48D6B82701A1 /* PageAnalysisPIRRecovery.swift */; };
-		0BEF1B37D8204DE8B8531305 /* PageAnalysisDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7FF2779619E45AE8CC5A124 /* PageAnalysisDebugMenu.swift */; };
-		C845E22F77D34D3C812FBE40 /* PageAnalysisDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7FF2779619E45AE8CC5A124 /* PageAnalysisDebugMenu.swift */; };
+		B00E66C2425D4BCC8CE6232C /* PIRRecoverySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E6689EDC6D247B2A75B7E3E /* PIRRecoverySnapshot.swift */; };
+		133A981A5FB6472689E3384A /* PIRRecoveryAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53764C0A3C654155A6B28FA1 /* PIRRecoveryAction.swift */; };
+		709DCF87BE6B48D6B82701A2 /* PIRRecoveryGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 709DCF87BE6B48D6B82701A1 /* PIRRecoveryGenerator.swift */; };
+		F2056665935A48F38D1C1032 /* PIRRecoverySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E6689EDC6D247B2A75B7E3E /* PIRRecoverySnapshot.swift */; };
+		219CF8554FAD41B38F7570D6 /* PIRRecoveryAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53764C0A3C654155A6B28FA1 /* PIRRecoveryAction.swift */; };
+		709DCF87BE6B48D6B82701A3 /* PIRRecoveryGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 709DCF87BE6B48D6B82701A1 /* PIRRecoveryGenerator.swift */; };
 		00D8FF2311AEAC102CCB6061 /* BookmarksBarMenuWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E98C31C7349D34C0C8A569A /* BookmarksBarMenuWindow.swift */; };
 		021EA0802BD2A9D500772C9A /* TabsPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021EA07F2BD2A9D500772C9A /* TabsPreferences.swift */; };
 		021EA0812BD2A9D500772C9A /* TabsPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021EA07F2BD2A9D500772C9A /* TabsPreferences.swift */; };
@@ -965,7 +961,7 @@
 		3706FE0B293F661700E42796 /* AVCaptureDeviceMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63ED0DD26AFD9A300A9DAD1 /* AVCaptureDeviceMock.swift */; };
 		3706FE0C293F661700E42796 /* GeolocationProviderMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63ED0DF26AFE32F00A9DAD1 /* GeolocationProviderMock.swift */; };
 		3706FE0D293F661700E42796 /* MainMenuTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378205FA283C277800D1D4AA /* MainMenuTests.swift */; };
-		709DCF87BE6B48D6B82701B2 /* PageAnalysisPIRRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 709DCF87BE6B48D6B82701B1 /* PageAnalysisPIRRecoveryTests.swift */; };
+		709DCF87BE6B48D6B82701B2 /* PIRRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 709DCF87BE6B48D6B82701B1 /* PIRRecoveryTests.swift */; };
 		3706FE0E293F661700E42796 /* FirefoxDataImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B43469428655D1400177407 /* FirefoxDataImporterTests.swift */; };
 		3706FE0F293F661700E42796 /* CSVLoginExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B723E0426B0003E00E14D75 /* CSVLoginExporterTests.swift */; };
 		3706FE11293F661700E42796 /* URLSuggestedFilenameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8553FF51257523760029327F /* URLSuggestedFilenameTests.swift */; };
@@ -1249,7 +1245,7 @@
 		377D801F2AB48191002AF251 /* FavoritesDisplayModeSyncHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D801B2AB47FBB002AF251 /* FavoritesDisplayModeSyncHandler.swift */; };
 		378205F8283BC6A600D1D4AA /* StartupPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378205F7283BC6A600D1D4AA /* StartupPreferencesTests.swift */; };
 		378205FB283C277800D1D4AA /* MainMenuTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378205FA283C277800D1D4AA /* MainMenuTests.swift */; };
-		709DCF87BE6B48D6B82701B3 /* PageAnalysisPIRRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 709DCF87BE6B48D6B82701B1 /* PageAnalysisPIRRecoveryTests.swift */; };
+		709DCF87BE6B48D6B82701B3 /* PIRRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 709DCF87BE6B48D6B82701B1 /* PIRRecoveryTests.swift */; };
 		3783F92329432E1800BCA897 /* WebViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3783F92229432E1800BCA897 /* WebViewTests.swift */; };
 		3785F6EC2EA6520400AF66E9 /* SuggestionLoadingDeciderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3785F6EA2EA651FE00AF66E9 /* SuggestionLoadingDeciderTests.swift */; };
 		3785F6EE2EA6520400AF66E9 /* SuggestionLoadingDeciderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3785F6EA2EA651FE00AF66E9 /* SuggestionLoadingDeciderTests.swift */; };
@@ -5164,11 +5160,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		DAEF4805D6924A8189C5B3F1 /* PageAnalysisPrototype */ = {isa = PBXFileReference; lastKnownFileType = folder; name = PageAnalysisPrototype; path = DuckDuckGo/Resources/PageAnalysisPrototype; sourceTree = "<group>"; };
-		4E6689EDC6D247B2A75B7E3E /* PageAnalysisSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageAnalysisSnapshot.swift; sourceTree = "<group>"; };
-		53764C0A3C654155A6B28FA1 /* PageAnalysisPIRAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageAnalysisPIRAction.swift; sourceTree = "<group>"; };
-		709DCF87BE6B48D6B82701A1 /* PageAnalysisPIRRecovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageAnalysisPIRRecovery.swift; sourceTree = "<group>"; };
-		C7FF2779619E45AE8CC5A124 /* PageAnalysisDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageAnalysisDebugMenu.swift; sourceTree = "<group>"; };
+		4E6689EDC6D247B2A75B7E3E /* PIRRecoverySnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIRRecoverySnapshot.swift; sourceTree = "<group>"; };
+		53764C0A3C654155A6B28FA1 /* PIRRecoveryAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIRRecoveryAction.swift; sourceTree = "<group>"; };
+		709DCF87BE6B48D6B82701A1 /* PIRRecoveryGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIRRecoveryGenerator.swift; sourceTree = "<group>"; };
 		021EA07F2BD2A9D500772C9A /* TabsPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsPreferences.swift; sourceTree = "<group>"; };
 		021EA0822BD6DF1B00772C9A /* TabsPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsPreferencesTests.swift; sourceTree = "<group>"; };
 		0230C0A2272080090018F728 /* KeyedCodingExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyedCodingExtension.swift; sourceTree = "<group>"; };
@@ -5553,7 +5547,7 @@
 		377E54382937B7C400780A0A /* DuckDuckGoAppStoreCI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoAppStoreCI.entitlements; sourceTree = "<group>"; };
 		378205F7283BC6A600D1D4AA /* StartupPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupPreferencesTests.swift; sourceTree = "<group>"; };
 		378205FA283C277800D1D4AA /* MainMenuTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenuTests.swift; sourceTree = "<group>"; };
-		709DCF87BE6B48D6B82701B1 /* PageAnalysisPIRRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageAnalysisPIRRecoveryTests.swift; sourceTree = "<group>"; };
+		709DCF87BE6B48D6B82701B1 /* PIRRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIRRecoveryTests.swift; sourceTree = "<group>"; };
 		3783F92229432E1800BCA897 /* WebViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewTests.swift; sourceTree = "<group>"; };
 		3785F6EA2EA651FE00AF66E9 /* SuggestionLoadingDeciderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionLoadingDeciderTests.swift; sourceTree = "<group>"; };
 		378B5887295CF2A4002C0CC0 /* Version.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
@@ -8450,6 +8444,9 @@
 				316913252BD2B76F0051B46D /* DataBrokerPrerequisitesStatusVerifier.swift */,
 				3199C6FC2AF97367002A7BA1 /* DataBrokerProtectionAppEvents.swift */,
 				316850712AF3AD58009A2828 /* DataBrokerProtectionDebugMenu.swift */,
+				53764C0A3C654155A6B28FA1 /* PIRRecoveryAction.swift */,
+				709DCF87BE6B48D6B82701A1 /* PIRRecoveryGenerator.swift */,
+				4E6689EDC6D247B2A75B7E3E /* PIRRecoverySnapshot.swift */,
 				3199C6F82AF94F5B002A7BA1 /* DataBrokerProtectionFeatureDisabler.swift */,
 				31C5FFB82AF64D120008A79F /* DataBrokerProtectionFeatureGatekeeper.swift */,
 				F1C70D782BFF50A400599292 /* DataBrokerProtectionLoginItemInterface.swift */,
@@ -8485,6 +8482,7 @@
 		31A2FD152BAB419400D0E741 /* DBP */ = {
 			isa = PBXGroup;
 			children = (
+				709DCF87BE6B48D6B82701B1 /* PIRRecoveryTests.swift */,
 				C1D8BE432C1739BF0057E426 /* Tests */,
 			);
 			path = DBP;
@@ -8793,7 +8791,6 @@
 			children = (
 				566B195F29CDB7A9007E38F4 /* Mocks */,
 				378205FA283C277800D1D4AA /* MainMenuTests.swift */,
-				709DCF87BE6B48D6B82701B1 /* PageAnalysisPIRRecoveryTests.swift */,
 				566B195C29CDB692007E38F4 /* MoreOptionsMenuTests.swift */,
 				9F9C49F52BC786790099738D /* MoreOptionsMenu+BookmarksTests.swift */,
 			);
@@ -11365,7 +11362,6 @@
 		AA585D75248FD31100E9A3E2 = {
 			isa = PBXGroup;
 			children = (
-				DAEF4805D6924A8189C5B3F1 /* PageAnalysisPrototype */,
 				378B5886295CF2A4002C0CC0 /* Configuration */,
 				AA585D80248FD31100E9A3E2 /* DuckDuckGo */,
 				9D9AE9132AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgent */,
@@ -12040,10 +12036,6 @@
 				7BA64F672EE1E86B00289E30 /* ContentScopeExperimentsMenu.swift */,
 				AA7E919628746BCC00AB6B62 /* HistoryMenu.swift */,
 				AA4BBA3A25C58FA200C4FB0F /* MainMenu.swift */,
-				4E6689EDC6D247B2A75B7E3E /* PageAnalysisSnapshot.swift */,
-				53764C0A3C654155A6B28FA1 /* PageAnalysisPIRAction.swift */,
-				709DCF87BE6B48D6B82701A1 /* PageAnalysisPIRRecovery.swift */,
-				C7FF2779619E45AE8CC5A124 /* PageAnalysisDebugMenu.swift */,
 				AA6EF9B425081B4C004754E6 /* MainMenuActions.swift */,
 				F1D43AED2B98D8DF00BAB743 /* MainMenuActions+VanillaBrowser.swift */,
 				AAAB9115288EB46B00A057A9 /* VisitMenuItem.swift */,
@@ -15082,7 +15074,6 @@
 				3706FCC8293F65D500E42796 /* Assets.xcassets in Resources */,
 				9FBB0C012CB94FC10006B6A6 /* view_highlight.json in Resources */,
 				84DD63E52E9788960043A25E /* TabBar.storyboard in Resources */,
-				DAEF4805D6924A8189C5B3F2 /* PageAnalysisPrototype in Resources */,
 				371C3DF02FE40ADF003D31C1 /* permissions-inspector.html in Resources */,
 				371C3DF32FE40ADF003D31C1 /* permissions-inspector.js in Resources */,
 				3706FCD0293F65D500E42796 /* BookmarksBarCollectionViewItem.xib in Resources */,
@@ -15346,7 +15337,6 @@
 				B31055C627A1BA1D001AC618 /* userscript.js in Resources */,
 				AA585D86248FD31400E9A3E2 /* Assets.xcassets in Resources */,
 				9FBB0C002CB94FC10006B6A6 /* view_highlight.json in Resources */,
-				DAEF4805D6924A8189C5B3F3 /* PageAnalysisPrototype in Resources */,
 				371C3DF12FE40ADF003D31C1 /* permissions-inspector.html in Resources */,
 				371C3DF42FE40ADF003D31C1 /* permissions-inspector.js in Resources */,
 				4BE5336B286912D40019DBFD /* BookmarksBarCollectionViewItem.xib in Resources */,
@@ -16607,10 +16597,9 @@
 				F188268E2BBF01C400D9AC4F /* PixelDataModel.xcdatamodeld in Sources */,
 				3706FBC1293F65D500E42796 /* StartupPreferences.swift in Sources */,
 				3706FBC2293F65D500E42796 /* MainMenu.swift in Sources */,
-				B00E66C2425D4BCC8CE6232C /* PageAnalysisSnapshot.swift in Sources */,
-				133A981A5FB6472689E3384A /* PageAnalysisPIRAction.swift in Sources */,
-				709DCF87BE6B48D6B82701A2 /* PageAnalysisPIRRecovery.swift in Sources */,
-				0BEF1B37D8204DE8B8531305 /* PageAnalysisDebugMenu.swift in Sources */,
+				B00E66C2425D4BCC8CE6232C /* PIRRecoverySnapshot.swift in Sources */,
+				133A981A5FB6472689E3384A /* PIRRecoveryAction.swift in Sources */,
+				709DCF87BE6B48D6B82701A2 /* PIRRecoveryGenerator.swift in Sources */,
 				3706FBC6293F65D500E42796 /* MouseOverView.swift in Sources */,
 				BBE948D02D6FD11200FAC581 /* DefaultBrowserAndDockPromptStoring.swift in Sources */,
 				2BB44A0F9B88E349EA5F5D37 /* CookiePopupsBlockedPromoDelegate.swift in Sources */,
@@ -17366,7 +17355,7 @@
 				CBDD5DE429A6800300832877 /* MockConfigurationStore.swift in Sources */,
 				84A37DED2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift in Sources */,
 				3706FE0D293F661700E42796 /* MainMenuTests.swift in Sources */,
-				709DCF87BE6B48D6B82701B2 /* PageAnalysisPIRRecoveryTests.swift in Sources */,
+				709DCF87BE6B48D6B82701B2 /* PIRRecoveryTests.swift in Sources */,
 				3706FE0E293F661700E42796 /* FirefoxDataImporterTests.swift in Sources */,
 				B5E7B6CB2ED4A7A800094EDF /* LoadingIndicatorPolicyTests.swift in Sources */,
 				3706FE0F293F661700E42796 /* CSVLoginExporterTests.swift in Sources */,
@@ -19028,10 +19017,9 @@
 				0900A40D95794BC984A351AA /* AutoconsentPopupManagedEvent.swift in Sources */,
 				E9F3D5067B8C901234567890 /* AutoconsentEventCoordinator.swift in Sources */,
 				AA4BBA3B25C58FA200C4FB0F /* MainMenu.swift in Sources */,
-				F2056665935A48F38D1C1032 /* PageAnalysisSnapshot.swift in Sources */,
-				219CF8554FAD41B38F7570D6 /* PageAnalysisPIRAction.swift in Sources */,
-				709DCF87BE6B48D6B82701A3 /* PageAnalysisPIRRecovery.swift in Sources */,
-				C845E22F77D34D3C812FBE40 /* PageAnalysisDebugMenu.swift in Sources */,
+				F2056665935A48F38D1C1032 /* PIRRecoverySnapshot.swift in Sources */,
+				219CF8554FAD41B38F7570D6 /* PIRRecoveryAction.swift in Sources */,
+				709DCF87BE6B48D6B82701A3 /* PIRRecoveryGenerator.swift in Sources */,
 				AA585D84248FD31100E9A3E2 /* BrowserTabViewController.swift in Sources */,
 				B693954B26F04BEB0015B914 /* MouseOverView.swift in Sources */,
 				AAE7527C263B056C00B973F8 /* EncryptedHistoryStore.swift in Sources */,
@@ -19852,7 +19840,7 @@
 				B63ED0E026AFE32F00A9DAD1 /* GeolocationProviderMock.swift in Sources */,
 				BB10556E2E14350E00199F37 /* DefaultVisualizeFireSettingsDeciderTests.swift in Sources */,
 				378205FB283C277800D1D4AA /* MainMenuTests.swift in Sources */,
-				709DCF87BE6B48D6B82701B3 /* PageAnalysisPIRRecoveryTests.swift in Sources */,
+				709DCF87BE6B48D6B82701B3 /* PIRRecoveryTests.swift in Sources */,
 				4B43469528655D1400177407 /* FirefoxDataImporterTests.swift in Sources */,
 				4B723E0926B0003E00E14D75 /* CSVLoginExporterTests.swift in Sources */,
 				3785F6EC2EA6520400AF66E9 /* SuggestionLoadingDeciderTests.swift in Sources */,

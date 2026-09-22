@@ -494,7 +494,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                                                                    applicationNameForUserAgentProvider: { WebViewUserAgentProvider.applicationNameForUserAgent })
 #if DEBUG && compiler(>=6.4) && canImport(FoundationModels)
         if #available(macOS 27.0, *) {
-            viewController.recoveryFactory = { @MainActor in PageAnalysisPIRRecovery.makeSession() }
+            viewController.recoveryFactory = { @MainActor in PIRRecovery.makeSession() }
         }
 #endif
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),

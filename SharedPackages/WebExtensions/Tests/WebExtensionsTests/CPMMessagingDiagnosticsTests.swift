@@ -52,19 +52,45 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
     }
 
     func testBackgroundEventsDropOldestEntriesToFitTheCap() {
-        let events = (0..<40).map { CPMMessagingDiagnostics.BackgroundEvent(token: "error_background_failed_to_load", secondsBeforeSnapshot: TimeInterval($0)) }
+        let events = (0..<40).map {
+            CPMMessagingDiagnostics.BackgroundEvent(token: "error_background_failed_to_load_\($0)", secondsBeforeSnapshot: TimeInterval(39 - $0))
+        }
         let value = CPMMessagingDiagnostics.backgroundEventsValue(events)
 
         XCTAssertLessThanOrEqual(value.count, CPMMessagingDiagnostics.maximumBackgroundEventsLength)
-        XCTAssertTrue(value.hasSuffix("error_background_failed_to_load@-39"), "newest event must survive")
-        XCTAssertFalse(value.hasPrefix("error_background_failed_to_load@-0,"), "oldest events are dropped first")
+        XCTAssertTrue(value.hasSuffix("error_background_failed_to_load_39@30s"), "newest event must survive")
+        XCTAssertFalse(value.contains("error_background_failed_to_load_0@"), "oldest events are dropped first")
     }
 
     func testBackgroundEventTokensAreSanitized() {
         let value = CPMMessagingDiagnostics.backgroundEventsValue([
             .init(token: "Died Crash; https://example.com/?q=1", secondsBeforeSnapshot: -3)
         ])
-        XCTAssertEqual(value, "diedcrashhttps:examplecomq1@-0")
+        XCTAssertEqual(value, "diedcrashhttps:examplecomq1@30s")
+    }
+
+    func testWhenBackgroundEventAgeCrossesBoundaryThenUsesNextBucket() {
+        let cases: [(TimeInterval, String)] = [
+            (-1, "30s"), (0, "30s"), (29.999, "30s"),
+            (30, "1m"), (59.999, "1m"),
+            (60, "2m"), (119.999, "2m"),
+            (120, "5m"), (299.999, "5m"),
+            (300, "15m"), (899.999, "15m"),
+            (900, "over_15"), (86_400, "over_15")
+        ]
+        for (seconds, bucket) in cases {
+            let value = CPMMessagingDiagnostics.backgroundEventsValue([.init(token: "view", secondsBeforeSnapshot: seconds)])
+            XCTAssertEqual(value, "view@\(bucket)", "age: \(seconds)")
+        }
+    }
+
+    func testWhenBackgroundEventsShareBucketThenPreservesOrderAndDuplicates() {
+        let value = CPMMessagingDiagnostics.backgroundEventsValue([
+            .init(token: "view", secondsBeforeSnapshot: 29),
+            .init(token: "died_crash", secondsBeforeSnapshot: 20),
+            .init(token: "view", secondsBeforeSnapshot: 10)
+        ])
+        XCTAssertEqual(value, "view@30s,died_crash@30s,view@30s")
     }
 
     func testMemoryPressureIsBucketed() {
@@ -110,7 +136,7 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
 
         XCTAssertEqual(diagnostics.pixelParameters, [
             Name.backgroundWebProcessResponsive: "false",
-            Name.backgroundEvents: "load@-600,view@-599,died_crash@-42,error_background_failed_to_load:nsurlerrordomain:-1100@-42",
+            Name.backgroundEvents: "load@15m,view@15m,died_crash@1m,error_background_failed_to_load:nsurlerrordomain:-1100@1m",
             Name.extensionContextLoaded: "true",
             Name.memoryPressureCritical: "1m",
             Name.networkProcessRestarted: "true",

@@ -64,7 +64,7 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
     /// `WKWebView._webProcessIsResponsive` for the background view: WebKit's hang-detection verdict at snapshot time.
     public var backgroundWebProcessResponsive: Bool?
     /// Most recent background lifecycle events, oldest first (context load, view created/deallocated, process death with
-    /// reason, unresponsive/responsive, load errors, and proxy state). Rendered as `token@-<seconds>`.
+    /// reason, unresponsive/responsive, load errors, and proxy state). Rendered as `token@<age bucket>`.
     public var backgroundEvents: [BackgroundEvent] = []
 
     public init(
@@ -166,13 +166,23 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         }
     }
 
-    /// `token@-<seconds>` entries, oldest first, comma-separated; drops the oldest entries until the value fits the cap.
+    private static func ageBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<30: return "30s"
+        case ..<60: return "1m"
+        case ..<120: return "2m"
+        case ..<300: return "5m"
+        case ..<900: return "15m"
+        default: return "over_15"
+        }
+    }
+
+    /// `token@<age bucket>` entries, oldest first, comma-separated; drops the oldest entries until the value fits the cap.
     /// Tokens are sanitized (they may embed error domain/code pairs).
     static func backgroundEventsValue(_ events: [BackgroundEvent]) -> String {
         var entries = events.map { event -> String in
             let token = sanitizedEventToken(event.token)
-            let seconds = Int(max(0, event.secondsBeforeSnapshot).rounded())
-            return "\(token)@-\(seconds)"
+            return "\(token)@\(ageBucket(event.secondsBeforeSnapshot))"
         }
         while entries.joined(separator: ",").count > maximumBackgroundEventsLength, entries.count > 1 {
             entries.removeFirst()

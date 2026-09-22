@@ -300,12 +300,12 @@ final class CPMBackgroundWebViewDelegateProxyTests: XCTestCase {
         recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
         clock = clock.addingTimeInterval(42)
         var parameters = recorder.snapshot().pixelParameters
-        XCTAssertEqual(parameters[CPMMessagingDiagnostics.ParameterName.backgroundEvents], "load@-42,view@-42,died_crash@-42")
+        XCTAssertEqual(parameters[CPMMessagingDiagnostics.ParameterName.backgroundEvents], "load@1m,view@1m,died_crash@1m")
 
         // Responsiveness callbacks for a view that is not the current one are ignored.
         recorder.backgroundWebViewWebProcessDidBecomeUnresponsive(WKWebView(frame: .zero))
         parameters = recorder.snapshot().pixelParameters
-        XCTAssertEqual(parameters[CPMMessagingDiagnostics.ParameterName.backgroundEvents], "load@-42,view@-42,died_crash@-42")
+        XCTAssertEqual(parameters[CPMMessagingDiagnostics.ParameterName.backgroundEvents], "load@1m,view@1m,died_crash@1m")
     }
 
     func testWhenProxyDisabledThenAllSurvivingViewDelegatesAreRestored() async throws {

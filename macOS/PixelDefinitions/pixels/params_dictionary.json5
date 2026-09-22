@@ -594,7 +594,7 @@
     "background_events": {
         "key": "bg_events",
         "type": "string",
-        "description": "Bounded, sanitized CPM lifecycle timeline, including context unload and extension file removal failures with error descriptors."
+        "description": "Bounded, sanitized CPM lifecycle timeline, oldest first, including context unload and extension file removal failures with error descriptors. Each token@age entry uses the first matching age bucket relative to the snapshot: 30s (<30s), 1m (<60s), 2m (<120s), 5m (<300s), 15m (<900s), over_15 (>=900s). Order and repeated events within a bucket are preserved; exact ages are not sent."
     },
     "web_extension_type": {
         "key": "extension_type",

@@ -99037,18 +99037,6 @@
         }
       }
     },
-    "preferences.autoplay.moved.caption" : {
-      "comment" : "Caption in General preferences telling the user where the autoplay setting now lives, %@ is the name of the Website Permissions settings pane and is a link to it",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Autoplay settings moved to %@."
-          }
-        }
-      }
-    },
     "preferences.cookie-pop-up-protection" : {
       "comment" : "Title of the option to show the Cookie Pop-Up Protection preferences",
       "extractionState" : "extracted_with_value",

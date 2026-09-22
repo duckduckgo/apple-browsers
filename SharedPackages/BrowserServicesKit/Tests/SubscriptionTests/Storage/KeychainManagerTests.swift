@@ -130,7 +130,9 @@ final class KeychainManagerTests: XCTestCase {
     }
 
     func testRetrieveDataKeychainLookupFailure() {
-        // Given
+        // Given: the keychain is unavailable (every copyMatching call, including the availability
+        // probe, fails) and there's no backlog entry for this key, so retrieveData must defer
+        // rather than issue the doomed lookup anyway.
         let testKey = "test-key"
         mockKeychainOperations.shouldFailCopyMatching = true
         mockKeychainOperations.copyMatchingFailureStatus = errSecInteractionNotAllowed
@@ -139,7 +141,7 @@ final class KeychainManagerTests: XCTestCase {
         XCTAssertThrowsError(try keychainManager.retrieveData(forKey: testKey)) { error in
             XCTAssertTrue(error is AccountKeychainAccessError)
             if case .keychainLookupFailure(let status) = error as? AccountKeychainAccessError {
-                XCTAssertEqual(status, errSecInteractionNotAllowed)
+                XCTAssertEqual(status, errSecNotAvailable)
             }
         }
     }

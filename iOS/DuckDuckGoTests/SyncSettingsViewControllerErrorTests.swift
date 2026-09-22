@@ -447,7 +447,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         await spyVC.controllerDidError(.syncCancelledFromOtherDevice, underlyingError: nil, setupRole: .sharer)
 
-        XCTAssertEqual(spyVC.dismissPresentedViewControllerCallCount, 1)
+        XCTAssertEqual(spyVC.dismissPresentedViewControllerCallCount, 0)
         XCTAssertNil(spyVC.viewModel.connectingSheetPhase)
         XCTAssertEqual(spyVC.presentCallCount, 1)
     }
@@ -557,6 +557,41 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         XCTAssertTrue(navigationController.topViewController === vc)
         await withCheckedContinuation { continuation in
             navigationController.dismiss(animated: false) { continuation.resume() }
+        }
+    }
+
+    @MainActor
+    func testWhenThirdPartyAccountIsAlreadyUpgradedThenDismissesPairingSetupBeforeShowingError() async {
+        let navigationController = UINavigationController(rootViewController: vc)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = navigationController
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        let scanner = UINavigationController(rootViewController: UIViewController())
+        vc.scanCodeNavigationController = scanner
+        scanner.modalPresentationStyle = .fullScreen
+        let qrSheet = UIViewController()
+        await withCheckedContinuation { continuation in
+            navigationController.present(scanner, animated: false) { continuation.resume() }
+        }
+        await withCheckedContinuation { continuation in
+            scanner.present(qrSheet, animated: false) { continuation.resume() }
+        }
+
+        await vc.controllerDidError(.thirdPartyAccountAlreadyUpgraded, underlyingError: nil, setupRole: .sharer)
+
+        XCTAssertNil(scanner.presentingViewController)
+        XCTAssertNil(qrSheet.presentingViewController)
+        let alert = navigationController.presentedViewController as? UIAlertController
+        XCTAssertNotNil(alert)
+        XCTAssertEqual(alert?.title, SyncErrorMessage.thirdPartyAccountAlreadyUpgraded.title)
+        XCTAssertEqual(alert?.message, SyncErrorMessage.thirdPartyAccountAlreadyUpgraded.description)
+        XCTAssertTrue(navigationController.topViewController === vc)
+        if let alert {
+            await withCheckedContinuation { continuation in
+                alert.dismiss(animated: false) { continuation.resume() }
+            }
         }
     }
 

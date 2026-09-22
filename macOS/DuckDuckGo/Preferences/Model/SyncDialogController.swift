@@ -923,7 +923,8 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         } else if isConfirmed {
             pairingV2PeerKind = peerKind
             if let dialog = Self.postPairingConfirmationDialog(
-                isSimplifiedSyncSetupV2Enabled: managementDialogModel.isSimplifiedSyncSetupV2Enabled
+                isSimplifiedSyncSetupV2Enabled: managementDialogModel.isSimplifiedSyncSetupV2Enabled,
+                setupRole: setupRole
             ) {
                 presentDialog(for: dialog)
             }
@@ -931,8 +932,8 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         return isConfirmed
     }
 
-    static func postPairingConfirmationDialog(isSimplifiedSyncSetupV2Enabled: Bool) -> ManagementDialogKind? {
-        guard isSimplifiedSyncSetupV2Enabled else {
+    static func postPairingConfirmationDialog(isSimplifiedSyncSetupV2Enabled: Bool, setupRole: SyncSetupRole) -> ManagementDialogKind? {
+        guard isSimplifiedSyncSetupV2Enabled, case .receiver = setupRole else {
             return nil
         }
         return .waitForOtherDevice

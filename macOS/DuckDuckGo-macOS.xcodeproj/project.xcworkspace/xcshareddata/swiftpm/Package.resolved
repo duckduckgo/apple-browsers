@@ -1,5 +1,5 @@
 {
-  "originHash" : "68b4c2aa06257235ced4279ff7391cfc3c67d26c2cd3b78902837661786d9387",
+  "originHash" : "54fda7b32ea5e814130dce8f5eaeb913d2a8a80637081f7fa230c1d4570d65a5",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/jwt-kit.git",
       "state" : {
-        "revision" : "13e7513b3ba0afa13967daf77af2fb4ad087306c",
-        "version" : "4.13.5"
+        "revision" : "1b55c7529eff82cd9fa907e67a539404459a02e6",
+        "version" : "5.7.1"
       }
     },
     {
@@ -146,6 +146,15 @@
       }
     },
     {
+      "identity" : "swift-certificates",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-certificates.git",
+      "state" : {
+        "revision" : "ff86b924ead66f853b8baf91f3c41926a8f36177",
+        "version" : "1.21.0"
+      }
+    },
+    {
       "identity" : "swift-clocks",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-clocks.git",
@@ -168,8 +177,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-crypto.git",
       "state" : {
-        "revision" : "95ba0316a9b733e92bb6b071255ff46263bbe7dc",
-        "version" : "3.15.1"
+        "revision" : "da9d28d69ebe3894b18376c8f2395c2f37b8448f",
+        "version" : "4.5.2"
       }
     },
     {
@@ -179,6 +188,15 @@
       "state" : {
         "revision" : "4fb9e7cbb4b8f5a7354005db39447f570d6b3e19",
         "version" : "1.7.3"
+      }
+    },
+    {
+      "identity" : "swift-log",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-log.git",
+      "state" : {
+        "revision" : "9c6fb14227f55d8f711ce3847dc2f419fb0ecacb",
+        "version" : "1.15.1"
       }
     },
     {

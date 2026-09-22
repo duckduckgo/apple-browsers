@@ -34,6 +34,7 @@ public struct SitePermissionsSheetView: View {
         static let bottomPadding: CGFloat = 12
         static let closeButtonTapTarget: CGFloat = 44
         static let rowHorizontalInset: CGFloat = 16
+        static let rowTrailingInset: CGFloat = 22 - horizontalPadding
         static let rowVerticalInset: CGFloat = 14
         static let iconSpacing: CGFloat = 8
         static let copySpacing: CGFloat = 8
@@ -135,6 +136,8 @@ public struct SitePermissionsSheetView: View {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
             }
             .buttonStyle(SheetCloseButtonStyle())
+            // Align the 32pt circle with the card edge while preserving its 44pt tap target.
+            .padding(.trailing, -6)
             .accessibilityLabel(UserText.PermissionManagement.close)
             .accessibilityIdentifier("SitePermissions.Sheet.Close")
         }
@@ -205,7 +208,8 @@ public struct SitePermissionsSheetView: View {
             .accessibilityValue(row.accessibilityValue)
             .accessibilityIdentifier("SitePermissions.Sheet.\(row.permissionType.rawValue.capitalized)")
         }
-        .padding(.horizontal, Constants.rowHorizontalInset)
+        .padding(.leading, Constants.rowHorizontalInset)
+        .padding(.trailing, Constants.rowTrailingInset)
     }
 
     private var reloadCaption: some View {

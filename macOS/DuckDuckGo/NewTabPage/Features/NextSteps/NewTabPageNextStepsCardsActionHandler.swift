@@ -112,7 +112,7 @@ private extension NewTabPageNextStepsCardsActionHandler {
 
     func performImportBookmarksAndPasswordsAction(completion: (() -> Void)?) {
         onboardingExperiment.fireMetric(.importRequested)
-        dataImportProvider.showImportWindow(customTitle: nil, completion: completion)
+        dataImportProvider.showImportWindow(completion: completion)
     }
 
     @MainActor

@@ -147,6 +147,10 @@ public struct AIChatNativeConfigValues: Codable {
     public let installAge: Int
     /// Native-owned attachment caps read by the sidebar; nil (omitted) means no caps.
     public let attachmentLimits: AIChatNativeAttachmentLimits?
+    /// `true` when native exposes the browser tools bridge, so Duck.ai may open an MCP session
+    /// and discover tools. The front end must not open a session when this is false — it also
+    /// serves as version-skew protection against builds that predate the bridge.
+    public let supportsBrowserTools: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -220,7 +224,8 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsNativeDictationPermissionHandler: Bool = false,
                 installType: AIChatInstallType = .new,
                 installAge: Int = 0,
-                attachmentLimits: AIChatNativeAttachmentLimits? = nil) {
+                attachmentLimits: AIChatNativeAttachmentLimits? = nil,
+                supportsBrowserTools: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -249,6 +254,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.installType = installType
         self.installAge = installAge
         self.attachmentLimits = attachmentLimits
+        self.supportsBrowserTools = supportsBrowserTools
     }
 
     /// Buckets the days between the install date and `now` into the values expected by the

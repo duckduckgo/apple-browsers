@@ -38,7 +38,8 @@ struct WebsitePermissionDefaultsUserDefaultsPersistor: WebsitePermissionDefaults
         case externalApps = "website-permissions.default.external-apps"
         case popups = "website-permissions.default.popups"
 
-        init(category: WebsitePermissionCategory) {
+        /// `nil` for Autoplay, whose default is the all-sites blocking mode owned by `AutoplayPreferences`.
+        init?(category: WebsitePermissionCategory) {
             switch category {
             case .notifications: self = .notifications
             case .location: self = .location
@@ -46,6 +47,7 @@ struct WebsitePermissionDefaultsUserDefaultsPersistor: WebsitePermissionDefaults
             case .microphone: self = .microphone
             case .externalApps: self = .externalApps
             case .popups: self = .popups
+            case .autoplay: return nil
             }
         }
     }
@@ -57,11 +59,13 @@ struct WebsitePermissionDefaultsUserDefaultsPersistor: WebsitePermissionDefaults
     }
 
     func decisionRawValue(for category: WebsitePermissionCategory) -> String? {
-        try? keyValueStore.object(forKey: Key(category: category).rawValue) as? String
+        guard let key = Key(category: category) else { return nil }
+        return try? keyValueStore.object(forKey: key.rawValue) as? String
     }
 
     func setDecisionRawValue(_ rawValue: String, for category: WebsitePermissionCategory) {
-        try? keyValueStore.set(rawValue, forKey: Key(category: category).rawValue)
+        guard let key = Key(category: category) else { return }
+        try? keyValueStore.set(rawValue, forKey: key.rawValue)
     }
 }
 
@@ -77,8 +81,10 @@ protocol WebsitePermissionDefaultsProviding: AnyObject {
 
 final class WebsitePermissionDefaults: WebsitePermissionDefaultsProviding {
 
-    /// Every category offers the same two options. There is deliberately no "Always allow" default:
-    /// a global grant would hand out camera, microphone or location without the user ever seeing a prompt.
+    /// Every category except Autoplay offers the same two options. There is deliberately no
+    /// "Always allow" default: a global grant would hand out camera, microphone or location without
+    /// the user ever seeing a prompt. Autoplay grants no access, so it offers its own three states —
+    /// see `WebsitePermissionCategory.availableDefaultDecisions`.
     static let availableDecisions: [PersistedPermissionDecision] = [.ask, .deny]
     /// Used when nothing is stored, when the stored value can't be parsed, and whenever the feature
     /// flag is off — so a rollback restores exactly the pre-feature behaviour.
@@ -86,41 +92,63 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProviding {
 
     private let persistor: WebsitePermissionDefaultsPersistor
     private let featureFlagger: FeatureFlagger
+    private let autoplayPreferences: AutoplayPreferences
+    /// Holds every category but Autoplay, whose default lives in `AutoplayPreferences`.
     private var storedDecisions: [WebsitePermissionCategory: PersistedPermissionDecision]
     private let subject: CurrentValueSubject<[WebsitePermissionCategory: PersistedPermissionDecision], Never>
-    private var featureFlagCancellable: AnyCancellable?
+    private var cancellables = Set<AnyCancellable>()
 
     var defaultsPublisher: AnyPublisher<[WebsitePermissionCategory: PersistedPermissionDecision], Never> {
         subject.removeDuplicates().eraseToAnyPublisher()
     }
 
-    init(persistor: WebsitePermissionDefaultsPersistor, featureFlagger: FeatureFlagger) {
+    init(persistor: WebsitePermissionDefaultsPersistor,
+         featureFlagger: FeatureFlagger,
+         autoplayPreferences: AutoplayPreferences) {
         self.persistor = persistor
         self.featureFlagger = featureFlagger
+        self.autoplayPreferences = autoplayPreferences
 
-        let stored = Self.loadDecisions(from: persistor)
-        self.storedDecisions = stored
-        let isEnabled = featureFlagger.isFeatureOn(.websitePermissionsSettings)
-        self.subject = CurrentValueSubject(isEnabled ? stored : Self.disabledDecisions)
+        self.storedDecisions = Self.loadDecisions(from: persistor)
+        self.subject = CurrentValueSubject(Self.disabledDecisions)
+        subject.send(effectiveDecisions)
 
         // The flag is remotely releasable, so it can flip while the app is running.
-        featureFlagCancellable = featureFlagger.updatesPublisher
+        featureFlagger.updatesPublisher
             .sink { [weak self] in
                 guard let self else { return }
                 subject.send(effectiveDecisions)
             }
+            .store(in: &cancellables)
+
+        // The all-sites autoplay mode is also editable from General preferences and the Permission
+        // Center, so the pane has to follow changes made outside it.
+        autoplayPreferences.$autoplayBlockingMode
+            .dropFirst()
+            .sink { [weak self] blockingMode in
+                guard let self else { return }
+                subject.send(effectiveDecisions(autoplayBlockingMode: blockingMode))
+            }
+            .store(in: &cancellables)
     }
 
     func defaultDecision(for category: WebsitePermissionCategory) -> PersistedPermissionDecision {
         guard isFeatureEnabled else { return Self.fallbackDecision }
+        guard category != .autoplay else { return PersistedPermissionDecision(autoplayPreferences.autoplayBlockingMode) }
         return storedDecisions[category] ?? Self.fallbackDecision
     }
 
     func setDefaultDecision(_ decision: PersistedPermissionDecision, for category: WebsitePermissionCategory) {
-        guard isFeatureEnabled,
-              Self.availableDecisions.contains(decision),
-              storedDecisions[category] != decision
-        else { return }
+        guard isFeatureEnabled, category.availableDefaultDecisions.contains(decision) else { return }
+
+        // Autoplay writes through to the all-sites blocking mode, which also fires its own pixel and
+        // feeds the WebKit policy; `autoplayPreferences` publishes the change back to `subject`.
+        guard category != .autoplay else {
+            autoplayPreferences.autoplayBlockingMode = decision.autoplayBlockingMode
+            return
+        }
+
+        guard storedDecisions[category] != decision else { return }
 
         storedDecisions[category] = decision
         persistor.setDecisionRawValue(decision.rawValue, for: category)
@@ -134,7 +162,16 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProviding {
     }
 
     private var effectiveDecisions: [WebsitePermissionCategory: PersistedPermissionDecision] {
-        isFeatureEnabled ? storedDecisions : Self.disabledDecisions
+        effectiveDecisions(autoplayBlockingMode: autoplayPreferences.autoplayBlockingMode)
+    }
+
+    private func effectiveDecisions(
+        autoplayBlockingMode: AutoplayBlockingMode
+    ) -> [WebsitePermissionCategory: PersistedPermissionDecision] {
+        guard isFeatureEnabled else { return Self.disabledDecisions }
+        var decisions = storedDecisions
+        decisions[.autoplay] = PersistedPermissionDecision(autoplayBlockingMode)
+        return decisions
     }
 
     /// Every category mapped to the fallback, used while the feature flag is off.
@@ -147,7 +184,7 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProviding {
     private static func loadDecisions(
         from persistor: WebsitePermissionDefaultsPersistor
     ) -> [WebsitePermissionCategory: PersistedPermissionDecision] {
-        WebsitePermissionCategory.allCases.reduce(into: [:]) { decisions, category in
+        WebsitePermissionCategory.allCases.filter { $0 != .autoplay }.reduce(into: [:]) { decisions, category in
             let stored = persistor.decisionRawValue(for: category)
                 .flatMap(PersistedPermissionDecision.init(rawValue:))
                 .flatMap { availableDecisions.contains($0) ? $0 : nil }

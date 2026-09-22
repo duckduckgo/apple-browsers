@@ -49,7 +49,7 @@ protocol PermissionManagerProtocol: AnyObject {
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision
     /// The default decision applied to `permissionType` when a domain has nothing persisted, as chosen
     /// in Settings > Website Permissions. `.ask` when the feature flag is off or the type has no
-    /// category in that pane (autoplay).
+    /// category in that pane.
     func defaultDecision(for permissionType: PermissionType) -> PersistedPermissionDecision
     /// Returns the underlying persisted decision, ignoring any active `PermissionDecisionOverriding`.
     /// `nil` when nothing is persisted. Use only for cleanup or migration paths that genuinely need

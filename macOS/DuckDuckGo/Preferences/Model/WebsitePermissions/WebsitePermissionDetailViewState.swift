@@ -24,8 +24,11 @@ struct WebsitePermissionDetailViewState: Equatable {
     var category: WebsitePermissionCategory = .notifications
     /// Behaviour applied to websites with no saved decision of their own.
     var defaultDecision: PersistedPermissionDecision = WebsitePermissionDefaults.fallbackDecision
-    /// Same two options for every category, so the radio group never offers a blanket grant.
-    let availableDefaultDecisions: [PersistedPermissionDecision] = WebsitePermissionDefaults.availableDecisions
+    /// The same two options for every category but Autoplay, so the radio group never offers a
+    /// blanket grant.
+    var availableDefaultDecisions: [PersistedPermissionDecision] {
+        category.availableDefaultDecisions
+    }
     var searchQuery = ""
     var sites: [SiteRow] = []
     var visibleSites: [SiteRow] = []

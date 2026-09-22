@@ -16,6 +16,9 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_macOS
+import PrivacyConfig
+
 enum WebsitePermissionCategory: CaseIterable, Hashable, Identifiable {
     case notifications
     case location
@@ -23,6 +26,7 @@ enum WebsitePermissionCategory: CaseIterable, Hashable, Identifiable {
     case microphone
     case externalApps
     case popups
+    case autoplay
 
     var id: Self { self }
 
@@ -40,12 +44,39 @@ enum WebsitePermissionCategory: CaseIterable, Hashable, Identifiable {
             return UserText.permissionCenterExternalApps
         case .popups:
             return UserText.permissionPopups
+        case .autoplay:
+            return UserText.permissionAutoplay
         }
     }
 
-    /// The category a permission belongs to, or `nil` for types this pane does not show (autoplay).
+    /// The category a permission belongs to, or `nil` for a type this pane has no section for.
     static func category(for permissionType: PermissionType) -> WebsitePermissionCategory? {
         allCases.first { $0.contains(permissionType) }
+    }
+
+    /// The categories the pane lists. Autoplay only appears while its feature flag is on, since
+    /// nothing applies the saved decisions otherwise.
+    static func visibleCases(featureFlagger: FeatureFlagger) -> [WebsitePermissionCategory] {
+        allCases.filter { $0.isVisible(featureFlagger: featureFlagger) }
+    }
+
+    func isVisible(featureFlagger: FeatureFlagger) -> Bool {
+        guard self == .autoplay else { return true }
+        return featureFlagger.isFeatureOn(.autoplayPolicy)
+    }
+
+    /// The options offered by this category's "Default" radio group, in the order the design lists them.
+    ///
+    /// Autoplay chooses which media may start on its own rather than whether to grant access, so it
+    /// offers all three of its states. Every other category keeps the uniform pair, with deliberately
+    /// no blanket grant.
+    var availableDefaultDecisions: [PersistedPermissionDecision] {
+        self == .autoplay ? PermissionType.autoplayPolicy.editableDecisions : WebsitePermissionDefaults.availableDecisions
+    }
+
+    /// Copy for one of this category's decisions.
+    func decisionTitle(for decision: PersistedPermissionDecision) -> String {
+        self == .autoplay ? decision.autoplayTitle : decision.websitePermissionsTitle
     }
 
     func contains(_ permissionType: PermissionType) -> Bool {
@@ -55,7 +86,8 @@ enum WebsitePermissionCategory: CaseIterable, Hashable, Identifiable {
             (.camera, .camera),
             (.microphone, .microphone),
             (.externalApps, .externalScheme),
-            (.popups, .popups):
+            (.popups, .popups),
+            (.autoplay, .autoplayPolicy):
             return true
         default:
             return false

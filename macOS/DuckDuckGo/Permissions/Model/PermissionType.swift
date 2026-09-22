@@ -108,7 +108,12 @@ extension PermissionType {
     }
 
     var editableDecisions: [PersistedPermissionDecision] {
-        canPersistDeniedDecision ? [.ask, .allow, .deny] : [.ask, .allow]
+        // Autoplay's three states are a scale rather than a grant, so they are ordered from most
+        // to least permissive, matching the Website Permissions design.
+        if case .autoplayPolicy = self {
+            return [.allow, .ask, .deny]
+        }
+        return canPersistDeniedDecision ? [.ask, .allow, .deny] : [.ask, .allow]
     }
 
     var isExternalScheme: Bool {

@@ -75,7 +75,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
 
     private func changeDefaultDecision(_ decision: PersistedPermissionDecision) {
         let category = viewState.category
-        guard WebsitePermissionDefaults.availableDecisions.contains(decision),
+        guard category.availableDefaultDecisions.contains(decision),
               decision != defaults.defaultDecision(for: category)
         else {
             Logger.general.debug("WebsitePermissionDetailViewModel: Ignored default change for \(String(describing: category))")

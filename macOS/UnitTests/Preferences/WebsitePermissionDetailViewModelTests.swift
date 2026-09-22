@@ -260,11 +260,50 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         XCTAssertEqual(model.viewState.availableDefaultDecisions, [.ask, .deny])
     }
 
-    func testWhenEveryCategoryIsOpenedThenTheSameTwoDefaultsAreOffered() {
-        for category in WebsitePermissionCategory.allCases {
+    func testWhenEveryCategoryButAutoplayIsOpenedThenTheSameTwoDefaultsAreOffered() {
+        for category in WebsitePermissionCategory.allCases where category != .autoplay {
             let sut = makeSUT(category: category, entries: [])
             XCTAssertEqual(sut.viewState.availableDefaultDecisions, [.ask, .deny], "\(category) should offer both options")
         }
+    }
+
+    // MARK: - Autoplay
+
+    func testWhenAutoplayIsOpenedThenItsThreeStatesAreOfferedMostPermissiveFirst() {
+        let sut = makeSUT(category: .autoplay, entries: [])
+
+        XCTAssertEqual(sut.viewState.availableDefaultDecisions, [.allow, .ask, .deny])
+    }
+
+    func testWhenAutoplayDefaultIsSetToAllowThenItIsPersisted() {
+        let sut = makeSUT(category: .autoplay, entries: [])
+
+        sut.send(action: .setDefaultDecision(.allow))
+
+        XCTAssertEqual(defaults.defaultDecision(for: .autoplay), .allow)
+        XCTAssertEqual(sut.viewState.defaultDecision, .allow)
+    }
+
+    func testWhenAutoplayRowIsShownThenItOffersItsThreeStates() {
+        let sut = makeSUT(
+            category: .autoplay,
+            entries: [
+                WebsitePermissionEntry(domain: "youtube.com", permissionType: .autoplayPolicy, decision: .allow, lastModified: nil),
+            ]
+        )
+
+        XCTAssertEqual(sut.viewState.sites.map(\.domain), ["youtube.com"])
+        XCTAssertEqual(sut.viewState.sites.first?.availableDecisions, [.allow, .ask, .deny])
+    }
+
+    func testWhenAutoplayDecisionsAreDisplayedThenTheyUseTheBlockingModeCopy() {
+        XCTAssertEqual(PersistedPermissionDecision.allow.autoplayTitle, UserText.autoplayModeAllowAll)
+        XCTAssertEqual(PersistedPermissionDecision.ask.autoplayTitle, UserText.autoplayModeBlockAudio)
+        XCTAssertEqual(PersistedPermissionDecision.deny.autoplayTitle, UserText.autoplayModeBlockAll)
+        XCTAssertEqual(WebsitePermissionCategory.autoplay.decisionTitle(for: .ask), UserText.autoplayModeBlockAudio)
+        XCTAssertEqual(WebsitePermissionCategory.camera.decisionTitle(for: .ask), UserText.websitePermissionsAskEachTime)
+        XCTAssertEqual(PersistedPermissionDecision.ask.websitePermissionsTitle(for: .autoplayPolicy), UserText.autoplayModeBlockAudio)
+        XCTAssertEqual(PersistedPermissionDecision.ask.websitePermissionsTitle(for: .camera), UserText.websitePermissionsAskEachTime)
     }
 
     func testWhenDefaultIsChangedThenItIsPersisted() {

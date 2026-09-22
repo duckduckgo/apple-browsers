@@ -49,7 +49,7 @@ final class WebsitePermissionDefaultsMock: WebsitePermissionDefaultsProviding {
     func setDefaultDecision(_ decision: PersistedPermissionDecision, for category: WebsitePermissionCategory) {
         setDefaultDecisionCalls.append((decision: decision, category: category))
         guard isFeatureEnabled,
-              WebsitePermissionDefaults.availableDecisions.contains(decision),
+              category.availableDefaultDecisions.contains(decision),
               subject.value[category] != decision
         else { return }
 

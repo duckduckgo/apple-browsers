@@ -242,6 +242,10 @@ final class PermissionModel {
             }
 
             switch (decision, self.permissions[permissionType]) {
+            case (.ask, .denied):
+                // A site exception must restore prompting after a silent default denial, for any
+                // permission: the runtime denial came from the category default, not from the user.
+                self.permissions[permissionType] = nil
             case (.deny, .some):
                 self.revoke(permissionType)
                 fallthrough
@@ -395,7 +399,13 @@ final class PermissionModel {
         }
     }
 
+    func isPopupBlockedByDefault(forDomain domain: String) -> Bool {
+        !permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: .popups)
+            && permissionManager.permission(forDomain: domain, permissionType: .popups) == .deny
+    }
+
     private func shouldGrantPermission(for permissions: [PermissionType], requestedForDomain domain: String) -> Bool? {
+        var shouldAsk = false
         for permission in permissions {
             var grant: PersistedPermissionDecision
             let stored = permissionManager.permission(forDomain: domain, permissionType: permission)
@@ -429,14 +439,14 @@ final class PermissionModel {
             case .allow:
                 // User has "Always Allow" stored - but check system permission first
                 if isSystemPermissionDisabled(for: permission) {
-                    return nil
+                    shouldAsk = true
                 }
             case .ask:
-                // if at least one permission is not set: ask
-                return nil
+                // Check the remaining permissions for a denial before prompting.
+                shouldAsk = true
             }
         }
-        return true
+        return shouldAsk ? nil : true
     }
 
     /// Checks if system-level permission is disabled for the given permission type (uses cached state for sync access)

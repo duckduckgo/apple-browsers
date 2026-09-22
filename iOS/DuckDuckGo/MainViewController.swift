@@ -1091,6 +1091,9 @@ class MainViewController: UIViewController {
                                                     isPaidAIChatEnabledProvider: { [weak self] in
                                                         self?.isPaidAIChatEnabledForSwipe ?? false
                                                     },
+                                                    allowsSubscriptionUpsellProvider: { [weak self] in
+                                                        self?.unifiedToggleInputCoordinator?.modelStore.allowsSubscriptionUpsell ?? false
+                                                    },
                                                     hasInlineSearchInput: { [weak self] tab in
                                                         guard let self, tab?.isAITab != true, tab?.link == nil,
                                                               !(tab?.fireTab ?? self.isCurrentTabFireTab()) else { return false }

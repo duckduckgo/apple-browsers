@@ -20,8 +20,8 @@ import Testing
 @testable import EventHub
 
 /// Component-level data-parameter behaviour that the telemetry specification does not state as a case:
-/// a `null` value, and the guard that stops a pixel firing when none of its data parameters resolve.
-/// The specification's own data-parameter cases, T-DAT-1 to T-DAT-5, live in `TelemetrySpecTests`.
+/// a `null` value, and an immediate pixel firing without parameters when its only data parameter is
+/// absent. The specification's own data-parameter cases, T-DAT-1 to T-DAT-5, live in `TelemetrySpecTests`.
 @Suite("EventHub data parameters")
 struct EventHubDataParameterTests {
     static let immediateDataConfig = """

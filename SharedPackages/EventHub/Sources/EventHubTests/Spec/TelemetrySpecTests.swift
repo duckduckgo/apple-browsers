@@ -192,17 +192,31 @@ struct TelemetrySpecTests {
 
     @Test("T-CNT-5: a data value alone does not fire a period pixel whose counter matched no bucket")
     func aDataValueAloneDoesNotFireAPeriodPixel() {
-        // The adwall day pixel has no zero bucket. Its `reason` parameter is assigned by the
-        // event regardless, but a data parameter never causes a fire, so the pixel stays silent.
-        // Reached via a config whose `counter` names an event never delivered while `data` is assigned.
+        // The spec's own entry: a counter on `captchaDetected` and a data parameter on `adwallDetected`.
+        // Only the adwall event arrives, so the count is 0 and matches no bucket. The `reason` it
+        // resolved is insignificant to that decision, so the pixel stays silent while the fixture's own
+        // pixels fire as they would for a lone `adwallDetected`.
         let f = Self.fixture(config: Self.config.replacingOccurrences(
-            of: #""count": { "template": "counter", "source": "adwallDetected""#,
-            with: #""count": { "template": "counter", "source": "neverSent""#))
+            of: #"{ "telemetry": {"#,
+            with: """
+            { "telemetry": {
+                "webTelemetry_mixedSource_day": {
+                    "state": "enabled",
+                    "trigger": { "period": { "seconds": 86400 } },
+                    "parameters": {
+                        "count": { "template": "counter", "source": "captchaDetected", "buckets": {
+                            "1-2": {"gte": 1, "lt": 3}, "3+": {"gte": 3}
+                        } },
+                        "reason": { "template": "data", "source": "adwallDetected", "dataKey": "reason" }
+                    }
+                },
+            """))
         f.send("adwallDetected", reason: "overlay", on: f.openPage())
 
         f.endPeriod()
 
         #expect(f.fired == [
+            #"webTelemetry_adwallDetection_day?count=1-2&reason="overlay""#,
             #"webTelemetry_adwallDetection_immediate?reason="overlay""#,
         ] + Self.captchaZero)
     }

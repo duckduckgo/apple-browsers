@@ -64,7 +64,7 @@ struct PreferencesWebsitePermissionDetailView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: Constants.chevronSize, height: Constants.chevronSize)
-                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                    .foregroundColor(Color(designSystemColor: .iconsPrimary))
                     .frame(width: Constants.backButtonSize, height: Constants.backButtonSize)
                     .contentShape(Rectangle())
             }

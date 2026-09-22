@@ -65,6 +65,8 @@ extension MainViewController {
             view.insertSubview(restingSnapshot, aboveSubview: viewCoordinator.unifiedInputContentContainer)
         }
 
+        let contentOffset = UIAccessibility.isReduceMotionEnabled ? 0 : InlineNTPTransitionMetrics.contentTravel
+        contentContainer.transform = CGAffineTransform(translationX: 0, y: contentOffset)
         let duration = UIAccessibility.isReduceMotionEnabled ? 0 : Constants.omnibarTransitionDuration(
             isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
         UIView.animate(withDuration: duration,
@@ -74,7 +76,9 @@ extension MainViewController {
             self?.viewCoordinator.unifiedToggleInputContainer.alpha = 1
             self?.viewCoordinator.focusedStateBackground.alpha = 1
             contentContainer.alpha = 1
+            contentContainer.transform = .identity
             restingSnapshot?.alpha = 0
+            restingSnapshot?.transform = CGAffineTransform(translationX: 0, y: -contentOffset)
         }, completion: { [weak self] _ in
             restingSnapshot?.removeFromSuperview()
             self?.refreshFloatingToolbarBackdrop()
@@ -92,8 +96,11 @@ extension MainViewController {
             let editingFrame = coordinator.viewController.inputCardFrame(in: view)
             restingTransform = CGAffineTransform(translationX: 0, y: restingFrame.midY - editingFrame.midY)
         }
+        let contentContainer: UIView = viewCoordinator.unifiedInputContentContainer
+        let contentOffset = UIAccessibility.isReduceMotionEnabled ? 0 : InlineNTPTransitionMetrics.contentTravel
         let finish: () -> Void = { [weak self] in
             inputContainer.transform = .identity
+            contentContainer.transform = .identity
             self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
         }
         guard animated else {
@@ -106,6 +113,7 @@ extension MainViewController {
         let restingSnapshot = makeRestingNewTabPageSnapshot()
         if let restingSnapshot {
             restingSnapshot.alpha = 0
+            restingSnapshot.transform = CGAffineTransform(translationX: 0, y: -contentOffset)
             view.insertSubview(restingSnapshot, aboveSubview: viewCoordinator.unifiedInputContentContainer)
         }
 
@@ -115,11 +123,14 @@ extension MainViewController {
             additionalAnimations: { [weak self] in
                 inputContainer.transform = restingTransform
                 self?.viewCoordinator.unifiedInputContentContainer.alpha = 0
+                contentContainer.transform = CGAffineTransform(translationX: 0, y: contentOffset)
                 restingSnapshot?.alpha = 1
+                restingSnapshot?.transform = .identity
             },
             interruptCleanup: { [weak self] in
                 restingSnapshot?.removeFromSuperview()
                 inputContainer.transform = .identity
+                contentContainer.transform = .identity
                 self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 self?.viewCoordinator.unifiedToggleInputContainer.alpha = 1
             },
@@ -164,4 +175,9 @@ extension MainViewController {
         snapshot.accessibilityElementsHidden = true
         return snapshot
     }
+}
+
+private enum InlineNTPTransitionMetrics {
+    /// A small directional cue without trying to morph duplicate controls between layouts.
+    static let contentTravel: CGFloat = 12
 }

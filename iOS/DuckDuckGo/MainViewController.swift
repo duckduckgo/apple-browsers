@@ -2984,6 +2984,12 @@ class MainViewController: UIViewController {
         // A fresh NTP has no `TabViewController` yet; drive UTI from the tab model so fire-mode still applies.
         unifiedToggleInputCoordinator?.updateIsFireTab(isCurrentTabFireTab())
 
+        // NTPs can have no TabViewController or URL. Reconcile their chrome before the early return,
+        // including when moving between the redesigned page and a regular or AI tab.
+        if isInMinimalChromeLayout != isMinimalChromeMode() {
+            applyWidth()
+        }
+
         guard let tab = currentTab, tab.link != nil else {
             viewCoordinator.omniBar.stopBrowsing()
             // Clear Dax Easter Egg logo when no tab is active
@@ -3039,10 +3045,6 @@ class MainViewController: UIViewController {
         restorePostFireAddressBarPickerIfNeeded()
 
         refreshUnifiedToggleInput(for: tab)
-
-        if isInMinimalChromeLayout != isMinimalChromeMode() {
-            applyWidth()
-        }
 
         updateBrowsingMenuHeaderDataSource()
         updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
@@ -3263,6 +3265,9 @@ class MainViewController: UIViewController {
     }
 
     private func isMinimalChromeMode(for size: CGSize? = nil) -> Bool {
+        // The redesigned NTP hides the resting address bar. Keep the normal toolbar rather than
+        // moving its controls into the hidden minimal-chrome bar, for either floating UI setting.
+        guard newTabPageViewController?.hasInlineSearchInput != true else { return false }
         let size = size ?? view.bounds.size
         return MinimalChromeModeDecision.isActive(
             minimalChromeEnabled: minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: currentTab?.isAITab ?? false),

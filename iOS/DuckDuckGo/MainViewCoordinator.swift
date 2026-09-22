@@ -128,6 +128,7 @@ class MainViewCoordinator {
             isNavigationBarContainerInteractionEnabledByLayout = navigationBarContainer.isUserInteractionEnabled
         }
         newTabPageInputPresentation = presentation
+        toolbar.usesRedesignedNewTabPageLayout = presentation != .browser
         navigationBarCollectionView.isHidden = presentation.hidesRestingOmnibar
         if presentation.reservesAddressBarSpace {
             ensureBottomOmnibarAttachedToToolbarIfNeeded()

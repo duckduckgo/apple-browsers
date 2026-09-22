@@ -507,9 +507,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218316798217456?focus=true
     case aiChatChromeMenuButtonIPad
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216000794365770?focus=true
-    case iPadDuckAIBarControls
-
     /// Warns Duck.ai users in the unified toggle input as they approach their usage limits, using the
     /// snapshot the web app writes into the reserved `usageLimits` native-storage entry.
     case utiDuckAIWarnings
@@ -771,8 +768,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle))
         case .forgetAllInSettings:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.forgetAllInSettings))
-        case .iPadDuckAIBarControls:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadDuckAIBarControls))
         case .utiDuckAIWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings))
         case .attributedMetrics:

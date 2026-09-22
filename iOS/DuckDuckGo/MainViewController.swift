@@ -165,6 +165,19 @@ class MainViewController: UIViewController {
 
     var newTabPageViewController: (any NewTabPage)?
     var isAddressBarHandOffInProgress = false
+    var restingNewTabPageSnapshot: (image: UIImage, frame: CGRect, viewportSize: CGSize)?
+
+    private var daxGreetingAppearance: DaxGreetingContext.Appearance?
+    private let daxGreetingActivity: DaxGreetingActivityStore?
+    private lazy var daxGreetingService = DaxGreetingServiceFactory.makeService(
+        activityStore: daxGreetingActivity,
+        privacyConfigurationManager: privacyConfigurationManager,
+        appSettings: appSettings,
+        aiChatSettings: aiChatSettings,
+        adBlockingAvailability: adBlockingAvailability,
+        maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
+        featureFlagger: featureFlagger,
+        appearanceProvider: { [weak self] in self?.daxGreetingAppearance })
 
     private lazy var newTabPageBuilder = NewTabPageBuilder(favoritesInteractionModel: favoritesViewModel,
                                                            homePageMessagesConfiguration: homePageConfiguration,
@@ -183,7 +196,10 @@ class MainViewController: UIViewController {
                                                            floatingUIManager: floatingUIManager,
                                                            redesignFeature: NewTabPageRedesignFeature(featureFlagger: featureFlagger),
                                                            toggleModeStorage: toggleModeStorage,
-                                                           voiceSearchHelper: voiceSearchHelper)
+                                                           voiceSearchHelper: voiceSearchHelper,
+                                                           daxGreetingProvider: daxGreetingService,
+                                                           daxGreetingChanges: daxGreetingActivity?.changes ?? Empty().eraseToAnyPublisher(),
+                                                           updateDaxGreetingAppearance: { [weak self] in self?.daxGreetingAppearance = $0 })
 
     var tabsBarController: TabsBarViewController?
     var suggestionTrayController: SuggestionTrayViewController?
@@ -636,6 +652,7 @@ class MainViewController: UIViewController {
         fireExecutor: FireExecuting,
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         privacyStats: PrivacyStatsProviding,
+        daxGreetingActivity: DaxGreetingActivityStore? = nil,
         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
         whatsNewRepository: WhatsNewMessageRepository,
@@ -737,6 +754,7 @@ class MainViewController: UIViewController {
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.privacyStats = privacyStats
+        self.daxGreetingActivity = daxGreetingActivity
         self.fireExecutor = fireExecutor
         self.devicePlatform = devicePlatform
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
@@ -1072,6 +1090,11 @@ class MainViewController: UIViewController {
                                                     },
                                                     isPaidAIChatEnabledProvider: { [weak self] in
                                                         self?.isPaidAIChatEnabledForSwipe ?? false
+                                                    },
+                                                    hasInlineSearchInput: { [weak self] tab in
+                                                        guard let self, tab?.isAITab != true, tab?.link == nil,
+                                                              !(tab?.fireTab ?? self.isCurrentTabFireTab()) else { return false }
+                                                        return NewTabPageRedesignFeature(featureFlagger: self.featureFlagger).isAvailable
                                                     }) { [weak self] tab in
 
             guard tab !== self?.tabManager.currentTabsModel.currentTab else {
@@ -1120,6 +1143,11 @@ class MainViewController: UIViewController {
 
     func updatePreviewForCurrentTab(completion: (() -> Void)? = nil) {
         assert(Thread.isMainThread)
+        // Returning by swipe also needs chrome and screen geometry when the NTP was left
+        // through the tab switcher, which otherwise only saves a content-sized thumbnail.
+        if newTabPageViewController?.hasInlineSearchInput == true {
+            swipeTabsCoordinator?.updateFullScreenSnapshotForCurrentTab()
+        }
         
         if !viewCoordinator.logoContainer.isHidden,
            self.tabManager.current()?.link == nil,
@@ -2231,6 +2259,19 @@ class MainViewController: UIViewController {
 
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
 
+        // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
+        // viewDidAppear fires after this function and shows the dialog, but the editing state
+        // created here would immediately cover it.
+        // Also suppress when the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
+        // is scheduled to fire: it drives its own beginEditing, and a premature activation here
+        // causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
+        let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
+        // Resolved before the instrumentation call below, so the wide event records the mode
+        // the app decided on rather than racing the keyboard to observe it.
+        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
+            && !daxDialogsManager.subscriptionPromotionPending
+            && !chatPathCompletionPending
+
         let controller = newTabPageBuilder.makeNewTabPage(tab: tabModel,
                                                           openedAfterIdle: hatch != nil,
                                                           daxDialogFactory: newTabDaxDialogFactory)
@@ -2258,6 +2299,9 @@ class MainViewController: UIViewController {
             controller.view.alpha = 0
         }
 
+        (controller as? RedesignedNewTabPageViewController)?.prepareForEntranceAnimation(
+            if: isNewTab && !willBeginEditing && !chatPathCompletionPending)
+
         addToContentContainer(controller: controller)
         viewCoordinator.logoContainer.isHidden = true
         updateAddressBarSuppressionForNewTabPage()
@@ -2269,19 +2313,6 @@ class MainViewController: UIViewController {
         refreshControls()
         updateScrollInteractionIfNeeded()
         presentContextualOnboardingDialogIfNeeded()
-
-        // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
-        // viewDidAppear fires after this function and shows the dialog, but the editing state
-        // created here would immediately cover it.
-        // Also suppress when the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
-        // is scheduled to fire: it drives its own beginEditing, and a premature activation here
-        // causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
-        let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
-        // Resolved before the instrumentation call below, so the wide event records the mode
-        // the app decided on rather than racing the keyboard to observe it.
-        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
-            && !daxDialogsManager.subscriptionPromotionPending
-            && !chatPathCompletionPending
 
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
@@ -2364,6 +2395,7 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func removeHomeScreen() {
+        restingNewTabPageSnapshot = nil
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil

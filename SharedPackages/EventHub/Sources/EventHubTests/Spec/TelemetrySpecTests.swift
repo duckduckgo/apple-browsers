@@ -27,7 +27,7 @@ import Foundation
 ///
 /// - Counters — T-CNT-1, T-CNT-2, T-CNT-3, T-CNT-4, T-CNT-5
 /// - Data parameters — T-DAT-1, T-DAT-2, T-DAT-3, T-DAT-4, T-DAT-5
-/// - Immediate pixels — T-IMM-1, T-IMM-2, T-IMM-3, T-IMM-4
+/// - Immediate pixels — T-IMM-1, T-IMM-2, T-IMM-3, T-IMM-4, T-IMM-5, T-IMM-6
 ///
 /// Every case lives here rather than in the narrower unit suites, which is what lets the roster above
 /// be checked against the document at a glance. One component-level behaviour sits in
@@ -39,7 +39,7 @@ import Foundation
 /// - **T-GEN-P2** — the trigger decides firing: a period pixel fires at period end only when a counter
 ///   matches a bucket; a resolved data parameter alone cannot make it fire (T-CNT-3, T-CNT-5).
 ///   An immediate pixel fires once per delivered event even when none of its parameters resolve;
-///   unresolved parameters are omitted rather than cancelling the pixel (T-DAT-2, T-IMM-1).
+///   unresolved parameters are omitted rather than cancelling the pixel (T-DAT-2, T-IMM-1, T-IMM-5, T-IMM-6).
 ///   Parameterless firing is also covered by `EventHubImmediatePixelTests.immediateTriggerFiresOnePixelPerEvent`,
 ///   and an absent data parameter by
 ///   `EventHubDataParameterTests.immediatePixelFiresWithoutParametersWhenOnlyDataParamAbsent`.
@@ -363,6 +363,50 @@ struct TelemetrySpecTests {
             #"webTelemetry_adwallDetection_day?count=1-2&reason="redirect""#,
             #"webTelemetry_adwallDetection_immediate?reason="overlay""#,
             #"webTelemetry_adwallDetection_immediate?reason="redirect""#,
+        ] + Self.captchaZero)
+    }
+
+    @Test("T-IMM-5: a pixel declaring no parameters fires on the event alone")
+    func aPixelDeclaringNoParametersFiresOnTheEventAlone() {
+        // Add the spec's parameterless pixel while retaining every entry in the shared fixture.
+        let f = Self.fixture(config: Self.config.replacingOccurrences(
+            of: #"{ "telemetry": {"#,
+            with: """
+            { "telemetry": {
+                "webTelemetry_bareEvent_immediate": {
+                    "state": "enabled",
+                    "trigger": { "type": "immediate_v2", "source": "adwallDetected" },
+                    "parameters": {}
+                },
+            """))
+        f.send("adwallDetected", reason: "overlay", on: f.openPage())
+
+        #expect(f.fired == [
+            #"webTelemetry_adwallDetection_immediate?reason="overlay""#,
+            "webTelemetry_bareEvent_immediate",
+        ])
+
+        f.endPeriod()
+
+        #expect(f.fired == [
+            #"webTelemetry_adwallDetection_day?count=1-2&reason="overlay""#,
+            #"webTelemetry_adwallDetection_immediate?reason="overlay""#,
+            "webTelemetry_bareEvent_immediate",
+        ] + Self.captchaZero)
+    }
+
+    @Test("T-IMM-6: a pixel fires with no parameters when none of those it declares resolve")
+    func aPixelFiresWithNoParametersWhenNoneOfThoseItDeclaresResolve() {
+        let f = Self.fixture()
+        f.sendRaw("adwallDetected", dataJSON: "{}", on: f.openPage())
+
+        #expect(f.fired == ["webTelemetry_adwallDetection_immediate"])
+
+        f.endPeriod()
+
+        #expect(f.fired == [
+            "webTelemetry_adwallDetection_day?count=1-2",
+            "webTelemetry_adwallDetection_immediate",
         ] + Self.captchaZero)
     }
 }

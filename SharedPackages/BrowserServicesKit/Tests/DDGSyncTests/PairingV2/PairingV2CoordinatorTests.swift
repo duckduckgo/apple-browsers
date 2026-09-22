@@ -1903,7 +1903,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
     }
 
     private func makeHostWithPendingConfirmationAndQueuedBye(confirmationDelegate: PairingV2ConfirmationDelegateMock,
-                                                            byeReason: PairingV2ByeReason = .cancelled) async throws -> (
+                                                             byeReason: PairingV2ByeReason = .cancelled) async throws -> (
         coordinator: PairingV2Coordinator,
         messageExchanger: PairingV2MessageExchangingMock,
         messageCrypto: PairingV2MessageCrypto,

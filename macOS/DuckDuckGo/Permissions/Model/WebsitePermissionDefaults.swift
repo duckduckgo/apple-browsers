@@ -25,6 +25,8 @@ import PrivacyConfig
 /// saved decision of its own. `PermissionManager` consults this as the last step of its read path,
 /// so a default takes effect in the prompt flow without any call site having to know about it.
 protocol WebsitePermissionDefaultsProtocol: AnyObject {
+    var availableDecisions: [PersistedPermissionDecision] { get }
+    var fallbackDecision: PersistedPermissionDecision { get }
     /// Emits the effective default of every category whenever one changes, and on subscribe.
     var defaultsPublisher: AnyPublisher<[WebsitePermissionCategory: PersistedPermissionDecision], Never> { get }
     func defaultDecision(for category: WebsitePermissionCategory) -> PersistedPermissionDecision
@@ -39,6 +41,9 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProtocol {
     /// Used when nothing is stored, when the stored value can't be parsed, and whenever the feature
     /// flag is off — so a rollback restores exactly the pre-feature behaviour.
     static let fallbackDecision: PersistedPermissionDecision = .ask
+
+    var availableDecisions: [PersistedPermissionDecision] { Self.availableDecisions }
+    var fallbackDecision: PersistedPermissionDecision { Self.fallbackDecision }
 
     private let persistor: WebsitePermissionDefaultsStorage
     private let featureFlagger: FeatureFlagger

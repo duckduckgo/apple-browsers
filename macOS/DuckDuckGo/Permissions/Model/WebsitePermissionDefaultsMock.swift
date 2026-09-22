@@ -29,27 +29,33 @@ final class WebsitePermissionDefaultsMock: WebsitePermissionDefaultsProtocol {
     /// When false, reads return `.ask` and writes are ignored, mirroring the feature flag being off.
     var isFeatureEnabled = true
 
+    static let defaultAvailableDecisions: [PersistedPermissionDecision] = [.ask, .deny]
+    static let defaultFallbackDecision: PersistedPermissionDecision = .ask
+
+    var availableDecisions: [PersistedPermissionDecision] = WebsitePermissionDefaultsMock.defaultAvailableDecisions
+    var fallbackDecision: PersistedPermissionDecision = WebsitePermissionDefaultsMock.defaultFallbackDecision
+
     var defaultsPublisher: AnyPublisher<[WebsitePermissionCategory: PersistedPermissionDecision], Never> {
         subject.removeDuplicates().eraseToAnyPublisher()
     }
 
     init(decisions: [WebsitePermissionCategory: PersistedPermissionDecision] = [:]) {
         var initial = WebsitePermissionCategory.allCases.reduce(into: [WebsitePermissionCategory: PersistedPermissionDecision]()) {
-            $0[$1] = WebsitePermissionDefaults.fallbackDecision
+            $0[$1] = WebsitePermissionDefaultsMock.defaultFallbackDecision
         }
         initial.merge(decisions) { _, override in override }
         subject = CurrentValueSubject(initial)
     }
 
     func defaultDecision(for category: WebsitePermissionCategory) -> PersistedPermissionDecision {
-        guard isFeatureEnabled else { return WebsitePermissionDefaults.fallbackDecision }
-        return subject.value[category] ?? WebsitePermissionDefaults.fallbackDecision
+        guard isFeatureEnabled else { return fallbackDecision }
+        return subject.value[category] ?? fallbackDecision
     }
 
     func setDefaultDecision(_ decision: PersistedPermissionDecision, for category: WebsitePermissionCategory) {
         setDefaultDecisionCalls.append((decision: decision, category: category))
         guard isFeatureEnabled,
-              WebsitePermissionDefaults.availableDecisions.contains(decision),
+              availableDecisions.contains(decision),
               subject.value[category] != decision
         else { return }
 

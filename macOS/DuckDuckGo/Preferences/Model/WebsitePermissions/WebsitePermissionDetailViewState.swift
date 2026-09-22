@@ -22,8 +22,8 @@ import PrivacyConfig
 
 struct WebsitePermissionDetailViewState: Equatable {
     var category: WebsitePermissionCategory = .notifications
-    var defaultDecision: PersistedPermissionDecision = WebsitePermissionDefaults.fallbackDecision
-    let availableDefaultDecisions: [PersistedPermissionDecision] = WebsitePermissionDefaults.availableDecisions
+    var defaultDecision: PersistedPermissionDecision = .ask
+    var availableDefaultDecisions: [PersistedPermissionDecision] = []
     var searchQuery = ""
     var sites: [SiteRow] = []
     var visibleSites: [SiteRow] = []
@@ -39,7 +39,7 @@ struct WebsitePermissionDetailViewState: Equatable {
 
     init(
         category: WebsitePermissionCategory = .notifications,
-        defaultDecision: PersistedPermissionDecision = WebsitePermissionDefaults.fallbackDecision,
+        defaultDecision: PersistedPermissionDecision = .ask,
         searchQuery: String = "",
         sites: [SiteRow] = []
     ) {
@@ -52,7 +52,7 @@ struct WebsitePermissionDetailViewState: Equatable {
 
     init(
         category: WebsitePermissionCategory,
-        defaultDecision: PersistedPermissionDecision = WebsitePermissionDefaults.fallbackDecision,
+        defaultDecision: PersistedPermissionDecision = .ask,
         searchQuery: String = "",
         entries: [WebsitePermissionEntry],
         featureFlagger: FeatureFlagger

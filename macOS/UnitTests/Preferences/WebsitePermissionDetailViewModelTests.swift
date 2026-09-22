@@ -260,6 +260,18 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         XCTAssertEqual(model.viewState.availableDefaultDecisions, [.ask, .deny])
     }
 
+    func testWhenDefaultsOfferADifferentOptionSetThenItIsUsedAndEnforced() {
+        defaults.availableDecisions = [.ask]
+
+        let sut = makeSUT(category: .camera, entries: [])
+
+        XCTAssertEqual(sut.viewState.availableDefaultDecisions, [.ask])
+
+        sut.send(action: .setDefaultDecision(.deny))
+
+        XCTAssertTrue(defaults.setDefaultDecisionCalls.isEmpty, "A decision outside the offered set should be rejected")
+    }
+
     func testWhenEveryCategoryIsOpenedThenTheSameTwoDefaultsAreOffered() {
         for category in WebsitePermissionCategory.allCases {
             let sut = makeSUT(category: category, entries: [])

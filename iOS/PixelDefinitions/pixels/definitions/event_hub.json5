@@ -146,8 +146,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    // Entries below come from the shared base `event-hub` feature config rather than the Apple override,
-    // so they arrive on every platform once the feature is enabled.
+    // Entries below come from the shared base `event-hub` feature config rather than the Apple override.
     "eventHub_baseline_day": {
         "description": "Daily bucketed count of periods in which EventHub ran at all. Serves as the denominator for the other eventHub telemetry — it counts nothing beyond the period itself. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
@@ -164,28 +163,28 @@
     },
     "webTelemetry_adwalls_day": {
         "description": "Daily bucketed count of adwall detections across all pages. Fired by the eventHub feature at the end of each 1-day measurement period.",
-        "owners": ["miasma13"],
+        "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "eventHubAdwallCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_adwalls_week": {
         "description": "Weekly bucketed count of adwall detections across all pages. Fired by the eventHub feature at the end of each 7-day measurement period.",
-        "owners": ["miasma13"],
+        "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "eventHubAdwallCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_admiralAdwalls_day": {
         "description": "Daily bucketed count of Admiral-served adwall detections across all pages. Fired by the eventHub feature at the end of each 1-day measurement period.",
-        "owners": ["miasma13"],
+        "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "eventHubAdmiralAdwallCount", "eventHubAttributionPeriod"]
     },
     "webTelemetry_admiralAdwalls_week": {
         "description": "Weekly bucketed count of Admiral-served adwall detections across all pages. Fired by the eventHub feature at the end of each 7-day measurement period.",
-        "owners": ["miasma13"],
+        "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "eventHubAdmiralAdwallCount", "eventHubAttributionPeriod"]
@@ -344,18 +343,16 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "eventHubBucketedCount", "eventHubAttributionPeriod"]
     },
-    // Immediate adwall detections. Governed by the shared base `event-hub` config, so they
-    // arrive on every platform once the feature is enabled.
     "webTelemetry_adwall": {
         "description": "Fired once per detection of an adwall on a page. Fired immediately by the eventHub feature, without aggregation.",
-        "owners": ["miasma13"],
+        "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "webTelemetry_admiralAdwall": {
         "description": "Fired once per detection of an Admiral-served adwall on a page. Fired immediately by the eventHub feature, without aggregation.",
-        "owners": ["miasma13"],
+        "owners": ["GuiltyDolphin"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]

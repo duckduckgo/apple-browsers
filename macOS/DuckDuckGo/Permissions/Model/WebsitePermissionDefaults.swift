@@ -34,6 +34,9 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProtocol {
 
     let fallbackDecision: PersistedPermissionDecision = .ask
 
+    /// The options every category but Autoplay offers.
+    private let uniformDecisions: [PersistedPermissionDecision] = [.ask, .deny]
+
     private let storage: WebsitePermissionDefaultsStorage
     private let featureFlagger: FeatureFlagger
     private let autoplayPreferences: AutoplayPreferences
@@ -82,7 +85,7 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProtocol {
     /// offers all three of its states. Every other category keeps the uniform pair, with deliberately
     /// no blanket grant: that would hand out camera, microphone or location without a prompt.
     func availableDecisions(for category: WebsitePermissionCategory) -> [PersistedPermissionDecision] {
-        category == .autoplay ? PermissionType.autoplayPolicy.editableDecisions : Self.uniformDecisions
+        category == .autoplay ? PermissionType.autoplayPolicy.editableDecisions : uniformDecisions
     }
 
     func defaultDecision(for category: WebsitePermissionCategory) -> PersistedPermissionDecision {
@@ -114,8 +117,6 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProtocol {
         featureFlagger.isFeatureOn(.websitePermissionsSettings)
     }
 
-    private static let uniformDecisions: [PersistedPermissionDecision] = [.ask, .deny]
-
     private var effectiveDecisions: [WebsitePermissionCategory: PersistedPermissionDecision] {
         effectiveDecisions(autoplayBlockingMode: autoplayPreferences.autoplayBlockingMode)
     }
@@ -138,7 +139,7 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProtocol {
         WebsitePermissionCategory.allCases.filter { $0 != .autoplay }.reduce(into: [:]) { decisions, category in
             let stored = storage.decisionRawValue(for: category)
                 .flatMap(PersistedPermissionDecision.init(rawValue:))
-                .flatMap { Self.uniformDecisions.contains($0) ? $0 : nil }
+                .flatMap { uniformDecisions.contains($0) ? $0 : nil }
             decisions[category] = stored ?? fallbackDecision
         }
     }

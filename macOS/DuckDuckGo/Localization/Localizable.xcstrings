@@ -82394,18 +82394,6 @@
         }
       }
     },
-    "permission.center.autoplay.disclaimer.website-permissions.link" : {
-      "comment" : "Clickable label in the autoplay disclaimer UI that opens the Website Permissions settings pane",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Settings → Website Permissions → Autoplay."
-          }
-        }
-      }
-    },
     "permission.center.external.apps" : {
       "comment" : "Permission center header for external app permissions",
       "extractionState" : "extracted_with_value",

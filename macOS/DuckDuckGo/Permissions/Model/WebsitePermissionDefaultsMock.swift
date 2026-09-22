@@ -30,7 +30,6 @@ final class WebsitePermissionDefaultsMock: WebsitePermissionDefaultsProtocol {
     var isFeatureEnabled = true
 
     static let defaultAvailableDecisions: [PersistedPermissionDecision] = [.ask, .deny]
-    static let defaultAutoplayDecisions: [PersistedPermissionDecision] = [.allow, .ask, .deny]
     static let defaultFallbackDecision: PersistedPermissionDecision = .ask
 
     /// Overrides the options for every category but Autoplay, which mirrors the real three states.
@@ -50,7 +49,7 @@ final class WebsitePermissionDefaultsMock: WebsitePermissionDefaultsProtocol {
     }
 
     func availableDecisions(for category: WebsitePermissionCategory) -> [PersistedPermissionDecision] {
-        category == .autoplay ? Self.defaultAutoplayDecisions : availableDecisions
+        category == .autoplay ? PermissionType.autoplayPolicy.editableDecisions : availableDecisions
     }
 
     func defaultDecision(for category: WebsitePermissionCategory) -> PersistedPermissionDecision {

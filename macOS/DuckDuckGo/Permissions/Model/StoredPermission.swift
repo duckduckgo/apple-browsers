@@ -36,8 +36,6 @@ enum PersistedPermissionDecision: String {
         }
     }
 
-    /// Copy used inside Settings > Website Permissions, where the design says "Ask each time"
-    /// rather than the Permission Center's "Always ask".
     var websitePermissionsTitle: String {
         switch self {
         case .ask:

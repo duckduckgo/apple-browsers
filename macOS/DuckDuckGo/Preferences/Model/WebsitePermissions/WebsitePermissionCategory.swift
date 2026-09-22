@@ -65,15 +65,6 @@ enum WebsitePermissionCategory: CaseIterable, Hashable, Identifiable {
         return featureFlagger.isFeatureOn(.autoplayPolicy)
     }
 
-    /// The options offered by this category's "Default" radio group, in the order the design lists them.
-    ///
-    /// Autoplay chooses which media may start on its own rather than whether to grant access, so it
-    /// offers all three of its states. Every other category keeps the uniform pair, with deliberately
-    /// no blanket grant.
-    var availableDefaultDecisions: [PersistedPermissionDecision] {
-        self == .autoplay ? PermissionType.autoplayPolicy.editableDecisions : WebsitePermissionDefaults.availableDecisions
-    }
-
     /// Copy for one of this category's decisions.
     func decisionTitle(for decision: PersistedPermissionDecision) -> String {
         self == .autoplay ? decision.autoplayTitle : decision.websitePermissionsTitle

@@ -818,7 +818,55 @@ final class PermissionModelTests: XCTestCase {
 
     // MARK: - Category defaults
 
-    func testWhenDefaultIsNeverAllowThenCameraIsDeniedWithoutAQuery() {
+    func testWhenMicrophoneDefaultIsDeniedThenCombinedMediaRequestIsDeniedBeforePrompting() {
+        permissionManagerMock.defaultDecisions = [.microphone: .deny]
+        webView.urlValue = URL.duckDuckGo
+
+        var grantedResult: Bool?
+        model.permissions([.camera, .microphone], requestedForDomain: URL.duckDuckGo.host!) { (granted: Bool) in
+            grantedResult = granted
+        }
+
+        XCTAssertEqual(grantedResult, false)
+        XCTAssertNil(model.authorizationQuery)
+        XCTAssertTrue(permissionManagerMock.setPermissionCalls.isEmpty)
+    }
+
+    func testWhenCameraIsSystemDisabledAndMicrophoneDefaultIsDeniedThenCombinedRequestIsDeniedSilently() {
+        permissionManagerMock.defaultDecisions = [.microphone: .deny]
+        permissionManagerMock.setPermission(.allow, forDomain: URL.duckDuckGo.host!, permissionType: .camera)
+        systemPermissionManagerMock.authorizationStates[.camera] = .denied
+        webView.urlValue = URL.duckDuckGo
+        var systemWarningShown = false
+        let cancellable = model.permissionBlockedBySystem.sink { _ in systemWarningShown = true }
+
+        var grantedResult: Bool?
+        model.permissions([.camera, .microphone], requestedForDomain: URL.duckDuckGo.host!) { (granted: Bool) in
+            grantedResult = granted
+        }
+
+        XCTAssertEqual(grantedResult, false)
+        XCTAssertNil(model.authorizationQuery)
+        XCTAssertFalse(systemWarningShown)
+        withExtendedLifetime(cancellable) {}
+    }
+
+    func testWhenSilentlyBlockedPopupsAreChangedToAskThenNextRequestPromptsWithoutReload() {
+        permissionManagerMock.defaultDecisions = [.popups: .deny]
+        webView.urlValue = URL.duckDuckGo
+        model.permissions([.popups], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+        XCTAssertEqual(model.permissions.popups, .denied)
+        XCTAssertNil(model.authorizationQuery)
+
+        permissionManagerMock.setPermission(.ask, forDomain: URL.duckDuckGo.host!, permissionType: .popups)
+        permissionManagerMock.permissionSubject.send((URL.duckDuckGo.host!, .popups, .decisionChanged(.ask)))
+
+        model.permissions([.popups], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+
+        XCTAssertNotNil(model.authorizationQuery)
+    }
+
+    func testWhenDefaultIsNeverAllowThenCameraIsDeniedWithoutAQueryAndNothingIsPersisted() {
         permissionManagerMock.defaultDecisions = [.camera: .deny]
         webView.urlValue = URL.duckDuckGo
 
@@ -830,14 +878,6 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertEqual(grantedResult, false)
         XCTAssertNil(model.authorizationQuery, "A default denial should not prompt")
         XCTAssertEqual(model.permissions.camera, .denied)
-    }
-
-    func testWhenDefaultIsNeverAllowThenNothingIsPersistedForTheDomain() {
-        permissionManagerMock.defaultDecisions = [.camera: .deny]
-        webView.urlValue = URL.duckDuckGo
-
-        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
-
         XCTAssertTrue(permissionManagerMock.setPermissionCalls.isEmpty)
         XCTAssertFalse(permissionManagerMock.hasPermissionPersisted(forDomain: URL.duckDuckGo.host!, permissionType: .camera))
     }
@@ -1491,4 +1531,43 @@ extension PermissionModelTests: WebViewPermissionsDelegate {
         }
     }
 
+}
+
+// MARK: - Restoring prompts after a silent default denial
+
+extension PermissionModelTests {
+
+    /// A category default of "Never allow" denies silently and leaves the permission in the `.denied`
+    /// runtime state. Giving the site its own "Ask each time" entry must clear that state, so the next
+    /// request prompts instead of staying denied until the page is reloaded.
+    func testWhenSilentlyDeniedPermissionIsChangedToAskThenNextRequestPromptsWithoutReload() {
+        let cases: [(permission: PermissionType, category: WebsitePermissionCategory)] = [
+            (.camera, .camera), (.microphone, .microphone), (.geolocation, .location), (.notification, .notifications),
+        ]
+        let domain = URL.duckDuckGo.host!
+        webView.urlValue = URL.duckDuckGo
+
+        for (permission, category) in cases {
+            let model = PermissionModel(webView: webView,
+                                        permissionManager: permissionManagerMock,
+                                        geolocationService: geolocationServiceMock,
+                                        systemPermissionManager: systemPermissionManagerMock)
+            permissionManagerMock.defaultDecisions = [category: .deny]
+            if permission.requiresSystemPermission {
+                systemPermissionManagerMock.authorizationStates[permission] = .authorized
+            }
+
+            model.permissions([permission], requestedForDomain: domain) { (_: Bool) in }
+
+            XCTAssertEqual(model.permissions[permission], .denied, "\(permission.rawValue): the default should deny")
+            XCTAssertNil(model.authorizationQuery, "\(permission.rawValue): a default denial should not prompt")
+
+            permissionManagerMock.setPermission(.ask, forDomain: domain, permissionType: permission)
+            permissionManagerMock.permissionSubject.send((domain, permission, .decisionChanged(.ask)))
+
+            model.permissions([permission], requestedForDomain: domain) { (_: Bool) in }
+
+            XCTAssertNotNil(model.authorizationQuery, "\(permission.rawValue): the site exception should restore prompting")
+        }
+    }
 }

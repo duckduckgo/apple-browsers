@@ -28,21 +28,20 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
 
     private let permissionManager: PermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
-    private let defaults: WebsitePermissionDefaultsProviding
+    private let defaults: WebsitePermissionDefaultsProtocol
     private var permissionsCancellable: AnyCancellable?
 
     init(
         initialState: WebsitePermissionDetailViewState?,
         permissionManager: PermissionManagerProtocol,
         featureFlagger: FeatureFlagger,
-        defaults: WebsitePermissionDefaultsProviding
+        defaults: WebsitePermissionDefaultsProtocol
     ) {
         viewState = initialState ?? .init()
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
         self.defaults = defaults
-        // Seed the default from storage so the radio group renders its real selection before the
-        // permission observer delivers its first update.
+        viewState.availableDefaultDecisions = defaults.availableDecisions(for: viewState.category)
         viewState.defaultDecision = defaults.defaultDecision(for: viewState.category)
         viewState.visibleSites = filteredSites(from: viewState.sites, matching: viewState.searchQuery)
     }
@@ -75,7 +74,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
 
     private func changeDefaultDecision(_ decision: PersistedPermissionDecision) {
         let category = viewState.category
-        guard category.availableDefaultDecisions.contains(decision),
+        guard defaults.availableDecisions(for: category).contains(decision),
               decision != defaults.defaultDecision(for: category)
         else {
             Logger.general.debug("WebsitePermissionDetailViewModel: Ignored default change for \(String(describing: category))")
@@ -84,7 +83,6 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
 
         defaults.setDefaultDecision(decision, for: category)
 
-        // Read back rather than trusting the request: the write is a no-op while the feature flag is off.
         viewState.defaultDecision = defaults.defaultDecision(for: category)
     }
 
@@ -128,11 +126,12 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
         let category = viewState.category
         var state = WebsitePermissionDetailViewState(
             category: category,
-            defaultDecision: defaultDecisions[category] ?? WebsitePermissionDefaults.fallbackDecision,
+            defaultDecision: defaultDecisions[category] ?? defaults.fallbackDecision,
             searchQuery: viewState.searchQuery,
             entries: entries,
             featureFlagger: featureFlagger
         )
+        state.availableDefaultDecisions = defaults.availableDecisions(for: category)
         state.visibleSites = filteredSites(from: state.sites, matching: state.searchQuery)
         viewState = state
     }

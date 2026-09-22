@@ -222,7 +222,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let fireCoordinator: FireCoordinator
     let permissionManager: PermissionManager
-    /// Per-category defaults chosen in Settings > Website Permissions, consulted by `permissionManager`.
     let websitePermissionDefaults: WebsitePermissionDefaults
     let notificationService: UserNotificationAuthorizationServicing
     let recentlyClosedCoordinator: RecentlyClosedCoordinating
@@ -281,6 +280,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatConversationSourceHandler = AIChatConversationSourceHandler()
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
+
+    let aiChatBrowserToolsService: AIChatBrowserToolsService
     let aiChatPreferences: AIChatPreferences
     let promptBarPreferences: PromptBarPreferences
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
@@ -887,6 +888,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
+        aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
+                                                              windowControllersManager: windowControllersManager)
+
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
         cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: CookiePopupProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
@@ -910,7 +914,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let voiceChatPermissionOverride = DuckAiVoiceChatPermissionOverride(featureFlagger: featureFlagger)
         let websitePermissionDefaults = WebsitePermissionDefaults(
-            persistor: WebsitePermissionDefaultsUserDefaultsPersistor(keyValueStore: keyValueStore),
+            storage: WebsitePermissionDefaultsUserDefaultsStorage(keyValueStore: keyValueStore),
             featureFlagger: featureFlagger,
             autoplayPreferences: autoplayPreferences
         )

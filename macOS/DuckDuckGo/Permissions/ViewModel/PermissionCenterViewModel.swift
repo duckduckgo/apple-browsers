@@ -136,8 +136,6 @@ enum PopupDecision: Hashable {
     case allowForThisVisit
     case notify
     case alwaysAllow
-    /// The category default from Settings > Website Permissions is "Never allow": pop-ups are
-    /// blocked silently for every site that has no decision of its own.
     case neverAllow
 
 }
@@ -205,8 +203,6 @@ final class PermissionCenterViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.popupBlocking)
     }
 
-    /// "Never allow" is only offered while it is the standing default, since a per-site denial can't
-    /// be persisted for pop-ups: choosing it just clears this site's override so the default applies.
     var showPopupsNeverAllowOption: Bool {
         permissionManager.defaultDecision(for: .popups) == .deny
     }
@@ -404,8 +400,6 @@ final class PermissionCenterViewModel: ObservableObject {
             resetTemporaryPopupAllowance?()
             hasTemporaryPopupAllowance = false
         case .neverAllow:
-            // Pop-ups can't persist a per-site denial, so falling back to the "Never allow" default
-            // means dropping this site's override rather than storing one.
             permissionManager.removePermission(forDomain: domain, permissionType: .popups)
             resetTemporaryPopupAllowance?()
             hasTemporaryPopupAllowance = false
@@ -420,7 +414,6 @@ final class PermissionCenterViewModel: ObservableObject {
         } else if persistedValue == .allow {
             return .alwaysAllow
         } else if persistedValue == .deny {
-            // Only reachable from the category default; a per-site denial isn't persisted for pop-ups.
             return .neverAllow
         } else {
             return .notify

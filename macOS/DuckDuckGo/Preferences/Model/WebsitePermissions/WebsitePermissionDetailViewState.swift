@@ -23,12 +23,8 @@ import PrivacyConfig
 struct WebsitePermissionDetailViewState: Equatable {
     var category: WebsitePermissionCategory = .notifications
     /// Behaviour applied to websites with no saved decision of their own.
-    var defaultDecision: PersistedPermissionDecision = WebsitePermissionDefaults.fallbackDecision
-    /// The same two options for every category but Autoplay, so the radio group never offers a
-    /// blanket grant.
-    var availableDefaultDecisions: [PersistedPermissionDecision] {
-        category.availableDefaultDecisions
-    }
+    var defaultDecision: PersistedPermissionDecision = .ask
+    var availableDefaultDecisions: [PersistedPermissionDecision] = []
     var searchQuery = ""
     var sites: [SiteRow] = []
     var visibleSites: [SiteRow] = []
@@ -44,7 +40,7 @@ struct WebsitePermissionDetailViewState: Equatable {
 
     init(
         category: WebsitePermissionCategory = .notifications,
-        defaultDecision: PersistedPermissionDecision = WebsitePermissionDefaults.fallbackDecision,
+        defaultDecision: PersistedPermissionDecision = .ask,
         searchQuery: String = "",
         sites: [SiteRow] = []
     ) {
@@ -57,7 +53,7 @@ struct WebsitePermissionDetailViewState: Equatable {
 
     init(
         category: WebsitePermissionCategory,
-        defaultDecision: PersistedPermissionDecision = WebsitePermissionDefaults.fallbackDecision,
+        defaultDecision: PersistedPermissionDecision = .ask,
         searchQuery: String = "",
         entries: [WebsitePermissionEntry],
         featureFlagger: FeatureFlagger

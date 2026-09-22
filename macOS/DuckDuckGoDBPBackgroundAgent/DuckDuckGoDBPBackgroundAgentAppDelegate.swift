@@ -91,6 +91,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private var cancellables = Set<AnyCancellable>()
     private var statusBarMenu: StatusBarMenu?
+    private static let deadTokenRecoverer = DeadTokenRecoverer()
     private let subscriptionManager: any SubscriptionManager
     private var manager: DataBrokerProtectionAgentManager?
 
@@ -101,11 +102,18 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
         let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
-        subscriptionManager = DefaultSubscriptionManager(keychainType: .dataProtection(.named(subscriptionAppGroup)),
+        let defaultSubscriptionManager = DefaultSubscriptionManager(keychainType: .dataProtection(.named(subscriptionAppGroup)),
                                                          environment: subscriptionEnvironment,
                                                          userDefaults: subscriptionUserDefaults,
                                                          pixelHandlingSource: .dbp,
                                                          source: .pir)
+        
+        let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
+                                                     storePurchaseManager: defaultSubscriptionManager.storePurchaseManager())
+        defaultSubscriptionManager.tokenRecoveryHandler = {
+            try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
+        }
+        subscriptionManager = defaultSubscriptionManager
     }
 
     @MainActor

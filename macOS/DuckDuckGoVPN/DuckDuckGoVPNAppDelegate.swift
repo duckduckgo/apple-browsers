@@ -60,11 +60,19 @@ final class DuckDuckGoVPNApplication: NSApplication {
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
-        subscriptionManager = DefaultSubscriptionManager(keychainType: keychainType,
+        let defaultSubscriptionManager = DefaultSubscriptionManager(keychainType: keychainType,
                                                          environment: subscriptionEnvironment,
                                                          userDefaults: subscriptionUserDefaults,
                                                          pixelHandlingSource: .vpnApp,
                                                          source: .vpn)
+        
+        let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
+                                                     storePurchaseManager: defaultSubscriptionManager.storePurchaseManager())
+        let deadTokenRecoverer = DeadTokenRecoverer()
+        defaultSubscriptionManager.tokenRecoveryHandler = {
+            try await deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
+        }
+        subscriptionManager = defaultSubscriptionManager
 
         _delegate = DuckDuckGoVPNAppDelegate(subscriptionManager: subscriptionManager,
                                              subscriptionEnvironment: subscriptionEnvironment)

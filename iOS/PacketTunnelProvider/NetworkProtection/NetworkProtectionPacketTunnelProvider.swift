@@ -567,6 +567,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                              wideEvent: wideEvent,
                                                              isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
                                                              authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
+        
+        let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                     storePurchaseManager: storePurchaseManager)
+        let deadTokenRecoverer = DeadTokenRecoverer()
+        subscriptionManager.tokenRecoveryHandler = {
+            try await deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
+        }
+
         entitlementsCheck = {
             Logger.networkProtection.log("Subscription Entitlements check...")
             do {

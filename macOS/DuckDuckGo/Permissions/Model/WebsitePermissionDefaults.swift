@@ -37,13 +37,10 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProtocol {
 
     /// Every category offers the same two options. There is deliberately no "Always allow" default:
     /// a global grant would hand out camera, microphone or location without the user ever seeing a prompt.
-    static let availableDecisions: [PersistedPermissionDecision] = [.ask, .deny]
+    let availableDecisions: [PersistedPermissionDecision] = [.ask, .deny]
     /// Used when nothing is stored, when the stored value can't be parsed, and whenever the feature
     /// flag is off — so a rollback restores exactly the pre-feature behaviour.
-    static let fallbackDecision: PersistedPermissionDecision = .ask
-
-    var availableDecisions: [PersistedPermissionDecision] { Self.availableDecisions }
-    var fallbackDecision: PersistedPermissionDecision { Self.fallbackDecision }
+    let fallbackDecision: PersistedPermissionDecision = .ask
 
     private let persistor: WebsitePermissionDefaultsStorage
     private let featureFlagger: FeatureFlagger
@@ -59,12 +56,12 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProtocol {
         self.persistor = persistor
         self.featureFlagger = featureFlagger
 
-        let stored = Self.loadDecisions(from: persistor)
-        self.storedDecisions = stored
-        let isEnabled = featureFlagger.isFeatureOn(.websitePermissionsSettings)
-        self.subject = CurrentValueSubject(isEnabled ? stored : Self.disabledDecisions)
+        self.storedDecisions = [:]
+        self.subject = CurrentValueSubject([:])
 
-        // The flag is remotely releasable, so it can flip while the app is running.
+        storedDecisions = loadDecisions()
+        subject.send(effectiveDecisions)
+
         featureFlagCancellable = featureFlagger.updatesPublisher
             .sink { [weak self] in
                 guard let self else { return }
@@ -73,13 +70,13 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProtocol {
     }
 
     func defaultDecision(for category: WebsitePermissionCategory) -> PersistedPermissionDecision {
-        guard isFeatureEnabled else { return Self.fallbackDecision }
-        return storedDecisions[category] ?? Self.fallbackDecision
+        guard isFeatureEnabled else { return fallbackDecision }
+        return storedDecisions[category] ?? fallbackDecision
     }
 
     func setDefaultDecision(_ decision: PersistedPermissionDecision, for category: WebsitePermissionCategory) {
         guard isFeatureEnabled,
-              Self.availableDecisions.contains(decision),
+              availableDecisions.contains(decision),
               storedDecisions[category] != decision
         else { return }
 
@@ -95,19 +92,17 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProtocol {
     }
 
     private var effectiveDecisions: [WebsitePermissionCategory: PersistedPermissionDecision] {
-        isFeatureEnabled ? storedDecisions : Self.disabledDecisions
+        isFeatureEnabled ? storedDecisions : disabledDecisions
     }
 
     /// Every category mapped to the fallback, used while the feature flag is off.
-    private static let disabledDecisions: [WebsitePermissionCategory: PersistedPermissionDecision] = {
+    private var disabledDecisions: [WebsitePermissionCategory: PersistedPermissionDecision] {
         WebsitePermissionCategory.allCases.reduce(into: [:]) { $0[$1] = fallbackDecision }
-    }()
+    }
 
     /// Loads a total map: a category with nothing stored, or an unrecognised or unsupported stored
     /// value, reads back as the fallback.
-    private static func loadDecisions(
-        from persistor: WebsitePermissionDefaultsStorage
-    ) -> [WebsitePermissionCategory: PersistedPermissionDecision] {
+    private func loadDecisions() -> [WebsitePermissionCategory: PersistedPermissionDecision] {
         WebsitePermissionCategory.allCases.reduce(into: [:]) { decisions, category in
             let stored = persistor.decisionRawValue(for: category)
                 .flatMap(PersistedPermissionDecision.init(rawValue:))

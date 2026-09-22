@@ -1242,12 +1242,17 @@ extension AIChatUserScriptHandler {
             return InvokeBrowserToolResponse(callId: request.callId, result: .failure(.notInitialized))
         }
 
-        let originCollection = AIChatTabPickerSource.originTabCollectionViewModel(for: message.messageWebView,
-                                                                                  in: windowControllersManager)
+        // Scoped by the owner tab, never the key window: a backgrounded chat would otherwise act on
+        // whichever window the user is in now, Fire included.
+        guard let ownerCollection = AIChatTabPickerSource.ownerCollection(for: message.messageWebView,
+                                                                          ownerTabID: ownerTabID,
+                                                                          in: windowControllersManager) else {
+            return InvokeBrowserToolResponse(callId: request.callId, result: .failure(.unavailable))
+        }
         let context = BrowserToolCallContext(
             ownerTabID: ownerTabID,
-            ownerWindowToken: originCollection.map(AIChatTabPickerSource.windowToken(forCollection:)),
-            isBurner: originCollection?.isBurner ?? true,
+            ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: ownerCollection),
+            isBurner: ownerCollection.isBurner,
             supportsElicitationForm: session.supportsElicitationForm
         )
 

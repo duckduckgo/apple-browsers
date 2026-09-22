@@ -56,6 +56,27 @@ enum AIChatTabPickerSource {
 
     /// Opaque handle for the window a call is scoped to. A tab id is not enough — pinned tabs are
     /// shared, so "the window holding this tab" is ambiguous; this is resolved from the web view.
+    /// The window a tool call is scoped to. Resolved from the owner tab rather than from the key
+    /// window: a backgrounded chat's web view has no window, and guessing would land on someone else's.
+    static func ownerCollection(for webView: WKWebView?,
+                                ownerTabID: TabIdentifier,
+                                in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
+        if let window = webView?.window,
+           let controller = windowControllersManager.mainWindowControllers.first(where: { $0.window === window }) {
+            return controller.mainViewController.tabCollectionViewModel
+        }
+        return collection(containingTabID: ownerTabID, in: windowControllersManager)
+    }
+
+    /// A shared pinned tab is in every window's collection, so it has no single owner — `nil`.
+    static func collection(containingTabID tabID: TabIdentifier,
+                           in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
+        let matches = windowControllersManager.allTabCollectionViewModels.filter {
+            $0.indexInAllTabs(where: { $0.uuid == tabID }) != nil
+        }
+        return matches.count == 1 ? matches[0] : nil
+    }
+
     static func windowToken(forCollection collection: TabCollectionViewModel) -> String {
         String(UInt(bitPattern: ObjectIdentifier(collection).hashValue))
     }

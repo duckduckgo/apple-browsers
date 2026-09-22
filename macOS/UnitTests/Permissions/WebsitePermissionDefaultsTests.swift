@@ -53,18 +53,13 @@ final class WebsitePermissionDefaultsTests: XCTestCase {
         }
     }
 
-    func testWhenStoredValueIsUnrecognisedThenAskEachTimeIsReturned() throws {
-        try keyValueStore.set("nonsense", forKey: WebsitePermissionDefaultsUserDefaultsPersistor.Key.camera.rawValue)
+    func testWhenStoredValueIsNotAnOfferedDefaultThenAskEachTimeIsReturned() throws {
+        // "allow" is not an offered default, so both it and an unparseable value can only come from tampering.
+        for rawValue in ["nonsense", PersistedPermissionDecision.allow.rawValue] {
+            try keyValueStore.set(rawValue, forKey: WebsitePermissionDefaultsUserDefaultsStorage.Key.camera.rawValue)
 
-        XCTAssertEqual(makeSUT().defaultDecision(for: .camera), .ask)
-    }
-
-    func testWhenStoredValueIsAllowThenAskEachTimeIsReturned() throws {
-        // "Always allow" is not an offered default; a value like this can only come from tampering.
-        try keyValueStore.set(PersistedPermissionDecision.allow.rawValue,
-                              forKey: WebsitePermissionDefaultsUserDefaultsPersistor.Key.camera.rawValue)
-
-        XCTAssertEqual(makeSUT().defaultDecision(for: .camera), .ask)
+            XCTAssertEqual(makeSUT().defaultDecision(for: .camera), .ask, "stored \(rawValue) should read back as .ask")
+        }
     }
 
     // MARK: - Writing
@@ -75,30 +70,14 @@ final class WebsitePermissionDefaultsTests: XCTestCase {
         let reloaded = makeSUT()
         XCTAssertEqual(reloaded.defaultDecision(for: .notifications), .deny)
         XCTAssertEqual(reloaded.defaultDecision(for: .camera), .ask, "Other categories should be untouched")
-    }
 
-    func testWhenAllowIsSetThenItIsIgnored() {
-        let sut = makeSUT()
+        reloaded.setDefaultDecision(.allow, for: .camera)
 
-        sut.setDefaultDecision(.allow, for: .camera)
-
-        XCTAssertEqual(sut.defaultDecision(for: .camera), .ask)
+        XCTAssertEqual(reloaded.defaultDecision(for: .camera), .ask, "Allow is not an offered default")
         XCTAssertNil(persistedRawValue(for: .camera))
     }
 
-    func testWhenSameDecisionIsSetAgainThenNothingIsPublished() {
-        let sut = makeSUT()
-        sut.setDefaultDecision(.deny, for: .popups)
-
-        var publishedCount = 0
-        sut.defaultsPublisher.dropFirst().sink { _ in publishedCount += 1 }.store(in: &cancellables)
-
-        sut.setDefaultDecision(.deny, for: .popups)
-
-        XCTAssertEqual(publishedCount, 0)
-    }
-
-    func testWhenDecisionChangesThenPublisherEmitsTheUpdatedMap() {
+    func testWhenDecisionChangesThenPublisherEmitsOnlyTheRealUpdates() {
         let sut = makeSUT()
         var published: [[WebsitePermissionCategory: PersistedPermissionDecision]] = []
         sut.defaultsPublisher.sink { published.append($0) }.store(in: &cancellables)
@@ -108,6 +87,10 @@ final class WebsitePermissionDefaultsTests: XCTestCase {
         XCTAssertEqual(published.count, 2, "Expected the current value plus one update")
         XCTAssertEqual(published.first?[.location], .ask)
         XCTAssertEqual(published.last?[.location], .deny)
+
+        sut.setDefaultDecision(.deny, for: .location)
+
+        XCTAssertEqual(published.count, 2, "Setting the same decision again should publish nothing")
     }
 
     // MARK: - Feature flag
@@ -150,12 +133,12 @@ final class WebsitePermissionDefaultsTests: XCTestCase {
 
     private func makeSUT() -> WebsitePermissionDefaults {
         WebsitePermissionDefaults(
-            persistor: WebsitePermissionDefaultsUserDefaultsPersistor(keyValueStore: keyValueStore),
+            persistor: WebsitePermissionDefaultsUserDefaultsStorage(keyValueStore: keyValueStore),
             featureFlagger: featureFlagger
         )
     }
 
     private func persistedRawValue(for category: WebsitePermissionCategory) -> String? {
-        try? keyValueStore.object(forKey: WebsitePermissionDefaultsUserDefaultsPersistor.Key(category: category).rawValue) as? String
+        try? keyValueStore.object(forKey: WebsitePermissionDefaultsUserDefaultsStorage.Key(category: category).rawValue) as? String
     }
 }

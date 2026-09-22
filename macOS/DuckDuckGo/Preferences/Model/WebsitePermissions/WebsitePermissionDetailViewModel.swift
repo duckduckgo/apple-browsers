@@ -28,21 +28,19 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
 
     private let permissionManager: PermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
-    private let defaults: WebsitePermissionDefaultsProviding
+    private let defaults: WebsitePermissionDefaultsProtocol
     private var permissionsCancellable: AnyCancellable?
 
     init(
         initialState: WebsitePermissionDetailViewState?,
         permissionManager: PermissionManagerProtocol,
         featureFlagger: FeatureFlagger,
-        defaults: WebsitePermissionDefaultsProviding
+        defaults: WebsitePermissionDefaultsProtocol
     ) {
         viewState = initialState ?? .init()
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
         self.defaults = defaults
-        // Seed the default from storage so the radio group renders its real selection before the
-        // permission observer delivers its first update.
         viewState.defaultDecision = defaults.defaultDecision(for: viewState.category)
         viewState.visibleSites = filteredSites(from: viewState.sites, matching: viewState.searchQuery)
     }

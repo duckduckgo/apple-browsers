@@ -21,7 +21,7 @@
 import Combine
 import Foundation
 
-final class WebsitePermissionDefaultsMock: WebsitePermissionDefaultsProviding {
+final class WebsitePermissionDefaultsMock: WebsitePermissionDefaultsProtocol {
 
     private let subject: CurrentValueSubject<[WebsitePermissionCategory: PersistedPermissionDecision], Never>
 

@@ -404,6 +404,11 @@ final class PermissionModel {
             && permissionManager.permission(forDomain: domain, permissionType: .popups) == .deny
     }
 
+    private func shouldApplyDenial(of permission: PermissionType, isPersistedForDomain: Bool) -> Bool {
+        let comesFromCategoryDefault = !isPersistedForDomain
+        return permission.canPersistDeniedDecision || comesFromCategoryDefault
+    }
+
     private func shouldGrantPermission(for permissions: [PermissionType], requestedForDomain domain: String) -> Bool? {
         var shouldAsk = false
         for permission in permissions {
@@ -412,11 +417,7 @@ final class PermissionModel {
             let isPersistedForDomain = permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permission)
             if case .allow = stored, permission.canPersistGrantedDecision {
                 grant = .allow
-            } else if case .deny = stored, permission.canPersistDeniedDecision || !isPersistedForDomain {
-                // A denial with nothing saved for this domain can only come from the category default
-                // ("Never allow" in Settings > Website Permissions). Pop-ups can't persist a per-site
-                // denial, so they rely on that second condition: the default blocks them silently,
-                // while a per-site "Ask each time" row still brings back the blocked-pop-up popover.
+            } else if case .deny = stored, shouldApplyDenial(of: permission, isPersistedForDomain: isPersistedForDomain) {
                 grant = .deny
             } else if let state = self.permissions[permission] {
                 switch state {

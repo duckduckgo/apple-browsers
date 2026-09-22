@@ -32,7 +32,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
 
     private let permissionManager: PermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
-    private let defaults: WebsitePermissionDefaultsProviding
+    private let defaults: WebsitePermissionDefaultsProtocol
     private var permissionsCancellable: AnyCancellable?
     private var latestEntries = [WebsitePermissionEntry]()
 
@@ -42,7 +42,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
 
     init(permissionManager: PermissionManagerProtocol,
          featureFlagger: FeatureFlagger,
-         defaults: WebsitePermissionDefaultsProviding) {
+         defaults: WebsitePermissionDefaultsProtocol) {
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
         self.defaults = defaults

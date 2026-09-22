@@ -222,7 +222,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let fireCoordinator: FireCoordinator
     let permissionManager: PermissionManager
-    /// Per-category defaults chosen in Settings > Website Permissions, consulted by `permissionManager`.
     let websitePermissionDefaults: WebsitePermissionDefaults
     let notificationService: UserNotificationAuthorizationServicing
     let recentlyClosedCoordinator: RecentlyClosedCoordinating
@@ -910,7 +909,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let voiceChatPermissionOverride = DuckAiVoiceChatPermissionOverride(featureFlagger: featureFlagger)
         let websitePermissionDefaults = WebsitePermissionDefaults(
-            persistor: WebsitePermissionDefaultsUserDefaultsPersistor(keyValueStore: keyValueStore),
+            persistor: WebsitePermissionDefaultsUserDefaultsStorage(keyValueStore: keyValueStore),
             featureFlagger: featureFlagger
         )
         self.websitePermissionDefaults = websitePermissionDefaults

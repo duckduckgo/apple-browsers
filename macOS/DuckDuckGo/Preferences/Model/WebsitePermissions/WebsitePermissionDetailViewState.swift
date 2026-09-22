@@ -22,9 +22,7 @@ import PrivacyConfig
 
 struct WebsitePermissionDetailViewState: Equatable {
     var category: WebsitePermissionCategory = .notifications
-    /// Behaviour applied to websites with no saved decision of their own.
     var defaultDecision: PersistedPermissionDecision = WebsitePermissionDefaults.fallbackDecision
-    /// Same two options for every category, so the radio group never offers a blanket grant.
     let availableDefaultDecisions: [PersistedPermissionDecision] = WebsitePermissionDefaults.availableDecisions
     var searchQuery = ""
     var sites: [SiteRow] = []

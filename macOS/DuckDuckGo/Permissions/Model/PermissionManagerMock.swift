@@ -44,7 +44,7 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     /// effective one and `savedPermissions` is left alone. Nil (the default) means no override.
     var decisionOverride: ((String, PermissionType) -> PersistedPermissionDecision?)?
 
-    /// Stands in for `WebsitePermissionDefaultsProviding`: the category default applied when a domain
+    /// Stands in for `WebsitePermissionDefaultsProtocol`: the category default applied when a domain
     /// has nothing saved. Categories left out fall back to `.ask`, as they do in the app.
     var defaultDecisions: [WebsitePermissionCategory: PersistedPermissionDecision] = [:]
 

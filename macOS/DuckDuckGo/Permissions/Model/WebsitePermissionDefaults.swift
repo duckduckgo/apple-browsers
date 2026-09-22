@@ -19,63 +19,19 @@
 import Combine
 import FeatureFlags_macOS
 import Foundation
-import Persistence
 import PrivacyConfig
-
-/// Storage for the per-category "Default" behaviour chosen in Settings > Website Permissions.
-protocol WebsitePermissionDefaultsPersistor {
-    func decisionRawValue(for category: WebsitePermissionCategory) -> String?
-    func setDecisionRawValue(_ rawValue: String, for category: WebsitePermissionCategory)
-}
-
-struct WebsitePermissionDefaultsUserDefaultsPersistor: WebsitePermissionDefaultsPersistor {
-
-    enum Key: String {
-        case notifications = "website-permissions.default.notifications"
-        case location = "website-permissions.default.location"
-        case camera = "website-permissions.default.camera"
-        case microphone = "website-permissions.default.microphone"
-        case externalApps = "website-permissions.default.external-apps"
-        case popups = "website-permissions.default.popups"
-
-        init(category: WebsitePermissionCategory) {
-            switch category {
-            case .notifications: self = .notifications
-            case .location: self = .location
-            case .camera: self = .camera
-            case .microphone: self = .microphone
-            case .externalApps: self = .externalApps
-            case .popups: self = .popups
-            }
-        }
-    }
-
-    private let keyValueStore: ThrowingKeyValueStoring
-
-    init(keyValueStore: ThrowingKeyValueStoring) {
-        self.keyValueStore = keyValueStore
-    }
-
-    func decisionRawValue(for category: WebsitePermissionCategory) -> String? {
-        try? keyValueStore.object(forKey: Key(category: category).rawValue) as? String
-    }
-
-    func setDecisionRawValue(_ rawValue: String, for category: WebsitePermissionCategory) {
-        try? keyValueStore.set(rawValue, forKey: Key(category: category).rawValue)
-    }
-}
 
 /// Reads and writes the default decision applied to a permission category when a website has no
 /// saved decision of its own. `PermissionManager` consults this as the last step of its read path,
 /// so a default takes effect in the prompt flow without any call site having to know about it.
-protocol WebsitePermissionDefaultsProviding: AnyObject {
+protocol WebsitePermissionDefaultsProtocol: AnyObject {
     /// Emits the effective default of every category whenever one changes, and on subscribe.
     var defaultsPublisher: AnyPublisher<[WebsitePermissionCategory: PersistedPermissionDecision], Never> { get }
     func defaultDecision(for category: WebsitePermissionCategory) -> PersistedPermissionDecision
     func setDefaultDecision(_ decision: PersistedPermissionDecision, for category: WebsitePermissionCategory)
 }
 
-final class WebsitePermissionDefaults: WebsitePermissionDefaultsProviding {
+final class WebsitePermissionDefaults: WebsitePermissionDefaultsProtocol {
 
     /// Every category offers the same two options. There is deliberately no "Always allow" default:
     /// a global grant would hand out camera, microphone or location without the user ever seeing a prompt.
@@ -84,7 +40,7 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProviding {
     /// flag is off — so a rollback restores exactly the pre-feature behaviour.
     static let fallbackDecision: PersistedPermissionDecision = .ask
 
-    private let persistor: WebsitePermissionDefaultsPersistor
+    private let persistor: WebsitePermissionDefaultsStorage
     private let featureFlagger: FeatureFlagger
     private var storedDecisions: [WebsitePermissionCategory: PersistedPermissionDecision]
     private let subject: CurrentValueSubject<[WebsitePermissionCategory: PersistedPermissionDecision], Never>
@@ -94,7 +50,7 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProviding {
         subject.removeDuplicates().eraseToAnyPublisher()
     }
 
-    init(persistor: WebsitePermissionDefaultsPersistor, featureFlagger: FeatureFlagger) {
+    init(persistor: WebsitePermissionDefaultsStorage, featureFlagger: FeatureFlagger) {
         self.persistor = persistor
         self.featureFlagger = featureFlagger
 
@@ -145,7 +101,7 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProviding {
     /// Loads a total map: a category with nothing stored, or an unrecognised or unsupported stored
     /// value, reads back as the fallback.
     private static func loadDecisions(
-        from persistor: WebsitePermissionDefaultsPersistor
+        from persistor: WebsitePermissionDefaultsStorage
     ) -> [WebsitePermissionCategory: PersistedPermissionDecision] {
         WebsitePermissionCategory.allCases.reduce(into: [:]) { decisions, category in
             let stored = persistor.decisionRawValue(for: category)

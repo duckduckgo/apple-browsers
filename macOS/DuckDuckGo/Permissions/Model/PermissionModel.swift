@@ -243,8 +243,6 @@ final class PermissionModel {
 
             switch (decision, self.permissions[permissionType]) {
             case (.ask, .denied):
-                // A site exception must restore prompting after a silent default denial, for any
-                // permission: the runtime denial came from the category default, not from the user.
                 self.permissions[permissionType] = nil
             case (.deny, .some):
                 self.revoke(permissionType)

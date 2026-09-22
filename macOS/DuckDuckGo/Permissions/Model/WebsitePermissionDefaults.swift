@@ -21,13 +21,9 @@ import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
 
-/// Reads and writes the default decision applied to a permission category when a website has no
-/// saved decision of its own. `PermissionManager` consults this as the last step of its read path,
-/// so a default takes effect in the prompt flow without any call site having to know about it.
 protocol WebsitePermissionDefaultsProtocol: AnyObject {
     var availableDecisions: [PersistedPermissionDecision] { get }
     var fallbackDecision: PersistedPermissionDecision { get }
-    /// Emits the effective default of every category whenever one changes, and on subscribe.
     var defaultsPublisher: AnyPublisher<[WebsitePermissionCategory: PersistedPermissionDecision], Never> { get }
     func defaultDecision(for category: WebsitePermissionCategory) -> PersistedPermissionDecision
     func setDefaultDecision(_ decision: PersistedPermissionDecision, for category: WebsitePermissionCategory)
@@ -35,14 +31,10 @@ protocol WebsitePermissionDefaultsProtocol: AnyObject {
 
 final class WebsitePermissionDefaults: WebsitePermissionDefaultsProtocol {
 
-    /// Every category offers the same two options. There is deliberately no "Always allow" default:
-    /// a global grant would hand out camera, microphone or location without the user ever seeing a prompt.
     let availableDecisions: [PersistedPermissionDecision] = [.ask, .deny]
-    /// Used when nothing is stored, when the stored value can't be parsed, and whenever the feature
-    /// flag is off — so a rollback restores exactly the pre-feature behaviour.
     let fallbackDecision: PersistedPermissionDecision = .ask
 
-    private let persistor: WebsitePermissionDefaultsStorage
+    private let storage: WebsitePermissionDefaultsStorage
     private let featureFlagger: FeatureFlagger
     private var storedDecisions: [WebsitePermissionCategory: PersistedPermissionDecision]
     private let subject: CurrentValueSubject<[WebsitePermissionCategory: PersistedPermissionDecision], Never>
@@ -52,8 +44,8 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProtocol {
         subject.removeDuplicates().eraseToAnyPublisher()
     }
 
-    init(persistor: WebsitePermissionDefaultsStorage, featureFlagger: FeatureFlagger) {
-        self.persistor = persistor
+    init(storage: WebsitePermissionDefaultsStorage, featureFlagger: FeatureFlagger) {
+        self.storage = storage
         self.featureFlagger = featureFlagger
 
         self.storedDecisions = [:]
@@ -81,7 +73,7 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProtocol {
         else { return }
 
         storedDecisions[category] = decision
-        persistor.setDecisionRawValue(decision.rawValue, for: category)
+        storage.setDecisionRawValue(decision.rawValue, for: category)
         subject.send(effectiveDecisions)
     }
 
@@ -95,16 +87,13 @@ final class WebsitePermissionDefaults: WebsitePermissionDefaultsProtocol {
         isFeatureEnabled ? storedDecisions : disabledDecisions
     }
 
-    /// Every category mapped to the fallback, used while the feature flag is off.
     private var disabledDecisions: [WebsitePermissionCategory: PersistedPermissionDecision] {
         WebsitePermissionCategory.allCases.reduce(into: [:]) { $0[$1] = fallbackDecision }
     }
 
-    /// Loads a total map: a category with nothing stored, or an unrecognised or unsupported stored
-    /// value, reads back as the fallback.
     private func loadDecisions() -> [WebsitePermissionCategory: PersistedPermissionDecision] {
         WebsitePermissionCategory.allCases.reduce(into: [:]) { decisions, category in
-            let stored = persistor.decisionRawValue(for: category)
+            let stored = storage.decisionRawValue(for: category)
                 .flatMap(PersistedPermissionDecision.init(rawValue:))
                 .flatMap { availableDecisions.contains($0) ? $0 : nil }
             decisions[category] = stored ?? fallbackDecision

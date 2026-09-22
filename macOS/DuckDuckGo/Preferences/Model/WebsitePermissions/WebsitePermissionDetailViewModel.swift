@@ -83,7 +83,6 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
 
         defaults.setDefaultDecision(decision, for: category)
 
-        // Read back rather than trusting the request: the write is a no-op while the feature flag is off.
         viewState.defaultDecision = defaults.defaultDecision(for: category)
     }
 

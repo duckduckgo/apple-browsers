@@ -133,7 +133,7 @@ final class WebsitePermissionDefaultsTests: XCTestCase {
 
     private func makeSUT() -> WebsitePermissionDefaults {
         WebsitePermissionDefaults(
-            persistor: WebsitePermissionDefaultsUserDefaultsStorage(keyValueStore: keyValueStore),
+            storage: WebsitePermissionDefaultsUserDefaultsStorage(keyValueStore: keyValueStore),
             featureFlagger: featureFlagger
         )
     }

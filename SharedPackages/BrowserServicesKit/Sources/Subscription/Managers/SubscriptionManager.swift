@@ -651,7 +651,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
                 pixelHandler.handle(pixel: .invalidRefreshToken)
                 do {
-                    let recoveredTokenContainer = try await attemptTokenRecovery()
+                    let recoveredTokenContainer = try await attemptTokenRecovery(tokenBeforeAttempt: tokenBeforeAttempt)
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil)
                     return recoveredTokenContainer
@@ -714,7 +714,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         pixelHandler.handle(pixel: .automaticSignOut(data, triggeringError))
     }
 
-    func attemptTokenRecovery() async throws -> TokenContainer {
+    func attemptTokenRecovery(tokenBeforeAttempt: LocalTokenSnapshot) async throws -> TokenContainer {
 
         Logger.subscriptionTokensManagement.log("Attempting token recovery...")
 
@@ -726,8 +726,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         try await tokenRecoveryHandler()
 
         guard let currentTokenContainer = try oAuthClient.currentTokenContainer(),
-              !currentTokenContainer.decodedRefreshToken.isExpired() else {
-            Logger.subscriptionTokensManagement.log("Recovery failed: the refresh token is missing or still expired after the recovery attempt.")
+              !currentTokenContainer.decodedRefreshToken.isExpired(),
+              currentTokenContainer.refreshToken != tokenBeforeAttempt.tokenContainer?.refreshToken // A not-expired refresh token isn't proof of recovery: a server-invalidated (reused) token is still unexpired, and a backlogged keychain write can hand back the same dead token we started with. Only a token that actually changed from tokenBeforeAttempt is a real recovery.
+        else {
+            Logger.subscriptionTokensManagement.log("Recovery failed: the refresh token is missing, still expired, or unchanged after the recovery attempt.")
             throw SubscriptionManagerError.noTokenAvailable
         }
         return currentTokenContainer

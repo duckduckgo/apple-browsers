@@ -38,7 +38,7 @@ struct PreferencesWebsitePermissionDetailView: View {
 
     @ObservedObject
     var model: WebsitePermissionDetailViewModel
-    
+
     let onBack: () -> Void
 
     @FocusState

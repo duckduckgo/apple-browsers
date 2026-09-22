@@ -60,7 +60,7 @@ struct NewTabPageBuilder {
         // Fire tabs are excluded because their empty state is drawn elsewhere and would cover the
         // page.
         if !tab.fireTab, redesignFeature.isAvailable {
-            return makeRedesignedNewTabPage()
+            return makeRedesignedNewTabPage(openedAfterIdle: openedAfterIdle)
         }
 
         return makeCurrentNewTabPage(tab: tab,
@@ -68,7 +68,7 @@ struct NewTabPageBuilder {
                                      daxDialogFactory: daxDialogFactory)
     }
 
-    private func makeRedesignedNewTabPage() -> any NewTabPage {
+    private func makeRedesignedNewTabPage(openedAfterIdle: Bool) -> any NewTabPage {
         // The callbacks are created before their owning page; keep the back-reference weak.
         weak var newTabPage: RedesignedNewTabPageViewController?
         let searchInputView = NewTabPageSearchInputView(
@@ -86,6 +86,20 @@ struct NewTabPageBuilder {
             onVoiceSearch: { textEntryMode in
                 newTabPage?.beginVoiceSearch(textEntryMode: textEntryMode)
             })
+
+        let pageModel = NewTabPageViewModel(fireTab: false)
+        pageModel.openedAfterIdle = openedAfterIdle
+        let messagesModel = NewTabPageMessagesModel(
+            homePageMessagesConfiguration: homePageMessagesConfiguration,
+            subscriptionDataReporter: subscriptionDataReporting,
+            messageActionHandler: remoteMessagingActionHandler,
+            imageLoader: remoteMessagingImageLoader,
+            pixelReporter: remoteMessagingPixelReporter,
+            isOpenedAfterIdle: { [weak pageModel] in pageModel?.openedAfterIdle ?? false })
+        messagesModel.onMessageInteraction = { interaction in
+            guard let newTabPage else { return }
+            newTabPage.delegate?.newTabPage(newTabPage, didInteractWithMessage: interaction)
+        }
 
         let favoritesModel = FavoritesViewModel(
             isFocussedState: false,
@@ -114,8 +128,10 @@ struct NewTabPageBuilder {
                                              contextChanges: daxGreetingChanges,
                                              updateAppearance: updateDaxGreetingAppearance))),
             NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView),
+            NewTabPageSwiftUIBlock(id: .optionalContent,
+                                  rootView: RedesignedNewTabPageOptionalContentView(pageModel: pageModel, messagesModel: messagesModel)),
             NewTabPageSwiftUIBlock(id: .favorites, rootView: RedesignedNewTabPageModulesView(favoritesModel: favoritesModel))
-        ], favoritesModel: favoritesModel)
+        ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel)
         newTabPage = page
         return page
     }

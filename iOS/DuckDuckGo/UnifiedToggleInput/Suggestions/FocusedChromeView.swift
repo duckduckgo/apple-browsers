@@ -27,6 +27,7 @@ struct FocusedChromeView: View {
 
     let hatchModel: EscapeHatchModel?
     let syncPromo: AnyView?
+    var usesRaisedEscapeHatch = false
     /// Gap between the bar's edge and the first chrome element (Figma: 6 top bar, 16 bottom bar).
     let topInset: CGFloat
     /// Reports the chrome's laid-out height so the container can inset the content below it. 0 when empty.
@@ -50,6 +51,12 @@ struct FocusedChromeView: View {
             VStack(spacing: Metrics.interCardSpacing) {
                 if let hatchModel {
                     EscapeHatchView(model: hatchModel)
+                        .padding(usesRaisedEscapeHatch ? Metrics.raisedHatchPadding : 0)
+                        .background {
+                            if usesRaisedEscapeHatch {
+                                RedesignedNewTabPageCardBackground()
+                            }
+                        }
                 }
                 if let syncPromo {
                     syncPromo
@@ -59,15 +66,20 @@ struct FocusedChromeView: View {
             .padding(.top, topInset)
             .padding(.bottom, Metrics.bottomInset)
             .frame(maxWidth: .infinity)
-            // Opaque page background directly behind the hatch so scroll-behind content hides under it
-            // — but only here, so content still visibly scrolls behind the bar itself.
-            .background(Color(designSystemColor: .background))
+            // Raised cards provide their own background; leave their surrounding space clear
+            // so scrolled content remains visible around the rounded edges.
+            .background {
+                if !usesRaisedEscapeHatch {
+                    Color(designSystemColor: .background)
+                }
+            }
         } else {
             Color.clear.frame(height: 0)
         }
     }
 
     enum Metrics {
+        static let raisedHatchPadding: CGFloat = 8
         /// Kept in step with `SuggestionsListView`'s cell edge so the hatch aligns with the rows.
         static let horizontalMargin: CGFloat = 16
         static let bottomInset: CGFloat = 16

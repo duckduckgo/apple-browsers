@@ -436,6 +436,7 @@ public final class SitePermissionsCoordinator {
             allowOnce.remove(permissionType)
             deniedForPage.insert(permissionType)
             siteAllowedPermissionTypesThisVisit.remove(permissionType)
+            cancelRequests(for: [permissionType], at: site)
         }
     }
 

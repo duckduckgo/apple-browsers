@@ -103,7 +103,7 @@ public final class GeolocationProvider {
     /// Tracks a `watchPosition()` subscription that can receive multiple location readings.
     /// It keeps the callback and request state until cancellation, permission revocation, or page teardown.
     @MainActor
-    private final class Watch {
+    private final class LocationSubscription {
         weak var userScript: GeolocationUserScript?
         let retainedFrame: RetainedFrame
         let options: GeolocationRequestOptions
@@ -157,11 +157,11 @@ public final class GeolocationProvider {
     private let queryPermission: PermissionQueryHandler
 
     private var oneShotRequests = [UUID: OneShotRequest]()
-    private var watches = [String: Watch]()
+    private var watches = [String: LocationSubscription]()
     private var permissionStatuses = [String: PermissionStatus]()
     private var locationUpdateHandlerID: UUID?
     // Cache the request's accuracy option, which can differ from the shared location manager's setting.
-    private var latestLocation: (location: CLLocation, enableHighAccuracy: Bool)?
+    private var latestLocation: (location: CLLocation, requestedHighAccuracy: Bool)?
     private var isActive = true
     private var resumedAt: Date?
     private var isClosed = false
@@ -509,7 +509,7 @@ public final class GeolocationProvider {
     private func reusableLocation(for options: GeolocationRequestOptions) -> CLLocation? {
         guard options.maximumAge > 0,
               let latestLocation,
-              latestLocation.enableHighAccuracy == options.enableHighAccuracy,
+              latestLocation.requestedHighAccuracy == options.enableHighAccuracy,
               isValid(latestLocation.location) else { return nil }
         let location = latestLocation.location
         return max(0, Date().timeIntervalSince(location.timestamp)) <= options.maximumAge ? location : nil
@@ -564,7 +564,7 @@ public final class GeolocationProvider {
                     deliver: @escaping @MainActor (GeolocationPositionResult) -> Bool) {
         guard !isClosed, watches[requestID] == nil else { return }
         let retainedFrame = RetainedFrame(context: context)
-        watches[requestID] = Watch(retainedFrame: retainedFrame, options: options, deliver: deliver)
+        watches[requestID] = LocationSubscription(retainedFrame: retainedFrame, options: options, deliver: deliver)
         resumeWatch(requestID)
     }
 
@@ -630,7 +630,7 @@ extension GeolocationProvider: GeolocationUserScriptDelegate {
             return
         }
 
-        watches[requestID] = Watch(userScript: userScript, requestID: requestID, retainedFrame: retainedFrame, options: options)
+        watches[requestID] = LocationSubscription(userScript: userScript, requestID: requestID, retainedFrame: retainedFrame, options: options)
         resumeWatch(requestID)
     }
 

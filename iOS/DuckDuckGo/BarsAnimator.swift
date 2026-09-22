@@ -28,7 +28,6 @@ class BarsAnimator {
 
         static let floatingVelocityCommitThreshold: CGFloat = 0.15
         static let floatingFastStepThreshold: CGFloat = 0.35
-        static let floatingFastStepAnimationDuration: CGFloat = 0.12
     }
 
     weak var delegate: BrowserChromeDelegate?
@@ -141,10 +140,10 @@ class BarsAnimator {
             barsState = .transitioning
         }
         transitionProgress = ratio
-        delegate?.setBarsVisibility(
-            1.0 - ratio,
-            animated: shouldAnimateFastStep,
-            animationDuration: shouldAnimateFastStep ? Metrics.floatingFastStepAnimationDuration : nil)
+        // Let the delegate's own duration scaling (based on how much of the morph this jump
+        // skipped) time the catch-up, so a fast scroll settles with the same deliberate morph as
+        // any other bars transition instead of a separately shortened snap.
+        delegate?.setBarsVisibility(1.0 - ratio, animated: shouldAnimateFastStep, animationDuration: nil)
     }
 
     private func revealedAndScrolling(in scrollView: UIScrollView) {

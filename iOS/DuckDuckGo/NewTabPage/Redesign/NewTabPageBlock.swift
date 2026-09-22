@@ -19,10 +19,13 @@
 
 import UIKit
 
+enum NewTabPageBlockID: String {
+    case welcome
+    case searchInput
+}
+
 /// One unit of New Tab Page content. Blocks are stacked vertically in the order given.
-///
-/// `id` is a stable string key for the block's persisted order and visibility.
-protocol NewTabPageBlock: AnyObject, Identifiable where ID == String {
+protocol NewTabPageBlock: AnyObject, Identifiable where ID == NewTabPageBlockID {
 
     /// The block's content, installed as a child view controller of the page.
     var viewController: UIViewController { get }

@@ -211,7 +211,8 @@ extension PromoServiceFactoryTests {
             }(),
             updateController: nil,
             updateNotificationBridge: nil,
-            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator()
+            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
+            quitSurveyPromoObserver: QuitSurveyPromoObserver()
         )
     }
 }

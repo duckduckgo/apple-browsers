@@ -1007,6 +1007,7 @@ extension MainViewController {
         contentVC.onDismissRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             if coordinator.isOmnibarSession {
+                self.onExperimentalAddressBarCancelPressed()
                 if let tab = self.tabManager.currentTabsModel.currentTab, tab.link == nil {
                     self.ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
                 }
@@ -1092,6 +1093,11 @@ extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
+        if viewCoordinator.newTabPageInputPresentation.transition == .inlineInput {
+            dismissInlineNewTabPageInput(coordinator: coordinator, animated: true, completion: completion)
+            return
+        }
+
         let omnibarPlaceholderWindowX = omnibarPlaceholderWindowXForHandoff(coordinator)
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
@@ -1177,7 +1183,7 @@ extension MainViewController {
         newTabPageViewController?.setFavoritesHidden(false)
     }
 
-    private func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
+    func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         applyUnifiedInputChromeBackground(.standardChrome)
         applyFloatingUIIfNeeded()
@@ -1195,6 +1201,8 @@ extension MainViewController {
         coordinator.clearText()
         reconcileToolbarVisibilityForCurrentTab()
         reconcileFloatingLayoutAfterUTIExit()
+        // The unified input dismisses on its own path, apart from `dismissOmniBar`.
+        updateAddressBarSuppressionForNewTabPage()
         completion?()
     }
 
@@ -1293,6 +1301,9 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
               currentTab?.isAITab != true else {
             return .allowDefault
         }
+        // Reveal before unified input measures the bar for its transition.
+        revealAddressBarForEditing()
+        defer { finishNewTabPageInputHandoff() }
         if tapped {
             onExperimentalAddressBarTapped()
         }

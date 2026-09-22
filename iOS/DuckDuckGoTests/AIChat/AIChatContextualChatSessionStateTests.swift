@@ -1381,14 +1381,14 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
             XCTAssertNil(contextData)
             XCTAssertEqual(targets, .frontendBridge)
             XCTAssertFalse(targets.contains(.utiChip))
-            XCTAssertFalse(targets.contains(.utiAttachAffordance))
         } else {
             XCTFail("Expected deliverPageContext effect with nil")
         }
     }
 
-    func testNotifyFrontendOfNavigationEmitsUTIAttachAffordanceWhenUTIActive() {
-        // Given - chat with initial context, UTI active
+    func testNotifyFrontendOfNavigationEmitsFrontendOnlyWhenUTIActive() {
+        // Given - chat with initial context, UTI active. The native offer rides its own
+        // .utiSuggestedContext path, so this signal carries only the frontend bridge.
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateUnifiedToggleInputActive(true)
         sessionState.updateContext(makeTestContext(title: "Page A"))
@@ -1412,11 +1412,10 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         waitForExpectations(timeout: 1.0)
 
-        // Then - nil is a multi-context navigation affordance, not a detach
+        // Then - nil is a multi-context navigation signal, not a detach
         if case .deliverPageContext(let contextData, let targets) = receivedEffect {
             XCTAssertNil(contextData)
-            XCTAssertTrue(targets.contains(.frontendBridge))
-            XCTAssertTrue(targets.contains(.utiAttachAffordance))
+            XCTAssertEqual(targets, .frontendBridge)
             XCTAssertFalse(targets.contains(.utiChip))
         } else {
             XCTFail("Expected deliverPageContext effect with nil")
@@ -2283,6 +2282,93 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         for _ in 0..<20 {
             await Task.yield()
         }
+    }
+
+    // MARK: - Offered page context
+
+    /// Auto-attach off, UTI active, chat under way: the conditions the offer shares with auto-attach.
+    private func arrangeOfferConditions() {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualPagePlaceholder]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.beginChatForUTISubmission()
+    }
+
+    func testWhenTheAutoAttachIsOffThenACollectedPageIsSuggestedRatherThanAttached() {
+        var deliveredTargets: PageContextDeliveryTargets?
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(_, let targets) = effect { deliveredTargets = targets }
+            }
+            .store(in: &cancellables)
+        arrangeOfferConditions()
+
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        XCTAssertEqual(sessionState.suggestedContext?.title, "Tokamak")
+        XCTAssertEqual(deliveredTargets, .utiSuggestedContext)
+        XCTAssertEqual(sessionState.chipState, .placeholder, "An offer is not an attachment")
+    }
+
+    func testWhenTheAutoAttachIsOnThenACollectedPageIsAttached() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.beginChatForUTISubmission()
+
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        XCTAssertNil(sessionState.suggestedContext)
+        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Tokamak")
+        XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
+    }
+
+    func testWhenThereIsNoChatThenNothingIsOffered() {
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.updateUnifiedToggleInputActive(true)
+
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        XCTAssertNil(sessionState.suggestedContext)
+    }
+
+    func testWhenThePageIsAlreadyAttachedThenItIsNotOfferedAgain() {
+        let url = "https://en.wikipedia.org/wiki/Tokamak"
+        arrangeOfferConditions()
+        sessionState.updateContext(makeTestContext(title: "Tokamak", url: url))
+        sessionState.acceptSuggestedContext()
+
+        XCTAssertFalse(sessionState.shouldOfferPageContext(for: URL(string: url)))
+    }
+
+    func testWhenAnOfferIsAcceptedThenItBecomesTheAttachedContext() {
+        arrangeOfferConditions()
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        sessionState.acceptSuggestedContext()
+
+        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Tokamak")
+        XCTAssertNil(sessionState.suggestedContext)
+        XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
+    }
+
+    func testWhenAnOfferIsDismissedThenNothingIsAttachedOrDetached() {
+        arrangeOfferConditions()
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        sessionState.dismissSuggestedContext()
+
+        XCTAssertNil(sessionState.suggestedContext)
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertNil(sessionState.intendedAttachedContext)
+    }
+
+    func testWhenNavigatingThenAPreviousOfferIsDropped() {
+        arrangeOfferConditions()
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        sessionState.notifyPageChanged()
+
+        XCTAssertNil(sessionState.suggestedContext, "The offer belonged to the page we left")
     }
 
     private func makeSuggestedPrompts(ids: [String]) -> [ContextualSuggestedPrompt] {

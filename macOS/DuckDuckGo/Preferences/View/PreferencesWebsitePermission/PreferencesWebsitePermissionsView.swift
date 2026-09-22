@@ -36,19 +36,12 @@ struct PreferencesWebsitePermissionsView: View {
 
     @ObservedObject
     var model: WebsitePermissionsViewModel
-    let onDetailNavigation: () -> Void
-
-    init(model: WebsitePermissionsViewModel, onDetailNavigation: @escaping () -> Void = {}) {
-        self.model = model
-        self.onDetailNavigation = onDetailNavigation
-    }
 
     var body: some View {
         Group {
             if let detailModel = model.viewState.detailModel {
                 PreferencesWebsitePermissionDetailView(model: detailModel) {
                     model.send(action: .closeDetail)
-                    onDetailNavigation()
                 }
             } else {
                 overview
@@ -105,7 +98,6 @@ struct PreferencesWebsitePermissionsView: View {
                     ForEach(Array(model.viewState.rows.enumerated()), id: \.element.id) { index, row in
                         Button {
                             model.send(action: .openDetail(row.category))
-                            onDetailNavigation()
                         } label: {
                             permissionRow(row)
                         }

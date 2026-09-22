@@ -101,7 +101,7 @@ struct NewTabPageCustomizationView: View {
         Section {
             NewTabPageCustomizationRow(title: UserText.newTabPageCustomizationAllSettings,
                                        image: DesignSystemImages.Glyphs.Size24.settings,
-                                       control: .button { model.onAllSettingsSelected?() })
+                                       control: .button { model.selectAllSettings() })
         }
     }
 }

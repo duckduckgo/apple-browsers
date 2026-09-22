@@ -50,6 +50,14 @@ enum Preferences {
     }
 
     struct RootViewV2: View {
+        private struct ScrollViewID: Hashable {
+            enum DetailPane: Hashable {
+                case websitePermission(WebsitePermissionCategory)
+            }
+
+            let pane: PreferencePaneIdentifier
+            let detailPane: DetailPane?
+        }
 
         @ObservedObject var model: PreferencesSidebarModel
         @ObservedObject var themeManager: ThemeManager
@@ -72,6 +80,18 @@ enum Preferences {
         let pinningManager: PinningManager
         private var colorsProvider: ColorsProviding {
             themeManager.theme.colorsProvider
+        }
+
+        private var scrollViewID: ScrollViewID {
+            let detailPane: ScrollViewID.DetailPane?
+            switch model.selectedPane {
+            case .websitePermissions:
+                detailPane = websitePermissionsModel.viewState.detailModel.map { .websitePermission($0.viewState.category) }
+            default:
+                detailPane = nil
+            }
+
+            return ScrollViewID(pane: model.selectedPane, detailPane: detailPane)
         }
 
         init(
@@ -127,6 +147,7 @@ enum Preferences {
                             Spacer()
                         }
                     }
+                    .id(scrollViewID)
                     .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
                     .accessibilityIdentifier("Settings.ScrollView")
                     // `onReceive`, not `onChange`: a deep-linked request lands before this view's first body
@@ -211,7 +232,7 @@ enum Preferences {
                 case .duckPlayer:
                     DuckPlayerView(model: model.duckPlayerPreferences)
                 case .websitePermissions:
-                    PreferencesWebsitePermissionsView(model: websitePermissionsModel, onDetailNavigation: model.scrollToTop)
+                    PreferencesWebsitePermissionsView(model: websitePermissionsModel)
                 case .otherPlatforms:
                     // Opens a new tab
                     Spacer()

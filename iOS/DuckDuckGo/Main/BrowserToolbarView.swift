@@ -877,7 +877,18 @@ final class BrowserToolbarView: UIView {
         updateCornerStyle()
     }
 
+    var usesRedesignedNewTabPageLayout = false {
+        didSet {
+            guard oldValue != usesRedesignedNewTabPageLayout else { return }
+            setNeedsLayout()
+        }
+    }
+
     var floatingBottomMargin: CGFloat {
+        if usesRedesignedNewTabPageLayout, let host = superview, host.bounds.width > host.bounds.height {
+            // The cutout widens the horizontal guide in landscape; it should not lift the toolbar.
+            return Self.floatingEmbeddedBottomMargin
+        }
         if #available(iOS 26.0, *) {
             return usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBottomMargin : floatingHorizontalInset
         }
@@ -911,7 +922,7 @@ final class BrowserToolbarView: UIView {
                 let horizontalInset = Self.floatingPhysicalInset(guideInsets: guideInsets)
                 left = guideInsets.left + Self.embeddedRestStateInnerInset(guideInset: guideInsets.left, physicalInset: horizontalInset)
                 right = guideInsets.right + Self.embeddedRestStateInnerInset(guideInset: guideInsets.right, physicalInset: horizontalInset)
-                bottom = bounds.maxY - horizontalInset
+                bottom = bounds.maxY - floatingBottomMargin
             }
         } else {
             let insets = currentBarOuterInsets
@@ -975,8 +986,7 @@ final class BrowserToolbarView: UIView {
         if #available(iOS 26.0, *), isFloatingStyleEnabled {
             if let host = superview, host.bounds.height > 0 {
                 let guideBottomGap = Self.verticalGuideBottomInset(in: host)
-                let bottomMargin = usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBottomMargin : floatingHorizontalInset
-                target = Self.embeddedRestStateBottomOffset(guideBottomGap: guideBottomGap, physicalInset: bottomMargin)
+                target = Self.embeddedRestStateBottomOffset(guideBottomGap: guideBottomGap, physicalInset: floatingBottomMargin)
             } else {
                 target = 0
             }

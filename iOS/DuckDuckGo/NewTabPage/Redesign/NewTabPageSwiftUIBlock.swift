@@ -1,5 +1,5 @@
 //
-//  SwiftUIBlock.swift
+//  NewTabPageSwiftUIBlock.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -21,15 +21,15 @@ import SwiftUI
 import UIKit
 
 /// A New Tab Page block whose content is a SwiftUI view.
-final class SwiftUIBlock<Content: View>: NewTabPageBlock {
+final class NewTabPageSwiftUIBlock<Content: View>: NewTabPageBlock {
 
-    let id: String
+    let id: NewTabPageBlockID
 
     private let hostingController: UIHostingController<Content>
 
     var viewController: UIViewController { hostingController }
 
-    init(id: String, rootView: Content) {
+    init(id: NewTabPageBlockID, rootView: Content) {
         self.id = id
 
         // The page already positions blocks inside its own safe area, so a hosting controller

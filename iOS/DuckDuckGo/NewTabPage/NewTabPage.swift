@@ -76,6 +76,9 @@ protocol NewTabPage: UIViewController,
 
     var isDragging: Bool { get }
 
+    /// Suppresses the chrome address bar while the page is not editing.
+    var hasInlineSearchInput: Bool { get }
+
     var delegate: NewTabPageControllerDelegate? { get set }
     var chromeDelegate: BrowserChromeDelegate? { get set }
 
@@ -84,4 +87,9 @@ protocol NewTabPage: UIViewController,
     func dismiss()
 
     func widthChanged()
+}
+
+protocol NewTabPageInputTransitionSource: AnyObject {
+    var searchInputView: UIView? { get }
+    func setSearchInputEditing(_ isEditing: Bool)
 }

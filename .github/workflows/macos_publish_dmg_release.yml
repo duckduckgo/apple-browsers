@@ -116,7 +116,7 @@ jobs:
     outputs:
       dmg-url: ${{ steps.set-common-env.outputs.dmg-url }}
 
-    runs-on: bitrise:macos26-m4
+    runs-on: [image:osx-tahoe-26, m4pro]
     timeout-minutes: 10
 
     steps:

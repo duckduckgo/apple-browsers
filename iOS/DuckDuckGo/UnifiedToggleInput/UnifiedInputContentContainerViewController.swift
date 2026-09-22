@@ -106,6 +106,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         didSet {
             guard oldValue != usesRedesignedNewTabPageLayout else { return }
             unifiedSuggestionsHost?.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
+            if isViewLoaded {
+                applyRequestedContentInset()
+            }
         }
     }
 
@@ -378,6 +381,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let rootView = FocusedChromeView(
             hatchModel: hatchModel,
             syncPromo: promo,
+            usesRaisedEscapeHatch: usesRedesignedNewTabPageLayout,
             topInset: chromeTopInsetForPosition,
             onHeightChange: { [weak self] height in
                 guard let self, self.chromeMeasuredHeight != height else { return }
@@ -445,7 +449,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         if isSyncPromoCardVisible {
             return chromeMeasuredHeight
         } else if shouldShowPinnedHatch {
-            return chromeTopInsetForPosition + TabSwitcherPill.compactSize + FocusedChromeView.Metrics.bottomInset
+            let cardPadding = usesRedesignedNewTabPageLayout ? FocusedChromeView.Metrics.raisedHatchPadding * 2 : 0
+            return chromeTopInsetForPosition + TabSwitcherPill.compactSize + cardPadding + FocusedChromeView.Metrics.bottomInset
         } else {
             return 0
         }

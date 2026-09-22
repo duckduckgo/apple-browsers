@@ -43,6 +43,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
 
     private let blocks: [any NewTabPageBlock]
     private let favoritesModel: FavoritesViewModel?
+    private let pageModel: NewTabPageViewModel?
+    private let messagesModel: NewTabPageMessagesModel?
     private var areFavoritesHidden = false
     private var isEntranceAnimationPending = false
     private var entranceAnimator: UIViewPropertyAnimator?
@@ -74,9 +76,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         return button
     }()
 
-    init(blocks: [any NewTabPageBlock], favoritesModel: FavoritesViewModel? = nil) {
+    init(blocks: [any NewTabPageBlock],
+         favoritesModel: FavoritesViewModel? = nil,
+         pageModel: NewTabPageViewModel? = nil,
+         messagesModel: NewTabPageMessagesModel? = nil) {
         self.blocks = blocks
         self.favoritesModel = favoritesModel
+        self.pageModel = pageModel
+        self.messagesModel = messagesModel
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -91,6 +98,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         view.backgroundColor = UIColor(designSystemColor: .background)
         addSubviews()
         installBlocks()
+        // Load once per page, after the caller has supplied the initial escape-hatch context.
+        messagesModel?.load()
     }
 
     @objc private func customizeButtonTapped() {
@@ -251,8 +260,13 @@ extension RedesignedNewTabPageViewController: NewTabPageChromeAdapting {
 
 extension RedesignedNewTabPageViewController: NewTabPageEscapeHatchPresenting {
 
-    /// The escape hatch will arrive as a block.
-    func setEscapeHatch(_ model: EscapeHatchModel?) {}
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
+        pageModel?.escapeHatch = model
+        pageModel?.openedAfterIdle = model != nil
+        if isViewLoaded {
+            messagesModel?.refresh()
+        }
+    }
 }
 
 /// Contextual dialogs are not hosted on this page yet.

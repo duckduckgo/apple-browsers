@@ -23,7 +23,6 @@ import Combine
 import Common
 import ConcurrencyExtensions
 import FoundationExtensions
-import PixelKit
 import os.log
 
 protocol BookmarkManager: AnyObject {
@@ -96,18 +95,11 @@ final class LocalBookmarkManager: BookmarkManager {
         bookmarkStore: BookmarkStore,
         foldersStore: BookmarkFoldersStore = UserDefaultsBookmarkFoldersStore(),
         sortRepository: SortBookmarksRepository = SortBookmarksUserDefaults(),
-        appearancePreferences: AppearancePreferences,
-        pixelFiring: PixelFiring? = PixelKit.shared,
-        bookmarksCountPixelScheduler: @escaping (@escaping () -> Void) -> Void = { firePixel in
-            let randomDelay = Double.random(in: 0.5...5)
-            DispatchQueue.global().asyncAfter(deadline: .now() + randomDelay, execute: firePixel)
-        }
+        appearancePreferences: AppearancePreferences
     ) {
         self.foldersStore = foldersStore
         self.bookmarkStore = bookmarkStore
         self.sortRepository = sortRepository
-        self.pixelFiring = pixelFiring
-        self.bookmarksCountPixelScheduler = bookmarksCountPixelScheduler
 
         subscribeToFavoritesDisplayMode(with: appearancePreferences)
         sortMode = sortRepository.storedSortMode
@@ -138,8 +130,6 @@ final class LocalBookmarkManager: BookmarkManager {
     private let bookmarkStore: BookmarkStore
     private let sortRepository: SortBookmarksRepository
     private let foldersStore: BookmarkFoldersStore
-    private let pixelFiring: PixelFiring?
-    private let bookmarksCountPixelScheduler: (@escaping () -> Void) -> Void
 
     private var favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.desktop)
     private var favoritesDisplayModeCancellable: AnyCancellable?
@@ -168,19 +158,10 @@ final class LocalBookmarkManager: BookmarkManager {
                         return
                     }
 
-                    let bookmarkList = BookmarkList(entities: bookmarks, topLevelEntities: topLevelEntities, favorites: favorites)
                     self.isLoading = false
-                    self.list = bookmarkList
-                    self.fireBookmarksCountPixel(bookmarksCount: bookmarkList.totalBookmarks)
+                    self.list = BookmarkList(entities: bookmarks, topLevelEntities: topLevelEntities, favorites: favorites)
                 }
             }
-        }
-    }
-
-    private func fireBookmarksCountPixel(bookmarksCount: Int) {
-        let pixel = BookmarksPixel.count(.init(bookmarksCount))
-        bookmarksCountPixelScheduler { [pixelFiring = pixelFiring] in
-            pixelFiring?.fire(pixel, frequency: .daily)
         }
     }
 

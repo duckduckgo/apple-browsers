@@ -330,6 +330,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218266695612921?focus=true
     case contextualPagePlaceholder
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218741887104023?focus=true
+    case contextualActiveChatSuggestions
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212388316840466?focus=true
     case showWhatsNewPromptOnDemand
 
@@ -824,6 +827,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.contextualSuggestedPrompts))
         case .contextualPagePlaceholder:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualPagePlaceholder))
+        case .contextualActiveChatSuggestions:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.contextualActiveChatSuggestions))
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .updatedModelPicker:

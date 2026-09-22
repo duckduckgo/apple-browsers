@@ -161,16 +161,6 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         return recognizer
     }()
 
-    /// Spans the full width, so it must not swallow taps in the gaps around the chips — those belong
-    /// to the dim behind it.
-    private final class ChipHitTestingView: UIView {
-        var containsChip: ((CGPoint) -> Bool)?
-
-        override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-            containsChip?(point) ?? false
-        }
-    }
-
     private lazy var chipsContainerView: ChipHitTestingView = {
         let view = ChipHitTestingView()
         view.backgroundColor = .clear
@@ -575,5 +565,14 @@ extension AIChatContextualFloatingInputViewController: UIGestureRecognizerDelega
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         true
+    }
+}
+
+/// A container that only claims touches landing on a chip, so taps in the gaps pass through.
+final class ChipHitTestingView: UIView {
+    var containsChip: ((CGPoint) -> Bool)?
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        containsChip?(point) ?? false
     }
 }

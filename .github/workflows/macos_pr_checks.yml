@@ -257,6 +257,8 @@ jobs:
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
+      with:
+        xcode-version: "27.0"
 
     - name: Restore Xcode Compilation Cache
       if: runner.environment != 'self-hosted'
@@ -623,6 +625,8 @@ jobs:
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
+      with:
+        xcode-version: "27.0"
 
     - name: Restore Xcode Compilation Cache
       if: runner.environment != 'self-hosted'

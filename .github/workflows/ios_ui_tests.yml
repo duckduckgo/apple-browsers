@@ -55,12 +55,14 @@ jobs:
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
+      with:
+        xcode-version: "27.0"
 
     - name: Select iOS Simulator
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.5"
+        preferred-versions: "27.0"
 
     - name: Run UI test
       run: |

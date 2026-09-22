@@ -115,7 +115,7 @@ public typealias GeolocationPermissionState = SitePermissionQueryState
 /// attribution fields and the ability to evaluate a callback in the exact requesting frame.
 public struct GeolocationFrame {
 
-    private let frameInfo: WKFrameInfo
+    fileprivate let frameInfo: WKFrameInfo
 
     public let securityOrigin: WKSecurityOrigin
     public let isMainFrame: Bool
@@ -169,8 +169,9 @@ public protocol GeolocationUserScriptDelegate: AnyObject {
                                didCancelPermissionStatusWithID statusID: String)
 }
 
-/// Routes authenticated page requests and frame-specific callbacks; the delegate owns
-/// permission decisions, location acquisition, and cancellation of its pending work.
+/// Routes page requests after checking policy in an isolated content world. Install
+/// `policyScript` before this adapter. The delegate owns site and system permissions,
+/// location acquisition, and cancellation of its pending work.
 public final class GeolocationUserScript: NSObject, UserScript {
 
     private enum MessageName {
@@ -189,6 +190,9 @@ public final class GeolocationUserScript: NSObject, UserScript {
     public static var bundle: Bundle { .module }
 
     static let capabilityToken = UUID().uuidString + UUID().uuidString
+
+    /// Install before this page-world adapter in every frame of the same web view.
+    public let policyScript = GeolocationPolicyUserScript()
 
     private let installImmediately: Bool
 
@@ -218,6 +222,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
     @MainActor private var watchRegistry = GeolocationWatchRegistry()
     @MainActor private var permissionStatusRegistry = GeolocationWatchRegistry()
     @MainActor private var frameRegistrations = GeolocationFrameRegistrationStore()
+    @MainActor private var lifecycleGeneration: UInt64 = 0
 
     @MainActor
     /// - Parameter installImmediately: Hardens the page API synchronously at document start. Use only when the
@@ -247,11 +252,11 @@ public final class GeolocationUserScript: NSObject, UserScript {
         }
 
         if kind == .registerFrame {
-            return (handleFrameRegistration(body: body, frame: frame, webView: message.webView), nil)
+            return (await handleFrameRegistration(body: body, frame: frame, webView: message.webView), nil)
         }
 
-        // Recheck activation for every request. Use the registered constraints so
-        // later messages cannot replace their original sandbox or policy verdict.
+        // Only the isolated world supplies policy. Page messages cannot replace
+        // a registered document's identity or its sandbox verdict.
         guard activationHandler?(frame) == true,
               let nonce = body["nonce"] as? String,
               Self.isValidNonce(nonce),
@@ -264,20 +269,36 @@ public final class GeolocationUserScript: NSObject, UserScript {
             return (Self.errorPayload(.permissionDenied, message: "Unregistered geolocation frame"), nil)
         }
 
+        let generation = lifecycleGeneration
+        guard let policy = await documentPolicy(in: frame, webView: webView),
+              policy.documentID == registration.documentID,
+              body["documentID"] as? String == registration.pageDocumentID,
+              await isCurrentDocument(registration.pageDocumentID, in: frame, webView: webView),
+              generation == lifecycleGeneration,
+              activationHandler?(frame) == true else {
+            return (Self.errorPayload(.permissionDenied, message: "Geolocation document is no longer active"), nil)
+        }
+        guard kind == .clearWatch || policy.constraints.allowsRequest else {
+            if kind == .queryPermission {
+                return (Self.permissionPayload(.denied), nil)
+            }
+            return (Self.errorPayload(.permissionDenied, message: "Geolocation is not allowed in this context"), nil)
+        }
+
         switch kind {
         case .getCurrentPosition:
-            return (await handlePositionRequest(body: body, frame: frame, constraints: registration.constraints), nil)
+            return (await handlePositionRequest(body: body, frame: frame, constraints: policy.constraints), nil)
         case .queryPermission:
             return (handlePermissionQuery(body: body,
                                           frame: frame,
                                           nonce: nonce,
-                                          constraints: registration.constraints,
+                                          constraints: policy.constraints,
                                           webView: webView), nil)
         case .startWatch:
             return (handleWatchStart(body: body,
                                      frame: frame,
                                      nonce: nonce,
-                                     constraints: registration.constraints,
+                                     constraints: policy.constraints,
                                      webView: webView), nil)
         case .clearWatch:
             return (handleWatchCancellation(body: body, nonce: nonce), nil)
@@ -291,6 +312,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
     /// separately cancel pending one-shot work.
     @MainActor
     public func cancelAllWatches() {
+        lifecycleGeneration &+= 1
         let requestIDs = watchRegistry.removeAll()
         let statusIDs = permissionStatusRegistry.removeAll()
         frameRegistrations.removeAll()
@@ -391,22 +413,57 @@ public final class GeolocationUserScript: NSObject, UserScript {
     }
 
     @MainActor
-    private func handleFrameRegistration(body: [String: Any], frame: GeolocationFrame, webView: WKWebView?) -> [String: Any] {
+    private func handleFrameRegistration(body: [String: Any], frame: GeolocationFrame, webView: WKWebView?) async -> [String: Any] {
         guard let nonce = body["nonce"] as? String,
-              Self.isValidNonce(nonce) else {
-            return Self.errorPayload(.permissionDenied, message: "Invalid geolocation frame nonce")
+              Self.isValidNonce(nonce),
+              let pageDocumentID = body["documentID"] as? String,
+              Self.isValidNonce(pageDocumentID) else {
+            return Self.errorPayload(.permissionDenied, message: "Invalid geolocation document identity")
         }
         guard activationHandler?(frame) == true else {
             return ["status": "registered", "enabled": false]
         }
+        let generation = lifecycleGeneration
         guard let webView,
+              frame.isAssociated(with: webView),
+              let policy = await documentPolicy(in: frame, webView: webView),
+              await isCurrentDocument(pageDocumentID, in: frame, webView: webView),
+              generation == lifecycleGeneration,
+              activationHandler?(frame) == true,
               frame.isAssociated(with: webView),
               frameRegistrations.register(nonce: nonce,
                                           frame: GeolocationNativeFrameIdentity(frame: frame, webView: webView),
-                                          constraints: Self.constraints(from: body)) else {
+                                          documentID: policy.documentID,
+                                          pageDocumentID: pageDocumentID,
+                                          constraints: policy.constraints) else {
             return Self.errorPayload(.permissionDenied, message: "Unable to register geolocation frame")
         }
-        return ["status": "registered", "enabled": true]
+        return ["status": "registered", "enabled": true, "constraints": [
+            "isSecureContext": policy.constraints.isSecureContext,
+            "isSandboxed": policy.constraints.isSandboxed,
+            "isPolicyAllowed": policy.constraints.isPolicyAllowed
+        ]]
+    }
+
+    @MainActor
+    private func documentPolicy(in frame: GeolocationFrame,
+                                webView: WKWebView) async -> (documentID: String, constraints: GeolocationRequestConstraints)? {
+        guard let value = try? await webView.callAsyncJavaScript(
+            "return await globalThis.__ddgSitePermissionsGeolocationPolicy?.getConstraints();",
+            arguments: [:], in: frame.frameInfo, contentWorld: .defaultClient),
+              let policy = value as? [String: Any],
+              let documentID = policy["documentID"] as? String,
+              Self.isValidNonce(documentID) else { return nil }
+        return (documentID, Self.constraints(from: policy))
+    }
+
+    @MainActor
+    private func isCurrentDocument(_ documentID: String, in frame: GeolocationFrame, webView: WKWebView) async -> Bool {
+        await withCheckedContinuation { continuation in
+            webView.evaluateJavaScript("globalThis.__ddgSitePermissionsGeolocationDocumentID", in: frame.frameInfo, in: .page) { result in
+                continuation.resume(returning: (try? result.get()) as? String == documentID)
+            }
+        }
     }
 
     @MainActor
@@ -631,6 +688,8 @@ final class GeolocationFrameRegistrationStore {
     struct Registration: Equatable {
         let nonce: String
         let frame: GeolocationNativeFrameIdentity
+        let documentID: String
+        let pageDocumentID: String
         let constraints: GeolocationRequestConstraints
     }
 
@@ -640,12 +699,15 @@ final class GeolocationFrameRegistrationStore {
 
     func register(nonce: String,
                   frame: GeolocationNativeFrameIdentity,
+                  documentID: String,
+                  pageDocumentID: String,
                   constraints: GeolocationRequestConstraints) -> Bool {
         // Repeated requests may reuse registration, but cannot overwrite its constraints.
         if let registration = registrations[nonce] {
-            return registration.frame == frame
+            return registration.frame == frame && registration.documentID == documentID && registration.pageDocumentID == pageDocumentID
         }
-        registrations[nonce] = Registration(nonce: nonce, frame: frame, constraints: constraints)
+        registrations[nonce] = Registration(nonce: nonce, frame: frame, documentID: documentID,
+                                            pageDocumentID: pageDocumentID, constraints: constraints)
         return true
     }
 

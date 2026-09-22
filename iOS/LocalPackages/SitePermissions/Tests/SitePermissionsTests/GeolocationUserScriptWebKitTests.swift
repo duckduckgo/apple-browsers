@@ -68,6 +68,61 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         XCTAssertEqual(state["installedBeforePageScript"] as? Bool, true)
     }
 
+    func testPolicyStateLivesInIsolatedWorldWhilePageRequestsStillWork() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
+        defer { server.stop() }
+        try await harness.load(try XCTUnwrap(server.url))
+
+        let pageState = try await javaScriptDictionary(in: harness.webView, body: """
+        globalThis.pageOnlySentinel = "page";
+        return {
+            hasPolicyState: globalThis.__ddgSitePermissionsGeolocationPolicy !== undefined,
+            hasPageShim: globalThis.__ddgSitePermissionsGeolocation !== undefined
+        };
+        """)
+        let isolatedState = try await harness.webView.callAsyncJavaScript("""
+        return {
+            hasPageSentinel: globalThis.pageOnlySentinel !== undefined,
+            hasPolicyState: typeof globalThis.__ddgSitePermissionsGeolocationPolicy?.getConstraints === "function"
+        };
+        """, arguments: [:], in: nil, contentWorld: .defaultClient)
+        let isolated = try XCTUnwrap(isolatedState as? [String: Any])
+
+        XCTAssertEqual(pageState["hasPolicyState"] as? Bool, false)
+        XCTAssertEqual(pageState["hasPageShim"] as? Bool, true)
+        XCTAssertEqual(isolated["hasPageSentinel"] as? Bool, false)
+        XCTAssertEqual(isolated["hasPolicyState"] as? Bool, true)
+        assertAllowed(try await exerciseGeolocation(in: harness.webView))
+        XCTAssertEqual(delegate.positionRequestCount, 1)
+        XCTAssertEqual(delegate.permissionQueryCount, 1)
+    }
+
+    func testMissingIsolatedPolicyScriptDeniesRequestWatchAndQuery() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript, includePolicyScript: false)
+        let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
+        defer { server.stop() }
+        try await harness.load(try XCTUnwrap(server.url))
+
+        assertDenied(try await exerciseGeolocation(in: harness.webView))
+        let watch = try await javaScriptDictionary(in: harness.webView, body: """
+        return await new Promise((resolve) => navigator.geolocation.watchPosition(
+            () => resolve({ code: 0 }),
+            (error) => resolve({ code: error.code })
+        ));
+        """)
+        XCTAssertEqual(watch["code"] as? Int, GeolocationPositionError.Code.permissionDenied.rawValue)
+        XCTAssertEqual(delegate.positionRequestCount, 0)
+        XCTAssertEqual(delegate.permissionQueryCount, 0)
+        XCTAssertTrue(delegate.watchIDs.isEmpty)
+    }
+
     func testDeletionAndDirectPrototypeCallsCannotRecoverNativeAPI() async throws {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
@@ -191,6 +246,24 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         XCTAssertEqual(delegate.permissionQueryCount, 1)
     }
 
+    func testSameOriginIframeWorksWithApplicationPromiseSubclass() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let frameHTML = frameExerciseHTML.replacingOccurrences(of: "<head>", with: """
+        <head><script>globalThis.Promise = class ApplicationPromise extends Promise {};</script>
+        """)
+        let server = try await WebKitLoopbackHTTPServer.start(html: frameHostHTML(source: "/frame"), frameHTML: frameHTML)
+        defer { server.stop() }
+        try await harness.load(try XCTUnwrap(server.url))
+        try await waitUntil(in: harness.webView, expression: "window.frameResult !== undefined")
+
+        assertAllowed(try await javaScriptDictionary(in: harness.webView, body: "return window.frameResult;"))
+        XCTAssertEqual(delegate.positionRequestCount, 1)
+        XCTAssertEqual(delegate.permissionQueryCount, 1)
+    }
+
     func testSameSiteCrossOriginIframeRequestAndQueryFailClosed() async throws {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
@@ -308,7 +381,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let state = try await javaScriptDictionary(in: harness.webView, body: "return window.frameResult;")
 
         XCTAssertEqual(state["status"] as? String, "error", "Page state: \(state)")
-        XCTAssertEqual(state["forgedSandboxVerdict"] as? Bool, true)
+        XCTAssertEqual(state["forgedSandboxVerdict"] as? Bool, false, "Isolated sandbox verdicts must never reach page Promise hooks")
         XCTAssertEqual(delegate.positionRequestCount, 0)
     }
 
@@ -773,13 +846,24 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         """
     }
 
-    private func makeHarness(script: GeolocationUserScript, precedingScript: String? = nil) -> WebKitTestHarness {
+    private func makeHarness(script: GeolocationUserScript,
+                             precedingScript: String? = nil,
+                             includePolicyScript: Bool = true) -> WebKitTestHarness {
         let configuration = WKWebViewConfiguration()
         if let precedingScript {
-            configuration.userContentController.addUserScript(WKUserScript(source: precedingScript,
-                                                                            injectionTime: .atDocumentStart,
-                                                                            forMainFrameOnly: false,
-                                                                            in: .page))
+            for world in [WKContentWorld.page, .defaultClient] {
+                configuration.userContentController.addUserScript(WKUserScript(source: precedingScript,
+                                                                                injectionTime: .atDocumentStart,
+                                                                                forMainFrameOnly: false,
+                                                                                in: world))
+            }
+        }
+        if includePolicyScript {
+            let policyScript = script.policyScript
+            configuration.userContentController.addUserScript(WKUserScript(source: policyScript.source,
+                                                                            injectionTime: policyScript.injectionTime,
+                                                                            forMainFrameOnly: policyScript.forMainFrameOnly,
+                                                                            in: .defaultClient))
         }
         configuration.userContentController.addUserScript(WKUserScript(source: script.source,
                                                                         injectionTime: script.injectionTime,

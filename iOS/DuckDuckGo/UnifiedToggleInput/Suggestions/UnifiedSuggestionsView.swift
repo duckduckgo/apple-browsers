@@ -26,6 +26,7 @@ struct UnifiedSuggestionsView: View {
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
     let favoritesPresentation: FocusedFavoritesPresentation
+    var showsRedesignedSearchModules = false
 
     var body: some View {
         // The chrome (escape hatch + sync-promo) is pinned to the bar by the container (it rides the
@@ -68,11 +69,20 @@ struct UnifiedSuggestionsView: View {
         // Favorites renders on top; the list is hidden + non-interactive beneath it.
         ZStack {
             listLayer
-            SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: isShowingFavorites)
+            SuggestionsFavoritesView(presentation: favoritesPresentation,
+                                     isVisible: isShowingFavorites && !showsRedesignedSearchModules)
+            if showsRedesignedSearchModules {
+                RedesignedFocusedSearchModulesView(favoritesModel: favoritesPresentation.viewController?.favoritesModel)
+                    // A mode switch must remove the Search modules immediately; the default
+                    // insertion/removal fade otherwise leaves them underneath the Duck.ai logo.
+                    .transition(.identity)
+                    .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
+            }
         }
     }
 
     private var isShowingList: Bool {
+        guard !showsRedesignedSearchModules else { return false }
         if case .list = viewModel.content { return true }
         return false
     }
@@ -97,6 +107,7 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var isShowingLogo: Bool {
+        guard !showsRedesignedSearchModules else { return false }
         if case .logo = viewModel.content { return true }
         return false
     }

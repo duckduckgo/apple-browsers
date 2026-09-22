@@ -36,5 +36,9 @@ final class NewTabPageSwiftUIBlock<Content: View>: NewTabPageBlock {
         // applying the safe area again would inset the block a second time.
         hostingController = UIHostingController(rootView: rootView, ignoreSafeArea: true)
         hostingController.view.backgroundColor = .clear
+        if #available(iOS 16.0, *) {
+            // The UIKit stack must resize when SwiftUI content changes, including See All/See Less.
+            hostingController.sizingOptions = [.intrinsicContentSize]
+        }
     }
 }

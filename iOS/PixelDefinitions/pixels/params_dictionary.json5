@@ -492,41 +492,36 @@
     "eventHubAttributionPeriod": {
         "key": "attributionPeriod",
         "type": "integer",
-        "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+        "description": "Unix timestamp (UTC seconds) denoting the start of the measurement period"
     },
     "eventHubBucketedCount": {
         "key": "count",
         "type": "string",
-        "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
-        "pattern": "^\\d+(-\\d+|\\+)?$"
-    },
-    "eventHubDetectionCount": {
-        "key": "count",
-        "type": "string",
-        "description": "Bucketed detection count for the period (e.g. \"0\", \"1+\")",
+        "description": "Bucketed count for the period. Bucket boundaries are set by the eventHub remote config",
         "pattern": "^\\d+(-\\d+|\\+)?$"
     },
     "eventHubLoginState": {
         "key": "loginState",
         "type": "string",
-        "description": "User's YouTube login state at detection time, as percent-encoded JSON (e.g. %22logged-in%22)"
+        "description": "The user's YouTube login state, as percent-encoded JSON, recorded as the last value seen during the period",
+        "enum": ["%22unknown%22", "%22logged-in%22", "%22logged-out%22", "%22premium%22"]
     },
     "eventHubBaseline": {
         "key": "baseline",
         "type": "string",
-        "description": "Bucketed count for the period (\"0+\")",
+        "description": "Bucketed count of periods in which EventHub ran. Bucket boundaries are set by the eventHub remote config",
         "pattern": "^\\d+(-\\d+|\\+)?$"
     },
     "eventHubAdwallCount": {
         "key": "adwallCount",
         "type": "string",
-        "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+        "description": "Bucketed adwall detection count for the period. Bucket boundaries are set by the eventHub remote config",
         "pattern": "^\\d+(-\\d+|\\+)?$"
     },
     "eventHubAdmiralAdwallCount": {
         "key": "admiralAdwallCount",
         "type": "string",
-        "description": "Bucketed count for the period (\"0\", \"1\", \"2-3\", \"4-7\", \"8-14\", \"15-20\", \"21-39\", \"40+\")",
+        "description": "Bucketed Admiral-served adwall detection count for the period. Bucket boundaries are set by the eventHub remote config",
         "pattern": "^\\d+(-\\d+|\\+)?$"
     }
 }

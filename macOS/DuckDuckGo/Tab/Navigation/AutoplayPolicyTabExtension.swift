@@ -19,7 +19,7 @@
 import Combine
 import Foundation
 import FeatureFlags_macOS
-import Navigation
+import DDGNavigation
 import PrivacyConfig
 import UserScript
 import WebKit

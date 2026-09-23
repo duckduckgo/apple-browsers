@@ -23,7 +23,7 @@ import ConcurrencyExtensions
 import ContentBlocking
 import FeatureFlags_macOS
 import FoundationExtensions
-import Navigation
+import DDGNavigation
 import OSLog
 import PrivacyConfig
 import TrackerRadarKit

@@ -22,7 +22,7 @@ import Common
 import FoundationExtensions
 import FeatureFlags_macOS
 import Foundation
-import Navigation
+import DDGNavigation
 import Persistence
 import PixelKit
 import WideEvent

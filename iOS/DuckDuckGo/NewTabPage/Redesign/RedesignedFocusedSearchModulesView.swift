@@ -36,5 +36,17 @@ struct RedesignedFocusedSearchModulesView: View {
             .padding(.bottom, 16)
         }
         .background(Color(designSystemColor: .background))
+        .scrollDismissesKeyboardIfAvailable()
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func scrollDismissesKeyboardIfAvailable() -> some View {
+        if #available(iOS 16, *) {
+            scrollDismissesKeyboard(.immediately)
+        } else {
+            self
+        }
     }
 }

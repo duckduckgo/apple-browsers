@@ -923,7 +923,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
             let site = try XCTUnwrap(SitePermissionKey(committedURL: committedURL))
             store.setPersistentDecision(.allow, for: .location, at: site)
-            let locationManager = Phase5MockLocationManager()
+            let locationManager = MockLocationManager()
             let systemPermissionClient = SystemPermissionClient(
                 locationManager: locationManager,
                 locationServicesEnabled: { true },
@@ -1004,7 +1004,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
         let site = try XCTUnwrap(SitePermissionKey(committedURL: committedURL))
         store.setPersistentDecision(.allow, for: .location, at: site)
-        let locationManager = Phase5MockLocationManager()
+        let locationManager = MockLocationManager()
         let systemPermissionClient = SystemPermissionClient(
             locationManager: locationManager,
             locationServicesEnabled: { true },
@@ -1060,7 +1060,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
     func testGeolocationProviderRoutesThroughCoordinatorReturnsLocationAndFiresFlowPixels() async throws {
         for isMainFrame in [true, false] {
-            let locationManager = Phase5MockLocationManager()
+            let locationManager = MockLocationManager()
             let systemPermissionClient = SystemPermissionClient(
                 locationManager: locationManager,
                 locationServicesEnabled: { true },
@@ -1141,7 +1141,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let site = try XCTUnwrap(SitePermissionKey(committedURL: committedURL))
         let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
         store.setPersistentDecision(.allow, for: .location, at: site)
-        let locationManager = Phase5MockLocationManager()
+        let locationManager = MockLocationManager()
         let systemPermissionClient = SystemPermissionClient(
             locationManager: locationManager,
             locationServicesEnabled: { true },
@@ -1186,7 +1186,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
     func testFlagOffPreservesPendingGeolocationPromptAndItsCompletion() async throws {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let locationManager = Phase5MockLocationManager()
+        let locationManager = MockLocationManager()
         let systemPermissionClient = SystemPermissionClient(
             locationManager: locationManager,
             locationServicesEnabled: { true },
@@ -1285,7 +1285,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     }
 
     func testPreparingForDataClearingCancelsActiveGeolocationRequest() async throws {
-        let locationManager = Phase5MockLocationManager()
+        let locationManager = MockLocationManager()
         let systemPermissionClient = SystemPermissionClient(
             locationManager: locationManager,
             locationServicesEnabled: { true },
@@ -1329,7 +1329,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         }
 
         for pageChange in PageChange.allCases {
-            let locationManager = Phase5MockLocationManager()
+            let locationManager = MockLocationManager()
             let systemPermissionClient = SystemPermissionClient(
                 locationManager: locationManager,
                 locationServicesEnabled: { true },
@@ -1389,7 +1389,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         }
 
         for isVisible in [true, false] {
-            let locationManager = Phase5MockLocationManager()
+            let locationManager = MockLocationManager()
             let systemPermissionClient = SystemPermissionClient(
                 locationManager: locationManager,
                 locationServicesEnabled: { true },
@@ -1946,7 +1946,7 @@ private final class SitePermissionURLWebView: WKWebView {
     }
 }
 
-private final class Phase5MockLocationManager: CLLocationManager {
+private final class MockLocationManager: CLLocationManager {
 
     private(set) var startUpdatingCallCount = 0
     private(set) var stopUpdatingCallCount = 0

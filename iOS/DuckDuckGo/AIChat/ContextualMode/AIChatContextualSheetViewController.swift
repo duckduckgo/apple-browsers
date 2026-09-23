@@ -212,6 +212,8 @@ final class AIChatContextualSheetViewController: UIViewController {
         return view
     }()
     private var hasEmbeddedActiveChatSuggestions = false
+    /// The strip only shows while the input is expanded, tracked by keyboard visibility.
+    private var isInputExpanded = false
 
     private var isCurrentlyMediumDetent: Bool {
         sheetPresentationController?.selectedDetentIdentifier == .medium
@@ -1574,7 +1576,7 @@ private extension AIChatContextualSheetViewController {
         if hasSuggestions {
             activeChatSuggestionsController.showStartActions()
         }
-        activeChatSuggestionsContainer.alpha = hasSuggestions ? 1 : 0
+        activeChatSuggestionsContainer.alpha = (hasSuggestions && isInputExpanded) ? 1 : 0
     }
 
     @objc private func handleContentDragToDismissKeyboard(_ gesture: UIPanGestureRecognizer) {
@@ -1647,15 +1649,34 @@ private extension AIChatContextualSheetViewController {
             name: UIResponder.keyboardWillShowNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(sheetKeyboardWillHide),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
     }
 
     func removeKeyboardObserver() {
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
     }
 
     @objc func sheetKeyboardWillShow() {
         if isWebViewVisible && isCurrentlyMediumDetent {
             expandToLargeDetent()
+        }
+        setInputExpanded(true)
+    }
+
+    @objc func sheetKeyboardWillHide() {
+        setInputExpanded(false)
+    }
+
+    private func setInputExpanded(_ expanded: Bool) {
+        isInputExpanded = expanded
+        if hasEmbeddedActiveChatSuggestions {
+            updateActiveChatSuggestions(sessionState.viewState)
         }
     }
 }

@@ -1,5 +1,5 @@
 {
-  "originHash" : "3e82d3d68ab6589a930394c86beb04a5f8e6cb306947d79464117b673cd83559",
+  "originHash" : "fd79daac47ba67db9f47a2dd9d650f6a71f08d8d155843471420917cd55c0db8",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -123,8 +123,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/gumob/PunycodeSwift.git",
       "state" : {
-        "revision" : "30a462bdb4398ea835a3585472229e0d74b36ba5",
-        "version" : "3.0.0"
+        "revision" : "de703481cf48b859a04bac8ef1d98217b9c97aa9",
+        "version" : "4.0.3"
       }
     },
     {

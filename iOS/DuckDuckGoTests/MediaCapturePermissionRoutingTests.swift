@@ -1777,6 +1777,29 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(decisions, [.deny, .grant])
     }
 
+    func testWhenInactiveSiteIsRevokedThenFireSessionOverrideClearsWithoutAffectingCurrentPage() async throws {
+        let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+        let sut = makeSUT(fireTab: true, store: store)
+        let currentSite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
+        let otherSite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://other.example")!))
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.allowOnce) }
+        let initialDecision = await requestPermissionThroughBridge(on: sut, originHost: currentSite.host, captureType: .camera)
+        XCTAssertEqual(initialDecision, .allow)
+        let coordinator = try XCTUnwrap(sut.sitePermissionsState.coordinator)
+        coordinator.applyFireModeManagementDecision(.allow, for: .camera, at: otherSite)
+        coordinator.pageDidChange(.navigation)
+        let currentDecision = await requestPermissionThroughBridge(on: sut, originHost: currentSite.host, captureType: .camera)
+        XCTAssertEqual(currentDecision, .allow)
+
+        store.setPersistentDecision(.deny, for: .camera, at: otherSite)
+        sut.revokeSitePermissions([.camera], for: otherSite)
+
+        XCTAssertEqual(coordinator.managementSnapshot(for: otherSite).storedPermissions[.camera], .deny)
+        XCTAssertEqual(coordinator.managementSnapshot(for: currentSite).ephemeralPermissionTypes, [.camera])
+        XCTAssertTrue(sut.isSitePermissionsManagementAvailable)
+        sut.closeSitePermissions()
+    }
+
     func testWhenPermissionIsRevokedWhilePromptingThenBridgeCompletesWithDenial() async throws {
         let sut = makeSUT()
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
@@ -1931,7 +1954,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     private func makeSUT(featureEnabled: Bool = true,
                          fireTab: Bool = false,
                          featureFlagger providedFeatureFlagger: MockFeatureFlagger? = nil,
-                         fireTab: Bool = false,
                          hasCommittedMainFrame: Bool = true,
                          systemAuthorizationStatus: AVAuthorizationStatus = .authorized,
                          systemPermissionClient: SystemPermissionClient? = nil,

@@ -184,7 +184,8 @@ final class SitePermissionsManagementCoordinatorTests: XCTestCase {
 
             let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
             XCTAssertTrue(snapshot.isFireMode)
-            XCTAssertEqual(snapshot.ephemeralPermissionTypes, [permissionType])
+            XCTAssertEqual(snapshot.storedPermissions[permissionType], .allow)
+            XCTAssertTrue(snapshot.ephemeralPermissionTypes.isEmpty)
             XCTAssertEqual(snapshot.siteAllowedPermissionTypesThisVisit, [permissionType])
             XCTAssertTrue(harness.store.storedSites.isEmpty)
         }
@@ -230,7 +231,7 @@ final class SitePermissionsManagementCoordinatorTests: XCTestCase {
 
                 harness.coordinator.restoreFireModeManagementState(for: removed.permissionTypes, at: harness.site)
 
-                XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).storedPermissions, original)
+                XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).storedPermissions, expected)
                 XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).ephemeralPermissionTypes.isEmpty)
                 XCTAssertEqual(harness.store.permissions(for: harness.site), original)
             }
@@ -284,7 +285,7 @@ final class SitePermissionsManagementCoordinatorTests: XCTestCase {
 
         let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
         XCTAssertEqual(snapshot.storedPermissions[.camera], .allow)
-        XCTAssertEqual(snapshot.ephemeralPermissionTypes, [.camera])
+        XCTAssertTrue(snapshot.ephemeralPermissionTypes.isEmpty)
         var resolutions = [SitePermissionResolution]()
         harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
             XCTFail("The Fire override should allow without prompting")
@@ -358,6 +359,44 @@ final class SitePermissionsManagementCoordinatorTests: XCTestCase {
                 XCTAssertEqual(harness.store.permissions(for: harness.site), [.camera: .allow])
                 XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .prompt)
             }
+        }
+    }
+
+    func testWhenFireSessionAllowIsRemovedAndUndoneThenChoiceReturnsWithoutResumingCapture() throws {
+        for permissionType in SitePermissionType.allCases {
+            let harness = try CoordinatorHarness(isFireMode: true)
+            harness.systemStates[permissionType] = .authorized
+            harness.coordinator.applyFireModeManagementDecision(.allow, for: permissionType, at: harness.site)
+            harness.coordinator.captureDidEnd([permissionType])
+
+            harness.coordinator.removeManagementSessionState(for: [permissionType], at: harness.site)
+
+            XCTAssertFalse(harness.coordinator.managementSnapshot(for: harness.site).showsMenuEntry)
+            XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .prompt)
+
+            harness.coordinator.restoreFireModeManagementState(for: [permissionType], at: harness.site)
+
+            let restored = harness.coordinator.managementSnapshot(for: harness.site)
+            XCTAssertEqual(restored.storedPermissions[permissionType], .allow)
+            XCTAssertTrue(restored.showsMenuEntry)
+            XCTAssertTrue(restored.ephemeralPermissionTypes.isEmpty)
+            XCTAssertEqual(harness.coordinator.captureState(for: permissionType), .inactive)
+            XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .granted)
+            XCTAssertTrue(harness.store.storedSites.isEmpty)
+        }
+    }
+
+    func testWhenFireChoiceIsMadeAfterRemovalThenUndoPreservesNewerSiteRecord() throws {
+        for permissionType in [SitePermissionType.camera, .location] {
+            let harness = try CoordinatorHarness(isFireMode: true)
+            harness.coordinator.applyFireModeManagementDecision(.allow, for: .camera, at: harness.site)
+            harness.coordinator.removeManagementSessionState(for: [.camera], at: harness.site)
+            harness.coordinator.applyFireModeManagementDecision(.deny, for: permissionType, at: harness.site)
+
+            harness.coordinator.restoreFireModeManagementState(for: [.camera], at: harness.site)
+
+            XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).storedPermissions, [permissionType: .deny])
+            XCTAssertTrue(harness.store.storedSites.isEmpty)
         }
     }
 

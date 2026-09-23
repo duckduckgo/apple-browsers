@@ -56,10 +56,12 @@ struct MultiTabAttachmentPage {
         let isLoading: Bool
         let isLoaded: Bool
         let isAttachable: Bool
+        var hasTerminatedProcess = false
     }
 
     let state: () -> State?
     let changes: AnyPublisher<Void, Never>
     let collect: (URL, @escaping @MainActor () -> Bool) async -> MultiTabAttachmentCollectionResult
     var loadIfNeeded: () -> Void = {}
+    var processTerminations: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
 }

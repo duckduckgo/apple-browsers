@@ -778,7 +778,9 @@ class TabViewController: UIViewController {
     private var pageContextNavigationInProgress = false
     private var pageContextInitialRequestPending = false
     private var pageContextRestoredPageNeedsLoad = false
+    private var pageContextProcessTerminated = false
     private let pageContextPageChanges = PassthroughSubject<Void, Never>()
+    private let pageContextProcessTerminations = PassthroughSubject<Void, Never>()
 
     private func makePageContextHandler() -> AIChatPageContextHandler {
         AIChatPageContextHandler(
@@ -799,22 +801,24 @@ class TabViewController: UIViewController {
                          url: webView.url,
                          isLoading: self.pageContextInitialRequestPending || self.pageContextNavigationInProgress || webView.isLoading,
                          isLoaded: self.pageContextLoadedNavigationID == self.pageContextNavigationID,
-                         isAttachable: self.makePageContextHandler().isCurrentPageAttachable())
+                         isAttachable: self.makePageContextHandler().isCurrentPageAttachable(),
+                         hasTerminatedProcess: self.pageContextProcessTerminated)
         }, changes: Publishers.Merge3(urlPublisher.map { _ in () }, pageContextPageChanges,
                                      webView.publisher(for: \.isLoading).map { _ in () }).eraseToAnyPublisher(),
         collect: { [weak self] url, isValid in
             guard let handler = self?.makePageContextHandler() else { return .unavailable }
             return await handler.collectContext(for: url, isValid: isValid)
         }, loadIfNeeded: { [weak self] in
-            self?.loadRestoredPageForTabAttachmentIfNeeded()
-        })
+            self?.loadPageForTabAttachmentIfNeeded()
+        }, processTerminations: pageContextProcessTerminations.eraseToAnyPublisher())
     }
 
-    private func loadRestoredPageForTabAttachmentIfNeeded() {
-        guard pageContextRestoredPageNeedsLoad, !pageContextInitialRequestPending,
+    private func loadPageForTabAttachmentIfNeeded() {
+        guard pageContextRestoredPageNeedsLoad || pageContextProcessTerminated, !pageContextInitialRequestPending,
               !pageContextNavigationInProgress, let webView, !webView.isLoading,
               webView.url != nil, pageContextLoadedNavigationID != pageContextNavigationID else { return }
         pageContextRestoredPageNeedsLoad = false
+        pageContextProcessTerminated = false
         pageContextInitialRequestPending = true
         if webView.reload() == nil {
             pageContextInitialRequestPending = false
@@ -1404,6 +1408,7 @@ class TabViewController: UIViewController {
         pageContextNavigationInProgress = false
         pageContextInitialRequestPending = request != nil
         pageContextRestoredPageNeedsLoad = false
+        pageContextProcessTerminated = false
         let isReplacingWebView = webView != nil
         let mediaCaptureUserScript = makeSitePermissionsMediaCaptureUserScript(replacingWebView: isReplacingWebView)
         let userContentController = UserContentController(
@@ -2699,6 +2704,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        pageContextProcessTerminated = false
         pageContextInitialRequestPending = false
         pageContextRestoredPageNeedsLoad = false
         pageContextNavigationID = UUID()
@@ -4343,6 +4349,15 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        pageContextProcessTerminated = true
+        pageContextLoadedNavigationID = nil
+        pageContextNavigationID = UUID()
+        pageContextInitialRequestPending = false
+        pageContextNavigationInProgress = false
+        pageContextRestoredPageNeedsLoad = false
+        pageContextProcessTerminations.send()
+        pageContextPageChanges.send()
+
         if #available(iOS 18.4, *) {
             webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.webContentProcessTerminated(tabIdentifier: tabModel.uid))
         }

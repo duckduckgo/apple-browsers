@@ -36,12 +36,14 @@ final class MultiTabAttachmentPreparation: TabObserver {
     private var pageReservation: MultiTabAttachmentPage.Reservation?
     private var subscriptions = Set<AnyCancellable>()
     private var pageSubscription: AnyCancellable?
+    private var processTerminationSubscription: AnyCancellable?
     private var page: MultiTabAttachmentPage?
     private var pageIdentity: MultiTabAttachmentPage.Identity?
     private var pageURL: URL?
     private(set) var operationID = UUID()
     private var task: Task<MultiTabAttachmentCollectionResult, Never>?
     private var isCancelled = false
+    private var requiresProcessRecovery = false
 
     init(attachment: UnifiedToggleInputTabAttachment,
          tab: Tab,
@@ -86,6 +88,7 @@ final class MultiTabAttachmentPreparation: TabObserver {
         task = nil
         page = nil
         pageSubscription = nil
+        processTerminationSubscription = nil
         subscriptions.removeAll()
         tab.removeObserver(self)
         pageReservation?.release()
@@ -117,6 +120,9 @@ final class MultiTabAttachmentPreparation: TabObserver {
         }
         let nextPage = source.pageProvider(tab)
         let state = nextPage?.state()
+        if state?.hasTerminatedProcess == true, !requiresProcessRecovery {
+            invalidateTerminatedPage()
+        }
         if let state, !state.isLoading, !state.isAttachable {
             cancel()
             onChange(nil)
@@ -127,6 +133,12 @@ final class MultiTabAttachmentPreparation: TabObserver {
             cancel()
             onChange(nil)
             return
+        }
+        if requiresProcessRecovery, let state, !state.hasTerminatedProcess, isEnabled() {
+            // Ordinary browsing may restore the page before Send. Resume with fresh protection and a new navigation budget.
+            requiresProcessRecovery = false
+            navigationDeadline = now() + navigationTimeout
+            replacePageReservation()
         }
         let updated = UnifiedToggleInputTabAttachment(id: attachment.id, tabId: tab.uid,
                                                        title: link.displayTitle, url: url,
@@ -139,19 +151,53 @@ final class MultiTabAttachmentPreparation: TabObserver {
         guard !samePage || task == nil else { return }
         task?.cancel()
         operationID = UUID()
-        page = nextPage
         pageIdentity = state?.identity
         pageURL = url
+        observePage(nextPage)
+        startCollection()
+    }
+
+    private func observePage(_ nextPage: MultiTabAttachmentPage?) {
+        page = nextPage
         pageSubscription = nextPage?.changes
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.refresh() }
-        startCollection()
+        processTerminationSubscription = nextPage?.processTerminations
+            .sink { [weak self] in self?.invalidateTerminatedPage() }
+    }
+
+    private func invalidateTerminatedPage() {
+        guard !isCancelled else { return }
+        requiresProcessRecovery = true
+        navigationDeadline = nil
+        operationID = UUID()
+        task?.cancel()
+        task = nil
+    }
+
+    private func replacePageReservation() {
+        let previous = pageReservation
+        pageReservation = source.acquirePage(tab)
+        previous?.release()
+    }
+
+    private func recoverPageAtSend() {
+        guard isEnabled(), isSourceValid else { return }
+        requiresProcessRecovery = false
+        navigationDeadline = now() + navigationTimeout
+        replacePageReservation()
+        guard isEnabled(), isSourceValid else { return }
+        task?.cancel()
+        task = nil
+        observePage(source.pageProvider(tab))
+        page?.loadIfNeeded()
+        refresh()
     }
 
     private func isValid(operation: UUID) -> Bool {
         guard operationID == operation, isEnabled(), isSourceValid,
               let expectedURL = pageURL, let state = page?.state(),
-              state.identity == pageIdentity,
+              state.identity == pageIdentity, !state.hasTerminatedProcess,
               state.url?.equals(expectedURL, by: .sameDocument) == true || (state.isLoading && state.url == nil),
               !AIChatTabMetadata.shouldExcludeFromTabPicker(expectedURL) else { return false }
         return state.isLoading || state.isAttachable
@@ -159,7 +205,8 @@ final class MultiTabAttachmentPreparation: TabObserver {
 
     private func startCollection() {
         let operation = operationID
-        guard isEnabled(), isSourceValid, let page else {
+        guard isEnabled(), isSourceValid, !requiresProcessRecovery,
+              let page, page.state()?.hasTerminatedProcess == false else {
             task = Task { .unavailable }
             return
         }
@@ -201,11 +248,16 @@ final class MultiTabAttachmentPreparation: TabObserver {
         }
     }
 
-    /// Tapping send button retries extraction failure once, including failure of an operation it first awaited.
+    /// Extraction failures and process recovery share one retry at Send.
     func value() async -> AIChatPageContextData? {
         var retried = false
         while !Task.isCancelled && !isCancelled && isEnabled() {
             refresh()
+            if requiresProcessRecovery {
+                guard !retried else { return nil }
+                retried = true
+                recoverPageAtSend()
+            }
             let operation = operationID
             let pending = task
             let result: MultiTabAttachmentCollectionResult = await withTaskCancellationHandler(

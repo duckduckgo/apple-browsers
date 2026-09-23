@@ -367,7 +367,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             guard let controller, self?.controller(for: tab) === controller else { return nil }
             return page.state()
         }, changes: page.changes.merge(with: tabAttachmentControllerChanges).eraseToAnyPublisher(),
-        collect: page.collect, loadIfNeeded: page.loadIfNeeded)
+        collect: page.collect, loadIfNeeded: page.loadIfNeeded, processTerminations: page.processTerminations)
     }
 
     @MainActor

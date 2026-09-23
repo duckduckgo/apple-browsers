@@ -59,6 +59,13 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
     }
 
+    public var hasResolvedAppStoreProducts = true {
+        didSet {
+            guard hasResolvedAppStoreProducts != oldValue else { return }
+            hasAppStoreProductsAvailableSubject.send(hasAppStoreProductsAvailable)
+        }
+    }
+
     public var hasAppStoreProductsAvailable: Bool = true {
         didSet {
             self.hasAppStoreProductsAvailableSubject.send(hasAppStoreProductsAvailable)
@@ -148,7 +155,7 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     }
 
     public var confirmPurchaseResponse: Result<DuckDuckGoSubscription, Error>?
-    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription {
+    public func confirmPurchase(signature: String, experimentAttribution: PurchaseExperimentAttribution?) async throws -> DuckDuckGoSubscription {
         switch confirmPurchaseResponse! {
         case .success(let result):
             return result

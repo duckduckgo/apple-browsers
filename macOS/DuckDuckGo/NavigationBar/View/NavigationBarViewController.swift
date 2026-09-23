@@ -2215,6 +2215,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedStartSync(_ menu: NSMenu) {
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": SyncDeviceButtonTouchpoint.moreMenu.rawValue]))
         DeviceSyncCoordinator()?.startDeviceSyncFlow(source: .moreMenu, completion: nil)
     }
 

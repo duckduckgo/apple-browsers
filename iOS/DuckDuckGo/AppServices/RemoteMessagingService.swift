@@ -19,9 +19,11 @@
 
 import Foundation
 import BrowserServicesKit
+import Common
 import Configuration
 import RemoteMessaging
 import Core
+import PixelKit
 import Persistence
 import PrivacyConfig
 import BackgroundTasks
@@ -75,7 +77,12 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
             configurationStore: configurationStore,
             database: database,
             errorEvents: RemoteMessagingStoreErrorHandling(),
-            autoDismissEvents: RemoteMessageAutoDismissEventHandling(),
+            autoDismissEvents: EventMapping<RemoteMessageAutoDismissEvent> { event, _, _, _ in
+                switch event {
+                case .messageAutoDismissed(let messageID):
+                    PixelKit.fire(RemoteMessagePixel.autoDismissed(messageID: messageID))
+                }
+            },
             remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
                 privacyConfigurationManager: privacyConfigurationManager
             ),

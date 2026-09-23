@@ -96,7 +96,7 @@ struct RemoteMessagingDebugRootView: View {
                 } else {
                     ForEach(model.messages, id: \.id) { message in
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("ID: \(message.id) | \(message.shown) | \(message.status) | impressions: \(message.impressionCount)")
+                            Text(verbatim: "ID: \(message.id) | \(message.shown) | \(message.status) | impressions: \(message.impressionCount)")
                                 .font(.system(size: 15))
                             Text(message.json ?? "")
                                 .font(.system(size: 12))

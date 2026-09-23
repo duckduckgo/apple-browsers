@@ -223,7 +223,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
-    private let activeChatSuggestionsScrimHeight: CGFloat = 160
+    private let activeChatSuggestionsScrimHeight: CGFloat = 120
 
     private var isCurrentlyMediumDetent: Bool {
         sheetPresentationController?.selectedDetentIdentifier == .medium
@@ -1753,7 +1753,9 @@ final class VerticalGradientView: UIView {
 
     func setColors(top: UIColor, bottom: UIColor) {
         guard let gradientLayer = layer as? CAGradientLayer else { return }
-        gradientLayer.colors = [top.cgColor, bottom.cgColor]
+        // Top half stays clear; the fade ramps in over the lower half so the opacity hugs the input.
+        gradientLayer.colors = [top.cgColor, top.cgColor, bottom.cgColor]
+        gradientLayer.locations = [0, 0.5, 1]
         gradientLayer.startPoint = CGPoint(x: 0.5, y: 0)
         gradientLayer.endPoint = CGPoint(x: 0.5, y: 1)
     }

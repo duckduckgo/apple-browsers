@@ -603,6 +603,12 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
             navigation.willStart()
         }
 
+        if startedNavigation !== navigation, !navigation.navigationAction.navigationType.isSameDocumentNavigation {
+            // WebKit may retain an interrupted custom-scheme navigation without reporting cancellation.
+            // Complete it before notifying responders that its replacement has started.
+            startedNavigation?.cancelForReplacementIfNeeded()
+        }
+
         navigation.started(wkNavigation)
         self.startedNavigation = navigation
         self.navigationExpectedToStart = nil
@@ -781,6 +787,7 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
     public func webView(_ webView: WKWebView, didFinish wkNavigation: WKNavigation?) {
         let navigation = wkNavigation?.navigation ?? startedNavigation
         guard let navigation,
+              !navigation.wasCancelledForReplacement,
               navigation.identity == wkNavigation.map(NavigationIdentity.init) || wkNavigation == nil
         else {
             Logger.navigation.log("dropping didFinishNavigation: \(wkNavigation?.description ?? "<nil>"), as another navigation is active: \(navigation?.debugDescription ?? "<nil>")")
@@ -825,6 +832,9 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
             Logger.navigation.log("dropping didFail \(isProvisional ? "Provisional" : "") Navigation: \(wkNavigation?.description ?? "<nil>") with: \(error.errorDescription ?? error.localizedDescription), as another navigation is active: \(navigation?.debugDescription ?? "<nil>")")
             return
         }
+
+        // The replacement's didStart callback may have already completed this navigation.
+        guard !navigation.wasCancelledForReplacement else { return }
 
 #if PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED
         updateCurrentHistoryItemIdentity(webView.backForwardList.currentItem)

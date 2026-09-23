@@ -29,6 +29,66 @@ import XCTest
 class NavigationValuesTests: DistributedNavigationDelegateTestsBase {
 
     @MainActor
+    func testWhenUnfinishedNavigationIsReplacedThenItFailsOnlyOnce() {
+        let states: [NavigationState] = [.started, .responseReceived, .redirected(.server)]
+        for state in states {
+            let isCommitted = state == .responseReceived
+            let navigation = Navigation(identity: .expected, responders: ResponderChain(), state: state, isCurrent: true, isCommitted: isCommitted)
+            var failureCodes = [Int]()
+            navigation.appendResponder(navigationDidFail: { navigation, error in
+                XCTAssertFalse(navigation.isCurrent)
+                XCTAssertEqual(navigation.isCommitted, isCommitted)
+                failureCodes.append(error.code.rawValue)
+            })
+
+            navigation.cancelForReplacementIfNeeded()
+            navigation.cancelForReplacementIfNeeded()
+
+            XCTAssertEqual(navigation.state, .failed(WKError(NSURLErrorCancelled)))
+            XCTAssertTrue(navigation.wasCancelledForReplacement)
+            XCTAssertEqual(failureCodes, [NSURLErrorCancelled])
+        }
+    }
+
+    @MainActor
+    func testWhenCancelledNavigationReceivesLateCallbacksThenRespondersAreNotNotifiedAgain() throws {
+        navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
+        let webView = withWebView { $0 }
+        navigationDelegate.webView(webView, didStartProvisionalNavigation: nil)
+        let navigation = try XCTUnwrap(navigationDelegate.currentNavigation)
+        var failureCodes = [Int]()
+        responder(at: 0).onDidFail = { _, error in failureCodes.append(error.code.rawValue) }
+        responder(at: 0).onDidFinish = { _ in XCTFail("Cancelled navigation must not finish") }
+
+        navigation.cancelForReplacementIfNeeded()
+        navigationDelegate.webView(webView, didFailProvisionalNavigation: nil, withError: WKError(NSURLErrorCancelled))
+        navigationDelegate.webView(webView, didFail: nil, withError: WKError(NSURLErrorCancelled))
+        navigationDelegate.webView(webView, didFinish: nil)
+
+        XCTAssertEqual(failureCodes, [NSURLErrorCancelled])
+        XCTAssertEqual(navigation.state, .failed(WKError(NSURLErrorCancelled)))
+    }
+
+    @MainActor
+    func testWhenNavigationDoesNotNeedReplacementCancellationThenItsStateIsPreserved() {
+        let states: [NavigationState] = [
+            .expected(nil), .navigationActionReceived, .approved, .finished, .failed(WKError(.unknown)),
+            .willPerformClientRedirect(delay: 0), .redirected(.client(delay: 0))
+        ]
+        for state in states {
+            let navigation = Navigation(identity: .expected, responders: ResponderChain(), state: state, isCurrent: true)
+            navigation.appendResponder(navigationDidFail: { _, _ in
+                XCTFail("Unexpected replacement cancellation for \(state)")
+            })
+
+            navigation.cancelForReplacementIfNeeded()
+
+            XCTAssertEqual(navigation.state, state)
+            XCTAssertFalse(navigation.wasCancelledForReplacement)
+        }
+    }
+
+    @MainActor
     func testNavigationActionPreferences() {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 

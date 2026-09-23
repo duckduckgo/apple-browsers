@@ -403,7 +403,7 @@ extension UIButton {
         state.permissionMask = mask
         let duration: TimeInterval = 0.2
         let barDuration: TimeInterval = 0.1
-        let barHeadStart: TimeInterval = reduceMotion ? 0 : 0.025
+        let barHeadStart: TimeInterval = reduceMotion ? 0 : 0.001
         setPermissionMenuBars(shortened: true, duration: reduceMotion ? 0 : barDuration)
 
         let hiddenTransform = CGAffineTransform(scaleX: 0.01, y: 0.01)

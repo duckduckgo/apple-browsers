@@ -84,7 +84,15 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
     private let now: @Sendable () -> Date
 
     private let lock = NSLock()
-    private var currentEvent: VPNSessionHealthWideEventData?
+
+    private var currentEventID: String?
+    private var currentEvent: VPNSessionHealthWideEventData? {
+         guard let currentEventID else {
+             return nil
+         }
+
+         return wideEvent.getFlowData(VPNSessionHealthWideEventData.self, globalID: currentEventID)
+     }
 
     public init(wideEvent: WideEventManaging,
                 extensionType: VPNConnectionWideEventData.ExtensionType,
@@ -176,12 +184,12 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
 
     public func tunnelStopped(reason: NEProviderStopReason) {
         Logger.networkProtectionSessionHealth.debug("tunnelStopped: reason=\(reason.rawValue, privacy: .public)")
-        applyTransition { $0.markingStopped(reason.asEventEndReason, at: $1) }
+        terminalTransition(status: .success) { $0.markingStopped(reason.asEventEndReason, at: $1) }
     }
 
     public func tunnelCancelledWithError() {
         Logger.networkProtectionSessionHealth.debug("tunnelCancelledWithError")
-        applyTransition { $0.markingCancelledWithError(at: $1) }
+        terminalTransition(status: .failure) { $0.markingCancelledWithError(at: $1) }
     }
 }
 
@@ -193,7 +201,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
         lock.lock()
         defer { lock.unlock() }
 
-        guard let previous = currentEvent, !previous.hasEnded else {
+        guard let previous = currentEvent else {
             return
         }
 
@@ -201,13 +209,23 @@ private extension DefaultVPNSessionHealthInstrumentation {
         var next = transition(previous, timestamp)
         next.lastObservedAt = timestamp
 
-        if completeEventIfEnded(next) {
-            currentEvent = nil
+        wideEvent.updateFlow(next)
+    }
+
+    func terminalTransition(status: WideEventStatus, _ transition: (VPNSessionHealthWideEventData, Date) -> VPNSessionHealthWideEventData) {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard let previous = currentEvent else {
             return
         }
 
-        currentEvent = next
-        wideEvent.updateFlow(next)
+        let timestamp = now()
+        var next = transition(previous, timestamp)
+        next.lastObservedAt = timestamp
+
+        let status = next.calculateEventOutcome()?.status ?? status
+        completeEvent(event: next, status: status)
     }
 
     func beginEvent(reason: VPNSessionHealthWideEventData.EventStartReason) {
@@ -232,7 +250,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
 private extension DefaultVPNSessionHealthInstrumentation {
 
     func beginEventInLock(_ fresh: VPNSessionHealthWideEventData) {
-        currentEvent = fresh
+        currentEventID = fresh.globalData.id
         wideEvent.startFlow(fresh)
     }
 
@@ -242,8 +260,10 @@ private extension DefaultVPNSessionHealthInstrumentation {
             return
         }
 
-        currentEvent = nil
-        completeEventIfEnded(previous.markingStopped(.restartedWithoutStop, at: now()))
+        let event = previous.markingStopped(.restartedWithoutStop, at: now())
+        let status = event.calculateEventOutcome()?.status ?? .unknown(reason: "unknown")
+
+        completeEvent(event: event, status: status)
     }
 
     func completeOrphanedEvents() {
@@ -253,23 +273,11 @@ private extension DefaultVPNSessionHealthInstrumentation {
         for orphan in orphans {
             Logger.networkProtectionSessionHealth.log("Recovering orphan: \(orphan.globalData.id, privacy: .public)")
 
-            let recovered = orphan.hasEnded ? orphan : orphan.markingOrphanedSessionEnded(at: now())
-            completeEvent(event: recovered, status: recovered.outcome?.status ?? .unknown(reason: "abandoned"))
-        }
-    }
+            let event = orphan.markingOrphanedSessionEnded(at: now())
+            let status = event.calculateEventOutcome()?.status ?? .unknown(reason: "orphan")
 
-    @discardableResult
-    func completeEventIfEnded(_ event: VPNSessionHealthWideEventData) -> Bool {
-        guard isTelemetryEnabled() else {
-            wideEvent.discardFlow(event)
-            return true
+            completeEvent(event: event, status: status)
         }
-
-        guard let status = event.outcome?.status else {
-            return false
-        }
-
-        return completeEvent(event: event, status: status)
     }
 
     @discardableResult

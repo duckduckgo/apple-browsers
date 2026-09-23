@@ -144,7 +144,7 @@ public struct VPNSessionHealthWideEventData: WideEventData {
 
 extension VPNSessionHealthWideEventData {
 
-    public var hasEnded: Bool { endedAt != nil }
+    private var hasEnded: Bool { endedAt != nil }
 
     public var canTrackOutageTime: Bool {
         !isPaused && !hasEnded && connectionMonitorsActive && connectionTestDidReport
@@ -154,7 +154,7 @@ extension VPNSessionHealthWideEventData {
 
     public var connectionTestFailureActive: Bool { activeOutageFailedCheckCount > 0 }
 
-    public var outcome: EventOutcome? {
+    public func calculateEventOutcome() -> EventOutcome? {
         guard hasEnded else {
             return nil
         }
@@ -312,6 +312,7 @@ extension VPNSessionHealthWideEventData {
         case connectionTesterNeverReported = "connection_tester_never_reported"
         case extensionProcessDied = "extension_process_died"
         case osStoppedWithoutNetwork = "os_stopped_without_network"
+        case unknown = "unknown"
     }
 
     public enum MonitoringCoverage: String, Codable, CaseIterable {

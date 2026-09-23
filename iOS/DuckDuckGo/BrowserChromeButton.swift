@@ -364,8 +364,8 @@ extension UIButton {
     }
 
     func animateSitePermissionGranted(_ permissionTypes: [SitePermissionType], reduceMotion: Bool = UIAccessibility.isReduceMotionEnabled) {
-        let state = menuAlertState
-        guard state.permissionBadge == nil, let permissionType = permissionTypes.first else { return }
+        cancelSitePermissionAnimation()
+        guard let permissionType = permissionTypes.first else { return }
         // Account for each glyph's padding and proportions, using location as the visual size reference.
         let (image, badgeSize, horizontalOffset): (UIImage, CGFloat, CGFloat) = switch permissionType {
         case .camera: (DesignSystemImages.Glyphs.Size16.permissionCameraSolid, 15, 8)
@@ -373,6 +373,7 @@ extension UIButton {
         case .location: (DesignSystemImages.Glyphs.Size16.locationSolid, 11, 6.5)
         }
 
+        let state = menuAlertState
         state.cancelAnimation()
         setMenuAlertIconTransform(.identity)
         setMenuAlertImage(DesignSystemImages.Glyphs.Size24.menuHamburger)
@@ -401,10 +402,10 @@ extension UIButton {
         menuImageView.layer.mask = mask
         state.permissionMask = mask
         let duration: TimeInterval = 0.25
-        setPermissionMenuBars(shortened: true, duration: reduceMotion ? 0 : duration)
+        let barDuration: TimeInterval = 0.1
+        setPermissionMenuBars(shortened: true, duration: reduceMotion ? 0 : barDuration)
 
-        // Grow inward from the right edge, keeping clear of the bars as they shorten.
-        let hiddenTransform = CGAffineTransform(translationX: badgeSize / 2, y: 0).scaledBy(x: 0.01, y: 0.01)
+        let hiddenTransform = CGAffineTransform(scaleX: 0.01, y: 0.01)
         badge.alpha = 0
         badge.transform = reduceMotion ? .identity : hiddenTransform
         let entrance = UIViewPropertyAnimator(duration: duration, curve: .easeOut) {
@@ -412,12 +413,14 @@ extension UIButton {
             badge.transform = .identity
         }
         state.permissionAnimator = entrance
-        entrance.startAnimation()
+        // Give the bars a head start so the badge can grow from its center without overlapping them.
+        entrance.startAnimation(afterDelay: reduceMotion ? 0 : 0.05)
 
         let dismissal = DispatchWorkItem { [weak self, weak badge] in
             guard let self, let badge else { return }
             if !reduceMotion {
-                self.setPermissionMenuBars(shortened: false, duration: duration)
+                // Keep the space open until the shrinking badge clears the bars.
+                self.setPermissionMenuBars(shortened: false, duration: barDuration, delay: duration - barDuration)
             }
             let exit = UIViewPropertyAnimator(duration: duration, curve: .easeOut) {
                 badge.alpha = 0
@@ -454,7 +457,7 @@ extension UIButton {
         setMenuAlertDotHidden(!state.isVisible)
     }
 
-    private func setPermissionMenuBars(shortened: Bool, duration: TimeInterval) {
+    private func setPermissionMenuBars(shortened: Bool, duration: TimeInterval, delay: TimeInterval = 0) {
         guard let mask = menuAlertState.permissionMask else { return }
         // Keep the mask clear of the glyph's stroke edges to avoid multiplying their antialiasing.
         func path(shortened: Bool) -> CGPath {
@@ -472,6 +475,8 @@ extension UIButton {
         animation.toValue = newPath
         animation.duration = duration
         animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        animation.beginTime = mask.convertTime(CACurrentMediaTime(), from: nil) + delay
+        animation.fillMode = .backwards
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         mask.path = newPath

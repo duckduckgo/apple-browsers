@@ -19,8 +19,7 @@
 import XCTest
 @testable import Subscription
 import SubscriptionTestingUtilities
-@testable import Networking
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
 
 @available(iOS 15.0, *)
 final class AppStoreRestoreFlowTests: XCTestCase {

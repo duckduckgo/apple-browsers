@@ -121,6 +121,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
     func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData)
+    func resetConversationSourceForNewDocument()
 
     @MainActor func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -203,7 +204,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var isFireWindowProvider: (() -> Bool)?
 
-    /// Surface that opened this chat, consumed once at load and retained for the conversation's pixels.
+    /// Surface that opened this chat, consumed once per document and retained for its pixels.
     private var conversationSource: AIChatConversationSource?
     private var didConsumeConversationSource = false
     private let conversationSourceHandler: AIChatConversationSourceHandler
@@ -278,15 +279,28 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
-        // Consume exactly once, at load, before the user can submit a prompt. Guarded by a flag (not
-        // by `conversationSource == nil`) so a chat that loaded with an empty mailbox can't later
-        // steal a different chat's pending source on a subsequent config fetch.
+        // Consume exactly once per document, at load, before the user can submit a prompt. Guarded by
+        // a flag (not by `conversationSource == nil`) so a chat that loaded with an empty mailbox
+        // can't later steal a different chat's pending source on a subsequent config fetch.
         if !didConsumeConversationSource {
             didConsumeConversationSource = true
-            conversationSource = conversationSourceHandler.consumeData()
+            let url = await message.messageWebView?.url
+            // Only a chat may claim the stamp: duckduckgo.com's other pages fetch this config too, and
+            // the mailbox is app-wide. A nil URL can't be told apart from a chat, so it consumes.
+            if url == nil || url?.isDuckAIURL == true {
+                conversationSource = conversationSourceHandler.consumeData()
+                    ?? (url?.isDuckAIOpenedFromHomepage == true ? .duckduckgoHomepage : nil)
+            }
         }
         let isFireWindow = isFireWindowProvider?() ?? false
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+    }
+
+    /// A committed document is a new conversation as far as attribution goes — a tab reused for a
+    /// second chat must not keep the first one's source.
+    func resetConversationSourceForNewDocument() {
+        didConsumeConversationSource = false
+        conversationSource = nil
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -562,6 +576,21 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     static func extractPageContext(from tab: Tab,
                                    timeout: TimeInterval = 5,
                                    featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) async -> AIChatPageContextData? {
+        // A local (file://) page is never attachable: hand back a non-attachable context rather
+        // than nil, which callers would treat as "nothing to attach" or fall through to a collect.
+        if case .url(let url, _, _) = tab.content, url.isFileURL {
+            return AIChatPageContextData(
+                title: tab.title ?? "",
+                favicon: [],
+                url: url.absoluteString,
+                content: "",
+                truncated: false,
+                fullContentLength: 0,
+                attachable: false,
+                mimeType: await tab.webView.mimeType ?? AIChatPageContextData.htmlMIMEType
+            )
+        }
+
         // A document tab (PDF) is handed over as bytes — the user script can't read it, so this
         // bypasses collection entirely. Covers both consumers: the sidebar's `@` picker
         // (`getAIChatTabContent`) and the omnibar's submit path.

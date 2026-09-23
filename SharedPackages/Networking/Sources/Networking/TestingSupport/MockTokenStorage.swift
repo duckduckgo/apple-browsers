@@ -17,8 +17,8 @@
 //
 
 import Foundation
-import Networking
 
+@_spi(Testing)
 public class MockTokenStorage: AuthTokenStoring {
 
     public init(tokenContainer: Networking.TokenContainer? = nil) {

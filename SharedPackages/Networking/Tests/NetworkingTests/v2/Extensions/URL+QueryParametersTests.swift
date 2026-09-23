@@ -18,7 +18,7 @@
 
 import XCTest
 
-class URLExtensionTests: XCTestCase {
+final class URLExtensionTests: XCTestCase {
 
     func testQueryParametersWithValidURL() {
         // Given

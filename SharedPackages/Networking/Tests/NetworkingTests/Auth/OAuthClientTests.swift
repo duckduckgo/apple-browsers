@@ -17,9 +17,8 @@
 //
 
 import XCTest
-import NetworkingTestingUtils
 import Common
-@testable import Networking
+@_spi(Testing) @testable import Networking
 import JWTKit
 
 extension OAuthClientRefreshEvent: Equatable {
@@ -42,7 +41,7 @@ extension OAuthClientRefreshEvent: Equatable {
     }
 }
 
-class OAuthEventCapture {
+final class OAuthEventCapture {
     private(set) var capturedEvents: [OAuthClientRefreshEvent] = []
 
     var eventMapping: EventMapping<OAuthClientRefreshEvent> {

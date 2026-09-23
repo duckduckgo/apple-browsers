@@ -89,6 +89,15 @@ final class WebExtensionPopupPresenter {
         })()
         """
 
+        /// Tells whether the popup page declares a color scheme, through CSS or a `<meta>` tag.
+        static let declaresColorSchemeScript = """
+        (function() {
+            if (document.querySelector('meta[name="color-scheme"]')) { return true; }
+            var root = document.documentElement;
+            return !!root && getComputedStyle(root).colorScheme !== "normal";
+        })()
+        """
+
         /// Name of the script message handler the popup page posts to when its layout changes.
         static let resizeMessageHandlerName = "ddgWebExtensionPopupResize"
 
@@ -174,6 +183,11 @@ final class WebExtensionPopupPresenter {
         // keeps the panel visible until then, instead of a fully transparent rectangle.
         contentView.layer?.backgroundColor = popupBackgroundColor.cgColor
 
+        // Light until the page shows it declares a color scheme, so a page that relies on
+        // Chrome's light defaults never renders a frame with white text.
+        // See `updateAppearance(of:)`.
+        popupWebView.appearance = NSAppearance(named: .aqua)
+
         popupWebView.frame = contentView.bounds
         popupWebView.autoresizingMask = [.width, .height]
         contentView.addSubview(popupWebView)
@@ -239,10 +253,33 @@ final class WebExtensionPopupPresenter {
     }
 
     private func measureAndObservePage(_ popupWebView: WKWebView) {
+        updateAppearance(of: popupWebView)
         measurePageAndResize(popupWebView)
         popupWebView.evaluateJavaScript(Constants.observePageScript) { _, error in
             if let error {
                 Logger.webExtensions.debug("🧩 Popup page could not be observed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    // MARK: - Appearance
+
+    /// Gives a popup page that declares no color scheme the light defaults Chrome gives it, and a
+    /// page that declares one the app's appearance.
+    ///
+    /// Chrome renders a page whose `color-scheme` is `normal` with black text and light form
+    /// controls whatever the system appearance, and extensions built for Chrome rely on it:
+    /// LastPass leaves text at the default color on its own light backgrounds. WebKit takes those
+    /// defaults from the web view's appearance and ignores `color-scheme` for them, so in a dark
+    /// app that text renders white. The appearance is the only lever that works. A page that
+    /// declares a color scheme handles dark mode itself, so it keeps the app's appearance and
+    /// sees `prefers-color-scheme` follow the app, as it would in Chrome.
+    private func updateAppearance(of popupWebView: WKWebView) {
+        popupWebView.evaluateJavaScript(Constants.declaresColorSchemeScript) { [weak popupWebView] result, _ in
+            DispatchQueue.main.async {
+                guard let popupWebView else { return }
+                let declaresColorScheme = (result as? Bool) ?? false
+                popupWebView.appearance = declaresColorScheme ? nil : NSAppearance(named: .aqua)
             }
         }
     }

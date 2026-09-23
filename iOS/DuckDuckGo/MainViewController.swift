@@ -4664,8 +4664,6 @@ extension MainViewController: BrowserChromeDelegate {
         // last committed fraction) so an interruption resumes smoothly rather than snapping.
         let fromPercent = chromeMorphAnimator.isAnimating ? chromeMorphAnimator.currentValue : lastChromeVisibilityPercent
         lastChromeVisibilityPercent = percent
-        // Any prior scrub is superseded by this command; the new state is applied below.
-        chromeMorphAnimator.cancel()
 
         if percent < 1 {
             if isAddressBarFocused {
@@ -4721,13 +4719,19 @@ extension MainViewController: BrowserChromeDelegate {
                     self.applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
                     self.view.layoutIfNeeded()
                 })
+            // `animate(from:to:duration:...)` owns cancellation for this branch: it carries the
+            // display-link clock over when retargeting an already-running scrub (see
+            // `ChromeMorphAnimator.animate`), which an external `cancel()` here would defeat by
+            // tearing the link down before `animate` ever sees it running.
         } else if animated {
+            chromeMorphAnimator.cancel()
             self.view.layoutIfNeeded()
             UIView.animate(withDuration: animationDuration ?? ChromeAnimationConstants.duration) {
                 self.applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
                 self.view.layoutIfNeeded()
             }
         } else {
+            chromeMorphAnimator.cancel()
             applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
 
             if isFloatingUIEnabled, percent > 0, percent < 1 {

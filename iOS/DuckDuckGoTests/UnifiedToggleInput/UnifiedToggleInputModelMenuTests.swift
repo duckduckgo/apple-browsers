@@ -123,7 +123,9 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         let menuActions = actions(in: menu)
         XCTAssertEqual(sections.map(\.title), ["", "Plus", "Pro"])
         XCTAssertEqual(menuActions.map(\.title), ["free-model", "plus-model", "pro-model"])
-        XCTAssertTrue(menuActions.allSatisfy { $0.subtitle == nil })
+        if #available(iOS 16.0, *) {
+            XCTAssertTrue(menuActions.allSatisfy { $0.subtitle == nil })
+        }
     }
 
     // MARK: - Updated Menu
@@ -153,8 +155,10 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
 
         let actions = availableActions(in: menu)
         XCTAssertEqual(actions.map(\.title), ["with-1", "unknown", "without-1", "without-2"])
-        XCTAssertEqual(actions.first?.subtitle, AIChatModelLabel.everydayUse.localizedText)
-        XCTAssertNil(actions[1].subtitle)
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(actions.first?.subtitle, AIChatModelLabel.everydayUse.localizedText)
+            XCTAssertNil(actions[1].subtitle)
+        }
     }
 
     func testWhenUpdatedMenuGatedModelsHaveLabelsThenKeepsBackendOrderAndOmitsSubtitles() {
@@ -166,7 +170,9 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         let gatedActions = gatedSection(in: menu)?.children.compactMap { $0 as? UIAction } ?? []
         XCTAssertTrue(availableActions(in: menu).isEmpty)
         XCTAssertEqual(gatedActions.map(\.title), ["gated-without…", "gated-with…"])
-        XCTAssertTrue(gatedActions.allSatisfy { $0.subtitle == nil })
+        if #available(iOS 16.0, *) {
+            XCTAssertTrue(gatedActions.allSatisfy { $0.subtitle == nil })
+        }
     }
 
     func testWhenUpdatedMenuModelIsAccessibleThenDoesNotAddTierBadgeToTitle() {

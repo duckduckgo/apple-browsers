@@ -167,6 +167,18 @@ class MainViewController: UIViewController {
     var isAddressBarHandOffInProgress = false
     var restingNewTabPageSnapshot: (image: UIImage, frame: CGRect, viewportSize: CGSize)?
 
+    private var daxGreetingAppearance: DaxGreetingContext.Appearance?
+    private let daxGreetingActivity: DaxGreetingActivityStore?
+    private lazy var daxGreetingService = DaxGreetingServiceFactory.makeService(
+        activityStore: daxGreetingActivity,
+        privacyConfigurationManager: privacyConfigurationManager,
+        appSettings: appSettings,
+        aiChatSettings: aiChatSettings,
+        adBlockingAvailability: adBlockingAvailability,
+        maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
+        featureFlagger: featureFlagger,
+        appearanceProvider: { [weak self] in self?.daxGreetingAppearance })
+
     private lazy var newTabPageBuilder = NewTabPageBuilder(favoritesInteractionModel: favoritesViewModel,
                                                            homePageMessagesConfiguration: homePageConfiguration,
                                                            subscriptionDataReporting: subscriptionDataReporter,
@@ -184,7 +196,10 @@ class MainViewController: UIViewController {
                                                            floatingUIManager: floatingUIManager,
                                                            redesignFeature: NewTabPageRedesignFeature(featureFlagger: featureFlagger),
                                                            toggleModeStorage: toggleModeStorage,
-                                                           voiceSearchHelper: voiceSearchHelper)
+                                                           voiceSearchHelper: voiceSearchHelper,
+                                                           daxGreetingProvider: daxGreetingService,
+                                                           daxGreetingChanges: daxGreetingActivity?.changes ?? Empty().eraseToAnyPublisher(),
+                                                           updateDaxGreetingAppearance: { [weak self] in self?.daxGreetingAppearance = $0 })
 
     var tabsBarController: TabsBarViewController?
     var suggestionTrayController: SuggestionTrayViewController?
@@ -637,6 +652,7 @@ class MainViewController: UIViewController {
         fireExecutor: FireExecuting,
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         privacyStats: PrivacyStatsProviding,
+        daxGreetingActivity: DaxGreetingActivityStore? = nil,
         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
         whatsNewRepository: WhatsNewMessageRepository,
@@ -738,6 +754,7 @@ class MainViewController: UIViewController {
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.privacyStats = privacyStats
+        self.daxGreetingActivity = daxGreetingActivity
         self.fireExecutor = fireExecutor
         self.devicePlatform = devicePlatform
         self.aiChatContextualModeFeature = aiChatContextualModeFeature

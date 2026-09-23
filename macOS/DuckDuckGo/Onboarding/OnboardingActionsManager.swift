@@ -371,7 +371,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         onboardingSharedPixelHandler.fire(.importData(.clicked(.engage)))
         nonBlockingExperiment.fireMetric(.importRequested)
         return await withCheckedContinuation { continuation in
-            dataImportProvider.showImportWindow(customTitle: UserText.importDataTitleOnboarding, completion: { [weak self] in
+            dataImportProvider.showImportWindow(completion: { [weak self] in
                 guard let self else {
                     continuation.resume(returning: false)
                     return

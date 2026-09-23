@@ -364,6 +364,26 @@ final class URLExtensionTests: XCTestCase {
         XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckDuckGoHomepage)
     }
 
+    // MARK: - Homepage Funnel Tests
+
+    /// The URL duckduckgo.com redirects to when its homepage composer hands a prompt to Duck.ai.
+    func testIsDuckAIOpenedFromHomepage() {
+        let url = URL(string: "https://duck.ai/chat?ia=chat&duckai=1&home=1&prompt=1&origin=funnel_home_website&t=h_")!
+        XCTAssertTrue(url.isDuckAIOpenedFromHomepage)
+    }
+
+    func testIsDuckAIOpenedFromHomepageRejectsChatsWithoutTheMarker() {
+        XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckAIOpenedFromHomepage)
+        XCTAssertFalse(URL(string: "https://duck.ai/chat?ia=chat")!.isDuckAIOpenedFromHomepage)
+        XCTAssertFalse(URL(string: "https://duck.ai/chat?ia=chat&origin=other")!.isDuckAIOpenedFromHomepage)
+    }
+
+    /// The marker only means something on a chat; elsewhere it is just a query parameter.
+    func testIsDuckAIOpenedFromHomepageRequiresAChat() {
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?origin=funnel_home_website")!.isDuckAIOpenedFromHomepage)
+        XCTAssertFalse(URL(string: "https://example.com/?origin=funnel_home_website")!.isDuckAIOpenedFromHomepage)
+    }
+
     // MARK: - AIChatTabMetadata.shouldExcludeFromTabPicker
 
     func testShouldExcludeFromTabPickerCoversAllThreeRules() {

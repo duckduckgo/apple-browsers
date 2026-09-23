@@ -173,7 +173,7 @@ final class ConfigurationManager: DefaultConfigurationManager {
     @discardableResult
     func fetchAndUpdateBloomFilterExcludedDomains() async -> Bool {
         do {
-            try await fetcher.fetch(.bloomFilterExcludedDomains, isDebug: false)
+            guard try await fetcher.fetch(.bloomFilterExcludedDomains, isDebug: false) == .updated else { return false }
             return try await updateBloomFilterExclusions()
         } catch {
             Logger.general.error("Failed to apply update to bloom filter exclusions: \(error.localizedDescription, privacy: .public)")

@@ -69,7 +69,7 @@ struct RedesignedFavoritesView: View {
                                 .background(Color(designSystemColor: .controlsFillPrimary))
                                 .clipShape(Circle())
                             Text(isExpanded ? "See Less" : "See All")
-                                .font(.system(size: 12))
+                                .daxCaption1()
                         }
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                     }

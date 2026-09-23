@@ -39,7 +39,7 @@ struct RedesignedFavoriteItemView: View {
                 }
 
             Text(favorite.title)
-                .font(Font.system(size: 12))
+                .daxCaption1()
                 .lineLimit(Metrics.titleLineLimit)
                 .multilineTextAlignment(.center)
                 .foregroundColor(Color(designSystemColor: .textPrimary))

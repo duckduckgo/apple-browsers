@@ -1218,8 +1218,9 @@ private extension AIChatContextualSheetViewController {
             if !isWebViewVisible {
                 transitionToWebView()
             }
-            persistentUTIHost?.setSuggestions(viewState.suggestions,
-                                              isLoading: viewState.suggestionsLoadState == .loading)
+            persistentUTIHost?.setStartActions(suggestions: viewState.suggestions,
+                                               quickActions: [],
+                                               isLoading: viewState.suggestionsLoadState == .loading)
             fireButton.isHidden = !viewState.shouldShowNewChatButton
         }
 
@@ -1512,7 +1513,7 @@ private extension AIChatContextualSheetViewController {
             contentContainerView.addGestureRecognizer(contentDragKeyboardDismissRecognizer)
         }
         if featureFlagger.isFeatureOn(.contextualActiveChatSuggestions) {
-            persistentUTIHost.embedSuggestions(in: self)
+            persistentUTIHost.embedSuggestions(in: self, dimmed: true)
         }
     }
 

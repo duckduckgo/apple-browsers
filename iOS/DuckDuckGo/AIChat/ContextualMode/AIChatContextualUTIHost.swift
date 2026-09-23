@@ -69,8 +69,12 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     private let suggestionsController: AIChatContextualInputViewController
     private var hasSuggestions = false
+    /// The surface the strip is currently mounted in, so it can be detached before it moves to another.
+    private weak var suggestionsParent: UIViewController?
     /// Fires when the user taps a suggestion chip.
     var onSuggestionSelected: ((ContextualSuggestedPrompt) -> Void)?
+    /// Fires when the user taps a quick-action chip (the floating surface offers these alongside suggestions).
+    var onQuickActionSelected: ((AIChatContextualQuickAction) -> Void)?
 
     private lazy var suggestionsContainer: ChipHitTestingView = {
         let view = ChipHitTestingView()
@@ -81,6 +85,18 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             guard let self else { return false }
             return self.suggestionsController.containsStartAction(at: point, from: self.suggestionsContainer)
         }
+        return view
+    }()
+
+    /// Scrims the content above the input while the strip is up, so the suggestions read against a bright
+    /// transcript. Only the sheet enables it; the floating surface already dims the whole page.
+    private var suggestionsDimEnabled = false
+    private lazy var suggestionsDimView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .black
+        view.alpha = 0
+        view.isUserInteractionEnabled = false
+        view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
 
@@ -383,13 +399,35 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     // MARK: - Suggestions strip
 
-    /// Mounts the suggestions strip above the input card in `parent`. Taps in the gaps pass through.
-    func embedSuggestions(in parent: UIViewController) {
-        guard suggestionsContainer.superview == nil else { return }
+    /// Mounts the suggestions strip above the input card in `parent`. Taps in the gaps pass through. The strip
+    /// is shared across surfaces, so mounting it here first detaches it from wherever it was — the same way the
+    /// input bar moves between surfaces.
+    func embedSuggestions(in parent: UIViewController, dimmed: Bool) {
+        guard suggestionsParent !== parent else { return }
+        detachSuggestionsContainer()
+        suggestionsParent = parent
+        suggestionsDimEnabled = dimmed
         parent.addChild(suggestionsController)
         suggestionsController.view.translatesAutoresizingMaskIntoConstraints = false
         suggestionsController.clearStartActionsHorizontalInset()
         suggestionsContainer.addSubview(suggestionsController.view)
+        if dimmed {
+            // A full-screen scrim behind everything, layered below the input card so the card and the strip
+            // float on top of it — one continuous dim rather than a band that ends in a hard line above the
+            // input.
+            let inputView = coordinator.viewController.view
+            if let inputView, inputView.superview === parent.view {
+                parent.view.insertSubview(suggestionsDimView, belowSubview: inputView)
+            } else {
+                parent.view.addSubview(suggestionsDimView)
+            }
+            NSLayoutConstraint.activate([
+                suggestionsDimView.topAnchor.constraint(equalTo: parent.view.topAnchor),
+                suggestionsDimView.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
+                suggestionsDimView.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor),
+                suggestionsDimView.bottomAnchor.constraint(equalTo: parent.view.bottomAnchor),
+            ])
+        }
         parent.view.addSubview(suggestionsContainer)
         NSLayoutConstraint.activate([
             suggestionsContainer.topAnchor.constraint(greaterThanOrEqualTo: parent.view.safeAreaLayoutGuide.topAnchor),
@@ -404,10 +442,36 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         suggestionsController.didMove(toParent: parent)
     }
 
-    /// Updates the suggestions shown in the strip; visibility follows the input's expanded state.
-    func setSuggestions(_ prompts: [ContextualSuggestedPrompt], isLoading: Bool) {
-        hasSuggestions = !isLoading && !prompts.isEmpty
-        suggestionsController.updateStartActions(suggestions: prompts, quickActions: [])
+    /// Detaches the strip from `parent`, but only if it still holds it: a surface animating out finishes after
+    /// the next one may already have taken it.
+    func detachSuggestions(from parent: UIViewController) {
+        guard suggestionsParent === parent else { return }
+        detachSuggestionsContainer()
+    }
+
+    private func detachSuggestionsContainer() {
+        // Reused across mounts, so a slide leaves a transform on it; handed back clean.
+        suggestionsContainer.transform = .identity
+        suggestionsContainer.removeFromSuperview()
+        if suggestionsDimEnabled {
+            suggestionsDimView.alpha = 0
+            suggestionsDimView.removeFromSuperview()
+        }
+        suggestionsDimEnabled = false
+        suggestionsParent = nil
+        guard suggestionsController.parent != nil else { return }
+        suggestionsController.willMove(toParent: nil)
+        suggestionsController.view.removeFromSuperview()
+        suggestionsController.removeFromParent()
+    }
+
+    /// Updates the start actions shown in the strip; visibility follows the input's expanded state. The sheet
+    /// passes suggestions only; the floating surface also passes quick actions.
+    func setStartActions(suggestions: [ContextualSuggestedPrompt],
+                         quickActions: [AIChatContextualQuickAction],
+                         isLoading: Bool) {
+        hasSuggestions = !isLoading && (!suggestions.isEmpty || !quickActions.isEmpty)
+        suggestionsController.updateStartActions(suggestions: suggestions, quickActions: quickActions)
         suggestionsController.updateSuggestionsLoading(isLoading)
         if hasSuggestions {
             suggestionsController.showStartActions()
@@ -415,8 +479,22 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         updateSuggestionsVisibility()
     }
 
+    /// The strip's container view, so a hosting surface (the floating input) can move it with the input.
+    var suggestionsContainerView: UIView { suggestionsContainer }
+
     private func updateSuggestionsVisibility() {
-        suggestionsContainer.alpha = (hasSuggestions && isInputExpanded) ? 1 : 0
+        fadeSuggestions(to: (hasSuggestions && isInputExpanded) ? 1 : 0)
+    }
+
+    private func fadeSuggestions(to alpha: CGFloat) {
+        guard suggestionsContainer.alpha != alpha else { return }
+        let dimAlpha: CGFloat = alpha > 0 ? ContextualSurfaceScrim.alpha : 0
+        UIView.animate(withDuration: 0.2) {
+            self.suggestionsContainer.alpha = alpha
+            if self.suggestionsDimEnabled {
+                self.suggestionsDimView.alpha = dimAlpha
+            }
+        }
     }
 
     /// Pins the input where it currently sits, so a keyboard that moves or changes height afterwards cannot
@@ -646,7 +724,9 @@ extension AIChatContextualUTIHost: AIChatContextualInputViewControllerDelegate {
     }
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {}
-    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {}
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
+        onQuickActionSelected?(action)
+    }
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {}
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {}
 }

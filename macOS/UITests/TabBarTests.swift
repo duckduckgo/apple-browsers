@@ -156,7 +156,9 @@ class TabBarTests: UITestCase {
     // MARK: - Utilities
 
     private func resetPinnedTabs() {
-        app.menuItems["Reset Pinned Tabs"].tap()
+        app.menuBars.menuBarItems["Debug"].clickAfterExistenceTestSucceeds()
+        app.menuItems["Reset Data"].hoverAfterExistenceTestSucceeds()
+        app.menuItems["Reset Pinned Tabs"].clickAfterExistenceTestSucceeds()
     }
 
     private func moveToRightEndTab() {

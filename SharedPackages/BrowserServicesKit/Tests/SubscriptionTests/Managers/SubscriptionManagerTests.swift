@@ -259,6 +259,35 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(automaticSignOutData.localTokenStateAfterSignOut, .missing)
     }
 
+    func testGetTokenContainer_InvalidTokenRequest_RecoveryFailure_NotifiesUI() async throws {
+        // A failed recovery is a terminal sign-out with no other UI already handling it (unlike
+        // the purchase/restore flows, which intentionally skip this notification because they
+        // show their own dedicated error UI right after). Without it, the app keeps showing
+        // subscribed state after the account is already gone.
+        //
+        // .accountDidSignOut only fires on a true->false transition of the cached authenticated
+        // flag, so a realistic "was signed in" state has to be primed first via a real success,
+        // not just by pointing the mock at a token container.
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+        _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = NSError(domain: "RecoveryError", code: 1)
+
+        let signOutNotification = expectation(forNotification: .accountDidSignOut, object: nil)
+
+        do {
+            _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+            XCTFail("Error expected")
+        } catch SubscriptionManagerError.noTokenAvailable {
+            // Expected.
+        }
+
+        await fulfillment(of: [signOutNotification], timeout: 1.0)
+    }
+
     func testGetTokenContainer_InvalidTokenRequest_WhenRecoveryClearsState_ReportsStateFromBeforeRecovery() async throws {
         mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         mockSubscriptionCachingService.cachedSubscription = SubscriptionMockFactory.appleSubscription

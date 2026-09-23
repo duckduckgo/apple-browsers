@@ -663,7 +663,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     await automaticallySignOut(recoveryOutcome: notAttempted ? .notAttempted : .failed,
                                                failedRequest: failedRequest,
                                                triggeringError: tokenRequestError,
-                                               notifyUI: false)
+                                               notifyUI: true)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(
                         outcome: notAttempted ? .notAttempted : .failed,

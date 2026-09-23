@@ -29,9 +29,6 @@
                   Identifier = "ContentBlockingRulesTests">
                </Test>
                <Test
-                  Identifier = "SubscriptionPromoUITests">
-               </Test>
-               <Test
                   Identifier = "FloatingUIBottomBarTests">
                </Test>
                <Test
@@ -39,6 +36,9 @@
                </Test>
                <Test
                   Identifier = "SitePermissionsXCUITests">
+               </Test>
+               <Test
+                  Identifier = "SubscriptionPromoUITests">
                </Test>
                <Test
                   Identifier = "TrackerRadarIntegrationTests">

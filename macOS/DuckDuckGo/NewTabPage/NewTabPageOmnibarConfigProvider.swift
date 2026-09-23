@@ -415,9 +415,12 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     func dismissUsageLimits() {
         if usageWarningViewModel?.warning != nil {
             usageWarningViewModel?.dismiss()
-        } else {
-            highUsageNoticeSource?.dismissCurrent()
+            return
         }
+        // Re-resolved first: the notice is keyed off the selected model, and dismissing one that
+        // hasn't been read since that model changed would record nothing and let it come back.
+        highUsageNoticeSource?.refresh()
+        highUsageNoticeSource?.dismissCurrent()
     }
 
     @MainActor

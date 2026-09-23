@@ -113,7 +113,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertEqual(discarded.globalData.id, original.globalData.id)
         XCTAssertEqual(discarded.startedAt, original.startedAt)
         XCTAssertEqual(discarded.endedAt, inputs.date)
-        XCTAssertEqual(discarded.outcome, .success)
+        XCTAssertEqual(discarded.completedOutcome(), .success)
 
         instrumentation.tunnelStopped(reason: .userInitiated)
         instrumentation.tunnelStarted(reason: .manual)
@@ -197,7 +197,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
 
         XCTAssertTrue(data.staleHandshakeRecovered)
         XCTAssertEqual(data.failureRecoverySucceeded, true)
-        XCTAssertEqual(data.outcome, .failure(.staleHandshake))
+        XCTAssertEqual(data.completedOutcome(), .failure(.staleHandshake))
     }
 
     func testSleepAndSnoozeClearOutageWhileReconfigurationPreservesIt() throws {
@@ -221,9 +221,9 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         let snoozeEvent = try completedEvent(at: 1)
         let reconfigurationEvent = try completedEvent(at: 2)
 
-        XCTAssertEqual(sleepEvent.outcome, .success)
-        XCTAssertEqual(snoozeEvent.outcome, .success)
-        XCTAssertEqual(reconfigurationEvent.outcome, .failure(.routingOutageAtUserStop))
+        XCTAssertEqual(sleepEvent.completedOutcome(), .success)
+        XCTAssertEqual(snoozeEvent.completedOutcome(), .success)
+        XCTAssertEqual(reconfigurationEvent.completedOutcome(), .failure(.routingOutageAtUserStop))
     }
 
     // MARK: - Long sessions
@@ -321,7 +321,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
                                                   extensionType: .system)
             .markingMonitoringStarted(at: hourStart)
             .applyingConnectionTestResult(.connected, at: hourStart)
-            .markingStopped(.stoppedByUser, at: endedAt)
+            .finalized(for: .stoppedByUser, at: endedAt).event
         wideEvent.startFlow(ended)
 
         instrumentation.tunnelStarted(reason: .manual)
@@ -331,7 +331,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertEqual(recovered.globalData.id, ended.globalData.id)
         XCTAssertEqual(recovered.endedAt, endedAt)
         XCTAssertEqual(recovered.endReason, .stoppedByUser)
-        XCTAssertEqual(recovered.outcome, .success)
+        XCTAssertEqual(recovered.completedOutcome(), .success)
         XCTAssertEqual(wideEvent.completions.first?.1, .success)
     }
 
@@ -346,7 +346,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertEqual(wideEvent.completions.count, 1)
         let recovered = try completedEvent()
         XCTAssertEqual(recovered.endReason, .processDied)
-        XCTAssertEqual(recovered.outcome, .unknown(.extensionProcessDied))
+        XCTAssertEqual(recovered.completedOutcome(), .unknown(.extensionProcessDied))
         XCTAssertEqual(wideEvent.completions.first?.1, .unknown(reason: "extension_process_died"))
     }
 
@@ -417,7 +417,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
 
         XCTAssertEqual(data.activeOutageFailedCheckCount, 100)
         XCTAssertEqual(data.connectionTestOutageCount, 1)
-        XCTAssertEqual(data.outcome, .failure(.routingOutage))
+        XCTAssertEqual(data.completedOutcome(), .failure(.routingOutage))
     }
 
     func testConcurrentStopsCompleteEventOnlyOnce() throws {
@@ -429,7 +429,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         }
 
         XCTAssertEqual(wideEvent.completions.count, 1)
-        XCTAssertEqual(try completedEvent().outcome, .success)
+        XCTAssertEqual(try completedEvent().completedOutcome(), .success)
     }
 
     // MARK: - Helpers

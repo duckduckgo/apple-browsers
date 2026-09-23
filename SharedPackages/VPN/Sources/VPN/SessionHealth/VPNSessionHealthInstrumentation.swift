@@ -184,12 +184,12 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
 
     public func tunnelStopped(reason: NEProviderStopReason) {
         Logger.networkProtectionSessionHealth.debug("tunnelStopped: reason=\(reason.rawValue, privacy: .public)")
-        terminalTransition(status: .success) { $0.markingStopped(reason.asEventEndReason, at: $1) }
+        terminalTransition { $0.finalized(for: reason.asEventEndReason, at: $1) }
     }
 
     public func tunnelCancelledWithError() {
         Logger.networkProtectionSessionHealth.debug("tunnelCancelledWithError")
-        terminalTransition(status: .failure) { $0.markingCancelledWithError(at: $1) }
+        terminalTransition { $0.finalizedAfterCancellation(at: $1) }
     }
 }
 
@@ -212,7 +212,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
         wideEvent.updateFlow(next)
     }
 
-    func terminalTransition(status: WideEventStatus, _ transition: (VPNSessionHealthWideEventData, Date) -> VPNSessionHealthWideEventData) {
+    func terminalTransition(_ transition: (VPNSessionHealthWideEventData, Date) -> (event: VPNSessionHealthWideEventData, outcome: VPNSessionHealthWideEventData.EventOutcome)) {
         lock.lock()
         defer { lock.unlock() }
 
@@ -221,11 +221,10 @@ private extension DefaultVPNSessionHealthInstrumentation {
         }
 
         let timestamp = now()
-        var next = transition(previous, timestamp)
-        next.lastObservedAt = timestamp
+        var (event, outcome) = transition(previous, timestamp)
+        event.lastObservedAt = timestamp
 
-        let status = next.calculateEventOutcome()?.status ?? status
-        completeEvent(event: next, status: status)
+        completeEvent(event: event, outcome: outcome)
     }
 
     func beginEvent(reason: VPNSessionHealthWideEventData.EventStartReason) {
@@ -260,10 +259,8 @@ private extension DefaultVPNSessionHealthInstrumentation {
             return
         }
 
-        let event = previous.markingStopped(.restartedWithoutStop, at: now())
-        let status = event.calculateEventOutcome()?.status ?? .unknown(reason: "unknown")
-
-        completeEvent(event: event, status: status)
+        let completed = previous.finalized(for: .restartedWithoutStop, at: now())
+        completeEvent(event: completed.event, outcome: completed.outcome)
     }
 
     func completeOrphanedEvents() {
@@ -273,15 +270,14 @@ private extension DefaultVPNSessionHealthInstrumentation {
         for orphan in orphans {
             Logger.networkProtectionSessionHealth.log("Recovering orphan: \(orphan.globalData.id, privacy: .public)")
 
-            let event = orphan.markingOrphanedSessionEnded(at: now())
-            let status = event.calculateEventOutcome()?.status ?? .unknown(reason: "orphan")
-
-            completeEvent(event: event, status: status)
+            let completed = orphan.finalizedAfterOrphanRecovery(at: now())
+            completeEvent(event: completed.event, outcome: completed.outcome)
         }
     }
 
     @discardableResult
-    func completeEvent(event: VPNSessionHealthWideEventData, status: WideEventStatus) -> Bool {
+    func completeEvent(event: VPNSessionHealthWideEventData, outcome: VPNSessionHealthWideEventData.EventOutcome) -> Bool {
+        let status = outcome.status
         Logger.networkProtectionSessionHealth.log("Completing vpn_session_health pixel: status=\(status.description, privacy: .public)")
         logPixelDetails(event)
 

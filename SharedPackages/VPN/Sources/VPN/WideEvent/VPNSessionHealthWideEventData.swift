@@ -154,10 +154,8 @@ extension VPNSessionHealthWideEventData {
 
     public var connectionTestFailureActive: Bool { activeOutageFailedCheckCount > 0 }
 
-    public func calculateEventOutcome() -> EventOutcome? {
-        guard hasEnded else {
-            return nil
-        }
+    func completedOutcome() -> EventOutcome {
+        precondition(hasEnded, "A session health outcome requires an ended event")
 
         if let failureReason {
             return .failure(failureReason)
@@ -312,7 +310,6 @@ extension VPNSessionHealthWideEventData {
         case connectionTesterNeverReported = "connection_tester_never_reported"
         case extensionProcessDied = "extension_process_died"
         case osStoppedWithoutNetwork = "os_stopped_without_network"
-        case unknown = "unknown"
     }
 
     public enum MonitoringCoverage: String, Codable, CaseIterable {

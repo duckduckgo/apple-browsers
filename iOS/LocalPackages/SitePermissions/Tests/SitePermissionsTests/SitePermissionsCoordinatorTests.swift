@@ -347,6 +347,10 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
                         respond(sourceState == .allowOnce ? .allowOnce : .denyOnce)
                     }, completion: { _ in activated.fulfill() })
                     await fulfillment(of: [activated], timeout: 1)
+                    if sourceState == .allowOnce {
+                        harness.coordinator.updateGeolocationCaptureState(.active)
+                        harness.coordinator.updateGeolocationCaptureState(.inactive)
+                    }
                 }
                 harness.systemStates[.location] = systemState
 
@@ -646,9 +650,9 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).captureStates.isEmpty)
     }
 
-    func testRenewedAllowOnceGrantsBeforeCaptureStartsAndGlobalNeverBlocksOnlyAfterCaptureEnds() async throws {
-        let harness = try Harness()
-        for _ in 0..<2 {
+    func testLocationAllowOnceSurvivesCaptureEndAndGlobalNeverAppliesAfterReload() async throws {
+        for isFireMode in [false, true] {
+            let harness = try Harness(isFireMode: isFireMode)
             let granted = expectation(description: "Allow Once grants")
             harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
                 respond(.allowOnce)
@@ -660,17 +664,27 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
             XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .granted)
             harness.coordinator.updateGeolocationCaptureState(.active)
             harness.coordinator.updateGeolocationCaptureState(.inactive)
-            XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .prompt)
-        }
+            harness.coordinator.pageDidChange(.sameDocumentNavigation)
+            XCTAssertEqual(harness.coordinator.captureState(for: .location), .inactive)
+            XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .granted)
 
-        harness.store.setGlobalDefault(.deny, for: .location)
-        XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .denied)
-        var deniedResolution: SitePermissionResolution?
-        harness.coordinator.request(harness.request([.location]), promptHandler: { _, _ in
-            XCTFail("An ended Allow Once must not bypass global Never")
-        }, completion: { deniedResolution = $0 })
-        XCTAssertEqual(deniedResolution, .deny(systemBlocks: []))
-        XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).showsMenuEntry)
+            harness.store.setGlobalDefault(.deny, for: .location)
+            var repeatedResolution: SitePermissionResolution?
+            harness.coordinator.request(harness.request([.location]), promptHandler: { _, _ in
+                XCTFail("The page's explicit Allow Once must survive inactivity and override the global default")
+            }, completion: { repeatedResolution = $0 })
+            XCTAssertEqual(repeatedResolution, .grant)
+            XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).showsMenuEntry)
+            XCTAssertTrue(harness.store.storedSites.isEmpty)
+
+            harness.coordinator.pageDidChange(.reload)
+            XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .denied)
+            var deniedResolution: SitePermissionResolution?
+            harness.coordinator.request(harness.request([.location]), promptHandler: { _, _ in
+                XCTFail("An expired page grant must not bypass global Never")
+            }, completion: { deniedResolution = $0 })
+            XCTAssertEqual(deniedResolution, .deny(systemBlocks: []))
+        }
     }
 
     func testInitialInactiveObservationAndActivePausedTransitionsRetainAllowOnceUntilCaptureEnds() async throws {
@@ -957,23 +971,28 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
     }
 
     func testWhenPageOrProcessEndsThenAllowOnceDoesNotSurvive() async throws {
-        for change in [SitePermissionPageChange.reload, .navigation, .webContentProcessReplacement] {
-            let harness = try Harness()
-            let grantCompletion = expectation(description: "Grant completes before \(change)")
-            harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
-                respond(.allowOnce)
-            }, completion: { resolution in
-                XCTAssertEqual(resolution, .grant)
-                grantCompletion.fulfill()
-            })
-            await fulfillment(of: [grantCompletion], timeout: 1)
+        for isFireMode in [false, true] {
+            for permissionType in SitePermissionType.allCases {
+                for change in [SitePermissionPageChange.reload, .navigation, .webContentProcessReplacement] {
+                    let harness = try Harness(isFireMode: isFireMode)
+                    let grantCompletion = expectation(description: "\(permissionType) grant completes before \(change)")
+                    harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, respond in
+                        respond(.allowOnce)
+                    }, completion: { resolution in
+                        XCTAssertEqual(resolution, .grant)
+                        grantCompletion.fulfill()
+                    })
+                    await fulfillment(of: [grantCompletion], timeout: 1)
 
-            harness.coordinator.pageDidChange(change)
-            var didPrompt = false
-            harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
-                didPrompt = true
-            }, completion: { _ in })
-            XCTAssertTrue(didPrompt)
+                    harness.coordinator.pageDidChange(change)
+                    XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .prompt)
+                    var didPrompt = false
+                    harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, _ in
+                        didPrompt = true
+                    }, completion: { _ in })
+                    XCTAssertTrue(didPrompt)
+                }
+            }
         }
     }
 

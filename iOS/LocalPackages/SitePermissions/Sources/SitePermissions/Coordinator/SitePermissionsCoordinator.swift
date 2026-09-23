@@ -69,7 +69,7 @@ public struct SitePermissionPrompt: Equatable, Sendable {
 
 /// The user's response to an on-site permission prompt.
 public enum SitePermissionPromptDecision: Equatable, Sendable {
-    /// Keeps a page-scoped grant without persisting it; a new request may prompt after capture ends.
+    /// Keeps a page-scoped grant without persisting it. Camera and microphone may prompt again after capture ends.
     case allowOnce
     /// Grants access and stores an Allow decision for the site outside Fire mode.
     case allowWhileUsingSite
@@ -289,7 +289,8 @@ public final class SitePermissionsCoordinator {
                 if deniedForPage.contains(permissionType) {
                     return .deny
                 }
-                if allowOnce.contains(permissionType), captureStates[permissionType] != .inactive {
+                // Location access lasts for the page, even between one-shot requests or watches.
+                if allowOnce.contains(permissionType), permissionType == .location || captureStates[permissionType] != .inactive {
                     continue
                 }
                 if store.globalDefault(for: permissionType) == .deny {
@@ -324,7 +325,7 @@ public final class SitePermissionsCoordinator {
 
     public func captureDidEnd(_ permissionTypes: Set<SitePermissionType>) {
         for permissionType in permissionTypes {
-            // Keep the page grant for management; an explicit inactive state allows the next request to prompt.
+            // Keep the page grant for management; inactive media capture allows the next camera/microphone request to prompt.
             // No state means capture has not started yet, including the initial inactive WebKit observation.
             captureStates[permissionType] = .inactive
         }

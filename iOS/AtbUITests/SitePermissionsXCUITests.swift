@@ -325,6 +325,14 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertTrue(element("SitePermissions.Sheet.GoToSystemSettings").exists)
     }
 
+    func testWhenLocationIsAllowedOnceThenCompletedRequestsAndWatchShareGrantUntilNewDocument() throws {
+        try assertLocationAllowOnceLastsUntilNewDocument(fireMode: false)
+    }
+
+    func testWhenFireTabAllowsLocationOnceThenCompletedRequestsAndWatchShareGrantUntilNewDocument() throws {
+        try assertLocationAllowOnceLastsUntilNewDocument(fireMode: true)
+    }
+
     func testWhenFireTabAllowsLocationWhileUsingSiteThenDecisionSurvivesReloadAndStaysInThatTab() throws {
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
         launchApp(additionalArguments: ["-ff.fireMode", "true"])
@@ -797,11 +805,11 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertTrue(element("searchEntry").waitForHittable(timeout: timeout))
     }
 
-    private func openPermissionPage(host: String = "127.0.0.1") {
+    private func openPermissionPage(host: String = "127.0.0.1", path: String = "/camera") {
         tap(element("searchEntry"))
         let searchField = app.textFields.matching(identifier: "searchEntry").firstMatch
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
-        searchField.typeText("http://\(host):\(port)/camera\r")
+        searchField.typeText("http://\(host):\(port)\(path)\r")
         XCTAssertTrue(app.staticTexts["Permissions fixture"].waitForExistence(timeout: timeout), app.debugDescription)
         assertResult("ready")
     }
@@ -895,6 +903,54 @@ final class SitePermissionsXCUITests: XCTestCase {
 
     private func request(_ permission: String) {
         tap(app.webViews.buttons["Request \(permission)"])
+    }
+
+    private func assertLocationAllowOnceLastsUntilNewDocument(fireMode: Bool) throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp(additionalArguments: ["-ff.fireMode", String(fireMode)])
+        if fireMode {
+            openNewPermissionTab(fireMode: true)
+        } else {
+            openPermissionPage()
+        }
+        request("location")
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        answerSystemAlert(for: "location", allow: true)
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("location success 1 37.3317,-122.0301")
+
+        // Each one-shot completes before the next request; no active capture keeps the grant alive.
+        request("location")
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("location success 2 37.3317,-122.0301")
+        assertNoPermissionPrompt()
+        tap(app.webViews.buttons["Watch location"])
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("watch success 37.3317,-122.0301")
+        assertNoPermissionPrompt()
+        try simulateLocation(latitude: 51.5007, longitude: -0.1246)
+        assertResult("watch success 51.5007,-0.1246")
+        assertNoPermissionPrompt()
+        openPermissionSettings()
+        XCTAssertFalse(element("Settings.SitePermissions.Site.127.0.0.1").exists)
+        closeSettings()
+
+        reloadPermissionPage()
+        assertResult("location ready")
+        request("location")
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("location success 1 37.3317,-122.0301")
+
+        // A different document on the same site must also need a new temporary grant.
+        openPermissionPage(path: "/camera?next")
+        assertResult("location ready")
+        request("location")
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.NeverAllow"))
+        assertResult("location error 1 1")
     }
 
     private func simulateLocation(latitude: Double, longitude: Double) throws {

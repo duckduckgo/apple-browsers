@@ -89,14 +89,53 @@ final class WebExtensionPopupPresenter {
         })()
         """
 
-        /// Delays after the load event, in seconds, at which the page is measured again.
+        /// Tells whether the popup page declares a color scheme, through CSS or a `<meta>` tag.
+        static let declaresColorSchemeScript = """
+        (function() {
+            if (document.querySelector('meta[name="color-scheme"]')) { return true; }
+            var root = document.documentElement;
+            return !!root && getComputedStyle(root).colorScheme !== "normal";
+        })()
+        """
+
+        /// Name of the script message handler the popup page posts to when its layout changes.
+        static let resizeMessageHandlerName = "ddgWebExtensionPopupResize"
+
+        /// Makes the popup page report layout changes, so the panel follows them as they happen.
         ///
-        /// Not every popup knows its size when it finishes loading. Bitwarden's is an Angular
-        /// app that sets `body.style.width` hundreds of milliseconds into its bootstrap, well
-        /// after the load event, so the one measurement at load time reads a stale size.
-        /// Measuring a few more times at growing intervals catches the final size without
-        /// driving the extension.
-        static let settleDelays: [TimeInterval] = [0.1, 0.2, 0.4, 0.8, 1.6]
+        /// A popup can change size without loading anything: LastPass swaps its login form for
+        /// its vault in place, and grows the form to show an error banner. A `ResizeObserver`
+        /// catches the page's own boxes changing size, and a `MutationObserver` catches content
+        /// swapped in without resizing `html` or `body`. Reports are coalesced to one per frame,
+        /// and the browser measures the page itself on each, with `measurePageScript`.
+        ///
+        /// Installed once per document: a page that loads again gets it again.
+        static let observePageScript = """
+        (function() {
+            if (window.__ddgPopupResizeObserved) { return; }
+            var handlers = window.webkit && window.webkit.messageHandlers;
+            var handler = handlers && handlers["\(resizeMessageHandlerName)"];
+            if (!handler) { return; }
+            window.__ddgPopupResizeObserved = true;
+
+            var scheduled = false;
+            function report() {
+                if (scheduled) { return; }
+                scheduled = true;
+                requestAnimationFrame(function() {
+                    scheduled = false;
+                    try { handler.postMessage(null); } catch (error) {}
+                });
+            }
+
+            var resizeObserver = new ResizeObserver(report);
+            resizeObserver.observe(document.documentElement);
+            if (document.body) { resizeObserver.observe(document.body); }
+            new MutationObserver(report).observe(document.documentElement, {
+                subtree: true, childList: true, attributes: true, characterData: true
+            });
+        })()
+        """
     }
 
     private var panel: WebExtensionPopupPanel?
@@ -106,7 +145,7 @@ final class WebExtensionPopupPresenter {
     private weak var popupWebView: WKWebView?
     private var loadingObservation: NSKeyValueObservation?
     private var clickMonitor: Any?
-    private var settleWorkItems: [DispatchWorkItem] = []
+    private var resizeMessageUserContentController: WKUserContentController?
 
     /// Whether the popup of the given extension is on screen.
     func isShown(for context: WKWebExtensionContext) -> Bool {
@@ -144,6 +183,11 @@ final class WebExtensionPopupPresenter {
         // keeps the panel visible until then, instead of a fully transparent rectangle.
         contentView.layer?.backgroundColor = popupBackgroundColor.cgColor
 
+        // Light until the page shows it declares a color scheme, so a page that relies on
+        // Chrome's light defaults never renders a frame with white text.
+        // See `updateAppearance(of:)`.
+        popupWebView.appearance = NSAppearance(named: .aqua)
+
         popupWebView.frame = contentView.bounds
         popupWebView.autoresizingMask = [.width, .height]
         contentView.addSubview(popupWebView)
@@ -177,14 +221,65 @@ final class WebExtensionPopupPresenter {
     /// WebKit does not tell us that size. The `contentSize` of the popover it would have
     /// presented stays zero, and the popup web view keeps a zero frame until something sizes
     /// it, so both are useless as a source. We therefore ask the page itself once it loads.
+    ///
+    /// The popup page may have finished loading before it is presented, in which case `isLoading`
+    /// never changes, so the page is measured and observed right away as well as on the load event.
+    ///
+    /// After that the page reports its own layout changes through `observePageScript`. WebKit
+    /// never resizes the popup web view by itself, so nothing on the native side would notice a
+    /// popup that changes size without loading, such as LastPass swapping its vault for its
+    /// login form on logout.
     private func observePopupSize(of popupWebView: WKWebView) {
-        measurePageAndResize(popupWebView)
+        // Every extension page shares this user content controller, so the handler only
+        // answers messages from the popup it was registered for.
+        let handler = PopupResizeMessageHandler { [weak self, weak popupWebView] webView in
+            guard let self, let popupWebView, webView === popupWebView else { return }
+            self.measurePageAndResize(popupWebView)
+        }
+        let userContentController = popupWebView.configuration.userContentController
+        // Adding a second handler under the same name raises, so drop any left behind first.
+        userContentController.removeScriptMessageHandler(forName: Constants.resizeMessageHandlerName)
+        userContentController.add(handler, name: Constants.resizeMessageHandlerName)
+        resizeMessageUserContentController = userContentController
+
+        measureAndObservePage(popupWebView)
 
         loadingObservation = popupWebView.observe(\.isLoading, options: [.new]) { [weak self] webView, _ in
             DispatchQueue.main.async {
                 guard webView.isLoading == false else { return }
-                self?.measurePageAndResize(webView)
-                self?.startSettling(webView)
+                self?.measureAndObservePage(webView)
+            }
+        }
+    }
+
+    private func measureAndObservePage(_ popupWebView: WKWebView) {
+        updateAppearance(of: popupWebView)
+        measurePageAndResize(popupWebView)
+        popupWebView.evaluateJavaScript(Constants.observePageScript) { _, error in
+            if let error {
+                Logger.webExtensions.debug("🧩 Popup page could not be observed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    // MARK: - Appearance
+
+    /// Gives a popup page that declares no color scheme the light defaults Chrome gives it, and a
+    /// page that declares one the app's appearance.
+    ///
+    /// Chrome renders a page whose `color-scheme` is `normal` with black text and light form
+    /// controls whatever the system appearance, and extensions built for Chrome rely on it:
+    /// LastPass leaves text at the default color on its own light backgrounds. WebKit takes those
+    /// defaults from the web view's appearance and ignores `color-scheme` for them, so in a dark
+    /// app that text renders white. The appearance is the only lever that works. A page that
+    /// declares a color scheme handles dark mode itself, so it keeps the app's appearance and
+    /// sees `prefers-color-scheme` follow the app, as it would in Chrome.
+    private func updateAppearance(of popupWebView: WKWebView) {
+        popupWebView.evaluateJavaScript(Constants.declaresColorSchemeScript) { [weak popupWebView] result, _ in
+            DispatchQueue.main.async {
+                guard let popupWebView else { return }
+                let declaresColorScheme = (result as? Bool) ?? false
+                popupWebView.appearance = declaresColorScheme ? nil : NSAppearance(named: .aqua)
             }
         }
     }
@@ -200,32 +295,6 @@ final class WebExtensionPopupPresenter {
                 self.resize(toPageSize: NSSize(width: values[0], height: values[1]))
             }
         }
-    }
-
-    /// Measures the page again at each of `settleDelays`, and resizes the panel when the size moved.
-    ///
-    /// Every step runs, however early the page settles: a measurement that reports the size the
-    /// panel already has is ignored by `resize(toPageSize:)`, so the extra reads cost nothing but a
-    /// few `evaluateJavaScript` calls.
-    ///
-    /// Read-only, like the measurement itself: the page is asked what size it is, the extension
-    /// is never asked to do anything.
-    private func startSettling(_ popupWebView: WKWebView) {
-        cancelSettling()
-
-        for delay in Constants.settleDelays {
-            let workItem = DispatchWorkItem { [weak self, weak popupWebView] in
-                guard let self, let popupWebView else { return }
-                self.measurePageAndResize(popupWebView)
-            }
-            settleWorkItems.append(workItem)
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
-        }
-    }
-
-    private func cancelSettling() {
-        settleWorkItems.forEach { $0.cancel() }
-        settleWorkItems = []
     }
 
     private func resize(toPageSize pageSize: NSSize) {
@@ -265,7 +334,7 @@ final class WebExtensionPopupPresenter {
 
     // MARK: - Close
 
-    /// Closes the popup on a click that lands neither in the popup nor on its button.
+    /// Closes the popup on a click in a browser window that lands neither in the popup nor on its button.
     ///
     /// The button needs the exception so that a click on it reaches the button action, which
     /// closes the popup itself. Without it the popup would close here and the action would
@@ -287,6 +356,11 @@ final class WebExtensionPopupPresenter {
         guard let panel, panel.isVisible else { return }
 
         if clickedWindow === panel { return }
+
+        // Only a click in a browser window dismisses the popup. Web Inspector opens on the
+        // popup page in a window of our own process, and closing the popup when it is clicked
+        // would take down the page being inspected.
+        guard clickedWindow is MainWindow else { return }
 
         if let button = anchorButton, clickedWindow === button.window {
             let pointInButton = button.convert(location, from: nil)
@@ -314,7 +388,8 @@ final class WebExtensionPopupPresenter {
         loadingObservation?.invalidate()
         loadingObservation = nil
 
-        cancelSettling()
+        resizeMessageUserContentController?.removeScriptMessageHandler(forName: Constants.resizeMessageHandlerName)
+        resizeMessageUserContentController = nil
 
         // The web view belongs to WebKit, so hand it back rather than leaving it in our panel.
         popupWebView?.removeFromSuperview()
@@ -329,5 +404,23 @@ final class WebExtensionPopupPresenter {
         shownAction = nil
         shownContext = nil
         anchorButton = nil
+    }
+}
+
+/// Receives the layout-change reports `observePageScript` posts from a popup page.
+private final class PopupResizeMessageHandler: NSObject, WKScriptMessageHandler {
+
+    private let onReport: @MainActor (WKWebView) -> Void
+
+    init(onReport: @escaping @MainActor (WKWebView) -> Void) {
+        self.onReport = onReport
+    }
+
+    func userContentController(_ userContentController: WKUserContentController,
+                               didReceive message: WKScriptMessage) {
+        guard let webView = message.webView else { return }
+        MainActor.assumeIsolated {
+            onReport(webView)
+        }
     }
 }

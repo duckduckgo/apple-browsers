@@ -269,10 +269,9 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     }
 
     public func getTokens(policy: AuthTokensCachePolicy, trigger: TokenRefreshTrigger) async throws -> TokenContainer {
-        let localTokenContainer = try tokenStorage.getTokenContainer()
-
         switch policy {
         case .local:
+            let localTokenContainer = try tokenStorage.getTokenContainer()
             guard let localTokenContainer else {
                 Logger.OAuthClient.log("Tokens not found")
                 throw OAuthClientError.missingTokenContainer
@@ -281,6 +280,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             return localTokenContainer
 
         case .localValid:
+            let localTokenContainer = try tokenStorage.getTokenContainer()
             guard let localTokenContainer else {
                 Logger.OAuthClient.log("Tokens not found")
                 throw OAuthClientError.missingTokenContainer
@@ -305,7 +305,19 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             }
 
             let refreshID = UUID().uuidString
+            // The flow must start before the keychain read below: `.tokenRefreshStarted` is what
+            // creates the wide-event flow, defaulting failingStep to `.tokenRead`. Reading first (as
+            // this used to) meant a keychain-read failure threw before any flow existed, so it could
+            // never be attributed to `.tokenRead` in the wide event - only in the separate pixel.
             refreshEventMapping?.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: trigger))
+
+            let localTokenContainer: TokenContainer?
+            do {
+                localTokenContainer = try tokenStorage.getTokenContainer()
+            } catch {
+                refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
+                throw error
+            }
 
             guard let localTokenContainer else {
                 Logger.OAuthClient.log("Tokens not found")

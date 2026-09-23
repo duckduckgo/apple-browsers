@@ -29,7 +29,7 @@ extension UserDefaults {
     @objc
     dynamic var vpnSettingEnforceRoutes: Bool {
         get {
-            object(forKey: enforceRoutesKey) as? Bool ?? Self.enforceRoutesDefaultValue
+            value(forKey: enforceRoutesKey) as? Bool ?? Self.enforceRoutesDefaultValue
         }
 
         set {

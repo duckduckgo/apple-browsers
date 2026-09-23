@@ -29,7 +29,7 @@ extension UserDefaults {
     @objc
     dynamic var vpnSettingSessionHealthTelemetryEnabled: Bool {
         get {
-            object(forKey: sessionHealthTelemetryEnabledKey) as? Bool ?? Self.sessionHealthTelemetryEnabledDefaultValue
+            value(forKey: sessionHealthTelemetryEnabledKey) as? Bool ?? Self.sessionHealthTelemetryEnabledDefaultValue
         }
 
         set {

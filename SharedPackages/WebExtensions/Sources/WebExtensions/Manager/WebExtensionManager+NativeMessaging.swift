@@ -59,6 +59,11 @@ extension WebExtensionManager: WebExtensionLoadingDelegate {
                                    willLoad context: WKWebExtensionContext,
                                    identifier: String) {
         registerHandlersForExtension(identifier: identifier, context: context)
+        if context.webExtension.duckDuckGoWebExtensionType == .embedded {
+            MainActor.assumeIsolated {
+                cpmDiagnosticsRecorder?.contextWillLoad(context)
+            }
+        }
     }
 }
 

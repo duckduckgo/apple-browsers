@@ -17,8 +17,8 @@
 //
 
 import Foundation
-@testable import Networking
 
+@_spi(Testing)
 public class MockAPIService: APIService {
 
     public var authorizationRefresherCallback: AuthorizationRefresherCallback?
@@ -59,6 +59,7 @@ public class MockAPIService: APIService {
     }
 }
 
+@_spi(Testing)
 public extension APIRequestV2 {
     var host: String {
         return urlRequest.url!.host!

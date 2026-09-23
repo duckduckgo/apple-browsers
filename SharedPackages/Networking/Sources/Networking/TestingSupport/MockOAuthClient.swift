@@ -17,8 +17,8 @@
 //
 
 import Foundation
-import Networking
 
+@_spi(Testing)
 public class MockOAuthClient: OAuthClient {
 
     public init() {}

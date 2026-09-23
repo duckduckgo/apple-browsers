@@ -65,7 +65,7 @@ final class DuckDuckGoVPNApplication: NSApplication {
                                                          userDefaults: subscriptionUserDefaults,
                                                          pixelHandlingSource: .vpnApp,
                                                          source: .vpn)
-        
+
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
                                                      storePurchaseManager: defaultSubscriptionManager.storePurchaseManager())
         let deadTokenRecoverer = DeadTokenRecoverer()

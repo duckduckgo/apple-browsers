@@ -107,7 +107,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
                                                          userDefaults: subscriptionUserDefaults,
                                                          pixelHandlingSource: .dbp,
                                                          source: .pir)
-        
+
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
                                                      storePurchaseManager: defaultSubscriptionManager.storePurchaseManager())
         defaultSubscriptionManager.tokenRecoveryHandler = {

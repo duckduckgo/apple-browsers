@@ -277,6 +277,7 @@ jobs:
         set -o pipefail && xcodebuild test-without-building \
           -scheme "${{ env.scheme }}" \
           -derivedDataPath DerivedData \
+          -resultBundlePath "DerivedData/Logs/Test/macOS-UI-Tests.xcresult" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
           -test-iterations 2 \

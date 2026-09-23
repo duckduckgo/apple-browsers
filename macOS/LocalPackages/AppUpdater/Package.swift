@@ -20,6 +20,7 @@ let package = Package(
         .package(path: "../../../SharedPackages/Persistence"),
         .package(path: "../../../SharedPackages/PixelKit"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Networking"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../FeatureFlags-macOS"),
     ],
@@ -110,7 +111,7 @@ let package = Package(
                 "AppStoreAppUpdater",
                 "AppUpdaterShared",
                 "AppUpdaterTestHelpers",
-                .product(name: "NetworkingTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
             ]
         ),

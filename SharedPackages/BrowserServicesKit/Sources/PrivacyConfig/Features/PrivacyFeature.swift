@@ -68,7 +68,6 @@ public enum PrivacyFeature: String {
     case experimentalTheming
     case setAsDefaultAndAddToDock
     case contentScopeExperiments
-    case extendedOnboarding
     case macOSBrowserConfig
     case iOSBrowserConfig
     // Demonstrative case for default value. Remove once a real-world feature is added
@@ -684,6 +683,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification
     case subscriptionPromoForExistingUsers
+    case subscriptionConcurrentExperiments
     case monthlyFreeTrialExperiment2
     case subscriptionOnboardingFreeTrialsSep2026
     case subscriptionOnboardingPaidSubsSep2026
@@ -771,12 +771,6 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     case scamProtection
 }
 
-public enum OnboardingSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .extendedOnboarding }
-
-    case showSettingsCompleteSetupSection
-}
-
 public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .experimentalTheming }
 
@@ -833,6 +827,10 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case lightweightReloadOnDataClear
     /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.
     case protectedDataLoadGate
+    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health.
+    case cpmBackgroundDelegateProxy
+    /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
+    case cpmDiagnosticsRecorder
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

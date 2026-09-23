@@ -71,10 +71,23 @@ jobs:
           -scheme "iOS UI Tests" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
           -derivedDataPath "DerivedData" \
+          -resultBundlePath "DerivedData/Logs/Test/iOS-UI-Tests.xcresult" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
           -test-iterations 2 \
           -retry-tests-on-failure \
           -test-repetition-relaunch-enabled YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+          2>&1 | tee ui-tests-xcodebuild.log \
           | xcbeautify
+
+    - name: Upload UI test diagnostics
+      if: failure() || cancelled()
+      uses: actions/upload-artifact@v6
+      with:
+        name: ios-ui-test-diagnostics
+        path: |
+          iOS/ui-tests-xcodebuild.log
+          iOS/DerivedData/Logs/Test/
+        if-no-files-found: warn
+        retention-days: 7

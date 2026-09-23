@@ -95,7 +95,7 @@ enum SubscriptionFunnelOrigin: String {
     /// Gated reasoning effort in the New Tab Page omnibar's reasoning picker.
     case newTabPageReasoningDropdown = "funnel_newtab_macos__reasoningdropdown"
 
-    /// The Duck.ai usage-limits drawer under the New Tab Page omnibar.
+    /// Upsell on the usage-limits drawer under the New Tab Page omnibar.
     case newTabPageUsageLimit = "funnel_newtab_macos__usagelimit"
 
     /// Gated model shown in the Prompt Bar's model picker. Impression only — gated rows aren't

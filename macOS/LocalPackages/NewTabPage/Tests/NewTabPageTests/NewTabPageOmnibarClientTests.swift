@@ -899,7 +899,6 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 0)
     }
 
-    /// The upsell and the weekly hand-off send no model, and the provider decides which it was.
     @MainActor
     func testSelectUsageLimitsCtaWithNoModelForwardsNil() async throws {
         try await messageHelper.handleMessageExpectingNilResponse(named: .selectUsageLimitsCta, parameters: [String: String]())

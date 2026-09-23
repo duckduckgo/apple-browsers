@@ -109,11 +109,6 @@ public extension NewTabPageDataModel {
         }
     }
 
-    /// The Duck.ai usage-limits drawer under the omnibar pill, resolved natively. The web renders
-    /// what it is given and reports the user's intent back over `omnibar_dismissUsageLimits` and
-    /// `omnibar_selectUsageLimitsCta`.
-    /// Unlike the other config payloads, this one is resolved and read back in the app target, so
-    /// its members are public.
     struct OmnibarUsageLimits: Codable, Equatable {
 
         public enum Icon: String, Codable {
@@ -146,10 +141,9 @@ public extension NewTabPageDataModel {
 
             public let label: String
             public let leadingIcon: LeadingIcon
-            /// Sent back on a primary tap. Absent for the upsell and the weekly hand-off.
             public let primaryModelId: String?
             public let showMenu: Bool
-            /// A header above the alternatives menu. Unset until design supplies the copy.
+            /// Unset: the address bar's chevron has no heading either, bar the gated one.
             public let menuHeader: String?
             public let alternatives: [Alternative]
 
@@ -197,8 +191,7 @@ public extension NewTabPageDataModel {
         }
     }
 
-    /// Whether the client still has to raise the subscription upsell after the provider has run the
-    /// drawer's CTA. Keeps the config provider out of the subscription flow.
+    /// Keeps the config provider out of the subscription flow; the client owns dialogs.
     enum OmnibarUsageLimitsCtaOutcome: Equatable {
         case handled
         case requiresSubscriptionUpsell
@@ -306,7 +299,6 @@ public extension NewTabPageDataModel {
         var enableUpdatedCreateImage: Bool?
         /// Native-localized notice shown after Create Image switches away from an unsupported model.
         var createImageModelSwitch: OmnibarCreateImageModelSwitch?
-        /// The usage-limits drawer. `nil` hides it; the web derives none of its content.
         var usageLimits: OmnibarUsageLimits?
     }
 
@@ -317,8 +309,7 @@ public extension NewTabPageDataModel {
     // MARK: - omnibar_selectUsageLimitsCta
 
     struct OmnibarSelectUsageLimitsCtaAction: Codable, Equatable {
-        /// Set when the user picked a model, either the primary one or an alternative. Absent for
-        /// the upsell and the weekly hand-off.
+        /// Absent for the upsell and the weekly hand-off.
         let modelId: String?
 
         public init(modelId: String?) {

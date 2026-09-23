@@ -1700,7 +1700,7 @@ extension AIChatOmnibarController {
     /// Resolved picker contents (accessible first, then the gated upsell section); owns the flag, copy, and ordering so the VC just renders.
     /// `freeModelsOnly` is the free-model CTA's chevron: advanced models are what it has run out of.
     /// `hidesGatedModels` is the usage card's chevron: it offers a way out of a spent allowance, so a
-    /// row that can't be picked doesn't belong in it. Keeps both surfaces' cards offering the same models.
+    /// row the user's plan can't pick has nothing to offer there.
     func modelPickerItems(selectedModelId: String?,
                           freeModelsOnly: Bool = false,
                           hidesGatedModels: Bool = false) -> [AIChatModelPickerItem] {

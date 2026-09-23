@@ -21,10 +21,8 @@ import NewTabPage
 
 extension NewTabPageDataModel.OmnibarUsageLimits {
 
-    /// `alternatives` is what the CTA's chevron menu lists, already filtered by the caller.
     init(warning: DuckAiUsageWarning, alternatives: [AIChatModel]) {
-        // The ring tracks the percentage while the limit is only approaching; a reached limit reads
-        // as an alert, where a nearly-full ring would say less than the copy already does.
+        // A reached limit reads as an alert: a nearly-full ring says less than the copy already does.
         let isApproaching = warning.message == .approaching
         self.init(
             message: warning.localizedHeadline,
@@ -60,9 +58,6 @@ private extension NewTabPageDataModel.OmnibarUsageLimits.Severity {
 private extension NewTabPageDataModel.OmnibarUsageLimits.Cta {
 
     /// `nil` hides the button, which is also how a switch with nothing to switch to renders.
-    ///
-    /// No `menuHeader`: the chevron on the address bar's card opens the plain model picker, whose
-    /// only heading is the gated-models one, and the web menu has no gated rows to head.
     init?(warning: DuckAiUsageWarning, alternatives: [AIChatModel]) {
         guard let label = warning.localizedActionTitle else { return nil }
 

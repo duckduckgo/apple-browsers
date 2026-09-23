@@ -303,8 +303,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertEqual(drawer?.cta?.primaryModelId, "claude-haiku-4-5")
     }
 
-    /// The web draws the chevron menu itself, so it is handed what the model picker would list —
-    /// not just the models the CTA steps down to. Recommended first, current selection excluded.
+    /// The picker's models, not the step-down ones web named.
     func testUsageLimits_switchCtaCarriesTheModelPickerAsAlternatives() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
 
@@ -318,8 +317,6 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         ])
     }
 
-    /// Advanced models are exactly what a free-model switch has run out of, and a gated one is a
-    /// dead end in a menu with no upsell row.
     func testUsageLimits_switchToFreeCtaListsOnlyFreeAccessibleModels() throws {
         let sut = try makeUsageLimitsProvider(seed: .weeklyReachedDegraded)
 
@@ -329,7 +326,6 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         ])
     }
 
-    /// Nothing to swap for the upsell, so the chevron has nothing to open.
     func testUsageLimits_nonSwitchCtaHasNoMenu() throws {
         let sut = try makeUsageLimitsProvider(seed: .freeDailyReached)
 
@@ -378,8 +374,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertNil(sut.provider.usageLimits())
     }
 
-    /// The menu is the message's own affordance, so any pick from it settles the message — even a
-    /// model web never named as a step down.
+    /// Settles the message even for a model web never named as a step down.
     func testSelectUsageLimitsCta_withAMenuAlternativePersistsItAndStandsTheMessageDown() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
 
@@ -390,7 +385,6 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertNil(sut.provider.usageLimits())
     }
 
-    /// A model the user's tier can't select is not something the menu offered.
     func testSelectUsageLimitsCta_ignoresAModelThatIsNotSelectable() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
 
@@ -418,7 +412,6 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertNil(sut.provider.usageLimits())
     }
 
-    /// Taking the drawer's advice from the omnibar's own model picker has to settle it too.
     func testSelectedModelId_switchingToTheSuggestedModelStandsTheWarningDown() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
 
@@ -467,8 +460,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertNil(sut.provider.usageLimits())
     }
 
-    /// The models are the ones the seed's switch targets name, in the order web lists them. The
-    /// selected model is a high-usage one so the notice fallback has something to resolve.
+    /// Defaults to a high-usage model, so the notice fallback has something to resolve.
     @MainActor
     private func makeUsageLimitsProvider(
         seed: DuckAiUsageSnapshotSeed?,

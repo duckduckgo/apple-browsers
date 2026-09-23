@@ -218,8 +218,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         }
         set {
             guard newValue != aiChatPreferencesPersistor.selectedModelId else { return }
-            // A switch made in the omnibar's own picker is the drawer's CTA by another route, so the
-            // message stands down here too. Read before the write: it needs the model we were on.
+            // The drawer's CTA by another route, so it settles the message too. Before the write:
+            // it needs the model we were on.
             if let newValue {
                 usageWarningViewModel?.userSwitchedModel(from: aiChatPreferencesPersistor.selectedModelId, to: newValue)
             }
@@ -380,8 +380,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
                 // The captured store carries this refresh's burner-aware handler.
                 store.write(entries)
             case .tryForFree:
-                // Raised by the client off `selectUsageLimitsCta`'s outcome instead: the drawer is
-                // web-rendered, so there is no native card to route an upsell from.
+                // The client raises this off `selectUsageLimitsCta`'s outcome instead.
                 break
             }
         }
@@ -390,8 +389,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         store.snapshotUpdates?
             .sink { [weak self] in self?.usageWarningViewModel?.refresh() }
             .store(in: &usageLimitsCancellables)
-        // Subscribed after the first resolve, so entering Duck.ai mode doesn't push a config update
-        // on top of the `getConfig` response that triggered it.
+        // After the first resolve, so entering Duck.ai mode doesn't push an update on top of the
+        // `getConfig` response that triggered it.
         usageWarningViewModel?.$warning
             .dropFirst()
             .removeDuplicates()
@@ -405,7 +404,6 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             return NewTabPageDataModel.OmnibarUsageLimits(warning: warning,
                                                           alternatives: modelPickerAlternatives(for: warning))
         }
-        // The fallback when no allowance message applies, as on the address bar's card.
         highUsageNoticeSource?.refresh()
         guard let notice = highUsageNoticeSource?.notice else { return nil }
         return NewTabPageDataModel.OmnibarUsageLimits(notice: notice)
@@ -417,8 +415,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             usageWarningViewModel?.dismiss()
             return
         }
-        // Re-resolved first: the notice is keyed off the selected model, and dismissing one that
-        // hasn't been read since that model changed would record nothing and let it come back.
+        // Re-resolved first: dismissing a notice that hasn't been read since the model changed
+        // records nothing and lets it come back.
         highUsageNoticeSource?.refresh()
         highUsageNoticeSource?.dismissCurrent()
     }
@@ -433,8 +431,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             return .handled
         }
 
-        // A pick from the chevron menu. That menu is the message's own affordance, so any model
-        // taken from it settles the message, as it does on the address bar's card.
+        // The chevron menu is the message's own affordance, so any pick from it settles it.
         guard let model = availableModelsProvider().first(where: { $0.id == modelId && $0.entityHasAccess }) else {
             return .handled
         }
@@ -443,10 +440,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         return .handled
     }
 
-    /// What the CTA's chevron lists. The address bar opens the plain model picker from there rather
-    /// than the step-down models web named, so this mirrors `modelPickerItems`: recommended first,
-    /// and advanced models dropped for a free-model switch, since those are what it has run out of.
-    /// The web menu has no gated rows and no selected state, so neither goes in it.
+    /// Mirrors `modelPickerItems` rather than offering the step-down models web named, because web
+    /// can't see this surface's picker. Gated rows and the selection go because web can't render them.
     private func modelPickerAlternatives(for warning: DuckAiUsageWarning) -> [AIChatModel] {
         guard warning.actionSwapsModel else { return [] }
 

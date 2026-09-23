@@ -2430,8 +2430,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(separatorCount(items), 0, "Nothing to divide off — there is no second section")
     }
 
-    /// The usage card's chevron offers a way out of a spent allowance, so a row that can't be picked
-    /// has nothing to offer. Matches the New Tab Page drawer's menu, which can't render one at all.
+    /// A row the user's plan can't pick has nothing to offer in a menu about switching model.
     func testModelPickerItems_hidesGatedModels_dropsTheGatedSection() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([

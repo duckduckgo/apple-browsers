@@ -377,8 +377,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         return nil
     }
 
-    /// An absent `modelId` is the upsell and the weekly hand-off, so a failed decode is the same
-    /// thing as no model rather than a reason to bail.
+    /// An absent `modelId` is valid — the upsell and the weekly hand-off send none — so a failed
+    /// decode means no model rather than nothing to do.
     @MainActor
     private func selectUsageLimitsCta(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let action: NewTabPageDataModel.OmnibarSelectUsageLimitsCtaAction? = DecodableHelper.decode(from: params)

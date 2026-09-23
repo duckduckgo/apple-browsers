@@ -115,7 +115,7 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
         wideEvent.updateFlow(wideData)
 
         // 6: Complete the tier change by confirming with the backend
-        let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: nil)
+        let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, experimentAttribution: nil)
 
         // 7: Handle tier change completion result
         switch completePurchaseResult {

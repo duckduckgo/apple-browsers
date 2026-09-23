@@ -148,7 +148,7 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     }
 
     public var confirmPurchaseResponse: Result<DuckDuckGoSubscription, Error>?
-    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription {
+    public func confirmPurchase(signature: String, experimentAttribution: PurchaseExperimentAttribution?) async throws -> DuckDuckGoSubscription {
         switch confirmPurchaseResponse! {
         case .success(let result):
             return result

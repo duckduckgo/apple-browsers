@@ -163,6 +163,15 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                                       forMainFrameOnly: false)
         controllerConfiguration.webViewConfiguration.userContentController.addUserScript(stubScript)
 
+        // Extension pages built for Chrome expect Chrome's light defaults when they declare no
+        // color scheme. WebKit follows the app's appearance instead, which turns their unstyled
+        // text white in a dark app. Injected at document start, so no page renders a frame
+        // with the wrong defaults.
+        let colorSchemeScript = WKUserScript(source: WebExtensionColorSchemeScript.source,
+                                             injectionTime: .atDocumentStart,
+                                             forMainFrameOnly: false)
+        controllerConfiguration.webViewConfiguration.userContentController.addUserScript(colorSchemeScript)
+
         // A popup page closes itself with `window.close()`. WebKit unloads the web view but tells
         // nobody, so the page reports the call through a script message, and the window/tab
         // provider takes down whatever it hosted the popup in.

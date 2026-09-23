@@ -174,11 +174,6 @@ final class WebExtensionPopupPresenter {
         // keeps the panel visible until then, instead of a fully transparent rectangle.
         contentView.layer?.backgroundColor = popupBackgroundColor.cgColor
 
-        // A page that declares no `color-scheme` expects the light defaults Chrome gives it:
-        // black text and light form controls. WebKit takes them from the web view's appearance
-        // instead, so in a dark app LastPass's unstyled text renders white on its light background.
-        popupWebView.appearance = NSAppearance(named: .aqua)
-
         popupWebView.frame = contentView.bounds
         popupWebView.autoresizingMask = [.width, .height]
         contentView.addSubview(popupWebView)

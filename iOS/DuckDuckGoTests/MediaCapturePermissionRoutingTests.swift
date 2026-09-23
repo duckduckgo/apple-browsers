@@ -1158,11 +1158,12 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             XCTAssertEqual(position.coordinates.latitude, location.coordinate.latitude)
             XCTAssertEqual(position.coordinates.longitude, location.coordinate.longitude)
             XCTAssertEqual(locationManager.stopUpdatingCallCount, 1, "isMainFrame: \(isMainFrame)")
+            // Location Allow Once lasts for the page, so a completed request keeps it granted.
             XCTAssertEqual(delegate.geolocationUserScript(userScript,
                                                           permissionStatusID: "status-after-request",
                                                           constraints: constraints,
                                                           permissionStateIn: frame),
-                           .prompt,
+                           .granted,
                            "isMainFrame: \(isMainFrame)")
             XCTAssertEqual(events, [
                 .permissionDialogImpression(type: .geolocation),

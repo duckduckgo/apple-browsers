@@ -47,8 +47,7 @@ protocol DependencyProvider {
     var variantManager: VariantManager { get }
     var internalUserDecider: InternalUserDecider { get }
     var featureFlagger: FeatureFlagger { get }
-    /// For debug editors to display pending changes; app behavior uses `featureFlagger`.
-    var liveFeatureFlagger: FeatureFlagger { get }
+    var isSitePermissionsEnabled: Bool { get }
     var configurationURLProvider: CustomConfigurationURLProviding { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var storageCache: StorageCache { get }
@@ -125,7 +124,7 @@ final class AppDependencyProvider: DependencyProvider {
     let variantManager: VariantManager = DefaultVariantManager()
     let internalUserDecider: InternalUserDecider = ContentBlocking.shared.privacyConfigurationManager.internalUserDecider
     let featureFlagger: FeatureFlagger
-    let liveFeatureFlagger: FeatureFlagger
+    let isSitePermissionsEnabled: Bool
     let configurationURLProvider: CustomConfigurationURLProviding
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
@@ -216,7 +215,6 @@ final class AppDependencyProvider: DependencyProvider {
             let mockFeatureFlagger = MockFeatureFlagger()
             self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
             self.featureFlagger = mockFeatureFlagger
-            self.liveFeatureFlagger = mockFeatureFlagger
             featureFlagger = mockFeatureFlagger
         } else {
             let defaultFeatureFlagger = DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
@@ -235,11 +233,12 @@ final class AppDependencyProvider: DependencyProvider {
                 featureFlagOverrideStore: featureFlagOverrideStore,
                 configRolloutStore: .standard
             )
-            let sessionFeatureFlagger = SessionFeatureFlagger(base: defaultFeatureFlagger)
-            self.liveFeatureFlagger = defaultFeatureFlagger
-            self.featureFlagger = sessionFeatureFlagger
-            featureFlagger = sessionFeatureFlagger
+            self.featureFlagger = defaultFeatureFlagger
+            featureFlagger = defaultFeatureFlagger
         }
+
+        // Injected scripts survive in loaded and cached documents, so every entry point uses the same launch-time value.
+        isSitePermissionsEnabled = featureFlagger.isFeatureOn(.sitePermissions)
 
         // Configure PixelKit Experiments
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger,

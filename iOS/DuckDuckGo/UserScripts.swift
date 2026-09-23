@@ -77,7 +77,7 @@ final class UserScripts: UserScriptsProvider {
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         sitePermissionsEnabled: Bool? = nil,
+         sitePermissionsEnabled: Bool = false,
          mediaCaptureUserScript: MediaCaptureUserScript? = nil,
          internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProviding = AppDependencyProvider.shared.internalFeedbackAttachmentsProvider,
          internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider = AppDependencyProvider.shared.internalFeedbackTabCountProvider,
@@ -89,8 +89,7 @@ final class UserScripts: UserScriptsProvider {
 
         selectionFrameScript = SelectionFrameUserScript()
         self.mediaCaptureUserScript = mediaCaptureUserScript
-        let isSitePermissionsEnabled = sitePermissionsEnabled ?? featureFlagger.isFeatureOn(.sitePermissions)
-        self.geolocationUserScript = isSitePermissionsEnabled ? geolocationUserScript : nil
+        self.geolocationUserScript = sitePermissionsEnabled ? geolocationUserScript : nil
 
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey

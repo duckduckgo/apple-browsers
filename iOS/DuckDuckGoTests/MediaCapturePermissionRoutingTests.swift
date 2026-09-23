@@ -325,7 +325,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(decisions, [.prompt, .grant])
     }
 
-    func testFlagOffInstallsBridgeBeforeContentBlockingAssetsAndHandlesLaterActivation() async {
+    func testDisabledLaunchInstallsBridgeButRemoteActivationStillBypasses() async {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         // The fake's content-blocking publisher never emits assets.
         let sut = makeSUT(featureFlagger: featureFlagger)
@@ -351,8 +351,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let enabledDecision = await requestPermissionThroughBridge(on: sut,
                                                                     originHost: "top-level.example",
                                                                     captureType: .camera)
-        XCTAssertTrue(didPrompt)
-        XCTAssertEqual(enabledDecision, .allow)
+        XCTAssertFalse(didPrompt)
+        XCTAssertEqual(enabledDecision, .bypass)
     }
 
     func testFlagOnRejectsBridgeRequestBeforeMainFrameCommit() async {
@@ -446,7 +446,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertFalse(didPrompt)
     }
 
-    func testFlagOffDismissesPendingPromptAndDrainsBridgeExactlyOnce() async {
+    func testRemoteDisablePreservesPendingPromptAndDeniesReplayedBridgeRequest() async {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
         let sut = makeSUT(featureFlagger: featureFlagger)
         let userScript = MediaCaptureUserScript()
@@ -466,14 +466,15 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
         featureFlagger.enabledFeatureFlags = []
         featureFlagger.triggerUpdate()
-        let originalDecision = await originalRequest.value
-        XCTAssertEqual(originalDecision, .bypass)
-
+        XCTAssertNotNil(sut.sitePermissionsState.coordinator)
         promptCompletion?(.denyOnce)
+        let originalDecision = await originalRequest.value
+        XCTAssertEqual(originalDecision, .deny)
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.denyOnce) }
         let flagOffDecision = await requestPermissionThroughBridge(on: sut,
                                                                    originHost: "top-level.example",
                                                                    captureType: .camera)
-        XCTAssertEqual(flagOffDecision, .bypass)
+        XCTAssertEqual(flagOffDecision, .deny)
         XCTAssertTrue(userScript.delegate === sut)
 
         featureFlagger.enabledFeatureFlags = [.sitePermissions]
@@ -1766,7 +1767,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             ?? MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : [])
         let sut = TabViewController.fake(
             customWebView: { SitePermissionURLWebView(url: committedURL, configuration: $0) },
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions)
         )
         let dependencies = SitePermissionsDependencies(
             store: store ?? SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring()),

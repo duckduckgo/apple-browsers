@@ -82,74 +82,72 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         WKContentRuleList.restoreDealloc()
     }
 
-    func testWhenSitePermissionsConfigChangesThenSessionKeepsItsLaunchStateUntilRecreated() throws {
-        let initialStates: [String?] = [nil, "disabled", "enabled"]
-        for initialState in initialStates {
-            let (base, manager, _) = try makeSessionFeatureFlaggerBase(sitePermissionsState: initialState)
-            let session = SessionFeatureFlagger(base: base)
-            let initiallyEnabled = initialState == "enabled"
-            XCTAssertEqual(session.isFeatureOn(for: FeatureFlag.sitePermissions), initiallyEnabled)
+    @MainActor
+    func testConfigChangesKeepExistingAndNewTabsOnLaunchStateUntilRelaunch() throws {
+        for initialState in [nil, "disabled", "enabled"] as [String?] {
+            let (flagger, manager, _) = try makeFeatureFlagger(sitePermissionsState: initialState)
+            let launchEnabled = flagger.isFeatureOn(for: FeatureFlag.sitePermissions)
+            let existingTab = TabViewController.fake(featureFlagger: flagger, sitePermissionsEnabled: launchEnabled)
+            existingTab.specialErrorPageNavigationHandler.delegate = nil
+            defer { existingTab.prepareForDataClearing() }
+            XCTAssertEqual(launchEnabled, initialState == "enabled")
 
-            let nextStates: [String?] = ["enabled", nil, "disabled"]
-            for nextState in nextStates {
-                manager.privacyConfig = try makeSessionPrivacyConfiguration(sitePermissionsState: nextState)
+            for nextState in ["enabled", nil, "disabled"] as [String?] {
+                manager.privacyConfig = try makePrivacyConfiguration(sitePermissionsState: nextState)
                 manager.updatesSubject.send()
-
-                XCTAssertEqual(base.isFeatureOn(for: FeatureFlag.sitePermissions), nextState == "enabled")
-                XCTAssertEqual(session.isFeatureOn(for: FeatureFlag.sitePermissions), initiallyEnabled)
-                XCTAssertEqual(SessionFeatureFlagger(base: base).isFeatureOn(for: FeatureFlag.sitePermissions),
-                               nextState == "enabled")
+                let newTab = TabViewController.fake(featureFlagger: flagger, sitePermissionsEnabled: launchEnabled)
+                let relaunchedTab = TabViewController.fake(featureFlagger: flagger,
+                                                          sitePermissionsEnabled: flagger.isFeatureOn(for: FeatureFlag.sitePermissions))
+                for tab in [newTab, relaunchedTab] { tab.specialErrorPageNavigationHandler.delegate = nil }
+                defer {
+                    newTab.prepareForDataClearing()
+                    relaunchedTab.prepareForDataClearing()
+                }
+                XCTAssertEqual(existingTab.isSitePermissionsEnabled, initialState == "enabled")
+                XCTAssertEqual(newTab.isSitePermissionsEnabled, initialState == "enabled")
+                XCTAssertEqual(relaunchedTab.isSitePermissionsEnabled, nextState == "enabled")
             }
         }
     }
 
-    func testWhenSitePermissionsOverrideChangesThenBothOverrideModesKeepTheirSeparateLaunchValues() throws {
+    @MainActor
+    func testLocalOverrideChangesApplyOnlyToNextLaunchWhileOtherFlagsStayLive() throws {
         for remoteEnabled in [false, true] {
-            let (base, manager, overrides) = try makeSessionFeatureFlaggerBase(
+            let (flagger, manager, overrides) = try makeFeatureFlagger(
                 sitePermissionsState: remoteEnabled ? "enabled" : "disabled")
             overrides.toggleOverride(for: FeatureFlag.sitePermissions)
-            let session = SessionFeatureFlagger(base: base)
-
-            XCTAssertEqual(session.isFeatureOn(for: FeatureFlag.sitePermissions, allowOverride: true), !remoteEnabled)
-            XCTAssertEqual(session.isFeatureOn(for: FeatureFlag.sitePermissions, allowOverride: false), remoteEnabled)
+            let launchEnabled = flagger.isFeatureOn(for: FeatureFlag.sitePermissions)
+            let tab = TabViewController.fake(featureFlagger: flagger, sitePermissionsEnabled: launchEnabled)
+            tab.specialErrorPageNavigationHandler.delegate = nil
+            defer { tab.prepareForDataClearing() }
+            XCTAssertEqual(tab.isSitePermissionsEnabled, !remoteEnabled)
+            XCTAssertFalse(flagger.isFeatureOn(for: FeatureFlag.promoPresentationCoordination))
 
             overrides.clearOverride(for: FeatureFlag.sitePermissions)
-            XCTAssertEqual(base.isFeatureOn(for: FeatureFlag.sitePermissions), remoteEnabled)
-            XCTAssertEqual(session.isFeatureOn(for: FeatureFlag.sitePermissions, allowOverride: true), !remoteEnabled)
-
-            manager.privacyConfig = try makeSessionPrivacyConfiguration(sitePermissionsState: remoteEnabled ? "disabled" : "enabled")
+            manager.privacyConfig = try makePrivacyConfiguration(
+                sitePermissionsState: remoteEnabled ? "enabled" : "disabled", promoEnabled: true)
             manager.updatesSubject.send()
-            XCTAssertEqual(base.isFeatureOn(for: FeatureFlag.sitePermissions, allowOverride: false), !remoteEnabled)
-            XCTAssertEqual(session.isFeatureOn(for: FeatureFlag.sitePermissions, allowOverride: true), !remoteEnabled)
-            XCTAssertEqual(session.isFeatureOn(for: FeatureFlag.sitePermissions, allowOverride: false), remoteEnabled)
+            let newTab = TabViewController.fake(featureFlagger: flagger, sitePermissionsEnabled: launchEnabled)
+            let relaunchedTab = TabViewController.fake(featureFlagger: flagger,
+                                                      sitePermissionsEnabled: flagger.isFeatureOn(for: FeatureFlag.sitePermissions))
+            for tab in [newTab, relaunchedTab] { tab.specialErrorPageNavigationHandler.delegate = nil }
+            defer {
+                newTab.prepareForDataClearing()
+                relaunchedTab.prepareForDataClearing()
+            }
+            XCTAssertEqual(tab.isSitePermissionsEnabled, !remoteEnabled)
+            XCTAssertEqual(newTab.isSitePermissionsEnabled, !remoteEnabled)
+            XCTAssertEqual(relaunchedTab.isSitePermissionsEnabled, remoteEnabled)
+            XCTAssertTrue(flagger.isFeatureOn(for: FeatureFlag.promoPresentationCoordination))
+            overrides.toggleOverride(for: FeatureFlag.promoPresentationCoordination)
+            XCTAssertFalse(flagger.isFeatureOn(for: FeatureFlag.promoPresentationCoordination))
         }
     }
 
-    func testWhenOtherFlagsChangeThenSessionForwardsLiveValuesAndConfigAndOverrideUpdates() throws {
-        let (base, manager, overrides) = try makeSessionFeatureFlaggerBase(sitePermissionsState: "enabled")
-        let session = SessionFeatureFlagger(base: base)
-        var updateCount = 0
-        let subscription = session.updatesPublisher.sink { updateCount += 1 }
-        defer { subscription.cancel() }
-        XCTAssertFalse(session.isFeatureOn(for: FeatureFlag.promoPresentationCoordination))
-
-        manager.privacyConfig = try makeSessionPrivacyConfiguration(sitePermissionsState: "disabled", promoEnabled: true)
-        manager.updatesSubject.send()
-        XCTAssertEqual(updateCount, 1)
-        XCTAssertTrue(session.isFeatureOn(for: FeatureFlag.promoPresentationCoordination))
-        XCTAssertTrue(session.isFeatureOn(for: FeatureFlag.sitePermissions))
-
-        overrides.toggleOverride(for: FeatureFlag.promoPresentationCoordination)
-        XCTAssertEqual(updateCount, 2)
-        XCTAssertFalse(session.isFeatureOn(for: FeatureFlag.promoPresentationCoordination))
-        XCTAssertTrue(session.isFeatureOn(for: FeatureFlag.promoPresentationCoordination, allowOverride: false))
-        XCTAssertTrue(session.isFeatureOn(for: FeatureFlag.sitePermissions))
-    }
-
-    private func makeSessionFeatureFlaggerBase(sitePermissionsState: String?) throws
+    private func makeFeatureFlagger(sitePermissionsState: String?) throws
         -> (DefaultFeatureFlagger, PrivacyConfigurationManagerMock, FeatureFlagLocalOverrides) {
         let manager = PrivacyConfigurationManagerMock()
-        manager.privacyConfig = try makeSessionPrivacyConfiguration(sitePermissionsState: sitePermissionsState)
+        manager.privacyConfig = try makePrivacyConfiguration(sitePermissionsState: sitePermissionsState)
         let internalUserDecider = PrivacyConfig.MockInternalUserDecider(isInternalUser: true)
         let overrides = FeatureFlagLocalOverrides(
             keyValueStore: InMemoryKeyValueStore(),
@@ -173,7 +171,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         return (base, manager, overrides)
     }
 
-    private func makeSessionPrivacyConfiguration(sitePermissionsState: String?, promoEnabled: Bool = false) throws -> AppPrivacyConfiguration {
+    private func makePrivacyConfiguration(sitePermissionsState: String?, promoEnabled: Bool = false) throws -> AppPrivacyConfiguration {
         var subfeatures: [String: Any] = ["promoPresentationCoordination": ["state": promoEnabled ? "enabled" : "disabled"]]
         if let sitePermissionsState {
             subfeatures["sitePermissions"] = ["state": sitePermissionsState]
@@ -231,7 +229,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     @MainActor
     func testWhenRequiredAssetsTimeOutThenNavigationCancelsOnceAndRefreshRetriesItsURL() async throws {
         let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },
-                                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]),
+                                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true,
                                         contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
@@ -291,7 +289,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                 }
                 configuration.userContentController = controller
                 return WKWebView(frame: .zero, configuration: configuration)
-            }, featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]))
+            }, featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true)
             tab.specialErrorPageNavigationHandler.delegate = nil
             defer { tab.prepareForDataClearing() }
             tab.sitePermissionsNavigationTimeout = 0.3
@@ -321,7 +319,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
     @MainActor
     func testWhenMainFrameNavigationReplacesAWaitThenOnlyTheNewDecisionCanResume() async throws {
-        let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]),
+        let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true,
                                         contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
@@ -363,7 +361,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     @MainActor
     func testWhenExplicitLoadReplacesAWaitThenItCancelsBeforeTheNextPolicyDecision() async throws {
         let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },
-                                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]))
+                                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true)
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
         tab.sitePermissionsNavigationTimeout = 0.25
@@ -395,7 +393,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
     @MainActor
     func testWhenTabClosesDuringAssetWaitThenCancellationDoesNotPresentTimeoutError() async throws {
-        let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]))
+        let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true)
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
         tab.sitePermissionsNavigationTimeout = 0.25
@@ -417,7 +415,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     func testWhenUserStopsDuringAssetWaitThenLateAssetsCannotResumeNavigationOrShowAnError() async throws {
         let controllerReleased = expectation(description: "Stopped navigation releases its content controller")
         func exerciseStop() async throws {
-            let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]),
+            let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true,
                                             contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
             let controller = try XCTUnwrap(tab.webView.configuration.userContentController as? UserContentController)
             controller.onDeinit { controllerReleased.fulfill() }
@@ -456,8 +454,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     @MainActor
     func testWhenRemoteFlagChangesBeforeFirstAssetsThenNavigationStillWaitsForLaunchTimeScripts() async throws {
         let remoteFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let flagger = SessionFeatureFlagger(base: remoteFlagger)
-        let tab = TabViewController.fake(featureFlagger: flagger,
+        let launchEnabled = remoteFlagger.isFeatureOn(.sitePermissions)
+        let tab = TabViewController.fake(featureFlagger: remoteFlagger, sitePermissionsEnabled: launchEnabled,
                                         contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
@@ -479,7 +477,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         remoteFlagger.triggerUpdate()
         await Task.yield()
         XCTAssertTrue(decisions.isEmpty)
-        XCTAssertTrue(flagger.isFeatureOn(.sitePermissions))
+        XCTAssertTrue(tab.isSitePermissionsEnabled)
 
         rulesManager.updatesSubject.send(Self.testUpdate())
         await fulfillment(of: [resumed], timeout: 10)
@@ -493,15 +491,15 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     func testRemoteFlagChangesApplyToDocumentsOnlyAfterRelaunch() async throws {
         for initiallyEnabled in [false, true] {
             let remoteFlagger = MockFeatureFlagger(enabledFeatureFlags: initiallyEnabled ? [.sitePermissions] : [])
-            let launchFlagger = SessionFeatureFlagger(base: remoteFlagger)
+            let launchEnabled = remoteFlagger.isFeatureOn(.sitePermissions)
             remoteFlagger.enabledFeatureFlags = initiallyEnabled ? [] : [.sitePermissions]
             remoteFlagger.triggerUpdate()
 
-            // New tabs in the current process keep the launch decision. A fresh app flagger adopts the update.
+            // New tabs in the current process keep the launch decision. A fresh launch snapshot adopts the update.
             for isRelaunch in [false, true] {
-                let flagger = isRelaunch ? SessionFeatureFlagger(base: remoteFlagger) : launchFlagger
+                let sitePermissionsEnabled = isRelaunch ? remoteFlagger.isFeatureOn(.sitePermissions) : launchEnabled
                 let expectedEnabled = isRelaunch ? !initiallyEnabled : initiallyEnabled
-                let tab = TabViewController.fake(featureFlagger: flagger,
+                let tab = TabViewController.fake(featureFlagger: remoteFlagger, sitePermissionsEnabled: sitePermissionsEnabled,
                                                 contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
                 tab.specialErrorPageNavigationHandler.delegate = nil
                 defer { tab.prepareForDataClearing() }
@@ -578,7 +576,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         let pageB = try XCTUnwrap(URL(string: "http://localhost:\(port.rawValue)/b"))
 
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let tab = TabViewController.fake(featureFlagger: SessionFeatureFlagger(base: flagger),
+        let tab = TabViewController.fake(featureFlagger: flagger, sitePermissionsEnabled: flagger.isFeatureOn(.sitePermissions),
                                         contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
         defer { tab.prepareForDataClearing() }
         let errorHandler = try XCTUnwrap(tab.specialErrorPageNavigationHandler as? DummySpecialErrorPageNavigationHandler)
@@ -677,7 +675,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     @MainActor
     func testWhenRemoteFlagChangesThenAssetsAndReloadNotificationsAreNotReplayed() async {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let tab = TabViewController.fake(featureFlagger: SessionFeatureFlagger(base: flagger),
+        let tab = TabViewController.fake(featureFlagger: flagger, sitePermissionsEnabled: flagger.isFeatureOn(.sitePermissions),
                                         contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
@@ -705,13 +703,14 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testGeolocationUserScriptRegistrationFollowsSitePermissionsFlag() async throws {
+    func testGeolocationUserScriptRegistrationFollowsLaunchSnapshot() async throws {
         let sourceProvider = makeScriptSourceProvider()
         let geolocationUserScript = GeolocationUserScript()
 
         let disabledScripts = UserScripts(
             with: sourceProvider,
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+            sitePermissionsEnabled: false,
             geolocationUserScript: geolocationUserScript
         )
         XCTAssertNil(disabledScripts.geolocationUserScript)
@@ -721,6 +720,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         let enabledScripts = UserScripts(
             with: sourceProvider,
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]),
+            sitePermissionsEnabled: true,
             geolocationUserScript: geolocationUserScript
         )
         XCTAssertTrue(enabledScripts.geolocationUserScript === geolocationUserScript)
@@ -766,14 +766,14 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     func testContentUpdatesRetainTheLaunchTimeScriptsAfterRemoteFlagChanges() {
         for initiallyEnabled in [false, true] {
             let remoteFlagger = MockFeatureFlagger(enabledFeatureFlags: initiallyEnabled ? [.sitePermissions] : [])
-            let featureFlagger = SessionFeatureFlagger(base: remoteFlagger)
+            let sitePermissionsEnabled = remoteFlagger.isFeatureOn(.sitePermissions)
             let mediaCaptureUserScript = MediaCaptureUserScript()
             let geolocationUserScript = GeolocationUserScript()
             let contentSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
             var receivedScripts = [(MediaCaptureUserScript?, GeolocationUserScript?)]()
             let cancellable = TabViewController.sitePermissionsContentBlockingAssetsPublisher(
                 contentSubject.eraseToAnyPublisher(),
-                featureFlagger: featureFlagger,
+                sitePermissionsEnabled: sitePermissionsEnabled,
                 mediaCaptureUserScript: mediaCaptureUserScript,
                 geolocationUserScript: geolocationUserScript
             ).sink { content in

@@ -23,7 +23,6 @@ import BrowserServicesKit
 import Combine
 import Common
 import Core
-import FeatureFlags_iOS
 import Foundation
 import MetricBuilder
 import PrivacyConfig
@@ -111,7 +110,6 @@ final class SitePermissionsState {
     fileprivate var systemSettingsOpenerOverride: (() -> Void)?
     fileprivate var uptimeProvider: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
 
-    fileprivate var featureFlagSubscription: AnyCancellable?
     var contentBlockingWaitTasks = [UUID: Task<Void, Never>]()
 
     func cancelContentBlockingWaits() {
@@ -255,7 +253,6 @@ final class SitePermissionsState {
 
     func close() {
         cancelContentBlockingWaits()
-        featureFlagSubscription = nil
         geolocationActivitySubscription = nil
         isClosed = true
         dismissDialog()
@@ -289,18 +286,6 @@ extension TabViewController {
         set { sitePermissionsState.uptimeProvider = newValue }
     }
 
-    func subscribeToSitePermissionsChanges() {
-        sitePermissionsState.featureFlagSubscription = featureFlagger.updatesPublisher
-            .receive(on: DispatchQueue.main)
-            .map { [weak self] in self?.isMediaCapturePermissionHandlingEnabled == true }
-            .removeDuplicates()
-            .sink { [weak self] isEnabled in
-                if !isEnabled {
-                    self?.configureSitePermissionsMediaCapture(with: nil)
-                }
-            }
-    }
-
     static func shouldWaitForContentBlockingAssets(assetsInstalled: Bool,
                                                    contentBlockingEnabled: Bool,
                                                    sitePermissionsEnabled: Bool,
@@ -322,7 +307,7 @@ extension TabViewController {
 
         return Self.sitePermissionsContentBlockingAssetsPublisher(
             contentBlockingAssetsPublisher,
-            featureFlagger: featureFlagger,
+            sitePermissionsEnabled: isSitePermissionsEnabled,
             mediaCaptureUserScript: mediaCaptureUserScript,
             geolocationUserScript: geolocationUserScript
         )
@@ -330,17 +315,15 @@ extension TabViewController {
 
     static func sitePermissionsContentBlockingAssetsPublisher(
         _ contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
-        featureFlagger: FeatureFlagger,
+        sitePermissionsEnabled: Bool,
         mediaCaptureUserScript: MediaCaptureUserScript,
         geolocationUserScript: GeolocationUserScript
     ) -> AnyPublisher<ContentBlockingUpdating.NewContent, Never> {
-        // The app resolves this flag once per launch. Asset updates keep the same script and handler.
-        let isEnabled = featureFlagger.isFeatureOn(.sitePermissions)
         return contentBlockingAssetsPublisher
             .map { content in
                 content
                     .includingSitePermissionsMediaCapture(mediaCaptureUserScript)
-                    .includingSitePermissionsGeolocation(geolocationUserScript, enabled: isEnabled)
+                    .includingSitePermissionsGeolocation(geolocationUserScript, enabled: sitePermissionsEnabled)
             }
             .eraseToAnyPublisher()
     }
@@ -351,8 +334,8 @@ extension TabViewController {
             sitePermissionsState.mediaCaptureUserScript = nil
         }
 
-        // Install before navigation, even when content-blocking assets are not ready. Keeping
-        // the bridge dormant while disabled lets existing documents participate after activation.
+        // Install before navigation, even when content-blocking assets are not ready.
+        // The bridge delegates to the legacy WebKit flow when site permissions is disabled.
         let userScript = MediaCaptureUserScript()
         sitePermissionsState.mediaCaptureUserScript = userScript
         userScript.delegate = self
@@ -450,7 +433,7 @@ extension TabViewController {
             return
         }
 
-        guard featureFlagger.isFeatureOn(.sitePermissions) else {
+        guard isSitePermissionsEnabled else {
             sitePermissionsState.discardPreapprovals()
             decisionHandler(.prompt)
             return
@@ -470,7 +453,7 @@ extension TabViewController {
     }
 
     var isSitePermissionsManagementAvailable: Bool {
-        guard featureFlagger.isFeatureOn(.sitePermissions),
+        guard isSitePermissionsEnabled,
               let site = currentSitePermissionKey(),
               let dependencies = sitePermissionsDependenciesProvider() else {
             return false
@@ -593,7 +576,7 @@ extension TabViewController {
     private func refreshSitePermissionsManagement(coordinator: SitePermissionsCoordinator,
                                                   site: SitePermissionKey,
                                                   viewModel: SitePermissionsSheetViewModel) {
-        guard featureFlagger.isFeatureOn(.sitePermissions), currentSitePermissionKey() == site else {
+        guard isSitePermissionsEnabled, currentSitePermissionKey() == site else {
             viewModel.dismiss()
             return
         }
@@ -767,7 +750,7 @@ extension TabViewController {
             userScript.delegate = provider
             return
         }
-        guard featureFlagger.isFeatureOn(.sitePermissions),
+        guard isSitePermissionsEnabled,
               let dependencies = sitePermissionsDependenciesProvider(),
               makeSitePermissionsCoordinatorIfNeeded(dependencies: dependencies) != nil else {
             return
@@ -1125,7 +1108,7 @@ extension TabViewController {
 extension TabViewController: MediaCaptureUserScriptDelegate {
 
     var isMediaCapturePermissionHandlingEnabled: Bool {
-        featureFlagger.isFeatureOn(.sitePermissions)
+        isSitePermissionsEnabled
     }
 
     func configureSitePermissionsMediaCapture(with userScript: MediaCaptureUserScript?) {
@@ -1149,7 +1132,7 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
                                 requestID: String,
                                 in frame: WKFrameInfo,
                                 webView: WKWebView) async -> MediaCaptureBridgeDecision {
-        guard featureFlagger.isFeatureOn(.sitePermissions) else {
+        guard isSitePermissionsEnabled else {
             sitePermissionsState.discardPreapprovals()
             return .bypass
         }
@@ -1205,19 +1188,6 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
     private func resolveMediaCaptureBridgeRequest(_ requestID: String,
                                                   resolution: SitePermissionResolution) {
         guard let pendingRequest = sitePermissionsState.pendingBridgeRequests[requestID] else { return }
-        guard featureFlagger.isFeatureOn(.sitePermissions) else {
-            sitePermissionsState.pendingBridgeRequests[requestID] = nil
-            sitePermissionsState.handledBridgeRequestIDs.remove(requestID)
-            let decision: MediaCaptureBridgeDecision
-            if case .deny = resolution {
-                decision = .deny
-            } else {
-                decision = .bypass
-            }
-            pendingRequest.continuation.resume(returning: decision)
-            return
-        }
-
         guard resolution == .grant,
               currentSitePermissionContext(tabID: pendingRequest.context.tabID,
                                            requestingFrameID: pendingRequest.context.requestingFrameID) == pendingRequest.context,

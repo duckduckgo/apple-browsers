@@ -76,7 +76,7 @@ class DebugScreensViewModel: ObservableObject {
     var pinnedTitles: [String]
 
     let dependencies: DebugScreen.Dependencies
-    private let featureFlagger: FeatureFlagger = AppDependencyProvider.shared.liveFeatureFlagger
+    private let featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
 
     var pushController: ((UIViewController) -> Void)?
 

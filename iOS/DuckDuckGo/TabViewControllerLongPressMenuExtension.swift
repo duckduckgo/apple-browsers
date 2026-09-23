@@ -166,7 +166,8 @@ extension TabViewController {
             autoplaySettings: autoplaySettings,
             adBlockingAvailability: adBlockingAvailability,
             eventHub: eventHub,
-            webExtensionManagerProvider: webExtensionManagerProvider)
+            webExtensionManagerProvider: webExtensionManagerProvider,
+            sitePermissionsEnabled: isSitePermissionsEnabled)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

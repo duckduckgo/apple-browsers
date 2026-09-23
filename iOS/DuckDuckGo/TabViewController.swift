@@ -632,6 +632,7 @@ class TabViewController: UIViewController {
                                    eventHub: EventHubManaging,
                                    webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
                                    pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+                                   sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
                                    sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) -> TabViewController {
 
         return TabViewController(tabModel: model,
@@ -671,6 +672,7 @@ class TabViewController: UIViewController {
                                  eventHub: eventHub,
                                  pixelFiring: pixelFiring,
                                  webExtensionManagerProvider: webExtensionManagerProvider,
+                                 sitePermissionsEnabled: sitePermissionsEnabled,
                                  sitePermissionsDependenciesProvider: sitePermissionsDependenciesProvider)
     }
 
@@ -764,6 +766,7 @@ class TabViewController: UIViewController {
     let autoplaySettings: AutoplaySettings
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    let isSitePermissionsEnabled: Bool
     var sitePermissionsDependenciesProvider: @MainActor () -> SitePermissionsDependencies?
 
     let sitePermissionsState = SitePermissionsState()
@@ -846,6 +849,7 @@ class TabViewController: UIViewController {
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          tabTerminationErrorPageInstrumentation: (any TabTerminationErrorPageInstrumenting)? = nil,
          webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
+         sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
          sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) {
 
         self.tabModel = tabModel
@@ -902,6 +906,7 @@ class TabViewController: UIViewController {
         self.autoplaySettings = autoplaySettings
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.isSitePermissionsEnabled = sitePermissionsEnabled
         self.sitePermissionsDependenciesProvider = sitePermissionsDependenciesProvider
         self.addressBarURLFilter = addressBarURLFilter
         self.adBlockingAvailability = adBlockingAvailability
@@ -916,8 +921,6 @@ class TabViewController: UIViewController {
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
         super.init(nibName: nil, bundle: nil)
-
-        subscribeToSitePermissionsChanges()
 
         // Reload AI Chat when subscription state changes
         subscriptionAIChatStateHandler.onSubscriptionStateChanged = { [weak self] in
@@ -1363,7 +1366,7 @@ class TabViewController: UIViewController {
             assetsPublisher: makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: mediaCaptureUserScript),
             privacyConfigurationManager: privacyConfigurationManager,
             earlyAccessHandlers: [mediaCaptureUserScript],
-            replyToUnavailableHandlers: featureFlagger.isFeatureOn(.sitePermissions)
+            replyToUnavailableHandlers: isSitePermissionsEnabled
         )
         userContentController.addUserScript(mediaCaptureUserScript.makeWKUserScriptSync())
         configuration.userContentController = userContentController
@@ -3293,7 +3296,7 @@ extension TabViewController: WKNavigationDelegate {
 
         if webView === self.webView,
            navigationAction.isTargetingMainFrame,
-           featureFlagger.isFeatureOn(.sitePermissions) {
+           isSitePermissionsEnabled {
             sitePermissionsState.cancelContentBlockingWaits()
         }
 
@@ -3562,7 +3565,7 @@ extension TabViewController: WKNavigationDelegate {
         let shouldWait = Self.shouldWaitForContentBlockingAssets(
             assetsInstalled: userContentController.contentBlockingAssetsInstalled,
             contentBlockingEnabled: privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking),
-            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
+            sitePermissionsEnabled: isSitePermissionsEnabled,
             geolocationScriptInstalled: userScripts?.geolocationUserScript != nil,
             isDuckDuckGoSearch: url.isDuckDuckGoSearch
         )
@@ -3572,7 +3575,7 @@ extension TabViewController: WKNavigationDelegate {
             return false
         }
 
-        guard featureFlagger.isFeatureOn(.sitePermissions) else {
+        guard isSitePermissionsEnabled else {
             // Preserve the existing content-blocking wait when site permissions is disabled for this launch.
             Task {
                 rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)

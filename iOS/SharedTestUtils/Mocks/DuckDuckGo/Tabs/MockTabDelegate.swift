@@ -204,6 +204,7 @@ extension TabViewController {
         contextualOnboardingLogic: ContextualOnboardingLogic = ContextualOnboardingLogicMock(),
         contextualOnboardingPixelReporter: OnboardingCustomInteractionPixelReporting = OnboardingPixelReporterMock(),
         featureFlagger: FeatureFlagger = MockFeatureFlagger(),
+        sitePermissionsEnabled: Bool = false,
         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never> = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
         link: Link = Link(title: nil, url: .ddg),
         fireTab: Bool = false
@@ -240,7 +241,8 @@ extension TabViewController {
             darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
             autoplaySettings: MockAutoplaySettings(),
             adBlockingAvailability: StubAdBlockingAvailability(),
-            eventHub: StubEventHub()
+            eventHub: StubEventHub(),
+            sitePermissionsEnabled: sitePermissionsEnabled
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
         return tab

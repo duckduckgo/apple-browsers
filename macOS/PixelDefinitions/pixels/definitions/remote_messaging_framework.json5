@@ -51,22 +51,6 @@
         ],
         "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
     },
-    "m_mac_remote_message_auto_dismissed": {
-        "description": "Triggered when RMF dismisses a remote message because one of its display conditions was met",
-        "owners": ["ayoy"],
-        "triggers": ["other"],
-        "suffixes": [],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "message",
-                "description": "The identifier for the message, sourced from the remote message configuration",
-                "type": "string"
-            },
-            "pixelSource",
-            "channel"
-        ]
-    },
     "m_mac_remote_message_action_clicked": {
         "description": "Triggered when the user clicks the action button on the remote message",
         "owners": ["ayoy"],

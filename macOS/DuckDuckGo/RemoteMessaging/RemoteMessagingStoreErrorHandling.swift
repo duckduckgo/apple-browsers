@@ -55,19 +55,3 @@ public class RemoteMessagingStoreErrorHandling: EventMapping<RemoteMessagingStor
         fatalError("Use init()")
     }
 }
-
-public final class RemoteMessageAutoDismissEventHandling: EventMapping<RemoteMessageAutoDismissEvent> {
-
-    public init() {
-        super.init { event, _, _, _ in
-            switch event {
-            case .messageAutoDismissed(let messageID):
-                PixelKit.fire(GeneralPixel.remoteMessageAutoDismissed, withAdditionalParameters: ["message": messageID])
-            }
-        }
-    }
-
-    override init(mapping: @escaping EventMapping<RemoteMessageAutoDismissEvent>.Mapping) {
-        fatalError("Use init()")
-    }
-}

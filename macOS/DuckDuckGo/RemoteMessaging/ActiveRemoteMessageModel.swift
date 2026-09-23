@@ -39,6 +39,7 @@ final class ActiveRemoteMessageModel: ObservableObject {
     @Published private var remoteMessage: RemoteMessageModel?
     @Published var newTabPageRemoteMessage: RemoteMessageModel?
     @Published var tabBarRemoteMessage: RemoteMessageModel?
+    @Published var isViewOnScreen: Bool = false
 
     /**
      * A block that returns a remote messaging store, if it exists.
@@ -149,6 +150,23 @@ final class ActiveRemoteMessageModel: ObservableObject {
             }
             .store(in: &cancellables)
 
+        let remoteMessagePublisher = $remoteMessage
+            .compactMap({ $0 })
+            .filter { [weak self] _ in self?.isViewOnScreen == true }
+            .asVoid()
+        let isViewOnScreenPublisher = $isViewOnScreen.removeDuplicates().filter({ $0 }).asVoid()
+        Publishers.Merge(remoteMessagePublisher, isViewOnScreenPublisher)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else {
+                    return
+                }
+                Task {
+                    await self.markRemoteMessageAsShown()
+                }
+            }
+            .store(in: &cancellables)
+
         updateRemoteMessage()
     }
 
@@ -184,40 +202,21 @@ final class ActiveRemoteMessageModel: ObservableObject {
         }
     }
 
-    @MainActor
-    func markRemoteMessageAsShown(for surface: RemoteMessageSurfaceType) async {
-        guard let remoteMessage = message(for: surface),
-              remoteMessage.content?.isSupported == true,
-              let store = store() else {
+    func markRemoteMessageAsShown() async {
+        guard let remoteMessage, let store = store() else {
             return
         }
-
-        // The published model can outlive the store's eligibility decision. Re-fetch the
-        // surface immediately before counting so a capped message is not counted again.
-        // The legacy permanent survey is published on the tab bar even though its stored
-        // surface can be the legacy/default NTP value, so use the same union as the model refresh.
-        guard let scheduledMessage = store.fetchScheduledRemoteMessage(surfaces: [.newTabPage, .tabBar]),
-              scheduledMessage.id == remoteMessage.id,
-              scheduledMessage.content?.isSupported == true else {
-            updateRemoteMessage()
-            return
-        }
-
         Logger.remoteMessaging.info("Remote message shown: \(remoteMessage.id, privacy: .public)")
         if remoteMessage.isMetricsEnabled {
             PixelKit.fire(GeneralPixel.remoteMessageShown, withAdditionalParameters: ["message": remoteMessage.id])
         }
-        let isFirstImpression = !store.hasShownRemoteMessage(withID: remoteMessage.id)
-        let shouldFireUniquePixel = isFirstImpression && uniqueImpressionIDs.insert(remoteMessage.id).inserted
-        if shouldFireUniquePixel {
+        if !store.hasShownRemoteMessage(withID: remoteMessage.id) {
             Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
             if remoteMessage.isMetricsEnabled {
                 PixelKit.fire(GeneralPixel.remoteMessageShownUnique, withAdditionalParameters: ["message": remoteMessage.id])
             }
+            await store.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
         }
-
-        // Count each confirmed NTP or tab bar appearance, matching the shown pixel above.
-        await store.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
     }
 
     var shouldShowRemoteMessage: Bool {
@@ -229,17 +228,7 @@ final class ActiveRemoteMessageModel: ObservableObject {
         remoteMessage = store()?.fetchScheduledRemoteMessage(surfaces: [.newTabPage, .tabBar])
     }
 
-    private func message(for surface: RemoteMessageSurfaceType) -> RemoteMessageModel? {
-        if surface == .newTabPage {
-            return newTabPageRemoteMessage
-        } else if surface == .tabBar {
-            return tabBarRemoteMessage
-        }
-        return nil
-    }
-
     private var cancellables = Set<AnyCancellable>()
-    private var uniqueImpressionIDs = Set<String>()
 }
 
 extension RemoteMessageModelType {

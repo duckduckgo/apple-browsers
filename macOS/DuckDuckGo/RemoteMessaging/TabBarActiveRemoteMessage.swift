@@ -44,7 +44,7 @@ final class TabBarActiveRemoteMessage: TabBarRemoteMessageProviding  {
     }
 
     func markRemoteMessageAsShown() async {
-        await activeRemoteMessageModel.markRemoteMessageAsShown(for: .tabBar)
+        await activeRemoteMessageModel.markRemoteMessageAsShown()
     }
 
     func onSurveyOpened() async {

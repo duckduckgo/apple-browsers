@@ -800,10 +800,20 @@ private extension AIChatContextualSheetCoordinator {
         guard isWebUTIEnabled else { return nil }
         if let persistentUTIHost { return persistentUTIHost }
 
+        let host = makeUTIHost(start: start)
+        bindSuggestionsStrip(on: host)
+        bindAttachmentHandlers(on: host)
+        bindPromptHandlers(on: host)
+        bindVoiceHandlers(on: host)
+        self.persistentUTIHost = host
+        return host
+    }
+
+    private func makeUTIHost(start: ContextualInputStart) -> AIChatContextualUTIHost {
         let initialUTIAttachment = self.initialUTIAttachment
         let suggestionsChips = makeChipsViewController()
         suggestionsChips.useGlassStartActionBackgrounds()
-        let host = AIChatContextualUTIHost(
+        return AIChatContextualUTIHost(
             originatingURLPublisher: originatingURLPublisher,
             initialAttachedContext: initialUTIAttachment.context,
             initialAttachmentDeliveryState: initialUTIAttachment.deliveryState,
@@ -817,13 +827,16 @@ private extension AIChatContextualSheetCoordinator {
             usageLimitsStore: duckAiUsageLimitsStore,
             suggestionsController: suggestionsChips
         )
-        bindSuggestionsStrip(on: host)
+    }
+
+    /// Everything riding on the input: the page-context chip, the offer to attach the page just
+    /// navigated to, and the file attachments strip.
+    private func bindAttachmentHandlers(on host: AIChatContextualUTIHost) {
         host.onAttachRequested = { [weak self] in
             self?.requestManualPageContextAttach()
         }
         host.onRemoveRequested = { [weak self] in
-            guard let self else { return }
-            self.removeAttachedContext()
+            self?.removeAttachedContext()
         }
         host.onSuggestionAccepted = { [weak self] in
             self?.sessionState.acceptSuggestedContext()
@@ -831,10 +844,16 @@ private extension AIChatContextualSheetCoordinator {
         host.onSuggestionDismissed = { [weak self] in
             self?.sessionState.dismissSuggestedContext()
         }
+        host.onAttachmentsChanged = { [weak self] in
+            self?.sessionState.refreshForAttachmentChange()
+        }
         // A host built mid-session (collapse, expand) inherits the offer already on screen.
         if let suggestion = sessionState.suggestedContext {
             host.setSuggestedContext(suggestion)
         }
+    }
+
+    private func bindPromptHandlers(on host: AIChatContextualUTIHost) {
         host.onPromptSubmitted = { [weak self] in
             guard let self else { return }
             self.selectionJourneyInstrumentation.promptSubmitted()
@@ -851,9 +870,10 @@ private extension AIChatContextualSheetCoordinator {
             guard let self else { return }
             self.delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: origin)
         }
-        host.onAttachmentsChanged = { [weak self] in
-            self?.sessionState.refreshForAttachmentChange()
-        }
+    }
+
+    /// Voice chat replaces the surface; dictation types into the input it is already showing.
+    private func bindVoiceHandlers(on host: AIChatContextualUTIHost) {
         host.onAIVoiceChatRequested = { [weak self] in
             self?.requestNewVoiceChatLeavingCurrentSurface()
         }
@@ -861,8 +881,6 @@ private extension AIChatContextualSheetCoordinator {
         host.onVoiceSearchRequested = { [weak self] in
             self?.presentDictation()
         }
-        self.persistentUTIHost = host
-        return host
     }
 
     /// The strip follows the session's view state; these are the taps coming back out of it.

@@ -1378,10 +1378,6 @@ extension SettingsViewModel {
 
     @available(iOS 18.2, *)
     private func updateCompleteSetupSectionVisiblity() {
-        guard featureFlagger.isFeatureOn(.showSettingsCompleteSetupSection) else {
-            return
-        }
-
         if let didDismissBrowserPrompt = try? keyValueStore.object(forKey: Constants.didDismissSetAsDefaultBrowserKey) as? Bool {
             shouldShowSetAsDefaultBrowser = !didDismissBrowserPrompt
         } else {

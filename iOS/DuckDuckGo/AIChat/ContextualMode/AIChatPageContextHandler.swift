@@ -225,6 +225,7 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
 
     func isCurrentPageAttachable() -> Bool {
         let url = currentURLProvider()
+        if let url, url.isFileURL { return false }
         if let url, isDocumentTab(url) { return true }
         guard let policy = attachabilityPolicyProvider() else { return true }
         return policy.verdict(url: url, mimeType: url.flatMap { mimeTypeProvider($0) }).isAttachable
@@ -278,6 +279,12 @@ private extension AIChatPageContextHandler {
     /// gate and the standalone sheet-open/navigation measurement.
     @discardableResult
     func firePreventedIfNonAttachable(for url: URL?, trigger: PageContextExtractionTrigger) -> Bool {
+        // Local (file://) pages are never attachable — independent of the blocklist config.
+        if let url, url.isFileURL {
+            Logger.aiChat.debug("[PageContext] 🚫 gate: prevented attach (local file)")
+            fireExtractionPixel(.prevented(PageContextExtractionOutcome.localFileCategory), trigger: trigger, latency: nil)
+            return true
+        }
         if let url, isDocumentTab(url) { return false }
         guard let policy = attachabilityPolicyProvider() else { return false }
         let verdict = policy.verdict(url: url, mimeType: url.flatMap { mimeTypeProvider($0) })
@@ -292,7 +299,8 @@ private extension AIChatPageContextHandler {
 
     /// Whether this tab's page goes to Duck.ai as document bytes rather than markdown.
     func isDocumentTab(_ url: URL) -> Bool {
-        isDocumentContextEnabled()
+        !url.isFileURL
+            && isDocumentContextEnabled()
             && DocumentPageContextProvider.isSupportedDocument(mimeType: mimeTypeProvider(url), url: url)
     }
 

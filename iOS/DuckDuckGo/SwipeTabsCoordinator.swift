@@ -25,6 +25,7 @@ import FeatureFlags_iOS
 enum FloatingSwipePreviewGeometry {
 
     static func destinationFrame(isAITab: Bool,
+                                 hasInlineSearchInput: Bool = false,
                                  superviewBounds: CGRect,
                                  contentContainerFrame: CGRect,
                                  safeAreaInsets: UIEdgeInsets,
@@ -40,6 +41,11 @@ enum FloatingSwipePreviewGeometry {
                 width: superviewBounds.width,
                 height: max(bottom - top, 0)
             )
+        } else if hasInlineSearchInput {
+            frameInSuperview = superviewBounds.inset(by: UIEdgeInsets(top: safeAreaInsets.top,
+                                                                     left: 0,
+                                                                     bottom: 0,
+                                                                     right: 0))
         } else {
             frameInSuperview = superviewBounds
         }
@@ -89,6 +95,8 @@ class SwipeTabsCoordinator: NSObject {
     private let liveTabControllerProvider: (Tab) -> TabViewController?
     private let inputStateProvider: (Tab) -> TabInputState
     private let isPaidAIChatEnabledProvider: () -> Bool
+    private let allowsSubscriptionUpsellProvider: () -> Bool
+    private let hasInlineSearchInput: (Tab?) -> Bool
 
     let selectTab: (Tab) -> Void
     let newTab: () -> Void
@@ -122,6 +130,8 @@ class SwipeTabsCoordinator: NSObject {
          liveTabControllerProvider: @escaping (Tab) -> TabViewController?,
          inputStateProvider: @escaping (Tab) -> TabInputState,
          isPaidAIChatEnabledProvider: @escaping () -> Bool,
+         allowsSubscriptionUpsellProvider: @escaping () -> Bool,
+         hasInlineSearchInput: @escaping (Tab?) -> Bool = { _ in false },
          selectTab: @escaping (Tab) -> Void,
          newTab: @escaping () -> Void,
          onSwipeStarted: @escaping () -> Void) {
@@ -134,6 +144,8 @@ class SwipeTabsCoordinator: NSObject {
         self.liveTabControllerProvider = liveTabControllerProvider
         self.inputStateProvider = inputStateProvider
         self.isPaidAIChatEnabledProvider = isPaidAIChatEnabledProvider
+        self.allowsSubscriptionUpsellProvider = allowsSubscriptionUpsellProvider
+        self.hasInlineSearchInput = hasInlineSearchInput
         self.selectTab = selectTab
         self.newTab = newTab
         self.onSwipeStarted = onSwipeStarted
@@ -282,7 +294,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 if !didPrepareLiveDestination {
                     preparePreview(offset)
                 }
-                if isCrossingAITabBoundary(offset: offset) {
+                if isCrossingChromeBoundary(offset: offset) {
                     if !didPrepareLiveDestination {
                         prepareLiveDestinationChrome(offset: offset)
                     }
@@ -383,11 +395,21 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         swipeOverlayView?.alpha = 0
     }
 
+    func updateFullScreenSnapshotForCurrentTab() {
+        guard !floatingUIManager.isFloatingUIEnabled,
+              let tab = tabsModel.currentTab else { return }
+        // Tab-switcher entry can dismiss editing synchronously in the same run loop.
+        // Capture the restored layout rather than the last rendered focused frame.
+        coordinator.superview.layoutIfNeeded()
+        guard let snapshot = makeFullScreenSnapshot(afterScreenUpdates: true) else { return }
+        tabPreviewsSource.updateFullScreenSnapshot(snapshot, forTab: tab)
+    }
+
     /// Renders the live `MainViewController.view` (`coordinator.superview`) into a `UIImage`,
     /// transiently zeroing the overlay's alpha so the overlay doesn't appear in its own
     /// snapshot. The alpha flip happens entirely within a single synchronous block, so UIKit
     /// only paints once — no visible flash.
-    private func makeFullScreenSnapshot() -> UIImage? {
+    private func makeFullScreenSnapshot(afterScreenUpdates: Bool = false) -> UIImage? {
         let superview = coordinator.superview
         guard superview.bounds.width > 0, superview.bounds.height > 0 else { return nil }
 
@@ -397,7 +419,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
         let renderer = UIGraphicsImageRenderer(size: superview.bounds.size)
         return renderer.image { _ in
-            superview.drawHierarchy(in: superview.bounds, afterScreenUpdates: false)
+            superview.drawHierarchy(in: superview.bounds, afterScreenUpdates: afterScreenUpdates)
         }
     }
 
@@ -508,6 +530,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         if floatingUIManager.isFloatingUIEnabled {
             targetFrame = FloatingSwipePreviewGeometry.destinationFrame(
                 isAITab: tab?.isAITab == true,
+                hasInlineSearchInput: hasInlineSearchInput(tab),
                 superviewBounds: coordinator.superview.bounds,
                 contentContainerFrame: coordinator.contentContainer.frame,
                 safeAreaInsets: coordinator.superview.safeAreaInsets,
@@ -534,7 +557,16 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             }
             preview?.frame = CGRect(x: targetFrame.minX, y: targetFrame.minY, width: targetFrame.width, height: height)
         } else if tab?.link == nil {
-            createPreviewFromLogoContainerWithSize(targetFrame.size)
+            if hasInlineSearchInput(tab) {
+                // The legacy centered logo does not match the redesigned page revealed after the swipe.
+                let placeholder = UIView()
+                placeholder.backgroundColor = UIColor(designSystemColor: .background)
+                placeholder.isUserInteractionEnabled = false
+                coordinator.contentContainer.addSubview(placeholder)
+                preview = placeholder
+            } else {
+                createPreviewFromLogoContainerWithSize(targetFrame.size)
+            }
             preview?.frame = targetFrame
         }
 
@@ -580,13 +612,13 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         controller.didMove(toParent: coordinator.parentController)
         liveDestinationController = controller
         preview = controller.view
-        if isCrossingAITabBoundary(offset: offset) {
+        if isCrossingChromeBoundary(offset: offset) {
             prepareLiveChromePreview(modifier: modifier, destinationTab: tab)
         }
         return true
     }
 
-    private func prepareLiveChromePreview(modifier: Int, destinationTab: Tab) {
+    private func prepareLiveChromePreview(modifier: Int, destinationTab: Tab?) {
         chromePreview?.removeFromSuperview()
         chromePreview = nil
 
@@ -601,7 +633,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         container.overrideUserInterfaceStyle = superview.traitCollection.userInterfaceStyle
         superview.addSubview(container)
 
-        if destinationTab.isAITab {
+        if let destinationTab, destinationTab.isAITab {
             addLiveAIChrome(for: destinationTab, to: container)
         } else {
             addLiveRegularChrome(for: destinationTab, to: container)
@@ -614,7 +646,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         guard let currentIndex = tabsModel.currentIndex else { return }
         let modifier = offset > 0 ? -1 : 1
         let destinationIndex = currentIndex + modifier
-        guard let destinationTab = tabsModel.get(tabAt: destinationIndex) else { return }
+        let destinationTab = tabsModel.get(tabAt: destinationIndex)
         prepareLiveChromePreview(modifier: modifier, destinationTab: destinationTab)
     }
 
@@ -634,7 +666,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             height: headerHeight
         )
         container.addSubview(header)
-        header.configure(isSubscriptionActive: isPaidAIChatEnabledProvider())
+        header.configure(isSubscriptionActive: isPaidAIChatEnabledProvider(),
+                         allowsSubscriptionUpsell: allowsSubscriptionUpsellProvider())
         header.setTabIconState(
             count: tabsModel.count,
             hasUnread: tabsModel.hasUnread,
@@ -676,8 +709,18 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         liveChromeControllers.append(inputController)
     }
 
-    private func addLiveRegularChrome(for tab: Tab, to container: UIView) {
-        let index = tabsModel.tabs.firstIndex { $0 === tab } ?? 0
+    private func addLiveRegularChrome(for tab: Tab?, to container: UIView) {
+        if hasInlineSearchInput(tab) {
+            let toolbar = makeReadOnlyToolbar()
+            let height = BrowserToolbarView.floatingButtonsHeight
+            toolbar.frame = CGRect(x: 0,
+                                   y: container.bounds.height - coordinator.superview.safeAreaInsets.bottom - height,
+                                   width: container.bounds.width,
+                                   height: height)
+            container.addSubview(toolbar)
+            return
+        }
+        let index = tab.flatMap { tab in tabsModel.tabs.firstIndex { $0 === tab } } ?? tabsModel.count
         let omnibarController = makeSwipeTemplateController()
         configureSwipeTemplate(omnibarController, at: index)
         omnibarController.barView.isUserInteractionEnabled = false
@@ -794,6 +837,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
     private func prepareFloatingBottomOmnibarSwipe(offset: CGFloat) {
         guard appSettings.currentAddressBarPosition.isBottom,
+              !isCrossingChromeBoundary(offset: offset),
               coordinator.isOmnibarInToolbar,
               let currentIndex = tabsModel.currentIndex else {
             return
@@ -838,13 +882,19 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         floatingIncomingOmnibarController = nil
     }
 
-    private func isCrossingAITabBoundary(offset: CGFloat) -> Bool {
+    private func isCrossingChromeBoundary(offset: CGFloat) -> Bool {
         guard let currentIndex = tabsModel.currentIndex,
               let currentTab = tabsModel.get(tabAt: currentIndex) else {
             return false
         }
         let destinationIndex = currentIndex + (offset > 0 ? -1 : 1)
-        guard let destinationTab = tabsModel.get(tabAt: destinationIndex) else { return false }
+        let isNewTabDestination = destinationIndex == tabsModel.count && tabsModel.tabs.last?.link != nil
+        guard tabsModel.tabs.indices.contains(destinationIndex) || isNewTabDestination else { return false }
+        let destinationTab = tabsModel.get(tabAt: destinationIndex)
+        if hasInlineSearchInput(currentTab) != hasInlineSearchInput(destinationTab) {
+            return true
+        }
+        guard let destinationTab else { return false }
         return SwipeTabBoundaryPolicy.crossesAITabBoundary(
             currentIsAITab: currentTab.isAITab,
             destinationIsAITab: destinationTab.isAITab
@@ -1114,6 +1164,7 @@ private extension SwipeTabsCoordinator {
 
         omniBar.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
         omniBar.refreshFireMode(fireMode: tab?.fireTab ?? false)
+        omniBar.barView.isHidden = hasInlineSearchInput(tab)
     }
 }
 

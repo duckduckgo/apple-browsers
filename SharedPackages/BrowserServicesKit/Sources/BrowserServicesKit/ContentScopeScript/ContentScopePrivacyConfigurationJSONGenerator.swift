@@ -31,12 +31,16 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
     let privacyConfigurationManager: PrivacyConfigurationManaging
     let excludedFeatures: [String]
 
+    /// Features every caller keeps out of the injected configuration. Exposed so a caller that
+    /// needs to exclude more can extend this rather than restate it and drift.
+    public static let defaultExcludedFeatures = [
+        PrivacyConfigurationData.CodingKeys.trackerAllowlist.rawValue,
+        PrivacyFeature.autoconsent.rawValue
+    ]
+
     public init(featureFlagger: FeatureFlagger,
                 privacyConfigurationManager: PrivacyConfigurationManaging,
-                excludedFeatures: [String] = [
-                    PrivacyConfigurationData.CodingKeys.trackerAllowlist.rawValue,
-                    PrivacyFeature.autoconsent.rawValue
-                ]) {
+                excludedFeatures: [String] = Self.defaultExcludedFeatures) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.excludedFeatures = excludedFeatures

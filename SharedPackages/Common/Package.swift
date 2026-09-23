@@ -30,7 +30,7 @@ let package = Package(
         .library(name: "Common", targets: ["Common"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
+        .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "4.0.3"),
         .package(path: "../URLPredictor"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
     ],

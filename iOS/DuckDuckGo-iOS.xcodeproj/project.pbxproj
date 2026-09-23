@@ -6674,6 +6674,7 @@
 				853273AC24FEF49600E3C778 /* Extensions.swift */,
 				8544C37A250B823600A0FE73 /* UserText.swift */,
 				7B1681002D106CB4005EAE24 /* UserTextShared.swift */,
+				373608912ABB430D00629E7F /* FavoritesDisplayMode+UserDefaults.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -9310,6 +9311,7 @@
 				85A5FEE42ED9D87B001B5605 /* Telemetry */,
 				F143C3191E4A99DD00CFDE3A /* Utilities */,
 				F143C3311E4A9A6A00CFDE3A /* Web */,
+				9FCFCD7D2C6AF52A006EB7A0 /* LaunchOptionsHandler.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -9642,11 +9644,9 @@
 				CB24F70E29A3EB15006DCC58 /* AppConfigurationURLProvider.swift */,
 				85BA58591F3506AE00C6E8CA /* AppSettings.swift */,
 				85BA58541F34F49E00C6E8CA /* AppUserDefaults.swift */,
-				373608912ABB430D00629E7F /* FavoritesDisplayMode+UserDefaults.swift */,
 				369E69292E5F579500F98A8F /* NotificationServiceManager.swift */,
 				850250B220D803F4002199C7 /* AtbAndVariantCleanup.swift */,
 				853C5F6021C277C7001F7A05 /* global.swift */,
-				9FCFCD7D2C6AF52A006EB7A0 /* LaunchOptionsHandler.swift */,
 				85C8E61C2B0E47380029A6BD /* BookmarksDatabaseSetup.swift */,
 				BFA000012F90000000FEEE01 /* FreemiumPIREligibility.swift */,
 				9821234F2B6D233E00F08C57 /* UserSession.swift */,

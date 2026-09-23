@@ -150,7 +150,11 @@ extension XCUIApplication {
         if forceTerminate {
             terminate()
         } else {
-            menuItems[AccessibilityIdentifiers.quitMenuItem].tap()
+            typeKey("q", modifierFlags: .command)
+            guard wait(for: .notRunning, timeout: UITests.Timeouts.elementExistence) else {
+                XCTFail("The app did not quit before restarting")
+                return
+            }
         }
         launch()
     }

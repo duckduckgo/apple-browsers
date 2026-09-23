@@ -20,6 +20,7 @@ import XCTest
 import Networking
 @_spi(Testing) import WideEvent
 @testable import Subscription
+import SubscriptionTestingUtilities
 
 final class AuthV2WideEventTests: XCTestCase {
 
@@ -343,6 +344,71 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertEqual(reason, "partial_data")
     }
 
+    // MARK: - New dimensions: subscription status, NetP status, sign-out
+
+    func testTokenRefreshStarted_capturesCachedSubscriptionStatus() throws {
+        let mock = WideEventMock()
+        let cachingService = SubscriptionCachingServiceMock(cachedSubscription: .make(withStatus: .autoRenewable))
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock, subscriptionCachingService: cachingService)
+
+        instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: "refresh-1", trigger: .client))
+
+        let pending = try XCTUnwrap(mock.getAllFlowData(AuthV2TokenRefreshWideEventData.self).first)
+        XCTAssertEqual(pending.subscriptionStatus, .autoRenewable)
+        XCTAssertEqual(pending.pixelParameters()["feature.data.ext.subscription_status"], "auto_renewable")
+    }
+
+    func testTokenRefreshStarted_noCachedSubscription_subscriptionStatusIsUnavailable() throws {
+        let mock = WideEventMock()
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock, subscriptionCachingService: SubscriptionCachingServiceMock())
+
+        instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: "refresh-1", trigger: .client))
+
+        let pending = try XCTUnwrap(mock.getAllFlowData(AuthV2TokenRefreshWideEventData.self).first)
+        XCTAssertEqual(pending.subscriptionStatus, .unavailable)
+    }
+
+    func testTokenRefreshStarted_capturesNetpStatusWhenProvided() throws {
+        let mock = WideEventMock()
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock,
+                                                          netpIsEnabledProvider: { true },
+                                                          netpIsRunningProvider: { false })
+
+        instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: "refresh-1", trigger: .client))
+
+        let pending = try XCTUnwrap(mock.getAllFlowData(AuthV2TokenRefreshWideEventData.self).first)
+        XCTAssertEqual(pending.netpIsEnabled, true)
+        XCTAssertEqual(pending.netpIsRunning, false)
+        XCTAssertEqual(pending.pixelParameters()["feature.data.ext.netp_is_enabled"], "true")
+        XCTAssertEqual(pending.pixelParameters()["feature.data.ext.netp_is_running"], "false")
+    }
+
+    func testTokenRefreshStarted_netpStatusAbsentByDefault_omittedFromParameters() throws {
+        let mock = WideEventMock()
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock)
+
+        instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: "refresh-1", trigger: .client))
+
+        let pending = try XCTUnwrap(mock.getAllFlowData(AuthV2TokenRefreshWideEventData.self).first)
+        XCTAssertNil(pending.netpIsEnabled)
+        XCTAssertNil(pending.netpIsRunning)
+        XCTAssertNil(pending.pixelParameters()["feature.data.ext.netp_is_enabled"])
+        XCTAssertNil(pending.pixelParameters()["feature.data.ext.netp_is_running"])
+    }
+
+    func testTokenRefreshSucceeded_signedOutDefaultsFalse() throws {
+        let mock = WideEventMock()
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock)
+        let refreshID = "refresh-success"
+
+        instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: .client))
+        instrumentation.eventMapping.fire(.tokenRefreshSucceeded(refreshID: refreshID))
+
+        let completedData = try XCTUnwrap(mock.completions.first?.0 as? AuthV2TokenRefreshWideEventData)
+        XCTAssertFalse(completedData.signedOut)
+        XCTAssertEqual(completedData.pixelParameters()["feature.data.ext.signed_out"], "false")
+    }
+
     // MARK: - Event mapping: deferral on invalid_token_request
 
     func testRefreshEventMapping_invalidTokenRequest_defersCompletionAndMarksStep() {
@@ -435,7 +501,7 @@ final class AuthV2WideEventTests: XCTestCase {
         freshFlow.recoveryDuration = .startingNow()
         mock.startFlow(freshFlow)
 
-        instrumentation.completeInvalidTokenRecovery(outcome: .succeeded, error: nil)
+        instrumentation.completeInvalidTokenRecovery(outcome: .succeeded, error: nil, signedOut: false)
 
         XCTAssertEqual(mock.completions.count, 1)
         let (data, status) = try XCTUnwrap(mock.completions.first)
@@ -447,6 +513,7 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertNil(refreshData.errorData)
         XCTAssertNil(refreshData.failingStep)
         XCTAssertNotNil(refreshData.recoveryDuration?.end)
+        XCTAssertFalse(refreshData.signedOut)
     }
 
     func testRefreshInstrumentation_recoveryFailureCompletesFlowWithError() throws {
@@ -457,7 +524,7 @@ final class AuthV2WideEventTests: XCTestCase {
         pendingFlow.recoveryDuration = .startingNow()
         mock.startFlow(pendingFlow)
 
-        instrumentation.completeInvalidTokenRecovery(outcome: .failed, error: SubscriptionManagerError.noTokenAvailable)
+        instrumentation.completeInvalidTokenRecovery(outcome: .failed, error: SubscriptionManagerError.noTokenAvailable, signedOut: true)
 
         XCTAssertEqual(mock.completions.count, 1)
         let (data, status) = try XCTUnwrap(mock.completions.first)
@@ -468,6 +535,7 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertNotNil(refreshData.errorData)
         XCTAssertEqual(refreshData.failingStep, .recoverInvalidToken)
         XCTAssertNotNil(refreshData.recoveryDuration?.end)
+        XCTAssertTrue(refreshData.signedOut)
     }
 
     func testRefreshInstrumentation_recoveryFailureDiscardsWhenSuppressed() {
@@ -478,7 +546,7 @@ final class AuthV2WideEventTests: XCTestCase {
         pendingFlow.recoveryDuration = .startingNow()
         mock.startFlow(pendingFlow)
 
-        instrumentation.completeInvalidTokenRecovery(outcome: .failed, error: SubscriptionManagerError.noTokenAvailable)
+        instrumentation.completeInvalidTokenRecovery(outcome: .failed, error: SubscriptionManagerError.noTokenAvailable, signedOut: true)
 
         XCTAssertTrue(mock.completions.isEmpty)
         XCTAssertEqual(mock.discarded.count, 1)
@@ -494,7 +562,7 @@ final class AuthV2WideEventTests: XCTestCase {
         pendingFlow.recoveryDuration = .startingNow()
         mock.startFlow(pendingFlow)
 
-        instrumentation.completeInvalidTokenRecovery(outcome: .notAttempted, error: nil)
+        instrumentation.completeInvalidTokenRecovery(outcome: .notAttempted, error: nil, signedOut: true)
 
         XCTAssertEqual(mock.completions.count, 1)
         let (data, status) = try XCTUnwrap(mock.completions.first)
@@ -507,6 +575,7 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertNil(refreshData.recoveryDuration)
         XCTAssertNotNil(refreshData.errorData)
         XCTAssertEqual(refreshData.failingStep, .recoverInvalidToken)
+        XCTAssertTrue(refreshData.signedOut)
     }
 
     func testRefreshInstrumentation_recoveryNotAttemptedDiscardsWhenSuppressed() {
@@ -517,7 +586,7 @@ final class AuthV2WideEventTests: XCTestCase {
         pendingFlow.recoveryDuration = .startingNow()
         mock.startFlow(pendingFlow)
 
-        instrumentation.completeInvalidTokenRecovery(outcome: .notAttempted, error: nil)
+        instrumentation.completeInvalidTokenRecovery(outcome: .notAttempted, error: nil, signedOut: true)
 
         XCTAssertTrue(mock.completions.isEmpty)
         XCTAssertEqual(mock.discarded.count, 1)
@@ -544,9 +613,15 @@ final class AuthV2WideEventTests: XCTestCase {
 
     private func makeRefreshInstrumentation(wideEvent: WideEventManaging,
                                             isFeatureEnabled: @escaping () -> Bool = { true },
-                                            shouldSuppressFailure: @escaping () -> Bool = { false }) -> AuthV2TokenRefreshInstrumenting {
+                                            shouldSuppressFailure: @escaping () -> Bool = { false },
+                                            subscriptionCachingService: SubscriptionCachingService = SubscriptionCachingServiceMock(),
+                                            netpIsEnabledProvider: @escaping () -> Bool? = { nil },
+                                            netpIsRunningProvider: @escaping () -> Bool? = { nil }) -> AuthV2TokenRefreshInstrumenting {
         DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent,
                                                  isFeatureEnabled: isFeatureEnabled,
-                                                 shouldSuppressFailure: shouldSuppressFailure)
+                                                 shouldSuppressFailure: shouldSuppressFailure,
+                                                 subscriptionCachingService: subscriptionCachingService,
+                                                 netpIsEnabledProvider: netpIsEnabledProvider,
+                                                 netpIsRunningProvider: netpIsRunningProvider)
     }
 }

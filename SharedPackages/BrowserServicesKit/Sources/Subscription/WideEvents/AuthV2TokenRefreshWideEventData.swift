@@ -34,7 +34,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         featureName: "authv2-token-refresh",
         mobileMetaType: "ios-authv2-token-refresh",
         desktopMetaType: "macos-authv2-token-refresh",
-        version: "1.2.0"
+        version: "1.3.0"
     )
 
     public var globalData: WideEventGlobalData
@@ -52,10 +52,25 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
     public var refreshTrigger: TokenRefreshTrigger?
     public var startedAt: Date?
 
+    /// Whether this refresh journey ended in the user being signed out. Always known once the
+    /// journey reaches a sign-out decision point, so unlike the other `ext` fields below it has no
+    /// "not applicable" state - it defaults to `false` and is only ever flipped to `true`.
+    public var signedOut: Bool = false
+
+    /// The cached subscription's status as of the start of this refresh. `.unavailable` when there
+    /// is no cached subscription, distinct from `.unknown` which is a status the backend itself returned.
+    public var subscriptionStatus: SubscriptionAutomaticSignOutPixelData.CachedSubscriptionStatus = .unavailable
+
+    /// Whether Network Protection is enabled/running, as observed from the process handling this
+    /// refresh. `nil` where that process has no meaningful notion of VPN state (e.g. the main app).
+    public var netpIsEnabled: Bool?
+    public var netpIsRunning: Bool?
+
     private enum CodingKeys: String, CodingKey {
         case globalData, contextData, appData
         case refreshTokenDuration, fetchJWKSDuration, recoveryDuration, recoveryOutcome
         case failingStep, errorData, refreshTrigger, startedAt
+        case signedOut, subscriptionStatus, netpIsEnabled, netpIsRunning
     }
 
     public init(failingStep: FailingStep? = nil,
@@ -86,6 +101,11 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         errorData = try container.decodeIfPresent(WideEventErrorData.self, forKey: .errorData)
         refreshTrigger = try container.decodeIfPresent(TokenRefreshTrigger.self, forKey: .refreshTrigger)
         startedAt = try container.decodeIfPresent(Date.self, forKey: .startedAt)
+        // Absent on flows started before this schema change (e.g. still pending across an app update).
+        signedOut = try container.decodeIfPresent(Bool.self, forKey: .signedOut) ?? false
+        subscriptionStatus = try container.decodeIfPresent(SubscriptionAutomaticSignOutPixelData.CachedSubscriptionStatus.self, forKey: .subscriptionStatus) ?? .unavailable
+        netpIsEnabled = try container.decodeIfPresent(Bool.self, forKey: .netpIsEnabled)
+        netpIsRunning = try container.decodeIfPresent(Bool.self, forKey: .netpIsRunning)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -102,6 +122,10 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         try container.encodeIfPresent(errorData, forKey: .errorData)
         try container.encodeIfPresent(refreshTrigger, forKey: .refreshTrigger)
         try container.encodeIfPresent(startedAt, forKey: .startedAt)
+        try container.encode(signedOut, forKey: .signedOut)
+        try container.encode(subscriptionStatus, forKey: .subscriptionStatus)
+        try container.encodeIfPresent(netpIsEnabled, forKey: .netpIsEnabled)
+        try container.encodeIfPresent(netpIsRunning, forKey: .netpIsRunning)
     }
 }
 
@@ -143,11 +167,17 @@ extension AuthV2TokenRefreshWideEventData {
             (WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency, refreshTokenDuration?.intValue(bucket)),
             (WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency, fetchJWKSDuration?.intValue(bucket)),
             (WideEventParameter.AuthV2RefreshFeature.recoveryLatency, recoveryDuration?.intValue(bucket)),
+            // nil (rather than false/true) where the current process has no notion of VPN state.
+            (WideEventParameter.AuthV2RefreshFeature.netpIsEnabled, netpIsEnabled),
+            (WideEventParameter.AuthV2RefreshFeature.netpIsRunning, netpIsRunning),
         ])
         // Emit only when the recovery path was reached (this event's params are sparse - absent means no recovery).
         if let recoveryOutcome {
             parameters[WideEventParameter.AuthV2RefreshFeature.recoveryOutcome] = recoveryOutcome.rawValue
         }
+        // Always emitted: every refresh has a sign-out outcome and a subscription status at start.
+        parameters[WideEventParameter.AuthV2RefreshFeature.signedOut] = signedOut
+        parameters[WideEventParameter.AuthV2RefreshFeature.subscriptionStatus] = subscriptionStatus.rawValue
         return parameters
     }
 
@@ -192,6 +222,10 @@ extension WideEventParameter {
         static let fetchJWKSLatency = "feature.data.ext.fetch_jwks_latency_ms_bucketed"
         static let recoveryLatency = "feature.data.ext.recovery_latency_ms_bucketed"
         static let recoveryOutcome = "feature.data.ext.recovery_outcome"
+        static let signedOut = "feature.data.ext.signed_out"
+        static let subscriptionStatus = "feature.data.ext.subscription_status"
+        static let netpIsEnabled = "feature.data.ext.netp_is_enabled"
+        static let netpIsRunning = "feature.data.ext.netp_is_running"
     }
 
 }

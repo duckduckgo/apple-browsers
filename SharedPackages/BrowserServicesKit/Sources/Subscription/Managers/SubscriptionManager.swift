@@ -653,7 +653,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery()
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
-                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil, signedOut: false)
                     return recoveredTokenContainer
                 } catch let recoveryError {
                     // `tokenRecoveryNotAttempted` means no restore ran (no handler, or the platform
@@ -667,7 +667,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(
                         outcome: notAttempted ? .notAttempted : .failed,
-                        error: notAttempted ? nil : recoveryError)
+                        error: notAttempted ? nil : recoveryError,
+                        signedOut: true)
                     throw SubscriptionManagerError.noTokenAvailable
                 }
 

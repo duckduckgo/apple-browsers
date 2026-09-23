@@ -503,6 +503,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
     let subscriptionManager: DefaultSubscriptionManager
     let tokenStorage: NetworkProtectionKeychainTokenStore
+    private let connectionStatusBox: ConnectionStatusBox
 
     @MainActor @objc public init() {
         Logger.networkProtection.log("[+] MacPacketTunnelProvider")
@@ -551,11 +552,19 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let tokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
                                                                  errorEventsHandler: debugEvents)
+        let connectionStatusBox = ConnectionStatusBox()
         let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(
             wideEvent: self.wideEvent,
             isFeatureEnabled: { true },
             shouldSuppressFailure: {
                 loopDetector.shouldSuppressCurrentAttemptTelemetry
+            },
+            netpIsEnabledProvider: {
+                connectionStatusBox.value != .notConfigured
+            },
+            netpIsRunningProvider: {
+                if case .connected = connectionStatusBox.value { return true }
+                return false
             })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStore,
                                             authService: authService,
@@ -588,6 +597,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         self.tokenStorage = tokenStore
         self.subscriptionManager = subscriptionManager
+        self.connectionStatusBox = connectionStatusBox
 
         // MARK: -
 
@@ -615,6 +625,12 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         setupPixels()
         Logger.networkProtection.log("[+] MacPacketTunnelProvider Initialised")
+    }
+
+    public override func handleConnectionStatusChange(old: ConnectionStatus, new: ConnectionStatus) {
+        super.handleConnectionStatusChange(old: old, new: new)
+
+        connectionStatusBox.value = new
     }
 
     deinit {
@@ -755,6 +771,13 @@ private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
         // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
         return true
     }
+}
+
+/// Lets a synchronous, non-actor context (the AuthV2 refresh instrumentation) read the tunnel's
+/// @MainActor `connectionStatus` without hopping actors. Written from `handleConnectionStatusChange`
+/// on every change; a stale/torn read only affects a telemetry dimension, never tunnel behavior.
+private final class ConnectionStatusBox {
+    nonisolated(unsafe) var value: ConnectionStatus = .default
 }
 
 final class DefaultWireGuardInterface: WireGuardGoInterface {

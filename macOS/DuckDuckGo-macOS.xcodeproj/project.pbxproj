@@ -4627,7 +4627,6 @@
 		EEBCE6822BA444FA00B9DF00 /* XCUIElementExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBCE6812BA444FA00B9DF00 /* XCUIElementExtension.swift */; };
 		EEBF15C22E4CE72E0053D15B /* BookmarksEmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBF15C12E4CE72E0053D15B /* BookmarksEmptyStateView.swift */; };
 		EEBF15C32E4CE72E0053D15B /* BookmarksEmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBF15C12E4CE72E0053D15B /* BookmarksEmptyStateView.swift */; };
-		EEC111E4294D06020086524F /* JSAlert.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EEC111E3294D06020086524F /* JSAlert.storyboard */; };
 		EEC111E6294D06290086524F /* JSAlertViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC111E5294D06290086524F /* JSAlertViewModel.swift */; };
 		EEC3BD262E5897300093F638 /* SyncDialogControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC3BD252E5897290093F638 /* SyncDialogControllerTests.swift */; };
 		EEC3BD272E5897300093F638 /* SyncDialogControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC3BD252E5897290093F638 /* SyncDialogControllerTests.swift */; };
@@ -4649,7 +4648,6 @@
 		EEC4A6722B2C90AB00F7C0AA /* VPNLocationPreferenceItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC4A6702B2C90AB00F7C0AA /* VPNLocationPreferenceItem.swift */; };
 		EEC7BE2E2BC6C09500F86835 /* AddressBarKeyboardShortcutsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC7BE2D2BC6C09400F86835 /* AddressBarKeyboardShortcutsTests.swift */; };
 		EEC8EB3E2982CA3B0065AA39 /* JSAlertViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC111E5294D06290086524F /* JSAlertViewModel.swift */; };
-		EEC8EB3F2982CA440065AA39 /* JSAlert.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EEC111E3294D06020086524F /* JSAlert.storyboard */; };
 		EEC8EB402982CD550065AA39 /* JSAlertViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF53E172950CED5002D78F4 /* JSAlertViewModelTests.swift */; };
 		EECA36B92E869885005A42EE /* ImportArchiveReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECA36B82E869885005A42EE /* ImportArchiveReader.swift */; };
 		EECA36BA2E869885005A42EE /* ImportArchiveReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECA36B82E869885005A42EE /* ImportArchiveReader.swift */; };
@@ -7424,7 +7422,6 @@
 		EEBCA0C52BD7CE2C004DF19C /* VPNFailureRecoveryPixel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNFailureRecoveryPixel.swift; sourceTree = "<group>"; };
 		EEBCE6812BA444FA00B9DF00 /* XCUIElementExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XCUIElementExtension.swift; sourceTree = "<group>"; };
 		EEBF15C12E4CE72E0053D15B /* BookmarksEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksEmptyStateView.swift; sourceTree = "<group>"; };
-		EEC111E3294D06020086524F /* JSAlert.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = JSAlert.storyboard; sourceTree = "<group>"; };
 		EEC111E5294D06290086524F /* JSAlertViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSAlertViewModel.swift; sourceTree = "<group>"; };
 		EEC3BD252E5897290093F638 /* SyncDialogControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDialogControllerTests.swift; sourceTree = "<group>"; };
 		EEC4A6682B2C87D300F7C0AA /* VPNLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNLocationView.swift; sourceTree = "<group>"; };
@@ -13799,7 +13796,6 @@
 		EEAEA3F4294D05CF00D04DF3 /* JSAlert */ = {
 			isa = PBXGroup;
 			children = (
-				EEC111E3294D06020086524F /* JSAlert.storyboard */,
 				EE339227291BDEFD009F62C1 /* JSAlertController.swift */,
 				EEC111E5294D06290086524F /* JSAlertViewModel.swift */,
 			);
@@ -15082,7 +15078,6 @@
 				37EE560F2D5F197300D53C7C /* trackers-2.json in Resources */,
 				37EE56102D5F197300D53C7C /* trackers-3.json in Resources */,
 				37EE56112D5F197300D53C7C /* NavigationBar.storyboard in Resources */,
-				EEC8EB3F2982CA440065AA39 /* JSAlert.storyboard in Resources */,
 				3706FCC3293F65D500E42796 /* userscript.js in Resources */,
 				B5165047300FACD7007AE203 /* upsell_devices_reveal.json in Resources */,
 				B5165048300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
@@ -15346,7 +15341,6 @@
 				37EE55E62D5F197300D53C7C /* trackers-2.json in Resources */,
 				37EE55E72D5F197300D53C7C /* trackers-3.json in Resources */,
 				37EE55E82D5F197300D53C7C /* NavigationBar.storyboard in Resources */,
-				EEC111E4294D06020086524F /* JSAlert.storyboard in Resources */,
 				B5165045300FACD7007AE203 /* upsell_devices_reveal.json in Resources */,
 				B5165046300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
 				B31055C627A1BA1D001AC618 /* userscript.js in Resources */,

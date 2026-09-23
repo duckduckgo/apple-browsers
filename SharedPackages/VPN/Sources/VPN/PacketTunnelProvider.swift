@@ -1305,7 +1305,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - App Messages
 
-    @MainActor public override func handleAppMessage(_ messageData: Data, completionHandler: ((Data?) -> Void)? = nil) {
+    @MainActor open override func handleAppMessage(_ messageData: Data, completionHandler: ((Data?) -> Void)? = nil) {
         messageHandler.handleAppMessage(messageData, completionHandler: completionHandler)
     }
 

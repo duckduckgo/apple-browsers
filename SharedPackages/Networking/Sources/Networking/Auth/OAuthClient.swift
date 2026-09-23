@@ -75,6 +75,14 @@ public enum OAuthClientError: DDGError {
 public protocol AuthTokenStoring {
     func getTokenContainer() throws -> TokenContainer?
     func saveTokenContainer(_ tokenContainer: TokenContainer?) throws
+
+    /// Retries any writes queued because the backing storage was unavailable when they were made.
+    /// No-op unless the backing storage actually queues writes.
+    func retryPendingWrites()
+}
+
+public extension AuthTokenStoring {
+    func retryPendingWrites() {}
 }
 
 public enum AuthTokensCachePolicy: CustomStringConvertible, Equatable {
@@ -136,6 +144,13 @@ public protocol OAuthClient {
 
     /// Remove the tokens container stored locally
     func removeLocalAccount() throws
+
+    /// Retries any writes the token storage queued because it was unavailable when they were
+    /// made. No-op unless the storage backend actually queues writes. Call this from any lifecycle
+    /// signal that plausibly means storage has become available again (e.g. a Network Extension
+    /// starting up or receiving a message from its containing app), since such contexts cannot
+    /// rely on the OS availability notifications the storage otherwise depends on.
+    func retryPendingWrites()
 }
 
 public extension OAuthClient {
@@ -144,6 +159,8 @@ public extension OAuthClient {
     func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
         try await getTokens(policy: policy, trigger: .client)
     }
+
+    func retryPendingWrites() {}
 }
 
 /// What initiated a token refresh. Recorded on the AuthV2 refresh wide event as `refresh_trigger`
@@ -420,5 +437,9 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     public func removeLocalAccount() throws {
         Logger.OAuthClient.log("Removing local account")
         try tokenStorage.saveTokenContainer(nil)
+    }
+
+    public func retryPendingWrites() {
+        tokenStorage.retryPendingWrites()
     }
 }

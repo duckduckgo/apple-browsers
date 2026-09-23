@@ -395,6 +395,61 @@ final class KeychainManagerTests: XCTestCase {
         XCTAssertNoThrow(try customManager.store(data: testData, forKey: "new-key"))
     }
 
+    func testWritingBacklogRetryStillUnavailableDoesNotFireSuccessPixel() throws {
+        // Given: a write is queued because the keychain is unavailable.
+        let testKey = "test-key"
+        let testData = createTestData()
+        let recordingPixelHandler = RecordingPixelHandler()
+        let manager = KeychainManager(keychainOperations: mockKeychainOperations, attributes: [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrSynchronizable: false
+        ], pixelHandler: recordingPixelHandler)
+
+        makeKeychainNotAvailable()
+        try manager.store(data: testData, forKey: testKey)
+        recordingPixelHandler.keychainPixels.removeAll() // Only care about pixels from the retry below.
+
+        // When: a retry is attempted while the keychain is still unavailable.
+        manager.retryPendingWrites()
+        let retried = expectation(description: "Retry attempted")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { retried.fulfill() }
+        wait(for: [retried], timeout: 1.0)
+
+        // Then: re-queuing must not be reported as a successful drain, and the item must still be
+        // recoverable from the backlog rather than lost or falsely marked written.
+        XCTAssertFalse(recordingPixelHandler.keychainPixels.contains(.dataWroteFromBacklog))
+        XCTAssertFalse(recordingPixelHandler.keychainPixels.contains(.failedToWriteDataFromBacklog))
+        XCTAssertFalse(recordingPixelHandler.keychainPixels.contains(.dataAddedToTheBacklog), "A re-queue is not a new addition")
+        XCTAssertNil(mockKeychainOperations.getStoredData(for: testKey))
+        XCTAssertEqual(try manager.retrieveData(forKey: testKey), testData)
+    }
+
+    func testWritingBacklogRetryBecomesAvailableFiresSuccessPixel() throws {
+        // Given: a write is queued because the keychain is unavailable.
+        let testKey = "test-key"
+        let testData = createTestData()
+        let recordingPixelHandler = RecordingPixelHandler()
+        let manager = KeychainManager(keychainOperations: mockKeychainOperations, attributes: [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrSynchronizable: false
+        ], pixelHandler: recordingPixelHandler)
+
+        makeKeychainNotAvailable()
+        try manager.store(data: testData, forKey: testKey)
+        recordingPixelHandler.keychainPixels.removeAll()
+
+        // When: the keychain becomes available and a retry is attempted.
+        makeKeychainAvailable()
+        manager.retryPendingWrites()
+        let retried = expectation(description: "Retry attempted")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { retried.fulfill() }
+        wait(for: [retried], timeout: 1.0)
+
+        // Then: this time the write genuinely lands, and only then is success reported.
+        XCTAssertTrue(recordingPixelHandler.keychainPixels.contains(.dataWroteFromBacklog))
+        XCTAssertEqual(mockKeychainOperations.getStoredData(for: testKey), testData)
+    }
+
     // MARK: - Edge Cases Tests
 
     func testMultipleOperationsConcurrently() throws {
@@ -475,5 +530,18 @@ final class KeychainManagerTests: XCTestCase {
 
         // Then - Manager should be deallocated
         XCTAssertNil(weakManager)
+    }
+}
+
+/// Records fired `KeychainManager.Pixel`s for assertions. `MockPixelHandler` is shared across
+/// several test targets and only logs, so this stays local to this file rather than widening that
+/// shared type's behavior for one test.
+private final class RecordingPixelHandler: SubscriptionPixelHandling {
+    var keychainPixels: [KeychainManager.Pixel] = []
+
+    func handle(pixel: SubscriptionPixelType) {}
+
+    func handle(pixel: KeychainManager.Pixel) {
+        keychainPixels.append(pixel)
     }
 }

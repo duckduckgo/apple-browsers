@@ -96,9 +96,11 @@ public enum FeatureFlag: String, CaseIterable {
     case webExtensionLightweightReload
 
     /// Failsafe for Web Extensions background-process diagnostics observation.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444683902
     case cpmBackgroundDelegateProxy
 
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218781680888931
     case cpmDiagnosticsRecorder
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576

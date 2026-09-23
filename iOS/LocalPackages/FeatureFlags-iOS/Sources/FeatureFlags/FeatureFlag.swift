@@ -415,9 +415,11 @@ public enum FeatureFlag: String {
     case webExtensionLightweightReload
 
     /// Failsafe for Web Extensions background-process diagnostics observation.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218782530802146
     case cpmBackgroundDelegateProxy
 
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444896174
     case cpmDiagnosticsRecorder
 
     /// Failsafe kill switch for deferring web-extension load/install until protected data is

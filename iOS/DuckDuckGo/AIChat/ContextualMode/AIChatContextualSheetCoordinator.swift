@@ -817,28 +817,7 @@ private extension AIChatContextualSheetCoordinator {
             usageLimitsStore: duckAiUsageLimitsStore,
             suggestionsController: suggestionsChips
         )
-        host.suggestionsStrip.bind(to: sessionState.$viewState.eraseToAnyPublisher())
-        host.onSuggestionSelected = { [weak self] suggestion in
-            guard let self else { return }
-            if self.isFloatingInputPresented {
-                self.promoteFloatingInputToSheet()
-            }
-            self.sheetViewController?.submitSuggestion(suggestion)
-        }
-        host.onQuickActionSelected = { [weak self] action in
-            guard let self else { return }
-            switch action {
-            case .askAboutPage:
-                // Only offered before an explicit removal, so it never competes with the attachment menu.
-                self.requestManualPageContextAttach()
-            case .summarize, .summarizePage:
-                self.pixelHandler.fireQuickActionSummarizeSelected()
-                if self.isFloatingInputPresented {
-                    self.promoteFloatingInputToSheet()
-                }
-                self.persistentUTIHost?.submitQuickActionPrompt(action.prompt)
-            }
-        }
+        bindSuggestionsStrip(on: host)
         host.onAttachRequested = { [weak self] in
             self?.requestManualPageContextAttach()
         }
@@ -884,6 +863,32 @@ private extension AIChatContextualSheetCoordinator {
         }
         self.persistentUTIHost = host
         return host
+    }
+
+    /// The strip follows the session's view state; these are the taps coming back out of it.
+    private func bindSuggestionsStrip(on host: AIChatContextualUTIHost) {
+        host.suggestionsStrip.bind(to: sessionState.$viewState.eraseToAnyPublisher())
+        host.onSuggestionSelected = { [weak self] suggestion in
+            guard let self else { return }
+            if self.isFloatingInputPresented {
+                self.promoteFloatingInputToSheet()
+            }
+            self.sheetViewController?.submitSuggestion(suggestion)
+        }
+        host.onQuickActionSelected = { [weak self] action in
+            guard let self else { return }
+            switch action {
+            case .askAboutPage:
+                // Only offered before an explicit removal, so it never competes with the attachment menu.
+                self.requestManualPageContextAttach()
+            case .summarize, .summarizePage:
+                self.pixelHandler.fireQuickActionSummarizeSelected()
+                if self.isFloatingInputPresented {
+                    self.promoteFloatingInputToSheet()
+                }
+                self.persistentUTIHost?.submitQuickActionPrompt(action.prompt)
+            }
+        }
     }
 
     /// Re-renders one chip per attached selection.

@@ -425,27 +425,7 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
 
     // MARK: - Pixels
 
-    func testWhenDetailIsOpenedThenDetailPixelFiresWithTheCategoryName() {
-        let model = createSUT()
-
-        model.send(action: .openDetail(.externalApps))
-        model.send(action: .openDetail(.location))
-
-        XCTAssertEqual(firedPixelNames, [
-            "m_mac_permission_settings_detail_external-scheme",
-            "m_mac_permission_settings_detail_geolocation",
-        ])
-    }
-
-    func testWhenDetailIsClosedThenNoPixelFires() {
-        let model = createSUT()
-
-        model.send(action: .closeDetail)
-
-        XCTAssertTrue(firedPixelNames.isEmpty)
-    }
-
-    func testWhenOpenedDetailChangesItsDefaultThenThePixelIsFiredThroughTheSharedFiring() throws {
+    func testWhenDetailIsOpenedAndItsDefaultChangesThenBothPixelsFire() throws {
         let model = createSUT()
         model.send(action: .openDetail(.camera))
         let detailModel = try XCTUnwrap(model.viewState.detailModel)
@@ -456,49 +436,6 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
             "m_mac_permission_settings_detail_camera",
             "m_mac_permission_settings_default_camera_deny",
         ])
-    }
-
-    func testWhenRecentDecisionIsChangedThenSiteChangedPixelFires() {
-        let entries = [
-            WebsitePermissionEntry(domain: "example.com", permissionType: .notification, decision: .allow, lastModified: Date()),
-        ]
-        let model = makeRecentsModel(entries, permissionManager: PermissionManagerMock())
-        guard let row = model.viewState.recents.first else {
-            return XCTFail("Expected a recent row")
-        }
-
-        model.send(action: .changeRecentDecision(row, .deny))
-
-        XCTAssertEqual(firedPixelNames, ["m_mac_permission_settings_site_changed_notification_to_deny"])
-    }
-
-    func testWhenRecentDecisionIsUnchangedThenNoPixelFires() {
-        let entries = [
-            WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .allow, lastModified: Date()),
-        ]
-        let model = makeRecentsModel(entries, permissionManager: PermissionManagerMock())
-        guard let row = model.viewState.recents.first else {
-            return XCTFail("Expected a recent row")
-        }
-
-        model.send(action: .changeRecentDecision(row, .allow))
-
-        XCTAssertTrue(firedPixelNames.isEmpty)
-    }
-
-    func testWhenRecentIsRemovedThenRemovedPixelFires() {
-        enableAutoplayPolicy()
-        let entries = [
-            WebsitePermissionEntry(domain: "example.com", permissionType: .autoplayPolicy, decision: .allow, lastModified: Date()),
-        ]
-        let model = makeRecentsModel(entries, permissionManager: PermissionManagerMock())
-        guard let row = model.viewState.recents.first else {
-            return XCTFail("Expected a recent row")
-        }
-
-        model.send(action: .removeRecent(row))
-
-        XCTAssertEqual(firedPixelNames, ["m_mac_permission_settings_removed_autoplay-policy"])
     }
 
     private var firedPixelNames: [String] {

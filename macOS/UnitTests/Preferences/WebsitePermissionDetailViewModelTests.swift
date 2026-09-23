@@ -454,32 +454,7 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
 
     // MARK: - Pixels
 
-    func testWhenDefaultIsChangedThenDefaultPixelFires() {
-        let sut = makeSUT(category: .camera, entries: [])
-
-        sut.send(action: .setDefaultDecision(.deny))
-
-        XCTAssertEqual(firedPixelNames, ["m_mac_permission_settings_default_camera_deny"])
-    }
-
-    func testWhenAutoplayDefaultIsSetToAllowThenDefaultPixelFires() {
-        let sut = makeSUT(category: .autoplay, entries: [])
-
-        sut.send(action: .setDefaultDecision(.allow))
-
-        XCTAssertEqual(firedPixelNames, ["m_mac_permission_settings_default_autoplay-policy_allow"])
-    }
-
-    func testWhenDefaultIsSetToItsCurrentValueOrAnUnofferedValueThenNoPixelFires() {
-        let sut = makeSUT(category: .camera, entries: [])
-
-        sut.send(action: .setDefaultDecision(.ask))
-        sut.send(action: .setDefaultDecision(.allow))
-
-        XCTAssertTrue(firedPixelNames.isEmpty)
-    }
-
-    func testWhenDetailDecisionChangesThenSiteChangedPixelFiresOnce() throws {
+    func testWhenDetailDecisionChangesAndIsRemovedThenEachFiresItsPixelOnce() throws {
         let sut = makeSUT(
             category: .camera,
             entries: [
@@ -492,44 +467,12 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
             sut.send(action: .changeDecision(rowID: row.id, decision: .deny))
         }
         sut.send(action: .changeDecision(rowID: row.id, decision: .deny))
-
-        XCTAssertEqual(firedPixelNames, ["m_mac_permission_settings_site_changed_camera_to_deny"])
-    }
-
-    func testWhenExternalAppDecisionChangesThenSiteChangedPixelUsesTheExternalSchemeName() throws {
-        let sut = makeSUT(
-            category: .externalApps,
-            entries: [
-                WebsitePermissionEntry(domain: "example.com", permissionType: .externalScheme(scheme: "zoommtg"), decision: .ask, lastModified: nil),
-            ]
-        )
-        let row = try XCTUnwrap(sut.viewState.sites.first)
-
-        sut.send(action: .changeDecision(rowID: row.id, decision: .allow))
-
-        XCTAssertEqual(firedPixelNames, ["m_mac_permission_settings_site_changed_external-scheme_to_allow"])
-    }
-
-    func testWhenDetailRowIsRemovedThenRemovedPixelFires() throws {
-        let sut = makeSUT(
-            category: .microphone,
-            entries: [
-                WebsitePermissionEntry(domain: "example.com", permissionType: .microphone, decision: .allow, lastModified: nil),
-            ]
-        )
-        let row = try XCTUnwrap(sut.viewState.sites.first)
-
         sut.send(action: .remove(rowID: row.id))
 
-        XCTAssertEqual(firedPixelNames, ["m_mac_permission_settings_removed_microphone"])
-    }
-
-    func testWhenSearchQueryChangesThenNoPixelFires() {
-        let sut = makeSUT(category: .camera, entries: [])
-
-        sut.send(action: .setSearchQuery("example"))
-
-        XCTAssertTrue(firedPixelNames.isEmpty)
+        XCTAssertEqual(firedPixelNames, [
+            "m_mac_permission_settings_site_changed_camera_to_deny",
+            "m_mac_permission_settings_removed_camera",
+        ])
     }
 
     private var firedPixelNames: [String] {

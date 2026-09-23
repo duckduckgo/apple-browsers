@@ -304,9 +304,11 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertSiteDialog(permission: "camera and microphone")
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
         answerSystemCameraAlert(allow: false)
-        answerSystemAlert(for: "microphone", allow: true)
+        // The toast hides after 3 seconds, so look for it before waiting for the system alert to dismiss.
+        answerSystemAlert(for: "microphone", allow: true, waitForDismissal: false)
         XCTAssertTrue(element("SitePermissions.Toast").staticTexts[
             "DuckDuckGo couldn’t give camera access to this site"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(springboard.alerts.firstMatch.waitForNonExistence(timeout: timeout))
         assertResult("NotAllowedError 1")
         assertResult("tracks video=0 audio=0")
         reloadPermissionPage()
@@ -331,9 +333,11 @@ final class SitePermissionsXCUITests: XCTestCase {
         requestMedia("camera and microphone")
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
         answerSystemCameraAlert(allow: true)
-        answerSystemAlert(for: "microphone", allow: false)
+        // The toast hides after 3 seconds, so look for it before waiting for the system alert to dismiss.
+        answerSystemAlert(for: "microphone", allow: false, waitForDismissal: false)
         XCTAssertTrue(element("SitePermissions.Toast").staticTexts[
             "DuckDuckGo couldn’t give microphone access to this site"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(springboard.alerts.firstMatch.waitForNonExistence(timeout: timeout))
         assertResult("NotAllowedError 1")
         assertResult("tracks video=0 audio=0")
         reloadPermissionPage()
@@ -527,7 +531,10 @@ final class SitePermissionsXCUITests: XCTestCase {
         enableDuckAIInput()
         openVoiceSearchSettings()
         XCTAssertEqual(voiceSearchSwitch.value as? String, "0")
-        tap(voiceSearchSwitch)
+        // iOS 26 reports the nested switch's frame away from the drawn toggle, so tap the toggle through its row.
+        let voiceSearchRow = app.switches["Private Voice Search"].firstMatch
+        XCTAssertTrue(voiceSearchRow.waitForHittable(timeout: timeout))
+        voiceSearchRow.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
         answerSystemAlert(for: "microphone", allow: true)
         let voiceSearchEnabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == '1'"), object: voiceSearchSwitch)
         XCTAssertEqual(XCTWaiter.wait(for: [voiceSearchEnabled], timeout: timeout), .completed)
@@ -622,11 +629,14 @@ final class SitePermissionsXCUITests: XCTestCase {
     private func launchApp(flagEnabled: Bool = true, seedPermissions: String? = nil, additionalArguments: [String] = []) {
         app.launchArguments = [
             "-clearAllDefaults", "isRunningUITests",
-            "-isOnboardingCompleted", "true", "-isInternalUser", "true",
+            "-isOnboardingCompleted", "true",
             "-ff.sitePermissions", String(flagEnabled),
             "-ff.floatingUIAugust2026", "true",
             "-AppleLanguages", "(en)", "-AppleLocale", "en_GB"
         ]
+        if ProcessInfo.processInfo.environment["INTERNAL_USER_MODE"] == "true" {
+            app.launchArguments += ["-isInternalUser", "true"]
+        }
         if let seedPermissions {
             app.launchArguments += ["-sitePermissionsTestSeed", seedPermissions]
         }
@@ -735,7 +745,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         answerSystemAlert(for: "camera", allow: allow)
     }
 
-    private func answerSystemAlert(for permission: String, allow: Bool) {
+    private func answerSystemAlert(for permission: String, allow: Bool, waitForDismissal: Bool = true) {
         // Match the permission so consecutive camera/microphone prompts do not share an element query.
         let systemAlert = springboard.alerts.containing(NSPredicate(format: "label CONTAINS[c] %@", permission)).firstMatch
         XCTAssertTrue(systemAlert.waitForExistence(timeout: timeout), springboard.debugDescription)
@@ -743,7 +753,9 @@ final class SitePermissionsXCUITests: XCTestCase {
         let button = systemAlert.buttons.matching(NSPredicate(
             format: "label IN %@", allow ? allowLabels : ["Don’t Allow", "Don't Allow"])).firstMatch
         tap(button)
-        XCTAssertTrue(systemAlert.waitForNonExistence(timeout: timeout))
+        if waitForDismissal {
+            XCTAssertTrue(systemAlert.waitForNonExistence(timeout: timeout))
+        }
     }
 
     private func dismissReminder(for permission: String) {
@@ -854,7 +866,7 @@ final class SitePermissionsXCUITests: XCTestCase {
       <button onclick="requestMedia({video: true, audio: true})">Request camera and microphone</button>
       <button onclick="requestLocation()">Request location</button>
       <button onclick="watchLocation()">Watch location</button>
-      <button onclick="location.reload()">Reload fixture</button>
+      <button onclick="document.getElementById('result').textContent = 'reloading'; location.reload()">Reload fixture</button>
       <p id="result" role="status">ready</p>
       <p id="tracks" role="status">tracks video=0 audio=0</p>
       <p id="locationResult" role="status">location ready</p>

@@ -258,6 +258,11 @@ extension LaunchOptionsHandler {
         }
         UserDefaults(suiteName: statisticsGroupName)?.removePersistentDomain(forName: statisticsGroupName)
         clearAppSupportFiles()
+
+        // WebKit stops showing its location prompt for a host after repeated denials and keeps that across launches.
+        if let libraryDir = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first {
+            try? FileManager.default.removeItem(at: libraryDir.appendingPathComponent("WebKit/GeolocationSitesV2.plist"))
+        }
     }
 
     private func clearAppSupportFiles() {

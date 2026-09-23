@@ -87,7 +87,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     /// Supplies the content for the contextual dialogs. Currently only EOJ but we will refactor step by step and "strangle" providing content by DaxDialogs.HomeSpec.
     private let contextualContentProvider: ContextualOnboardingContentProviding
 
-    static let remoteMessageSurfaceDidChange = Notification.Name("NewTabPageRemoteMessageSurfaceDidChange")
     private(set) var isRemoteMessageSurfacePresented = false
 
     var onViewDidAppear: (() -> Void)?
@@ -199,8 +198,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        isRemoteMessageSurfacePresented = false
-        notifyRemoteMessageSurfaceChanged()
         // Must run before the parent-check below, which would zero isShowingDuckAICompletionDialog
         // and prevent the seen flag from being set (e.g. on a tab switch without editing ending).
         dismissDuckAICompletionDialogIfNeededOnEditingEnd()
@@ -208,6 +205,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         if let hc = hostingController, hc.parent !== self {
             dismissHostingController(didFinishNTPOnboarding: false)
         }
+        isRemoteMessageSurfacePresented = false
+        notifyRemoteMessageSurfaceChanged()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -221,13 +220,12 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
             return
         }
 
-        isRemoteMessageSurfacePresented = true
-        notifyRemoteMessageSurfaceChanged()
-
         onViewDidAppear?()
         onViewDidAppear = nil
 
         associatedTab.viewed = true
+        isRemoteMessageSurfacePresented = true
+        notifyRemoteMessageSurfaceChanged()
 
         presentNextDaxDialog(event: .nextDialogRequested)
 
@@ -442,7 +440,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     private func notifyRemoteMessageSurfaceChanged() {
-        NotificationCenter.default.post(name: Self.remoteMessageSurfaceDidChange, object: self)
+        NotificationCenter.default.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: self)
     }
 
     // MARK: -

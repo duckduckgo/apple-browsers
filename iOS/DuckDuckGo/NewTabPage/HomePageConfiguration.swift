@@ -74,16 +74,16 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     var homeMessages: [HomeMessage] = []
     let mode: PromoCoordinationMode
 
+    var contentDidChangePublisher: AnyPublisher<Void, Never> {
+        contentDidChangeSubject.eraseToAnyPublisher()
+    }
+
     var currentRemoteMessageID: String? {
         homeMessages.lazy.compactMap { homeMessage in
             guard case .remoteMessage(let remoteMessage) = homeMessage,
-                  HomeMessageViewModelBuilder.canBuild(for: remoteMessage) else { return nil }
+            HomeMessageViewModelBuilder.canBuild(for: remoteMessage) else { return nil }
             return remoteMessage.id
         }.first
-    }
-
-    var contentDidChangePublisher: AnyPublisher<Void, Never> {
-        contentDidChangeSubject.eraseToAnyPublisher()
     }
 
     init(variantManager: VariantManager? = nil,

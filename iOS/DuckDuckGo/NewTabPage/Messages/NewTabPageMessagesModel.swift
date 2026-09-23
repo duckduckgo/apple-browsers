@@ -30,7 +30,7 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     private var messagesCancellable: AnyCancellable?
     private var legacyNotificationObserver: NSObjectProtocol?
-    private var appearedMessageIdentities = Set<HomeMessageViewModel.ViewIdentity>()
+    private var appearedRemoteMessageIdentity: HomeMessageViewModel.ViewIdentity?
     var onMessageVisibilityChanged: (() -> Void)?
 
     private let homePageMessagesConfiguration: HomePageMessagesConfiguration
@@ -89,10 +89,10 @@ final class NewTabPageMessagesModel: ObservableObject {
         )
     }
 
-    /// Hierarchy participation is only a readiness signal. The browser controller decides visibility.
+    /// Being in the view hierarchy tells us the view is ready; the browser controller controls whether it’s visible.
     func hasAppearedRemoteMessage(withID messageID: String) -> Bool {
         homeMessageViewModels.contains {
-            $0.messageId == messageID && appearedMessageIdentities.contains($0.viewIdentity)
+            $0.messageId == messageID && appearedRemoteMessageIdentity == $0.viewIdentity
         }
     }
 
@@ -125,12 +125,15 @@ final class NewTabPageMessagesModel: ObservableObject {
     private func updateHomeMessageViewModel() {
         let messages = homePageMessagesConfiguration.homeMessages
         homeMessageViewModels = messages.compactMap(homeMessageViewModel(for:))
-        appearedMessageIdentities.formIntersection(homeMessageViewModels.map(\.viewIdentity))
+        if let appearedRemoteMessageIdentity,
+           !homeMessageViewModels.contains(where: { $0.viewIdentity == appearedRemoteMessageIdentity }) {
+            self.appearedRemoteMessageIdentity = nil
+        }
     }
 
     private func messageViewDidAppear(with identity: HomeMessageViewModel.ViewIdentity) {
         guard homeMessageViewModels.contains(where: { $0.viewIdentity == identity }) else { return }
-        appearedMessageIdentities.insert(identity)
+        appearedRemoteMessageIdentity = identity
         onMessageVisibilityChanged?()
     }
 
@@ -220,7 +223,8 @@ final class NewTabPageMessagesModel: ObservableObject {
     }
 
     private func messageViewDidDisappear(with identity: HomeMessageViewModel.ViewIdentity) {
-        if appearedMessageIdentities.remove(identity) != nil {
+        if appearedRemoteMessageIdentity == identity {
+            appearedRemoteMessageIdentity = nil
             onMessageVisibilityChanged?()
         }
     }

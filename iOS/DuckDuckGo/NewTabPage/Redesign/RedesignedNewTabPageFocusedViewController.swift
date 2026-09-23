@@ -19,48 +19,67 @@
 
 import UIKit
 
-/// Hosts the existing focused content within the bounds supplied by the browser's input layout.
-/// Input positioning, transitions, and content eligibility remain with their existing owners.
+/// Arranges the existing focused content within the browser's input layout.
+/// The content controller stays a child of the browser so changing presentation does not restart
+/// its appearance lifecycle or the suggestions surfaces owned by its descendants.
 final class RedesignedNewTabPageFocusedViewController: UIViewController {
+
+    private static let boundsConstraintIdentifier = "FocusedContentContainer.bounds"
+
+    static func install(_ contentViewController: UIViewController,
+                        in parent: UIViewController,
+                        container: UIView) {
+        guard contentViewController.parent == nil else { return }
+        embed(contentViewController, in: parent, container: container)
+    }
 
     static func updateContainment(of contentViewController: UIViewController,
                                   in parent: UIViewController,
                                   container: UIView,
                                   usesFocusedContainer: Bool) {
-        let focusedController = contentViewController.parent as? RedesignedNewTabPageFocusedViewController
+        if contentViewController.parent == nil {
+            install(contentViewController, in: parent, container: container)
+        }
+        guard contentViewController.parent === parent else { return }
+        let focusedController = parent.children
+            .compactMap { $0 as? RedesignedNewTabPageFocusedViewController }
+            .first { $0.viewIfLoaded?.superview === container }
         if usesFocusedContainer {
             guard focusedController == nil else { return }
-            remove(contentViewController)
             let focusedController = RedesignedNewTabPageFocusedViewController()
             embed(focusedController, in: parent, container: container)
-            embed(contentViewController, in: focusedController, container: focusedController.view)
+            move(contentViewController.view, into: focusedController.view)
         } else {
-            guard contentViewController.parent !== parent else { return }
-            remove(contentViewController)
-            if let focusedController {
-                remove(focusedController)
-            }
-            embed(contentViewController, in: parent, container: container)
+            guard let focusedController else { return }
+            move(contentViewController.view, into: container)
+            focusedController.willMove(toParent: nil)
+            focusedController.view.removeFromSuperview()
+            focusedController.removeFromParent()
         }
     }
 
     private static func embed(_ child: UIViewController, in parent: UIViewController, container: UIView) {
         parent.addChild(child)
-        child.view.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(child.view)
-        NSLayoutConstraint.activate([
-            child.view.topAnchor.constraint(equalTo: container.topAnchor),
-            child.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            child.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            child.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-        ])
+        move(child.view, into: container)
         child.didMove(toParent: parent)
     }
 
-    private static func remove(_ child: UIViewController) {
-        guard child.parent != nil else { return }
-        child.willMove(toParent: nil)
-        child.view.removeFromSuperview()
-        child.removeFromParent()
+    private static func move(_ view: UIView, into container: UIView) {
+        // A move into a descendant keeps the old ancestor constraints alive unless removed explicitly.
+        let previousConstraints = view.superview?.constraints.filter {
+            $0.identifier == boundsConstraintIdentifier && $0.firstItem as? UIView === view
+        } ?? []
+        NSLayoutConstraint.deactivate(previousConstraints)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        // Reattach directly within the same window, without a detached appearance transition.
+        container.addSubview(view)
+        let constraints = [
+            view.topAnchor.constraint(equalTo: container.topAnchor),
+            view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ]
+        constraints.forEach { $0.identifier = boundsConstraintIdentifier }
+        NSLayoutConstraint.activate(constraints)
     }
 }

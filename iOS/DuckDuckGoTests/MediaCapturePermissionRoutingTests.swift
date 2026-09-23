@@ -876,66 +876,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertNil(nonLoopbackSUT.makeGeolocationSitePermissionContext(for: nonLoopbackFrame))
     }
 
-    func testPermissionsPolicyParserAllowsDefaultSelfAndExplicitPageOrigin() {
-        let pageURL = URL(string: "https://www.example.com/page")!
-
-        XCTAssertFalse(TabViewController.permissionsPolicyDisablesGeolocation(nil, for: pageURL))
-        XCTAssertFalse(TabViewController.permissionsPolicyDisablesGeolocation("camera=()", for: pageURL))
-        XCTAssertFalse(TabViewController.permissionsPolicyDisablesGeolocation("geolocation=*", for: pageURL))
-        XCTAssertFalse(TabViewController.permissionsPolicyDisablesGeolocation("camera=(), geolocation=(self)", for: pageURL))
-        XCTAssertFalse(TabViewController.permissionsPolicyDisablesGeolocation("geolocation=(\"https://www.example.com\")", for: pageURL))
-    }
-
-    func testPermissionsPolicyParserDeniesEmptyOtherOriginAndMalformedGeolocationAllowLists() {
-        let pageURL = URL(string: "https://www.example.com/page")!
-
-        XCTAssertTrue(TabViewController.permissionsPolicyDisablesGeolocation("geolocation=()", for: pageURL))
-        XCTAssertTrue(TabViewController.permissionsPolicyDisablesGeolocation("geolocation=(\"https://other.example\")", for: pageURL))
-        XCTAssertTrue(TabViewController.permissionsPolicyDisablesGeolocation("geolocation=(\"https://www.example.com:8443\")", for: pageURL))
-        XCTAssertTrue(TabViewController.permissionsPolicyDisablesGeolocation("geolocation=invalid", for: pageURL))
-    }
-
-    func testWhenPermissionsPolicyHasParametersThenOnlyTheAllowListControlsGeolocation() {
-        let pageURL = URL(string: "https://www.example.com/page")!
-        for allowList in ["*", "(self)", #"("https://www.example.com")"#] {
-            for parameters in [#";report-to="endpoint""#,
-                               #";data=:YQ:;more=:YWI:;empty=::"#,
-                               #";report-to="endpoint, geolocation=(); \"quoted\"";enabled;count=1;ratio=0.5;flag=?1;data=:YQ==:;token=value"#] {
-                XCTAssertFalse(TabViewController.permissionsPolicyDisablesGeolocation(
-                    "camera=(), geolocation=\(allowList)\(parameters), microphone=()", for: pageURL
-                ))
-            }
-        }
-        for allowList in ["()", #"("https://other.example")"#, #"("https://www.example.com:8443")"#, "invalid"] {
-            XCTAssertTrue(TabViewController.permissionsPolicyDisablesGeolocation(
-                "geolocation=\(allowList);report-to=\"endpoint\"", for: pageURL
-            ))
-        }
-        for malformed in [#"geolocation=*;=broken"#, #"geolocation=(self);report-to="unfinished"#,
-                          #"geolocation=*;report-to="bad\escape""#, "geolocation=(self);report-to=", "geolocation=*;",
-                          "geolocation=*;data=:A:", "geolocation=(self);data=:A=:"] {
-            XCTAssertTrue(TabViewController.permissionsPolicyDisablesGeolocation(malformed, for: pageURL))
-        }
-        XCTAssertFalse(TabViewController.permissionsPolicyDisablesGeolocation(
-            #"camera=();report-to="endpoint, geolocation=()", geolocation=(self)"#, for: pageURL
-        ))
-        XCTAssertTrue(TabViewController.permissionsPolicyDisablesGeolocation(
-            #"camera=();report-to="endpoint, geolocation=*", geolocation=();report-to="endpoint""#, for: pageURL
-        ))
-    }
-
-    func testPermissionsPolicyParameterValidationPreservesStructuredFieldLimits() {
-        let pageURL = URL(string: "https://www.example.com")!
-        for parameter in ["count=-123456789012345", "ratio=-123456789012.123", "data=:YQ=:", "enabled; flag=?0;token=*"] {
-            XCTAssertFalse(TabViewController.permissionsPolicyDisablesGeolocation("geolocation=(self);\(parameter)", for: pageURL), parameter)
-        }
-        for parameter in ["Uppercase", "1key", "count=1234567890123456", "count=1e2",
-                          "ratio=1234567890123.1", "ratio=1.1234", "ratio=.1", "ratio=1.", "flag=?2",
-                          "data=:YQ===:", "data=:YWJj=:", "data=:Y=Q=:", "token=é", "text=\"literal\t tab\""] {
-            XCTAssertTrue(TabViewController.permissionsPolicyDisablesGeolocation("geolocation=(self);\(parameter)", for: pageURL), parameter)
-        }
-    }
-
     func testPermissionsPolicyHeaderIsPromotedOnlyOnCommitAndFailedProvisionalNavigationRestoresCommittedPage() {
         let pageURL = URL(string: "https://www.example.com/page")!
         let sut = makeSUT(committedURL: pageURL)

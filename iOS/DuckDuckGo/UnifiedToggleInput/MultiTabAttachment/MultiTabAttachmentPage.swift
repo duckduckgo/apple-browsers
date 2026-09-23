@@ -20,9 +20,31 @@
 import Combine
 import Foundation
 
-/// Read-only access to an existing tab. Creating this value never loads a tab.
+/// Access to an existing tab. Creating this value never loads a tab.
 @MainActor
 struct MultiTabAttachmentPage {
+    /// Keeps a browser controller available until its preparation or submitted message releases it.
+    @MainActor
+    final class Reservation {
+        private var onRelease: (@MainActor () -> Void)?
+
+        init(onRelease: @escaping @MainActor () -> Void) {
+            self.onRelease = onRelease
+        }
+
+        func release() {
+            let action = onRelease
+            onRelease = nil
+            action?()
+        }
+
+        deinit {
+            if let onRelease {
+                Task { @MainActor in onRelease() }
+            }
+        }
+    }
+
     struct Identity: Equatable {
         let webView: ObjectIdentifier
         let navigation: UUID
@@ -39,4 +61,5 @@ struct MultiTabAttachmentPage {
     let state: () -> State?
     let changes: AnyPublisher<Void, Never>
     let collect: (URL, @escaping @MainActor () -> Bool) async -> MultiTabAttachmentCollectionResult
+    var loadIfNeeded: () -> Void = {}
 }

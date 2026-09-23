@@ -35,6 +35,7 @@ struct MultiTabAttachmentSource {
     let tabsProvider: () -> [Tab]
     var tabsPublisher: AnyPublisher<[Tab], Never>?
     var pageProvider: (Tab) -> MultiTabAttachmentPage? = { _ in nil }
+    var acquirePage: (Tab) -> MultiTabAttachmentPage.Reservation? = { _ in nil }
 
     func candidates() -> [MultiTabAttachmentCandidate] {
         var seen = Set<TabUID>()

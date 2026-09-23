@@ -22,6 +22,7 @@ import Combine
 import Core
 import UIKit
 import XCTest
+import WebKit
 @testable import DuckDuckGo
 
 @MainActor
@@ -263,6 +264,7 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
         coordinator.unifiedToggleInputVCDidChangeAttachments(coordinator.viewController)
         XCTAssertNil(coordinator.takeTabAttachmentRequest(), "A layout notification must not re-create transferred preparation")
         coordinator.clearAttachments()
+        XCTAssertEqual(fixture.releaseCount, 0)
         let send = Task { await request.contexts() }
         fixture.results.send(.collected(fixture.pageContext()))
         let contexts = await send.value
@@ -270,6 +272,7 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
         XCTAssertEqual(fixture.collectionCount, 1)
         XCTAssertTrue(coordinator.viewController.currentAttachments.isEmpty)
         request.cancel()
+        XCTAssertEqual(fixture.releaseCount, 1)
     }
 
     func testCoordinatorRemovalCancelsWaitingPreparation() async throws {
@@ -380,7 +383,7 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
         }
     }
 
-    func testUnloadedTabKeepsChipWithoutCollectingOrRetrying() async throws {
+    func testSourceWithoutPageKeepsChipWithoutCollectingOrRetrying() async throws {
         let fixture = AttachmentPreparationFixture()
         fixture.hasPage = false
         var removed = false
@@ -388,6 +391,147 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
         let result = await preparation.value()
         XCTAssertNil(result)
         XCTAssertFalse(removed)
+        XCTAssertEqual(fixture.collectionCount, 0)
+    }
+
+    func testBrowsingCandidatesDoesNotAcquireOrLoadPages() throws {
+        let fixture = AttachmentPreparationFixture()
+        fixture.hasPage = false
+        let candidates = fixture.source.candidates()
+        let picker = MultiTabAttachmentPickerViewModel(candidates: candidates, selectedTabIds: [], attachmentLimit: 3)
+        picker.query = "Page"
+        let item = try XCTUnwrap(picker.filteredItems.first)
+        picker.toggleSelection(for: item)
+        XCTAssertEqual(fixture.acquisitionCount, 0)
+        XCTAssertEqual(fixture.loadCount, 0)
+        XCTAssertEqual(fixture.collectionCount, 0)
+    }
+
+    func testUnloadedTabIsAcquiredOnceAndSendWaitsForInitialLoad() async throws {
+        let fixture = AttachmentPreparationFixture()
+        fixture.hasPage = false
+        fixture.isLoaded = false
+        fixture.hasPageURL = false
+        fixture.onAcquire = { [unowned fixture] in
+            fixture.hasPage = true
+            fixture.isInitialRequestPending = true
+        }
+        let preparation = try XCTUnwrap(fixture.prepare())
+        defer { preparation.cancel() }
+        let waiting = expectation(description: "Waiting for initial request")
+        fixture.onNavigationSubscription = { [unowned fixture] in
+            fixture.onNavigationSubscription = nil
+            waiting.fulfill()
+        }
+        let send = Task { await preparation.value() }
+        await fulfillment(of: [waiting], timeout: 1)
+        XCTAssertEqual(fixture.acquisitionCount, 1)
+        XCTAssertEqual(fixture.loadCount, 0)
+        XCTAssertEqual(fixture.collectionCount, 0)
+
+        fixture.navigationID = UUID()
+        fixture.isInitialRequestPending = false
+        fixture.hasPageURL = true
+        fixture.isLoaded = true
+        fixture.changes.send()
+        let result = await send.value
+        XCTAssertEqual(result?.tabId, fixture.tab.uid)
+        XCTAssertEqual(fixture.acquisitionCount, 1)
+        XCTAssertEqual(fixture.collectionCount, 1)
+        XCTAssertEqual(fixture.releaseCount, 0)
+    }
+
+    func testRestoredIdlePageStartsLoadingOnceAfterSubscription() async throws {
+        let fixture = AttachmentPreparationFixture()
+        fixture.isLoaded = false
+        var subscribed = false
+        fixture.onNavigationSubscription = { subscribed = true }
+        fixture.load = { [unowned fixture] in
+            XCTAssertTrue(subscribed)
+            fixture.isLoading = true
+            fixture.navigationID = UUID()
+            fixture.changes.send()
+        }
+        let preparation = try XCTUnwrap(fixture.prepare())
+        defer { preparation.cancel() }
+        preparation.refresh()
+        XCTAssertEqual(fixture.loadCount, 1)
+        fixture.isLoading = false
+        fixture.isLoaded = true
+        fixture.changes.send()
+        let result = await preparation.value()
+        XCTAssertNotNil(result)
+        XCTAssertEqual(fixture.loadCount, 1)
+        XCTAssertEqual(fixture.collectionCount, 1)
+    }
+
+    func testAcquisitionTimeConsumesInitialNavigationBudget() async {
+        let fixture = AttachmentPreparationFixture()
+        var time: TimeInterval = 0
+        fixture.onAcquire = { time = 6 }
+        fixture.collect = { _ in .failed }
+        let preparation = MultiTabAttachmentPreparation(
+            attachment: .init(tabId: fixture.tab.uid, title: "Page", url: fixture.url),
+            tab: fixture.tab, source: fixture.source, now: { time }, isEnabled: { true }, onChange: { _ in })
+        defer { preparation.cancel() }
+        let result = await preparation.value()
+        XCTAssertNil(result)
+        // Initial preparation timed out before extraction; only the existing Send retry collects.
+        XCTAssertEqual(fixture.collectionCount, 1)
+        XCTAssertEqual(fixture.acquisitionCount, 1)
+    }
+
+    func testFirstNavigationDoesNotResetInitialBudget() async throws {
+        let fixture = AttachmentPreparationFixture()
+        fixture.isInitialRequestPending = true
+        fixture.isLoaded = false
+        var time: TimeInterval = 0
+        fixture.collect = { _ in .failed }
+        let preparation = MultiTabAttachmentPreparation(
+            attachment: .init(tabId: fixture.tab.uid, title: "Page", url: fixture.url),
+            tab: fixture.tab, source: fixture.source, now: { time }, isEnabled: { true }, onChange: { _ in })
+        defer { preparation.cancel() }
+        time = 6
+        fixture.navigationID = UUID()
+        fixture.isInitialRequestPending = false
+        fixture.isLoaded = true
+        preparation.refresh()
+        let result = await preparation.value()
+        XCTAssertNil(result)
+        XCTAssertEqual(fixture.collectionCount, 1, "Only the Send retry may collect after the initial budget expired")
+    }
+
+    func testReadyPreparationRetainsReservationUntilCancelled() async throws {
+        let fixture = AttachmentPreparationFixture()
+        let preparation = try XCTUnwrap(fixture.prepare())
+        _ = await preparation.value()
+        XCTAssertEqual(fixture.acquisitionCount, 1)
+        XCTAssertEqual(fixture.releaseCount, 0)
+        preparation.cancel()
+        preparation.cancel()
+        XCTAssertEqual(fixture.releaseCount, 1)
+    }
+
+    func testOwnerTeardownReleasesReservation() async throws {
+        let fixture = AttachmentPreparationFixture()
+        let released = expectation(description: "Reservation released after owner teardown")
+        fixture.onRelease = { released.fulfill() }
+        var preparation = fixture.prepare()
+        XCTAssertNotNil(preparation)
+        _ = await preparation?.value()
+        preparation = nil
+        await fulfillment(of: [released], timeout: 1)
+        XCTAssertEqual(fixture.releaseCount, 1)
+    }
+
+    func testCancellingInitialLoadReleasesReservationWithoutAnotherLoad() throws {
+        let fixture = AttachmentPreparationFixture()
+        fixture.isLoaded = false
+        fixture.isInitialRequestPending = true
+        let preparation = try XCTUnwrap(fixture.prepare())
+        preparation.cancel()
+        XCTAssertEqual(fixture.releaseCount, 1)
+        XCTAssertEqual(fixture.loadCount, 0)
         XCTAssertEqual(fixture.collectionCount, 0)
     }
 
@@ -545,6 +689,7 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
         let fixture = AttachmentPreparationFixture()
         fixture.feature.state = .unavailable
         XCTAssertNil(fixture.prepare())
+        XCTAssertEqual(fixture.acquisitionCount, 0)
         XCTAssertEqual(fixture.collectionCount, 0)
     }
 
@@ -679,6 +824,105 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
 }
 
 @MainActor
+final class MultiTabAttachmentPageTests: XCTestCase {
+    func testRestoredDocumentReloadsOnlyOnce() throws {
+        let controller = makeController(restored: true)
+        let webView = try XCTUnwrap(controller.webView as? AttachmentLoadingWebView)
+        let page = try XCTUnwrap(controller.makeMultiTabAttachmentPage())
+        XCTAssertEqual(page.state()?.isLoaded, false)
+        page.loadIfNeeded()
+        page.loadIfNeeded()
+        XCTAssertEqual(webView.reloadCount, 1)
+        XCTAssertEqual(webView.stopCount, 0)
+    }
+
+    func testRestoredDocumentAlreadyLoadingIsNotReloaded() throws {
+        let controller = makeController(restored: true)
+        let webView = try XCTUnwrap(controller.webView as? AttachmentLoadingWebView)
+        webView.simulatedLoading = true
+        let page = try XCTUnwrap(controller.makeMultiTabAttachmentPage())
+        page.loadIfNeeded()
+        XCTAssertEqual(page.state()?.isLoading, true)
+        XCTAssertEqual(webView.reloadCount, 0)
+    }
+
+    func testPendingInitialRequestCountsAsLoadingBeforeWebKitStarts() throws {
+        let controller = makeController(restored: false, initialRequest: true)
+        let webView = try XCTUnwrap(controller.webView as? AttachmentLoadingWebView)
+        let page = try XCTUnwrap(controller.makeMultiTabAttachmentPage())
+        XCTAssertNil(webView.url)
+        XCTAssertFalse(webView.isLoading)
+        XCTAssertEqual(page.state()?.isLoading, true)
+        page.loadIfNeeded()
+        XCTAssertEqual(webView.reloadCount, 0)
+    }
+
+    func testReadingRestoredPageDoesNotStartLoading() throws {
+        let controller = makeController(restored: true)
+        let webView = try XCTUnwrap(controller.webView as? AttachmentLoadingWebView)
+        _ = controller.makeMultiTabAttachmentPage()?.state()
+        _ = controller.makeMultiTabAttachmentPage()?.state()
+        XCTAssertEqual(webView.reloadCount, 0)
+        XCTAssertEqual(webView.loadCount, 0)
+    }
+
+    func testPreparationCancellationDoesNotStopBrowserLoad() throws {
+        let controller = makeController(restored: true)
+        let webView = try XCTUnwrap(controller.webView as? AttachmentLoadingWebView)
+        webView.simulatedLoading = true
+        let tab = controller.tabModel
+        let source = MultiTabAttachmentSource(currentTabID: "other", mode: .normal, tabsProvider: { [tab] },
+                                               pageProvider: { _ in controller.makeMultiTabAttachmentPage() })
+        let context = MultiTabAttachmentContext(source: source, feature: MutableAttachmentFeature())
+        let preparation = try XCTUnwrap(context.prepare(.init(tabId: tab.uid, title: "Page", url: try XCTUnwrap(tab.link?.url)),
+                                                       onChange: { _ in }))
+        preparation.cancel()
+        XCTAssertEqual(webView.stopCount, 0)
+        XCTAssertTrue(webView.isLoading)
+    }
+
+    private func makeController(restored: Bool, initialRequest: Bool = false) -> TabViewController {
+        let url = URL(string: "https://example.com/page")!
+        return TabViewController.fake(customWebView: { configuration in
+            let webView = AttachmentLoadingWebView(frame: .zero, configuration: configuration)
+            webView.restoredURL = restored ? url : nil
+            return webView
+        }, link: Link(title: "Page", url: url), interactionStateData: restored ? Data() : nil,
+        initialRequest: initialRequest ? URLRequest.userInitiated(url) : nil, consumeCookies: initialRequest)
+    }
+}
+
+private final class AttachmentLoadingWebView: WKWebView {
+    var restoredURL: URL?
+    private var currentURL: URL?
+    var simulatedLoading = false
+    private(set) var reloadCount = 0
+    private(set) var loadCount = 0
+    private(set) var stopCount = 0
+
+    override var url: URL? { currentURL }
+    override var isLoading: Bool { simulatedLoading }
+    override var interactionState: Any? {
+        get { Data() }
+        set { currentURL = restoredURL }
+    }
+
+    override func reload() -> WKNavigation? {
+        reloadCount += 1
+        return nil
+    }
+
+    override func load(_ request: URLRequest) -> WKNavigation? {
+        loadCount += 1
+        return nil
+    }
+
+    override func stopLoading() {
+        stopCount += 1
+    }
+}
+
+@MainActor
 private final class AttachmentPreparationFixture {
     let tab: Tab
     lazy var tabs = CurrentValueSubject<[Tab], Never>([tab])
@@ -689,9 +933,17 @@ private final class AttachmentPreparationFixture {
     var navigationID = UUID()
     var url = URL(string: "https://example.com/page")!
     var isLoading = false
+    var isInitialRequestPending = false
+    var hasPageURL = true
     var isLoaded = true
     var hasPage = true
     var collectionCount = 0
+    var acquisitionCount = 0
+    var releaseCount = 0
+    var loadCount = 0
+    var onAcquire: (() -> Void)?
+    var onRelease: (() -> Void)?
+    var load: (() -> Void)?
     var collect: ((URL) async -> MultiTabAttachmentCollectionResult)?
     var onNavigationSubscription: (() -> Void)?
     var onStateRead: (() -> Void)?
@@ -708,7 +960,8 @@ private final class AttachmentPreparationFixture {
         return MultiTabAttachmentPage(state: { [unowned self] in
             self.onStateRead?()
             return .init(identity: .init(webView: ObjectIdentifier(self.pageObject), navigation: self.navigationID),
-                         url: self.url, isLoading: self.isLoading, isLoaded: self.isLoaded, isAttachable: true)
+                         url: self.hasPageURL ? self.url : nil,
+                         isLoading: self.isLoading || self.isInitialRequestPending, isLoaded: self.isLoaded, isAttachable: true)
         }, changes: self.changes.handleEvents(receiveSubscription: { [unowned self] _ in
             self.onNavigationSubscription?()
         }).eraseToAnyPublisher(), collect: { [unowned self] url, isValid in
@@ -716,7 +969,19 @@ private final class AttachmentPreparationFixture {
             self.collectionCount += 1
             if let collect = self.collect { return await collect(url) }
             return .collected(self.pageContext())
+        }, loadIfNeeded: { [unowned self] in
+            guard !self.isLoaded, !self.isLoading, !self.isInitialRequestPending, let load = self.load else { return }
+            self.loadCount += 1
+            load()
         })
+    }, acquirePage: { [unowned self] _ in
+        self.acquisitionCount += 1
+        self.onAcquire?()
+        guard self.hasPage else { return nil }
+        return MultiTabAttachmentPage.Reservation { [weak self] in
+            self?.releaseCount += 1
+            self?.onRelease?()
+        }
     })
 
     lazy var context = MultiTabAttachmentContext(source: source, feature: feature)

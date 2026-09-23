@@ -776,6 +776,8 @@ class TabViewController: UIViewController {
     private var pageContextNavigationID = UUID()
     private var pageContextLoadedNavigationID: UUID?
     private var pageContextNavigationInProgress = false
+    private var pageContextInitialRequestPending = false
+    private var pageContextRestoredPageNeedsLoad = false
     private let pageContextPageChanges = PassthroughSubject<Void, Never>()
 
     private func makePageContextHandler() -> AIChatPageContextHandler {
@@ -795,7 +797,7 @@ class TabViewController: UIViewController {
             guard let self, let webView = self.webView else { return nil }
             return .init(identity: .init(webView: ObjectIdentifier(webView), navigation: self.pageContextNavigationID),
                          url: webView.url,
-                         isLoading: self.pageContextNavigationInProgress || webView.isLoading,
+                         isLoading: self.pageContextInitialRequestPending || self.pageContextNavigationInProgress || webView.isLoading,
                          isLoaded: self.pageContextLoadedNavigationID == self.pageContextNavigationID,
                          isAttachable: self.makePageContextHandler().isCurrentPageAttachable())
         }, changes: Publishers.Merge3(urlPublisher.map { _ in () }, pageContextPageChanges,
@@ -803,7 +805,21 @@ class TabViewController: UIViewController {
         collect: { [weak self] url, isValid in
             guard let handler = self?.makePageContextHandler() else { return .unavailable }
             return await handler.collectContext(for: url, isValid: isValid)
+        }, loadIfNeeded: { [weak self] in
+            self?.loadRestoredPageForTabAttachmentIfNeeded()
         })
+    }
+
+    private func loadRestoredPageForTabAttachmentIfNeeded() {
+        guard pageContextRestoredPageNeedsLoad, !pageContextInitialRequestPending,
+              !pageContextNavigationInProgress, let webView, !webView.isLoading,
+              webView.url != nil, pageContextLoadedNavigationID != pageContextNavigationID else { return }
+        pageContextRestoredPageNeedsLoad = false
+        pageContextInitialRequestPending = true
+        if webView.reload() == nil {
+            pageContextInitialRequestPending = false
+        }
+        pageContextPageChanges.send()
     }
 
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
@@ -1383,6 +1399,11 @@ class TabViewController: UIViewController {
                        loadingInitiatedByParentTab: Bool = false,
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
         instrumentation.willPrepareWebView()
+        pageContextNavigationID = UUID()
+        pageContextLoadedNavigationID = nil
+        pageContextNavigationInProgress = false
+        pageContextInitialRequestPending = request != nil
+        pageContextRestoredPageNeedsLoad = false
         let isReplacingWebView = webView != nil
         let mediaCaptureUserScript = makeSitePermissionsMediaCaptureUserScript(replacingWebView: isReplacingWebView)
         let userContentController = UserContentController(
@@ -1445,6 +1466,8 @@ class TabViewController: UIViewController {
         }
 
         let didRestoreWebViewState = restoreInteractionStateToWebView(interactionStateData)
+        pageContextRestoredPageNeedsLoad = didRestoreWebViewState && pageContextLoadedNavigationID == nil
+        pageContextInitialRequestPending = request != nil && (consumeCookies || !didRestoreWebViewState)
 
         instrumentation.didPrepareWebView()
 
@@ -2676,6 +2699,8 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        pageContextInitialRequestPending = false
+        pageContextRestoredPageNeedsLoad = false
         pageContextNavigationID = UUID()
         pageContextNavigationInProgress = true
         pageContextPageChanges.send()
@@ -2726,6 +2751,7 @@ extension TabViewController: WKNavigationDelegate {
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
         pageContextLoadedNavigationID = pageContextNavigationID
+        pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
         didFinishURLSubject.send(webView.url)
@@ -3162,6 +3188,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
 
@@ -3215,6 +3242,7 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
 

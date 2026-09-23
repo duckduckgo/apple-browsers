@@ -31,6 +31,9 @@ final class MultiTabAttachmentPreparation: TabObserver {
     private let isEnabled: () -> Bool
     private let onChange: (UnifiedToggleInputTabAttachment?) -> Void
     private let navigationTimeout: TimeInterval
+    private let now: () -> TimeInterval
+    private var navigationDeadline: TimeInterval?
+    private var pageReservation: MultiTabAttachmentPage.Reservation?
     private var subscriptions = Set<AnyCancellable>()
     private var pageSubscription: AnyCancellable?
     private var page: MultiTabAttachmentPage?
@@ -44,12 +47,14 @@ final class MultiTabAttachmentPreparation: TabObserver {
          tab: Tab,
          source: MultiTabAttachmentSource,
          navigationTimeout: TimeInterval = 5,
+         now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
          isEnabled: @escaping () -> Bool,
          onChange: @escaping (UnifiedToggleInputTabAttachment?) -> Void) {
         self.attachment = attachment
         self.tab = tab
         self.source = source
         self.navigationTimeout = navigationTimeout
+        self.now = now
         self.isEnabled = isEnabled
         self.onChange = onChange
         tab.addObserver(self)
@@ -57,6 +62,11 @@ final class MultiTabAttachmentPreparation: TabObserver {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.refresh() }
             .store(in: &subscriptions)
+        if isEnabled(), isSourceValid, let url = tab.link?.url,
+           !AIChatTabMetadata.shouldExcludeFromTabPicker(url) {
+            navigationDeadline = now() + navigationTimeout
+            pageReservation = source.acquirePage(tab)
+        }
         refresh()
     }
 
@@ -78,6 +88,8 @@ final class MultiTabAttachmentPreparation: TabObserver {
         pageSubscription = nil
         subscriptions.removeAll()
         tab.removeObserver(self)
+        pageReservation?.release()
+        pageReservation = nil
     }
 
     private var isSourceValid: Bool {
@@ -147,15 +159,30 @@ final class MultiTabAttachmentPreparation: TabObserver {
 
     private func startCollection() {
         let operation = operationID
-        guard isEnabled(), let page, let state = page.state(), state.isLoaded || state.isLoading else {
-            // TODO: Support unloaded tabs: https://app.asana.com/1/137249556945/project/1208671677432066/task/1218243444968029?focus=true
+        guard isEnabled(), isSourceValid, let page else {
             task = Task { .unavailable }
             return
         }
-        let timeout = navigationTimeout
+        if navigationDeadline == nil {
+            navigationDeadline = now() + navigationTimeout
+        }
+        let deadline = navigationDeadline ?? now()
+        guard deadline > now() else {
+            task = Task { .timedOut }
+            return
+        }
+        // refresh() has already subscribed to page changes so a restored-page reload cannot emit changes before we subscribe.
+        page.loadIfNeeded()
+        guard let state = page.state(), state.isLoaded || state.isLoading else {
+            task = Task { .unavailable }
+            return
+        }
+        let now = self.now
         let isValid: @MainActor () -> Bool = { [weak self] in self?.isValid(operation: operation) == true }
-        task = Task { @MainActor in
+        task = Task { @MainActor [weak self] in
             guard !Task.isCancelled, isValid() else { return .cancelled }
+            let timeout = max(0, deadline - now())
+            guard timeout > 0 else { return .timedOut }
             if state.isLoading {
                 let finished = page.changes.prepend(())
                     .filter { !isValid() || page.state()?.isLoading != true }
@@ -169,6 +196,7 @@ final class MultiTabAttachmentPreparation: TabObserver {
             }
             guard !Task.isCancelled, isValid(), let ready = page.state(),
                   ready.isLoaded, !ready.isLoading, ready.isAttachable, let url = ready.url else { return .unavailable }
+            self?.navigationDeadline = nil
             return await page.collect(url, isValid)
         }
     }
@@ -201,6 +229,7 @@ final class MultiTabAttachmentPreparation: TabObserver {
             case .failed, .timedOut:
                 guard !retried else { return nil }
                 retried = true
+                navigationDeadline = nil
                 startCollection()
             default:
                 return nil

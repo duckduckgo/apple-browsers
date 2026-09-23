@@ -1713,7 +1713,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func synchronizeTabAttachmentPreparations() {
-        guard case .available = tabAttachmentFeature?.state else { return }
         guard !isSynchronizingTabAttachments else { return }
         isSynchronizingTabAttachments = true
         defer { isSynchronizingTabAttachments = false }
@@ -1723,6 +1722,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         for id in Array(tabAttachmentPreparations.keys) where !ids.contains(id) {
             tabAttachmentPreparations.removeValue(forKey: id)?.cancel()
         }
+        guard case .available = tabAttachmentFeature?.state else { return }
         for attachment in attachments where tabAttachmentPreparations[attachment.id] == nil && !transferredTabAttachmentIDs.contains(attachment.id) {
             let preparation = tabAttachmentContext?.prepare(attachment) { [weak self] updated in
                 guard let self, self.viewController.currentAttachments.contains(where: { $0.id == attachment.id }) else { return }

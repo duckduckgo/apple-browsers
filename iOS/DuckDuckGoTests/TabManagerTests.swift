@@ -27,6 +27,7 @@ import Core
 import PrivacyConfig
 import SubscriptionTestingUtilities
 import XCTest
+import WebKit
 @testable import DuckDuckGo
 
 @MainActor
@@ -602,6 +603,104 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(cacheDelegate.evictionReasons, [.webContentProcessTermination])
         XCTAssertNil(manager.controller(for: tabs[0]))
         XCTAssertEqual(model.tabs.count, 2)
+    }
+
+    func testAttachmentReservationProtectsControllerDuringCreationAndUntilRelease() throws {
+        let (manager, tabs) = try makeAttachmentManager()
+        let current = manager.current()
+        let reservation = try XCTUnwrap(manager.acquireTabAttachmentPage(for: tabs[1], mode: .normal))
+        XCTAssertNotNil(manager.controller(for: tabs[1]))
+        XCTAssertTrue(manager.current() === current)
+        XCTAssertTrue(manager.currentTabsModel.currentTab === tabs[0])
+
+        reservation.release()
+        XCTAssertNil(manager.controller(for: tabs[1]))
+        XCTAssertNotNil(manager.controller(for: tabs[0]))
+    }
+
+    func testMultipleAttachmentReservationsReleaseIndependently() throws {
+        let (manager, tabs) = try makeAttachmentManager()
+        let first = try XCTUnwrap(manager.acquireTabAttachmentPage(for: tabs[1], mode: .normal))
+        let controller = try XCTUnwrap(manager.controller(for: tabs[1]))
+        let second = try XCTUnwrap(manager.acquireTabAttachmentPage(for: tabs[1], mode: .normal))
+        XCTAssertTrue(manager.controller(for: tabs[1]) === controller)
+
+        first.release()
+        first.release()
+        XCTAssertTrue(manager.controller(for: tabs[1]) === controller)
+        second.release()
+        XCTAssertNil(manager.controller(for: tabs[1]))
+    }
+
+    func testControllerRemovalInvalidatesOldReservationsWithoutAffectingReplacement() throws {
+        let (manager, tabs) = try makeAttachmentManager()
+        let old = try XCTUnwrap(manager.acquireTabAttachmentPage(for: tabs[1], mode: .normal))
+        let controller = try XCTUnwrap(manager.controller(for: tabs[1]))
+        manager.invalidateCache(forController: controller, reloadCurrent: false)
+        XCTAssertNil(manager.controller(for: tabs[1]))
+
+        let replacement = try XCTUnwrap(manager.acquireTabAttachmentPage(for: tabs[1], mode: .normal))
+        let replacementController = try XCTUnwrap(manager.controller(for: tabs[1]))
+        XCTAssertFalse(replacementController === controller)
+        old.release()
+        XCTAssertTrue(manager.controller(for: tabs[1]) === replacementController)
+        replacement.release()
+        XCTAssertNil(manager.controller(for: tabs[1]))
+    }
+
+    func testClosingProtectedTabRemovesControllerAndPreventsReacquisition() throws {
+        let (manager, tabs) = try makeAttachmentManager()
+        let reservation = try XCTUnwrap(manager.acquireTabAttachmentPage(for: tabs[1], mode: .normal))
+        manager.remove(tab: tabs[1])
+        XCTAssertNil(manager.controller(for: tabs[1]))
+        XCTAssertNil(manager.acquireTabAttachmentPage(for: tabs[1], mode: .normal))
+        reservation.release()
+    }
+
+    func testBurningProtectedTabsRemovesControllers() throws {
+        let (manager, tabs) = try makeAttachmentManager()
+        let reservation = try XCTUnwrap(manager.acquireTabAttachmentPage(for: tabs[1], mode: .normal))
+        _ = manager.removeAll(browsingMode: .normal)
+        XCTAssertNil(manager.controller(for: tabs[1]))
+        XCTAssertNil(manager.acquireTabAttachmentPage(for: tabs[1], mode: .normal))
+        reservation.release()
+    }
+
+    func testAttachmentAcquisitionRejectsWrongModeAndUnlistedTab() throws {
+        let (manager, tabs) = try makeAttachmentManager()
+        XCTAssertNil(manager.acquireTabAttachmentPage(for: tabs[1], mode: .fire))
+        XCTAssertNil(manager.controller(for: tabs[1]))
+        let other = Tab(link: tabs[1].link)
+        XCTAssertNil(manager.acquireTabAttachmentPage(for: other, mode: .normal))
+        XCTAssertNil(manager.controller(for: other))
+    }
+
+    func testAttachmentUsesSourceModeWithoutChangingSelectedMode() throws {
+        let normal = Tab(link: Link(title: "Normal", url: URL(string: "https://example.com")!))
+        let fire = Tab(link: normal.link, fireTab: true)
+        let manager = try makeManager(TabsModel(tabs: [normal], desktop: false),
+                                      fireModel: TabsModel(tabs: [fire], desktop: false, mode: .fire),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode]))
+        let reservation = try XCTUnwrap(manager.acquireTabAttachmentPage(for: fire, mode: .fire))
+        defer { reservation.release() }
+        let controller = try XCTUnwrap(manager.controller(for: fire))
+        XCTAssertTrue(controller.tabModel === fire)
+        XCTAssertEqual(manager.currentBrowsingMode, .normal)
+        if #available(iOS 17, *) {
+            XCTAssertEqual(controller.webView.configuration.websiteDataStore.identifier,
+                           WKWebViewConfiguration.persistent(fireMode: true).websiteDataStore.identifier)
+        }
+    }
+
+    private func makeAttachmentManager() throws -> (TabManager, [Tab]) {
+        let tabs = (0..<2).map {
+            Tab(link: Link(title: "Page \($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let manager = try makeManager(TabsModel(tabs: tabs, desktop: false),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.tabLRUEviction]),
+                                      privacyConfigurationManager: makePrivacyConfigurationManager(settings: "{\"maxCapacityPhone\": 1}"))
+        _ = manager.current(createIfNeeded: true)
+        return (manager, tabs)
     }
 
     func testWhenWebContentProcessTerminatesThenTabTerminationTelemetryIsNotified() throws {

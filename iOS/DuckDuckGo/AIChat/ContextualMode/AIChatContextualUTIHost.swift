@@ -57,10 +57,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onDuckAIPromptSubmitted: ((AIChatEntryPointSource?) -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
     var onEditModeChange: ((Bool) -> Void)?
-    /// Fires when the input expands or collapses (the input's real card state).
     var onExpandedChange: ((Bool) -> Void)?
-
-    /// Whether the input bar is currently expanded (vs the collapsed compact pill).
     var isInputExpanded: Bool {
         coordinator.viewController.isInputExpanded
     }
@@ -68,7 +65,12 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     // MARK: - Suggestions strip (owned by the host, shown above the input card)
 
     private let suggestionsController: AIChatContextualInputViewController
-    private var hasSuggestions = false
+    /// True once the strip has shown for the current mount: the first batch appears instantly (riding the
+    /// input's entrance), later ones fade. Reset when the strip leaves a surface.
+    private var hasShownStartActions = false
+    /// The last actions handed to the strip, so a view-state emission that leaves them unchanged doesn't
+    /// rebuild every chip's visual-effect view.
+    private var lastStartActions: (suggestions: [ContextualSuggestedPrompt], quickActions: [AIChatContextualQuickAction], isLoading: Bool)?
     /// The surface the strip is currently mounted in, so it can be detached before it moves to another.
     private weak var suggestionsParent: UIViewController?
     /// Fires when the user taps a suggestion chip.
@@ -162,7 +164,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
         coordinator.viewController.onExpansionChange = { [weak self] expanded in
             self?.onExpandedChange?(expanded)
-            self?.updateSuggestionsVisibility()
+            self?.updateStartActionsForExpansion(expanded)
         }
         suggestionsController.delegate = self
         chipViewModel.onAttachActionRequested = { [weak self] in
@@ -459,42 +461,91 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         }
         suggestionsDimEnabled = false
         suggestionsParent = nil
+        // The next surface's first batch should appear instantly again.
+        hasShownStartActions = false
+        lastStartActions = nil
         guard suggestionsController.parent != nil else { return }
         suggestionsController.willMove(toParent: nil)
         suggestionsController.view.removeFromSuperview()
         suggestionsController.removeFromParent()
     }
 
-    /// Updates the start actions shown in the strip; visibility follows the input's expanded state. The sheet
-    /// passes suggestions only; the floating surface also passes quick actions.
+    /// Updates the start actions shown in the strip, driving the same show/clear lifecycle both surfaces used
+    /// when each owned its own chips. The sheet passes suggestions only; the floating surface also passes
+    /// quick actions.
     func setStartActions(suggestions: [ContextualSuggestedPrompt],
                          quickActions: [AIChatContextualQuickAction],
                          isLoading: Bool) {
-        hasSuggestions = !isLoading && (!suggestions.isEmpty || !quickActions.isEmpty)
-        suggestionsController.updateStartActions(suggestions: suggestions, quickActions: quickActions)
-        suggestionsController.updateSuggestionsLoading(isLoading)
-        if hasSuggestions {
-            suggestionsController.showStartActions()
+        let unchanged = lastStartActions.map {
+            $0.suggestions == suggestions && $0.quickActions == quickActions && $0.isLoading == isLoading
+        } ?? false
+        guard !unchanged else { return }
+        lastStartActions = (suggestions, quickActions, isLoading)
+
+        guard !isLoading else {
+            // Loader alone while suggestions resolve. Passing the actions through here would flash the
+            // placeholder chip beside it, then replace it.
+            suggestionsController.updateStartActions(suggestions: [], quickActions: [])
+            suggestionsController.updateSuggestionsLoading(true)
+            return
         }
-        updateSuggestionsVisibility()
+        guard !suggestions.isEmpty || !quickActions.isEmpty else {
+            suggestionsController.updateSuggestionsLoading(false)
+            clearStartActionsFadingOut()
+            return
+        }
+        suggestionsController.updateStartActions(suggestions: suggestions, quickActions: quickActions)
+        suggestionsController.updateSuggestionsLoading(false)
+        showStartActionsIfNeeded()
     }
 
     /// The strip's container view, so a hosting surface (the floating input) can move it with the input.
     var suggestionsContainerView: UIView { suggestionsContainer }
 
-    private func updateSuggestionsVisibility() {
-        fadeSuggestions(to: (hasSuggestions && isInputExpanded) ? 1 : 0)
+    /// Collapsing the input hides the strip without clearing it, so it returns when the input expands again.
+    private func updateStartActionsForExpansion(_ expanded: Bool) {
+        if expanded {
+            showStartActionsIfNeeded()
+        } else {
+            fadeStartActions(to: 0)
+        }
     }
 
-    private func fadeSuggestions(to alpha: CGFloat) {
-        guard suggestionsContainer.alpha != alpha else { return }
-        let dimAlpha: CGFloat = alpha > 0 ? ContextualSurfaceScrim.alpha : 0
-        UIView.animate(withDuration: 0.2) {
-            self.suggestionsContainer.alpha = alpha
-            if self.suggestionsDimEnabled {
-                self.suggestionsDimView.alpha = dimAlpha
-            }
+    /// Actions arrive asynchronously with the page context, so this waits for the first batch with content
+    /// rather than showing at mount. They ride the input's entrance the first time and fade in thereafter.
+    private func showStartActionsIfNeeded() {
+        guard suggestionsController.startActionCount > 0, isInputExpanded else { return }
+        guard !hasShownStartActions else {
+            fadeStartActions(to: 1)
+            return
         }
+        hasShownStartActions = true
+        suggestionsContainer.alpha = 1
+        if suggestionsDimEnabled { suggestionsDimView.alpha = ContextualSurfaceScrim.alpha }
+        suggestionsController.showStartActions()
+    }
+
+    /// Clears only once invisible: removing them collapses the stack into the input's own animation.
+    private func clearStartActionsFadingOut() {
+        fadeStartActions(to: 0) { [weak self] in
+            self?.suggestionsController.updateStartActions(suggestions: [], quickActions: [])
+        }
+    }
+
+    private func fadeStartActions(to alpha: CGFloat, completion: (() -> Void)? = nil) {
+        guard suggestionsContainer.alpha != alpha else {
+            completion?()
+            return
+        }
+        let dimAlpha: CGFloat = suggestionsDimEnabled ? (alpha > 0 ? ContextualSurfaceScrim.alpha : 0) : 0
+        UIView.animate(withDuration: 0.2, animations: {
+            self.suggestionsContainer.alpha = alpha
+            if self.suggestionsDimEnabled { self.suggestionsDimView.alpha = dimAlpha }
+        }, completion: { finished in
+            // An interrupted fade was overtaken; its clear would empty the row coming back.
+            guard finished else { return }
+            completion?()
+        })
     }
 
     /// Pins the input where it currently sits, so a keyboard that moves or changes height afterwards cannot

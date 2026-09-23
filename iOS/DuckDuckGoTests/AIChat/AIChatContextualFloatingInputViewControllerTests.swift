@@ -93,7 +93,8 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
             initialAttachmentDeliveryState: .delivered,
             hasActiveChat: { false },
             isAutoAttachEnabled: { false },
-            isFireTab: false
+            isFireTab: false,
+            suggestionsController: makeChips()
         )
     }
 

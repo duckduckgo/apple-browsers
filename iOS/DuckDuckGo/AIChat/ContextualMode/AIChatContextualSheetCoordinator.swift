@@ -827,6 +827,8 @@ private extension AIChatContextualSheetCoordinator {
         if let persistentUTIHost { return persistentUTIHost }
 
         let initialUTIAttachment = self.initialUTIAttachment
+        let suggestionsChips = makeChipsViewController()
+        suggestionsChips.useGlassStartActionBackgrounds()
         let host = AIChatContextualUTIHost(
             originatingURLPublisher: originatingURLPublisher,
             initialAttachedContext: initialUTIAttachment.context,
@@ -838,8 +840,16 @@ private extension AIChatContextualSheetCoordinator {
             lastUsedModelProvider: duckAiLastUsedModelProvider,
             floatingInputFeature: floatingInputFeature,
             start: start,
-            usageLimitsStore: duckAiUsageLimitsStore
+            usageLimitsStore: duckAiUsageLimitsStore,
+            suggestionsController: suggestionsChips
         )
+        host.onSuggestionSelected = { [weak self] suggestion in
+            guard let self else { return }
+            if self.isFloatingInputPresented {
+                self.promoteFloatingInputToSheet()
+            }
+            self.sheetViewController?.submitSuggestion(suggestion)
+        }
         host.onAttachRequested = { [weak self] in
             self?.requestManualPageContextAttach()
         }

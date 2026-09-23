@@ -54,7 +54,12 @@ final class AIChatContextualUTIHostTests: XCTestCase {
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
             hasActiveChat: { [weak self] in self?.hasActiveChat ?? false },
             isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false },
-            isFireTab: false
+            isFireTab: false,
+            suggestionsController: AIChatContextualInputViewController(
+                voiceSearchHelper: MockVoiceSearchHelper(),
+                showsBasicNativeInput: false,
+                showsWelcomeMessage: false
+            )
         )
     }
 

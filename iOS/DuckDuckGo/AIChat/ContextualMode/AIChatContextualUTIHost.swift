@@ -65,6 +65,25 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.viewController.isInputExpanded
     }
 
+    // MARK: - Suggestions strip (owned by the host, shown above the input card)
+
+    private let suggestionsController: AIChatContextualInputViewController
+    private var hasSuggestions = false
+    /// Fires when the user taps a suggestion chip.
+    var onSuggestionSelected: ((ContextualSuggestedPrompt) -> Void)?
+
+    private lazy var suggestionsContainer: ChipHitTestingView = {
+        let view = ChipHitTestingView()
+        view.backgroundColor = .clear
+        view.alpha = 0
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.containsChip = { [weak self] point in
+            guard let self else { return false }
+            return self.suggestionsController.containsStartAction(at: point, from: self.suggestionsContainer)
+        }
+        return view
+    }()
+
     /// Raised by the input's microphone, which dictates into the field rather than opening voice chat.
     var onVoiceSearchRequested: (() -> Void)?
 
@@ -84,8 +103,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
         start: ContextualInputStart = .expandedOnExistingChat,
-        usageLimitsStore: DuckAiUsageLimitsStore? = nil
+        usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        suggestionsController: AIChatContextualInputViewController
     ) {
+        self.suggestionsController = suggestionsController
         let isFloatingInputAvailable = floatingInputFeature.isAvailable
         self.hasActiveChat = hasActiveChat
         self.startsPreSubmit = start.isPreSubmit
@@ -125,7 +146,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
         coordinator.viewController.onExpansionChange = { [weak self] expanded in
             self?.onExpandedChange?(expanded)
+            self?.updateSuggestionsVisibility()
         }
+        suggestionsController.delegate = self
         chipViewModel.onAttachActionRequested = { [weak self] in
             self?.onAttachRequested?()
         }
@@ -358,6 +381,44 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var inputCardLeadingAnchor: NSLayoutXAxisAnchor { coordinator.viewController.inputCardLeadingAnchor }
     var inputCardTrailingAnchor: NSLayoutXAxisAnchor { coordinator.viewController.inputCardTrailingAnchor }
 
+    // MARK: - Suggestions strip
+
+    /// Mounts the suggestions strip above the input card in `parent`. Taps in the gaps pass through.
+    func embedSuggestions(in parent: UIViewController) {
+        guard suggestionsContainer.superview == nil else { return }
+        parent.addChild(suggestionsController)
+        suggestionsController.view.translatesAutoresizingMaskIntoConstraints = false
+        suggestionsController.clearStartActionsHorizontalInset()
+        suggestionsContainer.addSubview(suggestionsController.view)
+        parent.view.addSubview(suggestionsContainer)
+        NSLayoutConstraint.activate([
+            suggestionsContainer.topAnchor.constraint(greaterThanOrEqualTo: parent.view.safeAreaLayoutGuide.topAnchor),
+            suggestionsContainer.leadingAnchor.constraint(equalTo: inputCardLeadingAnchor),
+            suggestionsContainer.trailingAnchor.constraint(equalTo: inputCardTrailingAnchor),
+            suggestionsContainer.bottomAnchor.constraint(equalTo: inputCardTopAnchor),
+            suggestionsController.view.topAnchor.constraint(equalTo: suggestionsContainer.topAnchor),
+            suggestionsController.view.leadingAnchor.constraint(equalTo: suggestionsContainer.leadingAnchor),
+            suggestionsController.view.trailingAnchor.constraint(equalTo: suggestionsContainer.trailingAnchor),
+            suggestionsController.view.bottomAnchor.constraint(equalTo: suggestionsContainer.bottomAnchor),
+        ])
+        suggestionsController.didMove(toParent: parent)
+    }
+
+    /// Updates the suggestions shown in the strip; visibility follows the input's expanded state.
+    func setSuggestions(_ prompts: [ContextualSuggestedPrompt], isLoading: Bool) {
+        hasSuggestions = !isLoading && !prompts.isEmpty
+        suggestionsController.updateStartActions(suggestions: prompts, quickActions: [])
+        suggestionsController.updateSuggestionsLoading(isLoading)
+        if hasSuggestions {
+            suggestionsController.showStartActions()
+        }
+        updateSuggestionsVisibility()
+    }
+
+    private func updateSuggestionsVisibility() {
+        suggestionsContainer.alpha = (hasSuggestions && isInputExpanded) ? 1 : 0
+    }
+
     /// Pins the input where it currently sits, so a keyboard that moves or changes height afterwards cannot
     /// drag it. For a surface animating itself out: its own motion is then the only thing moving it.
     func freezeInputPosition() {
@@ -575,4 +636,17 @@ extension AIChatContextualUTIHost {
             hasPageContext: hasPageContext
         )
     }
+}
+
+// MARK: - AIChatContextualInputViewControllerDelegate (suggestions strip)
+
+extension AIChatContextualUTIHost: AIChatContextualInputViewControllerDelegate {
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
+        onSuggestionSelected?(suggestion)
+    }
+
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {}
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {}
+    func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {}
+    func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {}
 }

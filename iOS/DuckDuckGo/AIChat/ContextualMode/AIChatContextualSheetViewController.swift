@@ -187,34 +187,6 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// Whether the web view is currently visible (vs native input being visible)
     private var isWebViewVisible = false
 
-    /// Active-chat suggestions chips above the UTI input — same controller, embedding and glass style as
-    /// the floating input.
-    private lazy var activeChatSuggestionsController: AIChatContextualInputViewController = {
-        let controller = AIChatContextualInputViewController(
-            voiceSearchHelper: voiceSearchHelper,
-            showsBasicNativeInput: false,
-            showsWelcomeMessage: false
-        )
-        controller.delegate = self
-        controller.useGlassStartActionBackgrounds()
-        return controller
-    }()
-
-    private lazy var activeChatSuggestionsContainer: ChipHitTestingView = {
-        let view = ChipHitTestingView()
-        view.backgroundColor = .clear
-        view.alpha = 0
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.containsChip = { [weak self] point in
-            guard let self else { return false }
-            return self.activeChatSuggestionsController.containsStartAction(at: point, from: self.activeChatSuggestionsContainer)
-        }
-        return view
-    }()
-    private var hasEmbeddedActiveChatSuggestions = false
-    /// The strip only shows while the input is expanded, tracked by keyboard visibility.
-    private var isInputExpanded = false
-
     private var isCurrentlyMediumDetent: Bool {
         sheetPresentationController?.selectedDetentIdentifier == .medium
     }
@@ -1215,9 +1187,6 @@ private extension AIChatContextualSheetViewController {
         titleTapControl?.isEnabled = viewState.isExpandButtonEnabled
         contextualInputViewController.updateStartActions(suggestions: viewState.suggestions, quickActions: viewState.quickActions)
         contextualInputViewController.updateSuggestionsLoading(viewState.suggestionsLoadState == .loading)
-        if hasEmbeddedActiveChatSuggestions {
-            activeChatSuggestionsContainer.alpha = 0
-        }
         fireAskAboutPageShownPixelIfNeeded(for: viewState)
         fireSuggestionsViewedPixelIfNeeded(for: viewState)
 
@@ -1249,9 +1218,8 @@ private extension AIChatContextualSheetViewController {
             if !isWebViewVisible {
                 transitionToWebView()
             }
-            if hasEmbeddedActiveChatSuggestions {
-                updateActiveChatSuggestions(viewState)
-            }
+            persistentUTIHost?.setSuggestions(viewState.suggestions,
+                                              isLoading: viewState.suggestionsLoadState == .loading)
             fireButton.isHidden = !viewState.shouldShowNewChatButton
         }
 
@@ -1533,10 +1501,6 @@ private extension AIChatContextualSheetViewController {
         persistentUTIHost.onEditModeChange = { [weak self] isEditing in
             self?.setEditMode(isEditing)
         }
-        isInputExpanded = persistentUTIHost.isInputExpanded
-        persistentUTIHost.onExpandedChange = { [weak self] expanded in
-            self?.setInputExpanded(expanded)
-        }
 
         let utiView = persistentUTIHost.mount(in: self)
         // The previous constraint died with the old mount — its two views no longer share an ancestor.
@@ -1547,40 +1511,9 @@ private extension AIChatContextualSheetViewController {
         if contentDragKeyboardDismissRecognizer.view == nil {
             contentContainerView.addGestureRecognizer(contentDragKeyboardDismissRecognizer)
         }
-        embedActiveChatSuggestionsIfNeeded(above: persistentUTIHost)
-    }
-
-    /// Embeds the suggestions chips above the UTI input card, mirroring the floating input.
-    private func embedActiveChatSuggestionsIfNeeded(above host: AIChatContextualFloatingInputHosting) {
-        guard featureFlagger.isFeatureOn(.contextualActiveChatSuggestions) else { return }
-        guard !hasEmbeddedActiveChatSuggestions else { return }
-        hasEmbeddedActiveChatSuggestions = true
-
-        view.addSubview(activeChatSuggestionsContainer)
-        addChild(activeChatSuggestionsController)
-        activeChatSuggestionsController.view.translatesAutoresizingMaskIntoConstraints = false
-        activeChatSuggestionsController.clearStartActionsHorizontalInset()
-        activeChatSuggestionsContainer.addSubview(activeChatSuggestionsController.view)
-        NSLayoutConstraint.activate([
-            activeChatSuggestionsContainer.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor),
-            activeChatSuggestionsContainer.leadingAnchor.constraint(equalTo: host.inputCardLeadingAnchor),
-            activeChatSuggestionsContainer.trailingAnchor.constraint(equalTo: host.inputCardTrailingAnchor),
-            activeChatSuggestionsContainer.bottomAnchor.constraint(equalTo: host.inputCardTopAnchor),
-            activeChatSuggestionsController.view.topAnchor.constraint(equalTo: activeChatSuggestionsContainer.topAnchor),
-            activeChatSuggestionsController.view.leadingAnchor.constraint(equalTo: activeChatSuggestionsContainer.leadingAnchor),
-            activeChatSuggestionsController.view.trailingAnchor.constraint(equalTo: activeChatSuggestionsContainer.trailingAnchor),
-            activeChatSuggestionsController.view.bottomAnchor.constraint(equalTo: activeChatSuggestionsContainer.bottomAnchor),
-        ])
-        activeChatSuggestionsController.didMove(toParent: self)
-    }
-
-    private func updateActiveChatSuggestions(_ viewState: SheetViewState) {
-        let hasSuggestions = viewState.suggestionsLoadState == .loaded && !viewState.suggestions.isEmpty
-        activeChatSuggestionsController.updateStartActions(suggestions: viewState.suggestions, quickActions: [])
-        if hasSuggestions {
-            activeChatSuggestionsController.showStartActions()
+        if featureFlagger.isFeatureOn(.contextualActiveChatSuggestions) {
+            persistentUTIHost.embedSuggestions(in: self)
         }
-        activeChatSuggestionsContainer.alpha = (hasSuggestions && isInputExpanded) ? 1 : 0
     }
 
     @objc private func handleContentDragToDismissKeyboard(_ gesture: UIPanGestureRecognizer) {
@@ -1665,13 +1598,6 @@ private extension AIChatContextualSheetViewController {
         }
     }
 
-    /// Driven by the input's real expanded/collapsed signal (not the keyboard).
-    private func setInputExpanded(_ expanded: Bool) {
-        isInputExpanded = expanded
-        if hasEmbeddedActiveChatSuggestions {
-            updateActiveChatSuggestions(sessionState.viewState)
-        }
-    }
 }
 
 // MARK: - UISheetPresentationControllerDelegate

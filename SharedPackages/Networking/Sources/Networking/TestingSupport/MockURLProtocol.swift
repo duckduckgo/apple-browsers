@@ -19,6 +19,7 @@
 import Foundation
 
 /// A catch-all URL protocol that returns successful response and records all requests.
+@_spi(Testing)
 public final class MockURLProtocol: URLProtocol {
 
     public static var lastRequest: URLRequest?

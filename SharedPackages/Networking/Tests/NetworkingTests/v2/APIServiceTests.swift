@@ -17,8 +17,7 @@
 //
 
 import XCTest
-@testable import Networking
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
 
 final class APIServiceTests: XCTestCase {
 
@@ -93,7 +92,7 @@ final class APIServiceTests: XCTestCase {
             case anError
         }
 
-        MockURLProtocol.requestHandler = { request in throw TestError.anError }
+        MockURLProtocol.requestHandler = { _ in throw TestError.anError }
 
         let apiService = DefaultAPIService(urlSession: mockURLSession)
 
@@ -222,7 +221,7 @@ final class APIServiceTests: XCTestCase {
         let requestCountExpectation = expectation(description: "Request performed count")
         requestCountExpectation.expectedFulfillmentCount = 4
 
-        MockURLProtocol.requestHandler = { request in
+        MockURLProtocol.requestHandler = { _ in
             requestCountExpectation.fulfill()
             throw URLError(.cannotConnectToHost)
         }
@@ -238,7 +237,7 @@ final class APIServiceTests: XCTestCase {
         let requestCountExpectation = expectation(description: "Request performed count")
         requestCountExpectation.expectedFulfillmentCount = 1
 
-        MockURLProtocol.requestHandler = { request in
+        MockURLProtocol.requestHandler = { _ in
             requestCountExpectation.fulfill()
             return ( HTTPURLResponse.internalServerError, nil)
         }
@@ -294,7 +293,7 @@ final class APIServiceTests: XCTestCase {
 
         let request = APIRequestV2(url: HTTPURLResponse.testUrl,
                                    headers: APIRequestV2.HeadersV2(authToken: "expiredToken"))!
-        let apiService = DefaultAPIService(urlSession: mockURLSession) { request in
+        let apiService = DefaultAPIService(urlSession: mockURLSession) { _ in
             refreshCalledExpectation.fulfill()
             return "someToken"
         }
@@ -312,7 +311,7 @@ final class APIServiceTests: XCTestCase {
         }
 
         let request = APIRequestV2(url: HTTPURLResponse.testUrl)!
-        let apiService = DefaultAPIService(urlSession: mockURLSession) { request in
+        let apiService = DefaultAPIService(urlSession: mockURLSession) { _ in
             refreshCalledExpectation.fulfill()
             return "someToken"
         }

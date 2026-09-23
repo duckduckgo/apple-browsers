@@ -20,7 +20,7 @@ import XCTest
 import Foundation
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 
 private typealias MockURLProtocol = DataBrokerProtectionCoreTestsUtils.MockURLProtocol
 

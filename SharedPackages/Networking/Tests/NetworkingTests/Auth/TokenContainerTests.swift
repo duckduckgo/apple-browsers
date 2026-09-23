@@ -18,8 +18,7 @@
 
 import XCTest
 import JWTKit
-@testable import Networking
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
 
 final class TokenContainerTests: XCTestCase {
 

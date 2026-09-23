@@ -27,7 +27,7 @@ import PixelExperimentKit
 @testable import Subscription
 @testable import DuckDuckGo
 import PrivacyConfig
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 import BrowserServicesKitTestsUtils
 import WebKit
 

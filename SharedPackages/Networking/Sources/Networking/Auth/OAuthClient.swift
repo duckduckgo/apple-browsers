@@ -268,6 +268,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         try tokenStorage.saveTokenContainer(tokenContainer)
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     public func getTokens(policy: AuthTokensCachePolicy, trigger: TokenRefreshTrigger) async throws -> TokenContainer {
         switch policy {
         case .local:
@@ -305,10 +306,6 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             }
 
             let refreshID = UUID().uuidString
-            // The flow must start before the keychain read below: `.tokenRefreshStarted` is what
-            // creates the wide-event flow, defaulting failingStep to `.tokenRead`. Reading first (as
-            // this used to) meant a keychain-read failure threw before any flow existed, so it could
-            // never be attributed to `.tokenRead` in the wide event - only in the separate pixel.
             refreshEventMapping?.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: trigger))
 
             let localTokenContainer: TokenContainer?

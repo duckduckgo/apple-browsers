@@ -184,12 +184,12 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
 
     public func tunnelStopped(reason: NEProviderStopReason) {
         Logger.networkProtectionSessionHealth.debug("tunnelStopped: reason=\(reason.rawValue, privacy: .public)")
-        terminalTransition { $0.finalized(for: reason.asEventEndReason, at: $1) }
+        applyTransitionAndComplete { $0.finalized(for: reason.asEventEndReason, at: $1) }
     }
 
     public func tunnelCancelledWithError() {
         Logger.networkProtectionSessionHealth.debug("tunnelCancelledWithError")
-        terminalTransition { $0.finalizedAfterCancellation(at: $1) }
+        applyTransitionAndComplete { $0.finalizedAfterCancellation(at: $1) }
     }
 }
 
@@ -212,7 +212,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
         wideEvent.updateFlow(next)
     }
 
-    func terminalTransition(_ transition: (VPNSessionHealthWideEventData, Date) -> (event: VPNSessionHealthWideEventData, outcome: VPNSessionHealthWideEventData.EventOutcome)) {
+    func applyTransitionAndComplete(_ transition: (VPNSessionHealthWideEventData, Date) -> (event: VPNSessionHealthWideEventData, outcome: VPNSessionHealthWideEventData.EventOutcome)) {
         lock.lock()
         defer { lock.unlock() }
 

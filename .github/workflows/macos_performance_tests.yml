@@ -50,7 +50,6 @@ jobs:
     timeout-minutes: 60
 
     env:
-      XCODE_VERSION: "27.0"
       RUNS_ON: image:osx-goldengate,ui-tests  # keep this in sync with runs-on above
       RUNNER_NAME: image-osx-goldengate,ui-tests
 
@@ -138,8 +137,6 @@ jobs:
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
-      with:
-        xcode-version: ${{ env.XCODE_VERSION }}
 
     - name: Configure system logging
       working-directory: SharedPackages/BrowserServicesKit

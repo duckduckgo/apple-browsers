@@ -89,8 +89,6 @@ jobs:
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
-        with:
-          xcode-version: "27.0"
 
       - name: Setup Bitrise Build Cache
         uses: ./.github/actions/bitrise-build-cache
@@ -234,8 +232,6 @@ jobs:
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
-        with:
-          xcode-version: "27.0"
 
       - name: Select iOS Simulator
         id: select-simulator

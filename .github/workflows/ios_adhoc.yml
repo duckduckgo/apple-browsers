@@ -57,8 +57,6 @@ jobs:
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
-        with:
-          xcode-version: "27.0"
 
       - name: Add commit SHA to plist
         run: |

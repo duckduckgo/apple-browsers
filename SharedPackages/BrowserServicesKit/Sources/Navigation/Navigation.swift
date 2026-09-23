@@ -37,6 +37,7 @@ public final class Navigation {
     @Published public fileprivate(set) var state: NavigationState
     public private(set) var isCommitted: Bool = false
     public private(set) var didReceiveAuthenticationChallenge: Bool = false
+    internal private(set) var wasCancelledForReplacement = false
 
     /// Currently performed Navigation Action. May change for server redirects.
     public var navigationAction: NavigationAction {
@@ -213,6 +214,20 @@ extension Navigation {
         for responder in navigationResponders {
             responder.navigation(self, didFailWith: error)
         }
+    }
+
+    func cancelForReplacementIfNeeded() {
+        switch state {
+        case .started, .responseReceived, .redirected(.server):
+            break
+        default:
+            // Completed navigations and client redirects have their own completion handling.
+            return
+        }
+
+        didResignCurrent()
+        wasCancelledForReplacement = true
+        checkNavigationCompletion()
     }
 
     private func resolve(with wkNavigation: WKNavigation?) {

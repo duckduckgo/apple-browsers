@@ -963,7 +963,7 @@ extension MainViewController {
     }
 
     func applyTopChromeState(renderState: UTIRenderState, isOnAITab: Bool, coordinator: UnifiedToggleInputCoordinator) {
-        updateUnifiedInputContentContainment()
+        updateUnifiedInputContentContainment(presentation: newTabPageInputPresentation, isOnAITab: isOnAITab)
         if isOnAITab, viewCoordinator.isNavigationChromeHidden {
             let chromeBackgroundState = aiTabChromeBackgroundState(for: renderState)
             applyUnifiedInputChromeBackground(chromeBackgroundState, updateWebView: false)
@@ -1026,17 +1026,17 @@ extension MainViewController {
         }
 
         RedesignedNewTabPageFocusedViewController.install(contentVC, in: self, container: container)
-        updateUnifiedInputContentContainment()
+        updateUnifiedInputContentContainment(presentation: newTabPageInputPresentation, isOnAITab: currentTab?.isAITab == true)
     }
 
-    func updateUnifiedInputContentContainment() {
+    func updateUnifiedInputContentContainment(presentation: NewTabPageInputPresentation, isOnAITab: Bool) {
         guard let coordinator = unifiedToggleInputCoordinator,
               let container = viewCoordinator.unifiedInputContentContainer else { return }
         RedesignedNewTabPageFocusedViewController.updateContainment(
             of: coordinator.contentViewController,
             in: self,
             container: container,
-            usesFocusedContainer: currentTab?.isAITab != true && newTabPageInputPresentation.usesFocusedContentContainer)
+            usesFocusedContainer: !isOnAITab && presentation.usesFocusedContentContainer)
     }
 
     func installFloatingReturnKeyViewController() {

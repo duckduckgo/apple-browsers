@@ -35,7 +35,7 @@ extension MainViewController {
 
     func updateAddressBarSuppressionForNewTabPage() {
         let presentation = newTabPageInputPresentation
-        updateUnifiedInputContentContainment()
+        updateUnifiedInputContentContainment(presentation: presentation, isOnAITab: currentTab?.isAITab == true)
         guard viewCoordinator.newTabPageInputPresentation != presentation else { return }
         if presentation.hidesNavigationContainer || presentation.transition != .inlineInput {
             restingNewTabPageSnapshot = nil

@@ -106,6 +106,11 @@ enum FloatingGlassAppearancePolicy {
     }
 }
 
+private struct RemoteMessageExposure: Equatable {
+    let tabID: String
+    let messageID: String
+}
+
 class MainViewController: UIViewController {
 
     /// iOS may deliver buffered accelerometer data as a spurious shake when returning from background.
@@ -395,7 +400,7 @@ class MainViewController: UIViewController {
     weak var tabSwitcherController: TabSwitcherViewController? {
         didSet {
             if tabSwitcherController != nil {
-                remoteMessageImpression = nil
+                currentRemoteMessageExposure = nil
             }
         }
     }
@@ -543,12 +548,7 @@ class MainViewController: UIViewController {
     private var popoverSuggestionsCoordinator: PopoverSuggestionsCoordinator?
     private var homePageMessagesCancellable: AnyCancellable?
 
-    private struct RemoteMessageImpression: Equatable {
-        let tabID: String
-        let messageID: String
-    }
-
-    private var remoteMessageImpression: RemoteMessageImpression?
+    private var currentRemoteMessageExposure: RemoteMessageExposure?
     private var remoteMessageVisibilityCancellables = Set<AnyCancellable>()
     private var remoteMessageInputCancellables = Set<AnyCancellable>()
     private var isRemoteMessageVisibilityCheckScheduled = false
@@ -1038,7 +1038,7 @@ class MainViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         isBrowserPresentedForRemoteMessages = false
-        remoteMessageImpression = nil
+        currentRemoteMessageExposure = nil
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -1269,7 +1269,7 @@ class MainViewController: UIViewController {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         coordinator.modeChangePublisher
             .sink { [weak self] mode in
-                if mode == .aiChat { self?.remoteMessageImpression = nil }
+                if mode == .aiChat { self?.currentRemoteMessageExposure = nil }
                 self?.scheduleRemoteMessageVisibilityCheck()
             }
             .store(in: &remoteMessageInputCancellables)
@@ -1302,25 +1302,25 @@ class MainViewController: UIViewController {
               let tab = tabManager.currentTabsModel.currentTab,
               !tab.isAITab, !tab.fireTab,
               let messageID = homePageConfiguration.currentRemoteMessageID else {
-            remoteMessageImpression = nil
+            currentRemoteMessageExposure = nil
             return
         }
 
-        let impression = RemoteMessageImpression(tabID: tab.uid, messageID: messageID)
+        let exposure = RemoteMessageExposure(tabID: tab.uid, messageID: messageID)
         guard let surfaceRoot = remoteMessageSurfaceRoot,
               containsVisibleRemoteMessage(messageID, in: surfaceRoot, window: window) else {
             // Back fades the focused Search NTP while the same card remains on the resting NTP.
             // Preserve only an existing exposure; this fallback must never report a new one.
-            if remoteMessageImpression != impression || !isRemoteMessageVisibleDuringSearchDismiss(messageID, window: window) {
-                remoteMessageImpression = nil
+            if currentRemoteMessageExposure != exposure || !isRemoteMessageVisibleDuringSearchDismiss(messageID, window: window) {
+                currentRemoteMessageExposure = nil
             }
             return
         }
-        guard remoteMessageImpression != impression else { return }
+        guard currentRemoteMessageExposure != exposure else { return }
         // Reserve before reporting: eligibility reconciliation can synchronously publish content.
-        remoteMessageImpression = impression
+        currentRemoteMessageExposure = exposure
         if !homePageConfiguration.reportVisibleRemoteMessage(expectedMessageID: messageID) {
-            remoteMessageImpression = nil
+            currentRemoteMessageExposure = nil
         }
     }
 
@@ -1343,7 +1343,7 @@ class MainViewController: UIViewController {
             return coordinator.contentViewController
         }
         guard !isModeToggleInAIChatMode else { return nil }
-        if let tray = suggestionTrayController, tray.isShowing {
+        if let tray = suggestionTrayController, isPopoverVisible {
             return tray.isShowingFavorites ? tray : nil
         }
         // Focused Search can show RMF over a loaded website. Only the resting surface requires an NTP tab.
@@ -1804,7 +1804,7 @@ class MainViewController: UIViewController {
     }
 
     @objc private func onAppDidEnterBackground() {
-        remoteMessageImpression = nil
+        currentRemoteMessageExposure = nil
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
         }
@@ -2545,7 +2545,7 @@ class MainViewController: UIViewController {
 
     fileprivate func removeHomeScreen() {
         restingNewTabPageSnapshot = nil
-        remoteMessageImpression = nil
+        currentRemoteMessageExposure = nil
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
@@ -3592,6 +3592,7 @@ class MainViewController: UIViewController {
         }
         viewCoordinator.suggestionTrayContainer.isHidden = false
         currentTab?.webView.accessibilityElementsHidden = true
+        scheduleRemoteMessageVisibilityCheck()
     }
     
     func hideSuggestionTray() {
@@ -3599,6 +3600,7 @@ class MainViewController: UIViewController {
         viewCoordinator.suggestionTrayContainer.isHidden = true
         currentTab?.webView.accessibilityElementsHidden = false
         suggestionTrayController?.didHide(animated: false)
+        scheduleRemoteMessageVisibilityCheck()
     }
     
     func launchAutofillLogins(with currentTabUrl: URL? = nil, currentTabUid: String? = nil, openSearch: Bool = false, source: AutofillSettingsSource, selectedAccount: SecureVaultModels.WebsiteAccount? = nil, extensionPromotionManager: AutofillExtensionPromotionManaging? = nil) {
@@ -3689,7 +3691,6 @@ class MainViewController: UIViewController {
         omniBar.refreshCustomizableButton()
         reanchorAITabCollapsedFooterIfNeeded()
         updateWindowedAddressBarCorners()
-        scheduleRemoteMessageVisibilityCheck()
     }
 
     // True while the address-bar move animation runs; it owns the container background. See `onMoveAddressBar`.
@@ -6413,7 +6414,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onTextEntryModeDidChange(_ mode: TextEntryMode) {
-        if mode == .aiChat { remoteMessageImpression = nil }
+        if mode == .aiChat { currentRemoteMessageExposure = nil }
         scheduleRemoteMessageVisibilityCheck()
         // Only this callback carries the direction; `onToggleModeSwitched` does not.
         recordNewTabPageSessionToggleSwitch(to: mode)
@@ -6472,6 +6473,7 @@ extension MainViewController: PopoverSuggestionsHosting {
         viewCoordinator.omniBar.showSeparator()
         viewCoordinator.suggestionTrayContainer.isHidden = true
         currentTab?.webView.accessibilityElementsHidden = false
+        scheduleRemoteMessageVisibilityCheck()
     }
 }
 

@@ -31,7 +31,7 @@ final class NewTabPageMessagesModel: ObservableObject {
     private var messagesCancellable: AnyCancellable?
     private var legacyNotificationObserver: NSObjectProtocol?
     private var appearedMessageIdentities = Set<HomeMessageViewModel.ViewIdentity>()
-    var onMessageViewAppeared: (() -> Void)?
+    var onMessageVisibilityChanged: (() -> Void)?
 
     private let homePageMessagesConfiguration: HomePageMessagesConfiguration
     private let notificationCenter: NotificationCenter
@@ -131,7 +131,7 @@ final class NewTabPageMessagesModel: ObservableObject {
     private func messageViewDidAppear(with identity: HomeMessageViewModel.ViewIdentity) {
         guard homeMessageViewModels.contains(where: { $0.viewIdentity == identity }) else { return }
         appearedMessageIdentities.insert(identity)
-        onMessageViewAppeared?()
+        onMessageVisibilityChanged?()
     }
 
     // MARK: - HomeMessageViewModel Mapping
@@ -147,6 +147,8 @@ final class NewTabPageMessagesModel: ObservableObject {
                                         loadRemoteImage: nil) { [weak self] _ in
                 await self?.dismissHomeMessage(message)
             } onDidAppear: {
+                // no-op
+            } onDidDisappear: {
                 // no-op
             } onAttachAdditionalParameters: { _, params in
                 params
@@ -211,7 +213,15 @@ final class NewTabPageMessagesModel: ObservableObject {
                 }
             } onDidAppear: { [weak self] in
                 self?.messageViewDidAppear(with: viewIdentity)
+            } onDidDisappear: { [weak self] in
+                self?.messageViewDidDisappear(with: viewIdentity)
             }
+        }
+    }
+
+    private func messageViewDidDisappear(with identity: HomeMessageViewModel.ViewIdentity) {
+        if appearedMessageIdentities.remove(identity) != nil {
+            onMessageVisibilityChanged?()
         }
     }
 

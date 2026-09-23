@@ -68,7 +68,6 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     private var remoteMessagesCancellable: AnyCancellable?
     private var rmfOwnership: RMFOwnership?
     private var isRMFAdmissionEnabled: Bool
-    private var firstImpressionCheckedMessageIDs = Set<String>()
     private var legacyOpenedAfterIdle = false
     private var legacySelectedTriggerFilter: TriggerFilter?
 
@@ -427,19 +426,16 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
                           options: .parameters(additionalParameters(for: remoteMessage.id)))
         }
 
-        let shouldCheckFirstImpression = firstImpressionCheckedMessageIDs.insert(remoteMessage.id).inserted
-        let isFirstImpression = shouldCheckFirstImpression && !remoteMessagingStore.hasShownRemoteMessage(withID: remoteMessage.id)
-        if isFirstImpression {
+        // A countable iOS NTP impression is each confirmed appearance, matching the shown pixel above.
+        Task {
+            let result = await remoteMessagingStore.recordRemoteMessageImpression(withID: remoteMessage.id)
+            guard case .recorded(let isFirstImpression, _) = result,
+                  isFirstImpression else { return }
             Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
             if remoteMessage.isMetricsEnabled {
                 PixelKit.fire(Pixel.Event.remoteMessageShownUnique,
                               options: .parameters(additionalParameters(for: remoteMessage.id)))
             }
-        }
-
-        // A countable iOS NTP impression is each confirmed appearance, matching the shown pixel above.
-        Task {
-            await remoteMessagingStore.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
         }
     }
 

@@ -152,7 +152,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
         assignFavoriteModelActions()
         assignSessionInstrumentationActions()
-        messagesModel.onMessageViewAppeared = { [weak self] in
+        messagesModel.onMessageVisibilityChanged = { [weak self] in
             self?.notifyRemoteMessageSurfaceChanged()
         }
     }
@@ -195,7 +195,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateDaxDialogTopInsetIfNeeded()
-        notifyRemoteMessageSurfaceChanged()
     }
 
     override func viewWillDisappear(_ animated: Bool) {

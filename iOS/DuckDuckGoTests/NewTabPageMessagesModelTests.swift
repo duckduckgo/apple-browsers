@@ -139,7 +139,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
         let sut = createSUT(configuration: configuration)
         var appearanceSignalCount = 0
-        sut.onMessageViewAppeared = { appearanceSignalCount += 1 }
+        sut.onMessageVisibilityChanged = { appearanceSignalCount += 1 }
 
         sut.load()
         let viewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
@@ -149,6 +149,21 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertTrue(sut.hasAppearedRemoteMessage(withID: "foo"))
         XCTAssertEqual(appearanceSignalCount, 1)
         XCTAssertEqual(configuration.didAppearCallCount, 0)
+    }
+
+    func testMessageDisappearanceClearsVisibilityReadiness() throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+        sut.load()
+        let viewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+
+        viewModel.onDidAppear()
+        XCTAssertTrue(sut.hasAppearedRemoteMessage(withID: "foo"))
+
+        viewModel.onDidDisappear()
+
+        XCTAssertFalse(sut.hasAppearedRemoteMessage(withID: "foo"))
     }
 
     func testRemappingTheSameIdentityRetainsAppearanceReadiness() throws {

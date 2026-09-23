@@ -342,7 +342,7 @@ struct HomePageConfigurationTests {
         #expect(gate.arbiter.snapshot.owner == originalOwner)
         #expect(refreshedContext == originalContext)
         #expect(gate.cooldownPolicy.recordConfirmedRemoteMessageAppearanceCallCount == 1)
-        #expect(store.hasShownRemoteMessageCallCount == 1)
+        #expect(store.hasShownRemoteMessageCallCount == 0)
         #expect(sut.homeMessages == [.remoteMessage(remoteMessage: refreshedMessage)])
     }
 
@@ -445,7 +445,7 @@ struct HomePageConfigurationTests {
         }
 
         #expect(gate.cooldownPolicy.recordConfirmedRemoteMessageAppearanceCallCount == 1)
-        #expect(store.hasShownRemoteMessageCallCount == 1)
+        #expect(store.hasShownRemoteMessageCallCount == 0)
         #expect(store.updatedShownMessageIDs == ["message", "message", "message"])
         #expect(sut.currentRemoteMessageID == message.id)
     }
@@ -518,7 +518,7 @@ struct HomePageConfigurationTests {
         #expect(gate.arbiter.snapshot.owner != nil)
         #expect(gate.acquiredMessageIDs == ["message"])
         #expect(gate.cooldownPolicy.recordConfirmedRemoteMessageAppearanceCallCount == 1)
-        #expect(store.hasShownRemoteMessageCallCount == 1)
+        #expect(store.hasShownRemoteMessageCallCount == 0)
     }
 
     @available(iOS 16, *)
@@ -576,7 +576,7 @@ struct HomePageConfigurationTests {
         service.presentModalPromptIfNeeded(from: MockModalPromptPresenter())
 
         #expect(history.recordedDates == [now])
-        #expect(store.hasShownRemoteMessageCallCount == 1)
+        #expect(store.hasShownRemoteMessageCallCount == 0)
         #expect(store.updatedShownMessageIDs == ["message", "message"])
         #expect(sut.homeMessages == [.remoteMessage(remoteMessage: message)])
         #expect(sut.presentationContext(for: .remoteMessage(remoteMessage: message)) == context)
@@ -1138,6 +1138,13 @@ private final class FilteredRemoteMessagingStore: @preconcurrency RemoteMessagin
         } else {
             shownMessageIDs.remove(id)
         }
+    }
+
+    func recordRemoteMessageImpression(withID id: String) async -> RemoteMessageImpressionResult {
+        let isFirstImpression = !shownMessageIDs.contains(id)
+        await updateRemoteMessage(withID: id, asShown: true)
+        return .recorded(isFirstImpression: isFirstImpression,
+                         impressionCount: Int64(updatedShownMessageIDs.filter { $0 == id }.count))
     }
 
     func resetRemoteMessages() async {}

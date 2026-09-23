@@ -2269,7 +2269,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     // MARK: - Active Chat Suggestions
 
     private func makeActiveChatSessionState(activeChatSuggestionsEnabled: Bool,
-                                            provider: MockContextualSuggestedPromptsProvider) -> AIChatContextualChatSessionState {
+                                            provider: ContextualSuggestedPromptsProviding) -> AIChatContextualChatSessionState {
         mockFeatureFlagger.enabledFeatureFlags = activeChatSuggestionsEnabled
             ? [.contextualSuggestedPrompts, .contextualActiveChatSuggestions]
             : [.contextualSuggestedPrompts]

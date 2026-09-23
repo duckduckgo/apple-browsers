@@ -644,6 +644,26 @@ extension XCUIApplication {
     }
 
     func preferencesSetRestorePreviousSession(to state: StartupType, in prefs: XCUIElement) {
+        // Newer SwiftUI versions expose the combined radio button and window-type menu as a pop-up button.
+        let startupWindowPicker = prefs.radioGroups["PreferencesGeneralView.stateRestorePicker"].popUpButtons.firstMatch
+        if state != .restoreLastSession && startupWindowPicker.exists {
+            ensureHittable(startupWindowPicker)
+            if !startupWindowPicker.isSelected {
+                // Select the radio control at the leading edge before opening its window-type menu.
+                startupWindowPicker.coordinate(withNormalizedOffset: CGVector(dx: 0.03, dy: 0.5)).click()
+            }
+            startupWindowPicker.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).click()
+
+            let optionIdentifier = state == .fireWindow
+                ? AccessibilityIdentifiers.startupWindowTypeFireWindow
+                : AccessibilityIdentifiers.startupWindowTypeRegularWindow
+            let option = menuItems[optionIdentifier]
+            XCTAssertTrue(option.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Startup window option did not appear")
+            option.click()
+            XCTAssertTrue(startupWindowPicker.isSelected)
+            return
+        }
+
         var radioButton: XCUIElement
         var picker: XCUIElement?
         var switchKey: XCUIKeyboardKey?

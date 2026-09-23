@@ -413,25 +413,15 @@ final class AIChatContextualSheetCoordinator {
         }
     }
 
-    /// The sheet feeds its chips from `apply(viewState)`; the floating input has no sheet, so the
-    /// coordinator drives them for as long as it is the current surface.
+    /// The strip itself follows the view state; this reports what the floating surface showed.
     private func observeViewStateForFloatingChips() {
         floatingChipsCancellable = sessionState.$viewState
-            // `rebuildViewState` fires on many changes that leave the chips alone; without this, each
-            // one rebuilds every chip's `UIVisualEffectView` and the one-shot entrance skips them.
+            // `rebuildViewState` fires on many changes that leave the chips alone.
             .map { StartActionsContent(viewState: $0) }
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] content in
                 guard let self, self.floatingInputViewController != nil else { return }
-
-                // The host owns the strip and its fade: it shows the actions once they load and fades the
-                // strip out when there are none.
-                self.persistentUTIHost?.setStartActions(
-                    suggestions: content.isLoaded ? content.suggestions : [],
-                    quickActions: content.isLoaded ? content.quickActions : [],
-                    isLoading: !content.isLoaded
-                )
 
                 guard content.isLoaded, !content.isEmpty else {
                     self.areFloatingSuggestionsVisible = false
@@ -827,6 +817,7 @@ private extension AIChatContextualSheetCoordinator {
             usageLimitsStore: duckAiUsageLimitsStore,
             suggestionsController: suggestionsChips
         )
+        host.suggestionsStrip.bind(to: sessionState.$viewState.eraseToAnyPublisher())
         host.onSuggestionSelected = { [weak self] suggestion in
             guard let self else { return }
             if self.isFloatingInputPresented {

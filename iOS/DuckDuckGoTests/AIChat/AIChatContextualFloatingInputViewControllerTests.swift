@@ -65,7 +65,7 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
 
         let suggestionsView = UIView()
         var suggestionsContainerView: UIView { suggestionsView }
-        func embedSuggestions(in parent: UIViewController, dimmed: Bool) {
+        func embedSuggestions(in parent: UIViewController, style: AIChatContextualSuggestionsStrip.Style) {
             suggestionsView.translatesAutoresizingMaskIntoConstraints = false
             parent.view.addSubview(suggestionsView)
         }

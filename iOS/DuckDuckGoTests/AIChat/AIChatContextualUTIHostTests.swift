@@ -358,6 +358,94 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(inputView.frame.maxY, second.view.keyboardLayoutGuide.layoutFrame.minY)
     }
 
+    // MARK: - Suggestions strip
+
+    /// Only the surface holding the strip shows chips: an unmounted strip has nowhere to put them, and a
+    /// surface that has handed it on must not be able to fill it again.
+    func test_strip_onlyShowsChipsWhileASurfaceHoldsIt() {
+        makeSUT()
+        let viewState = CurrentValueSubject<SheetViewState, Never>(makeViewState(suggestions: []))
+        sut.suggestionsStrip.bind(to: viewState.eraseToAnyPublisher())
+
+        viewState.send(makeViewState(suggestions: [makeSuggestion(id: "s1")]))
+        drainMainQueue()
+        XCTAssertEqual(sut.suggestionsStrip.chipCountForTesting, 0)
+
+        let surface = UIViewController()
+        surface.view.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
+        _ = sut.mount(in: surface)
+        sut.embedSuggestions(in: surface, style: .floating)
+
+        viewState.send(makeViewState(suggestions: [makeSuggestion(id: "s1"), makeSuggestion(id: "s2")]))
+        drainMainQueue()
+        XCTAssertEqual(sut.suggestionsStrip.chipCountForTesting, 2)
+    }
+
+    /// The `.activeChat` surface must not repeat the attach offer the input card's placeholder chip carries.
+    func test_activeChatStrip_dropsQuickActions() {
+        makeSUT()
+        let viewState = CurrentValueSubject<SheetViewState, Never>(makeViewState(suggestions: []))
+        sut.suggestionsStrip.bind(to: viewState.eraseToAnyPublisher())
+        let surface = UIViewController()
+        surface.view.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
+        _ = sut.mount(in: surface)
+        sut.embedSuggestions(in: surface, style: .activeChat)
+
+        viewState.send(makeViewState(suggestions: [makeSuggestion(id: "s1")], quickActions: [.askAboutPage]))
+        drainMainQueue()
+
+        XCTAssertEqual(sut.suggestionsStrip.chipCountForTesting, 1)
+    }
+
+    func test_movingTheStripToAnotherSurface_handsItBackHiddenAndEmpty() {
+        makeSUT()
+        let viewState = CurrentValueSubject<SheetViewState, Never>(makeViewState(suggestions: []))
+        sut.suggestionsStrip.bind(to: viewState.eraseToAnyPublisher())
+        let first = UIViewController()
+        first.view.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
+        _ = sut.mount(in: first)
+        sut.embedSuggestions(in: first, style: .floating)
+        viewState.send(makeViewState(suggestions: [makeSuggestion(id: "s1")]))
+        drainMainQueue()
+        sut.suggestionsContainerView.transform = CGAffineTransform(translationX: 0, y: -40)
+
+        let second = UIViewController()
+        second.view.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
+        _ = sut.mount(in: second)
+        sut.embedSuggestions(in: second, style: .activeChat)
+
+        XCTAssertEqual(sut.suggestionsContainerView.alpha, 0)
+        XCTAssertEqual(sut.suggestionsContainerView.transform, .identity)
+        XCTAssertEqual(sut.suggestionsStrip.chipCountForTesting, 0)
+    }
+
+    private func makeSuggestion(id: String) -> ContextualSuggestedPrompt {
+        ContextualSuggestedPrompt(id: id, label: id, prompt: "Prompt \(id)", icon: nil)
+    }
+
+    private func makeViewState(suggestions: [ContextualSuggestedPrompt],
+                               quickActions: [AIChatContextualQuickAction] = []) -> SheetViewState {
+        SheetViewState(
+            content: .webView(restoreURL: nil),
+            isExpandButtonEnabled: true,
+            shouldShowNewChatButton: true,
+            chipState: .placeholder,
+            quickActions: quickActions,
+            suggestions: suggestions,
+            suggestionsLoadState: .loaded,
+            suggestionsAreSmart: false,
+            suggestionsPageType: .none,
+            suggestionsScope: .page
+        )
+    }
+
+    /// The strip receives on the main queue, so an emission needs a turn of the run loop to land.
+    private func drainMainQueue() {
+        let delivered = expectation(description: "main queue drained")
+        DispatchQueue.main.async { delivered.fulfill() }
+        wait(for: [delivered], timeout: 1.0)
+    }
+
     private func makeContext(title: String, url: String) -> AIChatPageContext {
         AIChatPageContext(
             contextData: AIChatPageContextData(

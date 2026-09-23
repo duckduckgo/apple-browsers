@@ -38,8 +38,7 @@ protocol AIChatContextualFloatingInputHosting: AnyObject {
     var isInputFirstResponder: Bool { get }
 
     /// The host owns the suggestions strip; this surface mounts it above the input and moves it with the bar.
-    /// `dimmed` scrims the content behind the strip — off here, since this surface already dims the whole page.
-    func embedSuggestions(in parent: UIViewController, dimmed: Bool)
+    func embedSuggestions(in parent: UIViewController, style: AIChatContextualSuggestionsStrip.Style)
     func detachSuggestions(from parent: UIViewController)
     var suggestionsContainerView: UIView { get }
 
@@ -219,7 +218,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
 
         let inputView = utiHost.mount(in: self)
         mountedInputView = inputView
-        utiHost.embedSuggestions(in: self, dimmed: false)
+        utiHost.embedSuggestions(in: self, style: .floating)
         presenterView = parent.view
         parent.view.addGestureRecognizer(dismissOnPageTapRecognizer)
         // Settles at the pre-keyboard resting position, which the entrance then animates away from.
@@ -477,14 +476,5 @@ extension AIChatContextualFloatingInputViewController: UIGestureRecognizerDelega
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         true
-    }
-}
-
-/// A container that only claims touches landing on a chip, so taps in the gaps pass through.
-final class ChipHitTestingView: UIView {
-    var containsChip: ((CGPoint) -> Bool)?
-
-    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        containsChip?(point) ?? false
     }
 }

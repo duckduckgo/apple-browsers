@@ -24,7 +24,7 @@ import os.log
 
 /// Owns a `UnifiedToggleInputCoordinator` configured for the contextual chat surface.
 @MainActor
-final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextualFloatingInputHosting {
+final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextualFloatingInputHosting, AIChatContextualSuggestionsStripAnchoring {
 
     private let coordinator: UnifiedToggleInputCoordinator
     let chipViewModel: UnifiedToggleInputPageContextChipViewModel
@@ -57,7 +57,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onDuckAIPromptSubmitted: ((AIChatEntryPointSource?) -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
     var onEditModeChange: ((Bool) -> Void)?
-    var onExpandedChange: ((Bool) -> Void)?
     var isInputExpanded: Bool {
         coordinator.viewController.isInputExpanded
     }
@@ -65,42 +64,13 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     // MARK: - Suggestions strip (owned by the host, shown above the input card)
 
     private let suggestionsController: AIChatContextualInputViewController
-    /// True once the strip has shown for the current mount: the first batch appears instantly (riding the
-    /// input's entrance), later ones fade. Reset when the strip leaves a surface.
-    private var hasShownStartActions = false
-    /// The last actions handed to the strip, so a view-state emission that leaves them unchanged doesn't
-    /// rebuild every chip's visual-effect view.
-    private var lastStartActions: (suggestions: [ContextualSuggestedPrompt], quickActions: [AIChatContextualQuickAction], isLoading: Bool)?
-    /// The surface the strip is currently mounted in, so it can be detached before it moves to another.
-    private weak var suggestionsParent: UIViewController?
+    /// Lent to whichever surface is up, the same way the input bar is. Built after `init` so it can
+    /// hold the host as its anchor.
+    private(set) var suggestionsStrip: AIChatContextualSuggestionsStrip!
     /// Fires when the user taps a suggestion chip.
     var onSuggestionSelected: ((ContextualSuggestedPrompt) -> Void)?
     /// Fires when the user taps a quick-action chip (the floating surface offers these alongside suggestions).
     var onQuickActionSelected: ((AIChatContextualQuickAction) -> Void)?
-
-    private lazy var suggestionsContainer: ChipHitTestingView = {
-        let view = ChipHitTestingView()
-        view.backgroundColor = .clear
-        view.alpha = 0
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.containsChip = { [weak self] point in
-            guard let self else { return false }
-            return self.suggestionsController.containsStartAction(at: point, from: self.suggestionsContainer)
-        }
-        return view
-    }()
-
-    /// Scrims the content above the input while the strip is up, so the suggestions read against a bright
-    /// transcript. Only the sheet enables it; the floating surface already dims the whole page.
-    private var suggestionsDimEnabled = false
-    private lazy var suggestionsDimView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .black
-        view.alpha = 0
-        view.isUserInteractionEnabled = false
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
 
     /// Raised by the input's microphone, which dictates into the field rather than opening voice chat.
     var onVoiceSearchRequested: (() -> Void)?
@@ -162,9 +132,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         }
         coordinator.updateImageButtonVisibility()
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
+        suggestionsStrip = AIChatContextualSuggestionsStrip(controller: suggestionsController, input: self)
         coordinator.viewController.onExpansionChange = { [weak self] expanded in
-            self?.onExpandedChange?(expanded)
-            self?.updateStartActionsForExpansion(expanded)
+            self?.suggestionsStrip.setInputExpanded(expanded)
         }
         suggestionsController.delegate = self
         chipViewModel.onAttachActionRequested = { [weak self] in
@@ -401,152 +371,17 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     // MARK: - Suggestions strip
 
-    /// Mounts the suggestions strip above the input card in `parent`. Taps in the gaps pass through. The strip
-    /// is shared across surfaces, so mounting it here first detaches it from wherever it was — the same way the
-    /// input bar moves between surfaces.
-    func embedSuggestions(in parent: UIViewController, dimmed: Bool) {
-        guard suggestionsParent !== parent else { return }
-        detachSuggestionsContainer()
-        suggestionsParent = parent
-        suggestionsDimEnabled = dimmed
-        parent.addChild(suggestionsController)
-        suggestionsController.view.translatesAutoresizingMaskIntoConstraints = false
-        suggestionsController.clearStartActionsHorizontalInset()
-        suggestionsContainer.addSubview(suggestionsController.view)
-        if dimmed {
-            // A full-screen scrim behind everything, layered below the input card so the card and the strip
-            // float on top of it — one continuous dim rather than a band that ends in a hard line above the
-            // input.
-            let inputView = coordinator.viewController.view
-            if let inputView, inputView.superview === parent.view {
-                parent.view.insertSubview(suggestionsDimView, belowSubview: inputView)
-            } else {
-                parent.view.addSubview(suggestionsDimView)
-            }
-            NSLayoutConstraint.activate([
-                suggestionsDimView.topAnchor.constraint(equalTo: parent.view.topAnchor),
-                suggestionsDimView.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
-                suggestionsDimView.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor),
-                suggestionsDimView.bottomAnchor.constraint(equalTo: parent.view.bottomAnchor),
-            ])
-        }
-        parent.view.addSubview(suggestionsContainer)
-        NSLayoutConstraint.activate([
-            suggestionsContainer.topAnchor.constraint(greaterThanOrEqualTo: parent.view.safeAreaLayoutGuide.topAnchor),
-            suggestionsContainer.leadingAnchor.constraint(equalTo: inputCardLeadingAnchor),
-            suggestionsContainer.trailingAnchor.constraint(equalTo: inputCardTrailingAnchor),
-            suggestionsContainer.bottomAnchor.constraint(equalTo: inputCardTopAnchor),
-            suggestionsController.view.topAnchor.constraint(equalTo: suggestionsContainer.topAnchor),
-            suggestionsController.view.leadingAnchor.constraint(equalTo: suggestionsContainer.leadingAnchor),
-            suggestionsController.view.trailingAnchor.constraint(equalTo: suggestionsContainer.trailingAnchor),
-            suggestionsController.view.bottomAnchor.constraint(equalTo: suggestionsContainer.bottomAnchor),
-        ])
-        suggestionsController.didMove(toParent: parent)
+    func embedSuggestions(in parent: UIViewController, style: AIChatContextualSuggestionsStrip.Style) {
+        suggestionsStrip.embed(in: parent, style: style)
     }
 
-    /// Detaches the strip from `parent`, but only if it still holds it: a surface animating out finishes after
-    /// the next one may already have taken it.
     func detachSuggestions(from parent: UIViewController) {
-        guard suggestionsParent === parent else { return }
-        detachSuggestionsContainer()
+        suggestionsStrip.detach(from: parent)
     }
 
-    private func detachSuggestionsContainer() {
-        // Reused across mounts, so a slide leaves a transform on it; handed back clean.
-        suggestionsContainer.transform = .identity
-        suggestionsContainer.removeFromSuperview()
-        if suggestionsDimEnabled {
-            suggestionsDimView.alpha = 0
-            suggestionsDimView.removeFromSuperview()
-        }
-        suggestionsDimEnabled = false
-        suggestionsParent = nil
-        // The next surface's first batch should appear instantly again.
-        hasShownStartActions = false
-        lastStartActions = nil
-        guard suggestionsController.parent != nil else { return }
-        suggestionsController.willMove(toParent: nil)
-        suggestionsController.view.removeFromSuperview()
-        suggestionsController.removeFromParent()
-    }
+    var suggestionsContainerView: UIView { suggestionsStrip.containerView }
 
-    /// Updates the start actions shown in the strip, driving the same show/clear lifecycle both surfaces used
-    /// when each owned its own chips. The sheet passes suggestions only; the floating surface also passes
-    /// quick actions.
-    func setStartActions(suggestions: [ContextualSuggestedPrompt],
-                         quickActions: [AIChatContextualQuickAction],
-                         isLoading: Bool) {
-        let unchanged = lastStartActions.map {
-            $0.suggestions == suggestions && $0.quickActions == quickActions && $0.isLoading == isLoading
-        } ?? false
-        guard !unchanged else { return }
-        lastStartActions = (suggestions, quickActions, isLoading)
-
-        guard !isLoading else {
-            // Loader alone while suggestions resolve. Passing the actions through here would flash the
-            // placeholder chip beside it, then replace it.
-            suggestionsController.updateStartActions(suggestions: [], quickActions: [])
-            suggestionsController.updateSuggestionsLoading(true)
-            return
-        }
-        guard !suggestions.isEmpty || !quickActions.isEmpty else {
-            suggestionsController.updateSuggestionsLoading(false)
-            clearStartActionsFadingOut()
-            return
-        }
-        suggestionsController.updateStartActions(suggestions: suggestions, quickActions: quickActions)
-        suggestionsController.updateSuggestionsLoading(false)
-        showStartActionsIfNeeded()
-    }
-
-    /// The strip's container view, so a hosting surface (the floating input) can move it with the input.
-    var suggestionsContainerView: UIView { suggestionsContainer }
-
-    /// Collapsing the input hides the strip without clearing it, so it returns when the input expands again.
-    private func updateStartActionsForExpansion(_ expanded: Bool) {
-        if expanded {
-            showStartActionsIfNeeded()
-        } else {
-            fadeStartActions(to: 0)
-        }
-    }
-
-    /// Actions arrive asynchronously with the page context, so this waits for the first batch with content
-    /// rather than showing at mount. They ride the input's entrance the first time and fade in thereafter.
-    private func showStartActionsIfNeeded() {
-        guard suggestionsController.startActionCount > 0, isInputExpanded else { return }
-        guard !hasShownStartActions else {
-            fadeStartActions(to: 1)
-            return
-        }
-        hasShownStartActions = true
-        suggestionsContainer.alpha = 1
-        if suggestionsDimEnabled { suggestionsDimView.alpha = ContextualSurfaceScrim.alpha }
-        suggestionsController.showStartActions()
-    }
-
-    /// Clears only once invisible: removing them collapses the stack into the input's own animation.
-    private func clearStartActionsFadingOut() {
-        fadeStartActions(to: 0) { [weak self] in
-            self?.suggestionsController.updateStartActions(suggestions: [], quickActions: [])
-        }
-    }
-
-    private func fadeStartActions(to alpha: CGFloat, completion: (() -> Void)? = nil) {
-        guard suggestionsContainer.alpha != alpha else {
-            completion?()
-            return
-        }
-        let dimAlpha: CGFloat = suggestionsDimEnabled ? (alpha > 0 ? ContextualSurfaceScrim.alpha : 0) : 0
-        UIView.animate(withDuration: 0.2, animations: {
-            self.suggestionsContainer.alpha = alpha
-            if self.suggestionsDimEnabled { self.suggestionsDimView.alpha = dimAlpha }
-        }, completion: { finished in
-            // An interrupted fade was overtaken; its clear would empty the row coming back.
-            guard finished else { return }
-            completion?()
-        })
-    }
+    var mountedInputView: UIView? { coordinator.viewController.viewIfLoaded }
 
     /// Pins the input where it currently sits, so a keyboard that moves or changes height afterwards cannot
     /// drag it. For a surface animating itself out: its own motion is then the only thing moving it.

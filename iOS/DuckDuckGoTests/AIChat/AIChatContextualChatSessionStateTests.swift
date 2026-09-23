@@ -2343,6 +2343,24 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
     }
 
+    /// A resolve still in flight when the context is used stops being deliverable, so the state must not
+    /// keep reporting `.loading` — the surfaces would sit on a loader that nothing ever clears.
+    func testActiveChatSuggestionsStopLoadingOnceContextIsUsedInAPrompt() {
+        let provider = GatedContextualSuggestedPromptsProvider()
+        sessionState = makeActiveChatSessionState(activeChatSuggestionsEnabled: true, provider: provider)
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.beginChatForUTISubmission()
+
+        sessionState.notifyPageChanged()
+        sessionState.updateContext(makeTestContext(url: "https://new.example"))
+        XCTAssertEqual(sessionState.viewState.suggestionsLoadState, .loading)
+
+        sessionState.markUTIContextDelivered()
+
+        XCTAssertEqual(sessionState.viewState.suggestionsLoadState, .loaded)
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
     // MARK: - Helpers
 
     /// Yields the main actor until `condition` holds (or the timeout elapses), letting

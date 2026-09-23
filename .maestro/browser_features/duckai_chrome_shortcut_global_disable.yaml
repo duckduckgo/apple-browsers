@@ -12,7 +12,7 @@ tags:
 - runFlow: ../shared/duckai_chrome_shortcut_setup.yaml
 
 - assertVisible:
-    id: "Browser.TabsBar.AIChatChip"
+    id: "Browser.TabsBar.AIChatMenuButton"
 
 # Disable Duck.ai globally. The per-shortcut Tab Bar preference stays on.
 - runFlow: ../shared/open_ai_features_settings.yaml
@@ -28,7 +28,7 @@ tags:
 
 # The chrome shortcut is hidden even though the per-shortcut toggle is still on.
 - assertNotVisible:
-    id: "Browser.TabsBar.AIChatChip"
+    id: "Browser.TabsBar.AIChatMenuButton"
 
 # Re-enable Duck.ai.
 - runFlow: ../shared/open_ai_features_settings.yaml
@@ -42,4 +42,4 @@ tags:
 
 # The chrome shortcut reappears (per-shortcut Tab Bar toggle is still on).
 - assertVisible:
-    id: "Browser.TabsBar.AIChatChip"
+    id: "Browser.TabsBar.AIChatMenuButton"

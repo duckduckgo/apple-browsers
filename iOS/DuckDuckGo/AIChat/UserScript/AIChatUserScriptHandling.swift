@@ -427,7 +427,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsMultipleContexts: supportsContextualMode,
             supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
             supportsNativePromptEditing: featureFlagger.isFeatureOn(.nativeAIPromptEditing) && supportsNativeChatInput,
-            supportsPromoCards: featureFlagger.isFeatureOn(.nativePromoCards) && supportsNativeChatInput,
+            supportsPromoCards: supportsNativeChatInput,
             supportsSuggestions: supportsSuggestions,
             supportsNativeUsageWarnings: supportsNativeUsageWarnings,
             installType: installTypeProvider(),

@@ -41,6 +41,8 @@ public extension PageContextExtractionOutcome {
     static let internalPageCategory = "internalPage"
     /// A document over the size ceiling native will hand across the JS bridge.
     static let documentTooLargeCategory = "documentTooLarge"
+    /// A page loaded from disk (`file://`), excluded from page context per security triage.
+    static let localFileCategory = "localFile"
 }
 
 public enum PageContextExtractionTrigger: String, Equatable {

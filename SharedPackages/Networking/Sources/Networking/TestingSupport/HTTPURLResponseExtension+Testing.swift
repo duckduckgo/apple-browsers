@@ -1,5 +1,5 @@
 //
-//  HTTPURLResponseExtension.swift
+//  HTTPURLResponseExtension+Testing.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -17,8 +17,8 @@
 //
 
 import Foundation
-import Networking
 
+@_spi(Testing)
 public extension HTTPURLResponse {
 
     static let testEtag = "test-etag"

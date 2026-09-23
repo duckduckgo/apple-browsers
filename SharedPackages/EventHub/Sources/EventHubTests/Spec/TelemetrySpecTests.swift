@@ -25,26 +25,34 @@ import Foundation
 /// **Complete case roster.** Every ID the document defines appears below, so this file can be diffed
 /// against the document in one place:
 ///
-/// - Counters — T-CNT-1, T-CNT-2, T-CNT-3, T-CNT-4
+/// - Counters — T-CNT-1, T-CNT-2, T-CNT-3, T-CNT-4, T-CNT-5
 /// - Data parameters — T-DAT-1, T-DAT-2, T-DAT-3, T-DAT-4, T-DAT-5
-/// - Immediate pixels — T-IMM-1, T-IMM-2, T-IMM-3, T-IMM-4
+/// - Immediate pixels — T-IMM-1, T-IMM-2, T-IMM-3, T-IMM-4, T-IMM-5, T-IMM-6
 ///
 /// Every case lives here rather than in the narrower unit suites, which is what lets the roster above
-/// be checked against the document at a glance. Two component-level behaviours sit in
-/// `EventHubDataParameterTests` instead — a `null` data value, and the "no parameter resolved, so no
-/// fire" guard — because neither is a case in this document.
+/// be checked against the document at a glance. One component-level behaviour sits in
+/// `EventHubDataParameterTests` instead — a `null` data value — because it is not a case in this document.
 ///
 /// The properties they evidence:
 /// - **T-GEN-P1** — only pixels enabled in the current config may fire, whatever their trigger type
 ///   (T-CNT-4, T-IMM-3).
+/// - **T-GEN-P2** — the trigger decides firing: a period pixel fires at period end only when a counter
+///   matches a bucket; a resolved data parameter alone cannot make it fire (T-CNT-3, T-CNT-5).
+///   An immediate pixel fires once per delivered event even when none of its parameters resolve;
+///   unresolved parameters are omitted rather than cancelling the pixel (T-DAT-2, T-IMM-1, T-IMM-5, T-IMM-6).
+///   Parameterless firing is also covered by `EventHubImmediatePixelTests.immediateTriggerFiresOnePixelPerEvent`,
+///   and an absent data parameter by
+///   `EventHubDataParameterTests.immediatePixelFiresWithoutParametersWhenOnlyDataParamAbsent`.
 /// - **T-CNT-P1** — counters count events as delivered by the hub, bucket at period end (first match
-///   wins) and fire one pixel per period; a pixel whose parameters produce no values does not fire.
+///   wins) and fire one pixel per period; a pixel fires only when a counter matched a bucket, and a
+///   `data` parameter alone never causes a fire.
 /// - **T-DAT-P1** — a data parameter carries the payload value of the most recent delivered event whose
 ///   type equals its `source`. Every such event assigns, so an event whose payload lacks the key leaves
 ///   the parameter with no value, and a parameter with no value is omitted.
 /// - **T-DAT-P2** — the value survives the round trip: percent-decoding yields compact JSON, and
 ///   JSON-decoding that yields the payload value exactly.
-/// - **T-IMM-P1** — immediate pixels fire once per *delivered* event. Because the hub de-duplicates
+/// - **T-IMM-P1** — immediate pixels fire once per *delivered* event, whatever their parameters
+///   resolve to: a parameter with no value is omitted, never a reason to stay silent. Because the hub de-duplicates
 ///   before fan-out (D-DEL-P1), repeats of an event type carrying the same payload on one page fire
 ///   once, while each distinct payload fires.
 ///
@@ -106,7 +114,7 @@ struct TelemetrySpecTests {
 
     /// Both the day and the week period end once per `endPeriod()`, so every case states the week leg
     /// alongside the day leg and the expected set stays exhaustive.
-    private static func fixture() -> SpecFixture {
+    private static func fixture(config: String = config) -> SpecFixture {
         SpecFixture(config, longestPeriodSeconds: 604800)
     }
 
@@ -182,6 +190,37 @@ struct TelemetrySpecTests {
         ])
     }
 
+    @Test("T-CNT-5: a data value alone does not fire a period pixel whose counter matched no bucket")
+    func aDataValueAloneDoesNotFireAPeriodPixel() {
+        // The spec's own entry: a counter on `captchaDetected` and a data parameter on `adwallDetected`.
+        // Only the adwall event arrives, so the count is 0 and matches no bucket. The `reason` it
+        // resolved is insignificant to that decision, so the pixel stays silent while the fixture's own
+        // pixels fire as they would for a lone `adwallDetected`.
+        let f = Self.fixture(config: Self.config.replacingOccurrences(
+            of: #"{ "telemetry": {"#,
+            with: """
+            { "telemetry": {
+                "webTelemetry_mixedSource_day": {
+                    "state": "enabled",
+                    "trigger": { "period": { "seconds": 86400 } },
+                    "parameters": {
+                        "count": { "template": "counter", "source": "captchaDetected", "buckets": {
+                            "1-2": {"gte": 1, "lt": 3}, "3+": {"gte": 3}
+                        } },
+                        "reason": { "template": "data", "source": "adwallDetected", "dataKey": "reason" }
+                    }
+                },
+            """))
+        f.send("adwallDetected", reason: "overlay", on: f.openPage())
+
+        f.endPeriod()
+
+        #expect(f.fired == [
+            #"webTelemetry_adwallDetection_day?count=1-2&reason="overlay""#,
+            #"webTelemetry_adwallDetection_immediate?reason="overlay""#,
+        ] + Self.captchaZero)
+    }
+
     // MARK: Data parameters
 
     @Test("T-DAT-1: the last matching event of the period supplies the value")
@@ -203,8 +242,8 @@ struct TelemetrySpecTests {
     func aMatchingEventWithoutTheKeyLeavesNoValue() {
         // On distinct pages, so de-duplication does not collapse the two. The second event assigns
         // like any other, and assigns nothing — so the day pixel reports no `reason` at all rather
-        // than the first event's. Its own immediate pixel does not fire: the only parameter that
-        // pixel declares produces no value.
+        // than the first event's. Its own immediate pixel still fires, carrying no parameter: delivery
+        // alone decides firing.
         let f = Self.fixture()
         f.send("adwallDetected", reason: "overlay", on: f.openPage())
         f.sendRaw("adwallDetected", dataJSON: "{}", on: f.openPage())
@@ -213,6 +252,7 @@ struct TelemetrySpecTests {
 
         #expect(f.fired == [
             "webTelemetry_adwallDetection_day?count=1-2",
+            "webTelemetry_adwallDetection_immediate",
             #"webTelemetry_adwallDetection_immediate?reason="overlay""#,
         ] + Self.captchaZero)
     }
@@ -337,6 +377,50 @@ struct TelemetrySpecTests {
             #"webTelemetry_adwallDetection_day?count=1-2&reason="redirect""#,
             #"webTelemetry_adwallDetection_immediate?reason="overlay""#,
             #"webTelemetry_adwallDetection_immediate?reason="redirect""#,
+        ] + Self.captchaZero)
+    }
+
+    @Test("T-IMM-5: a pixel declaring no parameters fires on the event alone")
+    func aPixelDeclaringNoParametersFiresOnTheEventAlone() {
+        // Add the spec's parameterless pixel while retaining every entry in the shared fixture.
+        let f = Self.fixture(config: Self.config.replacingOccurrences(
+            of: #"{ "telemetry": {"#,
+            with: """
+            { "telemetry": {
+                "webTelemetry_bareEvent_immediate": {
+                    "state": "enabled",
+                    "trigger": { "type": "immediate_v2", "source": "adwallDetected" },
+                    "parameters": {}
+                },
+            """))
+        f.send("adwallDetected", reason: "overlay", on: f.openPage())
+
+        #expect(f.fired == [
+            #"webTelemetry_adwallDetection_immediate?reason="overlay""#,
+            "webTelemetry_bareEvent_immediate",
+        ])
+
+        f.endPeriod()
+
+        #expect(f.fired == [
+            #"webTelemetry_adwallDetection_day?count=1-2&reason="overlay""#,
+            #"webTelemetry_adwallDetection_immediate?reason="overlay""#,
+            "webTelemetry_bareEvent_immediate",
+        ] + Self.captchaZero)
+    }
+
+    @Test("T-IMM-6: a pixel fires with no parameters when none of those it declares resolve")
+    func aPixelFiresWithNoParametersWhenNoneOfThoseItDeclaresResolve() {
+        let f = Self.fixture()
+        f.sendRaw("adwallDetected", dataJSON: "{}", on: f.openPage())
+
+        #expect(f.fired == ["webTelemetry_adwallDetection_immediate"])
+
+        f.endPeriod()
+
+        #expect(f.fired == [
+            "webTelemetry_adwallDetection_day?count=1-2",
+            "webTelemetry_adwallDetection_immediate",
         ] + Self.captchaZero)
     }
 }

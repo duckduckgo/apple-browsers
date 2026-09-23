@@ -33,7 +33,7 @@ final class RemoteMessageImpressionReporter {
         let searchDismissSurface: UIViewController?
     }
 
-    private struct Exposure: Equatable {
+    private struct VisibleMessage: Equatable {
         let tabID: String
         let messageID: String
     }
@@ -42,10 +42,11 @@ final class RemoteMessageImpressionReporter {
     private let hasCurrentMessage: () -> Bool
     private let snapshot: () -> Snapshot?
     private let reportVisibleMessage: (String) -> Bool
+    private let messageDidStopBeingVisible: (String) -> Void
     private let notificationCenter: NotificationCenter
     private let messageVisibilityOverride: ((String, UIViewController, UIWindow) -> Bool)?
 
-    private var currentExposure: Exposure?
+    private var currentVisibleMessage: VisibleMessage?
     private var visibilityCancellables = Set<AnyCancellable>()
     private var inputCancellables = Set<AnyCancellable>()
     private var isCheckScheduled = false
@@ -55,12 +56,14 @@ final class RemoteMessageImpressionReporter {
          hasCurrentMessage: @escaping () -> Bool,
          snapshot: @escaping () -> Snapshot?,
          reportVisibleMessage: @escaping (String) -> Bool,
+         messageDidStopBeingVisible: @escaping (String) -> Void,
          notificationCenter: NotificationCenter = .default,
          messageVisibilityOverride: ((String, UIViewController, UIWindow) -> Bool)? = nil) {
         self.contentDidChangePublisher = contentDidChangePublisher
         self.hasCurrentMessage = hasCurrentMessage
         self.snapshot = snapshot
         self.reportVisibleMessage = reportVisibleMessage
+        self.messageDidStopBeingVisible = messageDidStopBeingVisible
         self.notificationCenter = notificationCenter
         self.messageVisibilityOverride = messageVisibilityOverride
     }
@@ -110,11 +113,13 @@ final class RemoteMessageImpressionReporter {
     }
 
     func reset() {
-        currentExposure = nil
+        guard let currentVisibleMessage else { return }
+        self.currentVisibleMessage = nil
+        messageDidStopBeingVisible(currentVisibleMessage.messageID)
     }
 
     func scheduleCheck() {
-        guard hasCurrentMessage() || currentExposure != nil else { return }
+        guard hasCurrentMessage() || currentVisibleMessage != nil else { return }
         guard !isCheckScheduled else { return }
         isCheckScheduled = true
         // Mode and content publishers can precede the corresponding hierarchy changes.
@@ -127,25 +132,26 @@ final class RemoteMessageImpressionReporter {
 
     private func reportIfVisible() {
         guard isBrowserPresented, let snapshot = snapshot() else {
-            currentExposure = nil
+            reset()
             return
         }
 
-        let exposure = Exposure(tabID: snapshot.tabID, messageID: snapshot.messageID)
+        let observedMessage = VisibleMessage(tabID: snapshot.tabID, messageID: snapshot.messageID)
         guard let surfaceRoot = snapshot.surfaceRoot,
               isMessageVisible(snapshot.messageID, in: surfaceRoot, window: snapshot.window) else {
             // Back fades the focused Search NTP while the same card remains on the resting NTP.
-            // Preserve only an existing exposure; this fallback must never report a new one.
-            if currentExposure != exposure || !isVisibleDuringSearchDismiss(snapshot) {
-                currentExposure = nil
+            // Keep the current message only; this fallback must never report a new showing.
+            if currentVisibleMessage != observedMessage || !isVisibleDuringSearchDismiss(snapshot) {
+                reset()
             }
             return
         }
-        guard currentExposure != exposure else { return }
+        guard currentVisibleMessage != observedMessage else { return }
+        reset()
         // Reserve before reporting: eligibility reconciliation can synchronously publish content.
-        currentExposure = exposure
+        currentVisibleMessage = observedMessage
         if !reportVisibleMessage(snapshot.messageID) {
-            currentExposure = nil
+            currentVisibleMessage = nil
         }
     }
 

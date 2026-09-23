@@ -25,7 +25,7 @@ import XCTest
 @MainActor
 final class RemoteMessageImpressionReporterTests: XCTestCase {
 
-    func testSameExposureReportsOnlyOnce() async {
+    func testSameVisibleMessageReportsOnlyOnce() async {
         let harness = Harness()
         harness.visibleSurface = harness.surface
         harness.reporter.browserDidAppear()
@@ -51,9 +51,10 @@ final class RemoteMessageImpressionReporterTests: XCTestCase {
         await drainScheduledCheck()
 
         XCTAssertEqual(harness.reportedIDs, ["message", "message"])
+        XCTAssertEqual(harness.noLongerVisibleMessageIDs, ["message"])
     }
 
-    func testTabAndMessageChangesEachBeginNewExposure() async {
+    func testTabAndMessageChangesEachReportAgain() async {
         let harness = Harness()
         harness.visibleSurface = harness.surface
         harness.reporter.browserDidAppear()
@@ -67,9 +68,10 @@ final class RemoteMessageImpressionReporterTests: XCTestCase {
         await drainScheduledCheck()
 
         XCTAssertEqual(harness.reportedIDs, ["message", "message", "other-message"])
+        XCTAssertEqual(harness.noLongerVisibleMessageIDs, ["message", "message"])
     }
 
-    func testBrowserReappearanceBeginsNewExposure() async {
+    func testBrowserReappearanceReportsAgain() async {
         let harness = Harness()
         harness.visibleSurface = harness.surface
         harness.reporter.browserDidAppear()
@@ -83,9 +85,10 @@ final class RemoteMessageImpressionReporterTests: XCTestCase {
         harness.reporter.browserDidAppear()
         await drainScheduledCheck()
         XCTAssertEqual(harness.reportedIDs, ["message", "message"])
+        XCTAssertEqual(harness.noLongerVisibleMessageIDs, ["message"])
     }
 
-    func testSearchDismissDoesNotStartOrEndExposure() async {
+    func testSearchDismissKeepsCurrentVisibleMessage() async {
         let harness = Harness()
         harness.visibleSurface = harness.dismissSurface
         harness.reporter.browserDidAppear()
@@ -103,6 +106,7 @@ final class RemoteMessageImpressionReporterTests: XCTestCase {
         await drainScheduledCheck()
 
         XCTAssertEqual(harness.reportedIDs, ["message"])
+        XCTAssertTrue(harness.noLongerVisibleMessageIDs.isEmpty)
     }
 
     private func drainScheduledCheck() async {
@@ -122,6 +126,7 @@ private final class Harness {
     var messageID = "message"
     var visibleSurface: UIViewController?
     var reportedIDs: [String] = []
+    var noLongerVisibleMessageIDs: [String] = []
 
     lazy var reporter = RemoteMessageImpressionReporter(
         contentDidChangePublisher: Empty<Void, Never>().eraseToAnyPublisher(),
@@ -137,6 +142,9 @@ private final class Harness {
         reportVisibleMessage: { [weak self] id in
             self?.reportedIDs.append(id)
             return self != nil
+        },
+        messageDidStopBeingVisible: { [weak self] id in
+            self?.noLongerVisibleMessageIDs.append(id)
         },
         notificationCenter: notificationCenter,
         messageVisibilityOverride: { [weak self] _, controller, _ in

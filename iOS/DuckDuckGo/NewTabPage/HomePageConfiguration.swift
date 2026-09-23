@@ -57,6 +57,11 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         let presentationContext: HomeMessagePresentationContext
     }
 
+    private struct VisibleRemoteMessage {
+        let id: String
+        var hasReachedImpressionCap = false
+    }
+
     private let homeMessageStorage: HomeMessageStorage
     private let remoteMessagingStore: RemoteMessagingStoring
     private let subscriptionDataReporter: SubscriptionDataReporting
@@ -70,6 +75,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     private var isRMFAdmissionEnabled: Bool
     private var legacyOpenedAfterIdle = false
     private var legacySelectedTriggerFilter: TriggerFilter?
+    private var visibleRemoteMessage: VisibleRemoteMessage?
 
     var homeMessages: [HomeMessage] = []
     let mode: PromoCoordinationMode
@@ -215,7 +221,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
 
     /// Reports the currently published remote message after revalidating that it remains eligible.
     /// The caller invokes this when the NTP becomes visible, so each invocation represents a new
-    /// confirmed surface exposure.
+    /// confirmed showing of the card.
     @discardableResult
     func reportVisibleRemoteMessage(expectedMessageID: String) -> Bool {
         guard let homeMessage = homeMessages.first(where: { homeMessage in
@@ -235,14 +241,11 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
                   let currentCandidate = self.remoteMessage(triggerFilter: triggerFilter),
                   currentCandidate.id == publishedRemoteMessage.id,
                   HomeMessageViewModelBuilder.canBuild(for: currentCandidate) else {
-                let previousHomeMessages = homeMessages
-                refresh(openedAfterIdle: legacyOpenedAfterIdle)
-                if homeMessages != previousHomeMessages {
-                    notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
-                }
+                revalidatePublishedRemoteMessage()
                 return false
             }
 
+            visibleRemoteMessage = VisibleRemoteMessage(id: currentCandidate.id)
             didAppear(.remoteMessage(remoteMessage: currentCandidate), presentationContext: nil)
             return true
 
@@ -252,12 +255,21 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
                   let currentCandidate = self.remoteMessage(triggerFilter: rmfOwnership.selectedTriggerFilter),
                   currentCandidate.id == publishedRemoteMessage.id,
                   HomeMessageViewModelBuilder.canBuild(for: currentCandidate) else {
-                reconcileCoordinatedMessages(reason: .storeChanged)
+                revalidatePublishedRemoteMessage()
                 return false
             }
 
+            visibleRemoteMessage = VisibleRemoteMessage(id: currentCandidate.id)
             didAppear(.remoteMessage(remoteMessage: currentCandidate), presentationContext: rmfOwnership.presentationContext)
             return true
+        }
+    }
+
+    func remoteMessageDidStopBeingVisible(messageID: String) {
+        guard let visibleRemoteMessage, visibleRemoteMessage.id == messageID else { return }
+        self.visibleRemoteMessage = nil
+        if visibleRemoteMessage.hasReachedImpressionCap, currentRemoteMessageID == messageID {
+            revalidatePublishedRemoteMessage()
         }
     }
 
@@ -426,16 +438,42 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
                           options: .parameters(additionalParameters(for: remoteMessage.id)))
         }
 
-        // A countable iOS NTP impression is each confirmed appearance, matching the shown pixel above.
+        // The shown pixel fires for each confirmed NTP showing, not once per ownership lease.
+        // Count every showing too, even when metrics are disabled; the cap is local display state.
         Task {
             let result = await remoteMessagingStore.recordRemoteMessageImpression(withID: remoteMessage.id)
-            guard case .recorded(let isFirstImpression, _) = result,
-                  isFirstImpression else { return }
+            guard case .recorded(let isFirstImpression, let impressionCount) = result else { return }
+
+            if let maxImpressions = remoteMessage.displayConditions?.maxImpressions,
+               maxImpressions > 0,
+               let impressionCount,
+               impressionCount >= Int64(maxImpressions) {
+                if visibleRemoteMessage?.id == remoteMessage.id {
+                    visibleRemoteMessage?.hasReachedImpressionCap = true
+                } else if currentRemoteMessageID == remoteMessage.id {
+                    revalidatePublishedRemoteMessage()
+                }
+            }
+
+            guard isFirstImpression else { return }
             Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
             if remoteMessage.isMetricsEnabled {
                 PixelKit.fire(Pixel.Event.remoteMessageShownUnique,
                               options: .parameters(additionalParameters(for: remoteMessage.id)))
             }
+        }
+    }
+
+    private func revalidatePublishedRemoteMessage() {
+        switch mode {
+        case .legacy:
+            let previousHomeMessages = homeMessages
+            refresh(openedAfterIdle: legacyOpenedAfterIdle)
+            if homeMessages != previousHomeMessages {
+                notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+            }
+        case .coordinated:
+            reconcileCoordinatedMessages(reason: .storeChanged)
         }
     }
 

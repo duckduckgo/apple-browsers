@@ -467,6 +467,48 @@ struct HomePageConfigurationTests {
         #expect(store.updatedShownMessageIDs.isEmpty)
     }
 
+    @available(iOS 16, *)
+    @Test("A cap-reaching card remains published until it stops being visible", .timeLimit(.minutes(1)))
+    func capReachingCardIsRemovedWhenHidden() async {
+        let message = makeRemoteMessage(id: "message", displayConditions: DisplayConditions(maxImpressions: 1))
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
+        let (shownEvents, shownContinuation) = AsyncStream.makeStream(of: String.self)
+        defer { shownContinuation.finish() }
+        store.onShownPersistence = { shownContinuation.yield($0) }
+        let sut = makeCoordinatedConfiguration(store: store, gate: MockPromoGate())
+        sut.prepareForNTP(openedAfterIdle: false)
+
+        #expect(sut.reportVisibleRemoteMessage(expectedMessageID: message.id))
+        var shownIterator = shownEvents.makeAsyncIterator()
+        #expect(await shownIterator.next() == message.id)
+        await waitForMainActorQueue()
+        #expect(sut.currentRemoteMessageID == message.id)
+
+        sut.remoteMessageDidStopBeingVisible(messageID: message.id)
+        #expect(sut.currentRemoteMessageID == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("A late cap result removes a card after it stops being visible", .timeLimit(.minutes(1)))
+    func lateCapResultRemovesMessageAfterItStopsBeingVisible() async {
+        let message = makeRemoteMessage(id: "message", displayConditions: DisplayConditions(maxImpressions: 1))
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
+        let (shownEvents, shownContinuation) = AsyncStream.makeStream(of: String.self)
+        defer { shownContinuation.finish() }
+        store.onShownPersistence = { shownContinuation.yield($0) }
+        let sut = makeCoordinatedConfiguration(store: store, gate: MockPromoGate())
+        sut.prepareForNTP(openedAfterIdle: false)
+
+        #expect(sut.reportVisibleRemoteMessage(expectedMessageID: message.id))
+        sut.remoteMessageDidStopBeingVisible(messageID: message.id)
+        #expect(sut.currentRemoteMessageID == message.id)
+
+        var shownIterator = shownEvents.makeAsyncIterator()
+        #expect(await shownIterator.next() == message.id)
+        await waitForMainActorQueue()
+        #expect(sut.currentRemoteMessageID == nil)
+    }
+
     @Test("A stale legacy message is removed and signals the message model")
     func staleLegacyMessagePublishesRemoval() {
         let notificationCenter = NotificationCenter()
@@ -995,7 +1037,8 @@ struct HomePageConfigurationTests {
 
     private func makeRemoteMessage(
         id: String,
-        content: RemoteMessageModelType? = .small(titleText: "Title", descriptionText: "Description")
+        content: RemoteMessageModelType? = .small(titleText: "Title", descriptionText: "Description"),
+        displayConditions: DisplayConditions? = nil
     ) -> RemoteMessageModel {
         RemoteMessageModel(
             id: id,
@@ -1003,7 +1046,8 @@ struct HomePageConfigurationTests {
             content: content,
             matchingRules: [],
             exclusionRules: [],
-            isMetricsEnabled: false
+            isMetricsEnabled: false,
+            displayConditions: displayConditions
         )
     }
 
@@ -1107,6 +1151,11 @@ private final class FilteredRemoteMessagingStore: @preconcurrency RemoteMessagin
         guard let candidate,
               !isScheduledMessageExpired,
               !dismissedMessageIDs.contains(candidate.id) else {
+            return nil
+        }
+        if let maxImpressions = candidate.displayConditions?.maxImpressions,
+           maxImpressions > 0,
+           updatedShownMessageIDs.filter({ $0 == candidate.id }).count >= maxImpressions {
             return nil
         }
         return candidate

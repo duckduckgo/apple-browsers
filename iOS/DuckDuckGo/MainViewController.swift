@@ -549,6 +549,9 @@ class MainViewController: UIViewController {
         snapshot: { [weak self] in self?.remoteMessageVisibilitySnapshot() },
         reportVisibleMessage: { [weak self] messageID in
             self?.homePageConfiguration.reportVisibleRemoteMessage(expectedMessageID: messageID) ?? false
+        },
+        messageDidStopBeingVisible: { [weak self] messageID in
+            self?.homePageConfiguration.remoteMessageDidStopBeingVisible(messageID: messageID)
         }
     )
 

@@ -727,6 +727,7 @@ public struct UserText {
     public static let actionAutofillLogins = NSLocalizedString("action.title.autofill.logins", value: "Passwords", comment: "Autofill Logins menu item opening the login list")
     public static let actionTabNew = NSLocalizedString("action.title.tab.new", value: "New Tab", comment: "New tab menu item opening a new tab")
     static let actionVPN = NSLocalizedString("action.title.vpn", value: "VPN", comment: "VPN menu item")
+    static let actionVPNFreeTrialBadge = NSLocalizedString("action.title.vpn.free-trial-badge", value: "Try for Free", comment: "Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased.")
 
     // MARK: - Control Center Widget Education
 

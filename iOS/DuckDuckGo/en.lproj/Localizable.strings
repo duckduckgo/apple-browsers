@@ -190,6 +190,9 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
+"action.title.vpn.free-trial-badge" = "Try for Free";
+
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.";
 

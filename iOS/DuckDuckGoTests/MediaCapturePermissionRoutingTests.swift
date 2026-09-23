@@ -924,6 +924,18 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         ))
     }
 
+    func testPermissionsPolicyParameterValidationPreservesStructuredFieldLimits() {
+        let pageURL = URL(string: "https://www.example.com")!
+        for parameter in ["count=-123456789012345", "ratio=-123456789012.123", "data=:YQ=:", "enabled; flag=?0;token=*"] {
+            XCTAssertFalse(TabViewController.permissionsPolicyDisablesGeolocation("geolocation=(self);\(parameter)", for: pageURL), parameter)
+        }
+        for parameter in ["Uppercase", "1key", "count=1234567890123456", "count=1e2",
+                          "ratio=1234567890123.1", "ratio=1.1234", "ratio=.1", "ratio=1.", "flag=?2",
+                          "data=:YQ===:", "data=:YWJj=:", "data=:Y=Q=:", "token=é", "text=\"literal\t tab\""] {
+            XCTAssertTrue(TabViewController.permissionsPolicyDisablesGeolocation("geolocation=(self);\(parameter)", for: pageURL), parameter)
+        }
+    }
+
     func testPermissionsPolicyHeaderIsPromotedOnlyOnCommitAndFailedProvisionalNavigationRestoresCommittedPage() {
         let pageURL = URL(string: "https://www.example.com/page")!
         let sut = makeSUT(committedURL: pageURL)

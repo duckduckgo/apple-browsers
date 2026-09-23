@@ -945,15 +945,7 @@ extension TabViewController {
         guard let components = splitPermissionsPolicyField(trimmedValue[...], on: ";"),
               let value = components.first else { return false }
         // RFC 8941 parameters do not change the allowlist. Validate them before discarding them.
-        let parameterValue = [
-            #""(?:[\x20-\x21\x23-\x5B\x5D-\x7E]|\\["\\])*""#,
-            #"[A-Za-z*][A-Za-z0-9!#$%&'*+.^_`|~:/-]*"#,
-            #"-?(?:[0-9]{1,15}|[0-9]{1,12}\.[0-9]{1,3})"#,
-            #":(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}={0,2}|[A-Za-z0-9+/]{3}=?)?:"#,
-            #"\?[01]"#
-        ].joined(separator: "|")
-        let parameter = #"^ *[a-z*][a-z0-9_.*-]*(?:=(?:"# + parameterValue + #"))?$"#
-        guard components.dropFirst().allSatisfy({ $0.range(of: parameter, options: .regularExpression) != nil }) else { return false }
+        guard components.dropFirst().allSatisfy(isValidPermissionsPolicyParameter) else { return false }
         if value == "*" { return true }
         guard value.first == "(", value.last == ")" else { return false }
 
@@ -964,6 +956,66 @@ extension TabViewController {
             guard let pageURL, let allowedURL = URL(string: token) else { return false }
             return sameOrigin(allowedURL, pageURL)
         }
+    }
+
+    private static func isValidPermissionsPolicyParameter(_ parameter: Substring) -> Bool {
+        let parts = parameter.drop(while: { $0 == " " }).split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+        let lowercaseLetters = "abcdefghijklmnopqrstuvwxyz"
+        let letters = lowercaseLetters + "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        let digits = "0123456789"
+        guard let key = parts.first, let first = key.first,
+              (lowercaseLetters + "*").contains(first),
+              key.allSatisfy({ (lowercaseLetters + digits + "_.*-").contains($0) }) else { return false }
+        guard parts.count == 2 else { return true }
+        let value = parts[1]
+        guard let first = value.first else { return false }
+
+        switch first {
+        case "\"":
+            return isValidPermissionsPolicyString(value)
+        case ":":
+            guard value.count >= 2, value.last == ":" else { return false }
+            let encoded = value.dropFirst().dropLast()
+            let payload = encoded.prefix(while: { $0 != "=" })
+            let padding = encoded.dropFirst(payload.count)
+            guard payload.allSatisfy({ (letters + digits + "+/").contains($0) }),
+                  padding.allSatisfy({ $0 == "=" }) else { return false }
+            // Base64 padding can be partially or entirely omitted in structured fields.
+            switch payload.count % 4 {
+            case 0: return padding.isEmpty
+            case 2: return padding.count <= 2
+            case 3: return padding.count <= 1
+            default: return false
+            }
+        case "?":
+            return value == "?0" || value == "?1"
+        case "-", "0"..."9":
+            let number = value.first == "-" ? value.dropFirst() : value
+            let components = number.split(separator: ".", omittingEmptySubsequences: false)
+            guard components.count <= 2,
+                  components.allSatisfy({ !$0.isEmpty && $0.allSatisfy(digits.contains) }) else { return false }
+            if components.count == 1 { return components[0].count <= 15 }
+            return components[0].count <= 12 && components[1].count <= 3
+        default:
+            return (letters + "*").contains(first)
+                && value.allSatisfy({ (letters + digits + "!#$%&'*+-.^_`|~:/").contains($0) })
+        }
+    }
+
+    private static func isValidPermissionsPolicyString(_ value: Substring) -> Bool {
+        guard value.count >= 2, value.last == "\"" else { return false }
+        var isEscaped = false
+        for byte in value.dropFirst().dropLast().utf8 {
+            if isEscaped {
+                guard byte == 0x22 || byte == 0x5C else { return false }
+                isEscaped = false
+            } else if byte == 0x5C {
+                isEscaped = true
+            } else if byte == 0x22 || !(0x20...0x7E).contains(byte) {
+                return false
+            }
+        }
+        return !isEscaped
     }
 
     private static func splitPermissionsPolicyField(_ value: Substring, on separator: Character) -> [Substring]? {

@@ -812,6 +812,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case protectedDataLoadGate
     /// Failsafe for the forwarding delegate used to observe Web Extensions background process health.
     case cpmBackgroundDelegateProxy
+    /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
+    case cpmDiagnosticsRecorder
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

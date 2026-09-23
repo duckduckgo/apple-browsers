@@ -72,7 +72,7 @@ enum WebExtensionManagerFactory {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
         let pixelFiring = MacOSWebExtensionPixelFiring()
         let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
-        let cpmDiagnosticsRecorder = CPMMessagingDiagnosticsRecorder(
+        let cpmDiagnosticsRecorder = Application.appDelegate.featureFlagger.isFeatureOn(.cpmDiagnosticsRecorder) ? CPMMessagingDiagnosticsRecorder(
             tabResolver: { tabIdentifier in
                 for windowController in Application.appDelegate.windowControllersManager.mainWindowControllers {
                     let viewModel = windowController.mainViewController.tabCollectionViewModel
@@ -84,7 +84,7 @@ enum WebExtensionManagerFactory {
             },
             featureFlags: MacOSCPMDiagnosticsFeatureFlags(featureFlagger: Application.appDelegate.featureFlagger),
             appSession: Application.appDelegate.cpmAppSessionDiagnostics
-        )
+        ) : nil
 
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),

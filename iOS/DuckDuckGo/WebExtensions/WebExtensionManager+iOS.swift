@@ -83,7 +83,7 @@ public enum WebExtensionManagerFactory {
         let preferencesAdapter = AutoconsentPreferencesAdapter(preferences: autoconsentPreferences)
         let pixelFiring = iOSWebExtensionPixelFiring()
         let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
-        let cpmDiagnosticsRecorder = CPMMessagingDiagnosticsRecorder(
+        let cpmDiagnosticsRecorder = featureFlagger.isFeatureOn(.cpmDiagnosticsRecorder) ? CPMMessagingDiagnosticsRecorder(
             tabResolver: { [weak mainViewController] tabIdentifier in
                 guard let mainViewController,
                       let tab = mainViewController.tabManager.allTabsModel.tabs.first(where: { $0.uid == tabIdentifier }),
@@ -102,7 +102,7 @@ public enum WebExtensionManagerFactory {
                 }
                 return CPMAppSessionDiagnostics(appVersionChange: change, launchDate: session.launchDate)
             }
-        )
+        ) : nil
 
         return WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),

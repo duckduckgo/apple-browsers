@@ -20,9 +20,8 @@ import Foundation
 import Combine
 import Common
 import FoundationExtensions
-@testable import Networking
+@_spi(Testing) @testable import Networking
 @testable import Subscription
-import NetworkingTestingUtils
 
 public final class SubscriptionManagerMock: SubscriptionManager {
 

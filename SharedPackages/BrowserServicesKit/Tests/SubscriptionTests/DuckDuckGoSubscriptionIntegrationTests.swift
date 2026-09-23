@@ -18,9 +18,8 @@
 
 import XCTest
 @testable import Subscription
-@testable import Networking
-import NetworkingTestingUtils
-import SubscriptionTestingUtilities
+@_spi(Testing) @testable import Networking
+@_spi(Testing) import SubscriptionTestingUtilities
 @_spi(Testing) import WideEvent
 import JWTKit
 

@@ -188,7 +188,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     private var isWebViewVisible = false
 
     /// Active-chat suggestions chips above the UTI input — same controller, embedding and glass style as
-    /// the floating input. Only shown while the input is expanded, when the chat behind is faded out.
+    /// the floating input.
     private lazy var activeChatSuggestionsController: AIChatContextualInputViewController = {
         let controller = AIChatContextualInputViewController(
             voiceSearchHelper: voiceSearchHelper,
@@ -199,9 +199,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         controller.useGlassStartActionBackgrounds()
         return controller
     }()
-
-    /// The suggestions strip only shows while the input is expanded (edit mode).
-    private var isInputExpanded = false
 
     private lazy var activeChatSuggestionsContainer: ChipHitTestingView = {
         let view = ChipHitTestingView()
@@ -1534,14 +1531,6 @@ private extension AIChatContextualSheetViewController {
         persistentUTIHost.onEditModeChange = { [weak self] isEditing in
             self?.setEditMode(isEditing)
         }
-        isInputExpanded = persistentUTIHost.isInputExpanded
-        persistentUTIHost.onExpandedChange = { [weak self] expanded in
-            guard let self else { return }
-            self.isInputExpanded = expanded
-            if self.hasEmbeddedActiveChatSuggestions {
-                self.updateActiveChatSuggestions(self.sessionState.viewState)
-            }
-        }
 
         let utiView = persistentUTIHost.mount(in: self)
         // The previous constraint died with the old mount — its two views no longer share an ancestor.
@@ -1585,8 +1574,7 @@ private extension AIChatContextualSheetViewController {
         if hasSuggestions {
             activeChatSuggestionsController.showStartActions()
         }
-        // Only while the input is expanded, when the chat behind is faded out.
-        activeChatSuggestionsContainer.alpha = (hasSuggestions && isInputExpanded) ? 1 : 0
+        activeChatSuggestionsContainer.alpha = hasSuggestions ? 1 : 0
     }
 
     @objc private func handleContentDragToDismissKeyboard(_ gesture: UIPanGestureRecognizer) {

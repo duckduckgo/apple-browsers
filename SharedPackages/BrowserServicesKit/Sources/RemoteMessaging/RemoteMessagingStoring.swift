@@ -48,13 +48,4 @@ public extension RemoteMessagingStoring {
     func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType) -> RemoteMessageModel? {
         fetchScheduledRemoteMessage(surfaces: surfaces, triggerFilter: .noTrigger)
     }
-
-    /// Compatibility bridge for stores that predate serialized impression recording. Concrete stores should override this
-    /// operation so the first-impression check and increment happen in one serialized transaction.
-    func recordRemoteMessageImpression(withID id: String) async -> RemoteMessageImpressionResult {
-        let isFirstImpression = !hasShownRemoteMessage(withID: id)
-        await updateRemoteMessage(withID: id, asShown: true)
-        guard hasShownRemoteMessage(withID: id) else { return .notRecorded }
-        return .recorded(isFirstImpression: isFirstImpression, impressionCount: nil)
-    }
 }

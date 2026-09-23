@@ -81,6 +81,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
     private let floatingUIManager: FloatingUIManaging
+    private let notificationCenter: NotificationCenter
 
     private let internalUserCommands: URLBasedDebugCommands
     private let tutorialSettings: TutorialSettings
@@ -113,6 +114,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          floatingUIManager: FloatingUIManaging = FloatingUIManager(),
          appWidthObserver: AppWidthObserver = .shared,
+         notificationCenter: NotificationCenter = .default,
          tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
          contextualContentProvider: ContextualOnboardingContentProviding = ContextualOnboardingContentProvider()) {
 
@@ -123,6 +125,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
         self.floatingUIManager = floatingUIManager
+        self.notificationCenter = notificationCenter
         self.internalUserCommands = internalUserCommands
         self.tutorialSettings = tutorialSettings
         self.contextualContentProvider = contextualContentProvider
@@ -440,7 +443,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     private func notifyRemoteMessageSurfaceChanged() {
-        NotificationCenter.default.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: self)
+        notificationCenter.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: self)
     }
 
     // MARK: -

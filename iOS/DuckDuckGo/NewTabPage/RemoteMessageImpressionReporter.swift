@@ -43,6 +43,7 @@ final class RemoteMessageImpressionReporter {
     private let snapshot: () -> Snapshot?
     private let reportVisibleMessage: (String) -> Bool
     private let notificationCenter: NotificationCenter
+    private let messageVisibilityOverride: ((String, UIViewController, UIWindow) -> Bool)?
 
     private var currentExposure: Exposure?
     private var visibilityCancellables = Set<AnyCancellable>()
@@ -54,12 +55,14 @@ final class RemoteMessageImpressionReporter {
          hasCurrentMessage: @escaping () -> Bool,
          snapshot: @escaping () -> Snapshot?,
          reportVisibleMessage: @escaping (String) -> Bool,
-         notificationCenter: NotificationCenter = .default) {
+         notificationCenter: NotificationCenter = .default,
+         messageVisibilityOverride: ((String, UIViewController, UIWindow) -> Bool)? = nil) {
         self.contentDidChangePublisher = contentDidChangePublisher
         self.hasCurrentMessage = hasCurrentMessage
         self.snapshot = snapshot
         self.reportVisibleMessage = reportVisibleMessage
         self.notificationCenter = notificationCenter
+        self.messageVisibilityOverride = messageVisibilityOverride
     }
 
     func observeVisibilityChanges() {
@@ -130,7 +133,7 @@ final class RemoteMessageImpressionReporter {
 
         let exposure = Exposure(tabID: snapshot.tabID, messageID: snapshot.messageID)
         guard let surfaceRoot = snapshot.surfaceRoot,
-              containsVisibleRemoteMessage(snapshot.messageID, in: surfaceRoot, window: snapshot.window) else {
+              isMessageVisible(snapshot.messageID, in: surfaceRoot, window: snapshot.window) else {
             // Back fades the focused Search NTP while the same card remains on the resting NTP.
             // Preserve only an existing exposure; this fallback must never report a new one.
             if currentExposure != exposure || !isVisibleDuringSearchDismiss(snapshot) {
@@ -148,7 +151,11 @@ final class RemoteMessageImpressionReporter {
 
     private func isVisibleDuringSearchDismiss(_ snapshot: Snapshot) -> Bool {
         guard let surface = snapshot.searchDismissSurface else { return false }
-        return containsVisibleRemoteMessage(snapshot.messageID, in: surface, window: snapshot.window)
+        return isMessageVisible(snapshot.messageID, in: surface, window: snapshot.window)
+    }
+
+    private func isMessageVisible(_ messageID: String, in controller: UIViewController, window: UIWindow) -> Bool {
+        messageVisibilityOverride?(messageID, controller, window) ?? containsVisibleRemoteMessage(messageID, in: controller, window: window)
     }
 
     private func containsVisibleRemoteMessage(_ messageID: String, in controller: UIViewController, window: UIWindow) -> Bool {

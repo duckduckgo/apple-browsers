@@ -30,7 +30,7 @@ let package = Package(
         .library(name: "Networking", targets: ["Networking"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
+        .package(url: "https://github.com/vapor/jwt-kit.git", exact: "5.7.1"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),

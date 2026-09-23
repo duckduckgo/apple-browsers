@@ -71,7 +71,6 @@ jobs:
           -scheme "iOS UI Tests" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
           -derivedDataPath "DerivedData" \
-          -disablePackageRepositoryCache \
           -skipPackagePluginValidation \
           -skipMacroValidation \
           -test-iterations 2 \

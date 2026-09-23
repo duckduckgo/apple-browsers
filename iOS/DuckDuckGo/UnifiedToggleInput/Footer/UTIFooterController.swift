@@ -52,6 +52,7 @@ final class UTIFooterController {
     private let measurement: DuckAiUsageWarningMeasurement
     private let createImagePixelFiring: CreateImagePixelFiring
     private let animator: Animator
+    private let allowsSubscriptionUpsell: () -> Bool
 
     private var isSuppressed = false
     /// The message the user acted on, held so the CTA can retire one that carries no close button.
@@ -70,6 +71,7 @@ final class UTIFooterController {
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
          measurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
          createImagePixelFiring: CreateImagePixelFiring,
+         allowsSubscriptionUpsell: @escaping () -> Bool = { true },
          animator: Animator? = nil) {
         self.viewModel = viewModel
         self.highUsageNotice = highUsageNotice
@@ -77,6 +79,7 @@ final class UTIFooterController {
         self.measurement = measurement
         self.createImagePixelFiring = createImagePixelFiring
         self.animator = animator ?? Self.springAnimator
+        self.allowsSubscriptionUpsell = allowsSubscriptionUpsell
     }
 
     /// Synchronous: a lookup in the already-loaded entries blob.
@@ -156,6 +159,10 @@ final class UTIFooterController {
     }
 
     func performPrimaryAction() {
+        if case .tryForFree = viewModel.warning?.action, !allowsSubscriptionUpsell() {
+            applyCurrentState()
+            return
+        }
         guard let message = currentMessage, message.primaryAction != nil else { return }
 
         if let cta = Self.cta(for: viewModel.warning?.action) {
@@ -243,7 +250,8 @@ final class UTIFooterController {
             return ResolvedCard(message: mapper.message(for: modelSwitchNotice), exposure: nil)
         }
         if let warning = viewModel.warning {
-            guard let message = unlessActedOn(mapper.message(for: warning)) else { return nil }
+            let warningMessage = mapper.message(for: warning, allowsSubscriptionUpsell: allowsSubscriptionUpsell())
+            guard let message = unlessActedOn(warningMessage) else { return nil }
             return ResolvedCard(message: message, exposure: DuckAiUsageWarningExposure(warning: warning))
         }
         if let notice = highUsageNotice?.notice {

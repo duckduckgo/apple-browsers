@@ -1289,7 +1289,24 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         case createImageSwitch(AIChatCreateImageModelSwitchNotice)
         case usageWarning(DuckAiUsageWarning)
         case highUsage(DuckAiHighUsageModelNotice)
+
+        enum Kind {
+            case attachmentPrivacy, createImageSwitch, usageWarning, highUsage
+        }
+
+        var kind: Kind {
+            switch self {
+            case .attachmentPrivacy: return .attachmentPrivacy
+            case .createImageSwitch: return .createImageSwitch
+            case .usageWarning: return .usageWarning
+            case .highUsage: return .highUsage
+            }
+        }
     }
+
+    /// A slot freed by a dismissal stays empty until the next trigger, so nothing is promoted into
+    /// it. `nil` when no dismissal is being held.
+    private var kindsAllowedAfterDismissal: Set<BandMessage.Kind>?
 
     private var hasStagedFileOrImageAttachment: Bool {
         !omnibarController.activeImageAttachments.isEmpty || !omnibarController.activeFileAttachments.isEmpty
@@ -1324,7 +1341,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func applyBandMessages() {
         applyInputBlock(omnibarController.usageWarningViewModel?.warning?.blocksInput == true)
 
-        let messages = resolveBandMessages()
+        var messages = resolveBandMessages()
+        if let kindsAllowedAfterDismissal {
+            messages = messages.filter { kindsAllowedAfterDismissal.contains($0.kind) }
+        }
         guard let primary = messages.first else {
             primaryBandMessage = nil
             secondaryBandMessage = nil
@@ -1365,6 +1385,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func dismissBandMessage(_ message: BandMessage?) {
         guard let message else { return }
+
+        let survivors = [primaryBandMessage, secondaryBandMessage]
+            .compactMap { $0?.kind }
+            .filter { $0 != message.kind }
+        kindsAllowedAfterDismissal = Set(survivors)
 
         switch message {
         case .attachmentPrivacy:
@@ -2244,6 +2269,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         omnibarController.hasImageAttachments = hasAttachments
 
+        kindsAllowedAfterDismissal = nil
         refreshUsageCard()
 
         // Image thumbnails and tab cards share the carousel's row, so the row's height is driven
@@ -2439,6 +2465,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Everything keyed off the selected model — the tools button would otherwise pop an empty menu
     /// for a model that supports none of them.
     private func refreshForSelectedModel() {
+        kindsAllowedAfterDismissal = nil
         refreshUsageCard()
         modelPickerButton.isHidden = !shouldShowModelPicker
         modelPickerButton.modelName = persistedModelShortName

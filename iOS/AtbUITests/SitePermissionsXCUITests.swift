@@ -21,13 +21,6 @@ import CoreLocation
 import Swifter
 import XCTest
 
-private extension XCUIElement {
-    func waitForHittable(timeout: TimeInterval) -> Bool {
-        let predicate = NSPredicate(format: "exists == true AND isHittable == true")
-        return XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: self)], timeout: timeout) == .completed
-    }
-}
-
 /// Run with the "iOS Site Permissions UI Tests" scheme; the "iOS ATB UI Tests" scheme skips this class.
 /// The local fixture uses real WebKit media capture and the app's geolocation bridge.
 final class SitePermissionsXCUITests: XCTestCase {
@@ -62,13 +55,8 @@ final class SitePermissionsXCUITests: XCTestCase {
         // Existing records must stay hidden after rollback too.
         launchApp(flagEnabled: false, seedPermissions: "{ \"127.0.0.1\" = { camera = allow; }; }")
         openPermissionPage()
-        requestCamera()
-
-        let webKitAlert = app.alerts.containing(NSPredicate(format: "label CONTAINS[c] %@", "127.0.0.1")).firstMatch
-        XCTAssertTrue(webKitAlert.waitForExistence(timeout: timeout), app.debugDescription)
-        XCTAssertTrue(webKitAlert.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] 'camera'")).firstMatch.exists)
-        XCTAssertFalse(element("SitePermissions.Dialog").exists)
-        webKitAlert.buttons["Don’t Allow"].tap()
+        request("camera")
+        denyWebKitPrompt(for: "camera")
 
         openMenu()
         XCTAssertFalse(element("BrowsingMenu.SitePermissions").exists)
@@ -85,12 +73,11 @@ final class SitePermissionsXCUITests: XCTestCase {
     func testWhenCameraIsAllowedThenSiteDialogPrecedesSystemPromptAndDecisionPersists() {
         launchApp()
         openPermissionPage()
-        requestCamera()
+        request("camera")
         assertSiteDialog()
-        assertNoSystemAlert()
 
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
-        answerSystemCameraAlert(allow: true)
+        answerSystemAlert(for: "camera", allow: true)
         assertResult("success 1")
         openPermissionsSheet()
         XCTAssertTrue((element("SitePermissions.Sheet.Camera").value as? String)?.contains("Always Allow") == true)
@@ -100,7 +87,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         closeSettings()
 
         reloadPermissionPage()
-        requestCamera()
+        request("camera")
         assertResult("success 1")
         assertNoPermissionPrompt()
     }
@@ -120,24 +107,24 @@ final class SitePermissionsXCUITests: XCTestCase {
     func testWhenAllowOnceIsChosenThenGrantEndsOnReloadAndSiteIsNotListed() {
         launchApp()
         openPermissionPage()
-        requestCamera()
+        request("camera")
         tap(element("SitePermissions.Dialog.AllowOnce"))
-        answerSystemCameraAlert(allow: true)
+        answerSystemAlert(for: "camera", allow: true)
         assertResult("success 1")
 
         // Begin a fresh browsing session with camera already authorized by iOS.
         app.terminate()
         launchApp()
         openPermissionPage()
-        requestCamera()
+        request("camera")
         tap(element("SitePermissions.Dialog.AllowOnce"))
         assertResult("success 1")
         assertNoSystemAlert()
-        requestCamera()
+        request("camera")
         assertResult("success 2")
         assertNoPermissionPrompt()
         reloadPermissionPage()
-        requestCamera()
+        request("camera")
         assertSiteDialog()
         tap(element("SitePermissions.Dialog.AllowOnce"))
         assertResult("success 1")
@@ -149,19 +136,15 @@ final class SitePermissionsXCUITests: XCTestCase {
     func testWhenSystemCameraIsDeniedThenReminderAppearsAndSiteAllowIsKept() {
         launchApp()
         openPermissionPage()
-        requestCamera()
+        request("camera")
         tap(element("SitePermissions.Dialog.AllowOnce"))
-        answerSystemCameraAlert(allow: false)
+        answerSystemAlert(for: "camera", allow: false)
         assertResult("NotAllowedError 1")
         reloadPermissionPage()
 
-        requestCamera()
+        request("camera")
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
-        XCTAssertTrue(element("SitePermissions.Reminder").waitForExistence(timeout: timeout))
-        XCTAssertTrue(element("SitePermissions.Reminder.ChangePermissions").exists)
-        XCTAssertTrue(element("SitePermissions.Reminder.Cancel").exists)
-        assertNoSystemAlert()
-        tap(element("SitePermissions.Reminder.Cancel"))
+        dismissReminder(for: "camera")
         assertResult("NotAllowedError 1")
         openPermissionsSheet()
         XCTAssertTrue(element("SitePermissions.Sheet.Reminder").exists)
@@ -172,9 +155,8 @@ final class SitePermissionsXCUITests: XCTestCase {
     func testWhenMicrophoneIsAllowedThenSiteDialogPrecedesSystemPromptAndOnlyAudioIsGranted() {
         launchApp()
         openPermissionPage()
-        requestMedia("microphone")
+        request("microphone")
         assertSiteDialog(permission: "microphone")
-        assertNoSystemAlert()
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
         answerSystemAlert(for: "microphone", allow: true)
         assertResult("success 1")
@@ -185,15 +167,14 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(element("SitePermissions.Sheet.Close"))
 
         reloadPermissionPage()
-        requestMedia("microphone")
+        request("microphone")
         assertResult("success 1")
         assertResult("tracks video=0 audio=1")
         assertNoPermissionPrompt()
-        requestCamera()
+        request("camera")
         assertSiteDialog(permission: "camera")
-        assertNoSystemAlert()
         tap(element("SitePermissions.Dialog.AllowOnce"))
-        answerSystemCameraAlert(allow: true)
+        answerSystemAlert(for: "camera", allow: true)
         assertResult("success 2")
         assertResult("tracks video=1 audio=0")
     }
@@ -201,13 +182,13 @@ final class SitePermissionsXCUITests: XCTestCase {
     func testWhenSystemMicrophoneIsDeniedThenReminderKeepsSiteAllowAndCameraStillWorks() {
         launchApp()
         openPermissionPage()
-        requestMedia("microphone")
+        request("microphone")
         tap(element("SitePermissions.Dialog.AllowOnce"))
         answerSystemAlert(for: "microphone", allow: false)
         assertResult("NotAllowedError 1")
         reloadPermissionPage()
 
-        requestMedia("microphone")
+        request("microphone")
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
         dismissReminder(for: "microphone")
         assertResult("NotAllowedError 1")
@@ -215,24 +196,16 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertSheetDecision("Microphone", contains: "Always Allow")
         XCTAssertFalse(element("SitePermissions.Sheet.Camera").exists)
         tap(element("SitePermissions.Sheet.Close"))
-        requestCamera()
+        request("camera")
         assertSiteDialog(permission: "camera")
         tap(element("SitePermissions.Dialog.AllowOnce"))
-        answerSystemCameraAlert(allow: true)
+        answerSystemAlert(for: "camera", allow: true)
         assertResult("success 2")
         assertResult("tracks video=1 audio=0")
     }
 
     func testWhenPrivateVoiceSearchLosesMicrophoneAccessThenReminderCanCancelOrHideVoiceSearch() {
-        prepareVoiceSearchWithDeniedMicrophone()
-        openEmptyVoiceSearchInput(duckAI: false)
-        tap(element("Browser.OmniBar.Button.VoiceSearch"))
-        assertVoicePermissionReminder(isVoiceChat: false)
-
-        tap(element("SitePermissions.Reminder.Cancel"))
-        XCTAssertTrue(element("SitePermissions.Reminder").waitForNonExistence(timeout: timeout))
-        XCTAssertTrue(element("Browser.OmniBar.Button.VoiceSearch").waitForHittable(timeout: timeout))
-        assertNoPermissionPrompt()
+        showAndCancelVoicePermissionReminder(duckAI: false, isVoiceChat: false)
         tap(element("Browser.OmniBar.Button.VoiceSearch"))
         assertVoicePermissionReminder(isVoiceChat: false)
         tap(element("SitePermissions.Reminder.HideVoiceSearch"))
@@ -245,30 +218,14 @@ final class SitePermissionsXCUITests: XCTestCase {
     }
 
     func testWhenDuckAIDictationLosesMicrophoneAccessThenPrivateVoiceSearchReminderAppears() {
-        prepareVoiceSearchWithDeniedMicrophone()
-        openEmptyVoiceSearchInput(duckAI: true)
-        tap(element("Browser.OmniBar.Button.VoiceSearch"))
-        assertVoicePermissionReminder(isVoiceChat: false)
-
-        tap(element("SitePermissions.Reminder.Cancel"))
-        XCTAssertTrue(element("SitePermissions.Reminder").waitForNonExistence(timeout: timeout))
-        XCTAssertTrue(element("Browser.OmniBar.Button.VoiceSearch").waitForHittable(timeout: timeout))
-        assertNoPermissionPrompt()
+        showAndCancelVoicePermissionReminder(duckAI: true, isVoiceChat: false)
         tap(element("UnifiedToggleInput.Button.Dismiss"))
         assertResult("NotAllowedError 1")
         assertResult("tracks video=0 audio=0")
     }
 
     func testWhenDuckAIVoiceChatLosesMicrophoneAccessThenVoiceChatReminderAppearsWithoutOpeningChat() {
-        prepareVoiceSearchWithDeniedMicrophone()
-        openEmptyVoiceSearchInput(duckAI: true)
-        tap(element("AIChat.Toolbar.Button.Submit"))
-        assertVoicePermissionReminder(isVoiceChat: true)
-
-        tap(element("SitePermissions.Reminder.Cancel"))
-        XCTAssertTrue(element("SitePermissions.Reminder").waitForNonExistence(timeout: timeout))
-        XCTAssertTrue(element("Browser.OmniBar.Button.VoiceSearch").waitForHittable(timeout: timeout))
-        assertNoPermissionPrompt()
+        showAndCancelVoicePermissionReminder(duckAI: true, isVoiceChat: true)
         tap(element("UnifiedToggleInput.Button.Dismiss"))
         assertResult("NotAllowedError 1")
         assertResult("tracks video=0 audio=0")
@@ -277,11 +234,10 @@ final class SitePermissionsXCUITests: XCTestCase {
     func testWhenCombinedMediaIsAllowedThenBothSystemPromptsAppearAndBothDecisionsPersist() {
         launchApp()
         openPermissionPage()
-        requestMedia("camera and microphone")
+        request("camera and microphone")
         assertSiteDialog(permission: "camera and microphone")
-        assertNoSystemAlert()
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
-        answerSystemCameraAlert(allow: true)
+        answerSystemAlert(for: "camera", allow: true)
         answerSystemAlert(for: "microphone", allow: true)
         assertResult("success 1")
         assertResult("tracks video=1 audio=1")
@@ -291,78 +247,26 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(element("SitePermissions.Sheet.Close"))
 
         reloadPermissionPage()
-        requestMedia("camera and microphone")
+        request("camera and microphone")
         assertResult("success 1")
         assertResult("tracks video=1 audio=1")
         assertNoPermissionPrompt()
     }
 
     func testWhenCombinedMediaHasSystemCameraDenialThenNeitherTrackIsGrantedAndMicrophoneWorksIndependently() {
-        launchApp()
-        openPermissionPage()
-        requestMedia("camera and microphone")
-        assertSiteDialog(permission: "camera and microphone")
-        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
-        answerSystemCameraAlert(allow: false)
-        // The toast hides after 3 seconds, so look for it before waiting for the system alert to dismiss.
-        answerSystemAlert(for: "microphone", allow: true, waitForDismissal: false)
-        XCTAssertTrue(element("SitePermissions.Toast").staticTexts[
-            "DuckDuckGo couldn’t give camera access to this site"].waitForExistence(timeout: timeout))
-        XCTAssertTrue(springboard.alerts.firstMatch.waitForNonExistence(timeout: timeout))
-        assertResult("NotAllowedError 1")
-        assertResult("tracks video=0 audio=0")
-        reloadPermissionPage()
-
-        requestMedia("camera and microphone")
-        dismissReminder(for: "camera")
-        assertResult("NotAllowedError 1")
-        assertResult("tracks video=0 audio=0")
-        openPermissionsSheet()
-        assertSheetDecision("Camera", contains: "Always Allow")
-        assertSheetDecision("Microphone", contains: "Always Allow")
-        tap(element("SitePermissions.Sheet.Close"))
-        requestMedia("microphone")
-        assertResult("success 2")
-        assertResult("tracks video=0 audio=1")
-        assertNoPermissionPrompt()
+        assertCombinedMediaFailsAfterSystemDenial(of: "camera")
     }
 
     func testWhenCombinedMediaHasSystemMicrophoneDenialThenNeitherTrackIsGrantedAndCameraWorksIndependently() {
-        launchApp()
-        openPermissionPage()
-        requestMedia("camera and microphone")
-        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
-        answerSystemCameraAlert(allow: true)
-        // The toast hides after 3 seconds, so look for it before waiting for the system alert to dismiss.
-        answerSystemAlert(for: "microphone", allow: false, waitForDismissal: false)
-        XCTAssertTrue(element("SitePermissions.Toast").staticTexts[
-            "DuckDuckGo couldn’t give microphone access to this site"].waitForExistence(timeout: timeout))
-        XCTAssertTrue(springboard.alerts.firstMatch.waitForNonExistence(timeout: timeout))
-        assertResult("NotAllowedError 1")
-        assertResult("tracks video=0 audio=0")
-        reloadPermissionPage()
-
-        requestMedia("camera and microphone")
-        dismissReminder(for: "microphone")
-        assertResult("NotAllowedError 1")
-        assertResult("tracks video=0 audio=0")
-        openPermissionsSheet()
-        assertSheetDecision("Camera", contains: "Always Allow")
-        assertSheetDecision("Microphone", contains: "Always Allow")
-        tap(element("SitePermissions.Sheet.Close"))
-        requestCamera()
-        assertResult("success 2")
-        assertResult("tracks video=1 audio=0")
-        assertNoPermissionPrompt()
+        assertCombinedMediaFailsAfterSystemDenial(of: "microphone")
     }
 
     func testWhenLocationIsAllowedThenSiteDialogPrecedesSystemPromptAndCoordinatesSurviveReload() throws {
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
         launchApp()
         openPermissionPage()
-        requestLocation()
+        request("location")
         assertSiteDialog(permission: "location")
-        assertNoSystemAlert()
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
         answerSystemAlert(for: "location", allow: true)
         // maximumAge: 0 needs a fix timestamped after authorization and acquisition begin.
@@ -372,12 +276,12 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertSheetDecision("Geolocation", contains: "Always Allow")
         tap(element("SitePermissions.Sheet.Close"))
 
-        requestLocation()
+        request("location")
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
         assertResult("location success 2 37.3317,-122.0301")
         assertNoPermissionPrompt()
         reloadPermissionPage()
-        requestLocation()
+        request("location")
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
         assertResult("location success 1 37.3317,-122.0301")
         assertNoPermissionPrompt()
@@ -386,13 +290,13 @@ final class SitePermissionsXCUITests: XCTestCase {
     func testWhenSystemLocationIsDeniedThenReminderKeepsSavedSiteAllow() {
         launchApp()
         openPermissionPage()
-        requestLocation()
+        request("location")
         tap(element("SitePermissions.Dialog.AllowOnce"))
         answerSystemAlert(for: "location", allow: false)
         assertResult("location error 1 1")
         reloadPermissionPage()
 
-        requestLocation()
+        request("location")
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
         dismissReminder(for: "location")
         assertResult("location error 1 1")
@@ -420,16 +324,13 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(element("SitePermissions.Sheet.Geolocation"))
         tap(element("SitePermissions.Sheet.Geolocation.alwaysAllow"))
         tap(element("SitePermissions.Sheet.Close"))
-        requestLocation()
+        request("location")
         try simulateLocation(latitude: 51.5007, longitude: -0.1246)
         assertResult("location success 1 51.5007,-0.1246")
         assertNoPermissionPrompt()
         // A new request proves delivery resumed; the old watch must remain terminated.
-        let restartedWatch = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "exists == true"),
-            object: app.webViews.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'watch success'")).firstMatch)
-        restartedWatch.isInverted = true
-        XCTAssertEqual(XCTWaiter.wait(for: [restartedWatch], timeout: 2), .completed)
+        let restartedWatch = app.webViews.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'watch success'")).firstMatch
+        XCTAssertFalse(restartedWatch.waitForExistence(timeout: 2))
         assertResult("watch error 1")
     }
 
@@ -467,7 +368,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
         launchApp()
         openPermissionPage()
-        requestLocation()
+        request("location")
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
         answerSystemAlert(for: "location", allow: true)
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
@@ -477,12 +378,8 @@ final class SitePermissionsXCUITests: XCTestCase {
         app.terminate()
         launchApp(flagEnabled: false, seedPermissions: "{ \"127.0.0.1\" = { geolocation = deny; }; }")
         openPermissionPage()
-        requestLocation()
-        let alert = app.alerts.containing(NSPredicate(format: "label CONTAINS[c] %@", "127.0.0.1")).firstMatch
-        XCTAssertTrue(alert.waitForExistence(timeout: timeout), app.debugDescription)
-        XCTAssertTrue(alert.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] 'location'")).firstMatch.exists)
-        XCTAssertFalse(element("SitePermissions.Dialog").exists)
-        tap(alert.buttons.matching(NSPredicate(format: "label IN %@", ["Don’t Allow", "Don't Allow"])).firstMatch)
+        request("location")
+        denyWebKitPrompt(for: "location")
         assertResult("location error 1 1")
         assertNoPermissionPrompt()
     }
@@ -526,6 +423,18 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertEqual(element("Settings.SitePermissions.Global.geolocation").value as? String, "Never Allow")
     }
 
+    private func showAndCancelVoicePermissionReminder(duckAI: Bool, isVoiceChat: Bool) {
+        prepareVoiceSearchWithDeniedMicrophone()
+        openEmptyVoiceSearchInput(duckAI: duckAI)
+        tap(element(isVoiceChat ? "AIChat.Toolbar.Button.Submit" : "Browser.OmniBar.Button.VoiceSearch"))
+        assertVoicePermissionReminder(isVoiceChat: isVoiceChat)
+
+        tap(element("SitePermissions.Reminder.Cancel"))
+        XCTAssertTrue(element("SitePermissions.Reminder").waitForNonExistence(timeout: timeout))
+        XCTAssertTrue(element("Browser.OmniBar.Button.VoiceSearch").waitForHittable(timeout: timeout))
+        assertNoPermissionPrompt()
+    }
+
     private func prepareVoiceSearchWithDeniedMicrophone() {
         launchApp(additionalArguments: ["-ff.utiDuckAIWarnings", "false"])
         enableDuckAIInput()
@@ -547,7 +456,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(element("searchEntry").waitForHittable(timeout: timeout))
         openPermissionPage()
-        requestMedia("microphone")
+        request("microphone")
         tap(element("SitePermissions.Dialog.AllowOnce"))
         answerSystemAlert(for: "microphone", allow: false)
         assertResult("NotAllowedError 1")
@@ -558,9 +467,7 @@ final class SitePermissionsXCUITests: XCTestCase {
     }
 
     private func enableDuckAIInput() {
-        openMenu()
-        tap(app.buttons["Settings"])
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
+        openSettings()
         let aiFeatures = app.staticTexts["AI Features"]
         scrollTo(aiFeatures)
         tap(aiFeatures)
@@ -582,9 +489,7 @@ final class SitePermissionsXCUITests: XCTestCase {
     }
 
     private func openVoiceSearchSettings() {
-        openMenu()
-        tap(app.buttons["Settings"])
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
+        openSettings()
         let accessibility = app.staticTexts["Accessibility"]
         scrollTo(accessibility)
         tap(accessibility)
@@ -621,9 +526,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         } else {
             XCTAssertEqual(element("SitePermissions.Reminder.HideVoiceSearch").label, "Hide Voice Search")
         }
-        XCTAssertFalse(element("SitePermissions.Dialog").exists)
-        XCTAssertFalse(app.alerts.firstMatch.exists)
-        assertNoSystemAlert()
+        assertNoPermissionPrompt()
     }
 
     private func launchApp(flagEnabled: Bool = true, seedPermissions: String? = nil, additionalArguments: [String] = []) {
@@ -665,15 +568,14 @@ final class SitePermissionsXCUITests: XCTestCase {
     private func assertReloadCaptionAfterResettingPermission(_ permission: String, row: String) {
         launchApp()
         openPermissionPage()
-        let request = app.webViews.buttons["Request \(permission)"]
         let deniedResult = permission == "location" ? "location error 1 1" : "NotAllowedError 1"
-        tap(request)
+        request(permission)
         assertSiteDialog(permission: permission)
         tap(element("SitePermissions.Dialog.NeverAllow"))
         assertResult(deniedResult)
 
         reloadPermissionPage()
-        tap(request)
+        request(permission)
         assertResult(deniedResult)
         assertNoPermissionPrompt()
         openPermissionsSheet()
@@ -699,24 +601,46 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertSheetDecision(row, contains: "Ask Each Time")
         XCTAssertFalse(caption.exists)
         tap(element("SitePermissions.Sheet.Close"))
-        tap(request)
+        request(permission)
         assertSiteDialog(permission: permission)
-        assertNoSystemAlert()
         tap(element("SitePermissions.Dialog.NeverAllow"))
         assertResult(deniedResult)
         assertResult("tracks video=0 audio=0")
     }
 
-    private func requestCamera() {
-        requestMedia("camera")
+    private func assertCombinedMediaFailsAfterSystemDenial(of deniedPermission: String) {
+        let allowedPermission = deniedPermission == "camera" ? "microphone" : "camera"
+        launchApp()
+        openPermissionPage()
+        request("camera and microphone")
+        assertSiteDialog(permission: "camera and microphone")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "camera", allow: deniedPermission != "camera")
+        // The toast hides after 3 seconds, so look for it before waiting for the system alert to dismiss.
+        answerSystemAlert(for: "microphone", allow: deniedPermission != "microphone", waitForDismissal: false)
+        XCTAssertTrue(element("SitePermissions.Toast").staticTexts[
+            "DuckDuckGo couldn’t give \(deniedPermission) access to this site"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(springboard.alerts.firstMatch.waitForNonExistence(timeout: timeout))
+        assertResult("NotAllowedError 1")
+        assertResult("tracks video=0 audio=0")
+        reloadPermissionPage()
+
+        request("camera and microphone")
+        dismissReminder(for: deniedPermission)
+        assertResult("NotAllowedError 1")
+        assertResult("tracks video=0 audio=0")
+        openPermissionsSheet()
+        assertSheetDecision("Camera", contains: "Always Allow")
+        assertSheetDecision("Microphone", contains: "Always Allow")
+        tap(element("SitePermissions.Sheet.Close"))
+        request(allowedPermission)
+        assertResult("success 2")
+        assertResult(allowedPermission == "camera" ? "tracks video=1 audio=0" : "tracks video=0 audio=1")
+        assertNoPermissionPrompt()
     }
 
-    private func requestMedia(_ permission: String) {
+    private func request(_ permission: String) {
         tap(app.webViews.buttons["Request \(permission)"])
-    }
-
-    private func requestLocation() {
-        tap(app.webViews.buttons["Request location"])
     }
 
     private func simulateLocation(latitude: Double, longitude: Double) throws {
@@ -739,10 +663,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         for action in ["AllowOnce", "AllowWhileUsingSite", "NeverAllow"] {
             XCTAssertTrue(element("SitePermissions.Dialog.\(action)").exists, file: file, line: line)
         }
-    }
-
-    private func answerSystemCameraAlert(allow: Bool) {
-        answerSystemAlert(for: "camera", allow: allow)
+        assertNoSystemAlert(file: file, line: line)
     }
 
     private func answerSystemAlert(for permission: String, allow: Bool, waitForDismissal: Bool = true) {
@@ -751,7 +672,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertTrue(systemAlert.waitForExistence(timeout: timeout), springboard.debugDescription)
         let allowLabels = permission == "location" ? ["Allow While Using App", "Allow While Using the App"] : ["Allow", "OK"]
         let button = systemAlert.buttons.matching(NSPredicate(
-            format: "label IN %@", allow ? allowLabels : ["Don’t Allow", "Don't Allow"])).firstMatch
+            format: "label IN %@", allow ? allowLabels : Self.dontAllowLabels)).firstMatch
         tap(button)
         if waitForDismissal {
             XCTAssertTrue(systemAlert.waitForNonExistence(timeout: timeout))
@@ -784,17 +705,21 @@ final class SitePermissionsXCUITests: XCTestCase {
     private func assertWebKitMediaRollback(permission: String) {
         launchApp(flagEnabled: false, seedPermissions: "{ \"127.0.0.1\" = { camera = deny; microphone = deny; geolocation = deny; }; }")
         openPermissionPage()
-        requestMedia(permission)
+        request(permission)
+        denyWebKitPrompt(for: permission)
+        assertResult("NotAllowedError 1")
+        assertResult("tracks video=0 audio=0")
+        assertNoPermissionPrompt()
+    }
+
+    private func denyWebKitPrompt(for permission: String) {
         let alert = app.alerts.containing(NSPredicate(format: "label CONTAINS[c] %@", "127.0.0.1")).firstMatch
-        XCTAssertTrue(alert.waitForExistence(timeout: timeout), springboard.debugDescription)
+        XCTAssertTrue(alert.waitForExistence(timeout: timeout), app.debugDescription)
         for name in permission.components(separatedBy: " and ") {
             XCTAssertTrue(alert.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] %@", name)).firstMatch.exists)
         }
         XCTAssertFalse(element("SitePermissions.Dialog").exists)
-        tap(alert.buttons.matching(NSPredicate(format: "label IN %@", ["Don’t Allow", "Don't Allow"])).firstMatch)
-        assertResult("NotAllowedError 1")
-        assertResult("tracks video=0 audio=0")
-        assertNoPermissionPrompt()
+        tap(alert.buttons.matching(NSPredicate(format: "label IN %@", Self.dontAllowLabels)).firstMatch)
     }
 
     private func assertNoSystemAlert(file: StaticString = #filePath, line: UInt = #line) {
@@ -818,18 +743,18 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertTrue(element("SitePermissions.Sheet").waitForExistence(timeout: timeout))
     }
 
-    private func openPermissionSettings() {
+    private func openSettings() {
         openMenu()
         tap(app.buttons["Settings"])
-        openSitePermissionSettingsEntry()
-        XCTAssertTrue(element("Settings.SitePermissions.Global.camera").waitForExistence(timeout: timeout))
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
     }
 
-    private func openSitePermissionSettingsEntry() {
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
+    private func openPermissionSettings() {
+        openSettings()
         let entry = element("Settings.SitePermissions")
         scrollTo(entry)
         tap(entry)
+        XCTAssertTrue(element("Settings.SitePermissions.Global.camera").waitForExistence(timeout: timeout))
     }
 
     private func scrollTo(_ element: XCUIElement) {
@@ -854,6 +779,8 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertTrue(element.waitForHittable(timeout: timeout), app.debugDescription, file: file, line: line)
         element.tap()
     }
+
+    private static let dontAllowLabels = ["Don’t Allow", "Don't Allow"]
 
     private static let permissionsHTML = """
     <!doctype html>

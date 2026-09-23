@@ -20,7 +20,7 @@
 import Swifter
 import XCTest
 
-private extension XCUIElement {
+extension XCUIElement {
 
     func waitForHittable(timeout: TimeInterval) -> Bool {
         let predicate = NSPredicate(format: "exists == true AND isHittable == true")

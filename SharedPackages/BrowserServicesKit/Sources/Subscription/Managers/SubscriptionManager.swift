@@ -67,7 +67,11 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     var hasAppStoreProductsAvailable: Bool { get }
 
     /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
+    /// Also emits when the initial product fetch finishes, even if availability is unchanged.
     var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the initial App Store product fetch has finished, including an empty result or failure.
+    var hasResolvedAppStoreProducts: Bool { get }
     func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
 
     /// Returns subscription tier options (plans and pricing) for the appropriate platform.
@@ -244,6 +248,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     private let isInternalUserEnabled: () -> Bool
     private let userDefaults: UserDefaults
     private let hasAppStoreProductsAvailableSubject = PassthroughSubject<Bool, Never>()
+    public private(set) var hasResolvedAppStoreProducts = false
     private var cancellables = Set<AnyCancellable>()
     private let requestCoalescer = SubscriptionRequestCoalescer()
     private let wideEvent: WideEventManaging?
@@ -299,6 +304,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
     /// The value is updated whenever the `areProductsAvailablePublisher` of the underlying StorePurchaseManager emits a new value.
+    /// Also emits after the initial fetch resolves and its result is cached.
     public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> {
         hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
     }
@@ -337,10 +343,12 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             }
             .store(in: &cancellables)
 
-        Task { [weak self] in
+        Task { @MainActor [weak self] in
             guard let self else { return }
             await storePurchaseManager().updateAvailableProducts()
             userDefaults.cachedHasAppStoreProductsAvailable = storePurchaseManager().areProductsAvailable
+            hasResolvedAppStoreProducts = true
+            hasAppStoreProductsAvailableSubject.send(hasAppStoreProductsAvailable)
         }
     }
 

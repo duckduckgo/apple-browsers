@@ -252,6 +252,27 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         )
     }
 
+    func testUnavailablePurchaseOmitsGatedModelsAndHeadingsInBothMenuVariants() {
+        let models = [
+            makeFakeModel(id: "free", accessTier: ["free"], hasAccess: true),
+            makeFakeModel(id: "plus", accessTier: ["plus"], hasAccess: false),
+            makeFakeModel(id: "pro", accessTier: ["pro"], hasAccess: false)
+        ]
+        for updated in [true, false] {
+            let factory = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: updated)
+            let menu = factory.makeMenu(models: models, selectedId: "free", userTier: .free,
+                                        allowsSubscriptionUpsell: false, onSelect: { _ in })
+            let visibleActions = updated ? availableActions(in: menu) : actions(in: menu)
+            XCTAssertEqual(visibleActions.map(\.title), ["free"])
+            XCTAssertEqual(visibleActions.first?.state, .on)
+            XCTAssertTrue(menu.children.compactMap { $0 as? UIMenu }.allSatisfy { $0.title.isEmpty })
+
+            let restored = factory.makeMenu(models: models, selectedId: "free", userTier: .free, onSelect: { _ in })
+            let restoredActions = updated ? availableActions(in: restored) + actions(in: restored) : actions(in: restored)
+            XCTAssertEqual(restoredActions.count, 3)
+        }
+    }
+
     // MARK: - Helpers
 
     private func buildMenu(models: [AIChatModel], selectedId: String? = nil) -> UnifiedToggleInputModelMenu {

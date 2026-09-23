@@ -53,7 +53,6 @@ jobs:
           - xcode-version: "27.0"
             runner: [image:osx-goldengate, ui-tests]
             runner-name: image:osx-goldengate,ui-tests
-            os-version: 26
 
     timeout-minutes: 60
 
@@ -81,11 +80,9 @@ jobs:
         mode: start
 
     - name: Install screenresolution
-      if: matrix.os-version != '14'
       run: brew install screenresolution
 
     - name: Change screen resolution
-      if: matrix.os-version != '14'
       run: screenresolution set 1920x1080x32@60
 
     - name: Setup Ruby and dependencies
@@ -318,7 +315,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-        pixel-name: m_ci_apple_duration_macos_${{ matrix.os-version }}_performance_tests
+        pixel-name: m_ci_apple_duration_macos_27_performance_tests
         pixel-params: |
           runner: ${{ matrix.runner-name }}
 
@@ -348,7 +345,7 @@ jobs:
       uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
-        name: "app-console-${{ matrix.runner-name }}-macos${{ matrix.os-version }}"
+        name: "app-console-${{ matrix.runner-name }}"
         path: "macOS/app-console.log"
         if-no-files-found: warn
         retention-days: 1
@@ -361,7 +358,7 @@ jobs:
 
         # Create staging directory with timestamp and OS version
         timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
-        archive_name="BuildLogs ${{ matrix.runner-name }} (macOS ${{ matrix.os-version }}) ${timestamp}"
+        archive_name="BuildLogs ${{ matrix.runner-name }} ${timestamp}"
         echo "Creating archive directory: $archive_name"
         mkdir -p "$archive_name"
 

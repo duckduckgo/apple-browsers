@@ -202,6 +202,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private let secondaryCardView = AIChatUsageWarningCardView()
 
+    /// Collapses hidden cards on its own, so the band's height can't end up unconstrained.
+    private let cardStackView: NSStackView = {
+        let stack = NSStackView()
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.orientation = .vertical
+        stack.distribution = .fill
+        stack.spacing = 0
+        stack.detachesHiddenViews = true
+        return stack
+    }()
+
     private let attachmentPrivacyDismissalStore = AIChatAttachmentPrivacyDismissalStore()
 
     /// Holds ongoing resize tasks keyed by attachment ID, so we can await them before submission.
@@ -220,9 +231,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var isUsageWarningVisible = false
     private var isSecondaryCardVisible = false
     private var createImageModelSwitchNotice: AIChatCreateImageModelSwitchNotice?
-
-    private var primaryCardBottomToViewBottom: NSLayoutConstraint?
-    private var primaryCardBottomToSecondaryTop: NSLayoutConstraint?
 
     private var primaryBandMessage: BandMessage?
     private var secondaryBandMessage: BandMessage?
@@ -1164,7 +1172,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.isHidden = true
         // Behind the chrome, so the panel paints over the card's top edge. Ordering is the effect:
         // above, it would look like a slab dropped under the panel.
-        view.addSubview(usageWarningCardView, positioned: .below, relativeTo: backgroundView)
+        view.addSubview(cardStackView, positioned: .below, relativeTo: backgroundView)
+        cardStackView.addArrangedSubview(usageWarningCardView)
 
         // Lighter than the outer edge: this one falls on a surface a few points below, not into the
         // page behind the panel.
@@ -1178,13 +1187,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         backgroundViewBottomConstraint = bottomConstraint
         bottomConstraint.isActive = true
 
-        let topConstraint = usageWarningCardView.topAnchor.constraint(equalTo: backgroundView.bottomAnchor,
-                                                                     constant: -usageWarningOverlap)
+        let topConstraint = cardStackView.topAnchor.constraint(equalTo: backgroundView.bottomAnchor,
+                                                               constant: -usageWarningOverlap)
         usageWarningTopConstraint = topConstraint
 
+        // Vertical stacks centre their views by default; the cards run edge to edge.
+        usageWarningCardView.setContentHuggingPriority(.defaultLow, for: .vertical)
+
         NSLayoutConstraint.activate([
-            usageWarningCardView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            usageWarningCardView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            cardStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            cardStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            cardStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            usageWarningCardView.leadingAnchor.constraint(equalTo: cardStackView.leadingAnchor),
+            usageWarningCardView.trailingAnchor.constraint(equalTo: cardStackView.trailingAnchor),
             topConstraint
         ])
 
@@ -1243,18 +1258,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func setupSecondaryCard() {
         secondaryCardView.translatesAutoresizingMaskIntoConstraints = false
         secondaryCardView.isHidden = true
-        view.addSubview(secondaryCardView, positioned: .below, relativeTo: backgroundView)
-
-        let bottomToView = usageWarningCardView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        let bottomToSecondary = usageWarningCardView.bottomAnchor.constraint(equalTo: secondaryCardView.topAnchor)
-        primaryCardBottomToViewBottom = bottomToView
-        primaryCardBottomToSecondaryTop = bottomToSecondary
-        bottomToView.isActive = true
+        cardStackView.addArrangedSubview(secondaryCardView)
 
         NSLayoutConstraint.activate([
-            secondaryCardView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            secondaryCardView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            secondaryCardView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            secondaryCardView.leadingAnchor.constraint(equalTo: cardStackView.leadingAnchor),
+            secondaryCardView.trailingAnchor.constraint(equalTo: cardStackView.trailingAnchor),
             secondaryCardView.heightAnchor.constraint(equalToConstant: AIChatUsageWarningCardView.Constants.contentHeight)
         ])
 
@@ -1379,14 +1387,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         isSecondaryCardVisible = visible
         secondaryCardView.isHidden = !visible
-        // Outgoing first, or Auto Layout breaks whichever of the two it likes.
-        if visible {
-            primaryCardBottomToViewBottom?.isActive = false
-            primaryCardBottomToSecondaryTop?.isActive = true
-        } else {
-            primaryCardBottomToSecondaryTop?.isActive = false
-            primaryCardBottomToViewBottom?.isActive = true
-        }
         backgroundViewBottomConstraint?.constant = isUsageWarningVisible ? -usageWarningReservation : 0
 
         onSuggestionsHeightChanged?(suggestionsHeight)

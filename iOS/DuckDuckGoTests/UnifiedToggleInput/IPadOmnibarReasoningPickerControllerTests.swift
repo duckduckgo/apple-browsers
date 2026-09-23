@@ -217,19 +217,35 @@ final class IPadOmnibarReasoningPickerControllerTests: XCTestCase {
         XCTAssertNil(preferences.selectedReasoningMode)
     }
 
-    func testUnavailablePurchaseReasoningVisibilityFollowsAccessibleOptionCount() {
-        subscriptionManager.hasAppStoreProductsAvailable = false
-        for count in 0...3 {
-            let efforts: [AIChatReasoningEffort] = [.none, .low, .medium]
-            let access = efforts.enumerated().map { index, effort in
-                AIChatReasoningEffortAccess(effort: effort, accessTier: [index < count ? "free" : "plus"],
-                                            entityHasAccess: index < count)
-            }
-            store.models = [makeReasoningModel(id: "reasoning", supportedReasoningEffort: efforts, reasoningEffortAccess: access)]
+    func testReasoningVisibilityAndMenuFollowPurchaseAvailabilityAndAccessibleOptionCount() {
+        for purchaseAvailable in [false, true] {
+            subscriptionManager.hasAppStoreProductsAvailable = purchaseAvailable
+            for count in 0...3 {
+                let efforts: [AIChatReasoningEffort] = [.none, .low, .medium]
+                let access = efforts.enumerated().map { index, effort in
+                    AIChatReasoningEffortAccess(effort: effort, accessTier: [index < count ? "free" : "plus"],
+                                                entityHasAccess: index < count)
+                }
+                store.models = [makeReasoningModel(id: "reasoning", supportedReasoningEffort: efforts, reasoningEffortAccess: access)]
 
-            XCTAssertEqual(sut.isReasoningPickerAvailable, count > 1)
-            XCTAssertEqual(sut.makeMenu() != nil, count > 1)
+                let expectedAvailability = purchaseAvailable ? count > 0 : count > 1
+                XCTAssertEqual(sut.isReasoningPickerAvailable, expectedAvailability)
+                XCTAssertEqual(sut.makeMenu() != nil, expectedAvailability)
+            }
         }
+    }
+
+    func testUnresolvedPurchaseShowsHeaderUpsellButHidesSoleAccessibleReasoningChoice() {
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        subscriptionManager.hasResolvedAppStoreProducts = false
+        store.models = [makeReasoningModel(id: "reasoning", supportedReasoningEffort: [.none, .low], reasoningEffortAccess: [
+            .init(effort: .none, accessTier: ["free"], entityHasAccess: true),
+            .init(effort: .low, accessTier: ["plus"], entityHasAccess: false)
+        ])]
+
+        XCTAssertTrue(store.shouldShowHeaderUpsell)
+        XCTAssertFalse(sut.isReasoningPickerAvailable)
+        XCTAssertNil(sut.makeMenu())
     }
 
     func testRejectedStaleReasoningSelectionDoesNotBecomePending() {

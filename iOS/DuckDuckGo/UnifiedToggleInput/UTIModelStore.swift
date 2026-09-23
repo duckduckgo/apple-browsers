@@ -49,8 +49,7 @@ final class UTIModelStore {
 
     var isReasoningPickerAvailable: Bool {
         guard let selectedModel else { return false }
-        return selectedModel.supportsReasoningPicker
-            && (allowsSubscriptionUpsell || selectedModel.accessibleReasoningModes.count > 1)
+        return ReasoningPickerAvailability.isAvailable(for: selectedModel, allowsSubscriptionUpsell: allowsSubscriptionUpsell)
     }
 
     private let modelsService: AIChatModelsProviding

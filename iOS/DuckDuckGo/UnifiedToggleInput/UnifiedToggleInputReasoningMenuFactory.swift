@@ -20,6 +20,13 @@
 import AIChat
 import UIKit
 
+enum ReasoningPickerAvailability {
+    static func isAvailable(for model: AIChatModel, allowsSubscriptionUpsell: Bool) -> Bool {
+        model.supportsReasoningPicker
+            && (allowsSubscriptionUpsell || model.accessibleReasoningModes.count > 1)
+    }
+}
+
 /// Builds the reasoning-mode pull-down menu
 struct UnifiedToggleInputReasoningMenuFactory {
 
@@ -37,8 +44,7 @@ struct UnifiedToggleInputReasoningMenuFactory {
         allowsSubscriptionUpsell: Bool = true,
         onSelect: @escaping (AIChatReasoningMode) -> Void
     ) -> UIMenu? {
-        guard model.supportsReasoningPicker,
-              allowsSubscriptionUpsell || model.accessibleReasoningModes.count > 1 else { return nil }
+        guard ReasoningPickerAvailability.isAvailable(for: model, allowsSubscriptionUpsell: allowsSubscriptionUpsell) else { return nil }
         if isUpdatedModelPickerEnabled {
             return makeUpdatedMenu(
                 model: model,

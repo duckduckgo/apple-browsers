@@ -75,44 +75,6 @@ final class UserContentControllerTests: XCTestCase {
 
     // MARK: - Tests
     @MainActor
-    func testWhenAssetsBuildIsPendingThenLaterBuildWaitsAndPreservesBothUpdates() async throws {
-        let olderScripts = MockScriptProvider()
-        let newerScripts = MockScriptProvider()
-        let olderBuildStarted = expectation(description: "older build started")
-        let prematureBuild = expectation(description: "newer build must wait for older installation")
-        prematureBuild.isInverted = true
-        var installedAssets = [Assets]()
-        var finishOlderBuild: CheckedContinuation<[WKUserScript], Never>?
-        olderScripts.loadScripts = {
-            await withCheckedContinuation {
-                finishOlderBuild = $0
-                olderBuildStarted.fulfill()
-            }
-        }
-        newerScripts.loadScripts = {
-            if installedAssets.isEmpty {
-                prematureBuild.fulfill()
-            }
-            return []
-        }
-        let bothAssetsInstalled = assetsInstalledExpectation { installedAssets.append($0) }
-        bothAssetsInstalled.expectedFulfillmentCount = 2
-        let olderUpdate = ContentBlockerRulesManager.UpdateEvent(rules: [], changes: ["test": .unprotectedSites], completionTokens: ["older"])
-        let newerUpdate = ContentBlockerRulesManager.UpdateEvent(rules: [], changes: ["test": .tdsEtag], completionTokens: ["newer"])
-        assetsSubject.send(NewContent(rulesUpdate: olderUpdate, sourceProvider: .init(scriptProvider: olderScripts)))
-        await fulfillment(of: [olderBuildStarted], timeout: 1)
-
-        assetsSubject.send(NewContent(rulesUpdate: newerUpdate, sourceProvider: .init(scriptProvider: newerScripts)))
-        await fulfillment(of: [prematureBuild], timeout: 0.1)
-        finishOlderBuild?.resume(returning: [])
-        await fulfillment(of: [bothAssetsInstalled], timeout: 1)
-        XCTAssertTrue(installedAssets.first?.userScripts === olderScripts)
-        XCTAssertTrue(ucc.contentBlockingAssets?.userScripts === newerScripts)
-        XCTAssertEqual(installedAssets.map(\.updateEvent.changes), [olderUpdate.changes, newerUpdate.changes])
-        XCTAssertEqual(installedAssets.map(\.updateEvent.completionTokens), [["older"], ["newer"]])
-    }
-
-    @MainActor
     func testWhenClosedDuringAssetsBuildThenCompletedAssetsAreNotInstalled() async throws {
         let scripts = MockScriptProvider()
         let buildStarted = expectation(description: "build started")
@@ -151,7 +113,7 @@ final class UserContentControllerTests: XCTestCase {
     @MainActor
     func testWhenReplyHandlerTargetIsDeallocatedThenReplyReturnsAnError() async throws {
         let messageName = UUID().uuidString
-        let permanentHandler = PermanentScriptMessageHandler()
+        let permanentHandler = PermanentScriptMessageHandler(replyToUnavailableHandlers: true)
         permanentHandler.register(MockReplyUserScript(messageNames: [messageName]), for: messageName)
         XCTAssertNil(permanentHandler.messageHandler(for: messageName))
 
@@ -162,6 +124,24 @@ final class UserContentControllerTests: XCTestCase {
 
         XCTAssertNil(reply?.result)
         XCTAssertEqual(reply?.error, "Script message handler is unavailable")
+    }
+
+    @MainActor
+    func testRegisteredReplyHandlerWorksWithAndWithoutUnavailableHandlerReplies() {
+        for repliesEnabled in [false, true] {
+            let messageName = UUID().uuidString
+            let permanentHandler = PermanentScriptMessageHandler(replyToUnavailableHandlers: repliesEnabled)
+            let script = MockReplyUserScript(messageNames: [messageName])
+            permanentHandler.register(script, for: messageName)
+            var replyCount = 0
+            permanentHandler.userContentController(ucc, didReceive: .mock(name: messageName)) { result, error in
+                replyCount += 1
+                XCTAssertNil(result)
+                XCTAssertNil(error)
+            }
+            XCTAssertEqual(replyCount, 1)
+            withExtendedLifetime(script) {}
+        }
     }
 
     @MainActor

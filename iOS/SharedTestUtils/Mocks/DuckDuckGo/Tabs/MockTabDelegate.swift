@@ -25,6 +25,7 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import EventHub
 import PrivacyDashboard
+import PrivacyConfig
 @_spi(Testing) import Persistence
 import Subscription
 import SubscriptionTestingUtilities
@@ -202,7 +203,7 @@ extension TabViewController {
         contextualOnboardingPresenter: ContextualOnboardingPresenting = ContextualOnboardingPresenterMock(),
         contextualOnboardingLogic: ContextualOnboardingLogic = ContextualOnboardingLogicMock(),
         contextualOnboardingPixelReporter: OnboardingCustomInteractionPixelReporting = OnboardingPixelReporterMock(),
-        featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
+        featureFlagger: FeatureFlagger = MockFeatureFlagger(),
         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never> = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
         link: Link = Link(title: nil, url: .ddg),
         fireTab: Bool = false

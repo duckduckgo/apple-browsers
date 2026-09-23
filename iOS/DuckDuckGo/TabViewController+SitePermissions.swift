@@ -306,7 +306,7 @@ extension TabViewController {
                                                    sitePermissionsEnabled: Bool,
                                                    geolocationScriptInstalled: Bool,
                                                    isDuckDuckGoSearch: Bool) -> Bool {
-        sitePermissionsEnabled != geolocationScriptInstalled
+        (sitePermissionsEnabled && !geolocationScriptInstalled)
             || (!assetsInstalled && contentBlockingEnabled && !isDuckDuckGoSearch)
     }
 
@@ -334,29 +334,14 @@ extension TabViewController {
         mediaCaptureUserScript: MediaCaptureUserScript,
         geolocationUserScript: GeolocationUserScript
     ) -> AnyPublisher<ContentBlockingUpdating.NewContent, Never> {
-        let isEnabled = featureFlagger.updatesPublisher
-            .receive(on: DispatchQueue.main)
-            .map { _ in featureFlagger.isFeatureOn(.sitePermissions) }
-            .prepend(featureFlagger.isFeatureOn(.sitePermissions))
-            .removeDuplicates()
-
+        // The app resolves this flag once per launch. Asset updates keep the same script and handler.
+        let isEnabled = featureFlagger.isFeatureOn(.sitePermissions)
         return contentBlockingAssetsPublisher
-            .combineLatest(isEnabled)
-            .scan(nil as ContentBlockingUpdating.NewContent?) { previous, update in
-                var content = update.0
-                let isEnabled = update.1
-                if previous?.id == content.id {
-                    // A flag-only refresh must not replay a previous notification's page reload.
-                    content.rulesUpdate = .init(rules: content.rulesUpdate.rules, changes: [:], completionTokens: [])
-                }
-                return content
+            .map { content in
+                content
                     .includingSitePermissionsMediaCapture(mediaCaptureUserScript)
-                    .includingSitePermissionsGeolocation(
-                        geolocationUserScript,
-                        enabled: isEnabled
-                    )
+                    .includingSitePermissionsGeolocation(geolocationUserScript, enabled: isEnabled)
             }
-            .compactMap { $0 }
             .eraseToAnyPublisher()
     }
 

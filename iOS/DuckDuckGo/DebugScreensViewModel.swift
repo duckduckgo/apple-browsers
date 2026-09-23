@@ -76,7 +76,10 @@ class DebugScreensViewModel: ObservableObject {
     var pinnedTitles: [String]
 
     let dependencies: DebugScreen.Dependencies
-    private let featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
+    private let featureFlagger: FeatureFlagger = {
+        let flagger = AppDependencyProvider.shared.featureFlagger
+        return (flagger as? SitePermissionsFeatureFlagger)?.base ?? flagger
+    }()
 
     var pushController: ((UIViewController) -> Void)?
 

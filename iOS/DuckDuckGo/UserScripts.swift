@@ -252,7 +252,11 @@ final class UserScripts: UserScriptsProvider {
                 indexedScripts.append(result)
             }
 
-            // Preserve dependencies between scripts even when source preparation finishes out of order.
+            guard geolocationUserScript != nil else {
+                return indexedScripts.map { $0.1.wkUserScript }
+            }
+            // Keep concurrent preparation, then restore this small list's installation order:
+            // geolocation policy must precede its page adapter, which registers its frame immediately.
             return indexedScripts.sorted { $0.0 < $1.0 }.map { $0.1.wkUserScript }
         }
     }

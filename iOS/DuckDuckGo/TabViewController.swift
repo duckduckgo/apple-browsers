@@ -1361,7 +1361,8 @@ class TabViewController: UIViewController {
         let userContentController = UserContentController(
             assetsPublisher: makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: mediaCaptureUserScript),
             privacyConfigurationManager: privacyConfigurationManager,
-            earlyAccessHandlers: [mediaCaptureUserScript]
+            earlyAccessHandlers: [mediaCaptureUserScript],
+            replyToUnavailableHandlers: featureFlagger.isFeatureOn(.sitePermissions)
         )
         userContentController.addUserScript(mediaCaptureUserScript.makeWKUserScriptSync())
         configuration.userContentController = userContentController
@@ -3557,10 +3558,24 @@ extension TabViewController: WKNavigationDelegate {
             return false
         }
 
+        guard featureFlagger.isFeatureOn(.sitePermissions) else {
+            // Preserve the existing content-blocking wait when site permissions is disabled for this launch.
+            Task {
+                rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
+                showProgressIndicator()
+                await userContentController.awaitContentBlockingAssetsInstalled()
+                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabModel.uid)
+                completion(true)
+            }
+            return true
+        }
+
+        // Geolocation must be installed before the first document, including SERP and content-blocking-off loads.
+        // Track these additional waits so tab teardown resolves WebKit's outstanding decisions.
         rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
         showProgressIndicator()
         let waitID = UUID()
-        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak state = sitePermissionsState, userContentController, featureFlagger, privacyConfigurationManager, rulesCompilationMonitor, tabID = tabModel.uid] in
+        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak state = sitePermissionsState, userContentController, rulesCompilationMonitor, tabID = tabModel.uid] in
             defer {
                 state?.contentBlockingWaitTasks[waitID] = nil
                 rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
@@ -3569,19 +3584,9 @@ extension TabViewController: WKNavigationDelegate {
                 completion(false)
                 return
             }
-            let updates = userContentController.$contentBlockingAssets
-                .combineLatest(featureFlagger.updatesPublisher.prepend(()))
-            for await (assets, _) in updates.values {
-                let geolocationScriptInstalled = (assets?.userScripts as? UserScripts)?.geolocationUserScript != nil
-                if !Self.shouldWaitForContentBlockingAssets(
-                    assetsInstalled: assets != nil,
-                    contentBlockingEnabled: privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking),
-                    sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
-                    geolocationScriptInstalled: geolocationScriptInstalled,
-                    isDuckDuckGoSearch: url.isDuckDuckGoSearch
-                ) {
-                    break
-                }
+            for await assets in userContentController.$contentBlockingAssets.values
+                where (assets?.userScripts as? UserScripts)?.geolocationUserScript != nil {
+                break
             }
             completion(!Task.isCancelled)
         }

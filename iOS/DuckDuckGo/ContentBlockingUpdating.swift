@@ -39,13 +39,12 @@ public final class ContentBlockingUpdating {
 
     private typealias Update = ContentBlockerRulesManager.UpdateEvent
     struct NewContent: UserContentControllerNewContent {
-        let id = UUID()
-        var rulesUpdate: ContentBlockerRulesManager.UpdateEvent
+        let rulesUpdate: ContentBlockerRulesManager.UpdateEvent
         let sourceProvider: ScriptSourceProviding
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
         var sitePermissionsMediaCaptureUserScript: MediaCaptureUserScript?
         var sitePermissionsGeolocationUserScript: GeolocationUserScript?
-        var isSitePermissionsEnabled = false
+        var isSitePermissionsEnabled: Bool { sitePermissionsGeolocationUserScript != nil }
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
             { [duckAiNativeStorageHandler, sitePermissionsMediaCaptureUserScript, sitePermissionsGeolocationUserScript, isSitePermissionsEnabled] sourceProvider in
                 UserScripts(with: sourceProvider,
@@ -66,7 +65,6 @@ public final class ContentBlockingUpdating {
                                                  enabled: Bool) -> Self {
             var content = self
             content.sitePermissionsGeolocationUserScript = enabled ? userScript : nil
-            content.isSitePermissionsEnabled = enabled
             return content
         }
     }
@@ -84,8 +82,7 @@ public final class ContentBlockingUpdating {
             return NewContent(rulesUpdate: rulesUpdate,
                               sourceProvider: sourceProvider,
                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                              sitePermissionsGeolocationUserScript: nil,
-                              isSitePermissionsEnabled: false)
+                              sitePermissionsGeolocationUserScript: nil)
         }
 
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {

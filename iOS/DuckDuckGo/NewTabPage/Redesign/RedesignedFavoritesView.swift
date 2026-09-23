@@ -68,7 +68,7 @@ struct RedesignedFavoritesView: View {
                                 .frame(width: Metrics.tileSize, height: Metrics.tileSize)
                                 .background(Color(designSystemColor: .controlsFillPrimary))
                                 .clipShape(Circle())
-                            Text(isExpanded ? "See Less" : "See All")
+                            Text(isExpanded ? UserText.newTabPageFavoritesSeeLess : UserText.newTabPageFavoritesSeeAll)
                                 .daxCaption1()
                         }
                         .foregroundColor(Color(designSystemColor: .textPrimary))

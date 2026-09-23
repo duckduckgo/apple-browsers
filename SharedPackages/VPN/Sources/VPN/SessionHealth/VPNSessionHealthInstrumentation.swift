@@ -277,6 +277,11 @@ private extension DefaultVPNSessionHealthInstrumentation {
 
     @discardableResult
     func completeEvent(event: VPNSessionHealthWideEventData, outcome: VPNSessionHealthWideEventData.EventOutcome) -> Bool {
+        guard isTelemetryEnabled() else {
+            wideEvent.discardFlow(event)
+            return true
+        }
+
         let status = outcome.status
         Logger.networkProtectionSessionHealth.log("Completing vpn_session_health pixel: status=\(status.description, privacy: .public)")
         logPixelDetails(event)

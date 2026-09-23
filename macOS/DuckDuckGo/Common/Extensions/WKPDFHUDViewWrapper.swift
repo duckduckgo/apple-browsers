@@ -29,6 +29,7 @@ struct WKPDFHUDViewWrapper {
     static let performActionForControlSelector = NSSelectorFromString("_performActionForControl:")
     static let visibleKey = "_visible"
     static let setVisibleSelector = NSSelectorFromString("_setVisible:")
+    static let showSelector = NSSelectorFromString("show")
 
     private enum ControlId: String {
         case savePDF = "arrow.down.circle"
@@ -93,6 +94,14 @@ struct WKPDFHUDViewWrapper {
     }
 
     private func performAction(for controlId: ControlId) {
+        // WebKit's NSButton-based HUD exposes show(), and no longer has the _visible ivar.
+        // Its button actions require the HUD to be visible; show() also schedules it to hide.
+        if !hudView.responds(to: Self.setVisibleSelector), hudView.responds(to: Self.showSelector) {
+            hudView.perform(Self.showSelector)
+            hudView.perform(Self.performActionForControlSelector, with: controlId.rawValue)
+            return
+        }
+
         let wasVisible = isVisible
         self.setIsVisibleIVar(true)
         defer {

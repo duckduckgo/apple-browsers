@@ -102,7 +102,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() throws {
+    func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() async throws {
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
@@ -110,6 +110,9 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
+        defer { window.close() }
+        let sheetPresented = expectation(description: "Fire dialog presentation completed")
+        window.onBeginSheet = { sheetPresented.fulfill() }
         let mainWindowController = MainWindowController(
             window: window,
             mainViewController: mainViewController,
@@ -122,6 +125,8 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         window.isVisible = true
 
         viewModel.tryFireButton()
+
+        await fulfillment(of: [sheetPresented], timeout: 5)
 
         XCTAssertTrue(onFireButtonPressedCalled)
         XCTAssertTrue(reporter.measureFireButtonTryItCalled)

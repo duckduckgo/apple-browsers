@@ -319,7 +319,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenMakeViewForTryFireButtonAndFireButtonIsPressedThenOnFireButtonPressedActionIsCalled() throws {
+    func testWhenMakeViewForTryFireButtonAndFireButtonIsPressedThenOnFireButtonPressedActionIsCalled() async throws {
         // GIVEN
         var onFireButtonRun = false
         var onDismissRun = false
@@ -336,6 +336,9 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
+        defer { window.close() }
+        let sheetPresented = expectation(description: "Fire dialog presentation completed")
+        window.onBeginSheet = { sheetPresented.fulfill() }
         let mainWindowController = MainWindowController(
             window: window,
             mainViewController: mainViewController,
@@ -358,6 +361,8 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // WHEN
         window.isVisible = true
         view.viewModel.tryFireButton()
+
+        await fulfillment(of: [sheetPresented], timeout: 5)
 
         // THEN
         XCTAssertTrue(onFireButtonRun)

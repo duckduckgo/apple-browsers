@@ -979,6 +979,12 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
     func testWhenCustomSchemeNavigationIsInterruptedByNewRequestThenDidFailIsCalled() throws {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
+        // WebKit can report the cancellation after the replacement navigation finishes.
+        let cancellation = expectation(description: "Interrupted navigation failed")
+        responder(at: 0).onDidFail = { _, _ in
+            cancellation.fulfill()
+        }
+
         let lock = NSLock()
         defer {
             lock.try()

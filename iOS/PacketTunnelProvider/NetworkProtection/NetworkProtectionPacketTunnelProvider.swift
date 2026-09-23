@@ -462,14 +462,9 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         super.stopTunnel(with: reason, completionHandler: completionHandler)
     }
 
-    // A Network Extension has no UIApplication and so can't rely on KeychainManager's own
-    // availability notifications (see SharedPackages/BrowserServicesKit's KeychainManager). Retry
-    // any queued keychain writes at every lifecycle signal this process naturally gets instead:
-    // tunnel start (including a fresh boot's before-first-unlock launch, and every later
-    // reconnect) and any message from the containing app (which can only be sent while the device
-    // is unlocked and the app is running).
     @MainActor
     public override func startTunnel(options: [String: NSObject]? = nil) async throws {
+        // Retry to write any backlogged keychain write when the tunnel starts. Note: the main app listens to UIApplication notifications for this, but the VPN process has no suitable API for that.
         tokenStorage?.retryPendingWrites()
         try await super.startTunnel(options: options)
     }

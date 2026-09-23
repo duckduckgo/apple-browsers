@@ -325,6 +325,103 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertTrue(element("SitePermissions.Sheet.GoToSystemSettings").exists)
     }
 
+    func testWhenFireTabAllowsLocationWhileUsingSiteThenDecisionSurvivesReloadAndStaysInThatTab() throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp(additionalArguments: ["-ff.fireMode", "true"])
+        openNewPermissionTab(fireMode: true)
+        request("location")
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "location", allow: true)
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("location success 1 37.3317,-122.0301")
+        openPermissionsSheet()
+        assertSheetDecision("Geolocation", contains: "Always Allow")
+        tap(element("SitePermissions.Sheet.Close"))
+
+        // A completed one-shot location must not turn Always Allow into Allow Once.
+        request("location")
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("location success 2 37.3317,-122.0301")
+        assertNoPermissionPrompt()
+        reloadPermissionPage()
+        openPermissionsSheet()
+        assertSheetDecision("Geolocation", contains: "Always Allow")
+        tap(element("SitePermissions.Sheet.Close"))
+        request("location")
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("location success 1 37.3317,-122.0301")
+        assertNoPermissionPrompt()
+        openPermissionSettings()
+        XCTAssertFalse(element("Settings.SitePermissions.Site.127.0.0.1").exists)
+        closeSettings()
+
+        // Neither a normal tab nor another Fire tab inherits the session-only choice.
+        for fireMode in [false, true] {
+            openNewPermissionTab(fireMode: fireMode)
+            request("location")
+            assertSiteDialog(permission: "location")
+            tap(element("SitePermissions.Dialog.AllowOnce"))
+            try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+            assertResult("location success 1 37.3317,-122.0301")
+        }
+    }
+
+    func testWhenFireTabSetsAlwaysAllowInSheetThenReloadAndRemovalUndoKeepSessionDecision() throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp(additionalArguments: ["-ff.fireMode", "true"])
+        openNewPermissionTab(fireMode: true)
+        request("location")
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        answerSystemAlert(for: "location", allow: true)
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("location success 1 37.3317,-122.0301")
+        openPermissionsSheet()
+        tap(element("SitePermissions.Sheet.Geolocation"))
+        tap(app.buttons["Never Allow"])
+        tap(element("SitePermissions.Sheet.Close"))
+        request("location")
+        assertResult("location error 2 1")
+        assertNoPermissionPrompt()
+        openPermissionsSheet()
+        assertSheetDecision("Geolocation", contains: "Never Allow")
+        tap(element("SitePermissions.Sheet.Geolocation"))
+        tap(app.buttons["Always Allow"])
+        assertSheetDecision("Geolocation", contains: "Always Allow")
+        XCTAssertTrue(element("SitePermissions.Sheet.ReloadCaption").exists)
+        tap(element("SitePermissions.Sheet.Close"))
+        assertResult("location error 2 1")
+        assertNoPermissionPrompt()
+
+        reloadPermissionPage()
+        openPermissionsSheet()
+        assertSheetDecision("Geolocation", contains: "Always Allow")
+        XCTAssertFalse(element("SitePermissions.Sheet.ReloadCaption").exists)
+        tap(element("SitePermissions.Sheet.Close"))
+        request("location")
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("location success 1 37.3317,-122.0301")
+        assertNoPermissionPrompt()
+
+        openPermissionsSheet()
+        tap(element("SitePermissions.Sheet.RemovePermissions"))
+        XCTAssertTrue(element("SitePermissions.Sheet").waitForNonExistence(timeout: timeout))
+        tap(element("SitePermissions.Toast.Undo"))
+        XCTAssertTrue(element("SitePermissions.Sheet").waitForExistence(timeout: timeout))
+        assertSheetDecision("Geolocation", contains: "Always Allow")
+        tap(element("SitePermissions.Sheet.Close"))
+        // Undo restores the choice without replaying the completed location request.
+        assertResult("location success 1 37.3317,-122.0301")
+        assertNoPermissionPrompt()
+        request("location")
+        try simulateLocation(latitude: 51.5007, longitude: -0.1246)
+        assertResult("location success 2 51.5007,-0.1246")
+        assertNoPermissionPrompt()
+        openPermissionSettings()
+        XCTAssertFalse(element("Settings.SitePermissions.Site.127.0.0.1").exists)
+    }
+
     func testWhenActiveLocationWatchIsDeniedThenItStopsAndReallowDoesNotRestartIt() throws {
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
         launchApp()
@@ -712,6 +809,14 @@ final class SitePermissionsXCUITests: XCTestCase {
     private func reloadPermissionPage() {
         tap(app.webViews.buttons["Reload fixture"])
         assertResult("ready")
+    }
+
+    private func openNewPermissionTab(fireMode: Bool) {
+        let tabSwitcher = element("Browser.Toolbar.Button.TabSwitcher")
+        XCTAssertTrue(tabSwitcher.waitForHittable(timeout: timeout))
+        tabSwitcher.press(forDuration: 0.8)
+        tap(app.buttons[fireMode ? "New Fire Tab" : "New Tab"])
+        openPermissionPage()
     }
 
     private func assertReloadCaptionAfterResettingPermission(_ permission: String, row: String) {

@@ -1833,6 +1833,117 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertTrue(requestedTypes.isEmpty)
     }
 
+    func testWhenFirePromptAllowsSiteThenChoiceSurvivesCaptureReloadAndRevisitUntilTabCloses() async throws {
+        for permissionType in SitePermissionType.allCases {
+            let harness = try Harness(isFireMode: true)
+            let granted = expectation(description: "Fire session grant")
+            harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, respond in
+                respond(.allowWhileUsingSite)
+            }, completion: {
+                XCTAssertEqual($0, .grant)
+                granted.fulfill()
+            })
+            await fulfillment(of: [granted], timeout: 1)
+
+            harness.coordinator.captureDidEnd([permissionType])
+            for change in [SitePermissionPageChange.reload, .navigation, .webContentProcessReplacement] {
+                harness.coordinator.pageDidChange(change)
+                harness.context = harness.context(changingNavigationGenerationTo: harness.context.navigationGeneration + 1)
+                var resolution: SitePermissionResolution?
+                harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, _ in
+                    XCTFail("Fire Always Allow must survive capture end and page changes")
+                }, completion: { resolution = $0 })
+                XCTAssertEqual(resolution, .grant)
+                let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+                XCTAssertEqual(snapshot.storedPermissions[permissionType], .allow)
+                XCTAssertTrue(snapshot.showsMenuEntry)
+                XCTAssertTrue(snapshot.ephemeralPermissionTypes.isEmpty)
+            }
+
+            let originalContext = harness.context
+            let otherSite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://other.example.com")!))
+            harness.coordinator.pageDidChange(.navigation)
+            harness.context = SitePermissionRequestContext(tabID: originalContext.tabID,
+                                                            topLevelSite: otherSite,
+                                                            requestingFrameID: originalContext.requestingFrameID,
+                                                            webContentProcessGeneration: originalContext.webContentProcessGeneration,
+                                                            navigationGeneration: originalContext.navigationGeneration + 1)
+            XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .prompt)
+            XCTAssertFalse(harness.coordinator.managementSnapshot(for: otherSite).showsMenuEntry)
+
+            harness.coordinator.pageDidChange(.navigation)
+            harness.context = originalContext
+            XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .granted)
+            XCTAssertTrue(harness.store.storedSites.isEmpty)
+
+            harness.coordinator.close()
+            XCTAssertFalse(harness.coordinator.managementSnapshot(for: harness.site).showsMenuEntry)
+            let newTab = try Harness(isFireMode: true)
+            XCTAssertEqual(newTab.coordinator.queryState(for: permissionType, context: newTab.context), .prompt)
+        }
+    }
+
+    func testWhenSystemDeniesFireAlwaysAllowThenSessionChoiceAndRecoverySurviveReload() async throws {
+        let harness = try Harness(isFireMode: true)
+        harness.systemStates[.location] = .notDetermined
+        harness.authorizationRequester = { permissionType in
+            harness.systemStates[permissionType] = .denied
+            return .denied
+        }
+        var recoveries = [SitePermissionRecovery]()
+        harness.recoveryHandler = { recovery, completion in
+            recoveries.append(recovery)
+            completion()
+        }
+        let denied = expectation(description: "System denial completes")
+        harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+            respond(.allowWhileUsingSite)
+        }, completion: {
+            XCTAssertEqual($0, .deny(systemBlocks: [
+                SitePermissionSystemBlock(permissionType: .location, state: .denied, timing: .afterRequest)
+            ]))
+            denied.fulfill()
+        })
+        await fulfillment(of: [denied], timeout: 1)
+        XCTAssertEqual(recoveries, [.toast(permissionTypes: [.location])])
+
+        harness.coordinator.pageDidChange(.reload)
+        harness.coordinator.request(harness.request([.location]), promptHandler: { _, _ in
+            XCTFail("System denial must preserve the Fire site's Allow choice")
+        }, completion: {
+            XCTAssertEqual($0, .deny(systemBlocks: [
+                SitePermissionSystemBlock(permissionType: .location, state: .denied, timing: .preexisting)
+            ]))
+        })
+        XCTAssertEqual(recoveries.last, .reminder(permissionTypes: [.location]))
+        let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+        XCTAssertEqual(snapshot.storedPermissions[.location], .allow)
+        XCTAssertEqual(snapshot.systemBlockedPermissionTypes, [.location])
+        XCTAssertTrue(harness.store.storedSites.isEmpty)
+    }
+
+    func testWhenAnotherSiteIsRevokedThenFireOverrideClearsWithoutRevokingCurrentPageGrant() async throws {
+        let harness = try Harness(isFireMode: true)
+        let otherSite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://other.example.com")!))
+        harness.coordinator.applyFireModeManagementDecision(.allow, for: .camera, at: otherSite)
+        harness.coordinator.pageDidChange(.navigation)
+        let granted = expectation(description: "Current page temporary grant")
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: {
+            XCTAssertEqual($0, .grant)
+            granted.fulfill()
+        })
+        await fulfillment(of: [granted], timeout: 1)
+
+        harness.store.setPersistentDecision(.deny, for: .camera, at: otherSite)
+        harness.coordinator.revokeManagementSessionState(for: [.camera], at: otherSite)
+
+        XCTAssertEqual(harness.coordinator.managementSnapshot(for: otherSite).storedPermissions[.camera], .deny)
+        XCTAssertEqual(harness.coordinator.queryState(for: .camera, context: harness.context), .granted)
+        XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).ephemeralPermissionTypes, [.camera])
+    }
+
     func testWhenFireModeUserChoosesPersistentOptionsThenOnlyMemoryChanges() async throws {
         let harness = try Harness(isFireMode: true)
         harness.store.setGlobalDefault(.deny, for: .microphone)
@@ -1861,6 +1972,7 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertNil(harness.store.decision(for: .camera, at: harness.site))
 
         harness.coordinator.captureDidEnd([.camera])
+        harness.coordinator.applyFireModeManagementDecision(.ask, for: .camera, at: harness.site)
         harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
             respond(.neverAllow)
         }, completion: { _ in })

@@ -476,7 +476,7 @@ extension TabViewController {
             return false
         }
 
-        // Fire-mode removals hide saved permissions for the visit without changing the store.
+        // Fire-mode removals hide saved permissions for the tab's session without changing the store.
         if let coordinator = sitePermissionsState.coordinator {
             return coordinator.managementSnapshot(for: site).showsMenuEntry
         }
@@ -720,6 +720,9 @@ extension TabViewController {
     func revokeSitePermissions(_ permissionTypes: Set<SitePermissionType>,
                                for site: SitePermissionKey,
                                clearingManagementSessionState: Bool = true) {
+        if clearingManagementSessionState {
+            sitePermissionsState.coordinator?.revokeManagementSessionState(for: permissionTypes, at: site)
+        }
         let committedSite = sitePermissionsState.committedMainFrameURL.flatMap(SitePermissionKey.init(committedURL:))
         guard committedSite == site else { return }
 
@@ -729,9 +732,6 @@ extension TabViewController {
         sitePermissionsState.handledBridgeRequestIDs.subtract(revokedRequestIDs)
         sitePermissionsState.mediaCapturePreapprovals.removeAll { revokedRequestIDs.contains($0.requestID) }
         webView.revokeSitePermissions(permissionTypes)
-        if clearingManagementSessionState {
-            sitePermissionsState.coordinator?.revokeManagementSessionState(for: permissionTypes, at: site)
-        }
         if permissionTypes.contains(.location) {
             sitePermissionsState.geolocationProvider?.revokeActivePermission()
         }

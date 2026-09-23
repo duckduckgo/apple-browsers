@@ -345,8 +345,7 @@ public final class GeolocationProvider {
 
         request.acquisitionStartedAt = Date()
         if let location = reusableLocation(for: request.options) {
-            // Returning a cached location still starts and ends a request. Report both transitions so
-            // Allow Once expires after delivery just as it does for a new location reading.
+            // Report location use even when a cached position avoids starting Core Location.
             updateLocationActivity(.active)
             finishOneShot(identifier, with: .success(.init(location: location)))
         } else {
@@ -468,8 +467,7 @@ public final class GeolocationProvider {
         locationCaptureState = state
         locationActivityHandler?(state)
         if state == .inactive {
-            // Capture ending lets the next request prompt again. Re-query after the activity callback
-            // so existing PermissionStatus objects observe the new state.
+            // Re-query after the activity callback so PermissionStatus also reflects any authorization change.
             refreshPermissionStatuses()
         }
     }

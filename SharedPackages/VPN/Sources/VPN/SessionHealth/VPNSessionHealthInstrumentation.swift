@@ -254,25 +254,30 @@ private extension DefaultVPNSessionHealthInstrumentation {
             Logger.networkProtectionSessionHealth.log("Recovering orphan: \(orphan.globalData.id, privacy: .public)")
 
             let recovered = orphan.hasEnded ? orphan : orphan.markingOrphanedSessionEnded(at: now())
-            completeEventIfEnded(recovered)
+            completeEvent(event: recovered, status: recovered.outcome?.status ?? .unknown(reason: "abandoned"))
         }
     }
 
     @discardableResult
-    func completeEventIfEnded(_ data: VPNSessionHealthWideEventData) -> Bool {
-        guard let status = data.outcome?.status else {
-            return false
-        }
-
+    func completeEventIfEnded(_ event: VPNSessionHealthWideEventData) -> Bool {
         guard isTelemetryEnabled() else {
-            wideEvent.discardFlow(data)
+            wideEvent.discardFlow(event)
             return true
         }
 
-        Logger.networkProtectionSessionHealth.log("Completing vpn_session_health pixel: status=\(status.description, privacy: .public)")
-        logPixelDetails(data)
+        guard let status = event.outcome?.status else {
+            return false
+        }
 
-        wideEvent.completeFlow(data, status: status) { success, error in
+        return completeEvent(event: event, status: status)
+    }
+
+    @discardableResult
+    func completeEvent(event: VPNSessionHealthWideEventData, status: WideEventStatus) -> Bool {
+        Logger.networkProtectionSessionHealth.log("Completing vpn_session_health pixel: status=\(status.description, privacy: .public)")
+        logPixelDetails(event)
+
+        wideEvent.completeFlow(event, status: status) { success, error in
             if success {
                 Logger.networkProtectionSessionHealth.log("vpn_session_health pixel completion succeeded")
             } else {

@@ -187,7 +187,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// Whether the web view is currently visible (vs native input being visible)
     private var isWebViewVisible = false
 
-    /// Active-chat suggestions chips above the UTI input — same controller and embedding as the floating input.
+    /// Active-chat suggestions chips above the UTI input — same controller and embedding as the floating
+    /// input, but the solid translucent style (fill + border) so they read over the live chat.
     private lazy var activeChatSuggestionsController: AIChatContextualInputViewController = {
         let controller = AIChatContextualInputViewController(
             voiceSearchHelper: voiceSearchHelper,
@@ -195,7 +196,6 @@ final class AIChatContextualSheetViewController: UIViewController {
             showsWelcomeMessage: false
         )
         controller.delegate = self
-        controller.useGlassStartActionBackgrounds()
         return controller
     }()
 

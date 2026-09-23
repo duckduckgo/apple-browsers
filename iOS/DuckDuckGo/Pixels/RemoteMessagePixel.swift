@@ -1,5 +1,5 @@
 //
-//  RemoteMessageAutoDismissedPixel.swift
+//  RemoteMessagePixel.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -20,15 +20,15 @@
 import Core
 import PixelKit
 
-enum RemoteMessageAutoDismissedPixel: PixelKit.Event {
+enum RemoteMessagePixel: PixelKit.Event {
 
-    case messageAutoDismissed(messageID: String)
+    case autoDismissed(messageID: String)
 
     var name: String { "m_remote_message_auto_dismissed" }
 
     var parameters: [String: String]? {
         switch self {
-        case .messageAutoDismissed(let messageID):
+        case .autoDismissed(let messageID):
             return [PixelParameters.message: messageID]
         }
     }

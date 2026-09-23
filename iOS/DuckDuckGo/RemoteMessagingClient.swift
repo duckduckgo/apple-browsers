@@ -95,6 +95,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             notificationCenter: notificationCenter,
             errorEvents: errorEvents,
             autoDismissEvents: autoDismissEvents,
+            enforcesMaxImpressions: true,
             remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider
         )
         self.init(

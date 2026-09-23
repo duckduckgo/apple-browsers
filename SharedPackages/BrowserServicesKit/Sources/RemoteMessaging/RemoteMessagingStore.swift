@@ -66,18 +66,21 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
     let context: NSManagedObjectContext
     let notificationCenter: NotificationCenter
     let remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding
+    private let enforcesMaxImpressions: Bool
 
     public init(
         database: CoreDataDatabase,
         notificationCenter: NotificationCenter = .default,
         errorEvents: EventMapping<RemoteMessagingStoreError>?,
         autoDismissEvents: EventMapping<RemoteMessageAutoDismissEvent>? = nil,
+        enforcesMaxImpressions: Bool = false,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding
     ) {
         self.database = database
         self.notificationCenter = notificationCenter
         self.errorEvents = errorEvents
         self.autoDismissEvents = autoDismissEvents
+        self.enforcesMaxImpressions = enforcesMaxImpressions
         self.remoteMessagingAvailabilityProvider = remoteMessagingAvailabilityProvider
         self.context = database.makeContext(concurrencyType: .privateQueueConcurrencyType, name: Constants.privateContextName)
 
@@ -296,7 +299,8 @@ extension RemoteMessagingStore {
                     return daysSinceFirstShown >= dismissAfterDays
                 }()
                 let hasReachedImpressionCap: Bool = {
-                    guard let maxImpressions = remoteMessage.displayConditions?.maxImpressions,
+                    guard self.enforcesMaxImpressions,
+                          let maxImpressions = remoteMessage.displayConditions?.maxImpressions,
                           maxImpressions > 0 else {
                         return false
                     }
@@ -369,27 +373,39 @@ extension RemoteMessagingStore {
     }
 
     public func dismissRemoteMessage(withID id: String) async {
+        _ = await persistDismissal(of: id, requireScheduledTransition: false)
+    }
+
+    private func persistDismissal(of id: String, requireScheduledTransition: Bool) async -> Bool {
         guard remoteMessagingAvailabilityProvider.isRemoteMessagingAvailable else {
-            return
+            return false
         }
 
-        await withCheckedContinuation { continuation in
+        return await withCheckedContinuation { continuation in
             context.perform { [weak self] in
                 guard let self else {
-                    continuation.resume()
+                    continuation.resume(returning: false)
                     return
                 }
 
-                updateRemoteMessage(withID: id, toStatus: .dismissed, in: context)
+                guard let message = RemoteMessageUtils.fetchRemoteMessage(with: id, in: context),
+                      !requireScheduledTransition || message.status?.int16Value == RemoteMessageStatus.scheduled.rawValue else {
+                    continuation.resume(returning: false)
+                    return
+                }
+
+                message.status = NSNumber(value: RemoteMessageStatus.dismissed.rawValue)
                 invalidateRemoteMessagingConfigs(in: context)
 
                 do {
                     try context.save()
+                    continuation.resume(returning: true)
                 } catch {
                     errorEvents?.fire(.updateMessageStatusFailed, error: error)
                     Logger.remoteMessaging.error("Error saving updateMessageStatus")
+                    context.rollback()
+                    continuation.resume(returning: false)
                 }
-                continuation.resume()
             }
         }
     }
@@ -417,14 +433,22 @@ extension RemoteMessagingStore {
     }
 
     public func updateRemoteMessage(withID id: String, asShown shown: Bool) async {
+        _ = await persistRemoteMessageShownState(withID: id, asShown: shown)
+    }
+
+    public func recordRemoteMessageImpression(withID id: String) async -> RemoteMessageImpressionResult {
+        await persistRemoteMessageShownState(withID: id, asShown: true)
+    }
+
+    private func persistRemoteMessageShownState(withID id: String, asShown shown: Bool) async -> RemoteMessageImpressionResult {
         guard remoteMessagingAvailabilityProvider.isRemoteMessagingAvailable else {
-            return
+            return .notRecorded
         }
 
-        await withCheckedContinuation { continuation in
+        return await withCheckedContinuation { continuation in
             context.perform { [weak self] in
                 guard let self else {
-                    continuation.resume()
+                    continuation.resume(returning: .notRecorded)
                     return
                 }
 
@@ -433,23 +457,31 @@ extension RemoteMessagingStore {
 
                 do {
                     guard let message = try context.fetch(fetchRequest).first else {
-                        continuation.resume()
+                        continuation.resume(returning: .notRecorded)
                         return
                     }
+                    let isFirstImpression = shown && message.firstShownDate == nil
                     message.shown = shown
                     if shown {
                         message.firstShownDate = message.firstShownDate ?? Date()
                         message.impressionCount += 1
+                    }
+                    try context.save()
+                    if shown {
                         Logger.remoteMessaging.info(
                             "Remote message impression count updated: \(id, privacy: .public), count: \(message.impressionCount, privacy: .public)"
                         )
+                        continuation.resume(returning: .recorded(isFirstImpression: isFirstImpression,
+                                                                 impressionCount: message.impressionCount))
+                    } else {
+                        continuation.resume(returning: .notRecorded)
                     }
-                    try context.save()
                 } catch {
                     errorEvents?.fire(.updateMessageShownFailed, error: error)
-                    Logger.remoteMessaging.error("Failed to save message update as shown")
+                    Logger.remoteMessaging.error("Failed to save message shown state")
+                    context.rollback()
+                    continuation.resume(returning: .notRecorded)
                 }
-                continuation.resume()
             }
         }
     }
@@ -509,21 +541,11 @@ extension RemoteMessagingStore {
 
     private func autoDismiss(_ remoteMessage: RemoteMessageModel) {
         startTrackedTask(.dismissal(messageID: remoteMessage.id)) {
-            await self.dismissRemoteMessage(withID: remoteMessage.id)
-            if remoteMessage.isMetricsEnabled {
+            let didPersistDismissal = await self.persistDismissal(of: remoteMessage.id, requireScheduledTransition: true)
+            if didPersistDismissal, remoteMessage.isMetricsEnabled {
                 self.autoDismissEvents?.fire(.messageAutoDismissed(messageID: remoteMessage.id))
             }
         }
-    }
-
-    private func updateRemoteMessage(withID id: String, toStatus status: RemoteMessageStatus, in context: NSManagedObjectContext) {
-        let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "id == %@", id)
-        fetchRequest.returnsObjectsAsFaults = false
-
-        guard let results = try? context.fetch(fetchRequest) else { return }
-
-        results.forEach { $0.status = NSNumber(value: status.rawValue) }
     }
 
     private func markScheduledMessagesAsDone(in context: NSManagedObjectContext) {

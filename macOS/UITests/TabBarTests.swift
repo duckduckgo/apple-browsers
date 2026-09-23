@@ -66,8 +66,8 @@ class TabBarTests: UITestCase {
 
         /// We pin the privacy site and we close it. We do this to position the parent child first in the tab collection
         /// The reason why we unpin it, is because we do not want for it to be pinned for other tests.
-        app.menuItems["Pin Tab"].tap()
-        app.menuItems["Unpin Tab"].tap()
+        app.pinCurrentTab()
+        app.unpinCurrentTab()
         app.menuItems["Close Tab"].tap()
 
         /// Asserts that the first child next to the closed parent tab is shown. In this case si the Downloads site
@@ -88,8 +88,8 @@ class TabBarTests: UITestCase {
 
         /// We pin the privacy site and we close it. We do this to position the parent child first in the tab collection
         /// The reason why we unpin it, is because we do not want for it to be pinned for other tests.
-        app.menuItems["Pin Tab"].tap()
-        app.menuItems["Unpin Tab"].tap()
+        app.pinCurrentTab()
+        app.unpinCurrentTab()
 
         /// We move through tabs until we are in the child position tab and we close it
         app.typeKey("]", modifierFlags: [.command, .shift])
@@ -182,7 +182,7 @@ class TabBarTests: UITestCase {
         app.typeKey("[", modifierFlags: [.command, .shift])
         app.typeKey("[", modifierFlags: [.command, .shift])
         app.typeKey("[", modifierFlags: [.command, .shift])
-        app.menuItems["Pin Tab"].tap()
+        app.pinCurrentTab()
     }
 
     private func openPrivacyTestPagesSite() {

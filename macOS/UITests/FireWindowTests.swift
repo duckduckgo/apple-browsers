@@ -60,11 +60,11 @@ class FireWindowTests: UITestCase {
     func testFireWindowDoNotShowPinnedTabs() {
         app.openNewWindow()
         app.openSite(pageTitle: "Page #1")
-        app.menuItems["Pin Tab"].tap()
+        app.pinCurrentTab()
 
         app.openNewTab()
         app.openSite(pageTitle: "Page #2")
-        app.menuItems["Pin Tab"].tap()
+        app.pinCurrentTab()
 
         app.openFireWindow()
         assertFireWindowDoesNotHavePinnedTabs()

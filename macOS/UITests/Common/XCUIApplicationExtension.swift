@@ -202,7 +202,14 @@ extension XCUIApplication {
 
     /// Pins current tab using the main menu
     func pinCurrentTab() {
-        mainMenuPinTabMenuItem.tap()
+        menuBars.menuBarItems["Window"].clickAfterExistenceTestSucceeds()
+        mainMenuPinTabMenuItem.clickAfterExistenceTestSucceeds()
+    }
+
+    /// Unpins current tab using the main menu
+    func unpinCurrentTab() {
+        menuBars.menuBarItems["Window"].clickAfterExistenceTestSucceeds()
+        mainMenuUnpinTabMenuItem.clickAfterExistenceTestSucceeds()
     }
 
     /// Checks if the current tab can be pinned (i.e., is not already pinned)

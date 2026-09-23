@@ -28,7 +28,7 @@ private extension XCUIElement {
     }
 }
 
-/// Use the "iOS ATB UI Tests" scheme and select AtbUITests/SitePermissionsXCUITests.
+/// Run with the "iOS Site Permissions UI Tests" scheme; the "iOS ATB UI Tests" scheme skips this class.
 /// The local fixture uses real WebKit media capture and the app's geolocation bridge.
 final class SitePermissionsXCUITests: XCTestCase {
     private let app = XCUIApplication()

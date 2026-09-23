@@ -45,6 +45,12 @@ public extension PageContextExtractionOutcome {
     static let localFileCategory = "localFile"
 }
 
+/// The carrier a page is handed to Duck.ai in, so extraction measurement can be split by page kind.
+public enum PageContextType: String, Equatable {
+    case markdown
+    case pdf
+}
+
 public enum PageContextExtractionTrigger: String, Equatable {
     case auto
     case navigation

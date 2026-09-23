@@ -107,7 +107,7 @@ jobs:
     if: needs.should-run-checks.outputs.should_run == 'true'
 
     outputs:
-      # One object per runner configuration: {"runner": [labels], "os-version", "xcode-version"}.
+      # One object per runner configuration: {"runner": [labels], "xcode-version"}.
       # The ui-tests jobs multiply this list by the test list to build their matrix.
       config: ${{ steps.define-runners.outputs.config }}
       test: ${{ steps.list-tests.outputs.test }}
@@ -142,14 +142,14 @@ jobs:
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" || "$all_os_versions" == "false" ]]; then
             all_os_versions='false'
             config=$(jq -c <<< '[
-              {"runner": ["image:osx-goldengate", "ui-tests"], "os-version": "26", "xcode-version": "27.0"}
+              {"runner": ["image:osx-goldengate", "ui-tests"], "xcode-version": "27.0"}
             ]')
           else
             all_os_versions='true'
             config=$(jq -c <<< '[
-              {"runner": ["macos-14-xlarge"], "os-version": "14", "xcode-version": "16.2"},
-              {"runner": ["macos-15-xlarge"], "os-version": "15", "xcode-version": "26.2"},
-              {"runner": ["image:osx-goldengate", "ui-tests"], "os-version": "26", "xcode-version": "27.0"}
+              {"runner": ["macos-15-xlarge"], "xcode-version": "26.2"},
+              {"runner": ["macos-26-xlarge"], "xcode-version": "27.0"}
+              {"runner": ["image:osx-goldengate", "ui-tests"], "xcode-version": "27.0"}
             ]')
           fi
           echo "all-os-versions=${all_os_versions}" >> $GITHUB_OUTPUT
@@ -247,7 +247,6 @@ jobs:
     uses: ./.github/workflows/macos_run_ui_test.yml
     with:
       runner: ${{ toJSON(matrix.config.runner) }}
-      os-version: ${{ matrix.config.os-version }}
       xcode-version: ${{ matrix.config.xcode-version }}
       test: ${{ matrix.test }}
       user-mode: production
@@ -269,7 +268,6 @@ jobs:
     uses: ./.github/workflows/macos_run_ui_test.yml
     with:
       runner: ${{ toJSON(matrix.config.runner) }}
-      os-version: ${{ matrix.config.os-version }}
       xcode-version: ${{ matrix.config.xcode-version }}
       test: ${{ matrix.test }}
       user-mode: internal

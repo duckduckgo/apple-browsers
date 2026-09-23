@@ -755,6 +755,90 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(microphonePromptCount, 1)
     }
 
+    func testWhenCombinedPromptIsNeverAllowedThenOnlyTheStillCapturingPermissionIsRevoked() async throws {
+        let harness = try Harness()
+        let grantCompletion = expectation(description: "Camera Allow Once becomes active")
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: { resolution in
+            XCTAssertEqual(resolution, .grant)
+            grantCompletion.fulfill()
+        })
+        await fulfillment(of: [grantCompletion], timeout: 1)
+        let webView = MediaCaptureWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        harness.coordinator.observeMediaCapture(in: webView)
+        webView.setCameraCaptureStateForTesting(.active)
+
+        var revokedPermissionTypes = [Set<SitePermissionType>]()
+        var revokedSites = [SitePermissionKey]()
+        harness.revocationHandler = { permissionTypes, site in
+            revokedPermissionTypes.append(permissionTypes)
+            revokedSites.append(site)
+        }
+        var resolution: SitePermissionResolution?
+        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { prompt, respond in
+            XCTAssertEqual(prompt.permissionTypes, [.camera, .microphone])
+            respond(.neverAllow)
+        }, completion: { resolution = $0 })
+
+        XCTAssertEqual(resolution, .deny(systemBlocks: []))
+        XCTAssertEqual(revokedPermissionTypes, [[.camera]])
+        XCTAssertEqual(revokedSites, [harness.site])
+        XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .deny)
+        XCTAssertEqual(harness.store.decision(for: .microphone, at: harness.site), .deny)
+    }
+
+    func testWhenFireModeCombinedPromptIsNeverAllowedThenPausedCaptureIsRevokedWithoutPersisting() async throws {
+        let harness = try Harness(isFireMode: true)
+        let grantCompletion = expectation(description: "Camera Allow Once becomes active")
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: { resolution in
+            XCTAssertEqual(resolution, .grant)
+            grantCompletion.fulfill()
+        })
+        await fulfillment(of: [grantCompletion], timeout: 1)
+        let webView = MediaCaptureWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        harness.coordinator.observeMediaCapture(in: webView)
+        webView.setCameraCaptureStateForTesting(.muted)
+
+        var revokedPermissionTypes = [Set<SitePermissionType>]()
+        harness.revocationHandler = { permissionTypes, _ in revokedPermissionTypes.append(permissionTypes) }
+        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, respond in
+            respond(.neverAllow)
+        }, completion: { _ in })
+
+        XCTAssertEqual(revokedPermissionTypes, [[.camera]])
+        XCTAssertNil(harness.store.decision(for: .camera, at: harness.site))
+        XCTAssertNil(harness.store.decision(for: .microphone, at: harness.site))
+    }
+
+    func testWhenCombinedPromptIsDeniedOnceThenRunningCaptureIsKept() async throws {
+        let harness = try Harness()
+        let grantCompletion = expectation(description: "Camera Allow Once becomes active")
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: { resolution in
+            XCTAssertEqual(resolution, .grant)
+            grantCompletion.fulfill()
+        })
+        await fulfillment(of: [grantCompletion], timeout: 1)
+        let webView = MediaCaptureWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        harness.coordinator.observeMediaCapture(in: webView)
+        webView.setCameraCaptureStateForTesting(.active)
+
+        var revokedPermissionTypes = [Set<SitePermissionType>]()
+        harness.revocationHandler = { permissionTypes, _ in revokedPermissionTypes.append(permissionTypes) }
+        var resolution: SitePermissionResolution?
+        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, respond in
+            respond(.denyOnce)
+        }, completion: { resolution = $0 })
+
+        XCTAssertEqual(resolution, .deny(systemBlocks: []))
+        // Dismissing a prompt refuses only the new request; it keeps capture the page already has.
+        XCTAssertTrue(revokedPermissionTypes.isEmpty)
+    }
+
     func testReplacingObservationAndClosingInvalidateOldObservations() throws {
         let harness = try Harness()
         let firstWebView = MediaCaptureWebView(frame: .zero, configuration: WKWebViewConfiguration())
@@ -1806,6 +1890,7 @@ private final class Harness {
     var authorizationRequester: (SitePermissionType) async -> SystemPermissionAuthorizationState = { _ in .authorized }
     var recoveryHandler: SitePermissionsCoordinator.RecoveryHandler = { _, completion in completion() }
     var cancellationHandler: () -> Void = {}
+    var revocationHandler: SitePermissionsCoordinator.RevocationHandler = { _, _ in }
     var eventHandler: SitePermissionsCoordinator.EventHandler = { _ in }
 
     lazy var coordinator = SitePermissionsCoordinator(
@@ -1833,6 +1918,9 @@ private final class Harness {
             recoveryHandler(recovery, completion)
         },
         cancellationHandler: { [weak self] in self?.cancellationHandler() },
+        revocationHandler: { [weak self] permissionTypes, site in
+            self?.revocationHandler(permissionTypes, site)
+        },
         eventHandler: { [weak self] event in
             self?.eventHandler(event)
         })

@@ -118,7 +118,7 @@ This library is designed to be agnostic concerning concurrency models. It mainta
 
 ### Mock
 
-The `MockAPIService` implementing `APIService` can be found in `NetworkingTestingUtils`
+The `MockAPIService` implementing `APIService` can be found in `Networking`'s `TestingSupport`, behind `@_spi(Testing) import Networking`
 
 ```swift
 let mockData = Data("{}".utf8)

@@ -525,9 +525,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Supports Duck.ai edit prompt from the native input field.
     case nativePromptEditing
 
-    /// Re-enables Duck.ai promo cards on the native input (their CTAs open native pickers).
-    case nativePromoCards
-
     /// Warns users as they approach their daily/weekly Duck.ai limits, using the usage snapshot the
     /// web app writes into the reserved `usageLimits` native-storage entry.
     case usageWarnings
@@ -687,6 +684,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification
     case subscriptionPromoForExistingUsers
+    case subscriptionConcurrentExperiments
     case monthlyFreeTrialExperiment2
     case subscriptionOnboardingFreeTrialsSep2026
     case subscriptionOnboardingPaidSubsSep2026
@@ -836,6 +834,10 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case lightweightReloadOnDataClear
     /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.
     case protectedDataLoadGate
+    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health.
+    case cpmBackgroundDelegateProxy
+    /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
+    case cpmDiagnosticsRecorder
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

@@ -19,9 +19,8 @@
 import XCTest
 import Common
 @testable import Subscription
-@testable import Networking
+@_spi(Testing) @testable import Networking
 import SubscriptionTestingUtilities
-import NetworkingTestingUtils
 @_spi(Testing) import PixelKit
 @_spi(Testing) import WideEvent
 
@@ -687,7 +686,7 @@ class SubscriptionManagerTests: XCTestCase {
         mockSubscriptionEndpointService.confirmPurchaseResult = .failure(APIRequestV2Error.invalidResponse)
         mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
         do {
-            _ = try await subscriptionManager.confirmPurchase(signature: testSignature, additionalParams: nil)
+            _ = try await subscriptionManager.confirmPurchase(signature: testSignature, experimentAttribution: nil)
             XCTFail("Error expected")
         } catch {
             XCTAssertEqual(error as? APIRequestV2Error, APIRequestV2Error.invalidResponse)
@@ -718,7 +717,7 @@ class SubscriptionManagerTests: XCTestCase {
         mockSubscriptionEndpointService.getSubscriptionTierFeaturesResult = .failure(APIServiceError.serverError(statusCode: 500, statusDescription: "Internal Server Error"))
 
         do {
-            _ = try await subscriptionManager.confirmPurchase(signature: "testSignature", additionalParams: nil)
+            _ = try await subscriptionManager.confirmPurchase(signature: "testSignature", experimentAttribution: nil)
             XCTFail("Error expected from tier-features failure")
         } catch {
             // The cache must hold the raw (unenriched) subscription — not be empty.

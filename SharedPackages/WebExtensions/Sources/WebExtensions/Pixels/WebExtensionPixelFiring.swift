@@ -121,6 +121,7 @@ private extension WebExtensionReloadTrigger {
         case .dataClearing: return "data_clearing"
         case .scriptletUpdate: return "scriptlet_update"
         case .explicit: return "explicit"
+        case .cpmMessagingHang: return "cpm_messaging_hung"
         }
     }
 }

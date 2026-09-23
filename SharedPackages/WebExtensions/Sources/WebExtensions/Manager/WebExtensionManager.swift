@@ -200,6 +200,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 self?.messageRouter.hasHandler(for: context.uniqueIdentifier, featureName: "autoconsent") ?? false
             }
         }
+
+        if let healthMonitor = self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor {
+            healthMonitor.onConfirmedHang = { [weak self] in
+                Task { @MainActor [weak self] in
+                    await self?.reloadEmbeddedExtensionAfterCPMMessagingHang()
+                }
+            }
+        }
     }
 
     // MARK: - Computed Properties
@@ -664,6 +672,20 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     func reportLifecycleEvent(_ event: WebExtensionLifecycleEvent) {
         lifecycleEventsContinuation?.yield(event)
         cpmMessagingHealthMonitor.handle(.extensionLifecycle(event))
+    }
+
+    @MainActor
+    private func reloadEmbeddedExtensionAfterCPMMessagingHang() async {
+        guard let installedExtension = installedEmbeddedExtension(for: .embedded) else {
+            Logger.webExtensions.warning("[CPM Health Monitor] Cannot reload the embedded extension after a confirmed hang because it is not installed")
+            return
+        }
+
+        do {
+            try await reloadExtension(identifier: installedExtension.uniqueIdentifier, trigger: .cpmMessagingHang)
+        } catch {
+            Logger.webExtensions.error("[CPM Health Monitor] Failed to reload the embedded extension after a confirmed hang: \(error.localizedDescription)")
+        }
     }
 
     func notifyUpdate() {

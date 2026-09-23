@@ -24,7 +24,7 @@ import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
-@testable import Navigation
+@testable import DDGNavigation
 
 @MainActor
 final class AutoplayPolicyTabExtensionTests: XCTestCase {

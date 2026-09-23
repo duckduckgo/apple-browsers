@@ -24,7 +24,7 @@ import CombineExtensions
 import StoreKit
 import LocalAuthentication
 import BrowserServicesKit
-import Navigation
+import DDGNavigation
 import SwiftUI
 import Bookmarks
 import Persistence

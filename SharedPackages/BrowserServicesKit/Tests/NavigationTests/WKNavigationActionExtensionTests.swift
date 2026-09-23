@@ -20,7 +20,7 @@
 
 import WebKit
 import XCTest
-@testable import Navigation
+@testable import DDGNavigation
 
 /// Unit tests for `WKNavigationAction.isSameDocumentNavigation`.
 ///

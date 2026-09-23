@@ -29,7 +29,8 @@ let package = Package(
         .library(name: "Configuration", targets: ["Configuration"]),
         .library(name: "RemoteMessaging", targets: ["RemoteMessaging"]),
         .library(name: "RemoteMessagingTestsUtils", targets: ["RemoteMessagingTestsUtils"]),
-        .library(name: "Navigation", targets: ["Navigation"]),
+        // Avoid shadowing Apple's Navigation.framework when Xcode dynamically links package targets.
+        .library(name: "DDGNavigation", targets: ["DDGNavigation"]),
         .library(name: "SyncDataProviders", targets: ["SyncDataProviders"]),
         .library(name: "SecureStorage", targets: ["SecureStorage"]),
         .library(name: "Subscription", targets: ["Subscription"]),
@@ -95,7 +96,7 @@ let package = Package(
                 "SecureStorage",
                 "Subscription",
                 .product(name: "PixelKit", package: "PixelKit"),
-                "Navigation"
+                "DDGNavigation"
             ],
             resources: [
                 .process("SmarterEncryption/Store/HTTPSUpgrade.xcdatamodeld"),
@@ -109,7 +110,7 @@ let package = Package(
             name: "BrowserServicesKitTestsUtils",
             dependencies: [
                 "BrowserServicesKit",
-                "Navigation",
+                "DDGNavigation",
                 "WKAbstractions",
             ],
             swiftSettings: [
@@ -283,13 +284,14 @@ let package = Package(
             ]
         ),
         .target(
-            name: "Navigation",
+            name: "DDGNavigation",
             dependencies: [
                 .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
+            path: "Sources/Navigation",
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug)),
                 .define("_IS_USER_INITIATED_ENABLED", .when(platforms: [.macOS])),
@@ -331,7 +333,7 @@ let package = Package(
                 "PrivacyConfig",
                 "MaliciousSiteProtection",
                 .product(name: "PrivacyDashboardResources", package: "privacy-dashboard"),
-                "Navigation",
+                "DDGNavigation",
             ],
             path: "Sources/PrivacyDashboard",
             swiftSettings: [
@@ -672,7 +674,7 @@ let package = Package(
             name: "NavigationTests",
             dependencies: [
                 "SharedObjCTestsUtils",
-                "Navigation",
+                "DDGNavigation",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Swifter", package: "swifter"),
             ],
@@ -841,7 +843,7 @@ let package = Package(
                 "PixelExperimentKit",
                 "Configuration",
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
-                "Navigation",
+                "DDGNavigation",
                 "SecureStorage",
                 "Subscription",
                 "UserScript",

@@ -997,7 +997,8 @@ extension MainViewController {
     }
 
     func installUnifiedInputContentViewController() {
-        guard let coordinator = unifiedToggleInputCoordinator else {
+        guard let coordinator = unifiedToggleInputCoordinator,
+              let container = viewCoordinator.unifiedInputContentContainer else {
             return
         }
 
@@ -1024,6 +1025,7 @@ extension MainViewController {
             coordinator.dismissOmnibarKeyboard()
         }
 
+        RedesignedNewTabPageFocusedViewController.install(contentVC, in: self, container: container)
         updateUnifiedInputContentContainment()
     }
 

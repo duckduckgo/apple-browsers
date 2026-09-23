@@ -37,9 +37,7 @@ final class RedesignedNewTabPageFocusedViewController: UIViewController {
                                   in parent: UIViewController,
                                   container: UIView,
                                   usesFocusedContainer: Bool) {
-        if contentViewController.parent == nil {
-            install(contentViewController, in: parent, container: container)
-        }
+        // Only installation may load/attach content, after its dependencies have been injected.
         guard contentViewController.parent === parent else { return }
         let focusedController = parent.children
             .compactMap { $0 as? RedesignedNewTabPageFocusedViewController }

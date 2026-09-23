@@ -24,6 +24,19 @@ import XCTest
 @MainActor
 final class RedesignedNewTabPageFocusedViewControllerTests: XCTestCase {
 
+    func testWhenContainmentIsUpdatedBeforeInstallationThenContentIsNotLoadedOrAttached() {
+        let parent = UIViewController()
+        let content = ContentViewControllerSpy()
+
+        update(content, in: parent, focused: true)
+        update(content, in: parent, focused: false)
+
+        XCTAssertFalse(content.isViewLoaded)
+        XCTAssertEqual(content.loadCount, 0)
+        XCTAssertNil(content.parent)
+        XCTAssertTrue(parent.children.isEmpty)
+    }
+
     func testWhenBrowserContentIsFocusedThenSameContentStaysAttachedAndLoadsOnlyOnce() throws {
         let parent = UIViewController()
         let content = ContentViewControllerSpy()

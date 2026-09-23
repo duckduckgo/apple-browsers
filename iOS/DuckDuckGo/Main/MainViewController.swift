@@ -2471,6 +2471,7 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func removeHomeScreen() {
+        let hadInlineSearchInput = newTabPageViewController?.hasInlineSearchInput == true
         restingNewTabPageSnapshot = nil
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
@@ -2479,6 +2480,10 @@ class MainViewController: UIViewController {
         clearEscapeHatch()
         updateAddressBarSuppressionForNewTabPage()
         remoteMessageImpressionReporter.reset()
+        // Restore the destination's chrome only when leaving a page that overrode it.
+        if hadInlineSearchInput, isInMinimalChromeLayout != isMinimalChromeMode() {
+            applyWidth()
+        }
     }
 
     @IBAction func onFirePressed() {
@@ -3061,13 +3066,11 @@ class MainViewController: UIViewController {
         // A fresh NTP has no `TabViewController` yet; drive UTI from the tab model so fire-mode still applies.
         unifiedToggleInputCoordinator?.updateIsFireTab(isCurrentTabFireTab())
 
-        // NTPs can have no TabViewController or URL. Reconcile their chrome before the early return,
-        // including when moving between the redesigned page and a regular or AI tab.
-        if isInMinimalChromeLayout != isMinimalChromeMode() {
-            applyWidth()
-        }
-
         guard let tab = currentTab, tab.link != nil else {
+            // An inline NTP can have no URL, so it needs its toolbar reconciled on this path too.
+            if newTabPageViewController?.hasInlineSearchInput == true, isInMinimalChromeLayout != isMinimalChromeMode() {
+                applyWidth()
+            }
             viewCoordinator.omniBar.stopBrowsing()
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
@@ -3122,6 +3125,10 @@ class MainViewController: UIViewController {
         restorePostFireAddressBarPickerIfNeeded()
 
         refreshUnifiedToggleInput(for: tab)
+
+        if isInMinimalChromeLayout != isMinimalChromeMode() {
+            applyWidth()
+        }
 
         updateBrowsingMenuHeaderDataSource()
         updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)

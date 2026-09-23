@@ -89,14 +89,44 @@ final class WebExtensionPopupPresenter {
         })()
         """
 
-        /// Delays after the load event, in seconds, at which the page is measured again.
+        /// Name of the script message handler the popup page posts to when its layout changes.
+        static let resizeMessageHandlerName = "ddgWebExtensionPopupResize"
+
+        /// Makes the popup page report layout changes, so the panel follows them as they happen.
         ///
-        /// Not every popup knows its size when it finishes loading. Bitwarden's is an Angular
-        /// app that sets `body.style.width` hundreds of milliseconds into its bootstrap, well
-        /// after the load event, so the one measurement at load time reads a stale size.
-        /// Measuring a few more times at growing intervals catches the final size without
-        /// driving the extension.
-        static let settleDelays: [TimeInterval] = [0.1, 0.2, 0.4, 0.8, 1.6]
+        /// A popup can change size without loading anything: LastPass swaps its login form for
+        /// its vault in place, and grows the form to show an error banner. A `ResizeObserver`
+        /// catches the page's own boxes changing size, and a `MutationObserver` catches content
+        /// swapped in without resizing `html` or `body`. Reports are coalesced to one per frame,
+        /// and the browser measures the page itself on each, with `measurePageScript`.
+        ///
+        /// Installed once per document: a page that loads again gets it again.
+        static let observePageScript = """
+        (function() {
+            if (window.__ddgPopupResizeObserved) { return; }
+            var handlers = window.webkit && window.webkit.messageHandlers;
+            var handler = handlers && handlers["\(resizeMessageHandlerName)"];
+            if (!handler) { return; }
+            window.__ddgPopupResizeObserved = true;
+
+            var scheduled = false;
+            function report() {
+                if (scheduled) { return; }
+                scheduled = true;
+                requestAnimationFrame(function() {
+                    scheduled = false;
+                    try { handler.postMessage(null); } catch (error) {}
+                });
+            }
+
+            var resizeObserver = new ResizeObserver(report);
+            resizeObserver.observe(document.documentElement);
+            if (document.body) { resizeObserver.observe(document.body); }
+            new MutationObserver(report).observe(document.documentElement, {
+                subtree: true, childList: true, attributes: true, characterData: true
+            });
+        })()
+        """
     }
 
     private var panel: WebExtensionPopupPanel?
@@ -106,8 +136,7 @@ final class WebExtensionPopupPresenter {
     private weak var popupWebView: WKWebView?
     private var loadingObservation: NSKeyValueObservation?
     private var clickMonitor: Any?
-    private var frameChangeObserver: NSObjectProtocol?
-    private var settleWorkItems: [DispatchWorkItem] = []
+    private var resizeMessageUserContentController: WKUserContentController?
 
     /// Whether the popup of the given extension is on screen.
     func isShown(for context: WKWebExtensionContext) -> Bool {
@@ -185,60 +214,42 @@ final class WebExtensionPopupPresenter {
     /// it, so both are useless as a source. We therefore ask the page itself once it loads.
     ///
     /// The popup page may have finished loading before it is presented, in which case `isLoading`
-    /// never changes, so the page is measured and settled right away as well as on the load event.
+    /// never changes, so the page is measured and observed right away as well as on the load event.
+    ///
+    /// After that the page reports its own layout changes through `observePageScript`. WebKit
+    /// never resizes the popup web view by itself, so nothing on the native side would notice a
+    /// popup that changes size without loading, such as LastPass swapping its vault for its
+    /// login form on logout.
     private func observePopupSize(of popupWebView: WKWebView) {
-        measurePageAndResize(popupWebView)
-        startSettling(popupWebView)
-
-        // Not every popup knows its size when it finishes loading, and some change size long
-        // after: LastPass grows its login form to show an error banner only once the user
-        // submits it. WebKit resizes the popup web view itself when the page changes size, so
-        // following those frame changes resizes the panel as soon as the page does, without
-        // driving the extension.
-        popupWebView.postsFrameChangedNotifications = true
-        frameChangeObserver = NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification,
-                                                                     object: popupWebView,
-                                                                     queue: .main) { [weak self, weak popupWebView] _ in
-            MainActor.assumeMainThread {
-                guard let self, let popupWebView else { return }
-                Logger.webExtensions.debug("🧩 Popup web view frame changed to \(NSStringFromRect(popupWebView.frame), privacy: .public)")
-                self.measurePageAndResize(popupWebView)
-            }
+        // Every extension page shares this user content controller, so the handler only
+        // answers messages from the popup it was registered for.
+        let handler = PopupResizeMessageHandler { [weak self, weak popupWebView] webView in
+            guard let self, let popupWebView, webView === popupWebView else { return }
+            self.measurePageAndResize(popupWebView)
         }
+        let userContentController = popupWebView.configuration.userContentController
+        // Adding a second handler under the same name raises, so drop any left behind first.
+        userContentController.removeScriptMessageHandler(forName: Constants.resizeMessageHandlerName)
+        userContentController.add(handler, name: Constants.resizeMessageHandlerName)
+        resizeMessageUserContentController = userContentController
+
+        measureAndObservePage(popupWebView)
 
         loadingObservation = popupWebView.observe(\.isLoading, options: [.new]) { [weak self] webView, _ in
             DispatchQueue.main.async {
                 guard webView.isLoading == false else { return }
-                self?.measurePageAndResize(webView)
-                self?.startSettling(webView)
+                self?.measureAndObservePage(webView)
             }
         }
     }
 
-    /// Measures the page again at each of `settleDelays`, and resizes the panel when the size moved.
-    ///
-    /// Every step runs, however early the page settles: a measurement that reports the size the
-    /// panel already has is ignored by `resize(toPageSize:)`, so the extra reads cost nothing but a
-    /// few `evaluateJavaScript` calls.
-    ///
-    /// Read-only, like the measurement itself: the page is asked what size it is, the extension
-    /// is never asked to do anything.
-    private func startSettling(_ popupWebView: WKWebView) {
-        cancelSettling()
-
-        for delay in Constants.settleDelays {
-            let workItem = DispatchWorkItem { [weak self, weak popupWebView] in
-                guard let self, let popupWebView else { return }
-                self.measurePageAndResize(popupWebView)
+    private func measureAndObservePage(_ popupWebView: WKWebView) {
+        measurePageAndResize(popupWebView)
+        popupWebView.evaluateJavaScript(Constants.observePageScript) { _, error in
+            if let error {
+                Logger.webExtensions.debug("🧩 Popup page could not be observed: \(error.localizedDescription, privacy: .public)")
             }
-            settleWorkItems.append(workItem)
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
         }
-    }
-
-    private func cancelSettling() {
-        settleWorkItems.forEach { $0.cancel() }
-        settleWorkItems = []
     }
 
     private func measurePageAndResize(_ popupWebView: WKWebView) {
@@ -345,12 +356,8 @@ final class WebExtensionPopupPresenter {
         loadingObservation?.invalidate()
         loadingObservation = nil
 
-        cancelSettling()
-
-        if let frameChangeObserver {
-            NotificationCenter.default.removeObserver(frameChangeObserver)
-            self.frameChangeObserver = nil
-        }
+        resizeMessageUserContentController?.removeScriptMessageHandler(forName: Constants.resizeMessageHandlerName)
+        resizeMessageUserContentController = nil
 
         // The web view belongs to WebKit, so hand it back rather than leaving it in our panel.
         popupWebView?.removeFromSuperview()
@@ -365,5 +372,23 @@ final class WebExtensionPopupPresenter {
         shownAction = nil
         shownContext = nil
         anchorButton = nil
+    }
+}
+
+/// Receives the layout-change reports `observePageScript` posts from a popup page.
+private final class PopupResizeMessageHandler: NSObject, WKScriptMessageHandler {
+
+    private let onReport: @MainActor (WKWebView) -> Void
+
+    init(onReport: @escaping @MainActor (WKWebView) -> Void) {
+        self.onReport = onReport
+    }
+
+    func userContentController(_ userContentController: WKUserContentController,
+                               didReceive message: WKScriptMessage) {
+        guard let webView = message.webView else { return }
+        MainActor.assumeIsolated {
+            onReport(webView)
+        }
     }
 }

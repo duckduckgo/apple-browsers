@@ -328,18 +328,20 @@ jobs:
       with:
         name: "testreport-${{ inputs.test }}-${{ inputs.user-mode }}"
         path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
+        if-no-files-found: warn
         retention-days: 1
 
     - name: Upload xcresult files (passed on retry)
-      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome != 'skipped'
       uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: "xcresult-${{ inputs.test }}-${{ inputs.user-mode }}"
         path: "macOS/DerivedData/Logs/Test/*.xcresult"
+        if-no-files-found: warn
         retention-days: 1
 
     - name: Upload app console log (passed on retry)
-      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome != 'skipped'
       uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: "app-console-${{ inputs.test }}-${{ inputs.user-mode }}"

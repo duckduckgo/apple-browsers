@@ -147,13 +147,6 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// Remove the stored token container and the legacy token
     func removeLocalAccount() throws
 
-    /// Retries any writes the token storage queued because it was unavailable when they were made.
-    /// No-op unless the storage backend actually queues writes. Call this from any lifecycle signal
-    /// that plausibly means storage has become available again (e.g. a Network Extension starting
-    /// up or receiving a message from its containing app), since such contexts cannot rely on the
-    /// OS availability notifications the storage otherwise depends on.
-    func retryPendingWrites()
-
     /// Checks if the user is eligible for a free trial.
     func isUserEligibleForFreeTrial() -> Bool
 }
@@ -161,8 +154,6 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
 // MARK: -  Utilities
 
 extension SubscriptionManager {
-
-    public func retryPendingWrites() {}
 
     /// Convenience for ``getSubscription(forceRefresh:)`` that returns the cached subscription when available.
     @discardableResult
@@ -800,10 +791,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         Logger.subscriptionTokensManagement.log("Removing local account")
             updateCachedIsUserAuthenticated(false)
         try oAuthClient.removeLocalAccount()
-    }
-
-    public func retryPendingWrites() {
-        oAuthClient.retryPendingWrites()
     }
 
     public func signOut(notifyUI: Bool, userInitiated: Bool) async {

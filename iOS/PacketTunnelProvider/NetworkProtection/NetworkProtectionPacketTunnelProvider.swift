@@ -42,6 +42,10 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
     private var cancellables = Set<AnyCancellable>()
     private let subscriptionManager: (any SubscriptionManager)?
+    // Held separately from subscriptionManager (a business-facing façade that shouldn't expose
+    // storage-recovery mechanics) purely so this process's lifecycle hooks can nudge the token
+    // storage to retry deferred writes - see retryPendingWrites() below.
+    private let tokenStorage: (any AuthTokenStoring)?
     private let configurationStore = ConfigurationStore()
     private let configurationManager: ConfigurationManager
     private let wideEvent: WideEventManaging
@@ -469,13 +473,13 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     // is unlocked and the app is running).
     @MainActor
     public override func startTunnel(options: [String: NSObject]? = nil) async throws {
-        subscriptionManager?.retryPendingWrites()
+        tokenStorage?.retryPendingWrites()
         try await super.startTunnel(options: options)
     }
 
     @MainActor
     public override func handleAppMessage(_ messageData: Data, completionHandler: ((Data?) -> Void)? = nil) {
-        subscriptionManager?.retryPendingWrites()
+        tokenStorage?.retryPendingWrites()
         super.handleAppMessage(messageData, completionHandler: completionHandler)
     }
 
@@ -599,6 +603,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         }
         tokenHandler = subscriptionManager
         self.subscriptionManager = subscriptionManager
+        self.tokenStorage = tokenStorage
 
         // MARK: -
 

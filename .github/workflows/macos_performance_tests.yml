@@ -45,15 +45,13 @@ jobs:
   performance-tests:
     name: Performance Tests
     needs: create-notarized-app
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - xcode-version: 26.6
-            runner: [image:osx-tahoe-26, ui-tests]
-            runner-name: image:osx-tahoe-26,ui-tests
-            os-version: 26
+    runs-on: [image:osx-tahoe-26, ui-tests]
+
+    env:
+      RUNS_ON: image:osx-tahoe-26,ui-tests # keep this in sync with runs-on above
+      RUNNER_NAME: image-osx-tahoe-26,ui-tests # artifact names cannot contain colons
+      XCODE_VERSION: "26.6"
+      OS_VERSION: "26"
 
     timeout-minutes: 60
 
@@ -81,11 +79,9 @@ jobs:
         mode: start
 
     - name: Install screenresolution
-      if: matrix.os-version != '14'
       run: brew install screenresolution
 
     - name: Change screen resolution
-      if: matrix.os-version != '14'
       run: screenresolution set 1920x1080x32@60
 
     - name: Setup Ruby and dependencies
@@ -144,7 +140,7 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
       with:
-        xcode-version: ${{ matrix.xcode-version }}
+        xcode-version: ${{ env.XCODE_VERSION }}
 
     - name: Configure system logging
       working-directory: SharedPackages/BrowserServicesKit
@@ -240,7 +236,7 @@ jobs:
         START_TIME=$(date -u -r "${{ steps.start-duration.outputs.start-timestamp }}" '+%Y-%m-%d %H:%M:%S')
 
         ./scripts/build-memory-metrics-sql.sh \
-          --runner "${{ matrix.runner-name }}" \
+          --runner "${{ env.RUNS_ON }}" \
           --xcresult-path "$XCRESULT_PATH" \
           --run-id "${{ github.run_id }}" \
           --branch "${{ github.ref_name }}" \
@@ -249,7 +245,7 @@ jobs:
           > insert-statements-memory.sql
 
         ./scripts/build-startup-metrics-sql.sh \
-          --runner "${{ matrix.runner-name }}" \
+          --runner "${{ env.RUNS_ON }}" \
           --xcresult-path "$XCRESULT_PATH" \
           --suite StartupPerformanceTests \
           --run-id "${{ github.run_id }}" \
@@ -318,9 +314,9 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-        pixel-name: m_ci_apple_duration_macos_${{ matrix.os-version }}_performance_tests
+        pixel-name: m_ci_apple_duration_macos_${{ env.OS_VERSION }}_performance_tests
         pixel-params: |
-          runner: ${{ matrix.runner-name }}
+          runner: ${{ env.RUNS_ON }}
 
     - name: Prepare test report
       if: always() && steps.run-ui-tests.outcome != 'skipped'
@@ -332,7 +328,7 @@ jobs:
       uses: mikepenz/action-junit-report@v6
       if: always() && steps.run-ui-tests.outcome != 'skipped'
       with:
-        check_name: "Test Report ${{ matrix.runner-name }}"
+        check_name: "Test Report ${{ env.RUNNER_NAME }}"
         report_paths: macOS/ui-tests.xml
         check_retries: true
 
@@ -340,7 +336,7 @@ jobs:
       uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
-        name: "xcresult-${{ matrix.runner-name }}"
+        name: "xcresult-${{ env.RUNNER_NAME }}"
         path: "macOS/DerivedData/Logs/Test/*.xcresult"
         retention-days: 1
 
@@ -348,7 +344,7 @@ jobs:
       uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
-        name: "app-console-${{ matrix.runner-name }}-macos${{ matrix.os-version }}"
+        name: "app-console-${{ env.RUNNER_NAME }}-macos${{ env.OS_VERSION }}"
         path: "macOS/app-console.log"
         if-no-files-found: warn
         retention-days: 1
@@ -361,7 +357,7 @@ jobs:
 
         # Create staging directory with timestamp and OS version
         timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
-        archive_name="BuildLogs ${{ matrix.runner-name }} (macOS ${{ matrix.os-version }}) ${timestamp}"
+        archive_name="BuildLogs ${{ env.RUNNER_NAME }} (macOS ${{ env.OS_VERSION }}) ${timestamp}"
         echo "Creating archive directory: $archive_name"
         mkdir -p "$archive_name"
 

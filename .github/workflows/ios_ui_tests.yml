@@ -62,6 +62,22 @@ jobs:
       with:
         preferred-versions: "26.5"
 
+    - name: Record simulator runtime diagnostics
+      continue-on-error: true
+      run: |
+        xcode-select -p
+        for xcode_app in /Applications/Xcode*.app; do
+          [ -d "$xcode_app" ] || continue
+          echo "Installed Xcode: $xcode_app"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$xcode_app/Contents/version.plist" || true
+          /usr/libexec/PlistBuddy -c 'Print :ProductBuildVersion' "$xcode_app/Contents/version.plist" || true
+        done
+        xcodebuild -version
+        xcrun --sdk iphonesimulator --show-sdk-build-version
+        xcrun simctl runtime list
+        xcrun simctl runtime match list
+
+
     - name: Run UI test
       run: |
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"

@@ -168,6 +168,18 @@ final class AIChatUsageWarningCardView: NSView {
         return button
     }()
 
+    private lazy var learnMoreHitButton: PointingHandButton = {
+        let button = PointingHandButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.isBordered = false
+        button.isTransparent = true
+        button.title = ""
+        button.isHidden = true
+        button.target = self
+        button.action = #selector(learnMoreClicked)
+        return button
+    }()
+
     /// Content centres on the visible band, not the card, whose top runs up behind the panel.
     private let contentGuide = NSLayoutGuide()
 
@@ -212,6 +224,7 @@ final class AIChatUsageWarningCardView: NSView {
     var onAction: (() -> Void)?
     var onOpenModelPicker: (() -> Void)?
     var onDismiss: (() -> Void)?
+    var onLearnMore: (() -> Void)?
 
     /// The `>`, so a menu opens against the control the user actually clicked.
     var modelPickerAnchor: NSView { actionButton.pickerAnchor }
@@ -339,9 +352,24 @@ final class AIChatUsageWarningCardView: NSView {
 
     // MARK: - Content
 
+    func update(with notice: AIChatAttachmentPrivacyNotice) {
+        applyInfoIcon()
+        titleLabel.maximumNumberOfLines = 2
+        titleLabel.attributedStringValue = Self.attributedDisclosure()
+        titleLabel.setAccessibilityLabel("\(AIChatAttachmentPrivacyNotice.title) \(AIChatAttachmentPrivacyNotice.learnMoreTitle)")
+
+        actionButton.isHidden = true
+        actionButton.collapse()
+
+        applyCloseButton(isVisible: true)
+        installLearnMoreHitTargetIfNeeded()
+        learnMoreHitButton.isHidden = false
+    }
+
     /// Lays the row out for the high-usage model notice: no reset detail and no CTA, since it is
     /// about which model is selected rather than about an allowance running out.
     func update(with notice: DuckAiHighUsageModelNotice) {
+        learnMoreHitButton.isHidden = true
         let text = UserText.aiChatUsageWarningsHighUsageModel(notice.modelShortName)
         applyInfoIcon()
         titleLabel.maximumNumberOfLines = 1
@@ -356,6 +384,7 @@ final class AIChatUsageWarningCardView: NSView {
 
     /// Lays the row out for `warning`. Whether the card shows at all is the host's call.
     func update(with warning: DuckAiUsageWarning) {
+        learnMoreHitButton.isHidden = true
         applyIcon(for: warning)
         titleLabel.maximumNumberOfLines = 1
         titleLabel.attributedStringValue = Self.attributedTitle(headline: warning.localizedHeadline,
@@ -398,6 +427,7 @@ final class AIChatUsageWarningCardView: NSView {
     }
 
     func update(with notice: AIChatCreateImageModelSwitchNotice) {
+        learnMoreHitButton.isHidden = true
         let title = notice.localizedTitle
         let subtitle = notice.localizedSubtitle
 
@@ -454,6 +484,32 @@ final class AIChatUsageWarningCardView: NSView {
     /// Regular weight throughout: the notice is a sentence, where the warnings lead with a headline.
     private static func attributedNotice(_ text: String) -> NSAttributedString {
         NSAttributedString(string: text, attributes: textAttributes(weight: .regular))
+    }
+
+    private static func attributedDisclosure() -> NSAttributedString {
+        let result = NSMutableAttributedString(string: AIChatAttachmentPrivacyNotice.title + " ",
+                                               attributes: textAttributes(weight: .regular))
+        var linkAttributes = textAttributes(weight: .regular)
+        linkAttributes[.foregroundColor] = NSColor(designSystemColor: .textLink)
+        result.append(NSAttributedString(string: AIChatAttachmentPrivacyNotice.learnMoreTitle,
+                                         attributes: linkAttributes))
+        return result
+    }
+
+    @objc private func learnMoreClicked() {
+        onLearnMore?()
+    }
+
+    private func installLearnMoreHitTargetIfNeeded() {
+        guard learnMoreHitButton.superview == nil else { return }
+
+        addSubview(learnMoreHitButton, positioned: .above, relativeTo: titleLabel)
+        NSLayoutConstraint.activate([
+            learnMoreHitButton.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            learnMoreHitButton.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+            learnMoreHitButton.topAnchor.constraint(equalTo: contentGuide.topAnchor),
+            learnMoreHitButton.bottomAnchor.constraint(equalTo: contentGuide.bottomAnchor)
+        ])
     }
 
     private static func attributedTitle(headline: String, resetsIn: String) -> NSAttributedString {

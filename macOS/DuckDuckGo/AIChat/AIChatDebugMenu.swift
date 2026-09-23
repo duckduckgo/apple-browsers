@@ -59,6 +59,11 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
+            NSMenuItem(title: "Reset Attachment Privacy Dismissal", action: #selector(resetAttachmentPrivacyDismissal))
+                .targetting(self)
+
+            NSMenuItem.separator()
+
             storageServerMenuItem
 
 #if DEBUG
@@ -86,6 +91,12 @@ final class AIChatDebugMenu: NSMenu {
     }
 
 #endif
+
+    // MARK: - Attachment Privacy Disclosure
+
+    @objc func resetAttachmentPrivacyDismissal() {
+        AIChatAttachmentPrivacyDismissalStore().reset()
+    }
 
     // MARK: - Duck.ai Usage Warnings
 

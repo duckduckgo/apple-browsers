@@ -200,6 +200,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// sliding out from under the omnibar.
     private let usageWarningCardView = AIChatUsageWarningCardView()
 
+    private let secondaryCardView = AIChatUsageWarningCardView()
+
+    private let attachmentPrivacyDismissalStore = AIChatAttachmentPrivacyDismissalStore()
+
     /// Holds ongoing resize tasks keyed by attachment ID, so we can await them before submission.
     private var resizeTasks: [UUID: Task<Void, Never>] = [:]
 
@@ -214,11 +218,21 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Mirrors the card's constraint so the reservation and the layout can't disagree.
     private var isUsageWarningVisible = false
+    private var isSecondaryCardVisible = false
     private var createImageModelSwitchNotice: AIChatCreateImageModelSwitchNotice?
 
-    /// Only the exposed band counts; the rest is behind the panel and costs nothing.
+    private var primaryCardBottomToViewBottom: NSLayoutConstraint?
+    private var primaryCardBottomToSecondaryTop: NSLayoutConstraint?
+
+    private var primaryBandMessage: BandMessage?
+    private var secondaryBandMessage: BandMessage?
+
+    /// Only the exposed bands count; the rest is behind the panel and costs nothing.
     private var usageWarningReservation: CGFloat {
-        isUsageWarningVisible ? AIChatUsageWarningCardView.Constants.contentHeight : 0
+        guard isUsageWarningVisible else { return 0 }
+
+        let bands = isSecondaryCardVisible ? 2 : 1
+        return CGFloat(bands) * AIChatUsageWarningCardView.Constants.contentHeight
     }
 
     /// The card's exposed band, for hosts that need to stop their own chrome above it.
@@ -1171,9 +1185,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         NSLayoutConstraint.activate([
             usageWarningCardView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             usageWarningCardView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            usageWarningCardView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             topConstraint
         ])
+
+        setupSecondaryCard()
 
         // Shares an ancestor with the omnibar's controls, so the card can sit in the same column
         // as them rather than keep margins of its own.
@@ -1195,24 +1210,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         usageWarningCardView.onDismiss = { [weak self] in
             guard let self else { return }
-            // Ahead of the pixel: this card is not a usage message, so closing it must not report
-            // a dismissal against whichever usage exposure happens to be open.
-            if createImageModelSwitchNotice != nil {
-                omnibarController.pixelHandler.fire(.createImageModelSwitchNoticeDismissed)
-                clearCreateImageModelSwitchNotice()
-                return
-            }
-
-            omnibarController.usageWarningMeasurement.warningDismissed()
-            if omnibarController.usageWarningViewModel?.warning != nil {
-                omnibarController.usageWarningViewModel?.dismiss()
-            } else {
-                highUsageNoticeSource?.dismissCurrent()
-            }
-            refreshUsageCard()
+            dismissBandMessage(primaryBandMessage)
         }
         usageWarningCardView.onOpenModelPicker = { [weak self] in
             self?.omnibarController.usageWarningViewModel?.openModelPicker()
+        }
+        usageWarningCardView.onLearnMore = { [weak self] in
+            self?.openAttachmentPrivacyLearnMore()
         }
 
         omnibarController.usageWarningViewModel?.onOpenModelPicker = { [weak self] in
@@ -1236,6 +1240,168 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         highUsageNoticeSource?.refresh()
     }
 
+    private func setupSecondaryCard() {
+        secondaryCardView.translatesAutoresizingMaskIntoConstraints = false
+        secondaryCardView.isHidden = true
+        view.addSubview(secondaryCardView, positioned: .below, relativeTo: backgroundView)
+
+        let bottomToView = usageWarningCardView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        let bottomToSecondary = usageWarningCardView.bottomAnchor.constraint(equalTo: secondaryCardView.topAnchor)
+        primaryCardBottomToViewBottom = bottomToView
+        primaryCardBottomToSecondaryTop = bottomToSecondary
+        bottomToView.isActive = true
+
+        NSLayoutConstraint.activate([
+            secondaryCardView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            secondaryCardView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            secondaryCardView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            secondaryCardView.heightAnchor.constraint(equalToConstant: AIChatUsageWarningCardView.Constants.contentHeight)
+        ])
+
+        secondaryCardView.alignIcon(withCenterXOf: imageUploadButton)
+        secondaryCardView.alignCloseButton(withCenterXOf: submitButton)
+
+        secondaryCardView.onDismiss = { [weak self] in
+            guard let self else { return }
+            dismissBandMessage(secondaryBandMessage)
+        }
+        secondaryCardView.onLearnMore = { [weak self] in
+            self?.openAttachmentPrivacyLearnMore()
+        }
+        secondaryCardView.onAction = { [weak self] in
+            self?.omnibarController.usageWarningViewModel?.performAction()
+        }
+    }
+
+    // MARK: - Band messages
+
+    /// Consent > Action > State, then priority within type.
+    private enum BandMessage {
+        case attachmentPrivacy(AIChatAttachmentPrivacyNotice)
+        case createImageSwitch(AIChatCreateImageModelSwitchNotice)
+        case usageWarning(DuckAiUsageWarning)
+        case highUsage(DuckAiHighUsageModelNotice)
+    }
+
+    private var hasStagedFileOrImageAttachment: Bool {
+        !omnibarController.activeImageAttachments.isEmpty || !omnibarController.activeFileAttachments.isEmpty
+    }
+
+    private var attachmentPrivacyNotice: AIChatAttachmentPrivacyNotice? {
+        guard hasStagedFileOrImageAttachment,
+              !attachmentPrivacyDismissalStore.isSuppressed else { return nil }
+
+        return AIChatAttachmentPrivacyNotice()
+    }
+
+    private func resolveBandMessages() -> [BandMessage] {
+        var messages: [BandMessage] = []
+
+        if let notice = attachmentPrivacyNotice {
+            messages.append(.attachmentPrivacy(notice))
+        }
+        if let notice = createImageModelSwitchNotice {
+            messages.append(.createImageSwitch(notice))
+        }
+        if let warning = omnibarController.usageWarningViewModel?.warning {
+            messages.append(.usageWarning(warning))
+        } else if let notice = highUsageNoticeSource?.notice {
+            messages.append(.highUsage(notice))
+        }
+
+        return Array(messages.prefix(2))
+    }
+
+    /// Higher priority renders nearest the input, which is the primary card.
+    private func applyBandMessages() {
+        applyInputBlock(omnibarController.usageWarningViewModel?.warning?.blocksInput == true)
+
+        let messages = resolveBandMessages()
+        guard let primary = messages.first else {
+            primaryBandMessage = nil
+            secondaryBandMessage = nil
+            currentUsageWarningExposure = nil
+            applySecondaryCardVisible(false)
+            setUsageWarningVisible(false)
+            return
+        }
+
+        primaryBandMessage = primary
+        apply(primary, to: usageWarningCardView)
+        currentUsageWarningExposure = exposure(for: primary)
+
+        let secondary = messages.count > 1 ? messages[1] : nil
+        secondaryBandMessage = secondary
+        if let secondary {
+            apply(secondary, to: secondaryCardView)
+        }
+        applySecondaryCardVisible(secondary != nil)
+        setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+    }
+
+    private func apply(_ message: BandMessage, to card: AIChatUsageWarningCardView) {
+        switch message {
+        case .attachmentPrivacy(let notice): card.update(with: notice)
+        case .createImageSwitch(let notice): card.update(with: notice)
+        case .usageWarning(let warning): card.update(with: warning)
+        case .highUsage(let notice): card.update(with: notice)
+        }
+    }
+
+    private func exposure(for message: BandMessage) -> DuckAiUsageWarningExposure? {
+        switch message {
+        case .usageWarning(let warning): return DuckAiUsageWarningExposure(warning: warning)
+        case .highUsage, .createImageSwitch, .attachmentPrivacy: return nil
+        }
+    }
+
+    private func dismissBandMessage(_ message: BandMessage?) {
+        guard let message else { return }
+
+        switch message {
+        case .attachmentPrivacy:
+            attachmentPrivacyDismissalStore.recordDismissal()
+        case .createImageSwitch:
+            omnibarController.pixelHandler.fire(.createImageModelSwitchNoticeDismissed)
+            createImageModelSwitchNotice = nil
+        case .usageWarning:
+            omnibarController.usageWarningMeasurement.warningDismissed()
+            omnibarController.usageWarningViewModel?.dismiss()
+        case .highUsage:
+            omnibarController.usageWarningMeasurement.warningDismissed()
+            highUsageNoticeSource?.dismissCurrent()
+        }
+        refreshUsageCard()
+    }
+
+    private func applySecondaryCardVisible(_ visible: Bool) {
+        guard isSecondaryCardVisible != visible else { return }
+
+        isSecondaryCardVisible = visible
+        secondaryCardView.isHidden = !visible
+        // Outgoing first, or Auto Layout breaks whichever of the two it likes.
+        if visible {
+            primaryCardBottomToViewBottom?.isActive = false
+            primaryCardBottomToSecondaryTop?.isActive = true
+        } else {
+            primaryCardBottomToSecondaryTop?.isActive = false
+            primaryCardBottomToViewBottom?.isActive = true
+        }
+        backgroundViewBottomConstraint?.constant = isUsageWarningVisible ? -usageWarningReservation : 0
+
+        onSuggestionsHeightChanged?(suggestionsHeight)
+        onPassthroughHeightNeedsUpdate?()
+        layoutShadowView()
+    }
+
+    /// A new tab, so the staged attachment and the draft survive.
+    private func openAttachmentPrivacyLearnMore() {
+        Application.appDelegate.windowControllersManager.show(url: AIChatAttachmentPrivacyNotice.learnMoreURL,
+                                                              source: .ui,
+                                                              newTab: true,
+                                                              selected: true)
+    }
+
     private func subscribeToUsageWarnings() {
         guard let viewModel = omnibarController.usageWarningViewModel else { return }
 
@@ -1250,22 +1416,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Not gated on `shouldSuppressSuggestions`: image-gen mode and attachments still spend the
     /// allowance, so the message stays up where suggestions don't.
     private func applyUsageWarning(_ warning: DuckAiUsageWarning?) {
-        applyInputBlock(warning?.blocksInput == true)
-        if let createImageModelSwitchNotice {
-            usageWarningCardView.update(with: createImageModelSwitchNotice)
-            // Not a usage message, so nothing here is an impression — and leaving the last one set
-            // would report it again for a card the user is no longer looking at.
-            currentUsageWarningExposure = nil
-            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
-            return
-        }
-        if let warning {
-            usageWarningCardView.update(with: warning)
-            currentUsageWarningExposure = DuckAiUsageWarningExposure(warning: warning)
-            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
-            return
-        }
-        applyHighUsageNotice()
+        applyBandMessages()
     }
 
     /// Spent allowance: the whole input goes inert so the card is the only thing left to act on,
@@ -1283,22 +1434,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         updateSuggestionsHeight(shouldSuppressSuggestions ? 0 : lastKnownSuggestionsHeight)
     }
 
-    /// The fallback when no allowance message applies: web shows the same one, and shows it here too.
-    private func applyHighUsageNotice() {
-        guard let notice = highUsageNoticeSource?.notice else {
-            currentUsageWarningExposure = nil
-            return setUsageWarningVisible(false)
-        }
-        usageWarningCardView.update(with: notice)
-        currentUsageWarningExposure = DuckAiUsageWarningExposure(notice: notice)
-        setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
-    }
 
     /// Re-resolves the notice and re-applies whichever message wins. The warning half is published,
     /// so it only needs re-reading when the selected model changes.
     private func refreshUsageCard() {
         highUsageNoticeSource?.refresh()
-        applyUsageWarning(omnibarController.usageWarningViewModel?.warning)
+        applyBandMessages()
     }
 
     private func showCreateImageModelSwitchNotice(_ notice: AIChatCreateImageModelSwitchNotice) {
@@ -1338,11 +1479,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         isUsageWarningVisible = visible
         usageWarningCardView.isHidden = !visible
+        secondaryCardView.isHidden = !visible || !isSecondaryCardVisible
         usageWarningShadowView.isHidden = !visible || hostDrawsChrome
         panelBottomEdgeStrokeView.isHidden = !visible || !hostDrawsChrome
-        backgroundViewBottomConstraint?.constant = visible
-            ? -AIChatUsageWarningCardView.Constants.contentHeight
-            : 0
+        backgroundViewBottomConstraint?.constant = visible ? -usageWarningReservation : 0
         // Only while the panel's own shadow is up: `cleanup()` takes it down and then hides the card,
         // so without this guard teardown puts it straight back on the window.
         applyTheme(theme: themeManager.theme)
@@ -2104,6 +2244,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         omnibarController.hasImageAttachments = hasAttachments
 
+        refreshUsageCard()
+
         // Image thumbnails and tab cards share the carousel's row, so the row's height is driven
         // jointly through `updateAttachmentsCarouselLayout()` (single source of truth for the row).
         updateAttachmentsCarouselLayout()
@@ -2609,6 +2751,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.apply(hostDrawsChrome ? .hostPaintsSurface : .ownSurface)
         usageWarningCardView.applyThemeStyle()
         usageWarningCardView.applyPanelCornerRadius(panelRadius)
+        secondaryCardView.apply(hostDrawsChrome ? .hostPaintsSurface : .ownSurface)
+        secondaryCardView.applyThemeStyle()
+        secondaryCardView.applyPanelCornerRadius(panelRadius)
         usageWarningTopConstraint?.constant = -usageWarningOverlap
         panelBottomEdgeStrokeView.cornerRadius = panelRadius
         panelBottomEdgeStrokeView.strokeColor = NSColor(named: "AddressBarBorderColor")

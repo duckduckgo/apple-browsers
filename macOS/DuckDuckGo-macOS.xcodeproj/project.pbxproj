@@ -900,7 +900,6 @@
 		3706FCB5293F65D500E42796 /* trackerData.json in Resources */ = {isa = PBXBuildFile; fileRef = 9833913027AAA4B500DAF119 /* trackerData.json */; };
 		3706FCB7293F65D500E42796 /* 01_Fire_really_small.json in Resources */ = {isa = PBXBuildFile; fileRef = 8511E18325F82B34002F516B /* 01_Fire_really_small.json */; };
 		3706FCBE293F65D500E42796 /* autoconsent-bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = B31055C327A1BA1D001AC618 /* autoconsent-bundle.js */; };
-		3706FCBF293F65D500E42796 /* ContentOverlay.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7B1E819C27C8874900FF0E60 /* ContentOverlay.storyboard */; };
 		3706FCC0293F65D500E42796 /* FindInPage.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 85A0117325AF2EDF00FA6A0C /* FindInPage.storyboard */; };
 		3706FCC3293F65D500E42796 /* userscript.js in Resources */ = {isa = PBXBuildFile; fileRef = B31055BE27A1BA1D001AC618 /* userscript.js */; };
 		3706FCC8293F65D500E42796 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA585D85248FD31400E9A3E2 /* Assets.xcassets */; };
@@ -2169,7 +2168,6 @@
 		7B17AA8D2F757C480087A9ED /* UnloadedTabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B17AA8C2F757C480087A9ED /* UnloadedTabViewModel.swift */; };
 		7B17AA8E2F757C480087A9ED /* UnloadedTabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B17AA8C2F757C480087A9ED /* UnloadedTabViewModel.swift */; };
 		7B1E819E27C8874900FF0E60 /* ContentOverlayPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1E819B27C8874900FF0E60 /* ContentOverlayPopover.swift */; };
-		7B1E819F27C8874900FF0E60 /* ContentOverlay.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7B1E819C27C8874900FF0E60 /* ContentOverlay.storyboard */; };
 		7B1E81A027C8874900FF0E60 /* ContentOverlayViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1E819D27C8874900FF0E60 /* ContentOverlayViewController.swift */; };
 		7B1F0A112F0100000000FA01 /* FireWindowClosingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1F0A102F0100000000FA01 /* FireWindowClosingTests.swift */; };
 		7B1F0A122F0100000000FA01 /* FireWindowClosingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1F0A102F0100000000FA01 /* FireWindowClosingTests.swift */; };
@@ -6052,7 +6050,6 @@
 		7B17AA892F757C3B0087A9ED /* AnyTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnyTab.swift; sourceTree = "<group>"; };
 		7B17AA8C2F757C480087A9ED /* UnloadedTabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnloadedTabViewModel.swift; sourceTree = "<group>"; };
 		7B1E819B27C8874900FF0E60 /* ContentOverlayPopover.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentOverlayPopover.swift; sourceTree = "<group>"; };
-		7B1E819C27C8874900FF0E60 /* ContentOverlay.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = ContentOverlay.storyboard; sourceTree = "<group>"; };
 		7B1E819D27C8874900FF0E60 /* ContentOverlayViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentOverlayViewController.swift; sourceTree = "<group>"; };
 		7B1F0A102F0100000000FA01 /* FireWindowClosingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowClosingTests.swift; sourceTree = "<group>"; };
 		7B22D86D2CCFD7B7006A76E1 /* TipKitController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipKitController.swift; sourceTree = "<group>"; };
@@ -10187,7 +10184,6 @@
 				317307242CD2489900C492AB /* Onboarding */,
 				C10529482C9F45720041E502 /* Debug */,
 				7B1E819B27C8874900FF0E60 /* ContentOverlayPopover.swift */,
-				7B1E819C27C8874900FF0E60 /* ContentOverlay.storyboard */,
 				7B1E819D27C8874900FF0E60 /* ContentOverlayViewController.swift */,
 				C13909EE2B85FD4E001626ED /* AutofillActionExecutor.swift */,
 				C1E961EE2B87AA29001760E1 /* AutofillActionBuilder.swift */,
@@ -15007,7 +15003,6 @@
 				854DAAAE2A72B613001E2E24 /* BookmarksBarPromptAssets.xcassets in Resources */,
 				B599B5EE2FFE9DF700B5E877 /* Flame-24.json in Resources */,
 				3706FCBE293F65D500E42796 /* autoconsent-bundle.js in Resources */,
-				3706FCBF293F65D500E42796 /* ContentOverlay.storyboard in Resources */,
 				378CA3A02FBC79290043CF38 /* AppIcon.icon in Resources */,
 				ED314EC1301CC10E00D1A0A0 /* AppIcon-Debug.icon in Resources */,
 				ED314EC8301CC10E00D1A0A0 /* AppIcon-Alpha.icon in Resources */,
@@ -15269,7 +15264,6 @@
 				859F30672A72B38500C20372 /* BookmarksBarPromptAssets.xcassets in Resources */,
 				B599B5ED2FFE9DF700B5E877 /* Flame-24.json in Resources */,
 				B31055CB27A1BA1D001AC618 /* autoconsent-bundle.js in Resources */,
-				7B1E819F27C8874900FF0E60 /* ContentOverlay.storyboard in Resources */,
 				378CA39F2FBC79290043CF38 /* AppIcon.icon in Resources */,
 				ED314EC2301CC10E00D1A0A0 /* AppIcon-Debug.icon in Resources */,
 				ED314EC9301CC10E00D1A0A0 /* AppIcon-Alpha.icon in Resources */,

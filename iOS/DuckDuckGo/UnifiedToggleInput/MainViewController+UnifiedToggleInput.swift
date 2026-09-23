@@ -601,7 +601,7 @@ private extension MainViewController {
     func subscribeToSystemEvents() {
         unifiedToggleInputCoordinator?.onSubscriptionUpsellAvailabilityChanged = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
-            self.aiChatTabChatHeaderView?.setAllowsSubscriptionUpsell(coordinator.modelStore.allowsSubscriptionUpsell)
+            self.aiChatTabChatHeaderView?.setAllowsSubscriptionUpsell(coordinator.modelStore.shouldShowHeaderUpsell)
         }
 
         NotificationCenter.default.publisher(for: .speechRecognizerDidChangeAvailability)
@@ -946,7 +946,7 @@ private extension MainViewController {
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             self.aiChatTabChatHeaderView?.configure(
                 isSubscriptionActive: isActive,
-                allowsSubscriptionUpsell: coordinator.modelStore.allowsSubscriptionUpsell)
+                allowsSubscriptionUpsell: coordinator.modelStore.shouldShowHeaderUpsell)
         }
     }
 }

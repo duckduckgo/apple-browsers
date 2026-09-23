@@ -580,6 +580,32 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "image-capable")
     }
 
+    func testWhenInitialProductFetchResolvesThenHeaderUpsellUsesAvailability() async {
+        for available in [false, true] {
+            subscriptionManager.hasResolvedAppStoreProducts = false
+            subscriptionManager.hasAppStoreProductsAvailable = false
+            sut = makeSUT(isUpdatedModelPickerEnabled: false)
+
+            XCTAssertTrue(sut.shouldShowHeaderUpsell)
+            XCTAssertFalse(sut.allowsSubscriptionUpsell)
+
+            let productsUpdated = expectation(description: "product availability updated")
+            sut.onModelsUpdated = { productsUpdated.fulfill() }
+            subscriptionManager.hasAppStoreProductsAvailable = available
+            await fulfillment(of: [productsUpdated], timeout: 1)
+            XCTAssertTrue(sut.shouldShowHeaderUpsell)
+
+            let resolved = expectation(description: "header refreshed after initial product fetch")
+            sut.onModelsUpdated = { resolved.fulfill() }
+            subscriptionManager.hasResolvedAppStoreProducts = true
+            await fulfillment(of: [resolved], timeout: 1)
+
+            XCTAssertEqual(sut.shouldShowHeaderUpsell, available)
+            XCTAssertEqual(sut.allowsSubscriptionUpsell, available)
+            sut.onModelsUpdated = nil
+        }
+    }
+
     func testAvailabilityRefreshPreservesCatalogAndChoicesWithoutFetchingForBothPickerVariants() async {
         for updated in [true, false] {
             subscriptionManager.hasAppStoreProductsAvailable = true

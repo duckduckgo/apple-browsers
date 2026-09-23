@@ -1092,7 +1092,7 @@ class MainViewController: UIViewController {
                                                         self?.isPaidAIChatEnabledForSwipe ?? false
                                                     },
                                                     allowsSubscriptionUpsellProvider: { [weak self] in
-                                                        self?.unifiedToggleInputCoordinator?.modelStore.allowsSubscriptionUpsell ?? false
+                                                        self?.unifiedToggleInputCoordinator?.modelStore.shouldShowHeaderUpsell ?? true
                                                     },
                                                     hasInlineSearchInput: { [weak self] tab in
                                                         guard let self, tab?.isAITab != true, tab?.link == nil,

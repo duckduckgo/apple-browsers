@@ -43,6 +43,10 @@ final class UTIModelStore {
         upsellPolicy.allowsUpsell(for: subscriptionState.userTier)
     }
 
+    var shouldShowHeaderUpsell: Bool {
+        upsellPolicy.shouldShowHeaderUpsell(for: subscriptionState.userTier)
+    }
+
     var isReasoningPickerAvailable: Bool {
         guard let selectedModel else { return false }
         return selectedModel.supportsReasoningPicker

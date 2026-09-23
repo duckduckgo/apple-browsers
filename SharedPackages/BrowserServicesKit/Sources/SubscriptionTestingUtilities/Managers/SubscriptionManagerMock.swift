@@ -60,6 +60,13 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
     }
 
+    public var hasResolvedAppStoreProducts = true {
+        didSet {
+            guard hasResolvedAppStoreProducts != oldValue else { return }
+            hasAppStoreProductsAvailableSubject.send(hasAppStoreProductsAvailable)
+        }
+    }
+
     public var hasAppStoreProductsAvailable: Bool = true {
         didSet {
             self.hasAppStoreProductsAvailableSubject.send(hasAppStoreProductsAvailable)

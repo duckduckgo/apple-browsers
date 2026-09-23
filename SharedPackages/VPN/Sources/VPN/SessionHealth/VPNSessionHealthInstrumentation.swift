@@ -252,7 +252,9 @@ private extension DefaultVPNSessionHealthInstrumentation {
 
         for orphan in orphans {
             Logger.networkProtectionSessionHealth.log("Recovering orphan: \(orphan.globalData.id, privacy: .public)")
-            completeEventIfEnded(orphan.markingOrphanedSessionEnded(at: now()))
+
+            let recovered = orphan.hasEnded ? orphan : orphan.markingOrphanedSessionEnded(at: now())
+            completeEventIfEnded(recovered)
         }
     }
 

@@ -29,6 +29,7 @@ import UIKit
 
 /// Delegate protocol for handling interactions with the unified toggle input composite view.
 protocol UnifiedToggleInputViewDelegate: AnyObject {
+    func unifiedToggleInputView(_ view: UnifiedToggleInputView, didChangeExpansion isExpanded: Bool)
     func unifiedToggleInputViewDidTapWhileCollapsed(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidRequestSubmitCurrentInput(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode)
@@ -1139,8 +1140,12 @@ final class UnifiedToggleInputView: UIView {
 
     func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool) {
         let expanded = layout.isExpanded
+        let expansionChanged = expanded != isExpanded
         isExpanded = expanded
         handler.isExpanded = expanded
+        if expansionChanged {
+            delegate?.unifiedToggleInputView(self, didChangeExpansion: expanded)
+        }
         // The matched omnibar pose (`applyOmnibarMatchedInsets`) drops the top constraint below the
         // pinned height so the card stays the pill's height; restore it here so every other layout
         // is driven by its real top/bottom margins again.

@@ -1533,6 +1533,10 @@ private extension AIChatContextualSheetViewController {
         persistentUTIHost.onEditModeChange = { [weak self] isEditing in
             self?.setEditMode(isEditing)
         }
+        isInputExpanded = persistentUTIHost.isInputExpanded
+        persistentUTIHost.onExpandedChange = { [weak self] expanded in
+            self?.setInputExpanded(expanded)
+        }
 
         let utiView = persistentUTIHost.mount(in: self)
         // The previous constraint died with the old mount — its two views no longer share an ancestor.
@@ -1649,30 +1653,19 @@ private extension AIChatContextualSheetViewController {
             name: UIResponder.keyboardWillShowNotification,
             object: nil
         )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(sheetKeyboardWillHide),
-            name: UIResponder.keyboardWillHideNotification,
-            object: nil
-        )
     }
 
     func removeKeyboardObserver() {
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
-        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
     }
 
     @objc func sheetKeyboardWillShow() {
         if isWebViewVisible && isCurrentlyMediumDetent {
             expandToLargeDetent()
         }
-        setInputExpanded(true)
     }
 
-    @objc func sheetKeyboardWillHide() {
-        setInputExpanded(false)
-    }
-
+    /// Driven by the input's real expanded/collapsed signal (not the keyboard).
     private func setInputExpanded(_ expanded: Bool) {
         isInputExpanded = expanded
         if hasEmbeddedActiveChatSuggestions {

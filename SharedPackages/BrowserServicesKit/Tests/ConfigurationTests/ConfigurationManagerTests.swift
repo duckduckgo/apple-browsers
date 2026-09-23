@@ -19,8 +19,7 @@
 import XCTest
 @_spi(Testing) import Persistence
 @testable import Configuration
-@testable import Networking
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
 
 final class MockConfigurationManager: DefaultConfigurationManager {
 

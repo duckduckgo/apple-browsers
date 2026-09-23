@@ -109,6 +109,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
     let applicationUpdateDetector: ApplicationUpdateDetector
+    var cpmAppSessionDiagnostics: CPMAppSessionDiagnostics {
+        let versionChange: CPMAppSessionDiagnostics.VersionChange?
+        switch applicationUpdateDetector.isApplicationUpdated() {
+        case .updated: versionChange = .updated
+        case .downgraded: versionChange = .downgraded
+        case .noChange: versionChange = nil
+        }
+        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate)
+    }
     private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
@@ -279,6 +288,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatConversationSourceHandler = AIChatConversationSourceHandler()
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
+
+    let aiChatBrowserToolsService: AIChatBrowserToolsService
     let aiChatPreferences: AIChatPreferences
     let promptBarPreferences: PromptBarPreferences
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
@@ -884,6 +895,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
+
+        aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
+                                                              windowControllersManager: windowControllersManager)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)

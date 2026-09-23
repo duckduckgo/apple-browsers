@@ -521,7 +521,8 @@ class TabViewController: UIViewController {
     }
 
     var isShowingDocument: Bool {
-        guard featureFlagger.isFeatureOn(.aiChatPdfPageContext), let url else { return false }
+        // Local (file://) pages aren't attachable, so don't offer the document menu for a local PDF.
+        guard featureFlagger.isFeatureOn(.aiChatPdfPageContext), let url, !url.isFileURL else { return false }
         return DocumentPageContextProvider.isSupportedDocument(mimeType: lastMainFramePageContextMIMEType(for: url), url: url)
     }
 

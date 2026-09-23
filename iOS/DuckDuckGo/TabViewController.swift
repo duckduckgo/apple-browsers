@@ -767,6 +767,7 @@ class TabViewController: UIViewController {
     var sitePermissionsDependenciesProvider: @MainActor () -> SitePermissionsDependencies?
 
     let sitePermissionsState = SitePermissionsState()
+    var sitePermissionsNavigationTimeout: TimeInterval = 10
 
     /// Main-frame response (URL + MIME) for the page-context gate; keyed by URL to avoid stale-MIME leaks.
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
@@ -1522,6 +1523,7 @@ class TabViewController: UIViewController {
     }
 
     public func load(url: URL) {
+        sitePermissionsState.cancelContentBlockingWaits()
         wasLoadingStoppedExternally = false
         addressBarURLFilter.beginUserNavigation()
         webView.stopLoading()
@@ -1533,6 +1535,7 @@ class TabViewController: UIViewController {
     }
     
     public func load(backForwardListItem: WKBackForwardListItem) {
+        sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         webView.stopLoading()
         dismissJSAlertIfNeeded()
@@ -1780,6 +1783,7 @@ class TabViewController: UIViewController {
     }
 
     public func reload() {
+        sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
         wasLoadingStoppedExternally = false
         addressBarURLFilter.beginUserReload()
@@ -1796,6 +1800,7 @@ class TabViewController: UIViewController {
     }
 
     func goBack() {
+        sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
 
@@ -1868,6 +1873,7 @@ class TabViewController: UIViewController {
     }
 
     func goForward() {
+        sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
 
@@ -2345,6 +2351,7 @@ class TabViewController: UIViewController {
     }
 
     func stopLoading() {
+        sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
         webView.stopLoading()
         wasLoadingStoppedExternally = true
@@ -3284,6 +3291,12 @@ extension TabViewController: WKNavigationDelegate {
                  decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
+        if webView === self.webView,
+           navigationAction.isTargetingMainFrame,
+           featureFlagger.isFeatureOn(.sitePermissions) {
+            sitePermissionsState.cancelContentBlockingWaits()
+        }
+
         // Capture the site-loading navigation type only at the moment the navigation is actually allowed.
         // Doing it any earlier — e.g. at the top of this function — would race when policy decisions
         // overlap: for instance, the content-blocking wait below can hold nav1's `decisionHandler` while
@@ -3334,7 +3347,7 @@ extension TabViewController: WKNavigationDelegate {
                    return
                }
                self.webView(webView, decidePolicyFor: navigationAction, decisionHandler: wrappedHandler)
-           }, for: url) {
+           }, for: url, isMainFrame: navigationAction.isTargetingMainFrame) {
             // will wait for Content Blocking to load and re-call on completion
             return
         }
@@ -3543,7 +3556,8 @@ extension TabViewController: WKNavigationDelegate {
     // swiftlint:enable cyclomatic_complexity
 
     func shouldWaitUntilContentBlockingIsLoaded(_ completion: @Sendable @escaping @MainActor (Bool) -> Void,
-                                                for url: URL) -> Bool {
+                                                for url: URL,
+                                                isMainFrame: Bool = true) -> Bool {
         // Ensure Content Blocking Assets (WKContentRuleList&UserScripts) are installed
         let shouldWait = Self.shouldWaitForContentBlockingAssets(
             assetsInstalled: userContentController.contentBlockingAssetsInstalled,
@@ -3575,7 +3589,8 @@ extension TabViewController: WKNavigationDelegate {
         rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
         showProgressIndicator()
         let waitID = UUID()
-        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak state = sitePermissionsState, userContentController, rulesCompilationMonitor, tabID = tabModel.uid] in
+        let timeout = sitePermissionsNavigationTimeout
+        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, userContentController, rulesCompilationMonitor, tabID = tabModel.uid] in
             defer {
                 state?.contentBlockingWaitTasks[waitID] = nil
                 rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
@@ -3584,13 +3599,39 @@ extension TabViewController: WKNavigationDelegate {
                 completion(false)
                 return
             }
-            for await assets in userContentController.$contentBlockingAssets.values
-                where (assets?.userScripts as? UserScripts)?.geolocationUserScript != nil {
+            // Only readiness may reset the deadline; unrelated asset updates must not extend it.
+            let readiness = userContentController.$contentBlockingAssets
+                .filter { ($0?.userScripts as? UserScripts)?.geolocationUserScript != nil }
+                .timeout(.seconds(timeout), scheduler: DispatchQueue.main)
+                .first()
+            var isReady = false
+            for await _ in readiness.values {
+                isReady = true
                 break
             }
-            completion(!Task.isCancelled)
+            // Remove before completion: success re-enters the navigation policy delegate.
+            let isCurrentWait = state?.contentBlockingWaitTasks.removeValue(forKey: waitID) != nil
+            guard !Task.isCancelled, isCurrentWait else {
+                completion(false)
+                return
+            }
+            if !isReady, isMainFrame {
+                self?.showSitePermissionsAssetsTimeout(for: url)
+            }
+            completion(isReady)
         }
         return true
+    }
+
+    private func showSitePermissionsAssetsTimeout(for failedURL: URL) {
+        let error = URLError(.timedOut, userInfo: [NSURLErrorFailingURLErrorKey: failedURL])
+        lastError = error
+        pendingNativeLoadURL = nil
+        shouldReloadOnError = false
+        url = failedURL
+        hideProgressIndicator()
+        showError(message: error.localizedDescription)
+        webpageDidFailToLoad()
     }
 
     private func decidePolicyFor(navigationAction: WKNavigationAction, completion: @escaping (WKNavigationActionPolicy) -> Void) {

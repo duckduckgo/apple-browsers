@@ -114,7 +114,7 @@ final class SitePermissionsState {
     fileprivate var featureFlagSubscription: AnyCancellable?
     var contentBlockingWaitTasks = [UUID: Task<Void, Never>]()
 
-    fileprivate func cancelContentBlockingWaits() {
+    func cancelContentBlockingWaits() {
         contentBlockingWaitTasks.values.forEach { $0.cancel() }
         contentBlockingWaitTasks.removeAll()
     }

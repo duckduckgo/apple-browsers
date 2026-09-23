@@ -1,5 +1,5 @@
 //
-//  RedesignedFocusedSearchModulesView.swift
+//  RedesignedNewTabPageModulesView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,29 +17,20 @@
 //  limitations under the License.
 //
 
-import DesignResourcesKit
 import SwiftUI
 
-/// Favorites shown while the redesigned search input is focused and empty.
-struct RedesignedFocusedSearchModulesView: View {
+/// Shared module arrangement. Each presentation owns its scrolling and supplies existing models.
+struct RedesignedNewTabPageModulesView: View {
     let favoritesModel: FavoritesViewModel?
 
     var body: some View {
-        ScrollView {
-            RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
+        VStack(alignment: .leading, spacing: 28) {
+            if let favoritesModel {
+                RedesignedFavoritesView(model: favoritesModel)
+            }
         }
-        .background(Color(designSystemColor: .background))
-        .scrollDismissesKeyboardIfAvailable()
-    }
-}
-
-private extension View {
-    @ViewBuilder
-    func scrollDismissesKeyboardIfAvailable() -> some View {
-        if #available(iOS 16, *) {
-            scrollDismissesKeyboard(.immediately)
-        } else {
-            self
-        }
+        .padding(.horizontal, 16)
+        .padding(.top, 20)
+        .padding(.bottom, 16)
     }
 }

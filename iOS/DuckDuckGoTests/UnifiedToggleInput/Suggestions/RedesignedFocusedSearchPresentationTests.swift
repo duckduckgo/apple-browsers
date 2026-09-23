@@ -71,6 +71,48 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         XCTAssertEqual(cancellations, 1)
     }
 
+    func testWhenReturningToBrowserPresentationThenLogoAndInputSubscriptionsAreRestored() {
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+        var activeSubscriptions = 0
+        let publisher = inputs.handleEvents(
+            receiveSubscription: { _ in activeSubscriptions += 1 },
+            receiveCancel: { activeSubscriptions -= 1 }).eraseToAnyPublisher()
+        var host: UnifiedSuggestionsHost? = makeHost(inputsPublisher: publisher)
+        XCTAssertEqual(activeSubscriptions, 1)
+        XCTAssertEqual(host?.isShowingLogo, true)
+
+        for _ in 0..<3 {
+            host?.setUsesRedesignedNewTabPageLayout(true)
+            XCTAssertEqual(host?.isShowingLogo, false)
+            XCTAssertEqual(activeSubscriptions, 2)
+            host?.setUsesRedesignedNewTabPageLayout(true)
+            XCTAssertEqual(activeSubscriptions, 2)
+
+            host?.setUsesRedesignedNewTabPageLayout(false)
+            XCTAssertEqual(host?.isShowingLogo, true)
+            XCTAssertEqual(activeSubscriptions, 1)
+            host?.setUsesRedesignedNewTabPageLayout(false)
+            XCTAssertEqual(activeSubscriptions, 1)
+        }
+        host?.setUsesRedesignedNewTabPageLayout(true)
+        XCTAssertEqual(activeSubscriptions, 2)
+        host?.tearDown()
+        XCTAssertEqual(activeSubscriptions, 1)
+        host = nil
+        XCTAssertEqual(activeSubscriptions, 0)
+    }
+
+    private func makeHost(inputsPublisher: AnyPublisher<UnifiedSuggestionsInputs, Never>) -> UnifiedSuggestionsHost {
+        UnifiedSuggestionsHost(config: UnifiedSuggestionsHostConfig(
+            source: EmptySuggestionsSource(),
+            inputsPublisher: inputsPublisher,
+            isAddressBarAtBottom: false,
+            favoritesProvider: { nil },
+            onSelectRow: { _ in },
+            onDeleteRow: { _ in },
+            onTapAheadRow: { _ in }))
+    }
+
     private func makePresentation() -> RedesignedFocusedSearchPresentation {
         RedesignedFocusedSearchPresentation(inputsPublisher: inputs.eraseToAnyPublisher(),
                                             dismissPublisher: dismissal.eraseToAnyPublisher(),

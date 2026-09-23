@@ -182,11 +182,6 @@ final class HistoryStoreTests: XCTestCase {
 
         var toBeDeleted: [Visit] = []
         var historiesToPreventFromDeallocation = [HistoryEntry]()
-        let addVisitsToEntry = { [weak self] (visits: [Visit]) in
-            guard let self = self else { return }
-            let history = try await self.saveNewHistoryEntry(including: visits, lastVisit: visits.last!.date)
-            historiesToPreventFromDeallocation.append(history)
-        }
 
         for _ in 0..<3 {
             var visits = [Visit]()
@@ -196,7 +191,8 @@ final class HistoryStoreTests: XCTestCase {
                 visits.append(visit)
                 toBeDeleted.append(visit)
             }
-            try await addVisitsToEntry(visits)
+            let history = try await saveNewHistoryEntry(including: visits, lastVisit: visits.last!.date)
+            historiesToPreventFromDeallocation.append(history)
         }
 
         do {

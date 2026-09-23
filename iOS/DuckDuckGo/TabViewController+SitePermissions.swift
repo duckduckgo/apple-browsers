@@ -854,7 +854,7 @@ extension TabViewController {
             && !isError
             && frame.isAssociated(with: webView)
             && !host.isEmpty
-            && isSecureGeolocationOrigin(frame.securityOrigin)
+            && SitePermissionSecurityOrigin(frame.securityOrigin).isPotentiallyTrustworthy
             && host != "duck.ai"
             && !host.hasSuffix(".duck.ai")
     }
@@ -867,7 +867,7 @@ extension TabViewController {
               !sitePermissionsState.isCommittedGeolocationPolicyBlocked,
               let committedURL = sitePermissionsState.committedMainFrameURL,
               let topLevelSite = currentSitePermissionKey(),
-              isSecureGeolocationOrigin(frame.securityOrigin),
+              SitePermissionSecurityOrigin(frame.securityOrigin).isPotentiallyTrustworthy,
               Self.isSameOrigin(frame.securityOrigin, as: committedURL) else {
             return nil
         }
@@ -879,24 +879,6 @@ extension TabViewController {
             webContentProcessGeneration: sitePermissionsState.webContentProcessGeneration,
             navigationGeneration: sitePermissionsState.navigationGeneration
         )
-    }
-
-    private func isSecureGeolocationOrigin(_ origin: WKSecurityOrigin) -> Bool {
-        let scheme = origin.protocol.lowercased()
-        guard !origin.host.isEmpty,
-              scheme == "https" || scheme == "http" else { return false }
-        guard scheme == "http" else { return true }
-
-        let host = origin.host.lowercased()
-        let ipv4Octets = host.split(separator: ".", omittingEmptySubsequences: false)
-        let isIPv4Loopback = ipv4Octets.count == 4
-            && ipv4Octets.allSatisfy { UInt8($0) != nil }
-            && UInt8(ipv4Octets[0]) == 127
-        return host == "localhost"
-            || host.hasSuffix(".localhost")
-            || host == "::1"
-            || host == "[::1]"
-            || isIPv4Loopback
     }
 
     /// Cross-origin delegation is intentionally unsupported in v1 because the shim cannot reliably

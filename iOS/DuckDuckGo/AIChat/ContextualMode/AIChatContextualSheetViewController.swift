@@ -187,8 +187,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// Whether the web view is currently visible (vs native input being visible)
     private var isWebViewVisible = false
 
-    /// Active-chat suggestions chips above the UTI input — same controller and embedding as the floating
-    /// input, but the solid translucent style (fill + border) so they read over the live chat.
+    /// Active-chat suggestions chips above the UTI input — same controller, embedding and glass style as
+    /// the floating input. Only shown while the input is expanded, when the chat behind is faded out.
     private lazy var activeChatSuggestionsController: AIChatContextualInputViewController = {
         let controller = AIChatContextualInputViewController(
             voiceSearchHelper: voiceSearchHelper,
@@ -196,8 +196,12 @@ final class AIChatContextualSheetViewController: UIViewController {
             showsWelcomeMessage: false
         )
         controller.delegate = self
+        controller.useGlassStartActionBackgrounds()
         return controller
     }()
+
+    /// The suggestions strip only shows while the input is expanded (edit mode).
+    private var isInputExpanded = false
 
     private lazy var activeChatSuggestionsContainer: ChipHitTestingView = {
         let view = ChipHitTestingView()
@@ -1528,7 +1532,12 @@ private extension AIChatContextualSheetViewController {
         guard let persistentUTIHost, !persistentUTIHost.isMounted(in: self) else { return }
 
         persistentUTIHost.onEditModeChange = { [weak self] isEditing in
-            self?.setEditMode(isEditing)
+            guard let self else { return }
+            self.setEditMode(isEditing)
+            self.isInputExpanded = isEditing
+            if self.hasEmbeddedActiveChatSuggestions {
+                self.updateActiveChatSuggestions(self.sessionState.viewState)
+            }
         }
 
         let utiView = persistentUTIHost.mount(in: self)
@@ -1568,12 +1577,13 @@ private extension AIChatContextualSheetViewController {
     }
 
     private func updateActiveChatSuggestions(_ viewState: SheetViewState) {
-        let visible = viewState.suggestionsLoadState == .loaded && !viewState.suggestions.isEmpty
+        let hasSuggestions = viewState.suggestionsLoadState == .loaded && !viewState.suggestions.isEmpty
         activeChatSuggestionsController.updateStartActions(suggestions: viewState.suggestions, quickActions: [])
-        if visible {
+        if hasSuggestions {
             activeChatSuggestionsController.showStartActions()
         }
-        activeChatSuggestionsContainer.alpha = visible ? 1 : 0
+        // Only while the input is expanded, when the chat behind is faded out.
+        activeChatSuggestionsContainer.alpha = (hasSuggestions && isInputExpanded) ? 1 : 0
     }
 
     @objc private func handleContentDragToDismissKeyboard(_ gesture: UIPanGestureRecognizer) {

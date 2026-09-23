@@ -154,7 +154,7 @@ jobs:
          fi
 
     - name: Cache SPM
-      if: ${{ false }}
+      if: env.cache_key_hash && github.ref == 'refs/heads/main'
       uses: actions/cache@v5
       with:
         path: iOS/DerivedData/SourcePackages
@@ -375,7 +375,7 @@ jobs:
         fi
 
     - name: Cache SPM
-      if: env.cache_key_hash
+      if: env.cache_key_hash && github.ref == 'refs/heads/main'
       uses: actions/cache@v5
       with:
         path: iOS/DerivedData/SourcePackages
@@ -431,6 +431,7 @@ jobs:
         -destination "${{ steps.select-simulator.outputs.destination }}" \
         -derivedDataPath "DerivedData" \
         -configuration "Release" \
+        -disablePackageRepositoryCache \
         -skipPackagePluginValidation \
         -skipMacroValidation \
         COMPILATION_CACHE_ENABLE_CACHING=YES \

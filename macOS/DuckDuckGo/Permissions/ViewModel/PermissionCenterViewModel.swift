@@ -465,7 +465,7 @@ final class PermissionCenterViewModel: ObservableObject {
     /// Where the all-sites autoplay preference lives: its own category in Website Permissions once
     /// that pane exists, and the Permissions section of General preferences otherwise.
     private var autoplaySettingsDestination: PreferencesDestination {
-        featureFlagger.isFeatureOn(.websitePermissionsSettings) ? .websitePermissions : .generalPermissions
+        featureFlagger.isFeatureOn(.websitePermissionsSettings) ? .websitePermission(.autoplay) : .generalPermissions
     }
 
     /// The disclaimer's link text, which names the destination and so has to follow it.

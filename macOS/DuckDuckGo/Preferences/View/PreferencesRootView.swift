@@ -161,6 +161,14 @@ enum Preferences {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(colorsProvider.settingsBackgroundColor))
             .environment(\.designSystemPalette, themeManager.designColorPalette)
+            .onReceive(model.$websitePermissionTarget) { category in
+                guard let category else { return }
+                DispatchQueue.main.async {
+                    guard model.selectedPane == .websitePermissions, model.websitePermissionTarget == category else { return }
+                    websitePermissionsModel.send(action: .openDetail(category))
+                    model.resetWebsitePermissionRequest()
+                }
+            }
             .onChange(of: model.selectedPane) { selectedPane in
                 guard selectedPane != .websitePermissions else { return }
                 websitePermissionsModel.send(action: .closeDetail)

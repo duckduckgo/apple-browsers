@@ -217,7 +217,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
         XCTAssertEqual(dismissCallCount, 1)
     }
 
-    func testWhenWebsitePermissionsIsEnabledThenOpenAutoplaySettingsOpensThatPane() {
+    func testWhenWebsitePermissionsIsEnabledThenOpenAutoplaySettingsTargetsAutoplayDetail() {
         mockFeatureFlagger.featuresStub[FeatureFlag.websitePermissionsSettings.rawValue] = true
         var destinations: [PreferencesDestination] = []
 
@@ -236,7 +236,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
 
         viewModel.openAutoplaySettings()
 
-        XCTAssertEqual(destinations, [.websitePermissions])
+        XCTAssertEqual(destinations, [.websitePermission(.autoplay)])
         XCTAssertEqual(viewModel.autoplaySettingsLinkTitle, UserText.permissionCenterAutoplayDisclaimerWebsitePermissionsLink)
     }
 

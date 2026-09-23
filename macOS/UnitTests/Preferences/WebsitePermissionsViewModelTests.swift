@@ -387,6 +387,17 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         XCTAssertNil(model.viewState.detailModel)
     }
 
+    func testWhenOpeningAutoplayFromAnotherDetailThenAutoplayReplacesIt() {
+        enableAutoplayPolicy()
+        let model = createSUT()
+        model.send(action: .openDetail(.camera))
+
+        model.send(action: .openDetail(.autoplay))
+
+        XCTAssertEqual(model.viewState.detailModel?.viewState.category, .autoplay)
+        XCTAssertEqual(model.viewState.detailModel?.viewState.availableDefaultDecisions, [.allow, .ask, .deny])
+    }
+
     func testWhenPermissionsUpdateThenSelectedDetailModelIsPreserved() throws {
         let model = createSUT()
         waitForViewStateUpdate(model) {

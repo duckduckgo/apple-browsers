@@ -80,6 +80,8 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
         server = nil
         self.navigationDelegate.responders.forEach { responder in
             (responder as? NavigationResponderMock)?.reset(defaultHandler: { [testName=name] in
+                // Identify native WebKit callbacks versus Navigation's deallocation fallback in CI failures.
+                print("Late navigation event callback:\n" + Thread.callStackSymbols.joined(separator: "\n"))
                 XCTFail("[\(testName)] event received after test completed: \($0)")
             })
         }

@@ -57,6 +57,13 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onDuckAIPromptSubmitted: ((AIChatEntryPointSource?) -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
     var onEditModeChange: ((Bool) -> Void)?
+    /// Fires when the input expands or collapses, so hosts can follow its expanded state.
+    var onExpandedChange: ((Bool) -> Void)?
+
+    /// Whether the input bar is currently expanded (vs the collapsed compact pill).
+    var isInputExpanded: Bool {
+        coordinator.viewController.isInputExpanded
+    }
 
     /// Raised by the input's microphone, which dictates into the field rather than opening voice chat.
     var onVoiceSearchRequested: (() -> Void)?
@@ -525,7 +532,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         onAIVoiceChatRequested?()
     }
     func unifiedToggleInputDidRequestAIChat(prefilledText: String) {}
-    func unifiedToggleInputDidChangeHeight() {}
+    func unifiedToggleInputDidChangeHeight() {
+        onExpandedChange?(isInputExpanded)
+    }
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
     func unifiedToggleInputDidRequestFire() {}
     func unifiedToggleInputDidRequestAppMenu() {}

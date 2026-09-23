@@ -1532,9 +1532,12 @@ private extension AIChatContextualSheetViewController {
         guard let persistentUTIHost, !persistentUTIHost.isMounted(in: self) else { return }
 
         persistentUTIHost.onEditModeChange = { [weak self] isEditing in
+            self?.setEditMode(isEditing)
+        }
+        isInputExpanded = persistentUTIHost.isInputExpanded
+        persistentUTIHost.onExpandedChange = { [weak self] expanded in
             guard let self else { return }
-            self.setEditMode(isEditing)
-            self.isInputExpanded = isEditing
+            self.isInputExpanded = expanded
             if self.hasEmbeddedActiveChatSuggestions {
                 self.updateActiveChatSuggestions(self.sessionState.viewState)
             }

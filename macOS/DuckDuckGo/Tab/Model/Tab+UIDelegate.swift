@@ -243,15 +243,20 @@ extension Tab: WKUIDelegate {
     }
 
     private func createAlertDialog(initiatedByFrame frame: WKFrameInfo, prompt: String, defaultInputText: String? = nil, queryCreator: (JSAlertParameters) -> JSAlertQuery) {
+        let url = frame.safeRequest?.url
+        // in case the web view is navigating to another host
+        ?? webView.backForwardList.currentItem?.url
+        ?? self.url
+        ?? .empty
+        let host = url.isFileURL ? .localhost : (url.host ?? "")
+
         let parameters = JSAlertParameters(
-            domain: frame.safeRequest?.url?.host ?? "",
+            domain: host,
             prompt: prompt,
             defaultInputText: defaultInputText
         )
         let alertQuery = queryCreator(parameters)
         let dialog = UserDialogType.jsDialog(alertQuery)
-        let url = frame.safeRequest?.url ?? .empty
-        let host = url.isFileURL ? .localhost : (url.host ?? "")
         userInteractionDialog = UserDialog(sender: .page(domain: host), dialog: dialog)
     }
 

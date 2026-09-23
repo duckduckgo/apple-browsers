@@ -672,7 +672,11 @@ extension XCUIApplication {
             let optionIdentifier = state == .fireWindow
                 ? AccessibilityIdentifiers.startupWindowTypeFireWindow
                 : AccessibilityIdentifiers.startupWindowTypeRegularWindow
-            let selectedOption = prefs.popUpButtons[optionIdentifier]
+            // SwiftUI can combine the radio row and selected menu item's identifiers.
+            let combinedIdentifier = "\(optionIdentifier)-\(optionIdentifier)"
+            let selectedOption = prefs.popUpButtons.matching(NSPredicate(
+                format: "identifier == %@ OR identifier == %@", optionIdentifier, combinedIdentifier
+            )).firstMatch
             XCTAssertTrue(selectedOption.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Requested startup window type was not selected")
             XCTAssertTrue(selectedOption.isSelected)
             return

@@ -90,13 +90,6 @@ jobs:
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
 
-      - name: Setup Bitrise Build Cache
-        uses: ./.github/actions/bitrise-build-cache
-        with:
-          enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
-          token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-          workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
-
       - name: Run tests
         id: run-unit-tests
         run: |
@@ -271,13 +264,6 @@ jobs:
 
           echo "::error::Package resolution failed after $max_attempts attempts"
           exit 1
-
-      - name: Setup Bitrise Build Cache
-        uses: ./.github/actions/bitrise-build-cache
-        with:
-          enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
-          token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-          workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
       - name: Run tests
         id: run-unit-tests

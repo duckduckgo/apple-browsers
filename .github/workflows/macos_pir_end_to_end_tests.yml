@@ -161,13 +161,6 @@ jobs:
         restore-keys: |
           xcode-compilation-cache-pir-e2e-
 
-    - name: Setup Bitrise Build Cache
-      uses: ./.github/actions/bitrise-build-cache
-      with:
-        enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
-        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
-
     - name: Wait for PIR Fake Broker
       run: |
         for i in {1..60}; do

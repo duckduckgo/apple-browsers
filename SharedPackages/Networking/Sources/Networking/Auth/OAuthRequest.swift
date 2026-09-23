@@ -320,7 +320,7 @@ public struct OAuthRequest {
 
         return OAuthRequest(apiRequest: request)
     }
-    
+
     static func refreshAccessToken(baseURL: URL, clientID: String, refreshToken: String) -> OAuthRequest? {
         guard clientID.isEmpty == false,
               refreshToken.isEmpty == false else { return nil }

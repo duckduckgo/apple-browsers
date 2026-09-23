@@ -110,7 +110,6 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
-        defer { window.close() }
         let sheetPresented = expectation(description: "Fire dialog presentation completed")
         window.onBeginSheet = { sheetPresented.fulfill() }
         let mainWindowController = MainWindowController(

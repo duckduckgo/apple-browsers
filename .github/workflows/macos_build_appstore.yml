@@ -77,7 +77,7 @@ jobs:
       group: macos-appstore-build-${{ github.event.inputs.destination || inputs.destination }}
       cancel-in-progress: true
 
-    runs-on: [image:osx-tahoe-26, m4pro]
+    runs-on: [image:osx-goldengate, m4pro]
 
     env:
       destination: ${{ github.event.inputs.destination || inputs.destination }}
@@ -232,7 +232,7 @@ jobs:
       group: macos-appstore-upload-${{ github.event.inputs.destination || inputs.destination }}
       cancel-in-progress: true
 
-    runs-on: [image:osx-tahoe-26, m4pro]
+    runs-on: [image:osx-goldengate, m4pro]
 
     env:
       destination: ${{ github.event.inputs.destination || inputs.destination }}

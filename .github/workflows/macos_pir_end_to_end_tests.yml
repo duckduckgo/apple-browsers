@@ -40,7 +40,7 @@ jobs:
       matrix:
         include:
           - xcode-version: "27.0"
-            runner: [image:osx-tahoe-26, general-purpose]
+            runner: [image:osx-goldengate, general-purpose]
             runner-name: image-osx-tahoe-26,general-purpose # runner label without reserved characters, for use in the artifact name
 
     concurrency:

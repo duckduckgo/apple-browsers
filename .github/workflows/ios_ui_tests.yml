@@ -36,7 +36,7 @@ jobs:
     name: UI Tests
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
-    runs-on: [image:osx-tahoe-26, ui-tests]
+    runs-on: [image:osx-goldengate, ui-tests]
     timeout-minutes: 45
 
     steps:

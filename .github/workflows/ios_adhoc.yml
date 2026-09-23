@@ -26,11 +26,11 @@ on:
 
 jobs:
   make-adhoc:
-    runs-on: [image:osx-tahoe-26, m4pro]
+    runs-on: [image:osx-goldengate, m4pro]
     name: Make ad-hoc build
 
     env:
-      RUNS_ON: image:osx-tahoe-26,m4pro # keep this in sync with runs-on above
+      RUNS_ON: image:osx-goldengate,m4pro # keep this in sync with runs-on above
 
     steps:
 

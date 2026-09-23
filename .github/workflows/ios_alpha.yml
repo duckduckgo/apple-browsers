@@ -20,7 +20,7 @@ on:
 
 jobs:
   build-alpha:
-    runs-on: [image:osx-tahoe-26, m4pro]
+    runs-on: [image:osx-goldengate, m4pro]
     name: Build Alpha
     timeout-minutes: 30
 
@@ -174,7 +174,7 @@ jobs:
   upload:
     needs: build-alpha
     if: needs.build-alpha.outputs.should_skip != 'true'
-    runs-on: [image:osx-tahoe-26, m4pro]
+    runs-on: [image:osx-goldengate, m4pro]
     name: Upload to TestFlight
     timeout-minutes: 15
 

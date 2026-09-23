@@ -36,11 +36,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: [image:osx-tahoe-26, general-purpose]
+      runs-on: [image:osx-goldengate, general-purpose]
       timeout-minutes: 30
 
       env:
-        RUNS_ON: image:osx-tahoe-26,general-purpose # keep this in sync with runs-on above
+        RUNS_ON: image:osx-goldengate,general-purpose # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       outputs:
@@ -187,11 +187,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: [image:osx-tahoe-26, general-purpose]
+      runs-on: [image:osx-goldengate, general-purpose]
       timeout-minutes: 30
 
       env:
-        RUNS_ON: image:osx-tahoe-26,general-purpose # keep this in sync with runs-on above
+        RUNS_ON: image:osx-goldengate,general-purpose # keep this in sync with runs-on above
 
       steps:
 

@@ -56,6 +56,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         enum Kind: Equatable {
             case contextLoad
             case extensionUpdated
+            case baseURLChanged
             case viewCreated
             case viewDeallocated
             case processDied(CPMBackgroundProcessTerminationReason?)
@@ -92,6 +93,8 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     private weak var context: WKWebExtensionContext?
     private var contextGeneration = UUID()
     private var cpmContextIdentifier: String?
+    /// Survives timeline resets and unloads; used only for local comparison, never serialized.
+    private var previousContextBaseURL: (identifier: String, url: URL)?
     private var contextErrorsObserver: NSObjectProtocol?
     private var recordedContextErrors: [String] = []
     private var networkProcessIdentifierAtLoad: Int32?
@@ -197,6 +200,12 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         backgroundEvents = [latestExtensionUpdateEvent].compactMap { $0 }
         backgroundProcessIsUnresponsive = false
         record(.contextLoad)
+        if let previousContextBaseURL,
+           previousContextBaseURL.identifier == context.uniqueIdentifier,
+           previousContextBaseURL.url != context.baseURL {
+            record(.baseURLChanged)
+        }
+        previousContextBaseURL = (context.uniqueIdentifier, context.baseURL)
         networkProcessIdentifierAtLoad = Self.networkProcessIdentifier(for: context)
         Logger.webExtensions.info("[CPM Diagnostics] Context will load; networkProcessPID=\(self.networkProcessIdentifierAtLoad.map(String.init) ?? "unknown", privacy: .public)")
 
@@ -499,6 +508,7 @@ extension CPMMessagingDiagnosticsRecorder.BackgroundEvent.Kind: CustomStringConv
         switch self {
         case .contextLoad: return "load"
         case .extensionUpdated: return "extension_updated"
+        case .baseURLChanged: return "base_url_changed"
         case .viewCreated: return "view"
         case .viewDeallocated: return "dealloc"
         case .processDied(let reason): return "died_\(reason?.description ?? "unknown")"

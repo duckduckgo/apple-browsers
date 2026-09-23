@@ -209,6 +209,37 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
         XCTAssertEqual(recorder.snapshot().backgroundEvents.map(\.token), ["load", "extension_updated"])
     }
 
+    func testWhenBaseURLChangesAcrossUnloadThenRecordsChangeWithoutURL() async throws {
+        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false,
+                                                      now: { Date(timeIntervalSince1970: 1000) })
+        let context = try await makeContext()
+        context.baseURL = try XCTUnwrap(URL(string: "webkit-extension://first/"))
+        recorder.contextWillLoad(context)
+        XCTAssertEqual(recorder.snapshot().backgroundEvents.map(\.token), ["load"])
+        recorder.contextDidUnload(identifier: context.uniqueIdentifier)
+
+        let replacement = try await makeContext()
+        replacement.baseURL = try XCTUnwrap(URL(string: "webkit-extension://second/"))
+        recorder.contextWillLoad(replacement)
+        XCTAssertEqual(recorder.snapshot().pixelParameters["bg_events"], "load@30s,base_url_changed@30s")
+
+        recorder.contextWillLoad(replacement)
+        XCTAssertEqual(recorder.snapshot().backgroundEvents.map(\.token), ["load"])
+    }
+
+    func testWhenContextIdentifierChangesThenDoesNotCompareBaseURLs() async throws {
+        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
+        let context = try await makeContext()
+        context.baseURL = try XCTUnwrap(URL(string: "webkit-extension://first/"))
+        recorder.contextWillLoad(context)
+
+        let replacement = try await makeContext()
+        replacement.uniqueIdentifier = "another-extension"
+        replacement.baseURL = try XCTUnwrap(URL(string: "webkit-extension://second/"))
+        recorder.contextWillLoad(replacement)
+        XCTAssertEqual(recorder.snapshot().backgroundEvents.map(\.token), ["load"])
+    }
+
     func testWhenContextErrorIsRecordedThenDescriptorCarriesCodesNotText() async throws {
         let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
         let context = try await makeContext()
@@ -346,6 +377,7 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
         let oldContext = try await makeContext()
         let replacement = try await makeContext()
         let oldView = WKWebView(frame: .zero)
+        replacement.baseURL = oldContext.baseURL
         recorder.contextWillLoad(oldContext)
         recorder.didCreateBackgroundWebView(oldView, for: oldContext)
 
@@ -365,6 +397,7 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
         let oldContext = try await makeContext()
         let replacement = try await makeContext()
         weak var releasedView: WKWebView?
+        replacement.baseURL = oldContext.baseURL
         autoreleasepool {
             let view = WKWebView(frame: .zero)
             releasedView = view

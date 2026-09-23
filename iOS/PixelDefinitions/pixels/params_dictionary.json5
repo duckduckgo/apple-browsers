@@ -577,7 +577,7 @@
     "background_events": {
         "key": "bg_events",
         "type": "string",
-        "description": "Bounded, sanitized CPM lifecycle timeline, oldest first, including extension_updated (successful replacement of an installed CPM version, not first install or reload; latest update survives context reloads), context unload and extension file removal failures with error descriptors. Each token@age entry uses the first matching age bucket relative to the snapshot: 30s (<30s), 1m (<60s), 2m (<120s), 5m (<300s), 15m (<900s), over_15 (>=900s). Order and repeated events within a bucket are preserved; exact ages are not sent."
+        "description": "Bounded, sanitized CPM lifecycle timeline, oldest first, including extension_updated (successful replacement of an installed CPM version, not first install or reload; latest update survives context reloads), base_url_changed (local comparison between context loads; no URL or identifier is sent), context unload and extension file removal failures with error descriptors. Each token@age entry uses the first matching age bucket relative to the snapshot: 30s (<30s), 1m (<60s), 2m (<120s), 5m (<300s), 15m (<900s), over_15 (>=900s). Order and repeated events within a bucket are preserved; exact ages are not sent."
     },
     "web_extension_type": {
         "key": "extension_type",

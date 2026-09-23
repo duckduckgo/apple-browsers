@@ -32,10 +32,7 @@ class FeatureFlagsSettingViewModel: ObservableObject {
         case disabled = "Disabled"
     }
 
-    private let featureFlagger: FeatureFlagger = {
-        let flagger = AppDependencyProvider.shared.featureFlagger
-        return (flagger as? SitePermissionsFeatureFlagger)?.base ?? flagger
-    }()
+    private let featureFlagger: FeatureFlagger = AppDependencyProvider.shared.liveFeatureFlagger
 
     @Published var featureFlags: [FeatureFlag] = []
     @Published var experiments: [FeatureFlag] = []

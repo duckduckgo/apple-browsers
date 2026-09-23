@@ -86,7 +86,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         let initialStates: [String?] = [nil, "disabled", "enabled"]
         for initialState in initialStates {
             let (base, manager, _) = try makeSessionFeatureFlaggerBase(sitePermissionsState: initialState)
-            let session = SitePermissionsFeatureFlagger(base: base)
+            let session = SessionFeatureFlagger(base: base)
             let initiallyEnabled = initialState == "enabled"
             XCTAssertEqual(session.isFeatureOn(for: FeatureFlag.sitePermissions), initiallyEnabled)
 
@@ -97,7 +97,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
                 XCTAssertEqual(base.isFeatureOn(for: FeatureFlag.sitePermissions), nextState == "enabled")
                 XCTAssertEqual(session.isFeatureOn(for: FeatureFlag.sitePermissions), initiallyEnabled)
-                XCTAssertEqual(SitePermissionsFeatureFlagger(base: base).isFeatureOn(for: FeatureFlag.sitePermissions),
+                XCTAssertEqual(SessionFeatureFlagger(base: base).isFeatureOn(for: FeatureFlag.sitePermissions),
                                nextState == "enabled")
             }
         }
@@ -108,7 +108,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             let (base, manager, overrides) = try makeSessionFeatureFlaggerBase(
                 sitePermissionsState: remoteEnabled ? "enabled" : "disabled")
             overrides.toggleOverride(for: FeatureFlag.sitePermissions)
-            let session = SitePermissionsFeatureFlagger(base: base)
+            let session = SessionFeatureFlagger(base: base)
 
             XCTAssertEqual(session.isFeatureOn(for: FeatureFlag.sitePermissions, allowOverride: true), !remoteEnabled)
             XCTAssertEqual(session.isFeatureOn(for: FeatureFlag.sitePermissions, allowOverride: false), remoteEnabled)
@@ -127,7 +127,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
     func testWhenOtherFlagsChangeThenSessionForwardsLiveValuesAndConfigAndOverrideUpdates() throws {
         let (base, manager, overrides) = try makeSessionFeatureFlaggerBase(sitePermissionsState: "enabled")
-        let session = SitePermissionsFeatureFlagger(base: base)
+        let session = SessionFeatureFlagger(base: base)
         var updateCount = 0
         let subscription = session.updatesPublisher.sink { updateCount += 1 }
         defer { subscription.cancel() }
@@ -456,7 +456,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     @MainActor
     func testWhenRemoteFlagChangesBeforeFirstAssetsThenNavigationStillWaitsForLaunchTimeScripts() async throws {
         let remoteFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let flagger = SitePermissionsFeatureFlagger(base: remoteFlagger)
+        let flagger = SessionFeatureFlagger(base: remoteFlagger)
         let tab = TabViewController.fake(featureFlagger: flagger,
                                         contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
         tab.specialErrorPageNavigationHandler.delegate = nil
@@ -493,13 +493,13 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     func testRemoteFlagChangesApplyToDocumentsOnlyAfterRelaunch() async throws {
         for initiallyEnabled in [false, true] {
             let remoteFlagger = MockFeatureFlagger(enabledFeatureFlags: initiallyEnabled ? [.sitePermissions] : [])
-            let launchFlagger = SitePermissionsFeatureFlagger(base: remoteFlagger)
+            let launchFlagger = SessionFeatureFlagger(base: remoteFlagger)
             remoteFlagger.enabledFeatureFlags = initiallyEnabled ? [] : [.sitePermissions]
             remoteFlagger.triggerUpdate()
 
             // New tabs in the current process keep the launch decision. A fresh app flagger adopts the update.
             for isRelaunch in [false, true] {
-                let flagger = isRelaunch ? SitePermissionsFeatureFlagger(base: remoteFlagger) : launchFlagger
+                let flagger = isRelaunch ? SessionFeatureFlagger(base: remoteFlagger) : launchFlagger
                 let expectedEnabled = isRelaunch ? !initiallyEnabled : initiallyEnabled
                 let tab = TabViewController.fake(featureFlagger: flagger,
                                                 contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
@@ -578,7 +578,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         let pageB = try XCTUnwrap(URL(string: "http://localhost:\(port.rawValue)/b"))
 
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let tab = TabViewController.fake(featureFlagger: SitePermissionsFeatureFlagger(base: flagger),
+        let tab = TabViewController.fake(featureFlagger: SessionFeatureFlagger(base: flagger),
                                         contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
         defer { tab.prepareForDataClearing() }
         let errorHandler = try XCTUnwrap(tab.specialErrorPageNavigationHandler as? DummySpecialErrorPageNavigationHandler)
@@ -677,7 +677,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     @MainActor
     func testWhenRemoteFlagChangesThenAssetsAndReloadNotificationsAreNotReplayed() async {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let tab = TabViewController.fake(featureFlagger: SitePermissionsFeatureFlagger(base: flagger),
+        let tab = TabViewController.fake(featureFlagger: SessionFeatureFlagger(base: flagger),
                                         contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
@@ -766,7 +766,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     func testContentUpdatesRetainTheLaunchTimeScriptsAfterRemoteFlagChanges() {
         for initiallyEnabled in [false, true] {
             let remoteFlagger = MockFeatureFlagger(enabledFeatureFlags: initiallyEnabled ? [.sitePermissions] : [])
-            let featureFlagger = SitePermissionsFeatureFlagger(base: remoteFlagger)
+            let featureFlagger = SessionFeatureFlagger(base: remoteFlagger)
             let mediaCaptureUserScript = MediaCaptureUserScript()
             let geolocationUserScript = GeolocationUserScript()
             let contentSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()

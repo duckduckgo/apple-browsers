@@ -18,7 +18,6 @@
 //
 
 import Foundation
-import Combine
 import Core
 import BrowserServicesKit
 import DDGSync
@@ -48,6 +47,8 @@ protocol DependencyProvider {
     var variantManager: VariantManager { get }
     var internalUserDecider: InternalUserDecider { get }
     var featureFlagger: FeatureFlagger { get }
+    /// For debug editors to display pending changes; app behavior uses `featureFlagger`.
+    var liveFeatureFlagger: FeatureFlagger { get }
     var configurationURLProvider: CustomConfigurationURLProviding { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var storageCache: StorageCache { get }
@@ -124,6 +125,7 @@ final class AppDependencyProvider: DependencyProvider {
     let variantManager: VariantManager = DefaultVariantManager()
     let internalUserDecider: InternalUserDecider = ContentBlocking.shared.privacyConfigurationManager.internalUserDecider
     let featureFlagger: FeatureFlagger
+    let liveFeatureFlagger: FeatureFlagger
     let configurationURLProvider: CustomConfigurationURLProviding
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
@@ -214,6 +216,7 @@ final class AppDependencyProvider: DependencyProvider {
             let mockFeatureFlagger = MockFeatureFlagger()
             self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
             self.featureFlagger = mockFeatureFlagger
+            self.liveFeatureFlagger = mockFeatureFlagger
             featureFlagger = mockFeatureFlagger
         } else {
             let defaultFeatureFlagger = DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
@@ -232,9 +235,10 @@ final class AppDependencyProvider: DependencyProvider {
                 featureFlagOverrideStore: featureFlagOverrideStore,
                 configRolloutStore: .standard
             )
-            let sitePermissionsFeatureFlagger = SitePermissionsFeatureFlagger(base: defaultFeatureFlagger)
-            self.featureFlagger = sitePermissionsFeatureFlagger
-            featureFlagger = sitePermissionsFeatureFlagger
+            let sessionFeatureFlagger = SessionFeatureFlagger(base: defaultFeatureFlagger)
+            self.liveFeatureFlagger = defaultFeatureFlagger
+            self.featureFlagger = sessionFeatureFlagger
+            featureFlagger = sessionFeatureFlagger
         }
 
         // Configure PixelKit Experiments
@@ -373,37 +377,4 @@ final class AppDependencyProvider: DependencyProvider {
 
     }
 
-}
-
-/// Keep every permission entry point on the same launch-time state, including tabs created after a config update.
-final class SitePermissionsFeatureFlagger: FeatureFlagger {
-    let base: FeatureFlagger
-    private let isSitePermissionsEnabled: Bool
-    private let isSitePermissionsEnabledWithoutOverride: Bool
-
-    init(base: FeatureFlagger) {
-        self.base = base
-        isSitePermissionsEnabled = base.isFeatureOn(for: FeatureFlag.sitePermissions, allowOverride: true)
-        isSitePermissionsEnabledWithoutOverride = base.isFeatureOn(for: FeatureFlag.sitePermissions, allowOverride: false)
-    }
-
-    var internalUserDecider: InternalUserDecider { base.internalUserDecider }
-    var localOverrides: FeatureFlagLocalOverriding? { base.localOverrides }
-    var updatesPublisher: AnyPublisher<Void, Never> { base.updatesPublisher }
-    var allActiveExperiments: Experiments { base.allActiveExperiments }
-
-    func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
-        if (featureFlag as? FeatureFlag) == .sitePermissions {
-            return allowOverride ? isSitePermissionsEnabled : isSitePermissionsEnabledWithoutOverride
-        }
-        return base.isFeatureOn(for: featureFlag, allowOverride: allowOverride)
-    }
-
-    func resolveCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
-        base.resolveCohort(for: featureFlag, allowOverride: allowOverride)
-    }
-
-    func assignedCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
-        base.assignedCohort(for: featureFlag, allowOverride: allowOverride)
-    }
 }

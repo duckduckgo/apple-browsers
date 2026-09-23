@@ -29,7 +29,7 @@ struct RedesignedFavoriteItemView: View {
     let onMenuAction: ((MenuAction) -> Void)?
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: Metrics.iconToTitleSpacing) {
             RedesignedFavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
                 .if(isEditable) {
                     $0.contextMenu {
@@ -40,7 +40,7 @@ struct RedesignedFavoriteItemView: View {
 
             Text(favorite.title)
                 .font(Font.system(size: 12))
-                .lineLimit(2)
+                .lineLimit(Metrics.titleLineLimit)
                 .multilineTextAlignment(.center)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .frame(maxWidth: .infinity, alignment: .top)
@@ -89,11 +89,19 @@ struct RedesignedFavoriteIconView: View {
 
     var body: some View {
         FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
-            .frame(width: 64, height: 64)
-            .scaleEffect(0.5)
-            .frame(width: 32, height: 32)
-            .frame(width: 48, height: 48)
+            .frame(width: Metrics.sourceIconSize, height: Metrics.sourceIconSize)
+            .scaleEffect(Metrics.faviconSize / Metrics.sourceIconSize)
+            .frame(width: Metrics.faviconSize, height: Metrics.faviconSize)
+            .frame(width: Metrics.tileSize, height: Metrics.tileSize)
             .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
             .contentShape(Circle())
     }
+}
+
+private enum Metrics {
+    static let iconToTitleSpacing: CGFloat = 6
+    static let titleLineLimit = 2
+    static let sourceIconSize: CGFloat = 64
+    static let faviconSize: CGFloat = 32
+    static let tileSize: CGFloat = 48
 }

@@ -24,13 +24,20 @@ struct RedesignedNewTabPageModulesView: View {
     let favoritesModel: FavoritesViewModel?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 28) {
+        VStack(alignment: .leading, spacing: Metrics.moduleSpacing) {
             if let favoritesModel {
                 RedesignedFavoritesView(model: favoritesModel)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 20)
-        .padding(.bottom, 16)
+        .padding(.horizontal, Metrics.horizontalPadding)
+        .padding(.top, Metrics.topPadding)
+        .padding(.bottom, Metrics.bottomPadding)
     }
+}
+
+private enum Metrics {
+    static let moduleSpacing: CGFloat = 28
+    static let horizontalPadding: CGFloat = 16
+    static let topPadding: CGFloat = 20
+    static let bottomPadding: CGFloat = 16
 }

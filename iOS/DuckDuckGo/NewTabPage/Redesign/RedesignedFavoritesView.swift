@@ -24,19 +24,18 @@ import SwiftUI
 struct RedesignedFavoritesView: View {
     @ObservedObject var model: FavoritesViewModel
     @State private var isExpanded = false
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: 5)
-    private let collapsedCount = 10
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: Metrics.columnSpacing, alignment: .top), count: Metrics.columnCount)
 
-    private var hasOverflow: Bool { model.allFavorites.count > collapsedCount }
+    private var hasOverflow: Bool { model.allFavorites.count > Metrics.collapsedCount }
 
     private var visibleFavorites: [Favorite] {
         if isExpanded || !hasOverflow { return model.allFavorites }
-        return Array(model.allFavorites.prefix(collapsedCount - 1))
+        return Array(model.allFavorites.prefix(Metrics.collapsedCount - 1))
     }
 
     var body: some View {
         if !model.isEmpty {
-            LazyVGrid(columns: columns, alignment: .center, spacing: 20) {
+            LazyVGrid(columns: columns, alignment: .center, spacing: Metrics.rowSpacing) {
                 ReorderableForEach(visibleFavorites, id: \.id, isReorderingEnabled: model.canEditFavorites) { favorite in
                     Button {
                         model.favoriteSelected(favorite)
@@ -63,10 +62,10 @@ struct RedesignedFavoritesView: View {
                     Button {
                         withAnimation { isExpanded.toggle() }
                     } label: {
-                        VStack(spacing: 6) {
+                        VStack(spacing: Metrics.iconToTitleSpacing) {
                             Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronDownSmall)
                                 .rotationEffect(.degrees(isExpanded ? 180 : 0))
-                                .frame(width: 48, height: 48)
+                                .frame(width: Metrics.tileSize, height: Metrics.tileSize)
                                 .background(Color(designSystemColor: .controlsFillPrimary))
                                 .clipShape(Circle())
                             Text(isExpanded ? "See Less" : "See All")
@@ -80,4 +79,13 @@ struct RedesignedFavoritesView: View {
 
         }
     }
+}
+
+private enum Metrics {
+    static let columnCount = 5
+    static let collapsedCount = 10
+    static let columnSpacing: CGFloat = 8
+    static let rowSpacing: CGFloat = 20
+    static let iconToTitleSpacing: CGFloat = 6
+    static let tileSize: CGFloat = 48
 }

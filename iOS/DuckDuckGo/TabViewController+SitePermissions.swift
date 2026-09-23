@@ -55,7 +55,7 @@ final class SitePermissionsState {
     fileprivate var isGeolocationBackgrounded = false
     fileprivate var geolocationActivitySubscription: AnyCancellable?
     fileprivate var retiredGeolocationUserScripts = [GeolocationUserScript]()
-    fileprivate var shouldRetireGeolocationOnNavigation = false
+    fileprivate var shouldRetireGeolocationOnProcessReplacement = false
     fileprivate var storeChangeCancellable: AnyCancellable?
     fileprivate var applicationActiveCancellable: AnyCancellable?
     fileprivate var isCommittedGeolocationPolicyBlocked = false
@@ -203,7 +203,7 @@ final class SitePermissionsState {
         geolocationUserScript = nil
         storeChangeCancellable = nil
         applicationActiveCancellable = nil
-        shouldRetireGeolocationOnNavigation = false
+        shouldRetireGeolocationOnProcessReplacement = false
     }
 
     fileprivate func discardRetiredGeolocationUserScripts() {
@@ -228,7 +228,7 @@ final class SitePermissionsState {
         geolocationUserScript?.cancelAllWatches()
         discardRetiredGeolocationUserScripts()
         if pageChange == .webContentProcessReplacement,
-           shouldRetireGeolocationOnNavigation {
+           shouldRetireGeolocationOnProcessReplacement {
             retireGeolocation()
         }
         coordinator?.pageDidChange(pageChange)
@@ -382,9 +382,6 @@ extension TabViewController {
             sitePermissionsState.isMainFrameNavigationProvisional = false
             sitePermissionsState.provisionalNavigation = nil
             sitePermissionsState.isProvisionalGeolocationPolicyBlocked = false
-            if sitePermissionsState.shouldRetireGeolocationOnNavigation {
-                sitePermissionsState.retireGeolocation()
-            }
         }
     }
 
@@ -745,16 +742,16 @@ extension TabViewController {
 
     func configureSitePermissionsGeolocation(with userScript: GeolocationUserScript?, notificationCenter: NotificationCenter = .default) {
         guard let userScript else {
-            // An already-loaded page keeps its injected shim until the next navigation. Retain its
-            // weakly-held message handler until then so outstanding page promises still resolve.
-            sitePermissionsState.shouldRetireGeolocationOnNavigation = sitePermissionsState.geolocationUserScript != nil
+            // Cached documents keep their injected shim when restored by back/forward navigation.
+            // Retain the bridge until process replacement or tab teardown; navigation still cancels page activity.
+            sitePermissionsState.shouldRetireGeolocationOnProcessReplacement = sitePermissionsState.geolocationUserScript != nil
             return
         }
         userScript.activationHandler = { [weak self] frame in
             self?.shouldActivateSitePermissionsGeolocation(in: frame) ?? false
         }
         if sitePermissionsState.geolocationUserScript === userScript {
-            sitePermissionsState.shouldRetireGeolocationOnNavigation = false
+            sitePermissionsState.shouldRetireGeolocationOnProcessReplacement = false
             if let provider = sitePermissionsState.geolocationProvider {
                 userScript.delegate = provider
                 return
@@ -764,7 +761,7 @@ extension TabViewController {
                 sitePermissionsState.retiredGeolocationUserScripts.append(currentScript)
             }
             sitePermissionsState.geolocationUserScript = userScript
-            sitePermissionsState.shouldRetireGeolocationOnNavigation = false
+            sitePermissionsState.shouldRetireGeolocationOnProcessReplacement = false
         }
         if let provider = sitePermissionsState.geolocationProvider {
             userScript.delegate = provider
@@ -1264,7 +1261,7 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
 
     func configureSitePermissionsMediaCapture(with userScript: MediaCaptureUserScript?) {
         guard let userScript else {
-            // Existing geolocation documents remain managed until navigation commits.
+            // Existing geolocation documents remain managed, including back/forward-cache restores.
             sitePermissionsState.bypassPendingBridgeRequests()
             sitePermissionsState.discardPreapprovals()
             sitePermissionsState.dismissManagement()

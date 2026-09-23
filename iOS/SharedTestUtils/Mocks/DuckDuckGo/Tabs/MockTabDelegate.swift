@@ -250,6 +250,7 @@ extension TabViewController {
 
 class DummySpecialErrorPageNavigationHandler: SpecialErrorPageManaging {
     var delegate: (any DuckDuckGo.SpecialErrorPageNavigationDelegate)?
+    var handlesNavigationResponse = true
     
     var isSpecialErrorPageVisible: Bool = false
 
@@ -266,7 +267,7 @@ class DummySpecialErrorPageNavigationHandler: SpecialErrorPageManaging {
     func handleDecidePolicy(for navigationAction: WKNavigationAction, webView: WKWebView) {}
     
     func handleDecidePolicy(for navigationResponse: WKNavigationResponse, webView: WKWebView) async -> Bool {
-        true
+        handlesNavigationResponse
     }
     
     func handleWebView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {

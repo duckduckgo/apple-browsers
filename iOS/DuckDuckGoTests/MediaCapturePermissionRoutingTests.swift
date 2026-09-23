@@ -1304,9 +1304,10 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(locationManager.stopUpdatingCallCount, 1)
     }
 
-    func testDisablingGeolocationRetainsHandlerThroughFailedProvisionalNavigationAndRetiresItOnCommit() async throws {
+    func testDisablingGeolocationRetainsHandlerAcrossNavigationAndRetiresItOnProcessReplacement() throws {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
         let sut = makeSUT(featureFlagger: featureFlagger)
+        defer { sut.closeSitePermissions() }
         let userScript = GeolocationUserScript(installImmediately: true)
         sut.configureSitePermissionsGeolocation(with: userScript)
         let frameInfo = WKFrameInfo.mock(isMainFrame: false,
@@ -1317,25 +1318,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertNotNil(userScript.delegate)
         XCTAssertTrue(activationHandler(frame))
         XCTAssertNotNil(sut.makeGeolocationSitePermissionContext(for: frame))
-        let webView = try XCTUnwrap(sut.webView as? SitePermissionURLWebView)
-        webView.geolocationDocumentID = String(repeating: "b", count: 32)
-        webView.geolocationPolicy = [
-            "documentID": String(repeating: "c", count: 32),
-            "isSecureContext": true,
-            "isSandboxed": false,
-            "isPolicyAllowed": true
-        ]
-        var body: [String: Any] = [
-            "kind": "registerFrame",
-            "capability": GeolocationUserScript.capabilityToken,
-            "nonce": String(repeating: "a", count: 32),
-            "documentID": String(repeating: "b", count: 32)
-        ]
-        let controller = WKUserContentController()
-        let registration = await userScript.userContentController(
-            controller,
-            didReceive: .mock(webView: sut.webView, frameInfo: frameInfo, body: body))
-        XCTAssertEqual((registration.0 as? [String: Any])?["enabled"] as? Bool, true)
 
         featureFlagger.enabledFeatureFlags = []
         featureFlagger.triggerUpdate()
@@ -1351,16 +1333,15 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
         sut.webView(sut.webView, didStartProvisionalNavigation: nil)
         sut.webView(sut.webView, didCommit: nil)
+        XCTAssertNotNil(userScript.delegate)
+        XCTAssertNotNil(userScript.activationHandler)
+        XCTAssertTrue(activationHandler(frame))
+        XCTAssertNotNil(sut.makeGeolocationSitePermissionContext(for: frame))
+
+        sut.webViewWebContentProcessDidTerminate(sut.webView)
         XCTAssertNil(userScript.delegate)
         XCTAssertNil(userScript.activationHandler)
-
-        body["kind"] = "getCurrentPosition"
-        let response = await userScript.userContentController(
-            controller,
-            didReceive: .mock(webView: sut.webView, frameInfo: frameInfo, body: body))
-        let reply = try XCTUnwrap(response.0 as? [String: Any])
-        XCTAssertEqual(reply["status"] as? String, "error")
-        XCTAssertEqual(reply["code"] as? Int, GeolocationPositionError.Code.permissionDenied.rawValue)
+        XCTAssertNil(sut.makeGeolocationSitePermissionContext(for: frame))
     }
 
     func testPreparingForDataClearingCancelsActiveGeolocationRequest() async throws {
@@ -2009,8 +1990,6 @@ private extension AVCaptureDevice {
 
 private final class SitePermissionURLWebView: WKWebView {
     private let fixedURL: URL
-    var geolocationPolicy: [String: Any]?
-    var geolocationDocumentID: String?
 
     init(url: URL, configuration: WKWebViewConfiguration) {
         fixedURL = url
@@ -2024,33 +2003,6 @@ private final class SitePermissionURLWebView: WKWebView {
 
     override var url: URL? {
         fixedURL
-    }
-
-    override func __callAsyncJavaScript(_ functionBody: String,
-                                        arguments: [String: Any]?,
-                                        inFrame frame: WKFrameInfo?,
-                                        in contentWorld: WKContentWorld,
-                                        completionHandler: (@MainActor @Sendable (Any?, Error?) -> Void)?) {
-        if functionBody.contains("__ddgSitePermissionsGeolocationPolicy"), let geolocationPolicy {
-            XCTAssertEqual(contentWorld, .defaultClient)
-            XCTAssertNotNil(frame)
-            completionHandler?(geolocationPolicy, nil)
-        } else {
-            super.__callAsyncJavaScript(functionBody, arguments: arguments, inFrame: frame, in: contentWorld, completionHandler: completionHandler)
-        }
-    }
-
-    override func __evaluateJavaScript(_ javaScriptString: String,
-                                       inFrame frame: WKFrameInfo?,
-                                       in contentWorld: WKContentWorld,
-                                       completionHandler: (@MainActor @Sendable (Any?, Error?) -> Void)?) {
-        if javaScriptString == "globalThis.__ddgSitePermissionsGeolocationDocumentID", let geolocationDocumentID {
-            XCTAssertEqual(contentWorld, .page)
-            XCTAssertNotNil(frame)
-            completionHandler?(geolocationDocumentID, nil)
-        } else {
-            super.__evaluateJavaScript(javaScriptString, inFrame: frame, in: contentWorld, completionHandler: completionHandler)
-        }
     }
 }
 

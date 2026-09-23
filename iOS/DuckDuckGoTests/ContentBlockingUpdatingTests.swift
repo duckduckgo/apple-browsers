@@ -28,6 +28,7 @@ import FeatureFlags_iOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import UserScript
+import Network
 @_spi(Testing) import Persistence
 @testable import SitePermissions
 @testable import DuckDuckGo
@@ -306,6 +307,145 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                 XCTAssertEqual(hasPagePolicy, false)
             }
         }
+    }
+
+    @MainActor
+    func testWhenRemoteFlagIsDisabledThenRestoredCachedDocumentStillRoutesGeolocationUntilRelaunch() async throws {
+        // Use the same loopback HTTP fixture pattern as the package's WebKit tests so WebKit
+        // can restore a real document from its back-forward cache instead of reloading HTML.
+        let parameters = NWParameters.tcp
+        parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: .any)
+        let listener = try NWListener(using: parameters)
+        defer { listener.cancel() }
+        let serverReady = expectation(description: "Loopback server listening")
+        listener.stateUpdateHandler = { state in
+            switch state {
+            case .ready:
+                serverReady.fulfill()
+            case .failed(let error):
+                XCTFail("Loopback server failed: \(error)")
+                serverReady.fulfill()
+            default:
+                break
+            }
+        }
+        let body = Data("""
+        <html><body><script>
+        window.testDocumentID = Math.random().toString(36);
+        window.testRestoredFromCache = false;
+        addEventListener('pageshow', event => { window.testRestoredFromCache = event.persisted; });
+        </script></body></html>
+        """.utf8)
+        let headers = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: \(body.count)\r\nConnection: close\r\n\r\n"
+        let response = Data(headers.utf8) + body
+        let serverQueue = DispatchQueue(label: "ContentBlockingUpdatingTests.HTTPServer")
+        listener.newConnectionHandler = { connection in
+            connection.start(queue: serverQueue)
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { _, _, _, _ in
+                connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })
+            }
+        }
+        listener.start(queue: serverQueue)
+        await fulfillment(of: [serverReady], timeout: 3)
+        let port = try XCTUnwrap(listener.port)
+        let pageA = try XCTUnwrap(URL(string: "http://localhost:\(port.rawValue)/a"))
+        let pageB = try XCTUnwrap(URL(string: "http://localhost:\(port.rawValue)/b"))
+
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+        let tab = TabViewController.fake(featureFlagger: SitePermissionsFeatureFlagger(base: flagger),
+                                        contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
+        defer { tab.prepareForDataClearing() }
+        let errorHandler = try XCTUnwrap(tab.specialErrorPageNavigationHandler as? DummySpecialErrorPageNavigationHandler)
+        errorHandler.handlesNavigationResponse = false
+        defer {
+            errorHandler.delegate = nil
+            tab.closeSitePermissions()
+        }
+        let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+        let dependencies = SitePermissionsDependencies(store: store, systemPermissionClient: SystemPermissionClient())
+        tab.sitePermissionsDependenciesProvider = { dependencies }
+        var promptCount = 0
+        tab.sitePermissionsPromptHandlerOverride = { _, completion in
+            promptCount += 1
+            completion(.denyOnce)
+        }
+
+        let originalWindow = UIApplication.shared.firstKeyWindow
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = tab
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true
+            originalWindow?.makeKey()
+        }
+
+        let controller = try XCTUnwrap(tab.webView.configuration.userContentController as? UserContentController)
+        func waitForScripts(enabled: Bool, update: () -> Void) async {
+            let installed = expectation(description: "Geolocation script enabled: \(enabled)")
+            let subscription = controller.$contentBlockingAssets
+                .compactMap { $0?.userScripts as? UserScripts }
+                .filter { ($0.geolocationUserScript != nil) == enabled }
+                .first()
+                .sink { _ in installed.fulfill() }
+            update()
+            await fulfillment(of: [installed], timeout: 10)
+            subscription.cancel()
+        }
+        func navigate(to url: URL, action: () -> WKNavigation?) async throws {
+            let loaded = expectation(description: "Loaded \(url.path) through production navigation delegate")
+            let observation = tab.webView.observe(\.isLoading, options: [.new]) { webView, _ in
+                if !webView.isLoading, webView.url == url {
+                    loaded.fulfill()
+                }
+            }
+            defer { observation.invalidate() }
+            XCTAssertTrue(tab.webView.navigationDelegate === tab)
+            XCTAssertNotNil(action())
+            await fulfillment(of: [loaded], timeout: 10)
+            let readyState: String? = try await tab.webView.evaluateJavaScript("document.readyState")
+            XCTAssertEqual(readyState, "complete")
+        }
+
+        await waitForScripts(enabled: true) { rulesManager.updatesSubject.send(Self.testUpdate()) }
+        try await navigate(to: pageA) { tab.webView.load(URLRequest(url: pageA)) }
+        let originalDocument: String? = try await tab.webView.evaluateJavaScript("window.testDocumentID")
+        let originalShim: String? = try await tab.webView.evaluateJavaScript("window.__ddgSitePermissionsGeolocation?.documentID")
+        XCTAssertNotNil(originalDocument)
+        XCTAssertNotNil(originalShim)
+
+        flagger.enabledFeatureFlags = []
+        flagger.triggerUpdate()
+        try await navigate(to: pageB) { tab.webView.load(URLRequest(url: pageB)) }
+        let hasShim: Bool? = try await tab.webView.evaluateJavaScript("typeof window.__ddgSitePermissionsGeolocation !== 'undefined'")
+        XCTAssertEqual(hasShim, true)
+
+        try await navigate(to: pageA) { tab.webView.goBack() }
+        let restoredDocument: String? = try await tab.webView.evaluateJavaScript("window.testDocumentID")
+        let restoredShim: String? = try await tab.webView.evaluateJavaScript("window.__ddgSitePermissionsGeolocation?.documentID")
+        let restoredFromCache: Bool? = try await tab.webView.evaluateJavaScript("window.testRestoredFromCache")
+        XCTAssertEqual(restoredDocument, originalDocument)
+        XCTAssertEqual(restoredShim, originalShim)
+        XCTAssertEqual(restoredFromCache, true, "A fresh load would not exercise the cached document bridge")
+
+        let state = try await tab.webView.callAsyncJavaScript("""
+        return await Promise.race([
+            navigator.permissions.query({ name: 'geolocation' }).then(status => status.state),
+            new Promise(resolve => setTimeout(() => resolve('timeout'), 3000))
+        ]);
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(state as? String, "prompt")
+        let errorCode = try await tab.webView.callAsyncJavaScript("""
+        return await new Promise(resolve => {
+            const timer = setTimeout(() => resolve(-1), 3000);
+            navigator.geolocation.getCurrentPosition(
+                () => { clearTimeout(timer); resolve(0); },
+                error => { clearTimeout(timer); resolve(error.code); }
+            );
+        });
+        """, arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(errorCode as? Int, 1)
+        XCTAssertEqual(promptCount, 1, "The restored document must reach the coordinator; denial prevents an OS prompt")
     }
 
     @MainActor

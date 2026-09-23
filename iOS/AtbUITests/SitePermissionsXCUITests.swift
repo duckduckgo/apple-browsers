@@ -261,6 +261,26 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertCombinedMediaFailsAfterSystemDenial(of: "microphone")
     }
 
+    func testWhenCombinedPromptIsNeverAllowedThenRunningAllowOnceCameraStops() {
+        launchApp()
+        openPermissionPage()
+        request("camera")
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        answerSystemAlert(for: "camera", allow: true)
+        assertResult("success 1")
+        assertResult("live video=1 audio=0")
+
+        // The running Allow Once camera passes the site check, so only the microphone asks, as a combined prompt.
+        request("camera and microphone")
+        assertSiteDialog(permission: "camera and microphone")
+        tap(element("SitePermissions.Dialog.NeverAllow"))
+        assertResult("NotAllowedError 2")
+        assertResult("live video=0 audio=0")
+        openPermissionsSheet()
+        XCTAssertEqual(element("SitePermissions.Sheet.Camera").value as? String, "Never Allow")
+        XCTAssertEqual(element("SitePermissions.Sheet.Microphone").value as? String, "Never Allow")
+    }
+
     func testWhenLocationIsAllowedThenSiteDialogPrecedesSystemPromptAndCoordinatesSurviveReload() throws {
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
         launchApp()
@@ -796,6 +816,7 @@ final class SitePermissionsXCUITests: XCTestCase {
       <button onclick="document.getElementById('result').textContent = 'reloading'; location.reload()">Reload fixture</button>
       <p id="result" role="status">ready</p>
       <p id="tracks" role="status">tracks video=0 audio=0</p>
+      <p id="liveTracks" role="status">live video=0 audio=0</p>
       <p id="locationResult" role="status">location ready</p>
       <p id="watchResult" role="status">watch ready</p>
       <script>
@@ -812,11 +833,18 @@ final class SitePermissionsXCUITests: XCTestCase {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             // Keep capture active for same-page Allow Once reuse; reload ends these streams.
             streams.push(stream);
+            stream.getTracks().forEach(track => track.addEventListener('ended', updateLiveTracks));
+            updateLiveTracks();
             tracks.textContent = 'tracks video=' + stream.getVideoTracks().length + ' audio=' + stream.getAudioTracks().length;
             result.textContent = 'success ' + count;
           } catch (error) {
             result.textContent = error.name + ' ' + count;
           }
+        }
+        function updateLiveTracks() {
+          const live = streams.flatMap(stream => stream.getTracks()).filter(track => track.readyState === 'live');
+          document.getElementById('liveTracks').textContent = 'live video=' + live.filter(track => track.kind === 'video').length
+            + ' audio=' + live.filter(track => track.kind === 'audio').length;
         }
         function coordinates(position) {
           return position.coords.latitude.toFixed(4) + ',' + position.coords.longitude.toFixed(4);

@@ -1807,6 +1807,28 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(nativeDecision, .deny)
     }
 
+    func testWhenCombinedPromptIsNeverAllowedThenRunningAllowOnceCameraIsRevoked() async throws {
+        let sut = makeSUT()
+        var promptDecisions: [SitePermissionPromptDecision] = [.allowOnce, .neverAllow]
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(promptDecisions.removeFirst()) }
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
+        let cameraDecision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .camera)
+        XCTAssertEqual(cameraDecision, .allow)
+        let webView = try XCTUnwrap(sut.webView as? SitePermissionURLWebView)
+        webView.setCameraCaptureStateForTesting(.active)
+
+        let combinedDecision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .cameraAndMicrophone)
+
+        XCTAssertEqual(combinedDecision, .deny)
+        XCTAssertTrue(promptDecisions.isEmpty)
+        XCTAssertEqual(webView.requestedCameraCaptureStates, [.none])
+        // Revoking the camera also discards its outstanding Allow Once approval, so WebKit can no longer use it.
+        var nativeDecision: WKPermissionDecision?
+        requestPermission(on: sut, originHost: site.host, captureType: .camera,
+                          decisionHandler: { nativeDecision = $0 })
+        XCTAssertEqual(nativeDecision, .deny)
+    }
+
     func testMainFramePreapprovalCannotBeConsumedBySameOriginSubframe() async {
         let sut = makeSUT()
         sut.sitePermissionsPromptHandlerOverride = { _, completion in
@@ -2039,6 +2061,8 @@ private extension AVCaptureDevice {
 
 private final class SitePermissionURLWebView: WKWebView {
     private let fixedURL: URL
+    private var cameraCaptureStateValue = WKMediaCaptureState.none
+    private(set) var requestedCameraCaptureStates = [WKMediaCaptureState]()
 
     init(url: URL, configuration: WKWebViewConfiguration) {
         fixedURL = url
@@ -2052,6 +2076,22 @@ private final class SitePermissionURLWebView: WKWebView {
 
     override var url: URL? {
         fixedURL
+    }
+
+    override var cameraCaptureState: WKMediaCaptureState {
+        cameraCaptureStateValue
+    }
+
+    func setCameraCaptureStateForTesting(_ state: WKMediaCaptureState) {
+        willChangeValue(for: \.cameraCaptureState)
+        cameraCaptureStateValue = state
+        didChangeValue(for: \.cameraCaptureState)
+    }
+
+    override func setCameraCaptureState(_ state: WKMediaCaptureState, completionHandler: (@MainActor @Sendable () -> Void)?) {
+        requestedCameraCaptureStates.append(state)
+        setCameraCaptureStateForTesting(state)
+        completionHandler?()
     }
 }
 

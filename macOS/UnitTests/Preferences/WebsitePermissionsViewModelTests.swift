@@ -433,8 +433,8 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         detailModel.send(action: .setDefaultDecision(.deny))
 
         XCTAssertEqual(firedPixelNames, [
-            "m_mac_permission_settings_detail_camera",
-            "m_mac_permission_settings_default_camera_deny",
+            "permission_settings_detail_camera",
+            "permission_settings_default_camera_deny",
         ])
     }
 

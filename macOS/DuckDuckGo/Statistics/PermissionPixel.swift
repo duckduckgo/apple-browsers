@@ -117,16 +117,16 @@ enum PermissionPixel: PixelKit.Event {
             return "m_mac_permission_system_preferences_\(permissionType.pixelName)"
 
         case .settingsDetailOpened(let category):
-            return "m_mac_permission_settings_detail_\(category.pixelName)"
+            return "permission_settings_detail_\(category.pixelName)"
 
         case .settingsDefaultChanged(let category, let to):
-            return "m_mac_permission_settings_default_\(category.pixelName)_\(to.pixelName)"
+            return "permission_settings_default_\(category.pixelName)_\(to.pixelName)"
 
         case .settingsSiteChanged(let permissionType, let to):
-            return "m_mac_permission_settings_site_changed_\(permissionType.pixelName)_to_\(to.pixelName)"
+            return "permission_settings_site_changed_\(permissionType.pixelName)_to_\(to.pixelName)"
 
         case .settingsSiteRemoved(let permissionType):
-            return "m_mac_permission_settings_removed_\(permissionType.pixelName)"
+            return "permission_settings_removed_\(permissionType.pixelName)"
         }
     }
 

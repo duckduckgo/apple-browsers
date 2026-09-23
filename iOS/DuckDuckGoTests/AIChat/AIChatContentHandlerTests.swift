@@ -488,6 +488,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
+            onboardingActivationRecorder: mockOnboardingActivationRecorder,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in
                 XCTAssertEqual(script.cancelPendingTabContextSubmissionCallCount, 1)

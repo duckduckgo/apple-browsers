@@ -1238,9 +1238,9 @@ final class AIChatAttachedPageCollectionTests: XCTestCase {
                               truncated: false, fullContentLength: content.count)
     }
 
-    private func handler() -> AIChatPageContextHandler {
-        AIChatPageContextHandler(webViewProvider: { self.webView }, userScriptProvider: { self.script },
-                                 faviconProvider: { _ in nil }, currentURLProvider: { self.url })
+    private func handler() -> DuckDuckGo.AIChatPageContextHandler {
+        DuckDuckGo.AIChatPageContextHandler(webViewProvider: { self.webView }, userScriptProvider: { self.script },
+                                            faviconProvider: { _ in nil }, currentURLProvider: { self.url })
     }
 
     func testIgnoresWrongPageAndAcceptsMatchingDocumentURL() async {
@@ -1308,7 +1308,7 @@ final class AIChatAttachedPageCollectionTests: XCTestCase {
         let document = AIChatPageContextData.document(title: "Document", url: url.absoluteString,
                                                      mimeType: AIChatPageContextData.pdfMIMEType, data: "JVBERi0=")
         script.onCollect = { XCTFail("Document collection must not invoke HTML extraction") }
-        let handler = AIChatPageContextHandler(webViewProvider: { self.webView }, userScriptProvider: { self.script },
+        let handler = DuckDuckGo.AIChatPageContextHandler(webViewProvider: { self.webView }, userScriptProvider: { self.script },
                                               faviconProvider: { _ in "data:image/png;base64,icon" },
                                               currentURLProvider: { self.url }, mimeTypeProvider: { _ in "application/pdf" },
                                               isDocumentContextEnabled: { true },
@@ -1319,7 +1319,7 @@ final class AIChatAttachedPageCollectionTests: XCTestCase {
 
     func testDocumentTimeoutCancelsOwnedRead() async {
         let cancelled = expectation(description: "Document read cancelled")
-        let handler = AIChatPageContextHandler(webViewProvider: { self.webView }, userScriptProvider: { nil },
+        let handler = DuckDuckGo.AIChatPageContextHandler(webViewProvider: { self.webView }, userScriptProvider: { nil },
                                               faviconProvider: { _ in nil }, currentURLProvider: { self.url },
                                               mimeTypeProvider: { _ in "application/pdf" }, isDocumentContextEnabled: { true },
                                               makeDocumentContext: { _, _, _ in

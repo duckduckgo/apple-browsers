@@ -660,14 +660,17 @@ extension XCUIApplication {
                 startupWindowPicker.coordinate(withNormalizedOffset: CGVector(dx: 0.03, dy: 0.5)).click()
             }
             startupWindowPicker.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).click()
+            // The popup menu's items are not exposed by newer SwiftUI accessibility trees.
+            // Select through the keyboard, then verify the selected type on the enclosing control.
+            typeKey(state == .fireWindow ? .downArrow : .upArrow, modifierFlags: [])
+            typeKey(.enter, modifierFlags: [])
 
             let optionIdentifier = state == .fireWindow
                 ? AccessibilityIdentifiers.startupWindowTypeFireWindow
                 : AccessibilityIdentifiers.startupWindowTypeRegularWindow
-            let option = menuItems[optionIdentifier]
-            XCTAssertTrue(option.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Startup window option did not appear")
-            option.click()
-            XCTAssertTrue(startupWindowPicker.isSelected)
+            let selectedOption = prefs.popUpButtons[optionIdentifier]
+            XCTAssertTrue(selectedOption.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Requested startup window type was not selected")
+            XCTAssertTrue(selectedOption.isSelected)
             return
         }
 

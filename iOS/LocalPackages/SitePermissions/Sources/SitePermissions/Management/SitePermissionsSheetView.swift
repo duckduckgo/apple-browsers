@@ -116,15 +116,15 @@ public struct SitePermissionsSheetView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            HStack(spacing: 8) {
-                Text(UserText.PermissionManagement.titlePrefix)
+            HStack(spacing: 0) {
+                Text(UserText.PermissionManagement.titlePrefix + " ")
                     .fixedSize(horizontal: false, vertical: true)
                 Text("“\(viewModel.site.host)”")
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .font(.subheadline.weight(.semibold))
+            .daxHeadline()
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .frame(maxWidth: .infinity, minHeight: 20, alignment: .leading)
             .accessibilityElement(children: .ignore)

@@ -402,6 +402,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(element("SitePermissions.Toast.Undo"))
 
         XCTAssertTrue(element("SitePermissions.Sheet").waitForExistence(timeout: timeout))
+        XCTAssertEqual(element("SitePermissions.Sheet.Title").label, "Permissions for “127.0.0.1”")
         assertSheetDecision("Camera", contains: "Always Allow")
         assertSheetDecision("Microphone", contains: "Never Allow")
         tap(element("SitePermissions.Sheet.Close"))
@@ -889,6 +890,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         openMenu()
         tap(element("BrowsingMenu.SitePermissions"))
         XCTAssertTrue(element("SitePermissions.Sheet").waitForExistence(timeout: timeout))
+        XCTAssertEqual(element("SitePermissions.Sheet.Title").label, "Permissions for “127.0.0.1”")
     }
 
     private func openSettings() {

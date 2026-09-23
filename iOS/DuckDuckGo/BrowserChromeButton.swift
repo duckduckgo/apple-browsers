@@ -401,8 +401,9 @@ extension UIButton {
         mask.contentsScale = menuImageView.layer.contentsScale
         menuImageView.layer.mask = mask
         state.permissionMask = mask
-        let duration: TimeInterval = 0.25
+        let duration: TimeInterval = 0.2
         let barDuration: TimeInterval = 0.1
+        let barHeadStart: TimeInterval = reduceMotion ? 0 : 0.05
         setPermissionMenuBars(shortened: true, duration: reduceMotion ? 0 : barDuration)
 
         let hiddenTransform = CGAffineTransform(scaleX: 0.01, y: 0.01)
@@ -414,13 +415,13 @@ extension UIButton {
         }
         state.permissionAnimator = entrance
         // Give the bars a head start so the badge can grow from its center without overlapping them.
-        entrance.startAnimation(afterDelay: reduceMotion ? 0 : 0.05)
+        entrance.startAnimation(afterDelay: barHeadStart)
 
         let dismissal = DispatchWorkItem { [weak self, weak badge] in
             guard let self, let badge else { return }
             if !reduceMotion {
-                // Keep the space open until the shrinking badge clears the bars.
-                self.setPermissionMenuBars(shortened: false, duration: barDuration, delay: duration - barDuration)
+                // Mirror the entrance timing, finishing the bars after the badge disappears.
+                self.setPermissionMenuBars(shortened: false, duration: barDuration, delay: duration + barHeadStart - barDuration)
             }
             let exit = UIViewPropertyAnimator(duration: duration, curve: .easeOut) {
                 badge.alpha = 0
@@ -430,10 +431,15 @@ extension UIButton {
             }
             exit.addCompletion { [weak self] position in
                 guard let self, position == .end else { return }
-                self.cancelSitePermissionAnimation()
-                if permissionTypes.count > 1 {
-                    self.animateSitePermissionGranted(Array(permissionTypes.dropFirst()), reduceMotion: reduceMotion)
+                let completion = DispatchWorkItem { [weak self] in
+                    guard let self else { return }
+                    self.cancelSitePermissionAnimation()
+                    if permissionTypes.count > 1 {
+                        self.animateSitePermissionGranted(Array(permissionTypes.dropFirst()), reduceMotion: reduceMotion)
+                    }
                 }
+                self.menuAlertState.permissionDismissal = completion
+                DispatchQueue.main.asyncAfter(deadline: .now() + barHeadStart, execute: completion)
             }
             self.menuAlertState.permissionAnimator = exit
             exit.startAnimation()

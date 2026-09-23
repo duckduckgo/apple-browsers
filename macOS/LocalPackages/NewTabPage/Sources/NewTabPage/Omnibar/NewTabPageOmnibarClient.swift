@@ -45,6 +45,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case removeSuggestion = "omnibar_removeSuggestion"
         case setImageGenerationActive = "omnibar_setImageGenerationActive"
         case dismissCreateImageModelSwitch = "omnibar_dismissCreateImageModelSwitch"
+        case dismissUsageLimits = "omnibar_dismissUsageLimits"
+        case selectUsageLimitsCta = "omnibar_selectUsageLimitsCta"
     }
 
     private let configProvider: NewTabPageOmnibarConfigProviding
@@ -86,7 +88,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.isAttachTabsEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.isAIChatDeletionEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.isSearchSuggestionDeletionEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
-            configProvider.customizeResponsesStatePublisher.map { _ in () }.eraseToAnyPublisher()
+            configProvider.customizeResponsesStatePublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.usageLimitsPublisher.map { _ in () }.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in
@@ -133,7 +136,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.confirmDeleteAiChat.rawValue: { [weak self] in try await self?.confirmDeleteAiChat(params: $0, original: $1) },
             MessageName.removeSuggestion.rawValue: { [weak self] in try await self?.removeSuggestion(params: $0, original: $1) },
             MessageName.setImageGenerationActive.rawValue: { [weak self] in try await self?.setImageGenerationActive(params: $0, original: $1) },
-            MessageName.dismissCreateImageModelSwitch.rawValue: { [weak self] in try await self?.dismissCreateImageModelSwitch(params: $0, original: $1) }
+            MessageName.dismissCreateImageModelSwitch.rawValue: { [weak self] in try await self?.dismissCreateImageModelSwitch(params: $0, original: $1) },
+            MessageName.dismissUsageLimits.rawValue: { [weak self] in try await self?.dismissUsageLimits(params: $0, original: $1) },
+            MessageName.selectUsageLimitsCta.rawValue: { [weak self] in try await self?.selectUsageLimitsCta(params: $0, original: $1) }
         ])
     }
 
@@ -170,7 +175,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAiChatDeletion: configProvider.isAIChatDeletionEnabled,
             enableSearchSuggestionDeletion: configProvider.isSearchSuggestionDeletionEnabled,
             enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
-            createImageModelSwitch: createImageModelSwitch
+            createImageModelSwitch: createImageModelSwitch,
+            usageLimits: configProvider.usageLimits()
         )
     }
 
@@ -255,7 +261,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAiChatDeletion: configProvider.isAIChatDeletionEnabled,
             enableSearchSuggestionDeletion: configProvider.isSearchSuggestionDeletionEnabled,
             enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
-            createImageModelSwitch: createImageModelSwitch
+            createImageModelSwitch: createImageModelSwitch,
+            usageLimits: configProvider.usageLimits()
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
@@ -360,6 +367,26 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     private func dismissCreateImageModelSwitch(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         createImageModelSwitch = nil
         notifyConfigUpdated()
+        return nil
+    }
+
+    @MainActor
+    private func dismissUsageLimits(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        configProvider.dismissUsageLimits()
+        notifyConfigUpdated()
+        return nil
+    }
+
+    /// An absent `modelId` is the upsell and the weekly hand-off, so a failed decode is the same
+    /// thing as no model rather than a reason to bail.
+    @MainActor
+    private func selectUsageLimitsCta(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        let action: NewTabPageDataModel.OmnibarSelectUsageLimitsCtaAction? = DecodableHelper.decode(from: params)
+        let outcome = configProvider.selectUsageLimitsCta(modelId: action?.modelId)
+        notifyConfigUpdated()
+        if outcome == .requiresSubscriptionUpsell {
+            await subscriptionDialogPresenter?.showSubscriptionUpsellDialog(source: .usageLimit)
+        }
         return nil
     }
 

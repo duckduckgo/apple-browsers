@@ -95,6 +95,9 @@ enum SubscriptionFunnelOrigin: String {
     /// Gated reasoning effort in the New Tab Page omnibar's reasoning picker.
     case newTabPageReasoningDropdown = "funnel_newtab_macos__reasoningdropdown"
 
+    /// The Duck.ai usage-limits drawer under the New Tab Page omnibar.
+    case newTabPageUsageLimit = "funnel_newtab_macos__usagelimit"
+
     /// Gated model shown in the Prompt Bar's model picker. Impression only — gated rows aren't
     /// interactive on this surface, so nothing routes into the purchase flow from here.
     case promptBarModelPicker = "funnel_promptbar_macos__modelpicker"
@@ -147,7 +150,8 @@ extension SubscriptionFunnelOrigin {
                 .fireWindowPromo,
                 .newTabPageOmnibar,
                 .newTabPageModelPicker,
-                .newTabPageReasoningDropdown:
+                .newTabPageReasoningDropdown,
+                .newTabPageUsageLimit:
             return .newTabPage
         case .addressBarModelPicker,
                 .addressBarReasoningDropdown,

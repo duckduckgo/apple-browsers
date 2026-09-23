@@ -71,6 +71,24 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     @MainActor
     func refreshUsageLimits(requestingWebView: WKWebView?)
 
+    /// The drawer to show under the Duck.ai pill, or `nil` to hide it. A method rather than a value
+    /// because the high-usage model notice is keyed off the selected model and re-resolved per read.
+    @MainActor
+    func usageLimits() -> NewTabPageDataModel.OmnibarUsageLimits?
+
+    /// Records the dismissal against whichever message the drawer is showing.
+    @MainActor
+    func dismissUsageLimits()
+
+    /// Runs the drawer's CTA. `modelId` is set when the user picked a model, either the primary one
+    /// or one from the alternatives menu.
+    @MainActor
+    func selectUsageLimitsCta(modelId: String?) -> NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome
+
+    /// Fires when the resolved drawer changes — web republishing the usage snapshot, or the user
+    /// settling a message — so the client can push `omnibar_onConfigUpdate` without a reload.
+    var usageLimitsPublisher: AnyPublisher<Void, Never> { get }
+
     /// Whether the attach-tabs (and files) affordance is enabled. Driven by the
     /// `aiChatNtpAttachMoreTabs` feature flag. Published so the client can push an
     /// `omnibar_onConfigUpdate` when the flag flips at runtime, keeping an open NTP in sync.

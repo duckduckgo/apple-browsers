@@ -2100,6 +2100,7 @@
 		604AFF29DF594DC4AF18864C /* PreferencesWebsitePermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637378A7DE5641D7AF4A7BE1 /* PreferencesWebsitePermissionsView.swift */; };
 		6065685D53CB27C55ED5E009 /* SyncFaviconsPromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B4F96BDD7A9370213795740 /* SyncFaviconsPromoDelegateTests.swift */; };
 		62A0715146D181EEE08C6214 /* NewTabPageOmnibarSubscriptionDialogPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC8AD4809D753F81755525AD /* NewTabPageOmnibarSubscriptionDialogPresenter.swift */; };
+		92ADDC277445F1DFA513140A /* NewTabPageOmnibarUsageLimits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800E07FC8CB32A1F5EE8DE1E /* NewTabPageOmnibarUsageLimits.swift */; };
 		638B34FA781359331A3ED13A /* QuickFeedbackDiagnosticsCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F511D9CB8F68D9D9B0341314 /* QuickFeedbackDiagnosticsCollector.swift */; };
 		63AC47CDA9BC3FA42B5B335A /* WebNotificationPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A7430C39C716A6A3A1F654 /* WebNotificationPixel.swift */; };
 		63F6360B709D803C891FB236 /* MacOSEventHubPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62DD4D2AC1D0C1F50B8025D3 /* MacOSEventHubPixelFiring.swift */; };
@@ -2120,6 +2121,7 @@
 		6E2F0A255CE251B0278AACDD /* CookiePopupsBlockedPromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0838C95B673253942ABF8BF /* CookiePopupsBlockedPromoDelegateTests.swift */; };
 		6F2449E6DE7EE721370575B9 /* QuickFeedbackDiagnosticsCollectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABD3D561804AB2C73BB789AC /* QuickFeedbackDiagnosticsCollectorTests.swift */; };
 		7260827D8EA789D699522A4F /* NewTabPageOmnibarSubscriptionDialogPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC8AD4809D753F81755525AD /* NewTabPageOmnibarSubscriptionDialogPresenter.swift */; };
+		08E2D13A8CCE87EAC32462B3 /* NewTabPageOmnibarUsageLimits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800E07FC8CB32A1F5EE8DE1E /* NewTabPageOmnibarUsageLimits.swift */; };
 		7380BFFD4A203C992E79AD0B /* BookmarksBarMenuWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E98C31C7349D34C0C8A569A /* BookmarksBarMenuWindow.swift */; };
 		740E44F249D5E9A1422C6032 /* QuitSurveyPromoObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C69DB2B1B8FFE0FAAA520B /* QuitSurveyPromoObserver.swift */; };
 		7458C940729D4932BA46D1A5 /* BookmarkToolbarPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFE9339884FE402C912A8626 /* BookmarkToolbarPromoDelegate.swift */; };
@@ -7331,6 +7333,7 @@
 		E7B10F7957CD4E02BFA956FF /* PromoServiceFactory+BookmarkToolbar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+BookmarkToolbar.swift"; sourceTree = "<group>"; };
 		EA1C3EF05DE61AEEE58D72C2 /* AIChatUsageWarningCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUsageWarningCardView.swift; sourceTree = "<group>"; };
 		EC8AD4809D753F81755525AD /* NewTabPageOmnibarSubscriptionDialogPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarSubscriptionDialogPresenter.swift; sourceTree = "<group>"; };
+		800E07FC8CB32A1F5EE8DE1E /* NewTabPageOmnibarUsageLimits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarUsageLimits.swift; sourceTree = "<group>"; };
 		ED190E102E8BD33F00CA3816 /* MacWatchdogDiagnosticProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacWatchdogDiagnosticProvider.swift; sourceTree = "<group>"; };
 		ED1B618C2ED8B256008E0935 /* PasswordEntryRetryPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordEntryRetryPromptView.swift; sourceTree = "<group>"; };
 		ED314EC0301CC10E00D1A0A0 /* AppIcon-Debug.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "AppIcon-Debug.icon"; sourceTree = "<group>"; };
@@ -8675,6 +8678,7 @@
 				E231C3CC2E1BB72300B53914 /* NewTabPageSectionsAvailabilityProvider.swift */,
 				1D3DCCEF2F6A9EEE00388752 /* NewTabPageOmnibarModelsProvider.swift */,
 				EC8AD4809D753F81755525AD /* NewTabPageOmnibarSubscriptionDialogPresenter.swift */,
+				800E07FC8CB32A1F5EE8DE1E /* NewTabPageOmnibarUsageLimits.swift */,
 				E274EFF52E1D55CF00373C41 /* NewTabPageOmnibarSuggestionsProvider.swift */,
 				E2BC1B222E210AE600F58D61 /* NewTabPageOmnibarConfigProvider.swift */,
 				D1A7B0010000000000000001 /* NewTabPageOmnibarTabsProvider.swift */,
@@ -15788,6 +15792,7 @@
 				3706FA83293F65D500E42796 /* LazyLoadable.swift in Sources */,
 				1D3DCCF02F6A9EEE00388752 /* NewTabPageOmnibarModelsProvider.swift in Sources */,
 				7260827D8EA789D699522A4F /* NewTabPageOmnibarSubscriptionDialogPresenter.swift in Sources */,
+				08E2D13A8CCE87EAC32462B3 /* NewTabPageOmnibarUsageLimits.swift in Sources */,
 				37EE56122D5F197300D53C7C /* BadgeAnimationView.swift in Sources */,
 				37EE56132D5F197300D53C7C /* BadgeNotificationAnimationModel.swift in Sources */,
 				37EE56142D5F197300D53C7C /* BadgeNotificationContainerView.swift in Sources */,
@@ -18233,6 +18238,7 @@
 				37D2377A287EB8CA00BCE03B /* TabIndex.swift in Sources */,
 				1D3DCCF12F6A9EEE00388752 /* NewTabPageOmnibarModelsProvider.swift in Sources */,
 				62A0715146D181EEE08C6214 /* NewTabPageOmnibarSubscriptionDialogPresenter.swift in Sources */,
+				92ADDC277445F1DFA513140A /* NewTabPageOmnibarUsageLimits.swift in Sources */,
 				B60C6F8D29B200AB007BFAA8 /* SavePanelAccessoryView.swift in Sources */,
 				F1D042992BFBABA100A31506 /* SubscriptionManager+StandardConfiguration.swift in Sources */,
 				37534CA3281132CB002621E7 /* TabLazyLoaderDataSource.swift in Sources */,

@@ -106,6 +106,7 @@ final class WebExtensionPopupPresenter {
     private weak var popupWebView: WKWebView?
     private var loadingObservation: NSKeyValueObservation?
     private var clickMonitor: Any?
+    private var frameChangeObserver: NSObjectProtocol?
     private var settleWorkItems: [DispatchWorkItem] = []
 
     /// Whether the popup of the given extension is on screen.
@@ -144,6 +145,11 @@ final class WebExtensionPopupPresenter {
         // keeps the panel visible until then, instead of a fully transparent rectangle.
         contentView.layer?.backgroundColor = popupBackgroundColor.cgColor
 
+        // A page that declares no `color-scheme` expects the light defaults Chrome gives it:
+        // black text and light form controls. WebKit takes them from the web view's appearance
+        // instead, so in a dark app LastPass's unstyled text renders white on its light background.
+        popupWebView.appearance = NSAppearance(named: .aqua)
+
         popupWebView.frame = contentView.bounds
         popupWebView.autoresizingMask = [.width, .height]
         contentView.addSubview(popupWebView)
@@ -177,27 +183,34 @@ final class WebExtensionPopupPresenter {
     /// WebKit does not tell us that size. The `contentSize` of the popover it would have
     /// presented stays zero, and the popup web view keeps a zero frame until something sizes
     /// it, so both are useless as a source. We therefore ask the page itself once it loads.
+    ///
+    /// The popup page may have finished loading before it is presented, in which case `isLoading`
+    /// never changes, so the page is measured and settled right away as well as on the load event.
     private func observePopupSize(of popupWebView: WKWebView) {
         measurePageAndResize(popupWebView)
+        startSettling(popupWebView)
+
+        // Not every popup knows its size when it finishes loading, and some change size long
+        // after: LastPass grows its login form to show an error banner only once the user
+        // submits it. WebKit resizes the popup web view itself when the page changes size, so
+        // following those frame changes resizes the panel as soon as the page does, without
+        // driving the extension.
+        popupWebView.postsFrameChangedNotifications = true
+        frameChangeObserver = NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification,
+                                                                     object: popupWebView,
+                                                                     queue: .main) { [weak self, weak popupWebView] _ in
+            MainActor.assumeMainThread {
+                guard let self, let popupWebView else { return }
+                Logger.webExtensions.debug("🧩 Popup web view frame changed to \(NSStringFromRect(popupWebView.frame), privacy: .public)")
+                self.measurePageAndResize(popupWebView)
+            }
+        }
 
         loadingObservation = popupWebView.observe(\.isLoading, options: [.new]) { [weak self] webView, _ in
             DispatchQueue.main.async {
                 guard webView.isLoading == false else { return }
                 self?.measurePageAndResize(webView)
                 self?.startSettling(webView)
-            }
-        }
-    }
-
-    private func measurePageAndResize(_ popupWebView: WKWebView) {
-        popupWebView.evaluateJavaScript(Constants.measurePageScript) { [weak self] result, error in
-            DispatchQueue.main.async {
-                guard let self else { return }
-                guard let values = result as? [Double], values.count == 2 else {
-                    Logger.webExtensions.debug("🧩 Popup page did not report a size: \(error?.localizedDescription ?? "no value", privacy: .public)")
-                    return
-                }
-                self.resize(toPageSize: NSSize(width: values[0], height: values[1]))
             }
         }
     }
@@ -226,6 +239,19 @@ final class WebExtensionPopupPresenter {
     private func cancelSettling() {
         settleWorkItems.forEach { $0.cancel() }
         settleWorkItems = []
+    }
+
+    private func measurePageAndResize(_ popupWebView: WKWebView) {
+        popupWebView.evaluateJavaScript(Constants.measurePageScript) { [weak self] result, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                guard let values = result as? [Double], values.count == 2 else {
+                    Logger.webExtensions.debug("🧩 Popup page did not report a size: \(error?.localizedDescription ?? "no value", privacy: .public)")
+                    return
+                }
+                self.resize(toPageSize: NSSize(width: values[0], height: values[1]))
+            }
+        }
     }
 
     private func resize(toPageSize pageSize: NSSize) {
@@ -265,7 +291,7 @@ final class WebExtensionPopupPresenter {
 
     // MARK: - Close
 
-    /// Closes the popup on a click that lands neither in the popup nor on its button.
+    /// Closes the popup on a click in a browser window that lands neither in the popup nor on its button.
     ///
     /// The button needs the exception so that a click on it reaches the button action, which
     /// closes the popup itself. Without it the popup would close here and the action would
@@ -287,6 +313,11 @@ final class WebExtensionPopupPresenter {
         guard let panel, panel.isVisible else { return }
 
         if clickedWindow === panel { return }
+
+        // Only a click in a browser window dismisses the popup. Web Inspector opens on the
+        // popup page in a window of our own process, and closing the popup when it is clicked
+        // would take down the page being inspected.
+        guard clickedWindow is MainWindow else { return }
 
         if let button = anchorButton, clickedWindow === button.window {
             let pointInButton = button.convert(location, from: nil)
@@ -315,6 +346,11 @@ final class WebExtensionPopupPresenter {
         loadingObservation = nil
 
         cancelSettling()
+
+        if let frameChangeObserver {
+            NotificationCenter.default.removeObserver(frameChangeObserver)
+            self.frameChangeObserver = nil
+        }
 
         // The web view belongs to WebKit, so hand it back rather than leaving it in our panel.
         popupWebView?.removeFromSuperview()

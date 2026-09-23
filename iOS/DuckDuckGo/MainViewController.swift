@@ -1797,7 +1797,7 @@ class MainViewController: UIViewController {
         return FloatingUILayoutPolicy.rampedProgress(
             percent,
             from: FloatingDomainCapsuleController.handoffStart,
-            to: FloatingDomainCapsuleController.handoffEnd
+            to: FloatingDomainCapsuleController.alphaHandoffEnd(for: appSettings.currentAddressBarPosition)
         )
     }
 
@@ -5029,7 +5029,7 @@ extension MainViewController: BrowserChromeDelegate {
     /// Current visibility fraction of the chrome bars (1.0 = fully visible, 0.0 = hidden).
     /// We track the driven fraction directly rather than reading a container's alpha: with the
     /// floating capsule morph, `chromeAlpha(for:)` keeps the chrome alpha at 0 through the resize
-    /// band and only fades it in over `[handoffStart, handoffEnd]`, so container alpha no longer
+    /// band and only fades it in over `[handoffStart, alphaHandoffEnd]`, so container alpha no longer
     /// reflects the real fraction mid-transition. Call sites that reapply visibility need the true
     /// fraction.
     var currentBarsVisibility: CGFloat {

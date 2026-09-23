@@ -1311,21 +1311,43 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
     }
 
     func testWhenInsideTheHandoffBandThenPillFadesInWhileHoldingTheBarFrame() {
-        let midBandPercent = (FloatingDomainCapsuleController.handoffStart + FloatingDomainCapsuleController.handoffEnd) / 2
-        let button = update(barsVisibilityPercent: midBandPercent)
+        for position in [AddressBarPosition.top, .bottom] {
+            let alphaEnd = FloatingDomainCapsuleController.alphaHandoffEnd(for: position)
+            let midBandPercent = (FloatingDomainCapsuleController.handoffStart + alphaEnd) / 2
+            let button = update(barsVisibilityPercent: midBandPercent, addressBarPosition: position)
 
-        XCTAssertEqual(button?.alpha ?? -1, 0.5, accuracy: 0.01)
-        // Both bar and pill are geometry-locked throughout the band: the pill already sits at the
-        // bar's full expanded size, so widening the fade can't make either visibly creep.
-        XCTAssertEqual(button?.bounds.width ?? 0, expandedFrame.width, accuracy: 0.5)
-        XCTAssertEqual(button?.bounds.height ?? 0, expandedFrame.height, accuracy: 0.5)
+            XCTAssertEqual(button?.alpha ?? -1, 0.5, accuracy: 0.01, "position \(position)")
+            // Both bar and pill are geometry-locked throughout the band: the pill already sits at the
+            // bar's full expanded size, so widening the fade can't make either visibly creep.
+            XCTAssertEqual(button?.bounds.width ?? 0, expandedFrame.width, accuracy: 0.5, "position \(position)")
+            XCTAssertEqual(button?.bounds.height ?? 0, expandedFrame.height, accuracy: 0.5, "position \(position)")
+        }
     }
 
-    func testWhenAtHandoffEndThenPillIsHidden() {
-        update(barsVisibilityPercent: FloatingDomainCapsuleController.handoffEnd)
+    func testWhenAtItsAlphaHandoffEndThenPillIsHidden() {
+        for position in [AddressBarPosition.top, .bottom] {
+            update(barsVisibilityPercent: FloatingDomainCapsuleController.alphaHandoffEnd(for: position), addressBarPosition: position)
 
-        XCTAssertEqual(capsuleButton?.alpha ?? -1, 0, accuracy: 0.001)
-        XCTAssertEqual(capsuleButton?.isHidden, true)
+            XCTAssertEqual(capsuleButton?.alpha ?? -1, 0, accuracy: 0.001, "position \(position)")
+            XCTAssertEqual(capsuleButton?.isHidden, true, "position \(position)")
+        }
+    }
+
+    // The top bar has no button row to sequence a collapse cue through first, so its fade must start
+    // immediately at rest (percent 1) rather than holding at full pill-alpha-zero through a silent
+    // dead zone before suddenly fading — that dead-then-fast pattern is what reads as an abrupt swap.
+    func testWhenTopBarAndBarelyScrolledThenPillHasAlreadyStartedFadingIn() {
+        let button = update(barsVisibilityPercent: 0.99, addressBarPosition: .top)
+
+        XCTAssertGreaterThan(button?.alpha ?? 0, 0, "the top bar's pill must start fading in the instant scrolling begins, not after a dead zone")
+    }
+
+    // The bottom bar's button row collapses first (over `[handoffEnd, 1]`), so the pill should still
+    // be fully hidden at the same point that would already show a fade on the top bar.
+    func testWhenBottomBarAndBarelyScrolledThenPillHasNotStartedFadingInYet() {
+        let button = update(barsVisibilityPercent: 0.99, addressBarPosition: .bottom)
+
+        XCTAssertEqual(button?.alpha ?? -1, 0, accuracy: 0.001, "the bottom bar's pill should wait for the button row to collapse first")
     }
 }
 

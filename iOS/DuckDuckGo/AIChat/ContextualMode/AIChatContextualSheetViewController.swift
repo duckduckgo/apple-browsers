@@ -215,16 +215,6 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// The strip only shows while the input is expanded, tracked by keyboard visibility.
     private var isInputExpanded = false
 
-    /// A soft fade of the chat behind the suggestions so the glass pills read; shown with the strip.
-    private lazy var activeChatSuggestionsScrim: VerticalGradientView = {
-        let view = VerticalGradientView()
-        view.alpha = 0
-        view.isUserInteractionEnabled = false
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
-    private let activeChatSuggestionsScrimHeight: CGFloat = 160
-
     private var isCurrentlyMediumDetent: Bool {
         sheetPresentationController?.selectedDetentIdentifier == .medium
     }
@@ -1562,14 +1552,6 @@ private extension AIChatContextualSheetViewController {
         guard !hasEmbeddedActiveChatSuggestions else { return }
         hasEmbeddedActiveChatSuggestions = true
 
-        view.addSubview(activeChatSuggestionsScrim)
-        NSLayoutConstraint.activate([
-            activeChatSuggestionsScrim.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            activeChatSuggestionsScrim.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            activeChatSuggestionsScrim.bottomAnchor.constraint(equalTo: host.inputCardTopAnchor),
-            activeChatSuggestionsScrim.heightAnchor.constraint(equalToConstant: activeChatSuggestionsScrimHeight),
-        ])
-
         view.addSubview(activeChatSuggestionsContainer)
         addChild(activeChatSuggestionsController)
         activeChatSuggestionsController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -1594,11 +1576,7 @@ private extension AIChatContextualSheetViewController {
         if hasSuggestions {
             activeChatSuggestionsController.showStartActions()
         }
-        let visible = hasSuggestions && isInputExpanded
-        activeChatSuggestionsContainer.alpha = visible ? 1 : 0
-        let surface = UIColor(designSystemColor: .surface)
-        activeChatSuggestionsScrim.setColors(top: surface.withAlphaComponent(0), bottom: surface)
-        activeChatSuggestionsScrim.alpha = visible ? 1 : 0
+        activeChatSuggestionsContainer.alpha = (hasSuggestions && isInputExpanded) ? 1 : 0
     }
 
     @objc private func handleContentDragToDismissKeyboard(_ gesture: UIPanGestureRecognizer) {
@@ -1744,17 +1722,5 @@ private final class MenuHostingButton: UIButton {
                                          animator: UIContextMenuInteractionAnimating?) {
         super.contextMenuInteraction(interaction, willEndFor: configuration, animator: animator)
         onMenuWillEnd?(animator)
-    }
-}
-
-/// A view backed by a vertical `CAGradientLayer`, used to fade the chat behind the suggestions.
-final class VerticalGradientView: UIView {
-    override class var layerClass: AnyClass { CAGradientLayer.self }
-
-    func setColors(top: UIColor, bottom: UIColor) {
-        guard let gradientLayer = layer as? CAGradientLayer else { return }
-        gradientLayer.colors = [top.cgColor, bottom.cgColor]
-        gradientLayer.startPoint = CGPoint(x: 0.5, y: 0)
-        gradientLayer.endPoint = CGPoint(x: 0.5, y: 1)
     }
 }

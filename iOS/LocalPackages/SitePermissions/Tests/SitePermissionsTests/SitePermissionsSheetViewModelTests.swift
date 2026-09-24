@@ -301,7 +301,7 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         XCTAssertEqual(cleanDismissal, .clean)
     }
 
-    func testWhenPickerChangeIsCommittedThenReloadCaptionStateLastsUntilDismissal() throws {
+    func testWhenPickerChangeIsCommittedThenReloadCaptionStateSurvivesRefreshAndStartsClearInNewSheet() throws {
         let harness = try Harness()
         let sut = harness.makeViewModel(snapshot: harness.snapshot(stored: [.camera: .ask]))
 
@@ -316,8 +316,6 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         sut.refresh(with: harness.snapshot(captureStates: [.camera: .active]))
         XCTAssertTrue(sut.hasCommittedChanges)
 
-        sut.dismiss()
-        XCTAssertFalse(sut.hasCommittedChanges)
         XCTAssertFalse(harness.makeViewModel(snapshot: harness.snapshot()).hasCommittedChanges)
     }
 

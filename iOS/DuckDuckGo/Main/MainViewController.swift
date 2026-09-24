@@ -7309,7 +7309,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tab(_ tab: TabViewController, didGrantSitePermissions permissionTypes: Set<SitePermissionType>) {
-        guard currentTab === tab, tabManager.isSitePermissionsEnabled else { return }
+        guard currentTab === tab else { return }
         let orderedPermissionTypes = SitePermissionType.allCases.filter(permissionTypes.contains)
         sitePermissionAnimationTab = tab
         viewCoordinator.menuToolbarButton.animateSitePermissionGranted(orderedPermissionTypes)

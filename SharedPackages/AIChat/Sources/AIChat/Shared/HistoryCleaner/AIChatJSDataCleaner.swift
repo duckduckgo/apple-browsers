@@ -278,9 +278,10 @@ extension WKUserContentController {
 extension URL {
     static let duckAi = URL(string: "https://duck.ai")!
     static let duckDuckGo = URL(string: "https://duckduckgo.com")!
+    /// Custom Duck.ai URL set via the macOS debug menu, if any.
+    static var customDuckAi: URL? { UserDefaults.standard.string(forKey: "customURL").flatMap(URL.init(string:)) }
 
-    static let aiChatDomains: [URL] = [
-        .duckDuckGo,
-        .duckAi
-    ]
+    static var aiChatDomains: [URL] {
+        [.duckDuckGo, .duckAi, customDuckAi].compactMap { $0 }
+    }
 }

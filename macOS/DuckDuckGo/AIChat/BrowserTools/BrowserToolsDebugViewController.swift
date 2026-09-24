@@ -48,7 +48,8 @@ final class BrowserToolsDebugViewController: NSViewController {
 
     private let targetLabel = NSTextField(labelWithString: "")
     private let toolPicker = NSPopUpButton(frame: .zero, pullsDown: false)
-    private let argumentsField = NSTextField(string: "{}")
+    private let argumentsForm = NSStackView()
+    private var argumentFields: [ArgumentField] = []
     private let logStack = NSStackView()
     private let logScroll = NSScrollView()
     private var promptEntries: [String: LogEntryView] = [:]
@@ -108,9 +109,11 @@ final class BrowserToolsDebugViewController: NSViewController {
             appendToLog(summary: "→ no tool selected", detail: nil)
             return
         }
-        guard let argumentsData = argumentsField.stringValue.data(using: .utf8),
-              let arguments = try? JSONSerialization.jsonObject(with: argumentsData) else {
-            appendToLog(summary: "→ arguments are not valid JSON; nothing sent", detail: argumentsField.stringValue)
+        let arguments: [String: Any]
+        switch collectArguments() {
+        case .success(let collected): arguments = collected
+        case .failure(let problem):
+            appendToLog(summary: "→ \(problem.message); nothing sent", detail: nil)
             return
         }
         run("tools/call", params: [
@@ -121,7 +124,7 @@ final class BrowserToolsDebugViewController: NSViewController {
     }
 
     @objc private func toolPicked() {
-        argumentsField.stringValue = exampleArguments(for: toolPicker.titleOfSelectedItem ?? "")
+        rebuildArgumentsForm(for: toolPicker.titleOfSelectedItem ?? "")
     }
 
     /// Reads the owner's window directly — there is no tool for discovering a tabId to hand to
@@ -166,7 +169,10 @@ final class BrowserToolsDebugViewController: NSViewController {
     private func reloadToolPicker() {
         let names = service.catalog.enabledTools.map(\.name)
         let selected = toolPicker.titleOfSelectedItem
-        guard names != toolPicker.itemTitles else { return }
+        guard names != toolPicker.itemTitles else {
+            if argumentFields.isEmpty, let selected { rebuildArgumentsForm(for: selected) }
+            return
+        }
         toolPicker.removeAllItems()
         toolPicker.addItems(withTitles: names)
         if let selected, names.contains(selected) {
@@ -177,20 +183,59 @@ final class BrowserToolsDebugViewController: NSViewController {
         }
     }
 
-    /// Ready-to-run arguments per tool, so a tester never starts from an empty object.
-    private func exampleArguments(for tool: String) -> String {
-        switch tool {
-        case "listOpenTabs": return #"{"limit": 10}"#
-        case "switchToTab":
+    // MARK: - Arguments form
+
+    /// One row per property of the tool's input schema, typed from the schema and prefilled with a
+    /// runnable example, so a tester never starts from an empty object.
+    private func rebuildArgumentsForm(for tool: String) {
+        for row in argumentsForm.arrangedSubviews {
+            argumentsForm.removeArrangedSubview(row)
+            row.removeFromSuperview()
+        }
+        argumentFields = []
+        guard let descriptor = service.catalog.enabledTools.first(where: { $0.name == tool }),
+              let properties = descriptor.inputSchema["properties"]?.objectValue else { return }
+        let required = Set(descriptor.inputSchema["required"]?.arrayValue?.compactMap(\.stringValue) ?? [])
+
+        for name in properties.keys.sorted(by: { ($0 == "query" || $0 == "quotes") != ($1 == "query" || $1 == "quotes") ? ($0 == "query" || $0 == "quotes") : $0 < $1 }) {
+            let schema = properties[name] ?? .null
+            let field = ArgumentField(name: name,
+                                      type: schema["type"]?.stringValue ?? "string",
+                                      itemType: schema["items"]?["type"]?.stringValue,
+                                      isRequired: required.contains(name))
+            field.setExample(exampleValue(tool: tool, property: name))
+            field.control.toolTip = schema["description"]?.stringValue
+            argumentFields.append(field)
+            argumentsForm.addArrangedSubview(field.row)
+            field.row.widthAnchor.constraint(equalTo: argumentsForm.widthAnchor).isActive = true
+        }
+    }
+
+    private func collectArguments() -> Result<[String: Any], ArgumentProblem> {
+        var arguments: [String: Any] = [:]
+        for field in argumentFields {
+            switch field.value() {
+            case .success(let value):
+                if let value { arguments[field.name] = value }
+            case .failure(let problem):
+                return .failure(problem)
+            }
+        }
+        return .success(arguments)
+    }
+
+    private func exampleValue(tool: String, property: String) -> String? {
+        switch (tool, property) {
+        case ("listOpenTabs", "limit"): return "10"
+        case ("switchToTab", "tabId"):
             let owner = ownerTabProvider()?.uuid
-            let other = ownerCollection.map { ($0.pinnedTabsCollection?.tabs ?? []) + $0.tabCollection.tabs }?
-                .first { $0.uuid != owner }
-            return #"{"tabId": "\#(other?.uuid ?? "<paste from Show tab IDs>")"}"#
-        case "searchHistory": return #"{"query": "wiki", "limit": 5}"#
-        case "readTabContent": return "{}"
-        case "findInPage": return #"{"query": "games"}"#
-        case "highlightInPage": return #"{"quotes": ["games"]}"#
-        default: return "{}"
+            return ownerCollection.map { ($0.pinnedTabsCollection?.tabs ?? []) + $0.tabCollection.tabs }?
+                .first { $0.uuid != owner }?.uuid
+        case ("searchHistory", "query"): return "wiki"
+        case ("searchHistory", "limit"): return "5"
+        case ("findInPage", "query"): return "games"
+        case ("highlightInPage", "quotes"): return "games"
+        default: return nil
         }
     }
 
@@ -349,12 +394,23 @@ final class BrowserToolsDebugViewController: NSViewController {
                              expanded: Bool = false,
                              accessories: [NSView] = [],
                              highlighted: Bool = false) -> LogEntryView {
-        let entry = LogEntryView(summary: summary, detail: detail, expanded: expanded, accessories: accessories, highlighted: highlighted)
+        let entry = LogEntryView(summary: summary, detail: detail, expanded: expanded, accessories: accessories,
+                                 highlighted: highlighted, tint: Self.tint(for: summary))
         logStack.addArrangedSubview(entry)
         entry.widthAnchor.constraint(equalTo: logStack.widthAnchor).isActive = true
         view.layoutSubtreeIfNeeded()
         logScroll.contentView.scroll(to: NSPoint(x: 0, y: max(0, logStack.frame.height - logScroll.contentSize.height)))
         return entry
+    }
+
+    /// Direction at a glance: page→native, native→page reply, native→page push.
+    private static func tint(for summary: String) -> NSColor {
+        switch summary.first {
+        case "→": return .systemBlue
+        case "←": return .systemGreen
+        case "⇠": return .systemPurple
+        default: return .secondaryLabelColor
+        }
     }
 
     // MARK: - Layout
@@ -375,21 +431,19 @@ final class BrowserToolsDebugViewController: NSViewController {
         toolPicker.target = self
         toolPicker.action = #selector(toolPicked)
         toolPicker.controlSize = .small
-        argumentsField.placeholderString = "{}"
-        argumentsField.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         let call = NSStackView(views: [
             NSTextField(labelWithString: "tools/call"),
             toolPicker,
-            argumentsField,
             makeButton("Call", #selector(callTool))
         ])
         call.orientation = .horizontal
         call.spacing = 6
-        call.setClippingResistancePriority(.defaultLow, for: .horizontal)
-        NSLayoutConstraint.activate([
-            toolPicker.widthAnchor.constraint(equalToConstant: 130),
-            argumentsField.widthAnchor.constraint(greaterThanOrEqualToConstant: 140)
-        ])
+        toolPicker.widthAnchor.constraint(equalToConstant: 150).isActive = true
+
+        argumentsForm.orientation = .vertical
+        argumentsForm.alignment = .leading
+        argumentsForm.spacing = 4
+        argumentsForm.edgeInsets = NSEdgeInsets(top: 0, left: 16, bottom: 0, right: 0)
 
         logStack.orientation = .vertical
         logStack.alignment = .leading
@@ -412,7 +466,7 @@ final class BrowserToolsDebugViewController: NSViewController {
         targetLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         targetLabel.lineBreakMode = .byTruncatingMiddle
 
-        let stack = NSStackView(views: [targetLabel, buttons, call, logScroll])
+        let stack = NSStackView(views: [targetLabel, buttons, call, argumentsForm, logScroll])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 8
@@ -421,7 +475,8 @@ final class BrowserToolsDebugViewController: NSViewController {
         NSLayoutConstraint.activate([
             logScroll.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -20),
             logScroll.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
-            targetLabel.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -20)
+            targetLabel.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -20),
+            argumentsForm.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -20)
         ])
         return stack
     }
@@ -465,9 +520,12 @@ private final class LogEntryView: NSView {
     private let detailLabel = NSTextField(wrappingLabelWithString: "")
     private let accessories: [NSView]
 
-    init(summary: String, detail: String?, expanded: Bool, accessories: [NSView] = [], highlighted: Bool = false) {
+    private let accessoryRow: NSStackView?
+
+    init(summary: String, detail: String?, expanded: Bool, accessories: [NSView] = [], highlighted: Bool = false, tint: NSColor = .labelColor) {
         self.summaryLabel = NSTextField(labelWithString: summary)
         self.accessories = accessories
+        self.accessoryRow = accessories.isEmpty ? nil : NSStackView(views: accessories)
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         if highlighted {
@@ -485,6 +543,7 @@ private final class LogEntryView: NSView {
         disclosure.action = #selector(toggle)
 
         summaryLabel.font = .monospacedSystemFont(ofSize: 11, weight: .medium)
+        summaryLabel.textColor = tint
         summaryLabel.lineBreakMode = .byTruncatingTail
         summaryLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
@@ -493,11 +552,13 @@ private final class LogEntryView: NSView {
         detailLabel.isSelectable = true
         detailLabel.isHidden = !expanded || detail == nil
 
-        let header = NSStackView(views: [disclosure, summaryLabel] + accessories)
+        let header = NSStackView(views: [disclosure, summaryLabel])
         header.orientation = .horizontal
-        header.spacing = 4
-        header.setClippingResistancePriority(.defaultLow, for: .horizontal)
-        let column = NSStackView(views: [header, detailLabel])
+        header.spacing = 2
+        accessoryRow?.orientation = .horizontal
+        accessoryRow?.spacing = 4
+        accessoryRow?.setClippingResistancePriority(.defaultLow, for: .horizontal)
+        let column = NSStackView(views: [header] + (accessoryRow.map { [$0] } ?? []) + [detailLabel])
         column.orientation = .vertical
         column.alignment = .leading
         column.spacing = 2
@@ -510,7 +571,7 @@ private final class LogEntryView: NSView {
             column.bottomAnchor.constraint(equalTo: bottomAnchor),
             detailLabel.leadingAnchor.constraint(equalTo: column.leadingAnchor, constant: 18),
             detailLabel.trailingAnchor.constraint(equalTo: column.trailingAnchor)
-        ])
+        ] + (accessoryRow.map { [$0.leadingAnchor.constraint(equalTo: column.leadingAnchor, constant: 18)] } ?? []))
     }
 
     required init?(coder: NSCoder) {
@@ -523,9 +584,97 @@ private final class LogEntryView: NSView {
 
     /// Swaps the answer buttons for the outcome, so the history reads as a transcript.
     func resolve(outcome: String) {
-        accessories.forEach { $0.removeFromSuperview() }
+        accessoryRow?.removeFromSuperview()
         summaryLabel.stringValue += "  → \(outcome)"
         layer?.backgroundColor = nil
+    }
+}
+
+private struct ArgumentProblem: Error {
+    let message: String
+    init(_ message: String) { self.message = message }
+}
+
+/// One schema property as a form row. Empty means "omit"; the value is typed from the schema.
+@MainActor
+private final class ArgumentField {
+
+    let name: String
+    let row: NSStackView
+    let control: NSControl
+    private let type: String
+    private let itemType: String?
+
+    init(name: String, type: String, itemType: String?, isRequired: Bool) {
+        self.name = name
+        self.type = type
+        self.itemType = itemType
+        let label = NSTextField(labelWithString: isRequired ? "\(name) *" : name)
+        label.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+        label.widthAnchor.constraint(equalToConstant: 110).isActive = true
+        if type == "boolean" {
+            let popup = NSPopUpButton(frame: .zero, pullsDown: false)
+            popup.addItems(withTitles: ["(omit)", "true", "false"])
+            popup.controlSize = .small
+            control = popup
+        } else {
+            let field = NSTextField(string: "")
+            field.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+            field.placeholderString = Self.placeholder(type: type, itemType: itemType)
+            control = field
+        }
+        row = NSStackView(views: [label, control])
+        row.orientation = .horizontal
+        row.spacing = 6
+        control.setContentHuggingPriority(.defaultLow, for: .horizontal)
+    }
+
+    func setExample(_ value: String?) {
+        guard let value, let field = control as? NSTextField else { return }
+        field.stringValue = value
+    }
+
+    /// `.success(nil)` means the property is left out of the call.
+    func value() -> Result<Any?, ArgumentProblem> {
+        if let popup = control as? NSPopUpButton {
+            switch popup.indexOfSelectedItem {
+            case 1: return .success(true)
+            case 2: return .success(false)
+            default: return .success(nil)
+            }
+        }
+        let text = (control as? NSTextField)?.stringValue.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !text.isEmpty else { return .success(nil) }
+        switch type {
+        case "integer":
+            guard let number = Int(text) else { return .failure(ArgumentProblem("\(name) must be an integer")) }
+            return .success(number)
+        case "number":
+            guard let number = Double(text) else { return .failure(ArgumentProblem("\(name) must be a number")) }
+            return .success(number)
+        case "array":
+            if text.hasPrefix("["), let data = text.data(using: .utf8), let parsed = try? JSONSerialization.jsonObject(with: data) as? [Any] {
+                return .success(parsed)
+            }
+            let items = text.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+            if itemType == "integer" {
+                let numbers = items.compactMap(Int.init)
+                guard numbers.count == items.count else { return .failure(ArgumentProblem("\(name) must be integers separated by commas")) }
+                return .success(numbers)
+            }
+            return .success(items)
+        default:
+            return .success(text)
+        }
+    }
+
+    private static func placeholder(type: String, itemType: String?) -> String {
+        switch type {
+        case "integer": return "integer"
+        case "number": return "number"
+        case "array": return itemType == "integer" ? "0, 1, 2" : "comma separated, or a JSON array"
+        default: return "string"
+        }
     }
 }
 

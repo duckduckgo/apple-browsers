@@ -1,6 +1,3 @@
-/* No comment provided by engineer. */
-"%@\n%@" = "%@\n%@";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Възобновете сесията на Sync & Backup, за да възстановите отметките, паролите и други данни, или продължете с нови настройки.";
 
@@ -295,7 +292,7 @@
 /* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo за настолен компютър";
 
-/* Heading overlaid on the camera on the scan-QR tab of the scan screen */
+/* Heading overlaid on the camera on the scan-QR tab */
 "sync.simplified.scan.v2.qr.heading" = "Сканиране на QR код за синхронизиране.";
 
 /* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */

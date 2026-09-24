@@ -20,13 +20,18 @@
 import DesignResourcesKit
 import SwiftUI
 
-/// Favorites shown while the redesigned search input is focused and empty.
 struct RedesignedFocusedSearchModulesView: View {
     let favoritesModel: FavoritesViewModel?
+    let messagesModel: NewTabPageMessagesModel?
 
     var body: some View {
         ScrollView {
-            RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
+            VStack(spacing: 0) {
+                if let messagesModel {
+                    RedesignedNewTabPageMessagesView(messagesModel: messagesModel)
+                }
+                RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
+            }
         }
         .background(Color(designSystemColor: .background))
         .scrollDismissesKeyboardIfAvailable()

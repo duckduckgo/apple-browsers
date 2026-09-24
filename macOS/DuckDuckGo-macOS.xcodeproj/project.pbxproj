@@ -133,6 +133,8 @@
 		1D532BCA2EDA1DF800D219FA /* SystemPermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BC82EDA1DF200D219FA /* SystemPermissionManager.swift */; };
 		1D532BDE2EDC3E4800D219FA /* PermissionCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BDD2EDC3E3F00D219FA /* PermissionCenterView.swift */; };
 		1D532BDF2EDC3E4800D219FA /* PermissionCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BDD2EDC3E3F00D219FA /* PermissionCenterView.swift */; };
+		A5B00101000000000000002C /* PermissionRemoveButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000002B /* PermissionRemoveButton.swift */; };
+		A5B00101000000000000002D /* PermissionRemoveButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000002B /* PermissionRemoveButton.swift */; };
 		1D532BE12EDC3E5500D219FA /* PermissionCenterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BE02EDC3E4D00D219FA /* PermissionCenterViewController.swift */; };
 		1D532BE22EDC3E5500D219FA /* PermissionCenterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BE02EDC3E4D00D219FA /* PermissionCenterViewController.swift */; };
 		1D532BE52EDC3E6D00D219FA /* PermissionCenterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BE32EDC3E6100D219FA /* PermissionCenterViewModel.swift */; };
@@ -5210,6 +5212,7 @@
 		1D532BB32ED8D3D300D219FA /* PermissionAuthorizationSwiftUIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuthorizationSwiftUIView.swift; sourceTree = "<group>"; };
 		1D532BC82EDA1DF200D219FA /* SystemPermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPermissionManager.swift; sourceTree = "<group>"; };
 		1D532BDD2EDC3E3F00D219FA /* PermissionCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenterView.swift; sourceTree = "<group>"; };
+		A5B00101000000000000002B /* PermissionRemoveButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionRemoveButton.swift; sourceTree = "<group>"; };
 		1D532BE02EDC3E4D00D219FA /* PermissionCenterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenterViewController.swift; sourceTree = "<group>"; };
 		1D532BE32EDC3E6100D219FA /* PermissionCenterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenterViewModel.swift; sourceTree = "<group>"; };
 		1D5C23282F150A630055046E /* AIChatSuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSuggestionsView.swift; sourceTree = "<group>"; };
@@ -12693,6 +12696,7 @@
 				B64C84EA2692DD650048FEBE /* PermissionAuthorizationPopover.swift */,
 				B6BBF17327475B15004F850E /* PopupBlockedPopover.swift */,
 				1D532BDD2EDC3E3F00D219FA /* PermissionCenterView.swift */,
+				A5B00101000000000000002B /* PermissionRemoveButton.swift */,
 				1D532BE02EDC3E4D00D219FA /* PermissionCenterViewController.swift */,
 				7B6879222EF07ECA00F9964B /* SystemPermissionWarningView.swift */,
 				7B6879252EF07ECA00F9964B /* SystemDisabledPermissionInfoView.swift */,
@@ -16597,6 +16601,7 @@
 				2BB44A0F9B88E349EA5F5D37 /* CookiePopupsBlockedPromoDelegate.swift in Sources */,
 				56D145EC29E6C99B00E3488A /* DataImportStatusProviding.swift in Sources */,
 				1D532BDF2EDC3E4800D219FA /* PermissionCenterView.swift in Sources */,
+				A5B00101000000000000002C /* PermissionRemoveButton.swift in Sources */,
 				85774B002A713D3B00DE0561 /* BookmarksBarMenuFactory.swift in Sources */,
 				B602E81E2A1E25B1006D261F /* NEOnDemandRuleExtension.swift in Sources */,
 				3706FBC7293F65D500E42796 /* EncryptedHistoryStore.swift in Sources */,
@@ -19540,6 +19545,7 @@
 				A71D000330EEA00100A11A01 /* UnifiedDeviceListPixelHandler.swift in Sources */,
 				3767318B2C7F32C500EB097B /* GradientBackground.swift in Sources */,
 				1D532BDE2EDC3E4800D219FA /* PermissionCenterView.swift in Sources */,
+				A5B00101000000000000002D /* PermissionRemoveButton.swift in Sources */,
 				BBF17D1A2F7B1309004AFCF4 /* AIChatMenu.swift in Sources */,
 				6994C93E8D134666A5772C83 /* AIChatDeleteChatsDialog.swift in Sources */,
 				38935B87BCB54456BFEBB274 /* AIChatSubscriptionUpsellDialog.swift in Sources */,

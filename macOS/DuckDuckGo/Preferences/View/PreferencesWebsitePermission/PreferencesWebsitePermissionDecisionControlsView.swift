@@ -16,14 +16,12 @@
 //  limitations under the License.
 //
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import SwiftUI
 
 struct PreferencesWebsitePermissionDecisionControlsView: View {
     private enum Constants {
         static let minimumDropdownWidth: CGFloat = 124
-        static let removeButtonSize: CGFloat = 16
-        static let controlSpacing: CGFloat = 12
+        static let controlSpacing: CGFloat = 8
     }
 
     let decision: PersistedPermissionDecision
@@ -60,18 +58,10 @@ struct PreferencesWebsitePermissionDecisionControlsView: View {
     }
 
     private var removeButton: some View {
-        Button(action: onRemove) {
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.closeSmall)
-                .renderingMode(.template)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: Constants.removeButtonSize, height: Constants.removeButtonSize)
-                .foregroundColor(Color(designSystemColor: .iconsTertiary))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(
-            String(format: UserText.websitePermissionsRemovePermissionAccessibilityLabel, domain) + ", " + permissionAccessibilityDescription)
-        .accessibilityIdentifier("\(accessibilityIdentifier).Remove")
+        PermissionRemoveButton(action: onRemove)
+            .accessibilityLabel(
+                String(format: UserText.websitePermissionsRemovePermissionAccessibilityLabel, domain) + ", " + permissionAccessibilityDescription)
+            .accessibilityIdentifier("\(accessibilityIdentifier).Remove")
     }
 
     private var permissionAccessibilityDescription: String {

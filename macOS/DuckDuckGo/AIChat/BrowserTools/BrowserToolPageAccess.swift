@@ -120,11 +120,23 @@ final class WebViewPageHighlighter: BrowserToolPageHighlighting {
 
     func highlight(_ quote: String, in tab: Tab) async -> BrowserToolHighlightOutcome {
         // Case-sensitive on purpose: the contract defines `quotes` as exact page substrings.
-        let result = await tab.webView.find(quote, with: [.showOverlay, .showFindIndicator, .wrapAround], maxCount: Self.maxMatches)
+        // Same two-step sequence as the find bar: a cold search with the overlay does not reliably
+        // paint. The first pass only reports the next match; the overlay pass reports the total.
+        let webView = tab.webView
+        let result = await webView.find(quote, with: [.showFindIndicator, .wrapAround], maxCount: Self.maxMatches)
         switch result {
-        case .found(let matches): return .painted(count: matches)
-        case .notFound: return .notFound
-        case .cancelled: return .cancelled
+        case .found(let firstMatches):
+            webView.clearFindInPageState()
+            let overlay = await webView.find(quote, with: [.noIndexChange, .showOverlay, .showFindIndicator, .wrapAround], maxCount: Self.maxMatches)
+            if case .found(let total) = overlay, let total {
+                return .painted(count: total)
+            }
+            return .painted(count: firstMatches)
+        case .notFound:
+            webView.clearFindInPageState()
+            return .notFound
+        case .cancelled:
+            return .cancelled
         }
     }
 }

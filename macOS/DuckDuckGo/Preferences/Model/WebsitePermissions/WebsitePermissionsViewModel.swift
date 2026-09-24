@@ -65,12 +65,12 @@ final class WebsitePermissionsViewModel: ObservableObject {
             guard row.permissionType.isUserEditable(forDomain: row.domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled),
                   decision != row.decision else { return }
             permissionManager.setPermission(decision, forDomain: row.domain, permissionType: row.permissionType)
-            pixelFiring?.fire(PermissionPixel.settingsSiteChanged(permissionType: row.permissionType, to: decision))
+            pixelFiring?.fire(PermissionPixel.settingsSiteChanged(permissionType: row.permissionType, to: decision), frequency: .dailyAndCount)
 
         case .removeRecent(let row):
             guard row.permissionType.isUserEditable(forDomain: row.domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled) else { return }
             permissionManager.removePermission(forDomain: row.domain, permissionType: row.permissionType)
-            pixelFiring?.fire(PermissionPixel.settingsSiteRemoved(permissionType: row.permissionType))
+            pixelFiring?.fire(PermissionPixel.settingsSiteRemoved(permissionType: row.permissionType), frequency: .dailyAndCount)
 
         case .openDetail(let category):
             viewState.detailModel = WebsitePermissionDetailViewModel(
@@ -80,7 +80,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
                 defaults: defaults,
                 pixelFiring: pixelFiring
             )
-            pixelFiring?.fire(PermissionPixel.settingsDetailOpened(category: category))
+            pixelFiring?.fire(PermissionPixel.settingsDetailOpened(category: category), frequency: .dailyAndCount)
 
         case .closeDetail:
             viewState.detailModel = nil

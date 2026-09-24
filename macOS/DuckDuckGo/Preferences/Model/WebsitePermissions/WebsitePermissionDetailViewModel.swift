@@ -86,7 +86,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
         }
 
         defaults.setDefaultDecision(decision, for: category)
-        pixelFiring?.fire(PermissionPixel.settingsDefaultChanged(category: category, to: decision))
+        pixelFiring?.fire(PermissionPixel.settingsDefaultChanged(category: category, to: decision), frequency: .dailyAndCount)
 
         viewState.defaultDecision = defaults.defaultDecision(for: category)
     }
@@ -102,7 +102,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
             return
         }
         permissionManager.setPermission(decision, forDomain: siteRow.domain, permissionType: siteRow.permissionType)
-        pixelFiring?.fire(PermissionPixel.settingsSiteChanged(permissionType: siteRow.permissionType, to: decision))
+        pixelFiring?.fire(PermissionPixel.settingsSiteChanged(permissionType: siteRow.permissionType, to: decision), frequency: .dailyAndCount)
     }
 
     private func remove(rowID: WebsitePermissionDetailViewState.SiteRow.ID) {
@@ -114,7 +114,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
             return
         }
         permissionManager.removePermission(forDomain: siteRow.domain, permissionType: siteRow.permissionType)
-        pixelFiring?.fire(PermissionPixel.settingsSiteRemoved(permissionType: siteRow.permissionType))
+        pixelFiring?.fire(PermissionPixel.settingsSiteRemoved(permissionType: siteRow.permissionType), frequency: .dailyAndCount)
     }
 
     private func setupObserver() {

@@ -473,6 +473,7 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
             "permission_settings_site_changed_camera_to_deny_macos",
             "permission_settings_removed_camera_macos",
         ])
+        XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.frequency == .dailyAndCount })
     }
 
     private var firedPixelNames: [String] {

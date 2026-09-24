@@ -82,7 +82,8 @@
             {
                 "description": "Platform marker",
                 "enum": ["macos"]
-            }
+            },
+            "daily_count"
         ],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
@@ -102,7 +103,8 @@
             {
                 "description": "Platform marker",
                 "enum": ["macos"]
-            }
+            },
+            "daily_count"
         ],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
@@ -126,7 +128,8 @@
             {
                 "description": "Platform marker",
                 "enum": ["macos"]
-            }
+            },
+            "daily_count"
         ],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
@@ -142,7 +145,8 @@
             {
                 "description": "Platform marker",
                 "enum": ["macos"]
-            }
+            },
+            "daily_count"
         ],
         "parameters": ["appVersion", "pixelSource", "channel"]
     }

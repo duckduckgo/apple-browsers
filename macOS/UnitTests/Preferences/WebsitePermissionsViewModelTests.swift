@@ -438,6 +438,7 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         ])
         XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.pixel.namePrefix == .none },
                       "Settings pixels are sent without the m_mac_ prefix")
+        XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.frequency == .dailyAndCount })
     }
 
     private var firedPixelNames: [String] {

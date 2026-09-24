@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import PixelKit
 import PrivacyConfig
 import os.log
 
@@ -29,18 +30,21 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
     private let permissionManager: PermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
     private let defaults: WebsitePermissionDefaultsProtocol
+    private let pixelFiring: PixelFiring?
     private var permissionsCancellable: AnyCancellable?
 
     init(
         initialState: WebsitePermissionDetailViewState?,
         permissionManager: PermissionManagerProtocol,
         featureFlagger: FeatureFlagger,
-        defaults: WebsitePermissionDefaultsProtocol
+        defaults: WebsitePermissionDefaultsProtocol,
+        pixelFiring: PixelFiring? = PixelKit.shared
     ) {
         viewState = initialState ?? .init()
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
         self.defaults = defaults
+        self.pixelFiring = pixelFiring
         viewState.availableDefaultDecisions = defaults.availableDecisions(for: viewState.category)
         viewState.defaultDecision = defaults.defaultDecision(for: viewState.category)
         viewState.visibleSites = filteredSites(from: viewState.sites, matching: viewState.searchQuery)
@@ -82,6 +86,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
         }
 
         defaults.setDefaultDecision(decision, for: category)
+        pixelFiring?.fire(PermissionPixel.settingsDefaultChanged(category: category, to: decision), frequency: .dailyAndCount)
 
         viewState.defaultDecision = defaults.defaultDecision(for: category)
     }
@@ -97,6 +102,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
             return
         }
         permissionManager.setPermission(decision, forDomain: siteRow.domain, permissionType: siteRow.permissionType)
+        pixelFiring?.fire(PermissionPixel.settingsSiteChanged(permissionType: siteRow.permissionType, to: decision), frequency: .dailyAndCount)
     }
 
     private func remove(rowID: WebsitePermissionDetailViewState.SiteRow.ID) {
@@ -108,6 +114,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
             return
         }
         permissionManager.removePermission(forDomain: siteRow.domain, permissionType: siteRow.permissionType)
+        pixelFiring?.fire(PermissionPixel.settingsSiteRemoved(permissionType: siteRow.permissionType), frequency: .dailyAndCount)
     }
 
     private func setupObserver() {

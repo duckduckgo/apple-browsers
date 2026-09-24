@@ -18,6 +18,7 @@
 
 import Combine
 import FeatureFlags_macOS
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -27,18 +28,21 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
     private var permissionManager: PermissionManagerMock!
     private var featureFlagger: MockFeatureFlagger!
     private var defaults: WebsitePermissionDefaultsMock!
+    private var pixelFiring: PixelKitMock!
 
     override func setUp() {
         super.setUp()
         permissionManager = PermissionManagerMock()
         featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue: false])
         defaults = WebsitePermissionDefaultsMock()
+        pixelFiring = PixelKitMock()
     }
 
     override func tearDown() {
         permissionManager = nil
         featureFlagger = nil
         defaults = nil
+        pixelFiring = nil
         super.tearDown()
     }
 
@@ -130,7 +134,12 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
     private func makeRecentsModel(_ entries: [WebsitePermissionEntry],
                                   permissionManager: PermissionManagerMock) -> WebsitePermissionsViewModel {
         permissionManager.setPersistedPermissions(entries)
-        let model = WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: featureFlagger, defaults: defaults)
+        let model = WebsitePermissionsViewModel(
+            permissionManager: permissionManager,
+            featureFlagger: featureFlagger,
+            defaults: defaults,
+            pixelFiring: pixelFiring
+        )
         waitForViewStateUpdate(model) {
             model.send(action: .onAppear)
         }
@@ -411,9 +420,36 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         XCTAssertEqual(model.viewState.rows.first { $0.category == .camera }?.count, 1)
     }
 
+    // MARK: - Pixels
+
+    func testWhenDetailIsOpenedAndItsDefaultChangesThenBothPixelsFire() throws {
+        let model = createSUT()
+        model.send(action: .openDetail(.camera))
+        let detailModel = try XCTUnwrap(model.viewState.detailModel)
+
+        detailModel.send(action: .setDefaultDecision(.deny))
+
+        XCTAssertEqual(firedPixelNames, [
+            "permission_settings_detail_camera_macos",
+            "permission_settings_default_camera_deny_macos",
+        ])
+        XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.pixel.namePrefix == .none },
+                      "Settings pixels are sent without the m_mac_ prefix")
+        XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.frequency == .dailyAndCount })
+    }
+
+    private var firedPixelNames: [String] {
+        pixelFiring.actualFireCalls.map(\.pixel.name)
+    }
+
     private func createSUT(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {
         permissionManager.setPersistedPermissions(entries)
-        return WebsitePermissionsViewModel(permissionManager: permissionManager, featureFlagger: featureFlagger, defaults: defaults)
+        return WebsitePermissionsViewModel(
+            permissionManager: permissionManager,
+            featureFlagger: featureFlagger,
+            defaults: defaults,
+            pixelFiring: pixelFiring
+        )
     }
 
     private func waitForViewStateUpdate(_ model: WebsitePermissionsViewModel, action: () -> Void) {

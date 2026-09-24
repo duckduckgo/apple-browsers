@@ -18,6 +18,7 @@
 
 import Combine
 import FeatureFlags_macOS
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -27,18 +28,21 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
     private var permissionManager: PermissionManagerMock!
     private var featureFlagger: MockFeatureFlagger!
     private var defaults: WebsitePermissionDefaultsMock!
+    private var pixelFiring: PixelKitMock!
 
     override func setUp() {
         super.setUp()
         permissionManager = PermissionManagerMock()
         featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue: false])
         defaults = WebsitePermissionDefaultsMock()
+        pixelFiring = PixelKitMock()
     }
 
     override func tearDown() {
         permissionManager = nil
         featureFlagger = nil
         defaults = nil
+        pixelFiring = nil
         super.tearDown()
     }
 
@@ -448,6 +452,34 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         XCTAssertEqual(sut.viewState.visibleGroups.first?.rows.count, 2)
     }
 
+    // MARK: - Pixels
+
+    func testWhenDetailDecisionChangesAndIsRemovedThenEachFiresItsPixelOnce() throws {
+        let sut = makeSUT(
+            category: .camera,
+            entries: [
+                WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .ask, lastModified: nil),
+            ]
+        )
+        let row = try XCTUnwrap(sut.viewState.sites.first)
+
+        waitForDetailStateUpdate(sut) {
+            sut.send(action: .changeDecision(rowID: row.id, decision: .deny))
+        }
+        sut.send(action: .changeDecision(rowID: row.id, decision: .deny))
+        sut.send(action: .remove(rowID: row.id))
+
+        XCTAssertEqual(firedPixelNames, [
+            "permission_settings_site_changed_camera_to_deny_macos",
+            "permission_settings_removed_camera_macos",
+        ])
+        XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.frequency == .dailyAndCount })
+    }
+
+    private var firedPixelNames: [String] {
+        pixelFiring.actualFireCalls.map(\.pixel.name)
+    }
+
     private func makeExternalAppsSUT(searchQuery: String = "") -> WebsitePermissionDetailViewModel {
         let sites = [
             ("example.com", "asanadesktop", "Tâsk Manager"),
@@ -484,7 +516,8 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
             ),
             permissionManager: permissionManager,
             featureFlagger: featureFlagger,
-            defaults: defaults
+            defaults: defaults,
+            pixelFiring: pixelFiring
         )
         waitForDetailStateUpdate(model) {
             model.send(action: .onAppear)

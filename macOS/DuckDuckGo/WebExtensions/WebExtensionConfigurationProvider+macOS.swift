@@ -32,10 +32,10 @@ struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {
     }
 
     var isInspectable: Bool {
-#if DEBUG
+//#if DEBUG
         return true
-#else
-        return false
-#endif
+//#else
+//        return false
+//#endif
     }
 }

@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '0 1 * * 5'  # Every Friday at 01:00 UTC
   workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Update pins and resolve packages, but don't create a PR or Asana tasks"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -11,160 +16,22 @@ permissions:
 
 jobs:
   check-and-update:
-    runs-on: [image:osx-tahoe-26, general-purpose]
-    env:
+    uses: ./.github/workflows/shared_dependency_update.yml
+    with:
+      dependency-slug: sparkle
+      display-name: Sparkle
+      repo: sparkle-project/Sparkle
+      pin-kind: package-swift
+      pin-files: macOS/LocalPackages/AppUpdater/Package.swift
+      lockfiles: macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+      resolve-targets: |
+        -workspace|DuckDuckGo.xcworkspace|macOS Browser
+        -project|macOS/DuckDuckGo-macOS.xcodeproj|macOS Browser
       # Feature owners (GitHub handles, space-separated). Used for PR reviewers and Asana assignee.
-      SPARKLE_OWNERS: "diegoreymendez jotaemepereira"
-    steps:
-      - name: Checkout repository
-        # Pinned to v5: v6 duplicates the git Authorization header and breaks
-        # peter-evans/create-pull-request (Duplicate header: "Authorization", HTTP 400).
-        uses: actions/checkout@v5
-
-      - name: Print macOS version
-        run: sw_vers
-
-      - name: Assign SSH keys
-        uses: webfactory/ssh-agent@v0.9.1
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
-
-      - name: Check for Sparkle update
-        id: check
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: bash scripts/sparkle/check_sparkle_update.sh
-
-      - name: Check for existing update PR
-        id: dedupe
-        if: steps.check.outputs.update_available == 'true'
-        run: |
-          branch="automation/sparkle-update-${{ steps.check.outputs.latest_version }}"
-          if git ls-remote --exit-code --heads origin "${branch}" >/dev/null 2>&1; then
-            echo "Branch ${branch} already exists — skipping task and PR creation."
-            echo "should_create=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "should_create=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Resolve SPM packages
-        if: steps.dedupe.outputs.should_create == 'true'
-        run: |
-          xcodebuild -resolvePackageDependencies \
-            -workspace DuckDuckGo.xcworkspace \
-            -scheme "macOS Browser"
-          # Also resolve the macOS project directly: gym builds via the
-          # auto-detected DuckDuckGo-macOS.xcodeproj, so its own lockfile is
-          # what the build consumes and must be bumped too.
-          xcodebuild -resolvePackageDependencies \
-            -project macOS/DuckDuckGo-macOS.xcodeproj \
-            -scheme "macOS Browser"
-
-      - name: Create draft Pull Request
-        id: create-pr
-        if: steps.dedupe.outputs.should_create == 'true'
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
-        with:
-          commit-message: "Update Sparkle to ${{ steps.check.outputs.latest_version }}"
-          committer: Dax the Duck <dax@duckduckgo.com>
-          author: Dax the Duck <dax@duckduckgo.com>
-          branch: automation/sparkle-update-${{ steps.check.outputs.latest_version }}
-          title: "Update Sparkle to ${{ steps.check.outputs.latest_version }}"
-          body: |
-            Updates Sparkle from `${{ steps.check.outputs.current_version }}` to `${{ steps.check.outputs.latest_version }}` (${{ steps.check.outputs.bump_type }} update).
-
-            [Compare changes on GitHub](https://github.com/sparkle-project/Sparkle/compare/${{ steps.check.outputs.current_version }}...${{ steps.check.outputs.latest_version }})
-
-            ---
-
-            ${{ steps.check.outputs.release_notes }}
-          labels: dependencies,macOS${{ steps.check.outputs.bump_type == 'major' && ',breaking' || '' }}
-          draft: true
-
-      - name: Create Asana task
-        id: create-asana-task
-        if: steps.create-pr.outputs.pull-request-url
-        env:
-          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-        run: |
-          primary_owner="${SPARKLE_OWNERS%% *}"
-          mapping=$(curl -fLSs "https://raw.githubusercontent.com/duckduckgo/apple-toolbox/main/actions/asana-get-user-id-for-github-handle/github-asana-user-id-mapping.yml")
-
-          asana_user_id=$(echo "$mapping" | grep "^${primary_owner}:" | awk '{print $2}' | tr -d '"') || true
-
-          assignee_field=""
-          if [[ -n "$asana_user_id" && "$asana_user_id" != "null" ]]; then
-            assignee_field="\"assignee\": \"${asana_user_id}\","
-          else
-            echo "::warning::No Asana user found for ${primary_owner}"
-          fi
-
-          case "${{ steps.check.outputs.bump_type }}" in
-            major) emoji="🔴" ;;
-            minor) emoji="🟡" ;;
-            *)     emoji="🟢" ;;
-          esac
-
-          task_name="Sparkle ${emoji} [${{ steps.check.outputs.bump_type }}] ${{ steps.check.outputs.current_version }} → ${{ steps.check.outputs.latest_version }}"
-
-          response=$(curl -fLSs "https://app.asana.com/api/1.0/tasks" \
-            --header "Accept: application/json" \
-            --header "Authorization: Bearer ${ASANA_ACCESS_TOKEN}" \
-            --header "Content-Type: application/json" \
-            --data "{
-              \"data\": {
-                ${assignee_field}
-                \"parent\": \"1212461351428211\",
-                \"name\": \"${task_name}\",
-                \"notes\": \"PR: ${{ steps.create-pr.outputs.pull-request-url }}\"
-              }
-            }")
-
-          task_id=$(echo "$response" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['gid'])")
-          echo "task_url=https://app.asana.com/0/0/${task_id}/f" >> "$GITHUB_OUTPUT"
-
-      - name: Add Asana task URL to PR and mark ready for review
-        if: steps.create-asana-task.outputs.task_url
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          pr_number="${{ steps.create-pr.outputs.pull-request-number }}"
-
-          {
-            echo "Task/Issue URL: ${{ steps.create-asana-task.outputs.task_url }}"
-            echo
-            gh pr view "$pr_number" --json body --jq '.body'
-          } | gh pr edit "$pr_number" --body-file -
-
-          gh pr ready "$pr_number"
-          gh pr edit "$pr_number" --add-reviewer "${SPARKLE_OWNERS// /,}"
-
-      - name: Report failure to Asana
-        if: failure()
-        env:
-          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-        run: |
-          primary_owner="${SPARKLE_OWNERS%% *}"
-          mapping=$(curl -fLSs "https://raw.githubusercontent.com/duckduckgo/apple-toolbox/main/actions/asana-get-user-id-for-github-handle/github-asana-user-id-mapping.yml") || true
-
-          asana_user_id=$(echo "$mapping" | grep "^${primary_owner}:" | awk '{print $2}' | tr -d '"') || true
-
-          assignee_field=""
-          if [[ -n "$asana_user_id" && "$asana_user_id" != "null" ]]; then
-            assignee_field="\"assignee\": \"${asana_user_id}\","
-          fi
-
-          run_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-          curl -fLSs "https://app.asana.com/api/1.0/tasks" \
-            --header "Accept: application/json" \
-            --header "Authorization: Bearer ${ASANA_ACCESS_TOKEN}" \
-            --header "Content-Type: application/json" \
-            --data "{
-              \"data\": {
-                ${assignee_field}
-                \"parent\": \"1212461351428211\",
-                \"name\": \"⚠️ Sparkle update check failed\",
-                \"notes\": \"The macOS - Check Sparkle Update workflow failed. See ${run_url}\"
-              }
-            }"
+      owners: diegoreymendez jotaemepereira
+      asana-parent-task-id: "1212461351428211"
+      labels: dependencies,macOS
+      dry-run: ${{ inputs.dry-run || false }}
+    secrets:
+      SSH_PRIVATE_KEY_DUCKSANS_FONT: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}

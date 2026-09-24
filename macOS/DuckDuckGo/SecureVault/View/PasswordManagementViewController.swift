@@ -1073,7 +1073,6 @@ final class PasswordManagementViewController: NSViewController {
         }
 
         let syncPromoViewModel = SyncPromoViewModel(
-            isAppRebranded: themeManager.isAppRebranded,
             touchpointType: touchpoint,
             primaryButtonAction: { [weak self] in
                 self?.syncPromoManager.goToSyncSettings(for: touchpoint)

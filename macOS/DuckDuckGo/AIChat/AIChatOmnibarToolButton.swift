@@ -89,7 +89,6 @@ final class AIChatOmnibarToolButton: NSView {
         static let labelTrailingPadding: CGFloat = 28
         static let legacyLabelTrailingPadding: CGFloat = 18
         static let iconLeadingInset: CGFloat = 11
-        static let legacyIconLeadingInset: CGFloat = 6
     }
 
     private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
@@ -363,8 +362,7 @@ final class AIChatOmnibarToolButton: NSView {
 
         iconCenterXConstraint = iconImageView.centerXAnchor.constraint(equalTo: centerXAnchor)
         iconCenterXConstraint?.isActive = true
-        let iconLeadingInset = themeManager.isAppRebranded ? Constants.iconLeadingInset : Constants.legacyIconLeadingInset
-        iconLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: iconLeadingInset)
+        iconLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.iconLeadingInset)
         iconLeadingConstraint?.isActive = false
 
         trailingImageTrailingConstraint = trailingImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8)

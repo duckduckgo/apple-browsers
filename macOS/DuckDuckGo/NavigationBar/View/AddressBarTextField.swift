@@ -747,16 +747,14 @@ final class AddressBarTextField: NSTextField {
         private enum Metrics {
             static let shadowOffset: CGFloat = -2
             static let windowOffset = CGPoint(x: -20, y: -3)
-            static let legacyShadowOffset: CGFloat = 5
-            static let legacyWindowOffset = CGPoint(x: -20, y: 5)
         }
 
-        static func shadowOffset(isAppRebranded: Bool) -> CGFloat {
-            isAppRebranded ? Metrics.shadowOffset : Metrics.legacyShadowOffset
+        static var shadowOffset: CGFloat {
+            Metrics.shadowOffset
         }
 
-        static func windowOffset(isAppRebranded: Bool) -> CGPoint {
-            isAppRebranded ? Metrics.windowOffset : Metrics.legacyWindowOffset
+        static var windowOffset: CGPoint {
+            Metrics.windowOffset
         }
     }
 
@@ -852,7 +850,7 @@ final class AddressBarTextField: NSTextField {
         }
 
         /// Shift the panel so its top edge clears the AI Chat omnibar toggle / aligns with the focused bar.
-        let padding = SuggestionWindowSizes.windowOffset(isAppRebranded: themeManager.isAppRebranded)
+        let padding = SuggestionWindowSizes.windowOffset
 
         suggestionWindow.setFrame(NSRect(x: 0, y: 0, width: superview.frame.width - 2 * padding.x, height: 0), display: true)
 

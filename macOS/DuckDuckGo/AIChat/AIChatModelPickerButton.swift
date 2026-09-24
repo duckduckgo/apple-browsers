@@ -27,18 +27,11 @@ final class AIChatModelPickerButton: NSView {
     private enum Constants {
         static let height: CGFloat = 28
         static let horizontalPadding: CGFloat = 13
-        static let legacyHorizontalPadding: CGFloat = 10
         static let iconTextSpacing: CGFloat = 3
         static let chevronSize: CGFloat = 16
         static let fontSize: CGFloat = 12
         static let cornerRadius: CGFloat = 14
         static let borderWidth: CGFloat = 1
-    }
-
-    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
-
-    private var horizontalPadding: CGFloat {
-        themeManager.isAppRebranded ? Constants.horizontalPadding : Constants.legacyHorizontalPadding
     }
 
     private let nameLabel: NSTextField = {
@@ -168,7 +161,7 @@ final class AIChatModelPickerButton: NSView {
     override var intrinsicContentSize: NSSize {
         let labelWidth = nameLabel.intrinsicContentSize.width
         let menuIndicatorWidth = isReadOnly ? 0 : Constants.iconTextSpacing + Constants.chevronSize
-        let totalWidth = horizontalPadding + labelWidth + menuIndicatorWidth + horizontalPadding
+        let totalWidth = Constants.horizontalPadding * 2 + labelWidth + menuIndicatorWidth
         return NSSize(width: totalWidth, height: Constants.height)
     }
 
@@ -260,7 +253,7 @@ final class AIChatModelPickerButton: NSView {
         addSubview(chevronImageView)
 
         NSLayoutConstraint.activate([
-            nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: horizontalPadding),
+            nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             nameLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             chevronImageView.leadingAnchor.constraint(equalTo: nameLabel.trailingAnchor, constant: Constants.iconTextSpacing),

@@ -347,8 +347,7 @@ final class NavigationBarViewController: NSViewController {
             autofillPopoverPresenter: autofillPopoverPresenter,
             vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
             pinningManager: pinningManager,
-            isBurner: tabCollectionViewModel.isBurner,
-            isAppRebranded: themeManager.isAppRebranded
+            isBurner: tabCollectionViewModel.isBurner
         )
 
         self.tabCollectionViewModel = tabCollectionViewModel

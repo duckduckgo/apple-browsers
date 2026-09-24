@@ -334,6 +334,7 @@ final class AIChatContextualSheetCoordinator {
         if let restoreURL {
             sessionState.restoreChat(with: restoreURL)
         }
+        sessionState.clearAutoAttachedContextForSearchOnScreen()
 
         startObservingContextUpdates()
         if attachingPage {

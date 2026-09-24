@@ -494,6 +494,14 @@ final class AIChatContextualChatSessionState {
         Logger.aiChat.debug("[SessionState] Chip downgraded to placeholder via coordinator")
     }
 
+    func clearAutoAttachedContextForSearchOnScreen() {
+        guard searchQuickActionQuery != nil, shouldAutoCollectContext, case .attached = chipState else { return }
+        chipState = .placeholder
+        emitDeliveryIfNeeded(nil)
+        rebuildViewState()
+        Logger.aiChat.debug("[SessionState] Search on screen - dropped the auto-attached page")
+    }
+
     // MARK: - Context Management
 
     /// Begin a manual attach operation (user tapped "Attach Page")
@@ -537,6 +545,7 @@ final class AIChatContextualChatSessionState {
     /// Re-evaluate the sheet view state (e.g. "Ask about page" quick action) for the current page's
     /// attachability. Driven by the URL-change signal so it stays in sync on back/forward navigation.
     func refreshForCurrentPage() {
+        clearAutoAttachedContextForSearchOnScreen()
         rebuildViewState()
     }
 
@@ -556,11 +565,12 @@ final class AIChatContextualChatSessionState {
     }
 
     func shouldTriggerAutoCollect(for pageURL: URL? = nil) -> Bool {
-        shouldAutoCollectContext && shouldCollectPage(for: pageURL)
+        searchQuickActionQuery == nil && shouldAutoCollectContext && shouldCollectPage(for: pageURL)
     }
 
     func shouldOfferPageContext(for pageURL: URL? = nil) -> Bool {
         featureFlagger.isFeatureOn(.contextualPagePlaceholder)
+            && searchQuickActionQuery == nil
             && !shouldAutoCollectContext
             && isUnifiedToggleInputActive
             && hasActiveChat
@@ -680,8 +690,8 @@ final class AIChatContextualChatSessionState {
 
         if isManualAttachInProgress {
             handleManualAttach(context)
-        } else if contextualChatURL?.isDuckDuckGoSearch ?? false {
-            handleSerpAction()
+        } else if searchQuickActionQuery != nil {
+            clearAutoAttachedContextForSearchOnScreen()
         } else if shouldAutoCollectContext, !suppressesAutoAttachForSelectionEntry {
             handleAutoAttach(context)
         } else if shouldOfferPageContext(for: URL(string: context.contextData.url)), !suppressesAutoAttachForSelectionEntry {
@@ -810,11 +820,6 @@ private extension AIChatContextualChatSessionState {
         isManualAttachInProgress = false
         isManualAttachFromFrontend = false
         pixelHandler.endManualAttach()
-    }
-    
-    func handleSerpAction() {
-        chipState = .placeholder
-        
     }
 
     func handleOfferedContext(_ context: AIChatPageContext) {

@@ -1,5 +1,5 @@
 //
-//  RedesignedNewTabPageOptionalContentView.swift
+//  RedesignedNewTabPageMessagesView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -19,27 +19,28 @@
 
 import SwiftUI
 
-/// Renders the same eligible messages and return-to-tab model as the production resting page.
-struct RedesignedNewTabPageOptionalContentView: View {
-    @ObservedObject var pageModel: NewTabPageViewModel
+/// Renders the same eligible messages as the production resting page.
+struct RedesignedNewTabPageMessagesView: View {
     @ObservedObject var messagesModel: NewTabPageMessagesModel
 
     var body: some View {
-        if pageModel.escapeHatch != nil || !messagesModel.homeMessageViewModels.isEmpty {
-            VStack(spacing: 20) {
-                if let escapeHatch = pageModel.escapeHatch {
-                    EscapeHatchView(model: escapeHatch)
-                        .frame(maxWidth: .infinity)
-                }
+        if !messagesModel.homeMessageViewModels.isEmpty {
+            VStack(spacing: Metrics.messageSpacing) {
                 ForEach(messagesModel.homeMessageViewModels, id: \.viewIdentity) { messageModel in
                     HomeMessageView(viewModel: messageModel)
                         .frame(maxWidth: .infinity)
                         .transition(.scale.combined(with: .opacity))
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 20)
+            .padding(.horizontal, Metrics.horizontalPadding)
+            .padding(.top, Metrics.topPadding)
             .fixedSize(horizontal: false, vertical: true)
         }
     }
+}
+
+private enum Metrics {
+    static let messageSpacing: CGFloat = 20
+    static let horizontalPadding: CGFloat = 16
+    static let topPadding: CGFloat = 20
 }

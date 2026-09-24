@@ -128,8 +128,10 @@ struct NewTabPageBuilder {
                                              contextChanges: daxGreetingChanges,
                                              updateAppearance: updateDaxGreetingAppearance))),
             NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView),
-            NewTabPageSwiftUIBlock(id: .optionalContent,
-                                  rootView: RedesignedNewTabPageOptionalContentView(pageModel: pageModel, messagesModel: messagesModel)),
+            NewTabPageSwiftUIBlock(id: .escapeHatch,
+                                  rootView: RedesignedNewTabPageEscapeHatchView(pageModel: pageModel)),
+            NewTabPageSwiftUIBlock(id: .messages,
+                                  rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel)),
             NewTabPageSwiftUIBlock(id: .favorites, rootView: RedesignedNewTabPageModulesView(favoritesModel: favoritesModel))
         ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel)
         newTabPage = page

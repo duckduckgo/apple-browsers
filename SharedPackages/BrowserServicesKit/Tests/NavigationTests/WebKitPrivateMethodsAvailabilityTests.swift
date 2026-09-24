@@ -27,6 +27,22 @@ import XCTest
 @available(iOS 15.0, *)
 class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsBase {
 
+    func testWebsiteDataStoreRespondsTo_networkProcessIdentifier() {
+        XCTAssertTrue(WKWebsiteDataStore.instancesRespond(to: NSSelectorFromString("_networkProcessIdentifier")))
+    }
+
+    func testWebViewRespondsTo_webProcessIdentifier() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_webProcessIdentifier")))
+    }
+
+    func testWebViewRespondsTo_webProcessIsResponsive() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_webProcessIsResponsive")))
+    }
+
+    func testUserScriptRespondsTo_contentWorld() {
+        XCTAssertTrue(WKUserScript.instancesRespond(to: NSSelectorFromString("_contentWorld")))
+    }
+
 #if _SESSION_STATE_WITH_FILTER_ENABLED
     func testSessionStateDataAvailability() throws {
         XCTAssertTrue(WKWebView.instancesRespond(to: WKWebView.Selector.sessionStateData))

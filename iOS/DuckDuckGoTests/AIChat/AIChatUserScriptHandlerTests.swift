@@ -229,8 +229,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsNativePromptEditing, false)
     }
 
-    func testWhenPromoCardsFlagIsOnAndNativeChatInputAvailableThenConfigAdvertisesSupport() {
-        mockFeatureFlagger.enabledFeatureFlags = [.nativePromoCards]
+    func testWhenNativeChatInputAvailableThenPromoCardsConfigAdvertisesSupport() {
         MockDevicePlatform.isIphone = true
         mockUnifiedToggleInputFeature.isAvailable = true
         aiChatUserScriptHandler = makeAIChatUserScriptHandler()
@@ -240,20 +239,8 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsPromoCards, true)
     }
 
-    func testWhenPromoCardsFlagIsOnButNativeChatInputUnavailableThenConfigDoesNotAdvertiseSupport() {
-        mockFeatureFlagger.enabledFeatureFlags = [.nativePromoCards]
+    func testWhenNativeChatInputUnavailableThenPromoCardsConfigDoesNotAdvertiseSupport() {
         mockUnifiedToggleInputFeature.isAvailable = false
-        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
-
-        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
-
-        XCTAssertEqual(configValues?.supportsPromoCards, false)
-    }
-
-    func testWhenPromoCardsFlagIsOffThenConfigDoesNotAdvertiseSupport() {
-        mockFeatureFlagger.enabledFeatureFlags = []
-        MockDevicePlatform.isIphone = true
-        mockUnifiedToggleInputFeature.isAvailable = true
         aiChatUserScriptHandler = makeAIChatUserScriptHandler()
 
         let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues

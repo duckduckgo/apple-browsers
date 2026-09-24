@@ -40,6 +40,7 @@ extension Preferences {
         /// Opens the Website Permissions pane, where the all-sites autoplay setting now lives.
         let showWebsitePermissions: () -> Void
         @State private var showingCustomHomePageSheet = false
+        @Environment(\.designSystemPalette) private var palette
         let featureFlagger = NSApp.delegateTyped.featureFlagger
         let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
@@ -71,6 +72,7 @@ extension Preferences {
                 String(format: UserText.autoplayMovedCaption,
                        "[\(UserText.websitePermissions)](\(URL.settingsPane(.websitePermissions)))")
             )
+            .tint(Color.rebrandableLink(palette: palette))
             .environment(\.openURL, OpenURLAction { _ in
                 showWebsitePermissions()
                 return .handled
@@ -368,18 +370,16 @@ extension Preferences {
                 }
 
                 // SECTION: Permissions
-                if featureFlagger.isFeatureOn(.autoplayPolicy) {
-                    PreferencePaneSection(UserText.permissionsSection) {
-                        PreferencePaneSubSection {
-                            if featureFlagger.isFeatureOn(.websitePermissionsSettings) {
-                                autoplayMovedNotice
-                            } else {
-                                autoplayPicker
-                            }
+                PreferencePaneSection(UserText.permissionsSection) {
+                    PreferencePaneSubSection {
+                        if featureFlagger.isFeatureOn(.websitePermissionsSettings) {
+                            autoplayMovedNotice
+                        } else {
+                            autoplayPicker
                         }
                     }
-                    .id(PreferencesScrollAnchor.permissions)
                 }
+                .id(PreferencesScrollAnchor.permissions)
             }
             .sheet(isPresented: isPresentingAddToDockDemoVideo) {
                 PreferencesVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,

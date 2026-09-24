@@ -75,7 +75,6 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
     }
 
     func testWhenAutoplayPolicyIsEnabledThenAutoplayIsListedLast() {
-        enableAutoplayPolicy()
         let sut = createSUT(entries: [
             WebsitePermissionEntry(domain: "example.com", permissionType: .autoplayPolicy, decision: .allow, lastModified: nil),
         ])
@@ -178,7 +177,6 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
     }
 
     func testWhenAutoplayPolicyIsEnabledThenAutoplayCanAppearInRecents() {
-        enableAutoplayPolicy()
         let entries = [
             WebsitePermissionEntry(domain: "autoplay.com", permissionType: .autoplayPolicy, decision: .allow, lastModified: Date()),
             WebsitePermissionEntry(domain: "camera.com", permissionType: .camera, decision: .allow,
@@ -397,7 +395,6 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
     }
 
     func testWhenOpeningAutoplayFromAnotherDetailThenAutoplayReplacesIt() {
-        enableAutoplayPolicy()
         let model = createSUT()
         model.send(action: .openDetail(.camera))
 
@@ -443,10 +440,6 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
 
     private var firedPixelNames: [String] {
         pixelFiring.actualFireCalls.map(\.pixel.name)
-    }
-
-    private func enableAutoplayPolicy() {
-        featureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
     }
 
     private func createSUT(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {

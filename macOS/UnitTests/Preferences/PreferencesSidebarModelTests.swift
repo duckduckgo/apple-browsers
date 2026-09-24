@@ -21,7 +21,7 @@ import Common
 import ConcurrencyExtensions
 import FeatureFlags_macOS
 import FoundationExtensions
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 @_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
 import PreferencesUI_macOS

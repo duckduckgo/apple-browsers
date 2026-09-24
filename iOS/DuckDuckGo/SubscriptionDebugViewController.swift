@@ -919,7 +919,10 @@ final class SubscriptionDebugViewController: UITableViewController {
                 pendingTransactionHandler: pendingTransactionHandler,
                 subscriptionFlowsExecuter: subscriptionFlowsExecuter,
                 requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
-                isExpirationReminderFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }
+                isExpirationReminderFeatureEnabled: {
+                    AppDependencyProvider.shared.featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
+                },
+                subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: AppDependencyProvider.shared.featureFlagger)
             )
 
             // Create params matching what the web would send

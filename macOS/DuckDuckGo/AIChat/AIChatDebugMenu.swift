@@ -66,6 +66,7 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem(title: "Browser Tools Panel…", action: #selector(openBrowserToolsPanel))
                 .targetting(self)
+            browserToolPermissionsMenuItem
 #endif
         }
     }
@@ -83,6 +84,26 @@ final class AIChatDebugMenu: NSMenu {
         browserToolsPanel = panel
         panel.showWindow(nil)
         panel.window?.makeKeyAndOrderFront(nil)
+    }
+
+    private lazy var browserToolPermissionsMenuItem: NSMenuItem = {
+        let item = NSMenuItem(title: "Browser Tool Permissions")
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        menu.delegate = self
+        item.submenu = menu
+        return item
+    }()
+
+    @MainActor
+    @objc private func resetBrowserToolPermission(_ sender: NSMenuItem) {
+        guard let toolName = sender.representedObject as? String else { return }
+        NSApp.delegateTyped.aiChatBrowserToolsService.permissions.setState(.ask, forToolNamed: toolName)
+    }
+
+    @MainActor
+    @objc private func resetAllBrowserToolPermissions() {
+        NSApp.delegateTyped.aiChatBrowserToolsService.permissions.clearAll()
     }
 
 #endif
@@ -326,3 +347,35 @@ final class AIChatDebugMenu: NSMenu {
         }
     }
 }
+
+#if DEBUG
+extension AIChatDebugMenu: NSMenuDelegate {
+
+    /// Rebuilt on every open so it always shows the decisions currently stored.
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard menu === browserToolPermissionsMenuItem.submenu else { return }
+        menu.removeAllItems()
+
+        let decisions = NSApp.delegateTyped.aiChatBrowserToolsService.permissions.storedDecisions
+        if decisions.isEmpty {
+            let none = NSMenuItem(title: "No stored decisions")
+            none.isEnabled = false
+            menu.addItem(none)
+        }
+        for (toolName, state) in decisions.sorted(by: { $0.key < $1.key }) {
+            let item = NSMenuItem(title: "Reset \(toolName) (\(state.rawValue))",
+                                  action: #selector(resetBrowserToolPermission(_:)),
+                                  keyEquivalent: "")
+            item.target = self
+            item.representedObject = toolName
+            menu.addItem(item)
+        }
+
+        menu.addItem(.separator())
+        let resetAll = NSMenuItem(title: "Reset All", action: #selector(resetAllBrowserToolPermissions), keyEquivalent: "")
+        resetAll.target = self
+        resetAll.isEnabled = !decisions.isEmpty
+        menu.addItem(resetAll)
+    }
+}
+#endif

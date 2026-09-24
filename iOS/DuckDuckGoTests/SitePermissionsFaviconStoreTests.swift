@@ -37,7 +37,7 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
         let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { host in
             requestedHosts.append(host)
             return host == "www.cached.example" ? image : nil
-        }, fetchFavicon: { _, _ in XCTFail("Cached favicon must not trigger a download") })
+        })
 
         sut.loadFavicon(for: site)
 
@@ -47,51 +47,23 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
         XCTAssertNotNil(retainedImage)
     }
 
-    func testWhenDownloadCompletesThenUpdatesExistingRowAndPersistsImage() async throws {
-        let site = try makeSite("download.example")
+    func testWhenFaviconReachesBrowsingCacheAfterRowIsShownThenLoadUpdatesRowAndRetainsImage() async throws {
+        let site = try makeSite("late.example")
         let store = makeStore(sites: [site])
         let cache = try makeCache()
-        var completions = [(UIImage?) -> Void]()
-        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { _ in nil }) { host, completion in
-            XCTAssertEqual(host, site.host)
-            completions.append(completion)
-        }
+        var browsingImage: UIImage?
+        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { _ in browsingImage })
         let row = sut.viewModel(for: site)
-        let image = makeImage(.red)
+        let placeholder = row.image
+        sut.loadFavicon(for: site)
+        XCTAssertTrue(row.image === placeholder)
 
+        let image = makeImage(.red)
+        browsingImage = image
         sut.loadFavicon(for: site)
-        sut.loadFavicon(for: site)
-        XCTAssertEqual(completions.count, 1)
-        try XCTUnwrap(completions.first)(image)
 
         XCTAssertTrue(sut.viewModel(for: site) === row)
         XCTAssertTrue(row.image === image)
-        let retainedImage = try await diskImage(for: site, in: cache)
-        XCTAssertNotNil(retainedImage)
-    }
-
-    func testWhenRemovalIsUndoneThenOldDownloadCannotReplaceNewRequest() async throws {
-        let site = try makeSite("undo.example")
-        let store = makeStore(sites: [site])
-        let cache = try makeCache()
-        var completions = [(UIImage?) -> Void]()
-        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { _ in nil }) { _, completion in
-            completions.append(completion)
-        }
-        sut.loadFavicon(for: site)
-        let snapshot = store.removePermissions(for: site)
-        store.restore(snapshot)
-        sut.loadFavicon(for: site)
-        XCTAssertEqual(completions.count, 2)
-
-        completions[0](makeImage(.red))
-        let staleImage = try await diskImage(for: site, in: cache)
-        XCTAssertNil(staleImage)
-        XCTAssertNil(cache.retrieveImageInMemoryCache(forKey: key(for: site)))
-
-        let currentImage = makeImage(.blue)
-        completions[1](currentImage)
-        XCTAssertTrue(sut.viewModel(for: site).image === currentImage)
         let retainedImage = try await diskImage(for: site, in: cache)
         XCTAssertNotNil(retainedImage)
     }
@@ -102,8 +74,7 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
         let cache = try makeCache()
         let imageData = try XCTUnwrap(makeImage(.red).pngData())
         try cache.diskStorage.store(value: imageData, forKey: key(for: site), expiration: .never)
-        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { _ in nil },
-                                             fetchFavicon: { _, _ in XCTFail("Undo should retain the existing image") })
+        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { _ in nil })
         let queueBlocked = expectation(description: "Cache IO queue blocked")
         let resumeIO = DispatchSemaphore(value: 0)
         // The untouched callback runs on Kingfisher's serial disk queue.
@@ -123,28 +94,25 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
         sut.loadFavicon(for: site)
     }
 
-    func testWhenFeatureIsDisabledThenDoesNotFetchOrRetainPendingResult() async throws {
+    func testWhenFeatureIsDisabledThenRetainsNothingButRemovedRecordsStillDeleteTheirImages() async throws {
         let site = try makeSite("disabled.example")
-        let store = makeStore(sites: [site])
+        let removedSite = try makeSite("removed-while-disabled.example")
+        let store = makeStore(sites: [site, removedSite])
         let cache = try makeCache()
-        var isEnabled = false
-        var completions = [(UIImage?) -> Void]()
-        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { isEnabled }, cachedFavicon: { _ in nil }) { _, completion in
-            completions.append(completion)
-        }
-        sut.loadFavicon(for: site)
-        XCTAssertTrue(completions.isEmpty)
+        let imageData = try XCTUnwrap(makeImage(.blue).pngData())
+        try cache.diskStorage.store(value: imageData, forKey: key(for: removedSite), expiration: .never)
+        let image = makeImage(.red)
+        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { false }, cachedFavicon: { _ in image })
 
-        isEnabled = true
         sut.loadFavicon(for: site)
-        isEnabled = false
-        try XCTUnwrap(completions.first)(makeImage(.red))
+        store.removePermissions(for: removedSite)
 
-        let retainedImage = try await diskImage(for: site, in: cache)
-        XCTAssertNil(retainedImage)
+        XCTAssertFalse(sut.viewModel(for: site).image === image)
         XCTAssertNil(cache.retrieveImageInMemoryCache(forKey: key(for: site)))
-        sut.loadFavicon(for: site)
-        XCTAssertEqual(completions.count, 1)
+        let siteImage = try await diskImage(for: site, in: cache)
+        let removedImage = try await diskImage(for: removedSite, in: cache)
+        XCTAssertNil(siteImage)
+        XCTAssertNil(removedImage)
     }
 
     func testWhenFireClearsPermissionsThenRemovesOnlyUnpreservedFavicons() async throws {
@@ -153,8 +121,7 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
         let store = makeStore(sites: [removedSite, preservedSite])
         let cache = try makeCache()
         let image = makeImage(.red)
-        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { _ in image },
-                                             fetchFavicon: { _, _ in XCTFail("Cached favicon must not trigger a download") })
+        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { _ in image })
         let fireproofing = MockFireproofing()
         fireproofing.isAllowedFireproofDomainHandler = { $0 == preservedSite.host }
         let worker = PermissionsFireWorker(store: store, fireproofing: fireproofing, dataClearingWideEventService: nil)
@@ -174,24 +141,33 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
         XCTAssertTrue(sut.viewModel(for: preservedSite).image === image)
     }
 
-    func testWhenStartingWithOrphanedCacheFilesThenPrunesOnlyUnownedImages() async throws {
+    func testWhenStartingThenPrunesOrphansAndRetainsOnlyMissingFavicons() async throws {
         let storedSite = try makeSite("stored.example")
+        let missingSite = try makeSite("missing.example")
         let orphanedSite = try makeSite("orphaned.example")
-        let store = makeStore(sites: [storedSite])
+        let store = makeStore(sites: [storedSite, missingSite])
         let cache = try makeCache()
         let imageData = try XCTUnwrap(makeImage(.red).pngData())
         for site in [storedSite, orphanedSite] {
             try cache.diskStorage.store(value: imageData, forKey: key(for: site), expiration: .never)
         }
-        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { _ in nil },
-                                             fetchFavicon: { _, _ in XCTFail("Retained favicon must not trigger a download") })
+        let browsingImage = makeImage(.blue)
+        var requestedHosts = [String]()
+        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { host in
+            requestedHosts.append(host)
+            return host == missingSite.host ? browsingImage : nil
+        })
 
+        // Launch looks up only the site that has no image yet.
+        XCTAssertEqual(requestedHosts, [missingSite.host])
         sut.loadFavicon(for: storedSite)
 
         let orphanedImage = try await diskImage(for: orphanedSite, in: cache)
-        let retainedImage = try await diskImage(for: storedSite, in: cache)
+        let storedImage = try await diskImage(for: storedSite, in: cache)
+        let missingImage = try await diskImage(for: missingSite, in: cache)
         XCTAssertNil(orphanedImage)
-        XCTAssertNotNil(retainedImage)
+        XCTAssertNotNil(storedImage)
+        XCTAssertNotNil(missingImage)
     }
 
     private func makeStore(sites: Set<SitePermissionKey>) -> SitePermissionsStore {

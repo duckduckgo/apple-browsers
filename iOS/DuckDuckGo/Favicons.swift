@@ -36,7 +36,6 @@ protocol FaviconManaging: FaviconProviding, FavoritesFaviconCaching, FaviconStor
     func removeTabFavicon(forCacheKey key: String)
     @discardableResult
     func removeTabFavicons(forDomains domains: [String]) -> Result<Void, Error>
-    func fetchFavicon(forDomain domain: String, completion: @escaping (UIImage?) -> Void)
     func loadFavicon(forDomain domain: String?,
                      fromURL url: URL?,
                      intoCache targetCacheType: FaviconsCacheType,
@@ -268,15 +267,6 @@ public class Favicons: FaviconManaging {
 
         }
 
-    }
-
-    /// Fetches an image without caching it, so the caller can validate ownership before storing it.
-    public func fetchFavicon(forDomain domain: String, completion: @escaping (UIImage?) -> Void) {
-        loadImageFromNetwork(nil, domain) { image in
-            DispatchQueue.main.async {
-                completion(image.map { self.scaleDownIfNeeded(image: $0, toFit: Constants.maxFaviconSize) })
-            }
-        }
     }
 
     private func scaleDownIfNeeded(image: UIImage, toFit size: CGSize) -> UIImage {

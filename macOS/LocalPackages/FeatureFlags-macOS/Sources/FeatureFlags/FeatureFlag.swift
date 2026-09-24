@@ -420,10 +420,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
 
-    /// Autoplay policy control via WKWebpagePreferences
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213734484627619
-    case autoplayPolicy
-
     /// Enables the promo service to coordinate promos/calls to action
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
     case promoQueue
@@ -929,8 +925,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                    source: .remoteReleasable(AIChatSubfeature.nativeVoicePermissionFlow),
                    supportsLocalOverriding: true,
                    category: .duckAI)
-        case .autoplayPolicy:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.autoplayPolicy), supportsLocalOverriding: true)
         case .newErrorPageReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.newErrorPageReload))
         case .aiChatSettingsLinkInAiFeatures:

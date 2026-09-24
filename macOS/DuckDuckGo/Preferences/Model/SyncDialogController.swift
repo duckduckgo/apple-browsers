@@ -1233,6 +1233,9 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             let sheetWindow = SheetHostingWindow(rootView: confirmationView)
             request.sheetWindow = sheetWindow
             pairingV2ConfirmationRequest = request
+            if !presentationWindow.isKeyWindow {
+                presentationWindow.makeKeyAndOrderFront(nil)
+            }
             presentationWindow.beginSheet(sheetWindow) { [weak self, weak request] _ in
                 guard let request else {
                     return

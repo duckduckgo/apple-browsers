@@ -109,6 +109,94 @@ public extension NewTabPageDataModel {
         }
     }
 
+    struct OmnibarUsageLimits: Codable, Equatable {
+
+        public enum Icon: String, Codable {
+            case info, ring, alert
+        }
+
+        /// The ring's colour. Only read when `icon` is `.ring`.
+        public enum Severity: String, Codable {
+            case neutral, warning, critical
+        }
+
+        public struct Cta: Codable, Equatable {
+
+            /// `textOnly` carries the schema's `"none"`; the case is renamed so it can't be read as
+            /// `Optional.none` at a call site.
+            public enum LeadingIcon: String, Codable {
+                case textOnly = "none"
+                case convert
+            }
+
+            public struct Alternative: Codable, Equatable {
+                public let id: String
+                public let name: String
+
+                public init(id: String, name: String) {
+                    self.id = id
+                    self.name = name
+                }
+            }
+
+            public let label: String
+            public let leadingIcon: LeadingIcon
+            public let primaryModelId: String?
+            public let showMenu: Bool
+            /// Unset: the address bar's chevron has no heading either, bar the gated one.
+            public let menuHeader: String?
+            public let alternatives: [Alternative]
+
+            public init(label: String,
+                        leadingIcon: LeadingIcon = .textOnly,
+                        primaryModelId: String? = nil,
+                        showMenu: Bool = false,
+                        menuHeader: String? = nil,
+                        alternatives: [Alternative] = []) {
+                self.label = label
+                self.leadingIcon = leadingIcon
+                self.primaryModelId = primaryModelId
+                self.showMenu = showMenu
+                self.menuHeader = menuHeader
+                self.alternatives = alternatives
+            }
+        }
+
+        public let message: String
+        public let secondaryText: String?
+        public let dismissible: Bool
+        public let icon: Icon
+        public let percent: Int?
+        public let severity: Severity?
+        /// The allowance is spent, so the web freezes the composer and its tools.
+        public let blocksPrompt: Bool
+        public let cta: Cta?
+
+        public init(message: String,
+                    secondaryText: String? = nil,
+                    dismissible: Bool = false,
+                    icon: Icon = .info,
+                    percent: Int? = nil,
+                    severity: Severity? = nil,
+                    blocksPrompt: Bool = false,
+                    cta: Cta? = nil) {
+            self.message = message
+            self.secondaryText = secondaryText
+            self.dismissible = dismissible
+            self.icon = icon
+            self.percent = percent
+            self.severity = severity
+            self.blocksPrompt = blocksPrompt
+            self.cta = cta
+        }
+    }
+
+    /// Keeps the config provider out of the subscription flow; the client owns dialogs.
+    enum OmnibarUsageLimitsCtaOutcome: Equatable {
+        case handled
+        case requiresSubscriptionUpsell
+    }
+
     /// Attachment limits forwarded to the web. All optional: `files`/`images` are backend-sourced; `tabs` is a hardcoded native cap, omitted when the limit is disabled (web then applies no tab limit).
     struct AttachmentLimits: Codable, Equatable {
         public struct FileLimits: Codable, Equatable {
@@ -211,10 +299,22 @@ public extension NewTabPageDataModel {
         var enableUpdatedCreateImage: Bool?
         /// Native-localized notice shown after Create Image switches away from an unsupported model.
         var createImageModelSwitch: OmnibarCreateImageModelSwitch?
+        var usageLimits: OmnibarUsageLimits?
     }
 
     struct OmnibarSetImageGenerationActive: Codable, Equatable {
         let active: Bool
+    }
+
+    // MARK: - omnibar_selectUsageLimitsCta
+
+    struct OmnibarSelectUsageLimitsCtaAction: Codable, Equatable {
+        /// Absent for the upsell and the weekly hand-off.
+        let modelId: String?
+
+        public init(modelId: String?) {
+            self.modelId = modelId
+        }
     }
 
     // MARK: - omnibar_getSuggestions
@@ -506,6 +606,7 @@ public extension NewTabPageDataModel {
     public enum OmnibarSubscriptionUpsellSource: String, Codable, Equatable {
         case model
         case reasoning
+        case usageLimit
     }
 
     struct ShowSubscriptionUpsellAction: Codable, Equatable {

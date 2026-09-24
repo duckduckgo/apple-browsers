@@ -37,19 +37,156 @@ final class FindInPageViewController: NSViewController {
 
     @Published var model: FindInPageModel?
 
-    @IBOutlet weak var backgroundView: ColorView!
-    @IBOutlet weak var closeButton: NSButton!
-    @IBOutlet weak var textField: NSTextField!
-    @IBOutlet weak var focusRingView: FocusRingView!
-    @IBOutlet weak var statusField: NSTextField!
-    @IBOutlet weak var nextButton: NSButton!
-    @IBOutlet weak var previousButton: NSButton!
+    private enum Constants {
+        static let contentSize = CGSize(width: 400, height: 40)
+        static let cornerRadius: CGFloat = 10
+        static let buttonSize = CGSize(width: 32, height: 24)
+        static let buttonCornerRadius: CGFloat = 4
+        static let buttonSpacing: CGFloat = 4
+        static let searchImageSize: CGFloat = 14
+        static let focusRingHeight: CGFloat = 34
+        static let focusRingInset: CGFloat = 12
+        static let focusRingSpacing: CGFloat = 8
+    }
+
+    private(set) var backgroundView: ColorView!
+    private(set) var closeButton: NSButton!
+    private(set) var textField: NSTextField!
+    private(set) var focusRingView: FocusRingView!
+    private(set) var statusField: NSTextField!
+    private(set) var nextButton: NSButton!
+    private(set) var previousButton: NSButton!
 
     private var modelCancellables = Set<AnyCancellable>()
     private var cancellables = Set<AnyCancellable>()
 
     static func create() -> FindInPageViewController {
-        (NSStoryboard(name: "FindInPage", bundle: nil).instantiateInitialController() as? FindInPageViewController)!
+        FindInPageViewController()
+    }
+
+    init() {
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("\(type(of: self)): Bad initializer")
+    }
+
+    /// Image-only square button styled like the ones that used to live in FindInPage.storyboard.
+    private func makeImageButton(image: NSImage, target: AnyObject?, action: Selector) -> MouseOverButton {
+        let button = MouseOverButton(frame: .zero)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setButtonType(.momentaryPushIn)
+        button.isBordered = false
+        button.bezelStyle = .shadowlessSquare
+        button.image = image
+        button.imagePosition = .imageOnly
+        button.imageScaling = .scaleProportionallyDown
+        button.alignment = .center
+        button.contentTintColor = .button
+        // `awakeFromNib` captures this for the nib path; there is no nib here.
+        button.normalTintColor = button.contentTintColor
+        button.mouseOverColor = .buttonMouseOver
+        button.mouseDownColor = .buttonMouseDown
+        button.cornerRadius = Constants.buttonCornerRadius
+        button.target = target
+        button.action = action
+        return button
+    }
+
+    override func loadView() {
+        let backgroundView = ColorView(frame: NSRect(origin: .zero, size: Constants.contentSize),
+                                       cornerRadius: Constants.cornerRadius)
+        self.backgroundView = backgroundView
+
+        // `findInPageNext:`/`findInPagePrevious:` were wired to the First Responder in the storyboard,
+        // so they travel the responder chain rather than targeting this controller directly.
+        closeButton = makeImageButton(image: .closeLarge, target: self, action: #selector(findInPageDone))
+        previousButton = makeImageButton(image: .findPrevious, target: nil, action: #selector(findInPagePrevious))
+        previousButton.tag = 1
+        nextButton = makeImageButton(image: .findNext, target: nil, action: #selector(findInPageNext))
+        nextButton.tag = 2
+
+        focusRingView = FocusRingView(frame: .zero)
+        focusRingView.translatesAutoresizingMaskIntoConstraints = false
+
+        let searchImageButton = NSButton(frame: .zero)
+        searchImageButton.translatesAutoresizingMaskIntoConstraints = false
+        searchImageButton.setButtonType(.momentaryPushIn)
+        searchImageButton.isBordered = false
+        searchImageButton.bezelStyle = .shadowlessSquare
+        searchImageButton.image = .findSearch
+        searchImageButton.imagePosition = .imageOnly
+        searchImageButton.imageScaling = .scaleProportionallyUpOrDown
+        searchImageButton.alignment = .center
+        searchImageButton.contentTintColor = .button
+
+        textField = NSTextField(frame: .zero)
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        textField.isEditable = true
+        textField.isSelectable = true
+        textField.isBordered = false
+        textField.focusRingType = .none
+        textField.lineBreakMode = .byClipping
+        textField.font = .systemFont(ofSize: NSFont.systemFontSize)
+        textField.textColor = .controlTextColor
+        textField.drawsBackground = true
+        textField.backgroundColor = .clear
+        textField.cell?.sendsActionOnEndEditing = true
+        (textField.cell as? NSTextFieldCell)?.isScrollable = true
+        textField.setContentHuggingPriority(.init(750), for: .vertical)
+
+        statusField = NSTextField(labelWithString: "")
+        statusField.translatesAutoresizingMaskIntoConstraints = false
+        statusField.font = .systemFont(ofSize: NSFont.systemFontSize)
+        statusField.lineBreakMode = .byClipping
+        statusField.setContentHuggingPriority(.init(251), for: .horizontal)
+        statusField.setContentHuggingPriority(.init(750), for: .vertical)
+
+        focusRingView.addSubview(searchImageButton)
+        focusRingView.addSubview(textField)
+        focusRingView.addSubview(statusField)
+
+        backgroundView.addSubview(closeButton)
+        backgroundView.addSubview(focusRingView)
+        backgroundView.addSubview(previousButton)
+        backgroundView.addSubview(nextButton)
+
+        NSLayoutConstraint.activate([
+            closeButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize.width),
+            closeButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize.height),
+            closeButton.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: Constants.buttonSpacing),
+            closeButton.centerYAnchor.constraint(equalTo: backgroundView.centerYAnchor),
+
+            focusRingView.heightAnchor.constraint(equalToConstant: Constants.focusRingHeight),
+            focusRingView.leadingAnchor.constraint(equalTo: closeButton.trailingAnchor, constant: Constants.buttonSpacing),
+            focusRingView.centerYAnchor.constraint(equalTo: backgroundView.centerYAnchor),
+
+            searchImageButton.widthAnchor.constraint(equalToConstant: Constants.searchImageSize),
+            searchImageButton.heightAnchor.constraint(equalToConstant: Constants.searchImageSize),
+            searchImageButton.leadingAnchor.constraint(equalTo: focusRingView.leadingAnchor, constant: Constants.focusRingInset),
+            searchImageButton.centerYAnchor.constraint(equalTo: focusRingView.centerYAnchor),
+
+            textField.leadingAnchor.constraint(equalTo: searchImageButton.trailingAnchor, constant: Constants.focusRingSpacing),
+            textField.centerYAnchor.constraint(equalTo: focusRingView.centerYAnchor),
+
+            statusField.leadingAnchor.constraint(equalTo: textField.trailingAnchor, constant: Constants.focusRingSpacing),
+            focusRingView.trailingAnchor.constraint(equalTo: statusField.trailingAnchor, constant: Constants.focusRingInset),
+            statusField.centerYAnchor.constraint(equalTo: focusRingView.centerYAnchor),
+
+            previousButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize.width),
+            previousButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize.height),
+            previousButton.leadingAnchor.constraint(equalTo: focusRingView.trailingAnchor, constant: Constants.buttonSpacing),
+            previousButton.centerYAnchor.constraint(equalTo: backgroundView.centerYAnchor),
+
+            nextButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize.width),
+            nextButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize.height),
+            nextButton.leadingAnchor.constraint(equalTo: previousButton.trailingAnchor, constant: Constants.buttonSpacing),
+            backgroundView.trailingAnchor.constraint(equalTo: nextButton.trailingAnchor, constant: Constants.buttonSpacing),
+            nextButton.centerYAnchor.constraint(equalTo: backgroundView.centerYAnchor),
+        ])
+
+        self.view = backgroundView
     }
 
     override func viewDidLoad() {
@@ -86,15 +223,15 @@ final class FindInPageViewController: NSViewController {
         cancellables.removeAll()
     }
 
-    @IBAction func findInPageNext(_ sender: Any?) {
+    @objc func findInPageNext(_ sender: Any?) {
         delegate?.findInPageNext(self)
     }
 
-    @IBAction func findInPagePrevious(_ sender: Any?) {
+    @objc func findInPagePrevious(_ sender: Any?) {
         delegate?.findInPagePrevious(self)
     }
 
-    @IBAction func findInPageDone(_ sender: Any?) {
+    @objc func findInPageDone(_ sender: Any?) {
         delegate?.findInPageDone(self)
     }
 

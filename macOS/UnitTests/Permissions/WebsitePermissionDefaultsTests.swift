@@ -27,18 +27,23 @@ final class WebsitePermissionDefaultsTests: XCTestCase {
 
     private var keyValueStore: MockKeyValueFileStore!
     private var featureFlagger: MockFeatureFlagger!
+    private var autoplayPreferences: AutoplayPreferences!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         keyValueStore = try MockKeyValueFileStore()
         featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.websitePermissionsSettings.rawValue: true])
+        autoplayPreferences = AutoplayPreferences(
+            persistor: AutoplayPreferencesPersistorMock(autoplayBlockingModeRawValue: AutoplayBlockingMode.blockAudio.rawValue)
+        )
         cancellables = []
     }
 
     override func tearDown() {
         keyValueStore = nil
         featureFlagger = nil
+        autoplayPreferences = nil
         cancellables = nil
         super.tearDown()
     }
@@ -48,7 +53,7 @@ final class WebsitePermissionDefaultsTests: XCTestCase {
     func testWhenNothingIsStoredThenEveryCategoryDefaultsToAskEachTime() {
         let sut = makeSUT()
 
-        for category in WebsitePermissionCategory.allCases {
+        for category in WebsitePermissionCategory.allCases where category != .autoplay {
             XCTAssertEqual(sut.defaultDecision(for: category), .ask, "\(category) should fall back to .ask")
         }
     }
@@ -129,16 +134,70 @@ final class WebsitePermissionDefaultsTests: XCTestCase {
         XCTAssertEqual(published.last?[.camera], .ask)
     }
 
+    // MARK: - Autoplay
+
+    func testWhenAutoplayDefaultIsReadThenItMirrorsTheAllSitesBlockingMode() {
+        let sut = makeSUT()
+        XCTAssertEqual(sut.defaultDecision(for: .autoplay), .ask, "Block audio is the middle state")
+
+        autoplayPreferences.autoplayBlockingMode = .allowAll
+        XCTAssertEqual(sut.defaultDecision(for: .autoplay), .allow)
+
+        autoplayPreferences.autoplayBlockingMode = .blockAll
+        XCTAssertEqual(sut.defaultDecision(for: .autoplay), .deny)
+    }
+
+    func testWhenAutoplayDefaultIsSetThenTheAllSitesBlockingModeChanges() {
+        let sut = makeSUT()
+
+        sut.setDefaultDecision(.allow, for: .autoplay)
+
+        XCTAssertEqual(autoplayPreferences.autoplayBlockingMode, .allowAll)
+        XCTAssertEqual(sut.defaultDecision(for: .autoplay), .allow)
+        XCTAssertNil(persistedRawValue(for: .autoplay), "Autoplay has no default of its own to store")
+    }
+
+    func testWhenAutoplayDefaultIsSetThenOtherCategoriesStillRejectAllow() {
+        let sut = makeSUT()
+
+        sut.setDefaultDecision(.allow, for: .camera)
+
+        XCTAssertEqual(sut.defaultDecision(for: .camera), .ask)
+    }
+
+    func testWhenBlockingModeChangesElsewhereThenPublisherEmitsTheNewAutoplayDefault() {
+        let sut = makeSUT()
+        var published: [[WebsitePermissionCategory: PersistedPermissionDecision]] = []
+        sut.defaultsPublisher.sink { published.append($0) }.store(in: &cancellables)
+
+        autoplayPreferences.autoplayBlockingMode = .blockAll
+
+        XCTAssertEqual(published.first?[.autoplay], .ask)
+        XCTAssertEqual(published.last?[.autoplay], .deny)
+    }
+
+    func testWhenFeatureFlagIsOffThenAutoplayWritesAreIgnored() {
+        featureFlagger.featuresStub = [FeatureFlag.websitePermissionsSettings.rawValue: false]
+        let sut = makeSUT()
+
+        sut.setDefaultDecision(.deny, for: .autoplay)
+
+        XCTAssertEqual(autoplayPreferences.autoplayBlockingMode, .blockAudio)
+        XCTAssertEqual(sut.defaultDecision(for: .autoplay), .ask)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT() -> WebsitePermissionDefaults {
         WebsitePermissionDefaults(
             storage: WebsitePermissionDefaultsUserDefaultsStorage(keyValueStore: keyValueStore),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            autoplayPreferences: autoplayPreferences
         )
     }
 
     private func persistedRawValue(for category: WebsitePermissionCategory) -> String? {
-        try? keyValueStore.object(forKey: WebsitePermissionDefaultsUserDefaultsStorage.Key(category: category).rawValue) as? String
+        guard let key = WebsitePermissionDefaultsUserDefaultsStorage.Key(category: category) else { return nil }
+        return try? keyValueStore.object(forKey: key.rawValue) as? String
     }
 }

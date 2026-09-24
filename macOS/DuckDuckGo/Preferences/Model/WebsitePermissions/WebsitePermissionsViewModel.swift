@@ -100,9 +100,10 @@ final class WebsitePermissionsViewModel: ObservableObject {
     }
 
     private func makeRecentRows(from entries: [WebsitePermissionEntry]) -> [WebsitePermissionsViewState.RecentRow] {
-        entries
+        let categories = visibleCategories
+        return entries
             .filter { entry in
-                entry.lastModified != nil && WebsitePermissionCategory.category(for: entry.permissionType) != nil
+                entry.lastModified != nil && categories.contains { $0.contains(entry.permissionType) }
             }
             .sorted(by: isOrderedBefore)
             .prefix(Constants.maximumRecentRows)
@@ -142,8 +143,12 @@ final class WebsitePermissionsViewModel: ObservableObject {
         return String(format: UserText.websitePermissionsExternalAppFormat, permissionType.localizedDescription)
     }
 
+    private var visibleCategories: [WebsitePermissionCategory] {
+        WebsitePermissionCategory.allCases
+    }
+
     private func makeRows(from entries: [WebsitePermissionEntry]) -> [WebsitePermissionsViewState.Row] {
-        WebsitePermissionCategory.allCases.map { category in
+        visibleCategories.map { category in
             WebsitePermissionsViewState.Row(
                 category: category,
                 count: entries.count { category.contains($0.permissionType) }

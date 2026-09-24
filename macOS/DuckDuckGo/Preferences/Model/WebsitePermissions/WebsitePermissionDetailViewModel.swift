@@ -41,7 +41,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
         self.defaults = defaults
-        viewState.availableDefaultDecisions = defaults.availableDecisions
+        viewState.availableDefaultDecisions = defaults.availableDecisions(for: viewState.category)
         viewState.defaultDecision = defaults.defaultDecision(for: viewState.category)
         viewState.visibleSites = filteredSites(from: viewState.sites, matching: viewState.searchQuery)
     }
@@ -74,7 +74,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
 
     private func changeDefaultDecision(_ decision: PersistedPermissionDecision) {
         let category = viewState.category
-        guard defaults.availableDecisions.contains(decision),
+        guard defaults.availableDecisions(for: category).contains(decision),
               decision != defaults.defaultDecision(for: category)
         else {
             Logger.general.debug("WebsitePermissionDetailViewModel: Ignored default change for \(String(describing: category))")
@@ -131,7 +131,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
             entries: entries,
             featureFlagger: featureFlagger
         )
-        state.availableDefaultDecisions = defaults.availableDecisions
+        state.availableDefaultDecisions = defaults.availableDecisions(for: category)
         state.visibleSites = filteredSites(from: state.sites, matching: state.searchQuery)
         viewState = state
     }

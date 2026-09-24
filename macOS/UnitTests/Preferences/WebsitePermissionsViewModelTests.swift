@@ -70,7 +70,28 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         XCTAssertTrue(receivedRows.allSatisfy { $0.count == 0 })
     }
 
-    func testWhenBuildingRowsThenPermissionsAreGroupedByCategoryAndAutoplayIsExcluded() {
+    func testWhenAutoplayPolicyIsEnabledThenAutoplayIsListedLast() {
+        let sut = createSUT(entries: [
+            WebsitePermissionEntry(domain: "example.com", permissionType: .autoplayPolicy, decision: .allow, lastModified: nil),
+        ])
+
+        waitForViewStateUpdate(sut) {
+            sut.send(action: .onAppear)
+        }
+
+        XCTAssertEqual(sut.viewState.rows.map(\.category), [
+            .notifications,
+            .location,
+            .camera,
+            .microphone,
+            .externalApps,
+            .popups,
+            .autoplay,
+        ])
+        XCTAssertEqual(sut.viewState.rows.last?.count, 1)
+    }
+
+    func testWhenBuildingRowsThenPermissionsAreGroupedByCategoryAndAutoplayIsExcludedWhileItsFlagIsOff() {
         let entries = [
             WebsitePermissionEntry(domain: "example.com", permissionType: .notification, decision: .allow, lastModified: nil),
             WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .deny, lastModified: nil),
@@ -146,7 +167,22 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         XCTAssertTrue(model.viewState.hasRecents)
     }
 
-    func testWhenPermissionIsAutoplayThenItIsExcludedFromRecents() {
+    func testWhenAutoplayPolicyIsEnabledThenAutoplayCanAppearInRecents() {
+        let entries = [
+            WebsitePermissionEntry(domain: "autoplay.com", permissionType: .autoplayPolicy, decision: .allow, lastModified: Date()),
+            WebsitePermissionEntry(domain: "camera.com", permissionType: .camera, decision: .allow,
+                                   lastModified: Date(timeIntervalSinceNow: -10)),
+        ]
+
+        let model = makeRecentsModel(entries, permissionManager: PermissionManagerMock())
+
+        XCTAssertEqual(model.viewState.recents.map(\.domain), ["autoplay.com", "camera.com"])
+        XCTAssertEqual(model.viewState.recents.first?.availableDecisions, [.allow, .ask, .deny],
+                       "Autoplay offers its three states, most permissive first")
+        XCTAssertEqual(model.viewState.recents.first?.permissionTitle, UserText.permissionAutoplay)
+    }
+
+    func testWhenPermissionIsAutoplayThenItIsExcludedFromRecentsWhileItsFlagIsOff() {
         let entries = [
             WebsitePermissionEntry(domain: "autoplay.com", permissionType: .autoplayPolicy, decision: .allow, lastModified: Date()),
             WebsitePermissionEntry(domain: "camera.com", permissionType: .camera, decision: .allow,
@@ -347,6 +383,16 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
 
         model.send(action: .closeDetail)
         XCTAssertNil(model.viewState.detailModel)
+    }
+
+    func testWhenOpeningAutoplayFromAnotherDetailThenAutoplayReplacesIt() {
+        let model = createSUT()
+        model.send(action: .openDetail(.camera))
+
+        model.send(action: .openDetail(.autoplay))
+
+        XCTAssertEqual(model.viewState.detailModel?.viewState.category, .autoplay)
+        XCTAssertEqual(model.viewState.detailModel?.viewState.availableDefaultDecisions, [.allow, .ask, .deny])
     }
 
     func testWhenPermissionsUpdateThenSelectedDetailModelIsPreserved() throws {

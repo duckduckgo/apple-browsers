@@ -924,7 +924,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let voiceChatPermissionOverride = DuckAiVoiceChatPermissionOverride(featureFlagger: featureFlagger)
         let websitePermissionDefaults = WebsitePermissionDefaults(
             storage: WebsitePermissionDefaultsUserDefaultsStorage(keyValueStore: keyValueStore),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            autoplayPreferences: autoplayPreferences
         )
         self.websitePermissionDefaults = websitePermissionDefaults
 #if DEBUG

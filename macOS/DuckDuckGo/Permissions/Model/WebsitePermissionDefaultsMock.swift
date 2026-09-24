@@ -32,6 +32,7 @@ final class WebsitePermissionDefaultsMock: WebsitePermissionDefaultsProtocol {
     static let defaultAvailableDecisions: [PersistedPermissionDecision] = [.ask, .deny]
     static let defaultFallbackDecision: PersistedPermissionDecision = .ask
 
+    /// Overrides the options for every category but Autoplay, which mirrors the real three states.
     var availableDecisions: [PersistedPermissionDecision] = WebsitePermissionDefaultsMock.defaultAvailableDecisions
     var fallbackDecision: PersistedPermissionDecision = WebsitePermissionDefaultsMock.defaultFallbackDecision
 
@@ -47,6 +48,10 @@ final class WebsitePermissionDefaultsMock: WebsitePermissionDefaultsProtocol {
         subject = CurrentValueSubject(initial)
     }
 
+    func availableDecisions(for category: WebsitePermissionCategory) -> [PersistedPermissionDecision] {
+        category == .autoplay ? PermissionType.autoplayPolicy.editableDecisions : availableDecisions
+    }
+
     func defaultDecision(for category: WebsitePermissionCategory) -> PersistedPermissionDecision {
         guard isFeatureEnabled else { return fallbackDecision }
         return subject.value[category] ?? fallbackDecision
@@ -55,7 +60,7 @@ final class WebsitePermissionDefaultsMock: WebsitePermissionDefaultsProtocol {
     func setDefaultDecision(_ decision: PersistedPermissionDecision, for category: WebsitePermissionCategory) {
         setDefaultDecisionCalls.append((decision: decision, category: category))
         guard isFeatureEnabled,
-              availableDecisions.contains(decision),
+              availableDecisions(for: category).contains(decision),
               subject.value[category] != decision
         else { return }
 

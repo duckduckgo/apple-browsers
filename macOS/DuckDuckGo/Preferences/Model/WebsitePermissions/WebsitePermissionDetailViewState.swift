@@ -22,6 +22,7 @@ import PrivacyConfig
 
 struct WebsitePermissionDetailViewState: Equatable {
     var category: WebsitePermissionCategory = .notifications
+    /// Behaviour applied to websites with no saved decision of their own.
     var defaultDecision: PersistedPermissionDecision = .ask
     var availableDefaultDecisions: [PersistedPermissionDecision] = []
     var searchQuery = ""

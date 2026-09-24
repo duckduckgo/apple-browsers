@@ -86,7 +86,7 @@ struct PreferencesWebsitePermissionDetailView: View {
                 set: { model.send(action: .setDefaultDecision($0)) }
             ), label: EmptyView()) {
                 ForEach(model.viewState.availableDefaultDecisions, id: \.self) { decision in
-                    Text(decision.websitePermissionsTitle)
+                    Text(model.viewState.category.decisionTitle(for: decision))
                         .tag(decision)
                         .accessibilityIdentifier("WebsitePermissions.Detail.Default.\(decision.rawValue)")
                 }

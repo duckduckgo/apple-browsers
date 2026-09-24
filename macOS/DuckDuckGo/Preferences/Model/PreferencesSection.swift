@@ -325,6 +325,7 @@ struct PreferencesDestination: Hashable {
 
     let pane: PreferencePaneIdentifier
     let scrollAnchor: PreferencesScrollAnchor?
+    var websitePermissionCategory: WebsitePermissionCategory?
 
     static var aiChat: PreferencesDestination {
         PreferencesDestination(pane: .aiChat, scrollAnchor: nil)
@@ -332,5 +333,9 @@ struct PreferencesDestination: Hashable {
 
     static var generalPermissions: PreferencesDestination {
         PreferencesDestination(pane: .general, scrollAnchor: .permissions)
+    }
+
+    static func websitePermission(_ category: WebsitePermissionCategory) -> PreferencesDestination {
+        PreferencesDestination(pane: .websitePermissions, scrollAnchor: nil, websitePermissionCategory: category)
     }
 }

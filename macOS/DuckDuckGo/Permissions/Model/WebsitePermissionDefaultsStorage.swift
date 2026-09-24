@@ -35,7 +35,8 @@ struct WebsitePermissionDefaultsUserDefaultsStorage: WebsitePermissionDefaultsSt
         case externalApps = "website-permissions.default.external-apps"
         case popups = "website-permissions.default.popups"
 
-        init(category: WebsitePermissionCategory) {
+        /// `nil` for Autoplay, whose default is the all-sites blocking mode owned by `AutoplayPreferences`.
+        init?(category: WebsitePermissionCategory) {
             switch category {
             case .notifications: self = .notifications
             case .location: self = .location
@@ -43,6 +44,7 @@ struct WebsitePermissionDefaultsUserDefaultsStorage: WebsitePermissionDefaultsSt
             case .microphone: self = .microphone
             case .externalApps: self = .externalApps
             case .popups: self = .popups
+            case .autoplay: return nil
             }
         }
     }
@@ -54,10 +56,12 @@ struct WebsitePermissionDefaultsUserDefaultsStorage: WebsitePermissionDefaultsSt
     }
 
     func decisionRawValue(for category: WebsitePermissionCategory) -> String? {
-        try? keyValueStore.object(forKey: Key(category: category).rawValue) as? String
+        guard let key = Key(category: category) else { return nil }
+        return try? keyValueStore.object(forKey: key.rawValue) as? String
     }
 
     func setDecisionRawValue(_ rawValue: String, for category: WebsitePermissionCategory) {
-        try? keyValueStore.set(rawValue, forKey: Key(category: category).rawValue)
+        guard let key = Key(category: category) else { return }
+        try? keyValueStore.set(rawValue, forKey: key.rawValue)
     }
 }

@@ -148,7 +148,8 @@ struct PermissionCenterView: View {
 
             // Autoplay disclaimer
             if viewModel.showAutoplayDisclaimer {
-                AutoplayDiscoverabilityView(onClickSettings: viewModel.openAutoplaySettings)
+                AutoplayDiscoverabilityView(linkTitle: viewModel.autoplaySettingsLinkTitle,
+                                            onClickSettings: viewModel.openAutoplaySettings)
                     .padding(.horizontal, 16)
                     .padding(.bottom, viewModel.showReloadBanner ? 12 : 16)
             }

@@ -217,6 +217,46 @@ final class PermissionCenterViewModelTests: XCTestCase {
         XCTAssertEqual(dismissCallCount, 1)
     }
 
+    func testWhenWebsitePermissionsIsEnabledThenOpenAutoplaySettingsTargetsAutoplayDetail() {
+        mockFeatureFlagger.featuresStub[FeatureFlag.websitePermissionsSettings.rawValue] = true
+        var destinations: [PreferencesDestination] = []
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            openSettings: { destinations.append($0) },
+            displaysAutoplayPolicy: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.openAutoplaySettings()
+
+        XCTAssertEqual(destinations, [.websitePermission(.autoplay)])
+        XCTAssertEqual(viewModel.autoplaySettingsLinkTitle, UserText.permissionCenterAutoplayDisclaimerWebsitePermissionsLink)
+    }
+
+    func testWhenWebsitePermissionsIsDisabledThenTheDisclaimerStillNamesGeneralPreferences() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            openSettings: { _ in },
+            displaysAutoplayPolicy: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        XCTAssertEqual(viewModel.autoplaySettingsLinkTitle, UserText.permissionCenterAutoplayDisclaimerSettingsLink)
+    }
+
     // MARK: - Autoplay Disclaimer Tests
 
     func testWhenDisplaysAutoplayDiscoveryAndAutoplayRowIsPresentThenDisclaimerIsShown() {

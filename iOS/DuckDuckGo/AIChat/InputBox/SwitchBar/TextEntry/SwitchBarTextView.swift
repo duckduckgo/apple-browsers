@@ -65,6 +65,20 @@ final class SwitchBarTextView: UITextView {
 
 }
 
+extension SwitchBarTextView: UnifiedToggleInputTextShimmerSource {
+
+    /// Wrapped lines all start at the leading inset, so the span runs to the widest line.
+    var shimmerTextFrame: CGRect {
+        let leading = textContainerInset.left + textContainer.lineFragmentPadding
+        let trailing = textContainerInset.right + textContainer.lineFragmentPadding
+        let containerSize = CGSize(width: max(bounds.width - leading - trailing, 0), height: .greatestFiniteMagnitude)
+        let usedRect = attributedText.boundingRect(with: containerSize,
+                                                   options: [.usesLineFragmentOrigin, .usesFontLeading],
+                                                   context: nil)
+        return CGRect(x: bounds.minX + leading, y: bounds.minY, width: ceil(usedRect.width), height: bounds.height)
+    }
+}
+
 extension UIView {
     var hasHiddenAncestor: Bool {
         var view: UIView? = self

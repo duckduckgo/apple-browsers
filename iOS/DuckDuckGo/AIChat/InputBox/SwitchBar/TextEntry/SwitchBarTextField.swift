@@ -57,3 +57,12 @@ final class SwitchBarTextField: UITextField {
         return super.becomeFirstResponder()
     }
 }
+
+extension SwitchBarTextField: UnifiedToggleInputTextShimmerSource {
+
+    var shimmerTextFrame: CGRect {
+        let textArea = editingRect(forBounds: bounds)
+        let textWidth = ceil(attributedText?.size().width ?? 0)
+        return CGRect(x: textArea.minX, y: bounds.minY, width: min(textWidth, textArea.width), height: bounds.height)
+    }
+}

@@ -582,6 +582,7 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - UI
 
     private let cardView = UIView()
+    private let cardModeCue = UnifiedToggleInputCardModeCue()
 
     /// Edges of the visible input card, which sits inside this view's own padding. Content placed
     /// around the bar should align to these rather than to the view's edges.
@@ -780,6 +781,7 @@ final class UnifiedToggleInputView: UIView {
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
         textEntryView.style = isToggleEnabled ? .multiLine : .singleLine
+        textEntryView.isTextShimmerAvailable = isToggleEnabled
         setupUI()
         setupSubscriptions()
     }
@@ -794,6 +796,7 @@ final class UnifiedToggleInputView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         syncOmnibarMaterialTransitionCorners()
+        cardModeCue.syncGeometry()
         guard !expandedShadowView.isHidden else { return }
         // Runs inside UIView.animate via layoutIfNeeded so the shadow corners animate with cardView.
         expandedShadowView.layer.cornerRadius = cardView.layer.cornerRadius
@@ -917,6 +920,12 @@ final class UnifiedToggleInputView: UIView {
         syncOmnibarMaterialTransitionCorners()
     }
 
+    // MARK: - Mode Cue
+
+    private func updateCardModeCue() {
+        cardModeCue.update(mode: handler.currentToggleState, isActive: isExpanded && isToggleEnabled)
+    }
+
     private func syncOmnibarMaterialTransitionCorners() {
         guard omnibarMaterialBackdropView != nil || omnibarMaterialEditingFillView != nil else { return }
         let radius = cardView.layer.cornerRadius
@@ -1033,6 +1042,7 @@ final class UnifiedToggleInputView: UIView {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
         textEntryView.style = enabled ? .multiLine : .singleLine
+        textEntryView.isTextShimmerAvailable = enabled
         if isExpanded {
             applyCardLayout(.collapsed, animated: false)
             applyCardLayout(.expanded(showsToggle: enabled, showsToolbar: showsToolbar), animated: false)
@@ -1141,6 +1151,7 @@ final class UnifiedToggleInputView: UIView {
         let expanded = layout.isExpanded
         isExpanded = expanded
         handler.isExpanded = expanded
+        updateCardModeCue()
         // The matched omnibar pose (`applyOmnibarMatchedInsets`) drops the top constraint below the
         // pinned height so the card stays the pill's height; restore it here so every other layout
         // is driven by its real top/bottom margins again.
@@ -1308,6 +1319,17 @@ final class UnifiedToggleInputView: UIView {
             textEntryView.clearDismissSnapshot()
         }
         alignWithOmnibarChrome()
+    }
+
+    func installKeyboardEdgeModeCue(in screenHost: UIView) {
+        cardModeCue.installKeyboardEdge(in: screenHost)
+    }
+
+    /// Plays the one-shot mode cues. Call once the show animation has finished, so they land on a
+    /// settled card rather than one still growing in.
+    func playModeCue() {
+        guard isToggleEnabled else { return }
+        cardModeCue.playSweep(mode: handler.currentToggleState)
     }
 
     func prepareForOmnibarMaterialTransition(duration: TimeInterval) {
@@ -1810,6 +1832,7 @@ private extension UnifiedToggleInputView {
         textEntryView.isExpandable = false
         textEntryView.placeholderTextColor = UIColor(designSystemColor: .textTertiary)
         addSubview(textEntryView)
+        cardModeCue.install(in: self, card: cardView)
 
         attachmentsStrip.translatesAutoresizingMaskIntoConstraints = false
         attachmentsStrip.clipsToBounds = false
@@ -1999,6 +2022,10 @@ private extension UnifiedToggleInputView {
                 toggleView.setMode(mode, animated: true)
                 updateToolbarVisibility(for: mode, animated: true)
                 updateSubmitButtonAvailability()
+                updateCardModeCue()
+                if isExpanded {
+                    cardModeCue.playSweep(mode: mode)
+                }
             }
             .store(in: &cancellables)
 

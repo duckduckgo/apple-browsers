@@ -257,6 +257,7 @@ private extension MainViewController {
             },
             completion: { [weak self] _ in
                 self?.refreshFloatingToolbarBackdrop()
+                coordinator.viewController.playModeCue()
             }
         )
     }

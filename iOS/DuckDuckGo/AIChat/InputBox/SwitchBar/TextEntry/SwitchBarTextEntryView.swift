@@ -120,6 +120,7 @@ class SwitchBarTextEntryView: UIView {
             }
 
             updateTextViewHeight()
+            setNeedsTextShimmerUpdate()
         }
     }
 
@@ -136,6 +137,16 @@ class SwitchBarTextEntryView: UIView {
     private let textView = SwitchBarTextView()
     private let textField = SwitchBarTextField()
     private let placeholderLabel = UILabel()
+    private let textShimmer = UnifiedToggleInputTextShimmerView()
+    private let modeCueSettings = UnifiedToggleInputModeCueSettings()
+
+    /// Set by hosts that show the Search↔Duck.ai toggle; without one there is no mode to tell apart.
+    var isTextShimmerAvailable = false {
+        didSet {
+            guard isTextShimmerAvailable != oldValue else { return }
+            setNeedsTextShimmerUpdate()
+        }
+    }
     private var buttonsView = SwitchBarButtonsView()
     private var currentButtonState: SwitchBarButtonState {
         get { buttonsView.buttonState }
@@ -339,12 +350,14 @@ class SwitchBarTextEntryView: UIView {
 
         addSubview(textView)
         addSubview(textField)
+        addSubview(textShimmer)
         addSubview(placeholderLabel)
         addSubview(buttonsView)
 
         buttonsView.translatesAutoresizingMaskIntoConstraints = false
         textView.translatesAutoresizingMaskIntoConstraints = false
         textField.translatesAutoresizingMaskIntoConstraints = false
+        textShimmer.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
 
         heightConstraint = heightAnchor.constraint(equalToConstant: currentMinHeight)
@@ -484,6 +497,11 @@ class SwitchBarTextEntryView: UIView {
             textField.bottomAnchor.constraint(equalTo: bottomAnchor),
             textField.trailingAnchor.constraint(equalTo: trailingAnchor),
 
+            textShimmer.topAnchor.constraint(equalTo: topAnchor),
+            textShimmer.leadingAnchor.constraint(equalTo: leadingAnchor),
+            textShimmer.bottomAnchor.constraint(equalTo: bottomAnchor),
+            textShimmer.trailingAnchor.constraint(equalTo: trailingAnchor),
+
             placeholderCenterYConstraint,
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: placeholderHorizontalOffset),
             // Trail to the buttons so a visible stop / search-go-to / voice button truncates the
@@ -582,6 +600,8 @@ class SwitchBarTextEntryView: UIView {
         wasTextEmptyForAutocorrection = textView.text.isEmpty
 
         setPlaceholderText(placeholderText(for: currentMode))
+        textShimmer.setMode(currentMode)
+        setNeedsTextShimmerUpdate()
         switch currentMode {
         case .search:
             textView.autocapitalizationType = .none
@@ -733,6 +753,32 @@ class SwitchBarTextEntryView: UIView {
         }
         if !hasBeenInteractedWith {
             updateTextViewHeight()
+        }
+        updateTextShimmer()
+    }
+
+    // MARK: - Text Shimmer
+
+    /// Batched into the next layout pass, so a burst of edits re-masks the shimmer once per frame.
+    private func setNeedsTextShimmerUpdate() {
+        setNeedsLayout()
+    }
+
+    private var activeTextShimmerSource: UnifiedToggleInputTextShimmerSource {
+        usesTextField ? textField : textView
+    }
+
+    private var shouldShowTextShimmer: Bool {
+        let text = usesTextField ? textField.text : textView.text
+        let isChosen = modeCueSettings.style == .textShimmer
+        return isTextShimmerAvailable && isChosen && currentMode == .aiChat && !(text ?? "").isEmpty
+    }
+
+    private func updateTextShimmer() {
+        if shouldShowTextShimmer {
+            textShimmer.show(over: activeTextShimmerSource)
+        } else {
+            textShimmer.hide()
         }
     }
 
@@ -893,6 +939,7 @@ class SwitchBarTextEntryView: UIView {
                         self.textField.text = text
                         self.updatePlaceholderVisibility()
                         self.updateTextViewHeight()
+                        self.setNeedsTextShimmerUpdate()
                     }
                 } else {
                     if self.textView.text != text {
@@ -907,6 +954,7 @@ class SwitchBarTextEntryView: UIView {
                         self.textView.text = text
                         self.updatePlaceholderVisibility()
                         self.updateTextViewHeight()
+                        self.setNeedsTextShimmerUpdate()
                     }
 
                     self.updateAutoCorrectionSetupForAIChat(for: self.textView.text ?? "")
@@ -998,6 +1046,7 @@ class SwitchBarTextEntryView: UIView {
         handler.updateCurrentText(text)
         updateButtonState()
         updateTextViewHeight()
+        setNeedsTextShimmerUpdate()
     }
 
     func insertNewlineAtCursor() {
@@ -1106,6 +1155,7 @@ class SwitchBarTextEntryView: UIView {
         handler.updateCurrentText((textField.text ?? "").strippingDictationPlaceholder)
         updateButtonState()
         updateTextViewHeight()
+        setNeedsTextShimmerUpdate()
         handler.markUserInteraction()
     }
 
@@ -1125,6 +1175,10 @@ class SwitchBarTextEntryView: UIView {
 }
 
 extension SwitchBarTextEntryView: UITextViewDelegate {
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        setNeedsTextShimmerUpdate()
+    }
 
     func textViewDidChangeSelection(_ textView: UITextView) {
         guard canExpandOnSelectionChange else { return }
@@ -1146,6 +1200,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         updatePlaceholderVisibility()
         updateButtonState()
         updateTextViewHeight()
+        setNeedsTextShimmerUpdate()
         handler.updateCurrentText((textView.text ?? "").strippingDictationPlaceholder)
         handler.markUserInteraction()
 

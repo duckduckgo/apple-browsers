@@ -460,6 +460,7 @@ private extension MainViewController {
             inputVC.view.bottomAnchor.constraint(equalTo: viewCoordinator.unifiedToggleInputContainer.bottomAnchor),
         ])
         inputVC.didMove(toParent: self)
+        inputVC.installKeyboardEdgeModeCue(in: view)
     }
 
     func subscribeToIntentPublisher(_ coordinator: UnifiedToggleInputCoordinator) {

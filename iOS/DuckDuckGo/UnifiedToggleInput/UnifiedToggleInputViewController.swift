@@ -374,6 +374,15 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.applyOmnibarEditingShowPose()
     }
 
+    /// - Parameter screenHost: a view spanning the screen, for the cue drawn along the keyboard.
+    func installKeyboardEdgeModeCue(in screenHost: UIView) {
+        inputBarView.installKeyboardEdgeModeCue(in: screenHost)
+    }
+
+    func playModeCue() {
+        inputBarView.playModeCue()
+    }
+
     func applyOmnibarEditingDismissPose() {
         inputBarView.applyOmnibarEditingDismissPose()
     }

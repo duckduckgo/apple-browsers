@@ -38,6 +38,8 @@ final class LongPressBarMenuBuilder {
         let onCopy: (URL) -> Void
         let onMoveAddressBar: () -> Void
         let onCloseTab: () -> Void
+        /// Appended after the built-in sections, each as its own section.
+        var additionalSections: [UIMenu] = []
     }
 
     private let pixelFiring: (any PixelKitFiring)?
@@ -83,6 +85,8 @@ final class LongPressBarMenuBuilder {
                 context.onCloseTab()
             },
         ]))
+
+        sections.append(contentsOf: context.additionalSections)
 
         return UIMenu(title: "", children: sections)
     }

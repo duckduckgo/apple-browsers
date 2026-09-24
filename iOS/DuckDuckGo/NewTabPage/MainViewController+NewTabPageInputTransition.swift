@@ -78,6 +78,7 @@ extension MainViewController {
         }, completion: { [weak self] _ in
             restingSnapshot?.removeFromSuperview()
             self?.refreshFloatingToolbarBackdrop()
+            coordinator.viewController.playModeCue()
         })
     }
 

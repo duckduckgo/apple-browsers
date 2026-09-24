@@ -5711,7 +5711,8 @@ extension MainViewController: OmniBarDelegate {
             onCloseTab: { [weak self] in
                 guard let tab = self?.currentTab else { return }
                 self?.tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
-            }
+            },
+            additionalSections: [UnifiedToggleInputModeCueMenu.makeSection()]
         ))
     }
 

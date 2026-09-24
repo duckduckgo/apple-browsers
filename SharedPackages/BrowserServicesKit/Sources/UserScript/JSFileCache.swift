@@ -37,7 +37,8 @@ enum JSFileCache {
         }
 
         do {
-            let content = try String(contentsOfFile: path)
+            // Bundle scripts are UTF-8; ignore stale file encoding metadata.
+            let content = try String(contentsOfFile: path, encoding: .utf8)
             lock.lock()
             storage[cacheKey] = content
             lock.unlock()

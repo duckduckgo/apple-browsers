@@ -99,13 +99,16 @@ final class Telemetry {
         return result
     }
 
-    /// The query parameters to emit for this pixel, or `nil` if nothing meaningful was measured
-    /// (e.g. no counter matched a bucket and no data parameter has a value).
+    /// The query parameters to emit for this pixel, or `nil` if no `counter` parameter's total fell in
+    /// one of its buckets. `data` parameters ride along when a counter fires but never cause a fire.
     func buildPixelParameters() -> [String: String]? {
         var result: [String: String] = [:]
+        var counterMatched = false
         for (paramName, parameter) in parameters {
-            if let value = parameter.queryValue() { result[paramName] = value }
+            guard let value = parameter.queryValue() else { continue }
+            result[paramName] = value
+            if config.parameters[paramName]?.template == .counter { counterMatched = true }
         }
-        return result.isEmpty ? nil : result
+        return counterMatched ? result : nil
     }
 }

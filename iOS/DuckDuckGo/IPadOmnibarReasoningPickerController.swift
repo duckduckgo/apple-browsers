@@ -42,17 +42,17 @@ final class IPadOmnibarReasoningPickerController {
     init(
         store: UTIModelStore,
         accessResolver: ReasoningModeAccessResolving = ReasoningModeAccessResolver(),
-        upsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter(),
+        upsellPresenter: DuckAISubscriptionUpselling? = nil,
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
     ) {
         self.store = store
         self.menuFactory = UnifiedToggleInputReasoningMenuFactory(isUpdatedModelPickerEnabled: updatedModelPickerFeature.isAvailable)
         self.accessResolver = accessResolver
-        self.upsellPresenter = upsellPresenter
+        self.upsellPresenter = upsellPresenter ?? DuckAISubscriptionUpsellPresenter(policy: store.upsellPolicy)
     }
 
     var isReasoningPickerAvailable: Bool {
-        store.selectedModel?.supportsReasoningPicker ?? false
+        store.isReasoningPickerAvailable
     }
 
     var currentReasoningMode: AIChatReasoningMode? {
@@ -76,6 +76,7 @@ final class IPadOmnibarReasoningPickerController {
             selectedMode: currentReasoningMode,
             userTier: store.subscriptionState.userTier,
             freeTrialEligibility: store.freeTrialEligibility,
+            allowsSubscriptionUpsell: store.allowsSubscriptionUpsell,
             onSelect: onSelect
         )
     }

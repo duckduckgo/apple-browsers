@@ -105,7 +105,6 @@ final class FeedbackViewController: NSViewController {
         static let disclaimerHeight: CGFloat = 75
         static let feedbackHelpsHeight: CGFloat = 28
         static let thankYouImageSide: CGFloat = 96
-        static let closeButtonSide: CGFloat = 20
     }
 
     private func makeDialogButton(title: String, action: Selector) -> NSButton {
@@ -138,20 +137,7 @@ final class FeedbackViewController: NSViewController {
 
         titleLabel = makeCenteredTitleLabel("")
 
-        // Hidden in the storyboard and never shown from code; kept so the layout matches.
-        let headerCloseButton = NSButton(frame: .zero)
-        headerCloseButton.translatesAutoresizingMaskIntoConstraints = false
-        headerCloseButton.isHidden = true
-        headerCloseButton.setButtonType(.momentaryPushIn)
-        headerCloseButton.isBordered = false
-        headerCloseButton.bezelStyle = .shadowlessSquare
-        headerCloseButton.image = .close
-        headerCloseButton.imagePosition = .imageOnly
-        headerCloseButton.imageScaling = .scaleProportionallyUpOrDown
-        headerCloseButton.alignment = .center
-
         headerView.addSubview(titleLabel)
-        headerView.addSubview(headerCloseButton)
 
         let separator = NSBox()
         separator.translatesAutoresizingMaskIntoConstraints = false
@@ -301,11 +287,6 @@ final class FeedbackViewController: NSViewController {
             titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             titleLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: LayoutConstants.inset),
             headerView.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: LayoutConstants.inset),
-
-            headerCloseButton.widthAnchor.constraint(equalToConstant: LayoutConstants.closeButtonSide),
-            headerCloseButton.heightAnchor.constraint(equalToConstant: LayoutConstants.closeButtonSide),
-            headerCloseButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 8),
-            headerCloseButton.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 8),
 
             separator.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             view.trailingAnchor.constraint(equalTo: separator.trailingAnchor),

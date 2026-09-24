@@ -609,7 +609,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             let showStart = recordToUse.lastShown ?? currentDate
             let deadline = showStart.addingTimeInterval(interval)
             timeoutDeadline = deadline
-            let remaining = max(0, deadline.timeIntervalSince(currentDate))
+            let remaining = min(interval, max(0, deadline.timeIntervalSince(currentDate)))
             let flag = TimedFlag(queue: stateQueue, clearAfter: remaining)
             flag.set { [weak self] in
                 self?.handleTimeout(promoId: promoId)

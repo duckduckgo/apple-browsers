@@ -866,6 +866,81 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertNotNil(model.authorizationQuery)
     }
 
+    func testWhenPopupsDefaultChangesFromNeverAllowToAskThenNextRequestPromptsWithoutReload() {
+        permissionManagerMock.defaultDecisions = [.popups: .deny]
+        webView.urlValue = URL.duckDuckGo
+        model.permissions([.popups], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+        XCTAssertEqual(model.permissions.popups, .denied)
+        XCTAssertNil(model.authorizationQuery)
+
+        permissionManagerMock.defaultDecisions = [.popups: .ask]
+        model.permissions([.popups], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+
+        XCTAssertNotNil(model.authorizationQuery)
+    }
+
+    func testWhenCameraDefaultChangesFromNeverAllowToAskThenNextRequestPromptsWithoutReload() {
+        permissionManagerMock.defaultDecisions = [.camera: .deny]
+        webView.urlValue = URL.duckDuckGo
+        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+        XCTAssertEqual(model.permissions.camera, .denied)
+        XCTAssertNil(model.authorizationQuery)
+
+        permissionManagerMock.defaultDecisions = [.camera: .ask]
+        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+
+        XCTAssertNotNil(model.authorizationQuery)
+    }
+
+    func testWhenDefaultStaysNeverAllowThenRepeatedRequestIsDeniedWithoutAQuery() {
+        permissionManagerMock.defaultDecisions = [.camera: .deny]
+        webView.urlValue = URL.duckDuckGo
+        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+
+        var grantedResult: Bool?
+        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (granted: Bool) in
+            grantedResult = granted
+        }
+
+        XCTAssertEqual(grantedResult, false)
+        XCTAssertNil(model.authorizationQuery)
+        XCTAssertEqual(model.permissions.camera, .denied)
+    }
+
+    func testWhenUserDeniesPromptAfterDefaultChangedToAskThenRepeatedRequestIsDeniedWithoutAQuery() {
+        permissionManagerMock.defaultDecisions = [.camera: .deny]
+        webView.urlValue = URL.duckDuckGo
+        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+        permissionManagerMock.defaultDecisions = [.camera: .ask]
+        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+        model.authorizationQuery?.handleDecision(grant: false)
+        XCTAssertNil(model.authorizationQuery)
+
+        var grantedResult: Bool?
+        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (granted: Bool) in
+            grantedResult = granted
+        }
+
+        XCTAssertEqual(grantedResult, false)
+        XCTAssertNil(model.authorizationQuery, "A denial the user chose should stand until the page reloads")
+    }
+
+    func testWhenSiteIsSavedAsNeverAllowAndDefaultChangesToAskThenRequestIsStillDenied() {
+        permissionManagerMock.defaultDecisions = [.camera: .deny]
+        permissionManagerMock.setPermission(.deny, forDomain: URL.duckDuckGo.host!, permissionType: .camera)
+        webView.urlValue = URL.duckDuckGo
+        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+
+        permissionManagerMock.defaultDecisions = [.camera: .ask]
+        var grantedResult: Bool?
+        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (granted: Bool) in
+            grantedResult = granted
+        }
+
+        XCTAssertEqual(grantedResult, false)
+        XCTAssertNil(model.authorizationQuery)
+    }
+
     func testWhenDefaultIsNeverAllowThenCameraIsDeniedWithoutAQueryAndNothingIsPersisted() {
         permissionManagerMock.defaultDecisions = [.camera: .deny]
         webView.urlValue = URL.duckDuckGo

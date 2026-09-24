@@ -54,6 +54,10 @@ final class PermissionModel {
     /// Holds the set of permissions the user manually removed (to avoid adding them back via updatePermissions)
     private var removedPermissions = Set<PermissionType>()
 
+    /// Permissions denied on the current page only because their category default was "Never allow".
+    /// They are re-checked against the current default on the next request, so changing the default applies without a reload.
+    private var deniedByCategoryDefault = Set<PermissionType>()
+
     weak var webView: WKWebView? {
         didSet {
             guard let webView = webView else { return }
@@ -125,6 +129,7 @@ final class PermissionModel {
         }
         authorizationQueries = []
         removedPermissions.removeAll()
+        deniedByCategoryDefault.removeAll()
         clearPermissionsNeedReload()
     }
 
@@ -428,7 +433,8 @@ final class PermissionModel {
                 switch state {
                 // deny if already denied during current page being displayed
                 case .denied, .revoking:
-                    grant = .deny
+                    // A denial that only came from the category default follows that default if it has changed since
+                    grant = deniedByCategoryDefault.contains(permission) ? .ask : .deny
                 // ask otherwise
                 case .disabled, .requested, .active, .inactive, .paused, .reloading:
                     grant = .ask
@@ -495,6 +501,8 @@ final class PermissionModel {
                 // Fire event for view layer to show informational popover
                 permissionBlockedBySystem.send((domain: domain, permissionType: permissions.first!))
             } else {
+                // Once the user is asked, their answer replaces the default's denial for the rest of the page
+                deniedByCategoryDefault.subtract(permissions)
                 self.queryAuthorization(for: permissions, domain: domain, url: url,
                                         isSystemPermissionDisabled: false,
                                         decisionHandler: wrappedDecisionHandler)
@@ -504,6 +512,10 @@ final class PermissionModel {
         case .some(false):
             wrappedDecisionHandler(false)
             for permission in permissions {
+                if !permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permission),
+                   permissionManager.permission(forDomain: domain, permissionType: permission) == .deny {
+                    deniedByCategoryDefault.insert(permission)
+                }
                 self.permissions[permission].denied()
             }
         }

@@ -85,6 +85,7 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
                 self?.onActionSelected?(action)
             }
             stackView.addArrangedSubview(chipView)
+            chipView.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor).isActive = true
         }
     }
 

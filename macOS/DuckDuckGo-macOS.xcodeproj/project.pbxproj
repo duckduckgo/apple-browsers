@@ -2213,8 +2213,6 @@
 		7B5A23692C468233007213AC /* ExcludedDomainsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B5A23672C468233007213AC /* ExcludedDomainsViewController.swift */; };
 		7B5A236F2C46A116007213AC /* ExcludedDomainsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B5A236E2C46A116007213AC /* ExcludedDomainsModel.swift */; };
 		7B5A23702C46A116007213AC /* ExcludedDomainsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B5A236E2C46A116007213AC /* ExcludedDomainsModel.swift */; };
-		7B5A23752C46A4A8007213AC /* ExcludedDomains.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7B5A23742C46A4A8007213AC /* ExcludedDomains.storyboard */; };
-		7B5A23762C46A4A8007213AC /* ExcludedDomains.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7B5A23742C46A4A8007213AC /* ExcludedDomains.storyboard */; };
 		7B60AFFA2C511B65008E32A3 /* VPNUIActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B60AFF92C511B65008E32A3 /* VPNUIActionHandler.swift */; };
 		7B60AFFB2C511C68008E32A3 /* VPNUIActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B60AFF92C511B65008E32A3 /* VPNUIActionHandler.swift */; };
 		7B60AFFE2C514269008E32A3 /* VPNURLEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B60AFFC2C514260008E32A3 /* VPNURLEventHandler.swift */; };
@@ -6105,7 +6103,6 @@
 		7B5886382EAFEF310079F8B1 /* SparkleDebugHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleDebugHelper.swift; sourceTree = "<group>"; };
 		7B5A23672C468233007213AC /* ExcludedDomainsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExcludedDomainsViewController.swift; sourceTree = "<group>"; };
 		7B5A236E2C46A116007213AC /* ExcludedDomainsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcludedDomainsModel.swift; sourceTree = "<group>"; };
-		7B5A23742C46A4A8007213AC /* ExcludedDomains.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = ExcludedDomains.storyboard; sourceTree = "<group>"; };
 		7B60AFF92C511B65008E32A3 /* VPNUIActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUIActionHandler.swift; sourceTree = "<group>"; };
 		7B60AFFC2C514260008E32A3 /* VPNURLEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNURLEventHandler.swift; sourceTree = "<group>"; };
 		7B60B0002C514541008E32A3 /* VPNUIActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUIActionHandler.swift; sourceTree = "<group>"; };
@@ -10307,7 +10304,6 @@
 		7B5A236D2C46A0DA007213AC /* ExcludedDomains */ = {
 			isa = PBXGroup;
 			children = (
-				7B5A23742C46A4A8007213AC /* ExcludedDomains.storyboard */,
 				7B5A23672C468233007213AC /* ExcludedDomainsViewController.swift */,
 				7B5A236E2C46A116007213AC /* ExcludedDomainsModel.swift */,
 				7B7F5D202C526CE600826256 /* AddExcludedDomainView.swift */,
@@ -15092,7 +15088,6 @@
 				371C3DF02FE40ADF003D31C1 /* permissions-inspector.html in Resources */,
 				371C3DF32FE40ADF003D31C1 /* permissions-inspector.js in Resources */,
 				3706FCD0293F65D500E42796 /* BookmarksBarCollectionViewItem.xib in Resources */,
-				7B5A23762C46A4A8007213AC /* ExcludedDomains.storyboard in Resources */,
 				B57B84CD3013AFB20017774A /* 02_Fire_rebranded.json in Resources */,
 				84C96E482CF9BB6400A80A01 /* malwareFilterSet.json in Resources */,
 				84C96E492CF9BB6400A80A01 /* malwareHashPrefixes.json in Resources */,
@@ -15355,7 +15350,6 @@
 				371C3DF12FE40ADF003D31C1 /* permissions-inspector.html in Resources */,
 				371C3DF42FE40ADF003D31C1 /* permissions-inspector.js in Resources */,
 				4BE5336B286912D40019DBFD /* BookmarksBarCollectionViewItem.xib in Resources */,
-				7B5A23752C46A4A8007213AC /* ExcludedDomains.storyboard in Resources */,
 				B57B84CE3013AFB20017774A /* 02_Fire_rebranded.json in Resources */,
 				84C96E462CF9BB6400A80A01 /* malwareFilterSet.json in Resources */,
 				84C96E472CF9BB6400A80A01 /* malwareHashPrefixes.json in Resources */,

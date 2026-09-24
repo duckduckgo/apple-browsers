@@ -50,7 +50,6 @@ jobs:
     env:
       RUNS_ON: image:osx-tahoe-26,ui-tests # keep this in sync with runs-on above
       RUNNER_NAME: image-osx-tahoe-26,ui-tests # artifact names cannot contain colons
-      XCODE_VERSION: "26.6"
       OS_VERSION: "26"
 
     timeout-minutes: 60
@@ -139,8 +138,6 @@ jobs:
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
-      with:
-        xcode-version: ${{ env.XCODE_VERSION }}
 
     - name: Configure system logging
       working-directory: SharedPackages/BrowserServicesKit
@@ -218,6 +215,7 @@ jobs:
         set -o pipefail && xcodebuild test-without-building \
           -scheme "macOS Performance Tests CI" \
           -derivedDataPath DerivedData \
+          -resultBundlePath "DerivedData/Logs/Test/macOS-Performance-Tests.xcresult" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
         | tee -a xcodebuild.log \
@@ -227,9 +225,9 @@ jobs:
       if: always()
       working-directory: macOS
       run: |
-        XCRESULT_PATH=$(find DerivedData/Logs/Test -name "*.xcresult" | head -1)
-        if [[ -z "$XCRESULT_PATH" ]]; then
-          echo "No .xcresult bundle found"
+        XCRESULT_PATH="DerivedData/Logs/Test/macOS-Performance-Tests.xcresult"
+        if [[ ! -d "$XCRESULT_PATH" ]]; then
+          echo "No .xcresult bundle found at $XCRESULT_PATH"
           exit 1
         fi
 

@@ -477,7 +477,7 @@ class MainViewCoordinator {
         setAddressBarTopActive(false)
         setAddressBarBottomActive(true)
         setNavBarContainerBottomToToolbar()
-        constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
+        constraints.navigationBarContainerHeight.constant = UnifiedToggleInputView.aiTabCollapsedFooterHeight
         unifiedToggleInputContainer.isHidden = false
         unifiedToggleInputContainer.alpha = 1
         updateUnifiedToggleInputColors(inputView: nil)

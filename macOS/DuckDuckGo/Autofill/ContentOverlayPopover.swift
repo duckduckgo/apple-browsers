@@ -16,15 +16,20 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Cocoa
 import Common
 import FoundationExtensions
-import WebKit
-import BrowserServicesKit
 import PrivacyConfig
+import WebKit
 
 @MainActor
 public final class ContentOverlayPopover: NSObject {
+
+    private enum Constants {
+        /// Starting size only; the overlay resizes itself via `requestResizeToSize(_:)`.
+        static let initialContentRect = NSRect(x: 0, y: 0, width: 480, height: 270)
+    }
 
     public var zoomFactor: CGFloat?
     public weak var currentTabView: NSView?
@@ -40,22 +45,29 @@ public final class ContentOverlayPopover: NSObject {
         tld: TLD,
         pinningManager: PinningManager
     ) {
-        let storyboard = NSStoryboard(name: "ContentOverlay", bundle: Bundle.main)
-        viewController = storyboard.instantiateController(identifier: "ContentOverlayViewController") { coder in
-            ContentOverlayViewController(
-                coder: coder,
-                privacyConfigurationManager: privacyConfigurationManager,
-                webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                featureFlagger: featureFlagger,
-                tld: tld,
-                pinningManager: pinningManager
-            )
-        }
-        windowController = storyboard.instantiateController(identifier: "ContentOverlayWindowController")
+        viewController = ContentOverlayViewController(
+            privacyConfigurationManager: privacyConfigurationManager,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+            featureFlagger: featureFlagger,
+            tld: tld,
+            pinningManager: pinningManager
+        )
+
+        let window = NSWindow(contentRect: Constants.initialContentRect,
+                              styleMask: [.fullSizeContentView],
+                              backing: .buffered,
+                              defer: true)
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.autorecalculatesKeyViewLoop = false
+        window.isRestorable = false
+        window.hasShadow = true
+        window.backgroundColor = .clear
+        window.acceptsMouseMovedEvents = true
+        window.ignoresMouseEvents = false
+
+        windowController = NSWindowController(window: window)
         windowController.contentViewController = viewController
-        windowController.window?.hasShadow = true
-        windowController.window?.acceptsMouseMovedEvents = true
-        windowController.window?.ignoresMouseEvents = false
 
         viewController.view.wantsLayer = true
         if let layer = viewController.view.layer {
@@ -64,9 +76,6 @@ public final class ContentOverlayPopover: NSObject {
             layer.borderWidth = 0.5
             layer.borderColor = CGColor(gray: 0, alpha: 0.3) // Looks a little lighter than 0.2 in the CSS
         }
-        viewController.view.window?.backgroundColor = .clear
-        viewController.view.window?.acceptsMouseMovedEvents = true
-        viewController.view.window?.ignoresMouseEvents = false
         self.currentTabView = currentTabView
     }
 

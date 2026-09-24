@@ -2475,6 +2475,22 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(separatorCount(items), 0, "Nothing to divide off — there is no second section")
     }
 
+    /// A row the user's plan can't pick has nothing to offer in a menu about switching model.
+    func testModelPickerItems_hidesGatedModels_dropsTheGatedSection() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free", "plus", "pro"]),
+            makeRemoteModel(id: "plus-only", accessTier: ["plus"]),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ], tier: nil, trialEligible: true)
+
+        let items = controller.modelPickerItems(selectedModelId: nil, hidesGatedModels: true)
+
+        XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a"])
+        XCTAssertTrue(gatedRows(items).isEmpty)
+        XCTAssertEqual(separatorCount(items), 0, "Nothing to divide off — there is no second section")
+    }
+
     /// The toolbar's own picker is unchanged: it still offers everything, gated section included.
     func testModelPickerItems_withoutTheFreeOnlyFlag_stillOffersPaidModels() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true

@@ -74,24 +74,51 @@ enum NativeMessagingHostManifestLocator {
     /// file per browser it knows, and no app writes a DuckDuckGo file yet. Bitwarden, for
     /// example, writes a Chrome file and a Mozilla file. Without the fallbacks the user must
     /// copy a file by hand.
+    ///
+    /// A companion app may also install its manifest for all users, under `/Library` rather than
+    /// the user's own Library. macOS does this for iCloud Passwords, whose manifest lives in the
+    /// system-level Chrome directory, `/Library/Google/Chrome/NativeMessagingHosts`. Chrome searches
+    /// the user-level directory first and the system-level one second, so the system-level list,
+    /// in the same browser order, follows the user-level one. Several Chrome-family browsers keep
+    /// their system-level directory outside `/Library/Application Support`.
+    ///
+    /// The browser fallbacks, at either level, go away once companion apps write a DuckDuckGo file.
     static var searchDirectories: [URL] {
-        let library = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
-        guard let applicationSupport = library?.appendingPathComponent("Application Support") else {
-            return []
+        var directories: [URL] = []
+
+        if let userLibrary = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first {
+            let userRelativePaths = [
+                "Application Support/DuckDuckGo",
+                "Application Support/Google/Chrome",
+                "Application Support/Chromium",
+                "Application Support/Microsoft Edge",
+                "Application Support/BraveSoftware/Brave-Browser",
+                "Application Support/Vivaldi",
+                "Application Support/Mozilla",
+            ]
+            directories += hostDirectories(in: userLibrary, relativePaths: userRelativePaths)
         }
 
-        let relativePaths = [
-            "DuckDuckGo",
-            "Google/Chrome",
-            "Chromium",
-            "Microsoft Edge",
-            "BraveSoftware/Brave-Browser",
-            "Vivaldi",
-            "Mozilla",
-        ]
+        // The local domain's Library is `/Library`.
+        if let systemLibrary = FileManager.default.urls(for: .libraryDirectory, in: .localDomainMask).first {
+            let systemRelativePaths = [
+                "Application Support/DuckDuckGo",
+                "Google/Chrome",
+                "Application Support/Chromium",
+                "Microsoft/Edge",
+                "Application Support/BraveSoftware/Brave-Browser",
+                "Application Support/Vivaldi",
+                "Application Support/Mozilla",
+            ]
+            directories += hostDirectories(in: systemLibrary, relativePaths: systemRelativePaths)
+        }
 
-        return relativePaths.map {
-            applicationSupport
+        return directories
+    }
+
+    private static func hostDirectories(in library: URL, relativePaths: [String]) -> [URL] {
+        relativePaths.map {
+            library
                 .appendingPathComponent($0)
                 .appendingPathComponent("NativeMessagingHosts")
         }

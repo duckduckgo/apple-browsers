@@ -123,6 +123,45 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.webNavigation.onCommitted === originalOnCommitted")
     }
 
+    /// iCloud Passwords registers the first and third of these unguarded at the top level of its
+    /// background script; the rest are the same measured-missing set.
+    private static let restoredEventPaths = [
+        "webNavigation.onHistoryStateUpdated",
+        "webNavigation.onReferenceFragmentUpdated",
+        "webNavigation.onTabReplaced",
+        "tabs.onZoomChange",
+        "runtime.onSuspendCanceled",
+        "runtime.onUpdateAvailable",
+        "runtime.onRestartRequired"
+    ]
+
+    func testWhenLifecycleAndNavigationEventsAreMissing_ThenEachBecomesAListenerObject() throws {
+        try evaluateStubScript()
+
+        for path in Self.restoredEventPaths {
+            try assertTrue("typeof chrome.\(path).addListener === 'function'")
+            try assertTrue("chrome.\(path).hasListener() === false")
+        }
+        try assertTrue("chrome.webNavigation === originalWebNavigation")
+        try assertTrue("chrome.tabs === originalTabs")
+        try assertTrue("chrome.runtime === originalRuntime")
+    }
+
+    func testWhenLifecycleOrNavigationEventExists_ThenItIsNotReplaced() throws {
+        let assignments = Self.restoredEventPaths.enumerated().map { index, path in
+            "chrome.\(path) = { addListener: function() {}, marker: \(index) };"
+        }
+        context.evaluateScript(assignments.joined(separator: "\n"))
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        for (index, path) in Self.restoredEventPaths.enumerated() {
+            try assertTrue("chrome.\(path).marker === \(index)")
+            try assertTrue("chrome.\(path).hasListener === undefined")
+        }
+    }
+
     func testWhenSubNamespaceIsMissing_ThenItIsStubbedAndSiblingsAreUntouched() throws {
         try evaluateStubScript()
 
@@ -788,6 +827,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("consoleMessages[0].indexOf('[DuckDuckGo]') === 0")
         try assertTrue("consoleMessages[0].indexOf('notifications') !== -1")
         try assertTrue("consoleMessages[0].indexOf('webNavigation.onCreatedNavigationTarget') !== -1")
+        try assertTrue("consoleMessages[0].indexOf('webNavigation.onHistoryStateUpdated') !== -1")
         try assertTrue("consoleMessages[0].indexOf('storage.managed') !== -1")
         try assertTrue("consoleMessages[0].indexOf('clients') !== -1")
     }

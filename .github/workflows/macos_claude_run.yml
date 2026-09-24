@@ -1,0 +1,145 @@
+name: macOS - Run Claude Code on a Build
+
+# Manually triggered: checks out a branch, builds the macOS browser, then runs Claude Code
+# with the given prompt against that checkout and build. Anything Claude writes to
+# `claude-output/` (screenshots, screen recordings, reports) is uploaded as a workflow artifact.
+
+defaults:
+  run:
+    working-directory: macOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to check out and build"
+        required: true
+        type: string
+        default: main
+      prompt:
+        description: "Prompt for Claude Code. Ask for the output you want, e.g. a screenshot, a screen recording, or a report."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  claude-run:
+    name: Build and run Claude Code
+    runs-on: [image:osx-tahoe-26, general-purpose]
+    timeout-minutes: 120
+
+    env:
+      APP_PATH: ${{ github.workspace }}/macOS/DerivedData/Build/Products/CI/DuckDuckGo.app
+      OUTPUT_DIR: ${{ github.workspace }}/claude-output
+
+    steps:
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.10.0
+      with:
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+    - name: Check out the code
+      uses: actions/checkout@v6
+      with:
+        submodules: recursive
+        ref: ${{ inputs.branch }}
+
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
+
+    - name: Sync code signing assets
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      run: bundle exec fastlane sync_signing_ci
+
+    - name: Set cache key hash
+      run: |
+        has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
+        if [[ "$has_only_tags" == "true" ]]; then
+          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> "$GITHUB_ENV"
+        else
+          echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
+        fi
+
+    - name: Cache SPM
+      if: env.cache_key_hash
+      uses: actions/cache@v5
+      with:
+        path: macOS/DerivedData/SourcePackages
+        key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
+        restore-keys: |
+          ${{ runner.os }}-macos-
+
+    - name: Select Xcode
+      uses: ./.github/actions/select-xcode-version
+
+    - name: Build the browser
+      run: |
+        set -o pipefail && xcodebuild build \
+          -scheme "macOS Browser" \
+          -derivedDataPath "DerivedData" \
+          -configuration "CI" \
+          -skipPackagePluginValidation -skipMacroValidation \
+          ONLY_ACTIVE_ARCH=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+          | tee xcodebuild.log \
+          | xcbeautify
+        test -d "$APP_PATH" || { echo "::error::App not found at $APP_PATH"; exit 1; }
+        mkdir -p "$OUTPUT_DIR"
+
+    - name: Run Claude Code
+      id: claude
+      uses: anthropics/claude-code-action@v1
+      with:
+        anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        claude_args: --allowedTools "Bash,Read,Write,Edit,Glob,Grep" --max-turns 100
+        prompt: |
+          You are running in a GitHub Actions job on a macOS runner.
+          - Repository checkout: ${{ github.workspace }} (branch `${{ inputs.branch }}`)
+          - The macOS browser is already built at: ${{ env.APP_PATH }}
+            (Xcode build log: ${{ github.workspace }}/macOS/xcodebuild.log, DerivedData: ${{ github.workspace }}/macOS/DerivedData)
+          - Launch it with `open "${{ env.APP_PATH }}"`. Useful tools: `screencapture` (screenshots, `-v` for video), `osascript`.
+          - Save everything you produce (images, videos, reports, logs) to ${{ env.OUTPUT_DIR }}. That directory is uploaded as the run's artifact; nothing else is kept.
+          - If you write a summary, save it as ${{ env.OUTPUT_DIR }}/report.md; it is also shown on the run's summary page.
+
+          Task:
+          ${{ inputs.prompt }}
+
+    - name: Add report to job summary
+      if: always()
+      run: |
+        if [[ -f "$OUTPUT_DIR/report.md" ]]; then
+          cat "$OUTPUT_DIR/report.md" >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    - name: Copy Claude transcript to output
+      if: always() && steps.claude.outputs.execution_file
+      run: cp "${{ steps.claude.outputs.execution_file }}" "$OUTPUT_DIR/claude-transcript.json" || true
+
+    - name: Upload output
+      if: always()
+      uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: claude-output-${{ github.run_id }}
+        path: claude-output
+        retention-days: 14
+
+    - name: Upload build log on failure
+      if: failure()
+      uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: claude-run-xcodebuild-log-${{ github.run_id }}
+        path: macOS/xcodebuild.log
+        retention-days: 7

@@ -2741,6 +2741,101 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         XCTAssertNil(sessionState.searchQuickActionQuery)
     }
+
+    // MARK: - A search is not attached
+
+    private static let searchURL = "https://duckduckgo.com/?q=tokamak"
+
+    func testASearchIsNotCollectedForAttaching() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        arrangeChat(onPage: Self.searchURL)
+
+        XCTAssertFalse(sessionState.shouldTriggerAutoCollect())
+    }
+
+    func testAnOrdinaryPageIsStillCollectedForAttaching() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        arrangeChat(onPage: "https://example.com/reactor")
+
+        XCTAssertTrue(sessionState.shouldTriggerAutoCollect())
+    }
+
+    func testASearchIsNotOfferedAsAnAttachment() {
+        arrangeOfferConditions()
+        sessionState.currentPageURL = { URL(string: Self.searchURL) }
+
+        XCTAssertFalse(sessionState.shouldOfferPageContext(for: URL(string: Self.searchURL)))
+
+        sessionState.updateContext(makeTestContext(url: Self.searchURL))
+
+        XCTAssertNil(sessionState.suggestedContext)
+    }
+
+    func testASearchThatStillArrivesAsContextIsNotAttached() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        arrangeChat(onPage: Self.searchURL)
+
+        sessionState.updateContext(makeTestContext(url: Self.searchURL))
+
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertNil(sessionState.intendedAttachedContext)
+    }
+
+    /// The chip follows the page on screen, so it cannot keep claiming the page the search replaced.
+    func testTheAutoAttachedPageIsDroppedWhenASearchArrives() {
+        var deliveredNil = false
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(let context, _) = effect, context == nil { deliveredNil = true }
+            }
+            .store(in: &cancellables)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        arrangeChat(onPage: "https://example.com/reactor")
+        sessionState.updateContext(makeTestContext(url: "https://example.com/reactor"))
+        XCTAssertNotNil(sessionState.intendedAttachedContext)
+
+        sessionState.currentPageURL = { URL(string: Self.searchURL) }
+        sessionState.refreshForCurrentPage()
+
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertTrue(deliveredNil, "the chip and the frontend have to be told the page went")
+        XCTAssertFalse(sessionState.userDowngradedToPlaceholder, "the user did not remove it")
+    }
+
+    /// Pinned by hand with auto-attach off: the user chose that page, and a search does not undo it.
+    func testAPinnedPageSurvivesASearch() {
+        arrangeOfferConditions()
+        sessionState.attachContextFromSuggestionTap(makeTestContext(url: "https://example.com/reactor"))
+
+        sessionState.currentPageURL = { URL(string: Self.searchURL) }
+        sessionState.refreshForCurrentPage()
+
+        XCTAssertEqual(sessionState.intendedAttachedContext?.contextData.url, "https://example.com/reactor")
+    }
+
+    /// Asking about the page is explicit, so it attaches the search results like any other page.
+    func testAskingAboutTheSearchPageStillAttachesIt() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        arrangeChat(onPage: Self.searchURL)
+
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(url: Self.searchURL))
+
+        XCTAssertEqual(sessionState.intendedAttachedContext?.contextData.url, Self.searchURL)
+    }
+
+    /// The chip belongs to a chat under way; before one, a search attaches as it always did.
+    func testASearchIsStillAttachedBeforeAChatStarts() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.currentPageURL = { URL(string: Self.searchURL) }
+        sessionState.updateUnifiedToggleInputActive(true)
+
+        XCTAssertTrue(sessionState.shouldTriggerAutoCollect())
+
+        sessionState.updateContext(makeTestContext(url: Self.searchURL))
+
+        XCTAssertEqual(sessionState.intendedAttachedContext?.contextData.url, Self.searchURL)
+    }
 }
 
 // MARK: - Mock Pixel Handler

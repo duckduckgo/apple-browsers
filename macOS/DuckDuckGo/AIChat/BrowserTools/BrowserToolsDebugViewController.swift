@@ -49,10 +49,9 @@ final class BrowserToolsDebugViewController: NSViewController {
     private let targetLabel = NSTextField(labelWithString: "")
     private let toolPicker = NSPopUpButton(frame: .zero, pullsDown: false)
     private let argumentsField = NSTextField(string: "{}")
-    private let promptsStack = NSStackView()
     private let logStack = NSStackView()
     private let logScroll = NSScrollView()
-    private var promptRows: [String: NSView] = [:]
+    private var promptEntries: [String: LogEntryView] = [:]
 
     init(windowControllersManager: WindowControllersManagerProtocol,
          service: AIChatBrowserToolsService = NSApp.delegateTyped.aiChatBrowserToolsService,
@@ -205,29 +204,28 @@ final class BrowserToolsDebugViewController: NSViewController {
         ("Cancel", MCPElicitationResult(action: .cancel))
     ]
 
-    private func addPromptRow(for params: MCPElicitationCreateParams) {
-        let label = NSTextField(labelWithString: "\(params.message)  [\(params.id.prefix(8))]")
-        label.lineBreakMode = .byTruncatingTail
-        var views: [NSView] = [label]
-        for answer in Self.answers {
+    /// The prompt is a log entry like any other, in sequence, with its answers in the header so it
+    /// cannot be missed and the history shows what was chosen.
+    private func addPromptEntry(for params: MCPElicitationCreateParams) {
+        let buttons = Self.answers.map { answer -> NSView in
             let button = PromptButton(title: answer.title, target: self, action: #selector(answerPrompt(_:)))
             button.bezelStyle = .rounded
             button.controlSize = .small
             button.promptID = params.id
             button.result = answer.result
-            views.append(button)
+            return button
         }
-        let row = NSStackView(views: views)
-        row.orientation = .horizontal
-        row.spacing = 6
-        promptsStack.addArrangedSubview(row)
-        promptRows[params.id] = row
+        let entry = appendToLog(summary: "⇠ elicitation/create  \(params.message)",
+                                detail: prettyPrinted(params),
+                                accessories: buttons,
+                                highlighted: true)
+        promptEntries[params.id] = entry
     }
 
     /// Goes through `elicitation/response` exactly as the page would, so the answer exercises the
     /// same decode, correlation and persistence.
     @objc private func answerPrompt(_ sender: PromptButton) {
-        removePromptRow(id: sender.promptID)
+        resolvePromptEntry(id: sender.promptID, outcome: sender.title)
         var result: [String: Any] = ["action": sender.result.action]
         if let choice = sender.result.content?["choice"]?.stringValue {
             result["content"] = ["choice": choice]
@@ -235,17 +233,15 @@ final class BrowserToolsDebugViewController: NSViewController {
         run("elicitation/response", params: ["id": sender.promptID, "result": result])
     }
 
-    private func removePromptRow(id: String) {
-        guard let row = promptRows.removeValue(forKey: id) else { return }
-        promptsStack.removeArrangedSubview(row)
-        row.removeFromSuperview()
+    private func resolvePromptEntry(id: String, outcome: String) {
+        promptEntries.removeValue(forKey: id)?.resolve(outcome: outcome)
     }
 
-    /// Drops rows whose prompt already resolved — timed out, or answered from elsewhere.
-    private func pruneStalePromptRows() {
+    /// Prompts that resolved without us — timed out, or answered from elsewhere.
+    private func pruneStalePromptEntries() {
         let pending = Set(service.elicitations.pendingPrompts.map(\.id))
-        for id in promptRows.keys where !pending.contains(id) {
-            removePromptRow(id: id)
+        for id in promptEntries.keys where !pending.contains(id) {
+            resolvePromptEntry(id: id, outcome: "expired")
         }
     }
 
@@ -274,7 +270,7 @@ final class BrowserToolsDebugViewController: NSViewController {
             let response = await invoke(params, SyntheticUserScriptMessage(name: method, body: params, webView: webView))
             let json = response.flatMap(Self.jsonObject) ?? [:]
             appendToLog(summary: "← \(method)  \(Self.summary(of: json, for: method))", detail: prettyPrinted(Self.displayForm(of: json)))
-            pruneStalePromptRows()
+            pruneStalePromptEntries()
             refreshTarget()
         }
     }
@@ -347,12 +343,18 @@ final class BrowserToolsDebugViewController: NSViewController {
         return String(describing: value)
     }
 
-    private func appendToLog(summary: String, detail: String?, expanded: Bool = false) {
-        let entry = LogEntryView(summary: summary, detail: detail, expanded: expanded)
+    @discardableResult
+    private func appendToLog(summary: String,
+                             detail: String?,
+                             expanded: Bool = false,
+                             accessories: [NSView] = [],
+                             highlighted: Bool = false) -> LogEntryView {
+        let entry = LogEntryView(summary: summary, detail: detail, expanded: expanded, accessories: accessories, highlighted: highlighted)
         logStack.addArrangedSubview(entry)
         entry.widthAnchor.constraint(equalTo: logStack.widthAnchor).isActive = true
         view.layoutSubtreeIfNeeded()
         logScroll.contentView.scroll(to: NSPoint(x: 0, y: max(0, logStack.frame.height - logScroll.contentSize.height)))
+        return entry
     }
 
     // MARK: - Layout
@@ -389,10 +391,6 @@ final class BrowserToolsDebugViewController: NSViewController {
             argumentsField.widthAnchor.constraint(greaterThanOrEqualToConstant: 140)
         ])
 
-        promptsStack.orientation = .vertical
-        promptsStack.alignment = .leading
-        promptsStack.spacing = 6
-
         logStack.orientation = .vertical
         logStack.alignment = .leading
         logStack.spacing = 2
@@ -414,7 +412,7 @@ final class BrowserToolsDebugViewController: NSViewController {
         targetLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         targetLabel.lineBreakMode = .byTruncatingMiddle
 
-        let stack = NSStackView(views: [targetLabel, buttons, call, promptsStack, logScroll])
+        let stack = NSStackView(views: [targetLabel, buttons, call, logScroll])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 8
@@ -454,8 +452,7 @@ extension BrowserToolsDebugViewController: AIChatBrowserToolsPushing {
 extension BrowserToolsDebugViewController: AIChatElicitationPushing {
 
     func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool {
-        appendToLog(summary: "⇠ elicitation/create  \(params.message)", detail: prettyPrinted(params))
-        addPromptRow(for: params)
+        addPromptEntry(for: params)
         return true
     }
 }
@@ -464,11 +461,20 @@ extension BrowserToolsDebugViewController: AIChatElicitationPushing {
 private final class LogEntryView: NSView {
 
     private let disclosure = NSButton()
+    private let summaryLabel: NSTextField
     private let detailLabel = NSTextField(wrappingLabelWithString: "")
+    private let accessories: [NSView]
 
-    init(summary: String, detail: String?, expanded: Bool) {
+    init(summary: String, detail: String?, expanded: Bool, accessories: [NSView] = [], highlighted: Bool = false) {
+        self.summaryLabel = NSTextField(labelWithString: summary)
+        self.accessories = accessories
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
+        if highlighted {
+            wantsLayer = true
+            layer?.backgroundColor = NSColor.systemYellow.withAlphaComponent(0.18).cgColor
+            layer?.cornerRadius = 4
+        }
 
         disclosure.setButtonType(.pushOnPushOff)
         disclosure.bezelStyle = .disclosure
@@ -478,18 +484,19 @@ private final class LogEntryView: NSView {
         disclosure.target = self
         disclosure.action = #selector(toggle)
 
-        let summaryLabel = NSTextField(labelWithString: summary)
         summaryLabel.font = .monospacedSystemFont(ofSize: 11, weight: .medium)
         summaryLabel.lineBreakMode = .byTruncatingTail
+        summaryLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         detailLabel.stringValue = detail ?? ""
         detailLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         detailLabel.isSelectable = true
         detailLabel.isHidden = !expanded || detail == nil
 
-        let header = NSStackView(views: [disclosure, summaryLabel])
+        let header = NSStackView(views: [disclosure, summaryLabel] + accessories)
         header.orientation = .horizontal
-        header.spacing = 2
+        header.spacing = 4
+        header.setClippingResistancePriority(.defaultLow, for: .horizontal)
         let column = NSStackView(views: [header, detailLabel])
         column.orientation = .vertical
         column.alignment = .leading
@@ -512,6 +519,13 @@ private final class LogEntryView: NSView {
 
     @objc private func toggle() {
         detailLabel.isHidden = disclosure.state != .on
+    }
+
+    /// Swaps the answer buttons for the outcome, so the history reads as a transcript.
+    func resolve(outcome: String) {
+        accessories.forEach { $0.removeFromSuperview() }
+        summaryLabel.stringValue += "  → \(outcome)"
+        layer?.backgroundColor = nil
     }
 }
 

@@ -125,6 +125,8 @@ public struct SitePermissionsSheetView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .daxHeadline()
+            .padding(.leading, Constants.horizontalPadding)
+            .padding(.trailing, Constants.horizontalPadding / 2)
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .frame(maxWidth: .infinity, minHeight: 20, alignment: .leading)
             .accessibilityElement(children: .ignore)

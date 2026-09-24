@@ -457,7 +457,6 @@ extension TabViewController {
     }
 
     private func showSitePermissionGrantAnimation(for permissionTypes: Set<SitePermissionType>) {
-        guard isSitePermissionsEnabled else { return }
         sitePermissionsState.cancelGrantAnimation = { [weak self] in
             guard let self else { return }
             self.delegate?.tabDidCancelSitePermissionAnimation(self)

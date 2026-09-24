@@ -247,7 +247,6 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
     public func dismiss() {
         guard !hasDismissed else { return }
         hasDismissed = true
-        hasCommittedChanges = false
         onDismiss(dismissalState)
     }
 

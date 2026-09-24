@@ -178,8 +178,9 @@ struct DeduplicationSpecTests {
 
         f.endPeriod()
 
-        // No immediate pixel fires: its only parameter reads `reason`, which resolves to nothing.
-        #expect(f.fired == ["dedupProbe_day?count=1"])
+        // One immediate pixel fires for the one delivered event, carrying no `reason` since neither
+        // payload has one.
+        #expect(f.fired == ["dedupProbe_day?count=1", "dedupProbe_immediate"])
     }
 
     // MARK: Navigation resets the page

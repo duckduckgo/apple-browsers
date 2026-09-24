@@ -104,8 +104,8 @@ final class CrashReportPromptViewController: NSViewController {
         view.addSubview(sendButton)
         view.addSubview(dontSendButton)
 
-        // The vertical chain is anchored at the bottom and grows upwards, as it was in the storyboard:
-        // the title label's top edge is intentionally left free.
+        // The vertical chain is anchored at the bottom and grows upwards; the title label's top edge
+        // is intentionally left free.
         NSLayoutConstraint.activate([
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
             view.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: Constants.horizontalInset),

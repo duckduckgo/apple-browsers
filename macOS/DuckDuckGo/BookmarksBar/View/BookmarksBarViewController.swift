@@ -138,9 +138,8 @@ final class BookmarksBarViewController: NSViewController {
 
         viewModel.delegate = self
 
-        let nib = NSNib(nibNamed: "BookmarksBarCollectionViewItem", bundle: .main)
         bookmarksBarCollectionView.setDraggingSourceOperationMask([.copy, .move], forLocal: true)
-        bookmarksBarCollectionView.register(nib, forItemWithIdentifier: BookmarksBarCollectionViewItem.identifier)
+        bookmarksBarCollectionView.register(BookmarksBarCollectionViewItem.self, forItemWithIdentifier: BookmarksBarCollectionViewItem.identifier)
         bookmarksBarCollectionView.allowsMultipleSelection = false
 
         bookmarksBarCollectionView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)

@@ -19,6 +19,8 @@
 import AppKit
 import History
 import PrivacyConfig
+import UniformTypeIdentifiers
+import ZIPFoundation
 
 final class HistoryDebugMenu: NSMenu {
 
@@ -54,6 +56,12 @@ final class HistoryDebugMenu: NSMenu {
             ).withAccessibilityIdentifier("HistoryDebugMenu.populate100slow")
 
             NSMenuItem.separator()
+
+            NSMenuItem(
+                title: "Import Safari History…",
+                action: #selector(importSafariHistory),
+                target: self
+            ).withAccessibilityIdentifier("HistoryDebugMenu.importSafariHistory")
         }
     }
 
@@ -90,6 +98,63 @@ final class HistoryDebugMenu: NSMenu {
                 visitsPerDay = 0
             }
         }
+    }
+
+    @MainActor
+    @objc func importSafariHistory(_ sender: NSMenuItem) {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.zip, .json]
+        panel.message = "Select a Safari export (.zip) or its History.json"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        Task { @MainActor in
+            do {
+                let parseResult = try await Task.detached {
+                    try SafariHistoryImporter.parse(Self.historyJSONData(at: url))
+                }.value
+                let summary = try await SafariHistoryImporter.importVisits(parseResult, into: historyCoordinator)
+                showAlert(title: "Safari History Imported",
+                          message: """
+                          Imported: \(summary.imported)
+                          Already in history: \(summary.alreadyInHistory)
+                          Older than a month: \(summary.tooOld)
+                          Skipped (redirects, failed loads, non-web URLs): \(summary.skipped)
+                          """)
+            } catch {
+                showAlert(title: "Safari History Import Failed", message: "\(error)")
+            }
+        }
+    }
+
+    private static func historyJSONData(at url: URL) throws -> Data {
+        guard url.pathExtension.lowercased() == "zip" else {
+            return try Data(contentsOf: url)
+        }
+
+        let archive = try Archive(url: url, accessMode: .read)
+        // Skip the AppleDouble copies Finder adds under __MACOSX/ when re-zipping.
+        guard let entry = archive.first(where: { entry in
+            let path = entry.path as NSString
+            return entry.type == .file
+                && !entry.path.hasPrefix("__MACOSX/")
+                && path.lastPathComponent.lowercased() == "history.json"
+        }) else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+
+        var data = Data()
+        _ = try archive.extract(entry) { chunk in
+            data.append(chunk)
+        }
+        return data
+    }
+
+    @MainActor
+    private func showAlert(title: String, message: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.runModal()
     }
 
     enum FakeURLsPool {

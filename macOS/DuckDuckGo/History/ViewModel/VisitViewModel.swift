@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import DesignResourcesKitIcons
 import History
 
 final class VisitViewModel {
@@ -53,7 +54,7 @@ final class VisitViewModel {
             return .duckPlayer
         }
 
-        return faviconManager.getCachedFavicon(for: historyEntry.url, sizeCategory: .small)?.image
+        return faviconManager.getCachedFavicon(for: historyEntry.url, sizeCategory: .small)?.image ?? DesignSystemImages.Glyphs.Size16.globe
     }
 
 }

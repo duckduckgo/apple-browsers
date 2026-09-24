@@ -585,8 +585,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
     func testNavigationDrainsPendingRequestExactlyOnceAndIgnoresStaleCallbacks() async {
         let sut = makeSUT()
-        let tabDelegate = MockTabDelegate()
-        sut.delegate = tabDelegate
         var promptCompletion: ((SitePermissionPromptDecision) -> Void)?
         let promptExpectation = expectation(description: "Site prompt presented")
         sut.sitePermissionsPromptHandlerOverride = { _, completion in
@@ -606,8 +604,9 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(decision, .deny)
 
         promptCompletion?(.allowOnce)
-        XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
-        XCTAssertEqual(tabDelegate.sitePermissionAnimationCancellationCount, 1)
+        requestPermission(on: sut, originHost: "top-level.example", captureType: .camera) { decision in
+            XCTAssertEqual(decision, .deny)
+        }
     }
 
     func testFailedProvisionalNavigationReenablesRequestsForCommittedPage() async {

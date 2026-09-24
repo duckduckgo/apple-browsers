@@ -55,7 +55,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         ]
 
         for (reason, expected) in cases {
-            instrumentation.tunnelStarted(reason: reason)
+            startTunnel(reason)
             let data = try XCTUnwrap(wideEvent.started.last as? VPNSessionHealthWideEventData)
 
             XCTAssertEqual(data.startReason, expected)
@@ -80,14 +80,14 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
 
     func testEnablingMidSessionWaitsForNextPhysicalStart() {
         inputs.enabled = false
-        instrumentation.tunnelStarted(reason: .manual)
+        startTunnel(.manual)
         inputs.enabled = true
-        instrumentation.tunnelStarted(reason: .reconnected)
+        startTunnel(.reconnected)
         instrumentation.monitoringStarted()
 
         XCTAssertTrue(wideEvent.started.isEmpty)
 
-        instrumentation.tunnelStarted(reason: .manual)
+        startTunnel(.manual)
 
         XCTAssertEqual(wideEvent.started.count, 1)
     }
@@ -116,7 +116,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertEqual(discarded.completedOutcome(), .success)
 
         instrumentation.tunnelStopped(reason: .userInitiated)
-        instrumentation.tunnelStarted(reason: .manual)
+        startTunnel(.manual)
 
         XCTAssertEqual(wideEvent.started.count, 1)
         XCTAssertEqual(wideEvent.discarded.count, 1)
@@ -130,7 +130,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         let originalEventID = try latestEvent().globalData.id
         for reason in [PacketTunnelProvider.AdapterStartReason.reconnected, .wake, .snoozeEnded] {
             instrumentation.deviceWentToSleep()
-            instrumentation.tunnelStarted(reason: reason)
+            startTunnel(reason)
 
             XCTAssertEqual(try latestEvent().globalData.id, originalEventID)
             XCTAssertFalse(try latestEvent().isPaused)
@@ -142,7 +142,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
 
     func testCallbacksWithoutPhysicalStartAreIgnored() {
         instrumentation.tunnelResumed()
-        instrumentation.tunnelStarted(reason: .wake)
+        startTunnel(.wake)
         instrumentation.monitoringStarted()
         instrumentation.monitoringStopped(isIntentional: false)
         instrumentation.monitoringFailedToStart()
@@ -278,7 +278,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         instrumentation.connectionTestCompleted(.disconnected(failureCount: 1))
         instrumentation.deviceWentToSleep()
         inputs.date = hourStart.addingTimeInterval(10_830)
-        instrumentation.tunnelStarted(reason: .wake)
+        startTunnel(.wake)
 
         XCTAssertEqual(wideEvent.started.count, 1)
         XCTAssertTrue(wideEvent.completions.isEmpty)
@@ -307,7 +307,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
 
     func testPhysicalRestartCompletesPreviousEventWithoutMisclassifyingItAsOrphan() throws {
         startMonitoredSession()
-        instrumentation.tunnelStarted(reason: .onDemand)
+        startTunnel(.onDemand)
 
         XCTAssertEqual(wideEvent.started.count, 2)
         XCTAssertEqual(wideEvent.completions.count, 1)
@@ -324,7 +324,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
             .finalized(for: .stoppedByUser, at: endedAt).event
         wideEvent.startFlow(ended)
 
-        instrumentation.tunnelStarted(reason: .manual)
+        startTunnel(.manual)
 
         XCTAssertEqual(wideEvent.completions.count, 1)
         let recovered = try completedEvent()
@@ -341,7 +341,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
                                                    extensionType: .system)
         wideEvent.startFlow(orphan)
 
-        instrumentation.tunnelStarted(reason: .manual)
+        startTunnel(.manual)
 
         XCTAssertEqual(wideEvent.completions.count, 1)
         let recovered = try completedEvent()
@@ -355,7 +355,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         orphan.lastObservedAt = hourStart.addingTimeInterval(30)
         wideEvent.startFlow(orphan)
         inputs.enabled = false
-        instrumentation.tunnelStarted(reason: .manual)
+        startTunnel(.manual)
 
         XCTAssertEqual(wideEvent.started.count, 1)
         XCTAssertTrue(wideEvent.completions.isEmpty)
@@ -366,7 +366,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertEqual(discarded.endReason, .processDied)
         XCTAssertEqual(discarded.endedAt, orphan.lastObservedAt)
 
-        instrumentation.tunnelStarted(reason: .manual)
+        startTunnel(.manual)
 
         XCTAssertTrue(wideEvent.completions.isEmpty)
         XCTAssertEqual(wideEvent.discarded.count, 1)
@@ -385,7 +385,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         }
         for (expected, reasons) in groups {
             for reason in reasons {
-                instrumentation.tunnelStarted(reason: .manual)
+                startTunnel(.manual)
                 instrumentation.tunnelStopped(reason: reason)
                 let data = try XCTUnwrap(wideEvent.completions.last?.0 as? VPNSessionHealthWideEventData)
 
@@ -401,6 +401,82 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertEqual(wideEvent.completions.count, 1)
         XCTAssertEqual(wideEvent.completions.first?.1, .failure)
         XCTAssertEqual(try completedEvent().endReason, .cancelledWithError)
+    }
+
+    // MARK: - Start attempts
+
+    func testWhenStoppedWhileStartingThenLateStartDoesNotOpenEvent() {
+        let attemptID = instrumentation.tunnelStartRequested()
+        instrumentation.tunnelStopped(reason: .userInitiated)
+        instrumentation.tunnelStarted(reason: .manual, attemptID: attemptID)
+        instrumentation.monitoringFailedToStart()
+
+        XCTAssertTrue(wideEvent.started.isEmpty)
+        XCTAssertTrue(wideEvent.updates.isEmpty)
+        XCTAssertTrue(wideEvent.getAllFlowData(VPNSessionHealthWideEventData.self).isEmpty)
+    }
+
+    func testWhenCancelledWhileStartingThenLateStartDoesNotOpenEvent() {
+        let attemptID = instrumentation.tunnelStartRequested()
+        instrumentation.tunnelCancelledWithError()
+        instrumentation.tunnelStarted(reason: .onDemand, attemptID: attemptID)
+
+        XCTAssertTrue(wideEvent.started.isEmpty)
+        XCTAssertTrue(wideEvent.getAllFlowData(VPNSessionHealthWideEventData.self).isEmpty)
+    }
+
+    func testWhenLateStartIsIgnoredThenNextStartDoesNotRecoverOrphan() throws {
+        let staleAttemptID = instrumentation.tunnelStartRequested()
+        instrumentation.tunnelStopped(reason: .userInitiated)
+        instrumentation.tunnelStarted(reason: .manual, attemptID: staleAttemptID)
+
+        startMonitoredSession()
+        instrumentation.tunnelStopped(reason: .userInitiated)
+
+        XCTAssertEqual(wideEvent.started.count, 1)
+        XCTAssertEqual(wideEvent.completions.count, 1)
+        XCTAssertEqual(try completedEvent().endReason, .stoppedByUser)
+    }
+
+    func testWhenNewerAttemptIsRequestedThenOlderAttemptIsIgnored() throws {
+        let olderAttemptID = instrumentation.tunnelStartRequested()
+        let newerAttemptID = instrumentation.tunnelStartRequested()
+
+        instrumentation.tunnelStarted(reason: .manual, attemptID: olderAttemptID)
+        XCTAssertTrue(wideEvent.started.isEmpty)
+
+        instrumentation.tunnelStarted(reason: .manual, attemptID: newerAttemptID)
+        XCTAssertEqual(wideEvent.started.count, 1)
+    }
+
+    func testWhenPhysicalStartHasNoAttemptThenItIsIgnored() {
+        instrumentation.tunnelStarted(reason: .manual, attemptID: nil)
+        instrumentation.tunnelStarted(reason: .onDemand, attemptID: nil)
+
+        XCTAssertTrue(wideEvent.started.isEmpty)
+    }
+
+    func testWhenStoppedThenStartedAgainThenEachSessionCompletesOnItsOwn() throws {
+        startMonitoredSession()
+        instrumentation.tunnelStopped(reason: .userInitiated)
+        startMonitoredSession()
+        instrumentation.tunnelStopped(reason: .userInitiated)
+
+        XCTAssertEqual(wideEvent.started.count, 2)
+        XCTAssertEqual(wideEvent.completions.count, 2)
+        XCTAssertEqual(try completedEvent(at: 0).endReason, .stoppedByUser)
+        XCTAssertEqual(try completedEvent(at: 1).endReason, .stoppedByUser)
+        XCTAssertNotEqual(try completedEvent(at: 0).globalData.id, try completedEvent(at: 1).globalData.id)
+    }
+
+    func testResumesDoNotRequireAnAttempt() throws {
+        startMonitoredSession()
+        let originalEventID = try latestEvent().globalData.id
+        instrumentation.deviceWentToSleep()
+        instrumentation.tunnelStarted(reason: .wake, attemptID: nil)
+
+        XCTAssertEqual(try latestEvent().globalData.id, originalEventID)
+        XCTAssertFalse(try latestEvent().isPaused)
     }
 
     // MARK: - Concurrent callbacks
@@ -454,8 +530,19 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         return try XCTUnwrap(completion?.0 as? VPNSessionHealthWideEventData, "Expected a completed session-health event at index \(index)", file: file, line: line)
     }
 
+    /// Mirrors the provider: physical starts request an attempt first, resumes ignore it.
+    private func startTunnel(_ reason: PacketTunnelProvider.AdapterStartReason) {
+        switch reason {
+        case .manual, .onDemand:
+            let attemptID = instrumentation.tunnelStartRequested()
+            instrumentation.tunnelStarted(reason: reason, attemptID: attemptID)
+        case .reconnected, .wake, .snoozeEnded:
+            instrumentation.tunnelStarted(reason: reason, attemptID: nil)
+        }
+    }
+
     private func startMonitoredSession() {
-        instrumentation.tunnelStarted(reason: .manual)
+        startTunnel(.manual)
         instrumentation.monitoringStarted()
         instrumentation.connectionTestCompleted(.connected)
     }

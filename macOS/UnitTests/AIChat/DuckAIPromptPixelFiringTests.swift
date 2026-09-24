@@ -141,6 +141,7 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
             XCTAssertEqual(pixel.parameters, ["origin": "x"])
             XCTAssertEqual(pixel.namePrefix, .none)
         }
+    }
 
     func testWhenCreateImagePixelsAreMappedThenNamesAndParametersMatchDefinitions() {
         let modelSwitched = AIChatPixel.aiChatAddressBarCreateImageModelSwitched(
@@ -209,7 +210,6 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         XCTAssertEqual(PromptBarPixel.createImageSubmittedWithUnsupportedModel.name,
                        "aichat_promptbar_create_image_submitted_with_unsupported_model")
         XCTAssertNil(PromptBarPixel.createImageSubmittedWithUnsupportedModel.parameters)
->>>>>>> aebafc92e21e244b1aa0c887e447c8ee4d21a651
     }
 
     func testWhenAddressBarHandlerMapsAnEvent_ThenItKeepsThePixelItFiredBefore() {

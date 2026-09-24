@@ -167,7 +167,7 @@ jobs:
 
       - name: Create Asana task
         id: create-asana-task
-        if: steps.create-pr.outputs.pull-request-url || (inputs.dry-run && steps.dedupe.outputs.should_create == 'true')
+        if: steps.create-pr.outputs.pull-request-url
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
           ASANA_PARENT_TASK_ID: ${{ inputs.asana-parent-task-id }}
@@ -175,8 +175,7 @@ jobs:
           BUMP_TYPE: ${{ steps.check.outputs.bump_type }}
           CURRENT_VERSION: ${{ steps.check.outputs.current_version }}
           LATEST_VERSION: ${{ steps.check.outputs.latest_version }}
-          PR_URL: ${{ steps.create-pr.outputs.pull-request-url || 'https://example.com/dry-run-no-pr' }}
-          TASK_PREFIX: ${{ inputs.dry-run && '[DRY RUN] ' || '' }}
+          PR_URL: ${{ steps.create-pr.outputs.pull-request-url }}
         run: |
           primary_owner="${OWNERS%% *}"
           mapping=$(curl -fLSs "https://raw.githubusercontent.com/duckduckgo/apple-toolbox/main/actions/asana-get-user-id-for-github-handle/github-asana-user-id-mapping.yml")
@@ -193,7 +192,7 @@ jobs:
             *)     emoji="🟢" ;;
           esac
 
-          task_name="${TASK_PREFIX}${DISPLAY_NAME} ${emoji} [${BUMP_TYPE}] ${CURRENT_VERSION} → ${LATEST_VERSION}"
+          task_name="${DISPLAY_NAME} ${emoji} [${BUMP_TYPE}] ${CURRENT_VERSION} → ${LATEST_VERSION}"
           notes="PR: ${PR_URL}"
 
           payload=$(jq -n \
@@ -213,7 +212,7 @@ jobs:
           echo "task_url=https://app.asana.com/0/0/${task_id}/f" >> "$GITHUB_OUTPUT"
 
       - name: Add Asana task URL to PR and mark ready for review
-        if: steps.create-asana-task.outputs.task_url && steps.create-pr.outputs.pull-request-number
+        if: steps.create-asana-task.outputs.task_url
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.create-pr.outputs.pull-request-number }}

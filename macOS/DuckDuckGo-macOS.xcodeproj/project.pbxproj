@@ -2132,9 +2132,7 @@
 		7B09CBAA2BA4BE8200CF245B /* NetworkProtectionPixelEventTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B09CBA72BA4BE7000CF245B /* NetworkProtectionPixelEventTests.swift */; };
 		7B0A53D02F78469500F9A0DE /* StalledResourceLoadUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0A53CF2F78469500F9A0DE /* StalledResourceLoadUITests.swift */; };
 		7B0A6DFA2D47CCDF00FDFDC2 /* ExcludedAppsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0A6DF82D47CCDF00FDFDC2 /* ExcludedAppsViewController.swift */; };
-		7B0A6DFB2D47CCDF00FDFDC2 /* ExcludedApps.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7B0A6DF72D47CCDF00FDFDC2 /* ExcludedApps.storyboard */; };
 		7B0A6DFC2D47CCDF00FDFDC2 /* ExcludedAppsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0A6DF82D47CCDF00FDFDC2 /* ExcludedAppsViewController.swift */; };
-		7B0A6DFD2D47CCDF00FDFDC2 /* ExcludedApps.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7B0A6DF72D47CCDF00FDFDC2 /* ExcludedApps.storyboard */; };
 		7B0C7F0D2EDF132200A338FD /* WebNotificationsTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0C7F0C2EDF132200A338FD /* WebNotificationsTabExtension.swift */; };
 		7B0C7F0E2EDF132200A338FD /* WebNotificationsTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0C7F0C2EDF132200A338FD /* WebNotificationsTabExtension.swift */; };
 		7B0C7F172EDF187000A338FD /* WebNotificationClickHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0C7F162EDF187000A338FD /* WebNotificationClickHandler.swift */; };
@@ -2218,8 +2216,6 @@
 		7B5A23692C468233007213AC /* ExcludedDomainsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B5A23672C468233007213AC /* ExcludedDomainsViewController.swift */; };
 		7B5A236F2C46A116007213AC /* ExcludedDomainsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B5A236E2C46A116007213AC /* ExcludedDomainsModel.swift */; };
 		7B5A23702C46A116007213AC /* ExcludedDomainsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B5A236E2C46A116007213AC /* ExcludedDomainsModel.swift */; };
-		7B5A23752C46A4A8007213AC /* ExcludedDomains.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7B5A23742C46A4A8007213AC /* ExcludedDomains.storyboard */; };
-		7B5A23762C46A4A8007213AC /* ExcludedDomains.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7B5A23742C46A4A8007213AC /* ExcludedDomains.storyboard */; };
 		7B60AFFA2C511B65008E32A3 /* VPNUIActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B60AFF92C511B65008E32A3 /* VPNUIActionHandler.swift */; };
 		7B60AFFB2C511C68008E32A3 /* VPNUIActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B60AFF92C511B65008E32A3 /* VPNUIActionHandler.swift */; };
 		7B60AFFE2C514269008E32A3 /* VPNURLEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B60AFFC2C514260008E32A3 /* VPNURLEventHandler.swift */; };
@@ -6027,7 +6023,6 @@
 		7B0694972B6E980F00FA4DBA /* VPNProxyLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNProxyLauncher.swift; sourceTree = "<group>"; };
 		7B09CBA72BA4BE7000CF245B /* NetworkProtectionPixelEventTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionPixelEventTests.swift; sourceTree = "<group>"; };
 		7B0A53CF2F78469500F9A0DE /* StalledResourceLoadUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StalledResourceLoadUITests.swift; sourceTree = "<group>"; };
-		7B0A6DF72D47CCDF00FDFDC2 /* ExcludedApps.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = ExcludedApps.storyboard; sourceTree = "<group>"; };
 		7B0A6DF82D47CCDF00FDFDC2 /* ExcludedAppsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcludedAppsViewController.swift; sourceTree = "<group>"; };
 		7B0C7F0C2EDF132200A338FD /* WebNotificationsTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebNotificationsTabExtension.swift; sourceTree = "<group>"; };
 		7B0C7F162EDF187000A338FD /* WebNotificationClickHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebNotificationClickHandler.swift; sourceTree = "<group>"; };
@@ -6074,7 +6069,6 @@
 		7B5886382EAFEF310079F8B1 /* SparkleDebugHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleDebugHelper.swift; sourceTree = "<group>"; };
 		7B5A23672C468233007213AC /* ExcludedDomainsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExcludedDomainsViewController.swift; sourceTree = "<group>"; };
 		7B5A236E2C46A116007213AC /* ExcludedDomainsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcludedDomainsModel.swift; sourceTree = "<group>"; };
-		7B5A23742C46A4A8007213AC /* ExcludedDomains.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = ExcludedDomains.storyboard; sourceTree = "<group>"; };
 		7B60AFF92C511B65008E32A3 /* VPNUIActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUIActionHandler.swift; sourceTree = "<group>"; };
 		7B60AFFC2C514260008E32A3 /* VPNURLEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNURLEventHandler.swift; sourceTree = "<group>"; };
 		7B60B0002C514541008E32A3 /* VPNUIActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUIActionHandler.swift; sourceTree = "<group>"; };
@@ -10150,7 +10144,6 @@
 		7B0A6DF92D47CCDF00FDFDC2 /* ExcludedApps */ = {
 			isa = PBXGroup;
 			children = (
-				7B0A6DF72D47CCDF00FDFDC2 /* ExcludedApps.storyboard */,
 				7B0A6DF82D47CCDF00FDFDC2 /* ExcludedAppsViewController.swift */,
 				7B93A68A2D4A5AEC00E9FFC1 /* ExcludedAppsModel.swift */,
 			);
@@ -10262,7 +10255,6 @@
 		7B5A236D2C46A0DA007213AC /* ExcludedDomains */ = {
 			isa = PBXGroup;
 			children = (
-				7B5A23742C46A4A8007213AC /* ExcludedDomains.storyboard */,
 				7B5A23672C468233007213AC /* ExcludedDomainsViewController.swift */,
 				7B5A236E2C46A116007213AC /* ExcludedDomainsModel.swift */,
 				7B7F5D202C526CE600826256 /* AddExcludedDomainView.swift */,
@@ -15037,7 +15029,6 @@
 				371C3DF02FE40ADF003D31C1 /* permissions-inspector.html in Resources */,
 				371C3DF32FE40ADF003D31C1 /* permissions-inspector.js in Resources */,
 				3706FCD0293F65D500E42796 /* BookmarksBarCollectionViewItem.xib in Resources */,
-				7B5A23762C46A4A8007213AC /* ExcludedDomains.storyboard in Resources */,
 				B57B84CD3013AFB20017774A /* 02_Fire_rebranded.json in Resources */,
 				84C96E482CF9BB6400A80A01 /* malwareFilterSet.json in Resources */,
 				84C96E492CF9BB6400A80A01 /* malwareHashPrefixes.json in Resources */,
@@ -15053,7 +15044,6 @@
 				BB0DA4DF2DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */,
 				B531B7FA30112DB60087A2DE /* Shield-Off-Gray.json in Resources */,
 				3706FCEA293F65D500E42796 /* PasswordManager.storyboard in Resources */,
-				7B0A6DFB2D47CCDF00FDFDC2 /* ExcludedApps.storyboard in Resources */,
 				BD384ACC2BBC821B00EF3735 /* vpn-light-mode.json in Resources */,
 				3706FCED293F65D500E42796 /* httpsMobileV2Bloom.bin in Resources */,
 				3706FCEF293F65D500E42796 /* macos-config.json in Resources */,
@@ -15297,7 +15287,6 @@
 				371C3DF12FE40ADF003D31C1 /* permissions-inspector.html in Resources */,
 				371C3DF42FE40ADF003D31C1 /* permissions-inspector.js in Resources */,
 				4BE5336B286912D40019DBFD /* BookmarksBarCollectionViewItem.xib in Resources */,
-				7B5A23752C46A4A8007213AC /* ExcludedDomains.storyboard in Resources */,
 				B57B84CE3013AFB20017774A /* 02_Fire_rebranded.json in Resources */,
 				84C96E462CF9BB6400A80A01 /* malwareFilterSet.json in Resources */,
 				84C96E472CF9BB6400A80A01 /* malwareHashPrefixes.json in Resources */,
@@ -15312,7 +15301,6 @@
 				BB0DA4E12DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */,
 				85625994269C8F9600EE44BC /* PasswordManager.storyboard in Resources */,
 				B531B7F930112DB60087A2DE /* Shield-Off-Gray.json in Resources */,
-				7B0A6DFD2D47CCDF00FDFDC2 /* ExcludedApps.storyboard in Resources */,
 				BD384ACA2BBC821A00EF3735 /* vpn-light-mode.json in Resources */,
 				4B677433255DBEB800025BD8 /* httpsMobileV2Bloom.bin in Resources */,
 				026ADE1426C3010C002518EE /* macos-config.json in Resources */,

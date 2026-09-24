@@ -370,16 +370,12 @@ final class AuthV2WideEventTests: XCTestCase {
 
     func testTokenRefreshStarted_capturesNetpStatusWhenProvided() throws {
         let mock = WideEventMock()
-        let instrumentation = makeRefreshInstrumentation(wideEvent: mock,
-                                                          netpIsEnabledProvider: { true },
-                                                          netpIsRunningProvider: { false })
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock, netpIsRunningProvider: { false })
 
         instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: "refresh-1", trigger: .client))
 
         let pending = try XCTUnwrap(mock.getAllFlowData(AuthV2TokenRefreshWideEventData.self).first)
-        XCTAssertEqual(pending.netpIsEnabled, true)
         XCTAssertEqual(pending.netpIsRunning, false)
-        XCTAssertEqual(pending.pixelParameters()["feature.data.ext.netp_is_enabled"], "true")
         XCTAssertEqual(pending.pixelParameters()["feature.data.ext.netp_is_running"], "false")
     }
 
@@ -390,9 +386,7 @@ final class AuthV2WideEventTests: XCTestCase {
         instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: "refresh-1", trigger: .client))
 
         let pending = try XCTUnwrap(mock.getAllFlowData(AuthV2TokenRefreshWideEventData.self).first)
-        XCTAssertNil(pending.netpIsEnabled)
         XCTAssertNil(pending.netpIsRunning)
-        XCTAssertNil(pending.pixelParameters()["feature.data.ext.netp_is_enabled"])
         XCTAssertNil(pending.pixelParameters()["feature.data.ext.netp_is_running"])
     }
 
@@ -459,6 +453,45 @@ final class AuthV2WideEventTests: XCTestCase {
         guard case .failure = mock.completions.first?.1 else {
             return XCTFail("Expected FAILURE completion for a non-recoverable error")
         }
+    }
+
+    func testRefreshEventMapping_unknownAccountOnClientRefresh_marksSignedOut() throws {
+        let mock = WideEventMock()
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock)
+        let refreshID = "refresh-unknown-account"
+
+        instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: .client))
+        instrumentation.eventMapping.fire(.tokenRefreshFailed(refreshID: refreshID, error: OAuthClientError.unknownAccount))
+
+        let completedData = try XCTUnwrap(mock.completions.first?.0 as? AuthV2TokenRefreshWideEventData)
+        XCTAssertTrue(completedData.signedOut)
+        XCTAssertEqual(completedData.pixelParameters()["feature.data.ext.signed_out"], "true")
+    }
+
+    func testRefreshEventMapping_unknownAccountOnNonClientRefresh_doesNotMarkSignedOut() throws {
+        for trigger in [TokenRefreshTrigger.backend, .createIfNeeded, .tokenAdoption] {
+            let mock = WideEventMock()
+            let instrumentation = makeRefreshInstrumentation(wideEvent: mock)
+            let refreshID = "refresh-\(trigger.rawValue)"
+
+            instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: trigger))
+            instrumentation.eventMapping.fire(.tokenRefreshFailed(refreshID: refreshID, error: OAuthClientError.unknownAccount))
+
+            let completedData = try XCTUnwrap(mock.completions.first?.0 as? AuthV2TokenRefreshWideEventData)
+            XCTAssertFalse(completedData.signedOut, "trigger: \(trigger)")
+        }
+    }
+
+    func testRefreshEventMapping_nonAccountErrorOnClientRefresh_doesNotMarkSignedOut() throws {
+        let mock = WideEventMock()
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock)
+        let refreshID = "refresh-network-error"
+
+        instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: .client))
+        instrumentation.eventMapping.fire(.tokenRefreshFailed(refreshID: refreshID, error: URLError(.notConnectedToInternet)))
+
+        let completedData = try XCTUnwrap(mock.completions.first?.0 as? AuthV2TokenRefreshWideEventData)
+        XCTAssertFalse(completedData.signedOut)
     }
 
     func testRefreshEventMapping_otherError_discardsFailureWhenSuppressed() {
@@ -615,13 +648,11 @@ final class AuthV2WideEventTests: XCTestCase {
                                             isFeatureEnabled: @escaping () -> Bool = { true },
                                             shouldSuppressFailure: @escaping () -> Bool = { false },
                                             subscriptionCachingService: SubscriptionCachingService = SubscriptionCachingServiceMock(),
-                                            netpIsEnabledProvider: @escaping () -> Bool? = { nil },
                                             netpIsRunningProvider: @escaping () -> Bool? = { nil }) -> AuthV2TokenRefreshInstrumenting {
         DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent,
                                                  isFeatureEnabled: isFeatureEnabled,
                                                  shouldSuppressFailure: shouldSuppressFailure,
                                                  subscriptionCachingService: subscriptionCachingService,
-                                                 netpIsEnabledProvider: netpIsEnabledProvider,
                                                  netpIsRunningProvider: netpIsRunningProvider)
     }
 }

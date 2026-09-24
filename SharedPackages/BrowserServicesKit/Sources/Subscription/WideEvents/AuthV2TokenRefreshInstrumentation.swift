@@ -33,20 +33,17 @@ public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshI
     private let isFeatureEnabled: () -> Bool
     private let shouldSuppressFailure: () -> Bool
     private let subscriptionCachingService: SubscriptionCachingService
-    private let netpIsEnabledProvider: () -> Bool?
     private let netpIsRunningProvider: () -> Bool?
 
     public init(wideEvent: WideEventManaging,
                 isFeatureEnabled: @escaping () -> Bool,
                 shouldSuppressFailure: @escaping () -> Bool = { false },
                 subscriptionCachingService: SubscriptionCachingService = DefaultSubscriptionCachingService(),
-                netpIsEnabledProvider: @escaping () -> Bool? = { nil },
                 netpIsRunningProvider: @escaping () -> Bool? = { nil }) {
         self.wideEvent = wideEvent
         self.isFeatureEnabled = isFeatureEnabled
         self.shouldSuppressFailure = shouldSuppressFailure
         self.subscriptionCachingService = subscriptionCachingService
-        self.netpIsEnabledProvider = netpIsEnabledProvider
         self.netpIsRunningProvider = netpIsRunningProvider
     }
 
@@ -100,7 +97,6 @@ public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshI
             data.failingStep = .tokenRead
             data.refreshTrigger = trigger
             data.subscriptionStatus = SubscriptionAutomaticSignOutPixelData.CachedSubscriptionStatus(status: subscriptionCachingService.cachedSubscriptionStatus)
-            data.netpIsEnabled = netpIsEnabledProvider()
             data.netpIsRunning = netpIsRunningProvider()
             wideEvent.startFlow(data)
 
@@ -162,6 +158,13 @@ public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshI
             data.recoveryDuration = .startingNow()
             wideEvent.updateFlow(data)
             return
+        }
+
+        // On a client refresh, `SubscriptionManager.getTokenContainer` signs the user out
+        // unconditionally after an unknown-account failure, and only after this event has fired.
+        if case OAuthClientError.unknownAccount = error,
+           (data.refreshTrigger ?? .client) == .client {
+            data.signedOut = true
         }
 
         wideEvent.updateFlow(data)

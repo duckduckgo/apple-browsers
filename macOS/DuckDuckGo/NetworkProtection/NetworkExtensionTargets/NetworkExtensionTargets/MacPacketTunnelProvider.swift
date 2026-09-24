@@ -559,9 +559,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             shouldSuppressFailure: {
                 loopDetector.shouldSuppressCurrentAttemptTelemetry
             },
-            netpIsEnabledProvider: {
-                connectionStatusBox.value != .notConfigured
-            },
             netpIsRunningProvider: {
                 if case .connected = connectionStatusBox.value { return true }
                 return false
@@ -775,9 +772,23 @@ private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
 
 /// Lets a synchronous, non-actor context (the AuthV2 refresh instrumentation) read the tunnel's
 /// @MainActor `connectionStatus` without hopping actors. Written from `handleConnectionStatusChange`
-/// on every change; a stale/torn read only affects a telemetry dimension, never tunnel behavior.
-private final class ConnectionStatusBox {
-    nonisolated(unsafe) var value: ConnectionStatus = .default
+/// on every change.
+private final class ConnectionStatusBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _value: ConnectionStatus = .default
+
+    var value: ConnectionStatus {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _value
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _value = newValue
+        }
+    }
 }
 
 final class DefaultWireGuardInterface: WireGuardGoInterface {

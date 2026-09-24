@@ -319,6 +319,11 @@ final class BookmarksBarViewController: NSViewController {
             syncButtonZeroWidthConstraint,
         ])
 
+        // Resolve the layout right away. Clipping decides how many bar items fit by comparing the
+        // clipped-items indicator's frame against the collection view, so those frames have to be
+        // real before the first `bookmarksBarItems` update — otherwise everything reads as clipped.
+        backgroundColorView.layoutSubtreeIfNeeded()
+
         self.view = backgroundColorView
     }
 

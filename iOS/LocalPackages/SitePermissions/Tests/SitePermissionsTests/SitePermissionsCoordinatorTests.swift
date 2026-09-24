@@ -825,6 +825,8 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(revokedPermissionTypes, [[.camera]])
         XCTAssertNil(harness.store.decision(for: .camera, at: harness.site))
         XCTAssertNil(harness.store.decision(for: .microphone, at: harness.site))
+        XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).storedPermissions,
+                       [.camera: .deny, .microphone: .deny])
     }
 
     func testWhenCombinedPromptIsDeniedOnceThenRunningCaptureIsKept() async throws {

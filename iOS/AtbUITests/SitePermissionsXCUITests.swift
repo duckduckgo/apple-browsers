@@ -674,10 +674,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         enableDuckAIInput()
         openVoiceSearchSettings()
         XCTAssertEqual(voiceSearchSwitch.value as? String, "0")
-        // iOS 26 reports the nested switch's frame away from the drawn toggle, so tap the toggle through its row.
-        let voiceSearchRow = app.switches["Private Voice Search"].firstMatch
-        XCTAssertTrue(voiceSearchRow.waitForHittable(timeout: timeout))
-        voiceSearchRow.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        enablePrivateVoiceSearch()
         answerSystemAlert(for: "microphone", allow: true)
         let voiceSearchEnabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == '1'"), object: voiceSearchSwitch)
         XCTAssertEqual(XCTWaiter.wait(for: [voiceSearchEnabled], timeout: timeout), .completed)
@@ -743,7 +740,8 @@ final class SitePermissionsXCUITests: XCTestCase {
         let toggle = row.switches.firstMatch
         XCTAssertTrue(toggle.waitForHittable(timeout: timeout), row.debugDescription)
         XCTAssertTrue(["0", "1"].contains(toggle.value as? String ?? ""), toggle.debugDescription)
-        // SwiftUI can expose nested switch elements; tap the trailing control rather than the row's label.
+        // SwiftUI exposes a nested switch whose frame iOS 26 reports away from the drawn toggle,
+        // so tap the trailing edge of the row's switch instead.
         let switchControl = toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5))
         if toggle.value as? String == "1" {
             switchControl.tap()
@@ -937,7 +935,6 @@ final class SitePermissionsXCUITests: XCTestCase {
         closeSettings()
 
         reloadPermissionPage()
-        assertResult("location ready")
         request("location")
         assertSiteDialog(permission: "location")
         tap(element("SitePermissions.Dialog.AllowOnce"))

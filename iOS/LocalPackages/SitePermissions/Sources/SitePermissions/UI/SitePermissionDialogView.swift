@@ -62,7 +62,7 @@ public struct SitePermissionDialogView: View {
                     title
                     if let body = viewModel.body {
                         Text(body)
-                            .font(.body)
+                            .daxBodyRegular()
                             .foregroundColor(Color(designSystemColor: .textPrimary))
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)

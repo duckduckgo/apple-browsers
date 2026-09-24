@@ -32,6 +32,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
 
     private let permissionManager: PermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
+    private let defaults: WebsitePermissionDefaultsProtocol
     private var permissionsCancellable: AnyCancellable?
     private var latestEntries = [WebsitePermissionEntry]()
 
@@ -39,9 +40,12 @@ final class WebsitePermissionsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow)
     }
 
-    init(permissionManager: PermissionManagerProtocol, featureFlagger: FeatureFlagger) {
+    init(permissionManager: PermissionManagerProtocol,
+         featureFlagger: FeatureFlagger,
+         defaults: WebsitePermissionDefaultsProtocol) {
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
+        self.defaults = defaults
     }
 
     // MARK: - Public
@@ -64,7 +68,8 @@ final class WebsitePermissionsViewModel: ObservableObject {
             viewState.detailModel = WebsitePermissionDetailViewModel(
                 initialState: makeDetailInitialState(for: category),
                 permissionManager: permissionManager,
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                defaults: defaults
             )
 
         case .closeDetail:

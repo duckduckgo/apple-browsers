@@ -847,6 +847,61 @@ final class PermissionCenterViewModelTests: XCTestCase {
 
         XCTAssertTrue(viewModel.permissionItems.contains(where: { $0.permissionType == .microphone }))
     }
+
+    // MARK: - Pop-ups and the category default
+
+    func testWhenPopupsDefaultIsNeverAllowAndNothingIsSavedThenDecisionIsNeverAllow() {
+        mockPermissionManager.defaultDecisions = [.popups: .deny]
+        let viewModel = makePopupsViewModel()
+
+        XCTAssertEqual(viewModel.currentPopupDecision(), .neverAllow)
+        XCTAssertTrue(viewModel.showPopupsNeverAllowOption)
+    }
+
+    func testWhenPopupsDefaultIsAskEachTimeThenNeverAllowIsNotOffered() {
+        let viewModel = makePopupsViewModel()
+
+        XCTAssertEqual(viewModel.currentPopupDecision(), .notify)
+        XCTAssertFalse(viewModel.showPopupsNeverAllowOption)
+    }
+
+    func testWhenNotifyIsSelectedUnderANeverAllowDefaultThenAPerSiteAskIsStored() {
+        mockPermissionManager.defaultDecisions = [.popups: .deny]
+        let viewModel = makePopupsViewModel()
+
+        viewModel.setPopupDecision(.notify)
+
+        XCTAssertEqual(mockPermissionManager.persistedDecision(forDomain: "example.com", permissionType: .popups), .ask)
+        XCTAssertEqual(viewModel.currentPopupDecision(), .notify)
+    }
+
+    func testWhenNeverAllowIsSelectedThenThePerSiteOverrideIsRemoved() {
+        mockPermissionManager.defaultDecisions = [.popups: .deny]
+        mockPermissionManager.setPermission(.ask, forDomain: "example.com", permissionType: .popups)
+        let viewModel = makePopupsViewModel()
+
+        viewModel.setPopupDecision(.neverAllow)
+
+        XCTAssertNil(mockPermissionManager.persistedDecision(forDomain: "example.com", permissionType: .popups))
+        XCTAssertEqual(viewModel.currentPopupDecision(), .neverAllow)
+    }
+
+    private func makePopupsViewModel() -> PermissionCenterViewModel {
+        var usedPermissions = Permissions()
+        usedPermissions[.popups] = .denied
+
+        return PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+    }
+
 }
 
 // MARK: - Mock System Permission Manager

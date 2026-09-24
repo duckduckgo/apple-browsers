@@ -83,6 +83,7 @@ struct PermissionCenterView: View {
                                 item: item,
                                 currentDecision: viewModel.currentPopupDecision(),
                                 showAllowForThisVisitOption: viewModel.showAllowPopupsForThisVisitOption,
+                                showNeverAllowOption: viewModel.showPopupsNeverAllowOption,
                                 onDecisionChanged: { decision in
                                     viewModel.setPopupDecision(decision)
                                 },
@@ -394,6 +395,7 @@ struct PopupPermissionRowView: View {
     let item: PermissionCenterItem
     let currentDecision: PopupDecision
     let showAllowForThisVisitOption: Bool
+    let showNeverAllowOption: Bool
     let onDecisionChanged: (PopupDecision) -> Void
     let onOpenPopup: (BlockedPopup) -> Void
     let onRemove: () -> Void
@@ -405,6 +407,7 @@ struct PopupPermissionRowView: View {
         item: PermissionCenterItem,
         currentDecision: PopupDecision,
         showAllowForThisVisitOption: Bool,
+        showNeverAllowOption: Bool,
         onDecisionChanged: @escaping (PopupDecision) -> Void,
         onOpenPopup: @escaping (BlockedPopup) -> Void,
         onRemove: @escaping () -> Void
@@ -412,11 +415,19 @@ struct PopupPermissionRowView: View {
         self.item = item
         self.currentDecision = currentDecision
         self.showAllowForThisVisitOption = showAllowForThisVisitOption
+        self.showNeverAllowOption = showNeverAllowOption
         self.onDecisionChanged = onDecisionChanged
         self.onOpenPopup = onOpenPopup
         self.onRemove = onRemove
-        // If "allow for this visit" option is not available and that was the current decision, fall back to notify
-        let effectiveDecision = (!showAllowForThisVisitOption && currentDecision == .allowForThisVisit) ? .notify : currentDecision
+        // Fall back to notify when the current decision has no matching option in the menu.
+        let effectiveDecision: PopupDecision
+        switch currentDecision {
+        case .allowForThisVisit where !showAllowForThisVisitOption,
+             .neverAllow where !showNeverAllowOption:
+            effectiveDecision = .notify
+        default:
+            effectiveDecision = currentDecision
+        }
         self._selectedDecision = State(initialValue: effectiveDecision)
     }
 
@@ -524,6 +535,11 @@ struct PopupPermissionRowView: View {
 
             decisions.append((.notify, UserText.privacyDashboardPopupsAlwaysAsk))
             decisions.append((.alwaysAllow, UserText.privacyDashboardPermissionAlwaysAllow))
+
+            // Offered only while "Never allow" is the standing default for pop-ups.
+            if showNeverAllowOption {
+                decisions.append((.neverAllow, UserText.permissionCenterNeverAllow))
+            }
 
             for (decision, title) in decisions {
                 let menuItem = button.menu?.addItem(withTitle: title, action: nil, keyEquivalent: "")

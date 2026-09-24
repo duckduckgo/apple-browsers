@@ -136,6 +136,7 @@ enum PopupDecision: Hashable {
     case allowForThisVisit
     case notify
     case alwaysAllow
+    case neverAllow
 
 }
 
@@ -200,6 +201,10 @@ final class PermissionCenterViewModel: ObservableObject {
     /// Whether "Only allow pop-ups for this visit" option should be shown (based on feature flags)
     var showAllowPopupsForThisVisitOption: Bool {
         featureFlagger.isFeatureOn(.popupBlocking)
+    }
+
+    var showPopupsNeverAllowOption: Bool {
+        permissionManager.defaultDecision(for: .popups) == .deny
     }
 
     // MARK: - Initialization
@@ -394,6 +399,10 @@ final class PermissionCenterViewModel: ObservableObject {
             permissionManager.setPermission(.allow, forDomain: domain, permissionType: .popups)
             resetTemporaryPopupAllowance?()
             hasTemporaryPopupAllowance = false
+        case .neverAllow:
+            permissionManager.removePermission(forDomain: domain, permissionType: .popups)
+            resetTemporaryPopupAllowance?()
+            hasTemporaryPopupAllowance = false
         }
     }
 
@@ -404,6 +413,8 @@ final class PermissionCenterViewModel: ObservableObject {
             return .allowForThisVisit
         } else if persistedValue == .allow {
             return .alwaysAllow
+        } else if persistedValue == .deny {
+            return .neverAllow
         } else {
             return .notify
         }

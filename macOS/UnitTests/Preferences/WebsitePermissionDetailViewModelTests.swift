@@ -26,16 +26,19 @@ import XCTest
 final class WebsitePermissionDetailViewModelTests: XCTestCase {
     private var permissionManager: PermissionManagerMock!
     private var featureFlagger: MockFeatureFlagger!
+    private var defaults: WebsitePermissionDefaultsMock!
 
     override func setUp() {
         super.setUp()
         permissionManager = PermissionManagerMock()
         featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue: false])
+        defaults = WebsitePermissionDefaultsMock()
     }
 
     override func tearDown() {
         permissionManager = nil
         featureFlagger = nil
+        defaults = nil
         super.tearDown()
     }
 
@@ -43,7 +46,8 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         let model = WebsitePermissionDetailViewModel(
             initialState: WebsitePermissionDetailViewState(category: .camera),
             permissionManager: permissionManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            defaults: defaults
         )
 
         XCTAssertEqual(model.viewState.category, .camera)
@@ -60,7 +64,8 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
                 featureFlagger: featureFlagger
             ),
             permissionManager: permissionManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            defaults: defaults
         )
 
         XCTAssertEqual(model.viewState.sites.map(\.domain), ["example.com"])
@@ -239,6 +244,103 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         XCTAssertEqual(sut.viewState.sites.map(\.domain), ["duck.ai"])
     }
 
+    // MARK: - Default control
+
+    func testWhenDetailIsCreatedThenStateCarriesTheCategoryDefaultBeforeTheFirstUpdate() {
+        defaults = WebsitePermissionDefaultsMock(decisions: [.camera: .deny])
+
+        let model = WebsitePermissionDetailViewModel(
+            initialState: WebsitePermissionDetailViewState(category: .camera),
+            permissionManager: permissionManager,
+            featureFlagger: featureFlagger,
+            defaults: defaults
+        )
+
+        XCTAssertEqual(model.viewState.defaultDecision, .deny, "The radio group should not flicker before the first update")
+        XCTAssertEqual(model.viewState.availableDefaultDecisions, [.ask, .deny])
+    }
+
+    func testWhenDefaultsOfferADifferentOptionSetThenItIsUsedAndEnforced() {
+        defaults.availableDecisions = [.ask]
+
+        let sut = makeSUT(category: .camera, entries: [])
+
+        XCTAssertEqual(sut.viewState.availableDefaultDecisions, [.ask])
+
+        sut.send(action: .setDefaultDecision(.deny))
+
+        XCTAssertTrue(defaults.setDefaultDecisionCalls.isEmpty, "A decision outside the offered set should be rejected")
+    }
+
+    func testWhenEveryCategoryIsOpenedThenTheSameTwoDefaultsAreOffered() {
+        for category in WebsitePermissionCategory.allCases {
+            let sut = makeSUT(category: category, entries: [])
+            XCTAssertEqual(sut.viewState.availableDefaultDecisions, [.ask, .deny], "\(category) should offer both options")
+        }
+    }
+
+    func testWhenDefaultIsChangedThenItIsPersisted() {
+        let sut = makeSUT(category: .notifications, entries: [])
+
+        sut.send(action: .setDefaultDecision(.deny))
+
+        XCTAssertEqual(defaults.defaultDecision(for: .notifications), .deny)
+        XCTAssertEqual(sut.viewState.defaultDecision, .deny)
+    }
+
+    func testWhenDefaultIsSetToItsCurrentValueThenNothingIsWritten() {
+        let sut = makeSUT(category: .camera, entries: [])
+
+        sut.send(action: .setDefaultDecision(.ask))
+
+        XCTAssertTrue(defaults.setDefaultDecisionCalls.isEmpty)
+    }
+
+    func testWhenAlwaysAllowIsSentAsDefaultThenItIsIgnored() {
+        let sut = makeSUT(category: .camera, entries: [])
+
+        sut.send(action: .setDefaultDecision(.allow))
+
+        XCTAssertTrue(defaults.setDefaultDecisionCalls.isEmpty)
+        XCTAssertEqual(sut.viewState.defaultDecision, .ask)
+    }
+
+    func testWhenTheWriteIsRejectedThenStateKeepsTheStoredValue() {
+        // Mirrors the feature flag being off: the provider ignores writes.
+        let sut = makeSUT(category: .camera, entries: [])
+        defaults.isFeatureEnabled = false
+
+        sut.send(action: .setDefaultDecision(.deny))
+
+        XCTAssertEqual(sut.viewState.defaultDecision, .ask)
+    }
+
+    func testWhenDefaultChangesElsewhereThenStateIsUpdated() {
+        let sut = makeSUT(category: .location, entries: [])
+        XCTAssertEqual(sut.viewState.defaultDecision, .ask)
+
+        waitForDetailStateUpdate(sut) {
+            defaults.setDefaultDecision(.deny, for: .location)
+        }
+
+        XCTAssertEqual(sut.viewState.defaultDecision, .deny)
+    }
+
+    func testWhenADifferentCategoryDefaultChangesThenThisCategoryIsUnaffected() {
+        let sut = makeSUT(category: .camera, entries: [])
+
+        defaults.setDefaultDecision(.deny, for: .microphone)
+
+        XCTAssertEqual(sut.viewState.defaultDecision, .ask)
+    }
+
+    func testWhenAskEachTimeIsDisplayedThenItUsesTheSettingsCopy() {
+        XCTAssertEqual(PersistedPermissionDecision.ask.websitePermissionsTitle, UserText.websitePermissionsAskEachTime)
+        XCTAssertEqual(PersistedPermissionDecision.deny.websitePermissionsTitle, UserText.permissionCenterNeverAllow)
+    }
+
+    // MARK: - Domain grouping
+
     func testWhenExternalAppsShareADomainThenTheyAreGroupedUnderASingleDomainHeader() {
         let sut = makeSUT(
             category: .externalApps,
@@ -325,7 +427,8 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         return WebsitePermissionDetailViewModel(
             initialState: .init(category: .externalApps, searchQuery: searchQuery, sites: sites),
             permissionManager: permissionManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            defaults: defaults
         )
     }
 
@@ -341,7 +444,8 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
                 featureFlagger: featureFlagger
             ),
             permissionManager: permissionManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            defaults: defaults
         )
         waitForDetailStateUpdate(model) {
             model.send(action: .onAppear)

@@ -28,16 +28,21 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
 
     private let permissionManager: PermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
+    private let defaults: WebsitePermissionDefaultsProtocol
     private var permissionsCancellable: AnyCancellable?
 
     init(
         initialState: WebsitePermissionDetailViewState?,
         permissionManager: PermissionManagerProtocol,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger,
+        defaults: WebsitePermissionDefaultsProtocol
     ) {
         viewState = initialState ?? .init()
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
+        self.defaults = defaults
+        viewState.availableDefaultDecisions = defaults.availableDecisions
+        viewState.defaultDecision = defaults.defaultDecision(for: viewState.category)
         viewState.visibleSites = filteredSites(from: viewState.sites, matching: viewState.searchQuery)
     }
 
@@ -47,6 +52,9 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
         switch action {
         case .onAppear:
             setupObserver()
+
+        case .setDefaultDecision(let decision):
+            changeDefaultDecision(decision)
 
         case .setSearchQuery(let query):
             var state = viewState
@@ -63,6 +71,20 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
     }
 
     // MARK: - Private
+
+    private func changeDefaultDecision(_ decision: PersistedPermissionDecision) {
+        let category = viewState.category
+        guard defaults.availableDecisions.contains(decision),
+              decision != defaults.defaultDecision(for: category)
+        else {
+            Logger.general.debug("WebsitePermissionDetailViewModel: Ignored default change for \(String(describing: category))")
+            return
+        }
+
+        defaults.setDefaultDecision(decision, for: category)
+
+        viewState.defaultDecision = defaults.defaultDecision(for: category)
+    }
 
     private func changeDecision(_ decision: PersistedPermissionDecision, for rowID: WebsitePermissionDetailViewState.SiteRow.ID) {
         guard
@@ -92,20 +114,24 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
         guard permissionsCancellable == nil else { return }
 
         permissionsCancellable = permissionManager.persistedPermissionsPublisher
-            .combineLatest(featureFlagger.updatesPublisher.prepend(()))
+            .combineLatest(featureFlagger.updatesPublisher.prepend(()), defaults.defaultsPublisher)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] entries, _ in
-                self?.updateState(entries: entries)
+            .sink { [weak self] entries, _, defaultDecisions in
+                self?.updateState(entries: entries, defaultDecisions: defaultDecisions)
             }
     }
 
-    private func updateState(entries: [WebsitePermissionEntry]) {
+    private func updateState(entries: [WebsitePermissionEntry],
+                             defaultDecisions: [WebsitePermissionCategory: PersistedPermissionDecision]) {
+        let category = viewState.category
         var state = WebsitePermissionDetailViewState(
-            category: viewState.category,
+            category: category,
+            defaultDecision: defaultDecisions[category] ?? defaults.fallbackDecision,
             searchQuery: viewState.searchQuery,
             entries: entries,
             featureFlagger: featureFlagger
         )
+        state.availableDefaultDecisions = defaults.availableDecisions
         state.visibleSites = filteredSites(from: state.sites, matching: state.searchQuery)
         viewState = state
     }
@@ -145,6 +171,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
 extension WebsitePermissionDetailViewModel {
     enum Action {
         case onAppear
+        case setDefaultDecision(PersistedPermissionDecision)
         case setSearchQuery(String)
         case changeDecision(rowID: WebsitePermissionDetailViewState.SiteRow.ID, decision: PersistedPermissionDecision)
         case remove(rowID: WebsitePermissionDetailViewState.SiteRow.ID)

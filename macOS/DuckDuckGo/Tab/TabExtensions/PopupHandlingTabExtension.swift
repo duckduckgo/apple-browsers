@@ -312,7 +312,8 @@ final class PopupHandlingTabExtension {
         if let sourceFrame = navigationAction.safeSourceFrame {
             let allowlist = popupBlockingConfig.allowlist
             let sourceHost = sourceFrame.securityOrigin.host
-            if isDomainInAllowlist(sourceHost, allowlist: allowlist) {
+            if isDomainInAllowlist(sourceHost, allowlist: allowlist),
+               !permissionModel.isPopupBlockedByDefault(forDomain: sourceHost) {
                 Logger.general.debug("Pop-up allowed: source domain \(sourceHost) is in allowlist")
                 return .allowlistedDomain(sourceHost)
             }

@@ -20,7 +20,7 @@ import CoreData
 import Foundation
 import PixelKit
 
-enum PersistedPermissionDecision {
+enum PersistedPermissionDecision: String {
     case deny
     case allow
     case ask
@@ -29,6 +29,17 @@ enum PersistedPermissionDecision {
         switch self {
         case .ask:
             return UserText.permissionCenterAlwaysAsk
+        case .allow:
+            return UserText.permissionCenterAlwaysAllow
+        case .deny:
+            return UserText.permissionCenterNeverAllow
+        }
+    }
+
+    var websitePermissionsTitle: String {
+        switch self {
+        case .ask:
+            return UserText.websitePermissionsAskEachTime
         case .allow:
             return UserText.permissionCenterAlwaysAllow
         case .deny:

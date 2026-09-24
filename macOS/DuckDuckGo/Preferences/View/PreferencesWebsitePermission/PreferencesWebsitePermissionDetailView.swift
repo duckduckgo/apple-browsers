@@ -24,21 +24,30 @@ import SwiftUIExtensions
 
 struct PreferencesWebsitePermissionDetailView: View {
     private enum Constants {
-        static let chevronSize: CGFloat = 16
+        static let chevronSize: CGFloat = 18
         static let searchWidth: CGFloat = 173
         static let searchHeight: CGFloat = 28
         static let searchCornerRadius: CGFloat = 7
+        static let searchFocusRingWidth: CGFloat = 3.5
         static let backButtonSize: CGFloat = 32
         static let messageTopPadding: CGFloat = 4
         static let messageBottomPadding: CGFloat = 8
+        static let defaultSectionSpacing: CGFloat = 8
+        static let defaultSectionBottomPadding: CGFloat = 12
     }
 
-    @ObservedObject var model: WebsitePermissionDetailViewModel
+    @ObservedObject
+    var model: WebsitePermissionDetailViewModel
+
     let onBack: () -> Void
+
+    @FocusState
+    private var isSearchFieldFocused: Bool
 
     var body: some View {
         PreferencePane(nil) {
             detailHeader
+            defaultSection
             websitesSection
         }
         .accessibilityIdentifier("WebsitePermissions.Detail")
@@ -55,7 +64,7 @@ struct PreferencesWebsitePermissionDetailView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: Constants.chevronSize, height: Constants.chevronSize)
-                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                    .foregroundColor(Color(designSystemColor: .iconsPrimary))
                     .frame(width: Constants.backButtonSize, height: Constants.backButtonSize)
                     .contentShape(Rectangle())
             }
@@ -66,6 +75,28 @@ struct PreferencesWebsitePermissionDetailView: View {
             TextMenuTitle(model.viewState.category.title)
                 .accessibilityIdentifier("WebsitePermissions.Detail.Title")
         }
+    }
+
+    private var defaultSection: some View {
+        VStack(alignment: .leading, spacing: Constants.defaultSectionSpacing) {
+            TextMenuItemHeader(UserText.websitePermissionsDefaultSection)
+
+            Picker(selection: Binding(
+                get: { model.viewState.defaultDecision },
+                set: { model.send(action: .setDefaultDecision($0)) }
+            ), label: EmptyView()) {
+                ForEach(model.viewState.availableDefaultDecisions, id: \.self) { decision in
+                    Text(decision.websitePermissionsTitle)
+                        .tag(decision)
+                        .accessibilityIdentifier("WebsitePermissions.Detail.Default.\(decision.rawValue)")
+                }
+            }
+            .pickerStyle(.radioGroup)
+            .labelsHidden()
+            .accessibilityLabel(String(format: UserText.websitePermissionsDefaultAccessibilityLabel, model.viewState.category.title))
+            .accessibilityIdentifier("WebsitePermissions.Detail.Default")
+        }
+        .padding(.bottom, Constants.defaultSectionBottomPadding)
     }
 
     private var websitesSection: some View {
@@ -106,6 +137,7 @@ struct PreferencesWebsitePermissionDetailView: View {
                 )
             )
             .textFieldStyle(.plain)
+            .focused($isSearchFieldFocused)
 
             if !model.viewState.searchQuery.isEmpty {
                 Button {
@@ -125,11 +157,21 @@ struct PreferencesWebsitePermissionDetailView: View {
         .padding(.leading, 8)
         .padding(.trailing, 6)
         .frame(width: Constants.searchWidth, height: Constants.searchHeight)
-        .background(Color(designSystemColor: .containerFillSecondary))
+        .background(Color(designSystemColor: isSearchFieldFocused ? .controlsRaisedFillPrimary : .containerFillSecondary))
         .clipShape(RoundedRectangle(cornerRadius: Constants.searchCornerRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: Constants.searchCornerRadius, style: .continuous)
                 .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
+        }
+        .overlay {
+            if isSearchFieldFocused {
+                RoundedRectangle(
+                    cornerRadius: Constants.searchCornerRadius + Constants.searchFocusRingWidth / 2,
+                    style: .continuous
+                )
+                .strokeBorder(Color(nsColor: .keyboardFocusIndicatorColor), lineWidth: Constants.searchFocusRingWidth)
+                .padding(-Constants.searchFocusRingWidth / 2)
+            }
         }
         .accessibilityIdentifier("WebsitePermissions.Detail.Search")
     }

@@ -20,7 +20,7 @@
     },
     "aichat_report_metric_unknown": {
         "description": "Fired instead of m_aichat_report_metric_decode_error when the Duck.ai frontend sends a reportMetric payload whose metricName native code does not recognize",
-        "owners": ["aataraxiaa", "Bunn", "samsymons"],
+        "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": [

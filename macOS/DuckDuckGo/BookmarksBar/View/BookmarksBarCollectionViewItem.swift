@@ -87,8 +87,8 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
     override func loadView() {
         let containerView = NSView(frame: NSRect(x: 0, y: 0, width: 184, height: 24))
 
-        // Mouse over view: a translucent tint overlay that also owns hover/click handling,
-        // so it is kept in front of the favicon and the title (as it was in the xib).
+        // Translucent tint overlay that also owns hover/click handling, so it has to stay in front
+        // of the favicon and the title — behind them it would not receive clicks on the favicon.
         mouseOverView = MouseOverView(frame: .zero)
         mouseOverView.translatesAutoresizingMaskIntoConstraints = false
         mouseOverView.mouseOverColor = .buttonMouseOver

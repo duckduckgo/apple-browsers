@@ -283,6 +283,25 @@ final class BrowsingMenuBuilderTests: XCTestCase {
     }
 
     @MainActor
+    func testFireModeManagementRevocationKeepsFireSessionDenialWithoutRevokingOtherTabs() async throws {
+        let sut = makeTabViewController(
+            featureEnabled: true,
+            storedDecision: .allow,
+            fireTab: true,
+            revokePermissionsInOtherTabs: { _, _, _ in XCTFail("Fire-tab management must not revoke other tabs") }
+        )
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: XCTUnwrap(sut.webView.url)))
+        await grantCurrentSessionCameraPermission(on: sut)
+        let coordinator = try XCTUnwrap(sut.sitePermissionsState.coordinator)
+        // The sheet's Never Allow applies the Fire-session override, then revokes capture.
+        coordinator.applyFireModeManagementDecision(.deny, for: .camera, at: site)
+
+        sut.revokeSitePermissionsFromManagement([.camera], for: site)
+
+        XCTAssertEqual(coordinator.managementSnapshot(for: site).storedPermissions[.camera], .deny)
+    }
+
+    @MainActor
     func testManagementPresenterRefusesFlagOffAndStaleCommittedSite() {
         let flagOff = makeTabViewController(featureEnabled: false, storedDecision: .allow)
         flagOff.presentSitePermissionsManagement()

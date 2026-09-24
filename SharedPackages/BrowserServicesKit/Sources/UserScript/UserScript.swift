@@ -72,12 +72,17 @@ extension UserScript {
         return js.applyingReplacements(replacements)
     }
 
-    fileprivate nonisolated static func prepareScriptSource(from source: String) -> String {
+    fileprivate nonisolated static func prepareScriptSource(from source: String, skippingBlankSubframes: Bool = false) -> String {
         let hash = SHA256.hash(data: Data(source.utf8)).hashValue
+
+        // Some pages churn through hundreds of empty iframes (e.g. carousels that move slides around), and running
+        // every script in each of them can exhaust the web content process's memory.
+        let blankSubframeGuard = skippingBlankSubframes ? "if (window !== window.top && window.location.href === 'about:blank') {return}" : ""
 
         // This prevents the script being executed twice which appears to be a WKWebKit issue for about:blank frames when the location changes
         return """
         (() => {
+            \(blankSubframeGuard)
             if (window.navigator._duckduckgoloader_ && window.navigator._duckduckgoloader_.includes('\(hash)')) {return}
             \(source)
             window.navigator._duckduckgoloader_ = window.navigator._duckduckgoloader_ || [];
@@ -103,7 +108,14 @@ extension UserScript {
     }
 
     public func makeWKUserScript() async -> WKUserScriptBox {
-        let source = await Task.detached { [source] in Self.prepareScriptSource(from: source) }.result.get()
+        await makeWKUserScript(skippingBlankSubframes: false)
+    }
+
+    /// - Parameter skippingBlankSubframes: when true, the script returns before running in `about:blank` subframes.
+    public func makeWKUserScript(skippingBlankSubframes: Bool) async -> WKUserScriptBox {
+        let source = await Task.detached { [source] in
+            Self.prepareScriptSource(from: source, skippingBlankSubframes: skippingBlankSubframes)
+        }.result.get()
         return await Self.makeWKUserScript(from: source,
                                            injectionTime: injectionTime,
                                            forMainFrameOnly: forMainFrameOnly,

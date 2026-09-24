@@ -562,6 +562,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217880888140745
     case sitePermissions
+
+    /// Skips user scripts in about:blank subframes, to stop pages that churn through empty iframes from crashing the tab.
+    /// https://app.asana.com/1/137249556945/project/1206777341262243/task/1218822733141216?focus=true
+    case skipUserScriptsInBlankSubframes
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -968,6 +972,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .sitePermissions:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.sitePermissions))
+        case .skipUserScriptsInBlankSubframes:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.skipUserScriptsInBlankSubframes))
         }
     }
 

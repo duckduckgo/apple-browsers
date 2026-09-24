@@ -72,6 +72,7 @@ final class UserScripts: UserScriptsProvider {
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
 
     private let isAutoconsentExtensionAvailable: Bool
+    private let skipsBlankSubframes: Bool
 
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
@@ -83,6 +84,7 @@ final class UserScripts: UserScriptsProvider {
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
+        skipsBlankSubframes = featureFlagger.isFeatureOn(.skipUserScriptsInBlankSubframes)
 
         selectionFrameScript = SelectionFrameUserScript()
         self.mediaCaptureUserScript = mediaCaptureUserScript
@@ -236,9 +238,10 @@ final class UserScripts: UserScriptsProvider {
     func loadWKUserScripts() async -> [WKUserScript] {
         return await withTaskGroup(of: WKUserScriptBox.self) { @MainActor group in
             var wkUserScripts = [WKUserScript]()
+            let skipsBlankSubframes = self.skipsBlankSubframes
             userScripts.forEach { userScript in
                 group.addTask { @MainActor in
-                    await userScript.makeWKUserScript()
+                    await userScript.makeWKUserScript(skippingBlankSubframes: skipsBlankSubframes)
                 }
             }
             for await result in group {

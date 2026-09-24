@@ -43,11 +43,6 @@ on:
         description: "Comma-separated PR labels. 'breaking' is added for major updates."
         required: true
         type: string
-      dry-run:
-        description: "Update pins and resolve packages, but don't create a PR or Asana tasks"
-        required: false
-        type: boolean
-        default: false
     secrets:
       SSH_PRIVATE_KEY_DUCKSANS_FONT:
         required: true
@@ -145,7 +140,7 @@ jobs:
 
       - name: Create draft Pull Request
         id: create-pr
-        if: steps.dedupe.outputs.should_create == 'true' && !inputs.dry-run
+        if: steps.dedupe.outputs.should_create == 'true'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           add-paths: ${{ steps.verify.outputs.add_paths }}
@@ -228,7 +223,7 @@ jobs:
           gh pr edit "$PR_NUMBER" --add-reviewer "${OWNERS// /,}"
 
       - name: Report failure to Asana
-        if: failure() && !inputs.dry-run
+        if: failure()
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
           ASANA_PARENT_TASK_ID: ${{ inputs.asana-parent-task-id }}

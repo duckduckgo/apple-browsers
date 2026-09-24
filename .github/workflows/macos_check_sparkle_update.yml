@@ -6,11 +6,6 @@ on:
   schedule:
     - cron: '0 1 * * 5'  # Every Friday at 01:00 UTC
   workflow_dispatch:
-    inputs:
-      dry-run:
-        description: "Update pins and resolve packages, but don't create a PR or Asana tasks"
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -33,7 +28,6 @@ jobs:
       owners: diegoreymendez jotaemepereira
       asana-parent-task-id: "1212461351428211"
       labels: dependencies,macOS
-      dry-run: ${{ github.event_name == 'push' || inputs.dry-run || false }}  # TEMP: push check
     secrets:
       SSH_PRIVATE_KEY_DUCKSANS_FONT: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
       ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}

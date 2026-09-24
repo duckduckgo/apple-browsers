@@ -33,6 +33,22 @@
         return s ? s.display : 'block';
     }
 
+    // A floated element flows within surrounding text (e.g. a drop-cap first letter styled
+    // `float: left`), so it's inline content, not its own block. Gotcha: per CSS, a floated
+    // element's computed `display` is `block` — which is exactly what fooled the heuristic below,
+    // making the drop-cap <span> its own unit and orphaning the parent paragraph's text.
+    function isFloated(el) {
+        var s = window.getComputedStyle(el);
+        if (!s) return false;
+        var f = s.cssFloat || s.float;
+        return !!f && f !== 'none';
+    }
+
+    // Inline flow = inline display OR floated (both sit within a line of text, not their own block).
+    function isInlineFlow(el) {
+        return !!INLINE_DISPLAY[displayOf(el)] || isFloated(el);
+    }
+
     function isVisible(el) {
         var s = window.getComputedStyle(el);
         if (!s) return true;
@@ -40,12 +56,12 @@
     }
 
     // A visible block child means `el` is a container of other blocks, not a leaf text block.
+    // Floated children (drop caps) flow within the text, so they don't count as block children.
     function hasBlockChild(el) {
         var kids = el.children;
         for (var i = 0; i < kids.length; i++) {
-            var d = displayOf(kids[i]);
-            if (d === 'none') continue;
-            if (!INLINE_DISPLAY[d]) return true;
+            if (displayOf(kids[i]) === 'none') continue;
+            if (!isInlineFlow(kids[i])) return true;
         }
         return false;
     }
@@ -58,7 +74,7 @@
     // A translation unit is the INNERMOST block element that holds text: itself a block, with no
     // block children (so its content is one run of text + inline formatting), containing real letters.
     function isBlockUnit(el) {
-        if (INLINE_DISPLAY[displayOf(el)]) return false;   // inline → a block ancestor owns this text
+        if (isInlineFlow(el)) return false;                // inline or floated → a block ancestor owns this text
         if (hasBlockChild(el)) return false;               // container of blocks → descend instead
         if (el.querySelector(JUNK)) return false;          // contains technical junk → descend instead
         return /\p{L}/u.test(el.textContent || '');        // skip number-/symbol-/icon-only blocks
@@ -67,10 +83,12 @@
     var api = {
         _els: [],
         _originals: [],
+        _wrapped: [],
 
         extract: function () {
             this._els = [];
             this._originals = [];
+            this._wrapped = [];
             var out = [];
             var vh = window.innerHeight || document.documentElement.clientHeight;
             var root = document.body || document.documentElement;
@@ -92,17 +110,50 @@
                 var id = this._els.length;
                 this._els.push(el);
                 this._originals.push(el.innerHTML);
-                out.push({ id: id, text: html, vp: vp });
+                // Option 2: send the block wrapped in its own tag so the engine gets full-page-like
+                // context. A bare fragment that begins with a word-splitting inline tag (e.g. a
+                // drop-cap <span>A</span>iwa…) is mistranslated when sent alone; the enclosing tag
+                // avoids that. apply() strips this wrapper back off before writing to the DOM.
+                this._wrapped.push(true);
+                var tag = el.tagName.toLowerCase();
+                out.push({ id: id, text: '<' + tag + '>' + html + '</' + tag + '>', vp: vp });
             }
             return out;
+        },
+
+        // No extraction: treat the whole page body as a single translation unit (its innerHTML).
+        // Reuses the same _els/_originals machinery so apply()/revert() work unchanged.
+        extractFullPage: function () {
+            this._els = [];
+            this._originals = [];
+            this._wrapped = [];
+            var root = document.body || document.documentElement;
+            if (!root) return [];
+            var html = (root.innerHTML || '').trim();
+            if (!html) return [];
+            this._els.push(root);
+            this._originals.push(root.innerHTML);
+            this._wrapped.push(false);   // whole-body HTML already has context; not wrapped
+            return [{ id: 0, text: html, vp: 1 }];
         },
 
         apply: function (updates) {
             if (typeof updates === 'string') { updates = JSON.parse(updates); }
             var count = 0;
             for (var i = 0; i < updates.length; i++) {
-                var el = this._els[updates[i].id];
-                if (el) { el.innerHTML = updates[i].text; count++; }
+                var id = updates[i].id;
+                var el = this._els[id];
+                if (!el) { continue; }
+                var text = updates[i].text;
+                if (this._wrapped[id]) {
+                    // Strip the wrapper tag added in extract(). Fall back to the raw text if the
+                    // engine didn't return a clean single-element wrapper.
+                    var tmp = document.createElement('div');
+                    tmp.innerHTML = text;
+                    if (tmp.firstElementChild) { text = tmp.firstElementChild.innerHTML; }
+                }
+                el.innerHTML = text;
+                count++;
             }
             return count;
         },

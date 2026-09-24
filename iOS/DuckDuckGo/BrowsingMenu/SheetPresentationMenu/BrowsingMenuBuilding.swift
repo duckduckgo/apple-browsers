@@ -53,6 +53,8 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
     func makeFindInPageEntry() -> BrowsingMenuEntry?
     func makeExtractPageTextPOCEntry() -> BrowsingMenuEntry?
     func makeTranslateFoundationPOCEntry() -> BrowsingMenuEntry?
+    func makeTranslateBergamotPOCEntry() -> BrowsingMenuEntry?
+    func makeExportPageHTMLPOCEntry() -> BrowsingMenuEntry?
     func makeZoomEntry() -> BrowsingMenuEntry?
     func makeDesktopSiteEntry() -> BrowsingMenuEntry?
     func makeReloadEntry() -> BrowsingMenuEntry?

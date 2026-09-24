@@ -486,6 +486,7 @@
 		5B6D651D2FB4D2EB00BDCF4D /* ICSFileReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D651C2FB4D2E900BDCF4D /* ICSFileReaderTests.swift */; };
 		5B6D651F2FB4D30A00BDCF4D /* CompleteDownloadRowViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D651E2FB4D30700BDCF4D /* CompleteDownloadRowViewModelTests.swift */; };
 		5B6D65212FBA000000BDCF4D /* FilePreviewHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D65202FBA000000BDCF4D /* FilePreviewHelperTests.swift */; };
+		1AF5CD9CF159FAE174590704 /* TranslateKit in Frameworks */ = {isa = PBXBuildFile; productRef = 624DA54B91F1EAC4D2979710 /* TranslateKit */; };
 		5B7CA46B2FAE693000D69C83 /* ICSParser in Frameworks */ = {isa = PBXBuildFile; productRef = 5B7CA46A2FAE693000D69C83 /* ICSParser */; };
 		5B941E752FA29FC800AF2CE7 /* ShortcutOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B941E742FA29FC600AF2CE7 /* ShortcutOption.swift */; };
 		5BCF854E2F7D77540053B95E /* AddressBarURLFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BCF854D2F7D774A0053B95E /* AddressBarURLFilter.swift */; };
@@ -2585,6 +2586,14 @@
 		FAD9EA8CD6F8CD5124FA90F8 /* WebPageTranslationPOC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B061057FFC9C5F5428C468E4 /* WebPageTranslationPOC.swift */; };
 		FD555C0BE82E630360DC2E5A /* ToggleModeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6090D90640A2B1A529EDBAAB /* ToggleModeStorage.swift */; };
 		FF6D4181F0E95F602D9E1144 /* TranslationSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C0DFFE29A9250110EC62CED /* TranslationSettingsViewModel.swift */; };
+		168EFFE2D5E741A98DCF916F /* BergamotModelProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD3C1AFB0434050BDAC5C7E /* BergamotModelProvider.swift */; };
+		E378220AAAB7472AA56DE7A8 /* BergamotModelProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99904B2BCDB4B25BA1E5DF7 /* BergamotModelProviderTests.swift */; };
+		8DE24A7F05104B98A1185C91 /* TranslationDebugSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51602676FA2842B3A6EE3BD6 /* TranslationDebugSettings.swift */; };
+		EA93C805136743C08659C926 /* TranslationDebugSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF05FF3B61C6405092E8C37F /* TranslationDebugSettingsTests.swift */; };
+		BB11223344556677889900BB /* BatchBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11223344556677889900AA /* BatchBuilderTests.swift */; };
+		DD11223344556677889900DD /* TranslationDiagnosticReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11223344556677889900CC /* TranslationDiagnosticReport.swift */; };
+		FF11223344556677889900FF /* TranslationDiagnosticReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE11223344556677889900EE /* TranslationDiagnosticReportTests.swift */; };
+		B2C3D4E5F6A1B2C3D4E5F6A1 /* WebPageTranslationDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A1B2C3D4E5F6 /* WebPageTranslationDebugView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -4494,6 +4503,14 @@
 		AEC7FF2261884003814DB9D0 /* OnboardingSearchAIToggle_dark.lottie */ = {isa = PBXFileReference; lastKnownFileType = file; path = OnboardingSearchAIToggle_dark.lottie; sourceTree = "<group>"; };
 		AF81E0C6EDC46254CF28AFCB /* RebrandedOnboardingView+SearchExperienceContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "RebrandedOnboardingView+SearchExperienceContent.swift"; sourceTree = "<group>"; };
 		B061057FFC9C5F5428C468E4 /* WebPageTranslationPOC.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WebPageTranslationPOC.swift; path = DuckDuckGo/WebPageTranslation/WebPageTranslationPOC.swift; sourceTree = SOURCE_ROOT; };
+		0AD3C1AFB0434050BDAC5C7E /* BergamotModelProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BergamotModelProvider.swift; path = DuckDuckGo/WebPageTranslation/BergamotModelProvider.swift; sourceTree = SOURCE_ROOT; };
+		C99904B2BCDB4B25BA1E5DF7 /* BergamotModelProviderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BergamotModelProviderTests.swift; path = DuckDuckGoTests/WebPageTranslation/BergamotModelProviderTests.swift; sourceTree = SOURCE_ROOT; };
+		51602676FA2842B3A6EE3BD6 /* TranslationDebugSettings.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TranslationDebugSettings.swift; path = DuckDuckGo/WebPageTranslation/TranslationDebugSettings.swift; sourceTree = SOURCE_ROOT; };
+		DF05FF3B61C6405092E8C37F /* TranslationDebugSettingsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TranslationDebugSettingsTests.swift; path = DuckDuckGoTests/WebPageTranslation/TranslationDebugSettingsTests.swift; sourceTree = SOURCE_ROOT; };
+		AA11223344556677889900AA /* BatchBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BatchBuilderTests.swift; path = DuckDuckGoTests/WebPageTranslation/BatchBuilderTests.swift; sourceTree = SOURCE_ROOT; };
+		CC11223344556677889900CC /* TranslationDiagnosticReport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TranslationDiagnosticReport.swift; path = DuckDuckGo/WebPageTranslation/TranslationDiagnosticReport.swift; sourceTree = SOURCE_ROOT; };
+		EE11223344556677889900EE /* TranslationDiagnosticReportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TranslationDiagnosticReportTests.swift; path = DuckDuckGoTests/WebPageTranslation/TranslationDiagnosticReportTests.swift; sourceTree = SOURCE_ROOT; };
+		A1B2C3D4E5F6A1B2C3D4E5F6 /* WebPageTranslationDebugView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WebPageTranslationDebugView.swift; path = DuckDuckGo/WebPageTranslation/WebPageTranslationDebugView.swift; sourceTree = SOURCE_ROOT; };
 		B39FB0F32E25368100DF2C4E /* AutoconsentPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentPixels.swift; sourceTree = "<group>"; };
 		B4E5D6C7A8F9012345678901 /* AIChatTabChatHeaderViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabChatHeaderViewTests.swift; sourceTree = "<group>"; };
 		B50DAF4E2FBE4FD3007BFA26 /* EscapeHatchModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EscapeHatchModelTests.swift; sourceTree = "<group>"; };
@@ -5438,6 +5455,7 @@
 				9FDD72052D895D8C0016246B /* CombineSchedulers in Frameworks */,
 				9F254AF12CF8D5250063B308 /* MaliciousSiteProtection in Frameworks */,
 				5B7CA46B2FAE693000D69C83 /* ICSParser in Frameworks */,
+				1AF5CD9CF159FAE174590704 /* TranslateKit in Frameworks */,
 				F4D7F634298C00C3006C3AE9 /* FindInPageIOSJSSupport in Frameworks */,
 				4B94B79E2D4831D90014AAB8 /* SyncUI-iOS in Frameworks */,
 				DA46CDBDABEE6B9945F597C3 /* AIChatDebugServer in Frameworks */,
@@ -6656,6 +6674,14 @@
 				5C0DFFE29A9250110EC62CED /* TranslationSettingsViewModel.swift */,
 				9D682AF7C7067E5E7CCC2CB5 /* TranslationSettingsViewModelTests.swift */,
 				6F2A0A1D8DB0B586DA4AC17B /* TranslationSettingsView.swift */,
+				0AD3C1AFB0434050BDAC5C7E /* BergamotModelProvider.swift */,
+				C99904B2BCDB4B25BA1E5DF7 /* BergamotModelProviderTests.swift */,
+				51602676FA2842B3A6EE3BD6 /* TranslationDebugSettings.swift */,
+				DF05FF3B61C6405092E8C37F /* TranslationDebugSettingsTests.swift */,
+				AA11223344556677889900AA /* BatchBuilderTests.swift */,
+				CC11223344556677889900CC /* TranslationDiagnosticReport.swift */,
+				EE11223344556677889900EE /* TranslationDiagnosticReportTests.swift */,
+				A1B2C3D4E5F6A1B2C3D4E5F6 /* WebPageTranslationDebugView.swift */,
 			);
 			name = WebPageTranslation;
 			sourceTree = "<group>";
@@ -11794,6 +11820,7 @@
 				315E39642F86ABEE00D2289D /* DebugServer */,
 				3C12C8760D7AF6C888DAD36A /* AIChatDebugServer */,
 				5B7CA46A2FAE693000D69C83 /* ICSParser */,
+				624DA54B91F1EAC4D2979710 /* TranslateKit */,
 			);
 			productName = DuckDuckGo;
 			productReference = 84E341921E2F7EFB00BDBA6F /* DuckDuckGo.app */;
@@ -12223,6 +12250,7 @@
 				7B0752DA2F21BFDB00ACA559 /* XCLocalSwiftPackageReference "AutomationServer" */,
 				9FADFC482F5FC56400CA16F7 /* XCRemoteSwiftPackageReference "native-apps-ducksans" */,
 				315E39632F86ABE100D2289D /* XCLocalSwiftPackageReference "DebugServer" */,
+				DCA188F3D0BF46B0BE19F781 /* XCLocalSwiftPackageReference "translate-kit" */,
 			);
 			productRefGroup = 84E341931E2F7EFB00BDBA6F /* Products */;
 			projectDirPath = "";
@@ -13953,6 +13981,10 @@
 				24AC6CC30F8C54485BBFC541 /* TranslationLanguageAvailability.swift in Sources */,
 				FF6D4181F0E95F602D9E1144 /* TranslationSettingsViewModel.swift in Sources */,
 				CD1B1DC2B603C156ED732377 /* TranslationSettingsView.swift in Sources */,
+				168EFFE2D5E741A98DCF916F /* BergamotModelProvider.swift in Sources */,
+				8DE24A7F05104B98A1185C91 /* TranslationDebugSettings.swift in Sources */,
+				DD11223344556677889900DD /* TranslationDiagnosticReport.swift in Sources */,
+				B2C3D4E5F6A1B2C3D4E5F6A1 /* WebPageTranslationDebugView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -14471,6 +14503,10 @@
 				FAD2CD7CF552224052886BED /* TranslationLanguageStoreTests.swift in Sources */,
 				0B87C0FAD8036A0B5F36641A /* TranslationLanguageAvailabilityTests.swift in Sources */,
 				4E6A12756A6B48D02A664766 /* TranslationSettingsViewModelTests.swift in Sources */,
+				E378220AAAB7472AA56DE7A8 /* BergamotModelProviderTests.swift in Sources */,
+				EA93C805136743C08659C926 /* TranslationDebugSettingsTests.swift in Sources */,
+				BB11223344556677889900BB /* BatchBuilderTests.swift in Sources */,
+				FF11223344556677889900FF /* TranslationDiagnosticReportTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -18216,6 +18252,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LocalPackages/DuckUI;
 		};
+		DCA188F3D0BF46B0BE19F781 /* XCLocalSwiftPackageReference "translate-kit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../../translate-kit;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -18922,6 +18962,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F486D2FD25069744002D07D7 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
 			productName = OHHTTPStubsSwift;
+		};
+		624DA54B91F1EAC4D2979710 /* TranslateKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DCA188F3D0BF46B0BE19F781 /* XCLocalSwiftPackageReference "translate-kit" */;
+			productName = TranslateKit;
 		};
 		F4D7F633298C00C3006C3AE9 /* FindInPageIOSJSSupport */ = {
 			isa = XCSwiftPackageProductDependency;

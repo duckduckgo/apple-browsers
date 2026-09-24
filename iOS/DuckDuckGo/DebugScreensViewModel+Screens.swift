@@ -158,6 +158,9 @@ extension DebugScreensViewModel {
             .view(title: "Alert Playground", { _ in
                 AlertPlaygroundView()
             }),
+            .view(title: "Web Page Translation", { _ in
+                WebPageTranslationDebugView()
+            }),
             .view(title: "Tab Generator", { d in
                 BulkGeneratorView(factory: BulkTabFactory(tabManager: d.tabManager))
             }),

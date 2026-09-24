@@ -31,6 +31,7 @@ import FoundationModels
 import NaturalLanguage
 import ObjectiveC
 import os.log
+import TranslateKit
 
 private let pocLogger = Logger(subsystem: "com.duckduckgo.ios", category: "WebPageTranslationPOC")
 
@@ -68,11 +69,13 @@ extension TabViewController {
     private enum POCApproach {
         case appleTranslation
         case foundationModel
+        case bergamot
 
         var label: String {
             switch self {
             case .appleTranslation: return "Apple Translation (NMT)"
             case .foundationModel: return "Foundation Model (LLM)"
+            case .bergamot: return "Bergamot"
             }
         }
     }
@@ -106,6 +109,59 @@ extension TabViewController {
 
     func extractPageTextPOC() { togglePOC(approach: .appleTranslation) }
     func translateFoundationModelPOC() { togglePOC(approach: .foundationModel) }
+    func translateBergamotPOC() { togglePOC(approach: .bergamot) }
+
+    /// Serializes the current rendered DOM (including any applied translation) to a timestamped
+    /// .html file under Documents/exports/ and logs the absolute path. Independent of the translate
+    /// state machine — tap before translating to snapshot the original, or after to snapshot A/B.
+    func exportPageHTMLPOC() {
+        Task { @MainActor [weak self] in await self?.exportPageHTML() }
+    }
+
+    @MainActor
+    private func exportPageHTML() async {
+        do {
+            let outerHTML = (try await evaluatePOCJavaScript("document.documentElement.outerHTML")) as? String ?? ""
+            let baseHref = webView.url?.absoluteString ?? ""
+            let html = "<!DOCTYPE html>\n<!-- POC export from \(baseHref) -->\n"
+                + injectingBaseHref(into: outerHTML, baseHref: baseHref)
+
+            let exports = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("exports", isDirectory: true)
+            try FileManager.default.createDirectory(at: exports, withIntermediateDirectories: true)
+
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd-HHmmss"
+            let fileURL = exports.appendingPathComponent("page-\(formatter.string(from: Date())).html")
+            try html.write(to: fileURL, atomically: true, encoding: .utf8)
+
+            Swift.print("POC export → \(fileURL.path)")
+            pocLogger.info("POC export → \(fileURL.path, privacy: .public)")
+
+            // Share sheet so the .html can be AirDropped off a physical device (the app sandbox's
+            // Documents/ isn't easily reachable there). // ponytail: spike affordance.
+            let activityVC = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+            activityVC.popoverPresentationController?.sourceView = view
+            activityVC.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            present(activityVC, animated: true)
+        } catch {
+            pocLogger.error("POC export failed: \(error.localizedDescription, privacy: .public)")
+            presentExtractionPOCAlert(title: "Export failed", message: error.localizedDescription)
+        }
+    }
+
+    /// Inserts a `<base href>` right after the opening `<head>` so relative CSS/img/links resolve
+    /// when the saved file is hosted/opened online. // ponytail: naive string insert, not a parser.
+    private func injectingBaseHref(into html: String, baseHref: String) -> String {
+        guard !baseHref.isEmpty,
+              let head = html.range(of: "<head", options: .caseInsensitive),
+              let close = html.range(of: ">", range: head.upperBound..<html.endIndex) else {
+            return html
+        }
+        var out = html
+        out.insert(contentsOf: "<base href=\"\(baseHref)\">", at: close.upperBound)
+        return out
+    }
 
     private func togglePOC(approach: POCApproach) {
         switch pocState.mode {
@@ -152,12 +208,28 @@ extension TabViewController {
             return
         }
         let start = Date()
+
+        // Vars hoisted above `do` so the `catch` block can read them for the diagnostic report.
+        var settings = TranslationDebugSettings()
+        var targetCode: String = ""
+        var detectedSourceCode: String?
+        var detectionSeconds: Double?
+        var items: [[String: Any]] = []
+        var uniqueTexts: [String] = []
+        var viewportCount: Int = 0
+
         do {
             _ = try await evaluatePOCJavaScript(script)
-            let extractResult = try await evaluatePOCJavaScript("window.__ddgPOC.extract()")
-            let items = (extractResult as? [[String: Any]]) ?? []
+            // fullPageHTML bypasses block extraction and translates the whole body innerHTML as one unit.
+            settings = TranslationDebugSettings()
+            let extractionScope = settings.extractionScope
+            let extractFunction = extractionScope == .fullPageHTML ? "extractFullPage" : "extract"
+            let extractResult = try await evaluatePOCJavaScript("window.__ddgPOC.\(extractFunction)()")
+            items = (extractResult as? [[String: Any]]) ?? []
             // uniqueTexts is ordered viewport-visible-first; viewportCount is the size of that prefix.
-            let (uniqueTexts, textToIDs, viewportCount) = dedupePOC(items)
+            let (deduped, textToIDs, vpCount) = dedupePOC(items)
+            uniqueTexts = deduped
+            viewportCount = vpCount
 
             // DEBUG (temporary): log every extracted unit in full (one entry each, no truncation).
             let lengths = uniqueTexts.map { $0.count }.sorted()
@@ -166,46 +238,105 @@ extension TabViewController {
                 pocLogger.info("POC unit [\(i, privacy: .public)] vp=\(i < viewportCount, privacy: .public) len=\(unit.count, privacy: .public): \(unit, privacy: .public)")
             }
 
-            let translatedUnique: Int
-            var viewportSeconds: Double?
+            // Detect language once here in the pipeline (available to both success tail and catch).
+            let rawTarget = TranslationLanguageStore().targetLanguageCode
+            targetCode = String(rawTarget.split(separator: "-", maxSplits: 1).first ?? Substring(rawTarget))
+            if #available(iOS 16.0, *) {
+                let d = detectSource(from: uniqueTexts, detector: settings.detector, input: settings.detectionInput)
+                detectedSourceCode = d.language?.languageCode?.identifier
+                detectionSeconds = d.seconds
+            }
+
+            var runResult: POCRunResult
             switch approach {
             case .appleTranslation:
                 guard #available(iOS 18.0, *) else {
                     finishWithMessage(title: "Needs iOS 18", message: "Apple Translation requires iOS 18+.")
                     return
                 }
-                let result = try await runAppleTranslation(uniqueTexts: uniqueTexts,
-                                                           textToIDs: textToIDs,
-                                                           viewportCount: viewportCount,
-                                                           start: start)
-                translatedUnique = result.translated
-                viewportSeconds = result.viewportSeconds
+                runResult = try await runAppleTranslation(uniqueTexts: uniqueTexts,
+                                                          textToIDs: textToIDs,
+                                                          viewportCount: viewportCount,
+                                                          start: start,
+                                                          sourceCode: detectedSourceCode,
+                                                          targetCode: targetCode)
             case .foundationModel:
                 guard #available(iOS 26.0, *) else {
                     finishWithMessage(title: "Needs iOS 26", message: "Foundation Models requires iOS 26 + Apple Intelligence.")
                     return
                 }
-                translatedUnique = try await runFoundationModel(uniqueTexts: uniqueTexts, textToIDs: textToIDs)
+                runResult = try await runFoundationModel(uniqueTexts: uniqueTexts, textToIDs: textToIDs)
+            case .bergamot:
+                // ponytail: no availability gating for Bergamot — deliberate finding vs Apple NMT's iOS 18 floor
+                runResult = try await runBergamot(uniqueTexts: uniqueTexts,
+                                                   textToIDs: textToIDs,
+                                                   viewportCount: viewportCount,
+                                                   start: start,
+                                                   sourceCode: detectedSourceCode,
+                                                   targetCode: targetCode)
             }
 
             // User tapped Show Original mid-run: revert + state are handled there, so just bail.
             if Task.isCancelled { return }
 
+            let elapsed = Date().timeIntervalSince(start)
             pocState.mode = .translated
             pocState.task = nil
             logPOCMetrics(approach: approach.label,
                           extracted: items.count,
                           unique: uniqueTexts.count,
-                          translatedUnique: translatedUnique,
-                          elapsed: Date().timeIntervalSince(start),
+                          translatedUnique: runResult.translated,
+                          elapsed: elapsed,
                           viewportCount: viewportCount,
-                          viewportSeconds: viewportSeconds)
+                          viewportSeconds: runResult.viewportSeconds)
+
+            presentDiagnosticReport(engine: approach.label, targetCode: targetCode,
+                                    detectedSourceCode: detectedSourceCode, detectionSeconds: detectionSeconds,
+                                    itemsCount: items.count, uniqueCount: uniqueTexts.count, viewportCount: viewportCount,
+                                    elapsed: elapsed, runResult: runResult, settings: settings, errorMessage: nil)
         } catch is CancellationError {
             return
         } catch {
             pocLogger.error("POC failed (\(approach.label, privacy: .public)): \(error.localizedDescription, privacy: .public)")
-            finishWithMessage(title: "POC failed · \(approach.label)", message: error.localizedDescription)
+            if settings.diagnosticReportEnabled {
+                pocState.mode = .idle
+                pocState.task = nil
+                presentDiagnosticReport(engine: approach.label, targetCode: targetCode,
+                                        detectedSourceCode: detectedSourceCode, detectionSeconds: detectionSeconds,
+                                        itemsCount: items.count, uniqueCount: uniqueTexts.count, viewportCount: viewportCount,
+                                        elapsed: Date().timeIntervalSince(start), runResult: nil, settings: settings,
+                                        errorMessage: error.localizedDescription)
+            } else {
+                finishWithMessage(title: "POC failed · \(approach.label)", message: error.localizedDescription)
+            }
         }
+    }
+
+    /// Builds and presents the diagnostic report sheet. On the failure path, the report REPLACES
+    /// the `finishWithMessage` alert to avoid two simultaneous UIViewController presentations.
+    @MainActor
+    private func presentDiagnosticReport(engine: String, targetCode: String, detectedSourceCode: String?,
+                                         detectionSeconds: Double?, itemsCount: Int, uniqueCount: Int,
+                                         viewportCount: Int, elapsed: TimeInterval,
+                                         runResult: POCRunResult?, settings: TranslationDebugSettings,
+                                         errorMessage: String?) {
+        guard settings.diagnosticReportEnabled else { return }
+        let source = detectedSourceCode ?? "?"
+        let throughput = elapsed > 0 ? Double(runResult?.translated ?? 0) / elapsed : 0
+        let report = TranslationDiagnosticReport(
+            engine: engine,
+            languagePair: "\(source)\u{2192}\(targetCode)",
+            extractionScope: settings.extractionScope.rawValue,
+            detector: settings.detector.rawValue,
+            detectionInput: settings.detectionInput.rawValue,
+            detectedSourceLanguage: detectedSourceCode,
+            detectionSeconds: detectionSeconds,
+            nodesExtracted: itemsCount, uniqueUnits: uniqueCount, viewportCount: viewportCount,
+            timeToViewportSeconds: runResult?.viewportSeconds,
+            fullPageSeconds: elapsed, throughput: throughput,
+            bergamot: runResult?.bergamot,
+            errorMessage: errorMessage)
+        present(UIHostingController(rootView: TranslationDiagnosticReportView(report: report)), animated: true)
     }
 
     /// Resets state to idle and surfaces a message (used for failures and unmet-availability paths).
@@ -238,15 +369,43 @@ extension TabViewController {
         return (viewportTexts + restTexts, textToIDs, viewportTexts.count)
     }
 
-    /// Detects the page's dominant language from a sample of the extracted text using the on-device
-    /// NaturalLanguage recognizer (no model download). Returns nil when inconclusive, so the caller
-    /// can fall back to the Translation framework's own per-batch auto-detect.
+    /// Builds the detection sample per the debug setting: HTML-or-stripped × first-50-or-full-page.
+    private func detectionSample(from texts: [String], input: TranslationDetectionInput) -> String {
+        let selected = input.usesFullPage ? texts : Array(texts.prefix(50))
+        let joined = selected.joined(separator: "\n")
+        guard input.stripsHTML else { return joined }
+        // ponytail: crude regex tag-strip for the spike, not a real HTML parser
+        let noTags = joined.replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
+        return noTags.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                     .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Detects the source language with the selected detector + input mode; returns the result and the time it took.
     @available(iOS 16.0, *)
-    private func detectSourceLanguage(from texts: [String]) -> Locale.Language? {
-        let recognizer = NLLanguageRecognizer()
-        recognizer.processString(texts.prefix(50).joined(separator: "\n"))
-        guard let language = recognizer.dominantLanguage, language != .undetermined else { return nil }
-        return Locale.Language(identifier: language.rawValue)
+    private func detectSource(from texts: [String], detector: TranslationDetector, input: TranslationDetectionInput) -> (language: Locale.Language?, seconds: Double) {
+        let sample = detectionSample(from: texts, input: input)
+        let start = ProcessInfo.processInfo.systemUptime
+        let language: Locale.Language?
+        switch detector {
+        case .naturalLanguage:
+            let recognizer = NLLanguageRecognizer()
+            recognizer.processString(sample)
+            if let dominant = recognizer.dominantLanguage, dominant != .undetermined {
+                language = Locale.Language(identifier: dominant.rawValue)
+            } else { language = nil }
+        case .cld2:
+            if let code = try? TranslateKit().detectLanguage(sample).language, !code.isEmpty {
+                language = Locale.Language(identifier: code)
+            } else { language = nil }
+        }
+        return (language, ProcessInfo.processInfo.systemUptime - start)
+    }
+
+    /// Lightweight struct carrying engine-run results needed by the diagnostic report.
+    private struct POCRunResult {
+        var translated: Int
+        var viewportSeconds: Double?
+        var bergamot: TranslationDiagnosticReport.Bergamot?   // nil for Apple/Foundation
     }
 
     /// Wraps the (unambiguous) completion-handler `evaluateJavaScript` as async.
@@ -312,25 +471,21 @@ extension TabViewController {
     private func runAppleTranslation(uniqueTexts: [String],
                                      textToIDs: [String: [Int]],
                                      viewportCount: Int,
-                                     start: Date) async throws -> (translated: Int, viewportSeconds: Double) {
-        let targetCode = TranslationLanguageStore().targetLanguageCode
+                                     start: Date,
+                                     sourceCode: String?,
+                                     targetCode: String) async throws -> POCRunResult {
         let target = Locale.Language(identifier: targetCode)
-        let source = detectSourceLanguage(from: uniqueTexts)
+        let source = sourceCode.map { Locale.Language(identifier: $0) }
 
         // Page already in the target language → nothing to translate (avoids Apple's same-pair error).
         if let source, source.languageCode?.identifier == target.languageCode?.identifier {
             throw POCError(message: "This page already appears to be in \(translationLanguageDisplayName(forCode: targetCode)).")
         }
 
-        // Build the work: the viewport as a single batch, then the rest in small batches.
-        var indexBatches: [[Int]] = []
-        if viewportCount > 0 { indexBatches.append(Array(0..<viewportCount)) }
-        var cursor = viewportCount
-        while cursor < uniqueTexts.count {
-            let end = min(cursor + pocRestBatchSize, uniqueTexts.count)
-            indexBatches.append(Array(cursor..<end))
-            cursor = end
-        }
+        // Build the work: viewport batch then the rest using the shared batch builder.
+        let debugSettings = TranslationDebugSettings()
+        let scope = debugSettings.extractionScope
+        let indexBatches = buildIndexBatches(uniqueCount: uniqueTexts.count, viewportCount: viewportCount, scope: scope, restBatchSize: pocRestBatchSize)
         let requestBatches = indexBatches.map { group in
             group.map { TranslationSession.Request(sourceText: uniqueTexts[$0], clientIdentifier: String($0)) }
         }
@@ -387,14 +542,14 @@ extension TabViewController {
                 overlayVisible = false
             }
         }
-        return (translated, viewportSeconds)
+        return POCRunResult(translated: translated, viewportSeconds: viewportSeconds, bergamot: nil)
     }
 
     // MARK: - Engine 2: Foundation Models (LLM, iOS 26 + Apple Intelligence)
 
     @available(iOS 26.0, *)
     @MainActor
-    private func runFoundationModel(uniqueTexts: [String], textToIDs: [String: [Int]]) async throws -> Int {
+    private func runFoundationModel(uniqueTexts: [String], textToIDs: [String: [Int]]) async throws -> POCRunResult {
         switch SystemLanguageModel.default.availability {
         case .available:
             break
@@ -440,7 +595,122 @@ extension TabViewController {
             start = end
         }
         try await applyTranslationsPOC(buffer)
-        return translated
+        return POCRunResult(translated: translated, viewportSeconds: nil, bergamot: nil)
+    }
+
+    // MARK: - Engine 3: Bergamot (NMT, all supported iOS versions)
+
+    @MainActor
+    private func runBergamot(uniqueTexts: [String],
+                             textToIDs: [String: [Int]],
+                             viewportCount: Int,
+                             start: Date,
+                             sourceCode detectedSourceCode: String?,
+                             targetCode: String) async throws -> POCRunResult {
+        // --- Direction selection ---
+        // Page already in the target language → nothing to translate.
+        if let detected = detectedSourceCode, detected == targetCode {
+            throw POCError(message: "This page already appears to be in \(translationLanguageDisplayName(forCode: targetCode)).")
+        }
+
+        // Direction: models are X⇄en only. Use the detected source; if detection is inconclusive,
+        // infer it only when the target is a non-English language (⇒ the source must be English).
+        let sourceCode: String
+        if let detected = detectedSourceCode {
+            sourceCode = detected
+        } else if targetCode != "en" {
+            // ponytail: translating INTO a non-en target ⇒ source is en; can't infer when target is en
+            sourceCode = "en"
+        } else {
+            throw POCError(message: "Couldn't detect the page's source language (target is English, so the "
+                + "source could be any supported language). Try a different Detection input in the debug screen.")
+        }
+
+        guard BergamotModelProvider.supports(source: sourceCode, target: targetCode) else {
+            let langs = BergamotModelProvider.supportedNonEnglishLanguages.joined(separator: ", ")
+            throw POCError(message: "Bergamot supports \(langs) ⇄ en only. "
+                + "Got \(sourceCode)→\(targetCode) "
+                + "(detected source: \(detectedSourceCode ?? "nil"), target setting: \(targetCode)).")
+        }
+
+        // --- Overlay ---
+        let overlay = makePOCLoadingOverlay()
+        var overlayVisible = true
+        defer {
+            if overlayVisible { overlay.removeFromSuperview() }
+        }
+
+        // --- Ensure model (overlay is up, covering any download) ---
+        // download.seconds == 0 means cache hit; > 0 means a real download happened (used in diagnostic report).
+        let download = try await BergamotModelProvider().modelForDirection(source: sourceCode, target: targetCode)
+        let spec = download.model
+
+        // --- Build index batches using shared builder + extraction scope setting ---
+        let scope = TranslationDebugSettings().extractionScope
+        let indexBatches = buildIndexBatches(uniqueCount: uniqueTexts.count, viewportCount: viewportCount, scope: scope, restBatchSize: pocRestBatchSize)
+
+        // --- Run engine off the main thread ---
+        // TranslateKit/TranslationModel are blocking and non-Sendable; BergamotEngine actor owns them
+        // on a single background executor so all blocking calls stay off the main actor.
+        let engine = BergamotEngine()
+        let modelLoadStart = Date()
+        try await engine.prepare(spec: spec)
+        let modelLoadSeconds = Date().timeIntervalSince(modelLoadStart)
+
+        var translated = 0
+        var viewportSeconds = Date().timeIntervalSince(start)
+        var isFirstBatch = true
+
+        for batch in indexBatches {
+            if Task.isCancelled { break }
+
+            let strings = batch.map { uniqueTexts[$0] }
+
+            // DEBUG (temporary): log every translated IN/OUT pair in full.
+            for (batchOffset, globalIndex) in batch.enumerated() {
+                pocLogger.info("""
+                POC bergamot [\(globalIndex, privacy: .public)]
+                  IN : \(uniqueTexts[globalIndex], privacy: .public)
+                """)
+                _ = batchOffset // suppress unused warning; OUT logged after translate
+            }
+
+            // Translate off-main — blocking C ABI call runs inside the actor.
+            let outputTexts = try await engine.translate(strings)
+
+            // Back on MainActor: build updates and apply to page.
+            var updates: [[String: Any]] = []
+            for (batchOffset, globalIndex) in batch.enumerated() {
+                guard batchOffset < outputTexts.count else { continue }
+                let out = outputTexts[batchOffset]
+                pocLogger.info("""
+                POC bergamot [\(globalIndex, privacy: .public)]
+                  OUT: \(out, privacy: .public)
+                """)
+                for nodeID in textToIDs[uniqueTexts[globalIndex]] ?? [] {
+                    updates.append(["id": nodeID, "text": out])
+                }
+                translated += 1
+            }
+            try await applyTranslationsPOC(updates)
+
+            if isFirstBatch {
+                isFirstBatch = false
+                viewportSeconds = Date().timeIntervalSince(start)
+                overlay.removeFromSuperview()
+                overlayVisible = false
+            }
+        }
+
+        // Build bergamot metadata for the diagnostic report.
+        // downloadBytes/downloadSeconds are nil on cache hit (download.seconds == 0 means nothing was downloaded).
+        let bergamotMeta = TranslationDiagnosticReport.Bergamot(
+            modelTier: "base-memory",
+            modelLoadSeconds: modelLoadSeconds,
+            downloadBytes: download.seconds > 0 ? download.bytes : nil,
+            downloadSeconds: download.seconds > 0 ? download.seconds : nil
+        )
+        return POCRunResult(translated: translated, viewportSeconds: viewportSeconds, bergamot: bergamotMeta)
     }
 
     // MARK: - HTML probe (temporary manual test)
@@ -512,6 +782,57 @@ extension TabViewController {
             presentExtractionPOCAlert(title: "HTML probe failed", message: error.localizedDescription)
         }
     }
+}
+
+// MARK: - Shared batch builder (4.2)
+
+/// viewportOnly → only the viewport prefix.
+/// batches → viewport batch then the rest in restBatchSize chunks.
+/// fullPageHTML / fullPageExtracted → everything in a single translate call (fullPageHTML has one unit anyway).
+func buildIndexBatches(uniqueCount: Int, viewportCount: Int, scope: TranslationExtractionScope, restBatchSize: Int) -> [[Int]] {
+    guard uniqueCount > 0 else { return [] }
+    switch scope {
+    case .viewportOnly:
+        return viewportCount > 0 ? [Array(0..<min(viewportCount, uniqueCount))] : []
+    case .fullPageHTML, .fullPageExtracted:
+        return [Array(0..<uniqueCount)]
+    case .batches:
+        var batches: [[Int]] = []
+        if viewportCount > 0 { batches.append(Array(0..<min(viewportCount, uniqueCount))) }
+        var cursor = viewportCount
+        while cursor < uniqueCount {
+            let end = min(cursor + restBatchSize, uniqueCount)
+            batches.append(Array(cursor..<end))
+            cursor = end
+        }
+        return batches
+    }
+}
+
+// MARK: - Bergamot engine actor (all supported iOS versions)
+
+/// Owns a single `TranslateKit` context + loaded `TranslationModel` on a background executor.
+/// All blocking C ABI calls stay on this actor; only `[String]` values cross the boundary.
+private actor BergamotEngine {
+    private var kit: TranslateKit?
+    private var model: TranslationModel?
+
+    func prepare(spec: ModelSpec) throws {
+        let k = try TranslateKit()
+        let m = try k.loadModel(spec)
+        self.kit = k
+        self.model = m
+    }
+
+    func translate(_ strings: [String]) throws -> [String] {
+        guard let model else { throw BergamotEngineError.notPrepared }
+        let results = try model.translate(strings, isHtml: true)
+        return results.map(\.text)
+    }
+}
+
+private enum BergamotEngineError: Error {
+    case notPrepared
 }
 
 // MARK: - Apple Translation offscreen SwiftUI host (iOS 18+)

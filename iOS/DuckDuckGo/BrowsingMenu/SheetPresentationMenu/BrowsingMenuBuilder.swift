@@ -161,6 +161,8 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
                     .init(entryBuilder.makeFindInPageEntry()),
                     .init(entryBuilder.makeExtractPageTextPOCEntry()),
                     .init(entryBuilder.makeTranslateFoundationPOCEntry()),
+                    .init(entryBuilder.makeTranslateBergamotPOCEntry()),
+                    .init(entryBuilder.makeExportPageHTMLPOCEntry()),
                     .init(entryBuilder.makeZoomEntry()),
                     .init(entryBuilder.makeDesktopSiteEntry())
                 ].compactMap { $0 }
@@ -182,6 +184,8 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
                 .init(entryBuilder.makeFindInPageEntry()),
                 .init(entryBuilder.makeExtractPageTextPOCEntry()),
                 .init(entryBuilder.makeTranslateFoundationPOCEntry()),
+                .init(entryBuilder.makeTranslateBergamotPOCEntry()),
+                .init(entryBuilder.makeExportPageHTMLPOCEntry()),
                 .init(entryBuilder.makeZoomEntry()),
                 .init(entryBuilder.makeDesktopSiteEntry())
             ].compactMap { $0 }

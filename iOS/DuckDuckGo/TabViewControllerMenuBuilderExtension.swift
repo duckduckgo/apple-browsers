@@ -448,6 +448,21 @@ extension TabViewController {
         })
     }
 
+    private func buildTranslateBergamotPOCEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.globe : DesignSystemImages.Glyphs.Size24.globe
+        let title = webPageTranslationPOCIsActive ? "Show Original" : "Translate (Bergamot)"
+        return BrowsingMenuEntry.regular(name: title, image: image, action: { [weak self] in
+            self?.translateBergamotPOC()
+        })
+    }
+
+    private func buildExportPageHTMLPOCEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.globe : DesignSystemImages.Glyphs.Size24.globe
+        return BrowsingMenuEntry.regular(name: "Export page HTML", image: image, action: { [weak self] in
+            self?.exportPageHTMLPOC()
+        })
+    }
+
     private func buildFindInPageEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.findInPage : DesignSystemImages.Glyphs.Size24.findInPage
         return BrowsingMenuEntry.regular(name: UserText.findInPage, image: image, action: { [weak self] in
@@ -1136,6 +1151,16 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeTranslateFoundationPOCEntry() -> BrowsingMenuEntry? {
         guard let link = validLink else { return nil }
         return buildTranslateFoundationPOCEntry(forLink: link, useSmallIcon: false)
+    }
+
+    func makeTranslateBergamotPOCEntry() -> BrowsingMenuEntry? {
+        guard let link = validLink else { return nil }
+        return buildTranslateBergamotPOCEntry(forLink: link, useSmallIcon: false)
+    }
+
+    func makeExportPageHTMLPOCEntry() -> BrowsingMenuEntry? {
+        guard let link = validLink else { return nil }
+        return buildExportPageHTMLPOCEntry(forLink: link, useSmallIcon: false)
     }
     
     func makeDesktopSiteEntry() -> BrowsingMenuEntry? {

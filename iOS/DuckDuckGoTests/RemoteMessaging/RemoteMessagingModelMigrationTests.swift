@@ -68,16 +68,18 @@ final class RemoteMessagingModelMigrationTests: XCTestCase {
         let destinationContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
         destinationContext.persistentStoreCoordinator = destinationCoordinator
         try destinationContext.performAndWait {
-            let messages = try destinationContext.fetch(RemoteMessageManagedObject.fetchRequest())
+            // The app and test bundle can load separate copies of the managed-object class.
+            let messageRequest = NSFetchRequest<NSManagedObject>(entityName: "RemoteMessageManagedObject")
+            let messages = try destinationContext.fetch(messageRequest)
             guard messages.count == 1 else {
                 XCTFail("Expected one migrated remote message, got \(messages.count)")
                 return
             }
             let message = messages[0]
-            XCTAssertEqual(message.id, "existing-message")
-            XCTAssertTrue(message.shown)
-            XCTAssertEqual(message.firstShownDate, shownDate)
-            XCTAssertEqual(message.impressionCount, 0)
+            XCTAssertEqual(message.value(forKey: "id") as? String, "existing-message")
+            XCTAssertEqual(message.value(forKey: "shown") as? Bool, true)
+            XCTAssertEqual(message.value(forKey: "firstShownDate") as? Date, shownDate)
+            XCTAssertEqual((message.value(forKey: "impressionCount") as? NSNumber)?.int64Value, 0)
 
             let appRatingRequest = NSFetchRequest<NSManagedObject>(entityName: "AppRatingPromptEntity")
             let appRatings = try destinationContext.fetch(appRatingRequest)

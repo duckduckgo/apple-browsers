@@ -53,7 +53,7 @@ struct RemoteMessagingDebugRootView: View {
                     Text(verbatim: "Days Since Installed")
                         .font(.system(size: 15))
                     Spacer()
-                    Text(model.currentDaysSinceInstalled.map(String.init) ?? "Not set")
+                    Text(verbatim: model.currentDaysSinceInstalled.map(String.init) ?? "Not set")
                         .font(.system(size: 15))
                         .foregroundStyle(Color(baseColor: .gray70))
                 }
@@ -72,25 +72,27 @@ struct RemoteMessagingDebugRootView: View {
             Section {
                 if let configInfo = model.configInfo {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Version: \(configInfo.version)")
+                        Text(verbatim: "Version: \(configInfo.version)")
                             .font(.system(size: 15))
-                        Text("Last Processed: \(configInfo.lastProcessedFormatted)")
+                        Text(verbatim: "Last Processed: \(configInfo.lastProcessedFormatted)")
                             .font(.system(size: 15))
                         if configInfo.invalidate {
-                            Text("Status: Invalidated")
+                            Text(verbatim: "Status: Invalidated")
                                 .font(.system(size: 15))
                                 .foregroundStyle(.orange)
                         }
                     }
                 }
-                Button("Refresh Config", action: model.refreshConfig)
+                Button(action: model.refreshConfig) {
+                    Text(verbatim: "Refresh Config")
+                }
             } header: {
-                Text("Configuration")
+                Text(verbatim: "Configuration")
             }
 
             Section {
                 if model.messages.isEmpty {
-                    Text("No messages")
+                    Text(verbatim: "No messages")
                         .font(.system(size: 15))
                         .foregroundStyle(Color(baseColor: .gray70))
                 } else {
@@ -98,7 +100,7 @@ struct RemoteMessagingDebugRootView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(verbatim: "ID: \(message.id) | \(message.shown) | \(message.status) | impressions: \(message.impressionCount)")
                                 .font(.system(size: 15))
-                            Text(message.json ?? "")
+                            Text(verbatim: message.json ?? "")
                                 .font(.system(size: 12))
                                 .foregroundStyle(Color(baseColor: .gray70))
                         }
@@ -106,13 +108,15 @@ struct RemoteMessagingDebugRootView: View {
                 }
             } header: {
                 HStack {
-                    Text("Messages")
+                    Text(verbatim: "Messages")
                     Spacer()
-                    Button("Refresh", action: model.fetchMessages)
-                        .font(.system(size: 14))
+                    Button(action: model.fetchMessages) {
+                        Text(verbatim: "Refresh")
+                    }
+                    .font(.system(size: 14))
                 }
             } footer: {
-                Text("This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet.")
+                Text(verbatim: "This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet.")
             }
 
             Section {
@@ -123,16 +127,16 @@ struct RemoteMessagingDebugRootView: View {
                         Spacer()
                     }
                 } else if model.recentLogs.isEmpty {
-                    Text("No Logs")
+                    Text(verbatim: "No Logs")
                         .font(.system(size: 15))
                         .foregroundStyle(Color(baseColor: .gray70))
                 } else {
                     ForEach(model.recentLogs.indices, id: \.self) { index in
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(model.recentLogs[index].timestamp)
+                            Text(verbatim: model.recentLogs[index].timestamp)
                                 .font(.system(size: 10))
                                 .foregroundStyle(Color(baseColor: .gray50))
-                            Text(model.recentLogs[index].message)
+                            Text(verbatim: model.recentLogs[index].message)
                                 .font(.system(size: 12, design: .monospaced))
                         }
                         .padding(.vertical, 2)
@@ -140,24 +144,28 @@ struct RemoteMessagingDebugRootView: View {
                 }
             } header: {
                 HStack {
-                    Text("Recent Processing Logs")
+                    Text(verbatim: "Recent Processing Logs")
                     Spacer()
-                    Button("Export") {
+                    Button {
                         shareItem = ShareItem(logs: model.getLogsText())
+                    } label: {
+                        Text(verbatim: "Export")
                     }
                     .font(.system(size: 14))
                     .disabled(model.recentLogs.isEmpty || model.isLoadingLogs)
 
-                    Button("Refresh") {
+                    Button {
                         Task {
                             await model.fetchLogs()
                         }
+                    } label: {
+                        Text(verbatim: "Refresh")
                     }
                     .font(.system(size: 14))
                     .disabled(model.isLoadingLogs)
                 }
             } footer: {
-                Text("Shows logs from the last minute, to help diagnose issues immediately after a refresh.")
+                Text(verbatim: "Shows logs from the last minute, to help diagnose issues immediately after a refresh.")
             }
 
             Section {
@@ -171,25 +179,33 @@ struct RemoteMessagingDebugRootView: View {
                 Text(verbatim: "Renders a UI preview of each remote message type.")
             }
         }
-        .navigationTitle("Remote Messaging Debug")
+        .navigationTitle(Text(verbatim: "Remote Messaging Debug"))
         .toolbar {
-            Button("Delete All", role: .destructive, action: model.deleteAll)
-                .disabled(model.messages.isEmpty && model.configInfo == nil)
+            Button(role: .destructive, action: model.deleteAll) {
+                Text(verbatim: "Delete All")
+            }
+            .disabled(model.messages.isEmpty && model.configInfo == nil)
         }
         .sheet(item: $shareItem) { item in
             ShareSheet(activityItems: [item.fileURL])
         }
-        .alert("Set Days Since Installed", isPresented: $isShowingDaysAlert) {
-            TextField("Days", text: $daysInput)
-                .keyboardType(.numberPad)
-            Button("Cancel", role: .cancel) {}
-            Button("Set") {
+        .alert(Text(verbatim: "Set Days Since Installed"), isPresented: $isShowingDaysAlert) {
+            TextField(text: $daysInput) {
+                Text(verbatim: "Days")
+            }
+            .keyboardType(.numberPad)
+            Button(role: .cancel) {} label: {
+                Text(verbatim: "Cancel")
+            }
+            Button {
                 if let days = Int(daysInput.trimmingCharacters(in: .whitespaces)), days >= 0 {
                     model.setDaysSinceInstalled(days)
                 }
+            } label: {
+                Text(verbatim: "Set")
             }
         } message: {
-            Text("Enter a non-negative number of days. The install date will be set to that many days ago.")
+            Text(verbatim: "Enter a non-negative number of days. The install date will be set to that many days ago.")
         }
     }
 }

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import GRDB
 import History
 import PrivacyConfig
 import UniformTypeIdentifiers
@@ -62,6 +63,12 @@ final class HistoryDebugMenu: NSMenu {
                 action: #selector(importSafariHistory),
                 target: self
             ).withAccessibilityIdentifier("HistoryDebugMenu.importSafariHistory")
+
+            NSMenuItem(
+                title: "Import Chrome History…",
+                action: #selector(importChromeHistory),
+                target: self
+            ).withAccessibilityIdentifier("HistoryDebugMenu.importChromeHistory")
         }
     }
 
@@ -113,13 +120,7 @@ final class HistoryDebugMenu: NSMenu {
                     try SafariHistoryImporter.parse(Self.historyJSONData(at: url))
                 }.value
                 let summary = try await SafariHistoryImporter.importVisits(parseResult, into: historyCoordinator)
-                showAlert(title: "Safari History Imported",
-                          message: """
-                          Imported: \(summary.imported)
-                          Already in history: \(summary.alreadyInHistory)
-                          Older than a month: \(summary.tooOld)
-                          Skipped (redirects, failed loads, non-web URLs): \(summary.skipped)
-                          """)
+                showSummaryAlert(title: "Safari History Imported", summary: summary, skippedReasons: "redirects, failed loads, non-web URLs")
             } catch {
                 showAlert(title: "Safari History Import Failed", message: "\(error)")
             }
@@ -147,6 +148,61 @@ final class HistoryDebugMenu: NSMenu {
             data.append(chunk)
         }
         return data
+    }
+
+    @MainActor
+    @objc func importChromeHistory(_ sender: NSMenuItem) {
+        let panel = NSOpenPanel()
+        panel.directoryURL = ThirdPartyBrowser.chrome.profilesDirectories().first
+        panel.showsHiddenFiles = true
+        panel.message = "Select the History file inside a Chrome profile folder (e.g. Default/History)"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        Task { @MainActor in
+            do {
+                let cutoff = Date.monthAgo
+                let rows = try await Task.detached {
+                    try Self.chromiumHistoryRows(at: url, since: cutoff)
+                }.value
+                let summary = try await SafariHistoryImporter.importVisits(ChromiumHistoryImporter.parse(rows),
+                                                                           into: historyCoordinator,
+                                                                           cutoff: cutoff)
+                showSummaryAlert(title: "Chrome History Imported", summary: summary, skippedReasons: "redirects, subframes, non-web URLs")
+            } catch {
+                showAlert(title: "Chrome History Import Failed", message: "\(error)")
+            }
+        }
+    }
+
+    /// Reads a copy of the database, since Chrome keeps it locked while running.
+    private static func chromiumHistoryRows(at url: URL, since cutoff: Date) throws -> [ChromiumHistoryImporter.Row] {
+        try url.withTemporaryFile { temporaryURL in
+            let queue = try DatabaseQueue(path: temporaryURL.path)
+            return try queue.read { database in
+                try GRDB.Row.fetchAll(database, sql: """
+                    SELECT urls.url, urls.title, visits.visit_time, visits.transition
+                    FROM visits JOIN urls ON urls.id = visits.url
+                    WHERE visits.visit_time >= ?
+                    """, arguments: [ChromiumHistoryImporter.chromiumTime(for: cutoff)])
+                .compactMap { row in
+                    guard let url: String = row["url"] else { return nil }
+                    return ChromiumHistoryImporter.Row(url: url,
+                                                       title: row["title"],
+                                                       visitTime: row["visit_time"],
+                                                       transition: row["transition"])
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func showSummaryAlert(title: String, summary: SafariHistoryImporter.Summary, skippedReasons: String) {
+        showAlert(title: title, message: """
+                  Imported: \(summary.imported)
+                  Already in history: \(summary.alreadyInHistory)
+                  Older than a month: \(summary.tooOld)
+                  Skipped (\(skippedReasons)): \(summary.skipped)
+                  """)
     }
 
     @MainActor

@@ -780,11 +780,38 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
 
     func testRemovingAndReattachingDoesNotReuseOldOperation() async throws {
         let fixture = AttachmentPreparationFixture()
+        let oldStarted = expectation(description: "Old collection started")
+        let replacementStarted = expectation(description: "Reattached collection started")
+        var finishOld: CheckedContinuation<MultiTabAttachmentCollectionResult, Never>?
+        var finishReplacement: CheckedContinuation<MultiTabAttachmentCollectionResult, Never>?
+        fixture.collect = { [unowned fixture] _ in
+            await withCheckedContinuation { continuation in
+                if fixture.collectionCount == 1 {
+                    finishOld = continuation
+                    oldStarted.fulfill()
+                } else {
+                    finishReplacement = continuation
+                    replacementStarted.fulfill()
+                }
+            }
+        }
         let first = try XCTUnwrap(fixture.prepare())
-        _ = await first.value()
+        let oldResult = Task { await first.value() }
+        await fulfillment(of: [oldStarted], timeout: 1)
         first.cancel()
         let second = try XCTUnwrap(fixture.prepare())
-        _ = await second.value()
+        await fulfillment(of: [replacementStarted], timeout: 1)
+
+        // Ignore cancellation in the collector so the old native operation can finish after reattachment.
+        finishOld?.resume(returning: .collected(fixture.pageContext(content: "Removed")))
+        let removedContext = await oldResult.value
+        XCTAssertNil(removedContext)
+
+        finishReplacement?.resume(returning: .collected(fixture.pageContext(content: "Reattached")))
+        let request = try XCTUnwrap(fixture.context.makeRequest(preparations: [second]))
+        defer { request.cancel() }
+        let contexts = await request.contexts()
+        XCTAssertEqual(contexts, [fixture.pageContext(content: "Reattached").withTabId(fixture.tab.uid)])
         XCTAssertNotEqual(first.attachment.id, second.attachment.id)
         XCTAssertEqual(fixture.collectionCount, 2)
     }

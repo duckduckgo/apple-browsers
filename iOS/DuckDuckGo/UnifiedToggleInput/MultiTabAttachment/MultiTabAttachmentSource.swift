@@ -45,8 +45,7 @@ struct MultiTabAttachmentSource {
             .sorted { lhs, rhs in
                 if lhs.element.uid == currentTabID { return rhs.element.uid != currentTabID }
                 if rhs.element.uid == currentTabID { return false }
-                // Temporary use of lastViewedDate. Replace in https://app.asana.com/1/137249556945/project/1208671677432066/task/1218243445214613?focus=true
-                // lastViewedDate is reserved for the daily pixel.
+                // https://app.asana.com/1/137249556945/task/1208795393823862/comment/1218819316557912
                 let lhsDate = lhs.element.lastViewedDate ?? .distantPast
                 let rhsDate = rhs.element.lastViewedDate ?? .distantPast
                 return lhsDate == rhsDate ? lhs.offset < rhs.offset : lhsDate > rhsDate

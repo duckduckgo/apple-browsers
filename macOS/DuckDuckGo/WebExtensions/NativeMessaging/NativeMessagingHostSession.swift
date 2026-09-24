@@ -50,6 +50,9 @@ final class NativeMessagingHostSession {
     private var errorTask: Task<Void, Never>?
     private var didFinish = false
 
+    /// Serial, so frames are written to the host in send order and never interleave.
+    private let writeQueue = DispatchQueue(label: "com.duckduckgo.native-messaging.host-write")
+
     /// Signalled by the process's termination handler, so the read loop can wait for the exit
     /// instead of polling for it.
     private let didExit = DispatchSemaphore(value: 0)
@@ -151,8 +154,12 @@ final class NativeMessagingHostSession {
         let frame = try NativeMessagingFraming.encode(message)
         let handle = inputPipe.fileHandleForWriting
 
-        // Writes go off the main thread: a host that reads slowly must not block the browser.
-        Task.detached {
+        // Writes go off the main thread, so a host that reads slowly cannot block the browser.
+        // They go through one serial queue, so frames reach the host in the order the extension
+        // posted them and never interleave. A detached task per message gave no such guarantee:
+        // iCloud Passwords posts tab focus events on the same port while its pairing handshake is
+        // in flight, and a handshake step that overtook an earlier frame failed the pairing.
+        writeQueue.async {
             do {
                 try handle.write(contentsOf: frame)
             } catch {

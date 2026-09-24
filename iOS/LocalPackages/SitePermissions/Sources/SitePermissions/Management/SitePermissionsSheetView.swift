@@ -121,7 +121,7 @@ public struct SitePermissionsSheetView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Text("“\(viewModel.site.host)”")
                     .lineLimit(1)
-                    .truncationMode(.middle)
+                    .truncationMode(.tail)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .daxHeadline()

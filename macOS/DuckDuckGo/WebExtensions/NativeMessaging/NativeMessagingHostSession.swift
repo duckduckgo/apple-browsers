@@ -159,9 +159,11 @@ final class NativeMessagingHostSession {
         // posted them and never interleave. A detached task per message gave no such guarantee:
         // iCloud Passwords posts tab focus events on the same port while its pairing handshake is
         // in flight, and a handshake step that overtook an earlier frame failed the pairing.
+        let name = hostName
         writeQueue.async {
             do {
                 try handle.write(contentsOf: frame)
+                Logger.webExtensions.debug("📤 Wrote \(frame.count, privacy: .public) bytes to host \(name, privacy: .public)")
             } catch {
                 Logger.webExtensions.error("❌ Write to host failed: \(error.localizedDescription, privacy: .public)")
             }
@@ -188,6 +190,7 @@ final class NativeMessagingHostSession {
 
                     guard let payload = try Self.readExactly(length, from: handle) else { break }
                     let message = try NativeMessagingFraming.decodePayload(payload)
+                    Logger.webExtensions.debug("📥 Read \(payload.count, privacy: .public) bytes from host \(name, privacy: .public)")
 
                     await MainActor.run {
                         self.messageHandler?(message)

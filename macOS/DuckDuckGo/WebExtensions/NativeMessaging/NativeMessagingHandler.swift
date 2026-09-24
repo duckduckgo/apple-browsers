@@ -71,9 +71,15 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
 
         // Host to extension.
         session.messageHandler = { [weak port] message in
-            port?.sendMessage(message) { error in
+            guard let port else {
+                Logger.webExtensions.error("❌ Host \(hostName, privacy: .public) sent a message but its port is gone")
+                return
+            }
+            port.sendMessage(message) { error in
                 if let error {
                     Logger.webExtensions.error("❌ Port send failed: \(error.localizedDescription, privacy: .public)")
+                } else {
+                    Logger.webExtensions.debug("📨 Delivered a host message to the extension port of \(hostName, privacy: .public)")
                 }
             }
         }

@@ -2712,6 +2712,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     // MARK: - Search on screen
 
     private func arrangeChat(onPage urlString: String) {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts, .contextualActiveChatSuggestions]
         sessionState.currentPageURL = { URL(string: urlString) }
         sessionState.updateUnifiedToggleInputActive(true)
         sessionState.beginChatForUTISubmission()
@@ -2720,26 +2721,26 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     func testTheSearchOnScreenIsReadFromThePage() {
         arrangeChat(onPage: "https://duckduckgo.com/?q=tokamak%20fuel&ia=web")
 
-        XCTAssertEqual(sessionState.searchQuickActionQuery, "tokamak fuel")
+        XCTAssertEqual(sessionState.searchOnScreenQuery, "tokamak fuel")
     }
 
     func testThatSiteURLOffersNothingToSend() {
         arrangeChat(onPage: "https://example.com/reactor")
 
-        XCTAssertNil(sessionState.searchQuickActionQuery)
+        XCTAssertNil(sessionState.searchOnScreenQuery)
     }
 
     /// Nothing to send it to: the chip belongs to a chat under way.
     func testThereIsNoSearchToSendWithoutAChat() {
         sessionState.currentPageURL = { URL(string: "https://duckduckgo.com/?q=tokamak") }
 
-        XCTAssertNil(sessionState.searchQuickActionQuery)
+        XCTAssertNil(sessionState.searchOnScreenQuery)
     }
 
     func testABlankSearchOffersNothingToSend() {
         arrangeChat(onPage: "https://duckduckgo.com/?q=%20%20")
 
-        XCTAssertNil(sessionState.searchQuickActionQuery)
+        XCTAssertNil(sessionState.searchOnScreenQuery)
     }
 
     // MARK: - A search is not attached
@@ -2762,6 +2763,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     func testASearchIsNotOfferedAsAnAttachment() {
         arrangeOfferConditions()
+        mockFeatureFlagger.enabledFeatureFlags += [.contextualSuggestedPrompts, .contextualActiveChatSuggestions]
         sessionState.currentPageURL = { URL(string: Self.searchURL) }
 
         XCTAssertFalse(sessionState.shouldOfferPageContext(for: URL(string: Self.searchURL)))
@@ -2805,6 +2807,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     /// Pinned by hand with auto-attach off: the user chose that page, and a search does not undo it.
     func testAPinnedPageSurvivesASearch() {
         arrangeOfferConditions()
+        mockFeatureFlagger.enabledFeatureFlags += [.contextualSuggestedPrompts, .contextualActiveChatSuggestions]
         sessionState.attachContextFromSuggestionTap(makeTestContext(url: "https://example.com/reactor"))
 
         sessionState.currentPageURL = { URL(string: Self.searchURL) }
@@ -2822,6 +2825,66 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.updateContext(makeTestContext(url: Self.searchURL))
 
         XCTAssertEqual(sessionState.intendedAttachedContext?.contextData.url, Self.searchURL)
+    }
+
+    /// The app's own chip, offered with nothing attached — which is what gates the catalog's own.
+    func testTheSearchOnScreenIsOfferedAsASuggestion() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        arrangeChat(onPage: Self.searchURL)
+
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertEqual(sessionState.viewState.suggestions.count, 1)
+        let suggestion = sessionState.viewState.suggestions.first
+        XCTAssertEqual(suggestion?.id, ContextualSuggestedPrompt.askAboutSearchID)
+        XCTAssertEqual(suggestion?.prompt, "tokamak", "the search itself is the prompt")
+        XCTAssertTrue(suggestion?.label.contains("tokamak") ?? false, suggestion?.label ?? "no label")
+        XCTAssertEqual(sessionState.viewState.suggestionsLoadState, .loaded, "a loader would sit where the chip goes")
+        XCTAssertTrue(sessionState.viewState.quickActions.isEmpty)
+    }
+
+    /// Like the catalog's suggestions, it goes once the prompt it carries has been sent.
+    func testTheSearchSuggestionGoesOnceItsPromptIsSent() {
+        arrangeChat(onPage: Self.searchURL)
+
+        sessionState.markSearchPromptDelivered()
+
+        XCTAssertNil(sessionState.searchOnScreenQuery)
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
+    func testANewSearchOffersTheSuggestionAgain() {
+        arrangeChat(onPage: Self.searchURL)
+        sessionState.markSearchPromptDelivered()
+
+        sessionState.currentPageURL = { URL(string: "https://duckduckgo.com/?q=stellarator") }
+        sessionState.refreshForCurrentPage()
+
+        XCTAssertEqual(sessionState.searchOnScreenQuery, "stellarator")
+    }
+
+    /// Away and back is a fresh ask about the same search.
+    func testTheSameSearchOffersTheSuggestionAgainAfterNavigation() {
+        arrangeChat(onPage: Self.searchURL)
+        sessionState.markSearchPromptDelivered()
+
+        sessionState.notifyPageChanged()
+
+        XCTAssertEqual(sessionState.searchOnScreenQuery, "tokamak")
+    }
+
+    /// Off, a search is the page it always was: attached, with no chip standing in for it.
+    func testWithoutTheFlagsASearchIsAttachedAsBefore() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        arrangeChat(onPage: Self.searchURL)
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        XCTAssertNil(sessionState.searchOnScreenQuery)
+        XCTAssertTrue(sessionState.shouldTriggerAutoCollect())
+
+        sessionState.updateContext(makeTestContext(url: Self.searchURL))
+
+        XCTAssertEqual(sessionState.intendedAttachedContext?.contextData.url, Self.searchURL)
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
     }
 
     /// The chip belongs to a chat under way; before one, a search attaches as it always did.

@@ -25,3 +25,18 @@ struct ContextualSuggestedPrompt: Equatable, Codable {
     let prompt: String
     let icon: String?
 }
+
+extension ContextualSuggestedPrompt {
+
+    /// Deliberately not in the catalog: that file mirrors the frontend's byte for byte, and this chip
+    /// is the app's own. Delivered without attaching the page, unlike every catalog suggestion.
+    static let askAboutSearchID = "ask-about-search"
+
+    /// Sends what the user searched for to the chat, in place of the results page's own chips.
+    static func askAboutSearch(query: String) -> ContextualSuggestedPrompt {
+        ContextualSuggestedPrompt(id: askAboutSearchID,
+                                  label: UserText.aiChatSuggestionAskAboutSearchLabel(query),
+                                  prompt: query,
+                                  icon: nil)
+    }
+}

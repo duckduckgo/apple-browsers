@@ -977,6 +977,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         }
         let selectionAction = AIChatTextSelectionAction(selectionSuggestionID: suggestion.id)
         let actsOnSelection = selectionAction != nil
+        let actsOnSearch = suggestion.id == ContextualSuggestedPrompt.askAboutSearchID
         cancelSuggestionSubmission()
         delegate?.aiChatContextualSheetViewController(self, didSelectSelectionSuggestion: selectionAction)
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
@@ -998,7 +999,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             let didDeliver = if actsOnSelection {
                 await self.deliverSelectionSuggestionPrompt(suggestion)
             } else {
-                await self.deliverSuggestionPrompt(suggestion)
+                await self.deliverSuggestionPrompt(suggestion, attachingPage: !actsOnSearch)
             }
             if !didDeliver {
                 self.abandonAwaitedSubmittedChat()
@@ -1027,9 +1028,12 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     /// Attaches the context, waits for the frontend, then submits. Returns whether anything is still
     /// going to bring this sheet a chat — a prompt that went out, or another surface that took over.
     /// Only `false` leaves a promoted sheet with nothing coming.
-    private func deliverSuggestionPrompt(_ suggestion: ContextualSuggestedPrompt) async -> Bool {
-        await delegate?.aiChatContextualSheetViewControllerAttachContextForSuggestion(self)
-        guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
+    /// `attachingPage` is false for the search chip: the results page is the one thing it must not attach.
+    private func deliverSuggestionPrompt(_ suggestion: ContextualSuggestedPrompt, attachingPage: Bool) async -> Bool {
+        if attachingPage {
+            await delegate?.aiChatContextualSheetViewControllerAttachContextForSuggestion(self)
+            guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
+        }
 
         guard let webViewController else { return false }
 
@@ -1038,6 +1042,10 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
 
         submitSuggestionPrompt(suggestion.prompt)
+        // No context was attached, so nothing else records this page's prompt as sent.
+        if !attachingPage {
+            sessionState.markSearchPromptDelivered()
+        }
         return true
     }
 

@@ -1,8 +1,6 @@
 name: iOS & macOS - Check WireGuard Update
 
 on:
-  push:
-    branches: [diego/update-wireguard-automation]  # TEMP: remove before merge
   schedule:
     - cron: '30 1 * * 5'  # Every Friday at 01:30 UTC
   workflow_dispatch:
@@ -29,7 +27,7 @@ jobs:
         -project|iOS/DuckDuckGo-iOS.xcodeproj|iOS Browser
         -project|macOS/DuckDuckGo-macOS.xcodeproj|macOS Browser
       # Feature owners (GitHub handles, space-separated). Used for PR reviewers and Asana assignee.
-      owners: diegoreymendez  # TEMP: test run, restore "diegoreymendez samsymons"
+      owners: diegoreymendez samsymons
       asana-parent-task-id: "1212461351428219"
       labels: dependencies,iOS,macOS
     secrets:

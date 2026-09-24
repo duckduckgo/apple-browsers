@@ -1,8 +1,6 @@
 name: macOS - Check Sparkle Update
 
 on:
-  push:
-    branches: [diego/update-wireguard-automation]  # TEMP: remove before merge
   schedule:
     - cron: '0 1 * * 5'  # Every Friday at 01:00 UTC
   workflow_dispatch:
@@ -25,7 +23,7 @@ jobs:
         -workspace|DuckDuckGo.xcworkspace|macOS Browser
         -project|macOS/DuckDuckGo-macOS.xcodeproj|macOS Browser
       # Feature owners (GitHub handles, space-separated). Used for PR reviewers and Asana assignee.
-      owners: diegoreymendez  # TEMP: test run, restore "diegoreymendez jotaemepereira"
+      owners: diegoreymendez jotaemepereira
       asana-parent-task-id: "1212461351428211"
       labels: dependencies,macOS
     secrets:

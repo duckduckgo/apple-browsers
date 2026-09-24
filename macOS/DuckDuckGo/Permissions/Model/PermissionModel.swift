@@ -37,6 +37,10 @@ final class PermissionModel {
     /// Fires when permission blocked due to system being disabled - view layer shows info popover
     let permissionBlockedBySystem = PassthroughSubject<(domain: String, permissionType: PermissionType), Never>()
 
+    /// Fires when the current site's saved pop-up decision is removed (e.g. from Settings), so a temporary
+    /// "allow for this visit" pop-up allowance can be cleared along with it
+    let popupDecisionRemoved = PassthroughSubject<Void, Never>()
+
     private(set) var authorizationQueries = [PermissionAuthorizationQuery]() {
         didSet {
             authorizationQuery = authorizationQueries.last
@@ -235,6 +239,9 @@ final class PermissionModel {
         switch change {
         case .removed:
             removePermissionFromCurrentPage(permissionType)
+            if permissionType == .popups {
+                popupDecisionRemoved.send()
+            }
         case .decisionChanged(let decision):
             // Allow updatePermissions() to track the permission again when access is restored.
             if decision == .allow {

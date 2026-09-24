@@ -128,6 +128,15 @@ final class PopupHandlingTabExtension {
                 }
             }
             .store(in: &cancellables)
+
+        // Removing the site's pop-up decision (e.g. from Settings) also ends "allow pop-ups for this visit"
+        permissionModel.popupDecisionRemoved
+            .sink { [weak self] in
+                MainActor.assumeMainThread {
+                    self?.popupsTemporarilyAllowedForCurrentPage = false
+                }
+            }
+            .store(in: &cancellables)
     }
 
     /// Handles WKUIDelegate createWebViewWithConfiguration:forNavigationAction:windowFeatures: callback

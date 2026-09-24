@@ -959,6 +959,68 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         XCTAssertFalse(popupHandlingExtension.popupsTemporarilyAllowedForCurrentPage, "Allowance should be cleared on navigation")
     }
 
+    @MainActor
+    func testWhenCurrentSitePopupDecisionIsRemoved_ThenTemporaryAllowanceCleared() {
+        // GIVEN - A page on example.com allowed pop-ups for this visit, which saves "Ask" for the site
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
+        let permissionManager = PermissionManagerMock()
+        let pageWebView = WebViewMock(frame: .zero, configuration: WKWebViewConfiguration())
+        pageWebView.urlValue = URL(string: "https://example.com")!
+        mockPermissionModel = PermissionModel(webView: pageWebView, permissionManager: permissionManager)
+        popupHandlingExtension = createExtension()
+        permissionManager.setPermission(.ask, forDomain: "example.com", permissionType: .popups)
+        popupHandlingExtension.setPopupAllowanceForCurrentPage()
+
+        // WHEN - Settings removes the site's pop-up decision
+        permissionManager.removePermission(forDomain: "example.com", permissionType: .popups)
+
+        // THEN - The next page-initiated pop-up is no longer let through
+        XCTAssertFalse(popupHandlingExtension.popupsTemporarilyAllowedForCurrentPage)
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: webView, isUserInitiated: false)
+        XCTAssertNotEqual(
+            popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: navigationAction, windowFeatures: windowFeatures),
+            .popupsTemporarilyAllowedForCurrentPage
+        )
+    }
+
+    @MainActor
+    func testWhenAnotherSitePopupDecisionIsRemoved_ThenTemporaryAllowanceKept() {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
+        let permissionManager = PermissionManagerMock()
+        let pageWebView = WebViewMock(frame: .zero, configuration: WKWebViewConfiguration())
+        pageWebView.urlValue = URL(string: "https://example.com")!
+        mockPermissionModel = PermissionModel(webView: pageWebView, permissionManager: permissionManager)
+        popupHandlingExtension = createExtension()
+        permissionManager.setPermission(.ask, forDomain: "other.com", permissionType: .popups)
+        popupHandlingExtension.setPopupAllowanceForCurrentPage()
+
+        // WHEN
+        permissionManager.removePermission(forDomain: "other.com", permissionType: .popups)
+
+        // THEN
+        XCTAssertTrue(popupHandlingExtension.popupsTemporarilyAllowedForCurrentPage)
+    }
+
+    @MainActor
+    func testWhenCurrentSiteNonPopupDecisionIsRemoved_ThenTemporaryAllowanceKept() {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
+        let permissionManager = PermissionManagerMock()
+        let pageWebView = WebViewMock(frame: .zero, configuration: WKWebViewConfiguration())
+        pageWebView.urlValue = URL(string: "https://example.com")!
+        mockPermissionModel = PermissionModel(webView: pageWebView, permissionManager: permissionManager)
+        popupHandlingExtension = createExtension()
+        permissionManager.setPermission(.ask, forDomain: "example.com", permissionType: .camera)
+        popupHandlingExtension.setPopupAllowanceForCurrentPage()
+
+        // WHEN
+        permissionManager.removePermission(forDomain: "example.com", permissionType: .camera)
+
+        // THEN
+        XCTAssertTrue(popupHandlingExtension.popupsTemporarilyAllowedForCurrentPage)
+    }
+
     // MARK: - Persisted Permission Tests
 
     @MainActor

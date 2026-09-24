@@ -48,7 +48,7 @@ struct PreferencesWebsitePermissionDecisionControlsView: View {
             set: onDecisionChanged
         ), label: EmptyView()) {
             ForEach(availableDecisions, id: \.self) { decision in
-                Text(decision.localizedTitle).tag(decision)
+                Text(decision.websitePermissionsTitle(for: permissionType)).tag(decision)
             }
         }
         .labelsHidden()

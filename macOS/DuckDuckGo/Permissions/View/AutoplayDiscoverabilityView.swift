@@ -24,6 +24,7 @@ import SwiftUI
 
 struct AutoplayDiscoverabilityView: View {
 
+    let linkTitle: String
     let onClickSettings: () -> Void
 
     var body: some View {
@@ -58,7 +59,7 @@ private extension AutoplayDiscoverabilityView {
             .font(.system(size: 12))
             .foregroundColor(Color(designSystemColor: .accentAltTextSecondary))
         + Text(verbatim: " ")
-        + Text(UserText.permissionCenterAutoplayDisclaimerSettingsLink)
+        + Text(linkTitle)
             .font(.system(size: 12))
             .foregroundColor(Color(designSystemColor: .accentTextPrimary))
     }
@@ -66,7 +67,8 @@ private extension AutoplayDiscoverabilityView {
 
 #if DEBUG
 #Preview {
-    AutoplayDiscoverabilityView(onClickSettings: {})
+    AutoplayDiscoverabilityView(linkTitle: UserText.permissionCenterAutoplayDisclaimerWebsitePermissionsLink,
+                                onClickSettings: {})
         .padding(16)
         .frame(width: 400)
         .background(Color(designSystemColor: .permissionCenterBackground))

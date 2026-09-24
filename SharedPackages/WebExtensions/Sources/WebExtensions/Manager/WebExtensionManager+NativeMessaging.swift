@@ -187,26 +187,73 @@ extension WebExtensionManager {
         return wrapper
     }
 
+    /// Hands a new native messaging port to the handler.
+    ///
+    /// This is the completion-handler form of the delegate method on purpose. An extension
+    /// usually posts its first message in the same JavaScript turn as `connectNative()`, and
+    /// WebKit drops a port message that arrives while the port has no message handler. The
+    /// `async` form of this method runs its body in a new task, so it returns to WebKit before
+    /// any handler is in place, and that first message is lost. iCloud Passwords sends its hello
+    /// that way, and without the hello its helper never answers anything that follows.
+    ///
+    /// WebKit calls this form synchronously on the main thread, so a message handler installed
+    /// here is in place before WebKit processes the next message from the extension. Messages
+    /// that arrive while the host process is still starting are kept in order and replayed once
+    /// the handler has installed its own.
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        connectUsing port: WKWebExtension.MessagePort,
-                                       for extensionContext: WKWebExtensionContext) async throws {
+                                       for extensionContext: WKWebExtensionContext,
+                                       completionHandler: @escaping (Error?) -> Void) {
         let displayName = extensionContext.webExtension.displayName ?? "(unknown)"
         let applicationIdentifier = port.applicationIdentifier ?? "(none)"
         Logger.webExtensions.debug("🔗 \(displayName) opens a port to \(applicationIdentifier, privacy: .public)")
 
         guard let nativeMessagingHandler else {
             Logger.webExtensions.error("❌ No native messaging handler, so the port of \(displayName) stays silent")
+            completionHandler(nil)
             return
         }
 
-        do {
-            try await nativeMessagingHandler.connect(port,
-                                                     applicationIdentifier: port.applicationIdentifier,
-                                                     for: extensionContext)
-        } catch {
-            // WebKit only disconnects the port, so this is the one place the failure is recorded.
-            Logger.webExtensions.error("❌ Port of \(displayName) to \(applicationIdentifier, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
-            throw error
+        let pending = PendingPortMessages()
+        port.messageHandler = { message, error in
+            pending.append(message: message, error: error)
         }
+
+        Task { @MainActor in
+            do {
+                try await nativeMessagingHandler.connect(port,
+                                                         applicationIdentifier: port.applicationIdentifier,
+                                                         for: extensionContext)
+                // The handler has installed its own message handler by now. Nothing can slip in
+                // between the two lines below, because both run in the same main actor turn.
+                let replayed = pending.drain()
+                for (message, error) in replayed {
+                    port.messageHandler?(message, error)
+                }
+                if !replayed.isEmpty {
+                    Logger.webExtensions.debug("🔗 Replayed \(replayed.count, privacy: .public) message(s) that \(displayName) posted before its host was up")
+                }
+                completionHandler(nil)
+            } catch {
+                // WebKit only disconnects the port, so this is the one place the failure is recorded.
+                Logger.webExtensions.error("❌ Port of \(displayName) to \(applicationIdentifier, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+                completionHandler(error)
+            }
+        }
+    }
+}
+
+/// Holds port messages that arrive before a native messaging host is ready for them.
+@available(macOS 15.4, iOS 18.4, *)
+private final class PendingPortMessages: @unchecked Sendable {
+    private var messages: [(message: Any?, error: Error?)] = []
+
+    func append(message: Any?, error: Error?) {
+        messages.append((message, error))
+    }
+
+    func drain() -> [(message: Any?, error: Error?)] {
+        defer { messages.removeAll() }
+        return messages
     }
 }

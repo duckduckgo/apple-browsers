@@ -28,8 +28,12 @@ import WideEvent
 /// It answers one question: did an already-running VPN stay healthy, including while nominally connected but not routing.
 public protocol VPNSessionHealthInstrumentation: AnyObject, Sendable {
 
+    /// Issued when a start begins, before any await: a stop invalidates it, so a start completing after the tunnel stopped is ignored.
+    func tunnelStartRequested() -> UUID
+
     /// Opens a new event for a physical start, resumes the event already open rather than starting one for a reconnect, a wake, or the end of a snooze.
-    func tunnelStarted(reason: PacketTunnelProvider.AdapterStartReason)
+    /// Physical starts are ignored unless `attemptID` is the latest one issued and no stop happened since.
+    func tunnelStarted(reason: PacketTunnelProvider.AdapterStartReason, attemptID: UUID?)
 
     /// Resumes the event already open for a restart that carries no start reason: the monitors coming back up after a failed reasserting configuration update.
     func tunnelResumed()
@@ -85,6 +89,8 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
 
     private let lock = NSLock()
 
+    private var pendingStartAttemptID: UUID?
+
     private var currentEventID: String?
     private var currentEvent: VPNSessionHealthWideEventData? {
          guard let currentEventID else {
@@ -107,13 +113,23 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
 
     // MARK: - Lifecycle
 
-    public func tunnelStarted(reason: PacketTunnelProvider.AdapterStartReason) {
-        Logger.networkProtectionSessionHealth.debug("tunnelStarted: reason=\(String(describing: reason), privacy: .public)")
+    public func tunnelStartRequested() -> UUID {
+        lock.lock()
+        defer { lock.unlock() }
+
+        let attemptID = UUID()
+        pendingStartAttemptID = attemptID
+
+        return attemptID
+    }
+
+    public func tunnelStarted(reason: PacketTunnelProvider.AdapterStartReason, attemptID: UUID?) {
+        Logger.networkProtectionSessionHealth.debug("tunnelStarted: reason=\(String(describing: reason), privacy: .public) attemptID=\(attemptID?.uuidString ?? "none", privacy: .public)")
         switch reason {
         case .manual:
-            beginEvent(reason: .physicalTunnelStartManual)
+            beginEvent(reason: .physicalTunnelStartManual, attemptID: attemptID)
         case .onDemand:
-            beginEvent(reason: .physicalTunnelStartOnDemand)
+            beginEvent(reason: .physicalTunnelStartOnDemand, attemptID: attemptID)
         case .reconnected, .wake, .snoozeEnded:
             tunnelResumed()
         }
@@ -216,6 +232,9 @@ private extension DefaultVPNSessionHealthInstrumentation {
         lock.lock()
         defer { lock.unlock() }
 
+        // Cleared even without an open event: a start still in flight must not open one after the stop.
+        pendingStartAttemptID = nil
+
         guard let previous = currentEvent else {
             return
         }
@@ -227,9 +246,14 @@ private extension DefaultVPNSessionHealthInstrumentation {
         completeEvent(event: event, outcome: outcome)
     }
 
-    func beginEvent(reason: VPNSessionHealthWideEventData.EventStartReason) {
+    func beginEvent(reason: VPNSessionHealthWideEventData.EventStartReason, attemptID: UUID?) {
         lock.lock()
         defer { lock.unlock() }
+
+        guard let attemptID, attemptID == pendingStartAttemptID else {
+            Logger.networkProtectionSessionHealth.log("Ignoring stale start attempt: \(attemptID?.uuidString ?? "none", privacy: .public)")
+            return
+        }
 
         completeEventBeforeRestartInLock()
 

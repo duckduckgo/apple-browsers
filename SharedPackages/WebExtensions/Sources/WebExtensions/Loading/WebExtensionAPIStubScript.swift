@@ -82,6 +82,15 @@ import Foundation
 /// sites work as written. The list holds only the constants the supported extensions actually read,
 /// rather than everything Chrome documents.
 ///
+/// A handful of events WebKit leaves out of namespaces it does implement are stubbed as well, even
+/// though nothing we support *listens* on them meaningfully: iCloud Passwords registers
+/// `webNavigation.onHistoryStateUpdated` and `webNavigation.onTabReplaced` unguarded at the top
+/// level of its background script, and the first missing one aborted the whole script. The rest of
+/// that list — `onReferenceFragmentUpdated`, `tabs.onZoomChange` and the `runtime` lifecycle
+/// events — were measured missing alongside them and cost nothing to include. These stubs are inert:
+/// an extension that relies on `onHistoryStateUpdated` to follow single-page navigation still gets
+/// no events, it just no longer crashes.
+///
 /// Two behaviors of the host are worth calling out, both established by measurement on macOS 26.6.2:
 /// - `chrome.webNavigation`, `chrome.tabs` and friends are native wrapper objects that WebKit
 ///   discards once JavaScript stops referencing them, taking any property we added with them: an
@@ -131,11 +140,20 @@ enum WebExtensionAPIStubScript {
         // Members missing from namespaces that WebKit does implement, addressed by dotted path.
         // A "namespace" member becomes a nestable stub, an "event" member an addListener object,
         // "managedStorage" a purpose-shaped stub (see makeManagedStorage below), and "constants" the
-        // literal value carried by the entry.
+        // literal value carried by the entry. The events are the ones measured missing from WebKit;
+        // iCloud Passwords registers webNavigation.onHistoryStateUpdated and onTabReplaced unguarded
+        // at the top level, and the others are listed because they cost nothing.
         var missingMembers = [
             { path: "storage.managed", kind: "managedStorage" },
             { path: "webNavigation.onCreatedNavigationTarget", kind: "event" },
-            { path: "runtime.onSuspend", kind: "event" }
+            { path: "webNavigation.onHistoryStateUpdated", kind: "event" },
+            { path: "webNavigation.onReferenceFragmentUpdated", kind: "event" },
+            { path: "webNavigation.onTabReplaced", kind: "event" },
+            { path: "tabs.onZoomChange", kind: "event" },
+            { path: "runtime.onSuspend", kind: "event" },
+            { path: "runtime.onSuspendCanceled", kind: "event" },
+            { path: "runtime.onUpdateAvailable", kind: "event" },
+            { path: "runtime.onRestartRequired", kind: "event" }
         ];
 
         // The enum-like constants Chrome hangs off its namespaces, with Chrome's documented values.

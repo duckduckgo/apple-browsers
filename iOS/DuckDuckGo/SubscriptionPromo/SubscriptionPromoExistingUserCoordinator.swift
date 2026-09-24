@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Core
 import Foundation
+import PixelKit
 import PrivacyConfig
 import Subscription
 import FeatureFlags_iOS
@@ -42,7 +43,7 @@ final class SubscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinat
     private let tutorialSettings: TutorialSettings
     private let statisticsStore: StatisticsStore
     private let subscriptionManager: any SubscriptionManager
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
     init(
         daxDialogs: any ContextualDaxDialogStatusProvider & SubscriptionPromotionCoordinating,
@@ -51,7 +52,7 @@ final class SubscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinat
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
         statisticsStore: StatisticsStore = StatisticsUserDefaults(),
         subscriptionManager: any SubscriptionManager,
-        pixelFiring: PixelFiring.Type = Pixel.self
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
         self.daxDialogs = daxDialogs
         self.daxDialogsSettings = daxDialogsSettings
@@ -86,9 +87,16 @@ final class SubscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinat
             && hasCooldownPassed()
             // Don't show for users who skipped onboarding: handled by SubscriptionPromoCoordinator
             && !(daxDialogsSettings.isDismissed && isReturningUser && tutorialSettings.hasSkippedOnboarding)
-
-        Logger.subscription.debug("[Subscription Promo - Existing User] shouldPresentLaunchPrompt: \(shouldShow)")
-        return shouldShow
+        guard shouldShow else {
+            Logger.subscription.debug("[Subscription Promo - Existing User] shouldPresentLaunchPrompt: false")
+            return false
+        }
+        guard subscriptionManager.isSubscriptionPurchaseEligible else {
+            Logger.subscription.debug("[Subscription Promo] App Store products unavailable, skipping.")
+            return false
+        }
+        Logger.subscription.debug("[Subscription Promo - Existing User] shouldPresentLaunchPrompt: true")
+        return true
     }
 
     func markLaunchPromptPresented() {
@@ -155,7 +163,7 @@ final class SubscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinat
     }
 
     private func firePixel(_ event: Pixel.Event) {
-        pixelFiring.fire(event, withAdditionalParameters: pixelParameters)
+        pixelFiring?.fire(event, options: .parameters(pixelParameters))
     }
 
     private func redirectOrigin() -> SubscriptionFunnelOrigin {

@@ -1,0 +1,46 @@
+{
+    "ios-duckai-session": {
+        "description": "Sent at the end of a Duck.ai session on iOS: one visit to a full Duck.ai tab, from the tab becoming visible until Duck.ai is left (another tab is selected or the tab navigates to a non-Duck.ai page), the app is backgrounded, or the process ends. Opening or dismissing the tab switcher does not end the session. Contextual chat and the Duck.ai address bar input shown before a full tab opens are out of scope.",
+        "owners": ["Bunn"],
+        "meta": {
+            "type": "ios-duckai-session",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "duckai_session",
+            "status": ["SUCCESS", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "How the session ended. left_duckai (SUCCESS): Duck.ai is no longer the visible tab or the tab navigated to a non-Duck.ai page. app_backgrounded (CANCELLED): the app moved to the background while Duck.ai was visible. app_terminated (UNKNOWN): the process ended before another outcome was recorded; completed at the next launch.",
+                        "enum": ["left_duckai", "app_backgrounded", "app_terminated"]
+                    },
+                    "exit_trigger": {
+                        "type": "string",
+                        "description": "The action that caused the transition away from Duck.ai. Present only when status_reason is left_duckai. back_or_close: Back or a close of the Duck.ai tab. tab_switched: the user selected another existing tab. new_tab_opened: the user opened a new tab. fire_tab_opened: the user opened a Fire tab. search_started: the user started a Search from Duck.ai. other_navigation: no mapped action explains the transition.",
+                        "enum": ["back_or_close", "tab_switched", "new_tab_opened", "fire_tab_opened", "search_started", "other_navigation"]
+                    },
+                    "step": {
+                        "type": "object",
+                        "description": "Session activity. A present value of true means the action happened at least once during the session; an absent field means it did not happen.",
+                        "properties": {
+                            "prompt_submitted": {
+                                "type": "boolean",
+                                "description": "A prompt was submitted in the visible Duck.ai tab."
+                            },
+                            "new_chat_created": {
+                                "type": "boolean",
+                                "description": "A new chat was created from the active Duck.ai session (frontend New Chat, the Duck.ai header's New Chat or New Image, or Recent chats' New Chat)."
+                            },
+                            "chat_id_changed": {
+                                "type": "boolean",
+                                "description": "The visible tab's Duck.ai URL changed from one chatID value to another, including a change between missing and present. The identifier itself is never sent."
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -34,6 +34,7 @@ import Configuration
 import ContentScopeScripts
 import CoreData
 import Crashes
+import CryptoKit
 import CrashReportingShared
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
@@ -55,6 +56,7 @@ import os.log
 import Persistence
 import PixelExperimentKit
 import PixelKit
+import WideEvent
 import SERPSettings
 import PrivacyConfig
 import PrivacyStats
@@ -87,6 +89,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let urlEventHandler = URLEventHandler()
 
     private let keyStore: EncryptionKeyStoring
+    /// Error code of the first failed launch-time Keychain read, when a retry later succeeded.
+    /// Carried by the launch pixel; nil when the first read succeeded.
+    private let keychainReadErrorStatus: OSStatus?
     let fileStore: FileStore
 
     private let crashReporting: any CrashReporting
@@ -104,6 +109,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
     let applicationUpdateDetector: ApplicationUpdateDetector
+    var cpmAppSessionDiagnostics: CPMAppSessionDiagnostics {
+        let versionChange: CPMAppSessionDiagnostics.VersionChange?
+        switch applicationUpdateDetector.isApplicationUpdated() {
+        case .updated: versionChange = .updated
+        case .downgraded: versionChange = .downgraded
+        case .noChange: versionChange = nil
+        }
+        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate)
+    }
     private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
@@ -141,17 +155,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) weak var subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
     var privacyDashboardWindow: NSWindow?
 
-    @MainActor private(set) lazy var quickFeedbackService: QuickFeedbackService = {
-        let diagnosticsCollector = QuickFeedbackDiagnosticsCollector(
-            tabAndWindowCountProvider: windowControllersManager,
-            memoryUsageMonitor: memoryUsageMonitor,
-            launchDate: appLaunchDate
-        )
-        return QuickFeedbackService(
-            diagnosticsCollector: diagnosticsCollector,
-            firePublisher: fireCoordinator.fireViewModel.fire.burningDataPublisher
+    @MainActor
+    private(set) lazy var cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate = { // swiftlint:disable:this weak_delegate
+        CookiePopupsBlockedPromoDelegate(
+            featureFlagger: featureFlagger,
+            keyValueStore: keyValueStore,
+            windowControllersManager: windowControllersManager,
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+            appearancePreferences: appearancePreferences,
+            onboardingStateUpdater: onboardingContextualDialogsManager,
+            autoconsentStats: autoconsentStats
         )
     }()
+
+    @MainActor
+    private(set) lazy var quitSurveyPromoObserver = QuitSurveyPromoObserver()
+
+    @MainActor
+    private(set) lazy var duckPlayerOverlayObserver: DuckPlayerOverlayObserver = {
+        DuckPlayerOverlayObserver(
+            duckPlayer: duckPlayer,
+            windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger
+        )
+    }()
+
+    @MainActor private(set) lazy var quickFeedbackDiagnosticsCollector = QuickFeedbackDiagnosticsCollector(
+        tabAndWindowCountProvider: windowControllersManager,
+        memoryUsageMonitor: memoryUsageMonitor,
+        launchDate: appLaunchDate
+    )
+
+    @MainActor private(set) lazy var internalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProviding =
+        InternalFeedbackDeviceInfoProvider(diagnosticsCollector: quickFeedbackDiagnosticsCollector)
+
+    @MainActor private(set) lazy var internalFeedbackAttachmentsProvider = InternalFeedbackAttachmentsProvider()
+
+    @MainActor private(set) lazy var quickFeedbackService = QuickFeedbackService(
+        attachmentsProvider: internalFeedbackAttachmentsProvider,
+        firePublisher: fireCoordinator.fireViewModel.fire.burningDataPublisher
+    )
 
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
@@ -188,6 +231,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let fireCoordinator: FireCoordinator
     let permissionManager: PermissionManager
+    let websitePermissionDefaults: WebsitePermissionDefaults
     let notificationService: UserNotificationAuthorizationServicing
     let recentlyClosedCoordinator: RecentlyClosedCoordinating
     let downloadManager: FileDownloadManagerProtocol
@@ -196,16 +240,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let attributedMetricManager: AttributedMetricManager
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry?
-
-    @MainActor
-    private(set) lazy var autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinator = AutoconsentStatsPopoverCoordinator(
-        autoconsentStats: autoconsentStats,
-        keyValueStore: keyValueStore,
-        windowControllersManager: windowControllersManager,
-        cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-        appearancePreferences: appearancePreferences,
-        onboardingStateUpdater: onboardingContextualDialogsManager
-    )
 
     private var updateProgressCancellable: AnyCancellable?
 
@@ -255,6 +289,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatConversationSourceHandler = AIChatConversationSourceHandler()
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
+
+    let aiChatBrowserToolsService: AIChatBrowserToolsService
     let aiChatPreferences: AIChatPreferences
     let promptBarPreferences: PromptBarPreferences
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
@@ -296,9 +332,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
+
+    @MainActor
+    var isOnboardingReadyForPrompts: Bool {
+        guard onboardingContextualDialogsManager.state == .onboardingCompleted else { return false }
+        if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
+            let isActiveTabOnboarding = windowControllersManager.lastKeyMainWindowController?.activeTab?.content == .onboarding
+            return !isActiveTabOnboarding
+        }
+        return OnboardingActionsManager.isOnboardingFinished
+    }
+
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
     let eventHubIntegration: MacOSEventHubIntegration
     private lazy var webNotificationClickHandler = WebNotificationClickHandler(tabFinder: windowControllersManager)
+    private lazy var onboardingNonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
@@ -315,6 +363,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     public let subscriptionUIHandler: SubscriptionUIHandling
 
     private(set) lazy var sessionRestorePromptCoordinator = SessionRestorePromptCoordinator(pixelFiring: PixelKit.shared)
+    let brokenSitePromptPresentationCoordinator = BrokenSitePromptPresentationCoordinator()
 
     // MARK: - Automation Server
     private var automationServer: AutomationServer?
@@ -452,6 +501,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var didFinishLaunching = false
 
     var updateController: UpdateController?
+    private var updateNotificationPromoBridge: UpdateNotificationPromoBridge?
     let dockCustomization: DockCustomization
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
@@ -512,11 +562,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             didCrashDuringCrashHandlersSetUp.wrappedValue = false
         }
 
-        do {
-            let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
-            fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
-        } catch {
-            Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
+        if AppVersion.runType.requiresEnvironment {
+            let keyRead = Self.readEncryptionKeyRetryingKeychainAccess(keyStore: keyStore,
+                                                                      startupProfiler: startupProfiler)
+            keychainReadErrorStatus = keyRead.firstFailureStatus
+            fileStore = EncryptedFileStore(encryptionKey: keyRead.key)
+        } else {
+            keychainReadErrorStatus = nil
             fileStore = EncryptedFileStore()
         }
 
@@ -778,6 +830,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return (featureFlagger.internalUserDecider.isInternalUser &&
                         subscriptionEnvironment.serviceEnvironment == .staging &&
                         subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)
+            case .useSubscriptionNoProductsOverride:
+                return (featureFlagger.internalUserDecider.isInternalUser &&
+                        subscriptionEnvironment.serviceEnvironment == .staging &&
+                        subscriptionUserDefaults.noSubscriptionProductsOverride)
             }
         }
 
@@ -841,6 +897,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
+        aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
+                                                              windowControllersManager: windowControllersManager)
+
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
         cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: CookiePopupProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
@@ -863,27 +922,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger)
 
         let voiceChatPermissionOverride = DuckAiVoiceChatPermissionOverride(featureFlagger: featureFlagger)
+        let websitePermissionDefaults = WebsitePermissionDefaults(
+            storage: WebsitePermissionDefaultsUserDefaultsStorage(keyValueStore: keyValueStore),
+            featureFlagger: featureFlagger,
+            autoplayPreferences: autoplayPreferences
+        )
+        self.websitePermissionDefaults = websitePermissionDefaults
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
             faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
-            permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride)
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride, defaults: websitePermissionDefaults)
         } else {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(context: nil), tld: tld)
             faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
-            permissionManager = PermissionManager(store: LocalPermissionStore(database: nil), decisionOverride: voiceChatPermissionOverride)
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: nil), decisionOverride: voiceChatPermissionOverride, defaults: websitePermissionDefaults)
         }
 #else
         fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
         faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
-        permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride)
+        permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride, defaults: websitePermissionDefaults)
 #endif
         notificationService = UserNotificationAuthorizationService()
 
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
 
         if featureFlagger.isFeatureOn(.aiChatNativeStorage),
-           let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+           let appSupportURL = Self.duckAiNativeStorageBaseURL() {
             let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
             do {
                 duckAiNativeStorageHandler = try DuckAiNativeStorageHandler(
@@ -1053,7 +1118,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionUpsellExperiment: OnboardingSubscriptionUpsellExperiment(
                 featureFlagger: featureFlagger,
                 subscriptionManager: subscriptionManager
-            )
+            ),
+            isNonBlocking: { [featureFlagger] in NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking }
         )
 
         let onboardingManager = onboardingContextualDialogsManager
@@ -1447,25 +1513,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
-        if featureFlagger.isFeatureOn(.promoQueue) {
-            let subscriptionPromoDelegate = FireWindowSubscriptionPromoDelegate()
-            self.subscriptionPromoDelegate = subscriptionPromoDelegate
-            let dependencies = PromoDependencies(
-                keyValueStore: keyValueStore,
-                isExternallyActivated: urlEventHandlerResult.willOpenWindows,
-                isNewUserProvider: { AppDelegate.isNewUser },
-                isOnboardingCompletedProvider: { OnboardingActionsManager.isOnboardingFinished },
-                activeRemoteMessageModel: activeRemoteMessageModel,
-                defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
-                sessionRestoreCoordinator: sessionRestorePromptCoordinator,
-                subscriptionPromoDelegate: subscriptionPromoDelegate,
-                featureFlagger: featureFlagger,
-                cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-                windowControllersManager: windowControllersManager
-            )
-            promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
-            NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
-        }
+        let subscriptionPromoDelegate = FireWindowSubscriptionPromoDelegate()
+        self.subscriptionPromoDelegate = subscriptionPromoDelegate
+        let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: windowControllersManager)
+        let dependencies = PromoDependencies(
+            keyValueStore: keyValueStore,
+            isExternallyActivated: urlEventHandlerResult.willOpenWindows,
+            isNewUserProvider: { AppDelegate.isNewUser },
+            isOnboardingCompletedProvider: { [featureFlagger, onboardingContextualDialogsManager] in
+                NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
+                ? onboardingContextualDialogsManager.state == .onboardingCompleted && !activeDomainPublisher.isActiveTabOnboarding
+                : OnboardingActionsManager.isOnboardingFinished
+            },
+            activeRemoteMessageModel: activeRemoteMessageModel,
+            defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
+            sessionRestoreCoordinator: sessionRestorePromptCoordinator,
+            subscriptionPromoDelegate: subscriptionPromoDelegate,
+            featureFlagger: featureFlagger,
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+            windowControllersManager: windowControllersManager,
+            syncService: syncService,
+            syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
+            pinningManager: pinningManager,
+            cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate,
+            duckPlayerOverlayObserver: duckPlayerOverlayObserver,
+            updateController: updateController,
+            updateNotificationBridge: updateNotificationPromoBridge,
+            brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
+            quitSurveyPromoObserver: quitSurveyPromoObserver
+        )
+        promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
+        NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
 
         setUpAutoClearHandler()
         bitwardenManager?.initCommunication()
@@ -1555,7 +1633,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // silently inert. Calling it twice is harmless — it re-checks already-settled state.
         eventHubIntegration.applicationDidBecomeActive()
 
-        PixelKit.fire(GeneralPixel.launch)
+        fireLaunchPixel()
         profilerToken.stop()
     }
 
@@ -1628,15 +1706,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         defaultBrowserAndDockPromptService.applicationDidBecomeActive()
         eventHubIntegration.applicationDidBecomeActive()
-
-        Task { @MainActor in
-            await autoconsentStatsPopoverCoordinator.checkAndShowDialogIfNeeded()
-        }
     }
 
     private func fireDailyActiveUserPixels() {
         PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily)
         PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily)
+        if defaultBrowserPreferences.isDefault {
+            onboardingNonBlockingExperiment.fireMetric(.setAsDefaultEnabled)
+        }
         PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily)
     }
 
@@ -1661,8 +1738,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// The settings toggles only cover users who touch a setting; this sizes the enabled base.
     @MainActor
     private func fireDailyPromptBarStatePixel() {
-        guard featureFlagger.isFeatureOn(.promptBar) else { return }
-
         PixelKit.fire(PromptBarPixel.state(shortcutEnabled: promptBarPreferences.isKeyboardShortcutEnabled,
                                            menuBarIconEnabled: promptBarPreferences.isMenuBarIconVisible),
                       frequency: .daily)
@@ -1725,28 +1800,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard AppVersion.runType.allowsUpdates else { return }
 
         let buildType = StandardApplicationBuildType()
-        let notificationPresenter = UpdateNotificationPresenter(
-            pixelFiring: PixelKit.shared,
-            shouldSuppressPostUpdateNotification: { [weak self] in
-                let wc = self?.windowControllersManager.lastKeyMainWindowController
-                            ?? self?.windowControllersManager.mainWindowControllers.last
-                return wc?.mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.content == .releaseNotes
-            },
-            showNotificationPopover: { [weak self] popover in
-                guard let wc = self?.windowControllersManager.lastKeyMainWindowController
-                            ?? self?.windowControllersManager.mainWindowControllers.last,
-                      let button = wc.mainViewController.navigationBarViewController.optionsButton else {
-                    return false
-                }
-                let parent = wc.mainViewController
-                guard parent.view.window?.isKeyWindow == true,
-                      (parent.presentedViewControllers ?? []).isEmpty else {
-                    return false
-                }
-                popover.show(onParent: parent, relativeTo: button)
-                return true
-            }
-        )
+        let notificationPresenter = UpdateNotificationPromoBridge()
+        self.updateNotificationPromoBridge = notificationPresenter
 
         if buildType.isAppStoreBuild {
             guard let appStoreFactory = UpdateControllerFactory.self as? any AppStoreUpdateControllerFactory.Type else {
@@ -1758,7 +1813,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 internalUserDecider: internalUserDecider,
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
-                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished }
+                isOnboardingFinished: { [weak self, featureFlagger] in
+                    if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
+                        return self?.isOnboardingReadyForPrompts == true
+                    }
+                    return OnboardingActionsManager.isOnboardingFinished
+                }
             )
         } else {
             assert(buildType.isSparkleBuild)
@@ -1788,7 +1848,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 },
                 wideEvent: wideEvent,
-                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished },
+                isOnboardingFinished: { [weak self, featureFlagger] in
+                    if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
+                        return self?.isOnboardingReadyForPrompts == true
+                    }
+                    return OnboardingActionsManager.isOnboardingFinished
+                },
                 openUpdatesPage: { [windowControllersManager] in
                     windowControllersManager.showTab(with: .releaseNotes)
                 }
@@ -1857,8 +1922,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 showQuitSurvey: { [weak self] in
                     guard let self else { return }
-                    let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor, featureFlagger: self.featureFlagger, historyCoordinating: self.historyCoordinator, faviconManaging: self.faviconManager)
+                    let presenter = QuitSurveyPresenter(
+                        windowControllersManager: windowControllersManager,
+                        persistor: persistor,
+                        featureFlagger: featureFlagger,
+                        historyCoordinating: historyCoordinator,
+                        faviconManaging: faviconManager
+                    )
+
+                    guard promoService != nil else {
+                        await presenter.showSurvey()
+                        return
+                    }
+
+                    await quitSurveyPromoObserver.reportVisible()
                     await presenter.showSurvey()
+                    await quitSurveyPromoObserver.reportHidden()
                 }
             ),
 
@@ -1898,7 +1977,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
 
             // 9. Close windows before quitting while waiting for ⌘Q release
-            .perform {
+            .perform { [windowControllersManager] in
+                windowControllersManager.setOnboardingTab(nil)
                 NSApp.visibleWindows.forEach { $0.close() }
             }
         ]
@@ -2160,6 +2240,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
+    // MARK: - Duck.ai native storage
+
+    /// Production keeps `~/Library/Application Support`; other unsandboxed bundles get a per-bundle container so DMG variants don't share chats.
+    static func duckAiNativeStorageBaseURL(isSandboxed: Bool = NSApp.isSandboxed,
+                                           bundleID: String? = Bundle.main.bundleIdentifier) -> URL? {
+        guard !isSandboxed, bundleID != productionBundleID else {
+            return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        }
+        return URL.sandboxApplicationSupportURL
+    }
+
+    private static let productionBundleID = "com.duckduckgo.macos.browser"
+
     // MARK: - PixelKit
 
     static func configurePixelKit(isInternalUser: Bool) {
@@ -2225,6 +2318,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let syncService = DDGSync(
             dataProvidersSource: syncDataProviders,
             errorEvents: SyncErrorHandler(),
+            unifiedDeviceListEvents: UnifiedDeviceListPixelHandler(),
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             keyValueStore: keyValueStore,
             environment: environment,
@@ -2238,8 +2332,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 isPairingV2CodeEnabled: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanShowV2ConnectCode)
                 },
+                canUseExchangeV2Point1: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanUseExchangeV2Point1)
+                },
                 canWriteUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanWriteUnifiedDeviceList)
+                },
+                canUsePatchEndpointForLegacyDeviceRename: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanUsePatchEndpointForLegacyDeviceRename)
                 },
                 canReadUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanReadUnifiedDeviceList)
@@ -2483,11 +2583,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Must run before `setUpPromptBarMenuBarVisibility()`, which hands the icon's click to the coordinator.
     @MainActor
     private func setUpPromptBar() {
-        guard featureFlagger.isFeatureOn(.promptBar) else {
-            promptBarCoordinator = nil
-            return
-        }
-
         let promptSubmitter = PromptBarPromptSubmitter(aiChatTabOpener: aiChatTabOpener,
                                                        windowControllersManager: windowControllersManager)
         let content = PromptBarContentFactory.makeContent(promptSubmitter: promptSubmitter,
@@ -2496,7 +2591,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                           preferences: aiChatPreferencesPersistor)
         let coordinator = PromptBarCoordinator(
-            featureFlagger: featureFlagger,
             preferences: promptBarPreferences,
             shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
             presenter: PromptBarPresenter(content: content)
@@ -2507,13 +2601,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setUpPromptBarMenuBarVisibility() {
-        guard featureFlagger.isFeatureOn(.promptBar) else {
-            promptBarMenuBarController?.hide()
-            promptBarMenuBarController = nil
-            promptBarMenuBarCancellable = nil
-            return
-        }
-
         if promptBarMenuBarController == nil {
             promptBarMenuBarController = PromptBarMenuBarController()
         }
@@ -2531,6 +2618,65 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.promptBarMenuBarController?.hide()
                 }
             }
+    }
+
+    // MARK: - Keychain availability
+
+    /// Fires the launch pixel. When the launch-time Keychain read failed before a retry
+    /// succeeded, the pixel carries the first failure's error code — reported here rather
+    /// than from the retry loop, which runs before PixelKit is set up.
+    private func fireLaunchPixel() {
+        guard let keychainReadErrorStatus else {
+            PixelKit.fire(GeneralPixel.launch)
+            return
+        }
+
+        PixelKit.fire(GeneralPixel.launch,
+                      options: .parameters([PixelKit.Parameters.keychainErrorCode: "\(keychainReadErrorStatus)"]))
+    }
+
+    /// When launched as a login item the Keychain may not be unlocked yet.
+    /// Retry for up to 60 s to give loginwindow time to unlock it.
+    ///
+    /// Waiting here is also what keeps `Database()` from crashing further down: it reads
+    /// the same Keychain item through `registerValueTransformers`, so by the time it runs
+    /// the Keychain has had the full window to become available.
+    private static func readEncryptionKeyRetryingKeychainAccess(
+        keyStore: EncryptionKeyStoring,
+        startupProfiler: StartupProfiler
+    ) -> (key: SymmetricKey?, firstFailureStatus: OSStatus?) {
+        let retryInterval: TimeInterval = 6
+        let deadline = Date().addingTimeInterval(60)
+        var firstFailureStatus: OSStatus?
+
+        while true {
+            do {
+                return (try keyStore.readKey(), firstFailureStatus)
+            } catch {
+                let status = (error as? EncryptionKeyStoreError)?.status
+                if firstFailureStatus == nil {
+                    firstFailureStatus = status
+                }
+
+                // The user dismissed the Keychain prompt. Retrying would only present it
+                // again, and this is their decision rather than a failure, so quit quietly.
+                if status == errSecUserCanceled {
+                    exit(0)
+                }
+
+                // A read can block while a Keychain prompt is up, so bound the total wait
+                // rather than the number of attempts.
+                guard Date() < deadline else {
+                    // Carry on without a key, as this has always done. This is not a
+                    // supported degraded mode: `Database()` reads the same item moments
+                    // later and terminates there, reporting the failure.
+                    Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
+                    return (nil, firstFailureStatus)
+                }
+                startupProfiler.invalidate()
+                Thread.sleep(forTimeInterval: retryInterval)
+            }
+        }
     }
 }
 

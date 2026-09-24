@@ -773,6 +773,150 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 1)
     }
 
+    func testWhenUpdatedCreateImageIsSubmittedThenResolvedImageGenerationModelIsUsed() async throws {
+        configProvider.isUpdatedCreateImageEnabled = true
+        configProvider.imageGenerationModelId = "preferred-image-model"
+        let expectation = expectation(description: "submitChatCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, modelId, _, mode, toolChoice, reasoningEffort, _, _ in
+            XCTAssertEqual(modelId, "preferred-image-model")
+            XCTAssertNil(mode)
+            XCTAssertEqual(toolChoice, [AIChatRAGTool.imageGeneration.rawValue])
+            XCTAssertNil(reasoningEffort)
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.SubmitChatAction(
+            chat: "Draw a duck",
+            target: .sameTab,
+            modelId: "unsupported-web-model",
+            images: nil,
+            mode: AIChatNativePrompt.imageGenerationMode,
+            toolChoice: nil,
+            reasoningEffort: "medium",
+            pageContext: nil,
+            files: nil
+        )
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    func testWhenUpdatedCreateImageHasNoResolvedModelThenSubmissionUsesLegacyModeWithoutWebModel() async throws {
+        configProvider.isUpdatedCreateImageEnabled = true
+        configProvider.imageGenerationModelId = nil
+        let expectation = expectation(description: "submitChatCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, modelId, _, mode, toolChoice, _, _, _ in
+            XCTAssertNil(modelId)
+            XCTAssertEqual(mode, AIChatNativePrompt.imageGenerationMode)
+            XCTAssertNil(toolChoice)
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.SubmitChatAction(
+            chat: "Draw a duck",
+            target: .sameTab,
+            modelId: "unsupported-web-model",
+            images: nil,
+            mode: AIChatNativePrompt.imageGenerationMode,
+            toolChoice: [AIChatRAGTool.imageGeneration.rawValue],
+            reasoningEffort: nil,
+            pageContext: nil,
+            files: nil
+        )
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    func testWhenImageGenerationIsActivatedThenNativeSwitchNoticeIsIncludedInConfig() async throws {
+        let notice = NewTabPageDataModel.OmnibarCreateImageModelSwitch(message: "Now using Luna", secondaryText: "Mistral can't create images.")
+        configProvider.isUpdatedCreateImageEnabled = true
+        configProvider.activateImageGenerationResult = notice
+
+        let request = NewTabPageDataModel.OmnibarSetImageGenerationActive(active: true)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setImageGenerationActive, parameters: request)
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(configProvider.activateImageGenerationCallCount, 1)
+        XCTAssertEqual(config.createImageModelSwitch, notice)
+    }
+
+    func testWhenCreateImageSwitchNoticeIsDismissedThenItIsRemovedFromConfig() async throws {
+        configProvider.isUpdatedCreateImageEnabled = true
+        configProvider.activateImageGenerationResult = NewTabPageDataModel.OmnibarCreateImageModelSwitch(
+            message: "Now using Luna",
+            secondaryText: "Mistral can't create images."
+        )
+        let request = NewTabPageDataModel.OmnibarSetImageGenerationActive(active: true)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setImageGenerationActive, parameters: request)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .dismissCreateImageModelSwitch)
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertNil(config.createImageModelSwitch)
+    }
+
+    // MARK: - usage limits
+
+    @MainActor
+    func testUsageLimitsFromTheProviderAreIncludedInConfig() async throws {
+        let drawer = NewTabPageDataModel.OmnibarUsageLimits(
+            message: "75% of weekly limit",
+            secondaryText: " \u{00B7} Resets in 2d",
+            dismissible: true,
+            icon: .ring,
+            percent: 75,
+            severity: .warning,
+            cta: .init(label: "Switch to Haiku 4.5", leadingIcon: .convert, primaryModelId: "haiku", showMenu: false)
+        )
+        configProvider.usageLimitsResult = drawer
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.usageLimits, drawer)
+    }
+
+    @MainActor
+    func testWhenThereIsNoUsageMessageThenConfigOmitsTheDrawer() async throws {
+        configProvider.usageLimitsResult = nil
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertNil(config.usageLimits)
+    }
+
+    @MainActor
+    func testDismissUsageLimitsIsForwardedToTheProvider() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .dismissUsageLimits)
+
+        XCTAssertEqual(configProvider.dismissUsageLimitsCallCount, 1)
+    }
+
+    @MainActor
+    func testSelectUsageLimitsCtaForwardsThePickedModel() async throws {
+        let action = NewTabPageDataModel.OmnibarSelectUsageLimitsCtaAction(modelId: "claude-haiku-4-5")
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectUsageLimitsCta, parameters: action)
+
+        XCTAssertEqual(configProvider.selectUsageLimitsCtaModelIds, ["claude-haiku-4-5"])
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 0)
+    }
+
+    @MainActor
+    func testSelectUsageLimitsCtaWithNoModelForwardsNil() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectUsageLimitsCta, parameters: [String: String]())
+
+        XCTAssertEqual(configProvider.selectUsageLimitsCtaModelIds, [nil])
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 0)
+    }
+
+    @MainActor
+    func testWhenTheProviderAsksForAnUpsellThenTheDialogIsPresented() async throws {
+        configProvider.selectUsageLimitsCtaOutcome = .requiresSubscriptionUpsell
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectUsageLimitsCta, parameters: [String: String]())
+
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 1)
+        XCTAssertEqual(subscriptionDialogPresenter.lastUpsellSource, .usageLimit)
+    }
+
     // MARK: - attach tabs (config)
 
     @MainActor

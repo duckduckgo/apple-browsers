@@ -93,8 +93,7 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAi
                     migrationKey: "com.duckduckgo.duckai.nativeStorage.fireModeMigratedFromAppGroup",
                     label: .fireMode,
                     keyValueStore: keyValueStore,
-                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter(),
-                    lockedLaunchFixEnabled: featureFlagger.isFeatureOn(.duckAINativeStorageMigrationLockedLaunchFix)
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
                 ).run()
                 if outcome == .skip {
                     return nil

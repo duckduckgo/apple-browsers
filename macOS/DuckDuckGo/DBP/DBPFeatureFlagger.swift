@@ -21,9 +21,9 @@ import DataBrokerProtectionCore
 import DataBrokerProtection_macOS
 import PrivacyConfig
 import FeatureFlags_macOS
-import PixelKit
+import WideEvent
 
-final class DBPFeatureFlagger: DBPFeatureFlagging {
+final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
     fileprivate let featureFlagger: FeatureFlagger
 
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
@@ -50,6 +50,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
 
     var isExtractedProfileRefreshOn: Bool {
         featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
+    }
+
+    var isSchedulerDeferralHandlingEnabled: Bool {
+        featureFlagger.isFeatureOn(.dbpSchedulerDeferralHandling)
     }
 
     init(featureFlagger: FeatureFlagger) {

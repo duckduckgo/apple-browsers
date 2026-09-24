@@ -37,8 +37,6 @@ final class DataBrokerProtectionIOSManagerVaultInitReasonTests: XCTestCase {
         try await sut.prepareSecureVaultResourcesAtLaunch()
 
         XCTAssertEqual(initAttemptCount.value, 0)
-        XCTAssertEqual(sut.iOSRuntimeStatus?.vault.initialized, false)
-        XCTAssertEqual(sut.iOSRuntimeStatus?.vault.lastInitReason, "launch")
     }
 
     func test_launch_hasProfile_initializes() async throws {
@@ -49,7 +47,6 @@ final class DataBrokerProtectionIOSManagerVaultInitReasonTests: XCTestCase {
         try await sut.prepareSecureVaultResourcesAtLaunch()
 
         XCTAssertEqual(initAttemptCount.value, 1)
-        XCTAssertEqual(sut.iOSRuntimeStatus?.vault.initialized, true)
     }
 
     func test_launch_unknownProfile_initializes() async throws {
@@ -59,7 +56,6 @@ final class DataBrokerProtectionIOSManagerVaultInitReasonTests: XCTestCase {
         try await sut.prepareSecureVaultResourcesAtLaunch()
 
         XCTAssertEqual(initAttemptCount.value, 1)
-        XCTAssertEqual(sut.iOSRuntimeStatus?.vault.initialized, true)
     }
 
     // MARK: - appActive (skips when no profile, starts no operations)
@@ -72,7 +68,6 @@ final class DataBrokerProtectionIOSManagerVaultInitReasonTests: XCTestCase {
         await sut.appDidBecomeActive()
 
         XCTAssertEqual(initAttemptCount.value, 0)
-        XCTAssertEqual(sut.iOSRuntimeStatus?.vault.initialized, false)
         XCTAssertFalse(dependencies.queueManager.didCallStartImmediateScanOperationsIfPermitted)
         XCTAssertFalse(dependencies.queueManager.didCallStartScheduledScanOperationsIfPermitted)
         XCTAssertFalse(dependencies.queueManager.didCallStartScheduledAllOperationsIfPermitted)
@@ -88,8 +83,6 @@ final class DataBrokerProtectionIOSManagerVaultInitReasonTests: XCTestCase {
         try await sut.prepareDatabaseAccess()
 
         XCTAssertEqual(initAttemptCount.value, 1)
-        XCTAssertEqual(sut.iOSRuntimeStatus?.vault.initialized, true)
-        XCTAssertEqual(sut.iOSRuntimeStatus?.vault.lastInitReason, "dashboard")
     }
 
     // MARK: - Helpers

@@ -1,0 +1,9 @@
+// App launch pixel
+{
+    "ml_mac_app-launch": {
+        "description": "Fired on every app launch. When the launch-time Keychain read failed before a retry succeeded, carries the error code of the first failed read",
+        "owners": ["diegoreymendez"],
+        "triggers": ["startup"],
+        "parameters": ["appVersion", "pixelSource", "keychainErrorCode"]
+    }
+}

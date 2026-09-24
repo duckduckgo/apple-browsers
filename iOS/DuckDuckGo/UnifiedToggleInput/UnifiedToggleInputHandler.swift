@@ -97,13 +97,6 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         }
     }
 
-    var isAIVoiceChatEnabled: Bool = false {
-        didSet {
-            guard isAIVoiceChatEnabled != oldValue else { return }
-            updateButtonState()
-        }
-    }
-
     var hidesVoiceButton: Bool = false {
         didSet {
             guard hidesVoiceButton != oldValue else { return }
@@ -126,6 +119,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     var isImageGenerationSelected: Bool = false
+
+    /// Mirrors the usage card's blocking state, so every path into a prompt is closed and not just
+    /// the buttons that look closed.
+    var isInputBlockedByUsageLimit: Bool = false
 
     // MARK: - SwitchBarHandling — Publishers
 
@@ -202,12 +199,14 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     func submitText(_ text: String) {
+        guard !isInputBlockedByUsageLimit else { return }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
     }
 
     func submitAIChatAttachmentOnlyPrompt() {
+        guard !isInputBlockedByUsageLimit else { return }
         textSubmissionSubject.send((text: "", mode: .aiChat))
     }
 
@@ -260,8 +259,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     // MARK: - Private
 
     private func updateButtonState() {
-        let aiVoiceChatAvailable = !isExpanded && isAIVoiceChatEnabled && currentToggleState == .aiChat
-            && !prefersDictationOverVoiceChat
+        let aiVoiceChatAvailable = !isExpanded && currentToggleState == .aiChat && !prefersDictationOverVoiceChat
         let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
         let nextButtonState: SwitchBarButtonState
 

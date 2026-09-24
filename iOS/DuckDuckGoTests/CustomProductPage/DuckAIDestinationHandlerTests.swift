@@ -22,6 +22,7 @@ import Testing
 import AIChat
 import Core
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 @MainActor
 @Suite("Custom Product Page - Duck AI Destination Handler")
@@ -29,16 +30,17 @@ struct DuckAIDestinationHandlerTests {
     let mockAIChatDeepLinkHandler: MockAIChatDeepLinkHandler
     let mockPresenter: MockAppStoreCustomProductPagePresenter
     let mockFeatureFlagger: MockFeatureFlagger
+    let pixelKitMock: PixelKitMock
     let sut: DuckAIDestinationHandler
 
     init() {
-        PixelFiringMock.tearDown()
         mockAIChatDeepLinkHandler = MockAIChatDeepLinkHandler()
         mockPresenter = MockAppStoreCustomProductPagePresenter()
         mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.customProductPageDuckAiChat])
+        pixelKitMock = PixelKitMock()
         sut = DuckAIDestinationHandler(
             aiChatDeepLinkHandler: mockAIChatDeepLinkHandler,
-            pixelFiring: PixelFiringMock.self,
+            pixelFiring: pixelKitMock,
             featureFlagger: mockFeatureFlagger
         )
     }
@@ -69,9 +71,9 @@ struct DuckAIDestinationHandlerTests {
         sut.handle(url: url, on: mockPresenter)
 
         // THEN
-        #expect(PixelFiringMock.lastDailyPixelInfo?.pixelName == Pixel.Event.customProductPageDuckAIOpenedAIChat.name)
-        #expect(PixelFiringMock.lastDailyPixelInfo?.params?.isEmpty == true)
-        #expect(PixelFiringMock.lastDailyPixelInfo?.error == nil)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.customProductPageDuckAIOpenedAIChat.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?.isEmpty == true)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.error == nil)
     }
 
     // MARK: - Feature Flag Disabled
@@ -99,6 +101,6 @@ struct DuckAIDestinationHandlerTests {
         sut.handle(url: url, on: mockPresenter)
 
         // THEN
-        #expect(PixelFiringMock.lastDailyPixelInfo == nil)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
     }
 }

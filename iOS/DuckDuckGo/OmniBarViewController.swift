@@ -25,6 +25,7 @@ import Core
 import Kingfisher
 import DesignResourcesKitIcons
 import FeatureFlags_iOS
+import PixelKit
 
 class OmniBarViewController: UIViewController, OmniBar {
 
@@ -575,7 +576,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
         barView.privacyInfoContainer.privacyIcon.setDaxEasterEggLogoURL(url) {
             if url != nil {
-                DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoDisplayed)
+                PixelKit.fire(Pixel.Event.daxEasterEggLogoDisplayed, frequency: .dailyAndCount)
             }
         }
 
@@ -830,9 +831,9 @@ class OmniBarViewController: UIViewController, OmniBar {
             }
             resignFirstResponder()
 
-            DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarQuerySubmitted)
+            PixelKit.fire(Pixel.Event.aiChatLegacyOmnibarQuerySubmitted, frequency: .dailyAndCount)
             if dependencies.aiChatAddressBarExperience.shouldShowModeToggle {
-                DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarQuerySubmittedIPadToggleEnabled)
+                PixelKit.fire(Pixel.Event.aiChatOmnibarQuerySubmittedIPadToggleEnabled, frequency: .dailyAndCount)
             }
 
             if selectedTextEntryMode == .aiChat {
@@ -976,7 +977,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func onSettingsButtonPressed() {
-        Pixel.fire(pixel: .addressBarSettings)
+        PixelKit.fire(Pixel.Event.addressBarSettings)
         omniDelegate?.onSettingsPressed()
     }
 
@@ -986,7 +987,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func onRefreshPressed() {
-        Pixel.fire(pixel: .refreshPressed)
+        PixelKit.fire(Pixel.Event.refreshPressed)
         cancelAllAnimations()
         omniDelegate?.onRefreshPressed()
     }
@@ -1004,8 +1005,8 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func onBookmarksPressed() {
-        Pixel.fire(pixel: .bookmarksButtonPressed,
-                   withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
+        PixelKit.fire(Pixel.Event.bookmarksButtonPressed,
+                      options: .parameters([PixelParameters.originatedFromMenu: "0"]))
         omniDelegate?.onBookmarksPressed()
     }
 
@@ -1049,7 +1050,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func onDismissPressed() {
-        Pixel.fire(pixel: .aiChatLegacyOmnibarBackButtonPressed)
+        PixelKit.fire(Pixel.Event.aiChatLegacyOmnibarBackButtonPressed)
         omniDelegate?.onCancelPressed()
         refreshState(state.onEditingStoppedState)
     }
@@ -1074,7 +1075,7 @@ extension OmniBarViewController: UITextFieldDelegate {
     }
 
     @objc func textFieldDidBeginEditing(_ textField: UITextField) {
-        DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarShown)
+        PixelKit.fire(Pixel.Event.aiChatLegacyOmnibarShown, frequency: .dailyAndCount)
         
         DispatchQueue.main.async {
             let highlightText = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView) ?? true
@@ -1135,7 +1136,7 @@ extension OmniBarViewController {
 
 extension OmniBarViewController: PrivacyInfoContainerViewDelegate {
     func privacyInfoContainerViewDidTapDaxLogo(_ view: PrivacyInfoContainerView, logoURL: URL?, currentImage: UIImage?, sourceFrame: CGRect) {
-        DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoTapped)
+        PixelKit.fire(Pixel.Event.daxEasterEggLogoTapped, frequency: .dailyAndCount)
 
         dependencies.daxEasterEggPresenter.presentFullScreen(
             from: self,

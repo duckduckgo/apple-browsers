@@ -19,7 +19,7 @@
 
 import Foundation
 import FoundationExtensions
-import PixelKit
+import WideEvent
 
 final class DuckAISelectionJourneyWideEventData: WideEventData {
 

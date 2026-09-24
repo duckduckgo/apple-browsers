@@ -46,6 +46,24 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     // Key used for persistence in the provider
     private let storageKey = "newTabPageOmnibarMode"
 
+    /// `DuckAiUsageLimitsStore` builds its dismissal stores over `UserDefaults.standard`, so the
+    /// usage-limits tests would otherwise carry state into each other and into the rest of the suite.
+    private static let usageWarningDefaultsKeys = [
+        "aichat.usage-warning.dismissal",
+        "aichat.usage-warning.acted-snapshot",
+        "aichat.high-usage-notice.dismissed-models"
+    ]
+
+    override func setUp() {
+        super.setUp()
+        Self.usageWarningDefaultsKeys.forEach(UserDefaults.standard.removeObject(forKey:))
+    }
+
+    override func tearDown() {
+        Self.usageWarningDefaultsKeys.forEach(UserDefaults.standard.removeObject(forKey:))
+        super.tearDown()
+    }
+
     // Helper to create a mock key-value store
     private func makeStore(
         underlying: [String: Any] = [:],
@@ -266,12 +284,232 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     private let legacyModelIdKey = "newTabPageSelectedModelId"
 
+    // MARK: - usage limits
+
+    func testUsageLimits_approachingSeedMapsToTheRingDrawer() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        let drawer = sut.provider.usageLimits()
+
+        XCTAssertEqual(drawer?.message, UserText.aiChatUsageWarningsDailyUsage(percent: 75))
+        XCTAssertEqual(drawer?.secondaryText, " \u{00B7} " + UserText.aiChatUsageWarningsResetsIn("5h"))
+        XCTAssertEqual(drawer?.icon, .ring)
+        XCTAssertEqual(drawer?.percent, 75)
+        XCTAssertEqual(drawer?.severity, .warning)
+        XCTAssertEqual(drawer?.dismissible, true)
+        XCTAssertEqual(drawer?.blocksPrompt, false)
+        XCTAssertEqual(drawer?.cta?.label, UserText.aiChatUsageWarningsSwitchToModel("Haiku 4.5"))
+        XCTAssertEqual(drawer?.cta?.leadingIcon, .convert)
+        XCTAssertEqual(drawer?.cta?.primaryModelId, "claude-haiku-4-5")
+    }
+
+    /// The picker's models, not the step-down ones web named.
+    func testUsageLimits_switchCtaCarriesTheModelPickerAsAlternatives() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        let cta = sut.provider.usageLimits()?.cta
+
+        XCTAssertEqual(cta?.showMenu, true)
+        XCTAssertEqual(cta?.alternatives, [
+            .init(id: "gpt-5.6-luna", name: "5.6 Luna"),
+            .init(id: "claude-haiku-4-5", name: "Haiku 4.5"),
+            .init(id: "gpt-5.4-mini", name: "5.4 mini")
+        ])
+    }
+
+    func testUsageLimits_switchToFreeCtaListsOnlyFreeAccessibleModels() throws {
+        let sut = try makeUsageLimitsProvider(seed: .weeklyReachedDegraded)
+
+        XCTAssertEqual(sut.provider.usageLimits()?.cta?.alternatives, [
+            .init(id: "claude-haiku-4-5", name: "Haiku 4.5"),
+            .init(id: "gpt-5.4-mini", name: "5.4 mini")
+        ])
+    }
+
+    func testUsageLimits_nonSwitchCtaHasNoMenu() throws {
+        let sut = try makeUsageLimitsProvider(seed: .freeDailyReached)
+
+        XCTAssertEqual(sut.provider.usageLimits()?.cta?.showMenu, false)
+        XCTAssertEqual(sut.provider.usageLimits()?.cta?.alternatives, [])
+    }
+
+    func testUsageLimits_reachedSeedBlocksThePromptAndDropsTheRing() throws {
+        let sut = try makeUsageLimitsProvider(seed: .weeklyReached)
+
+        let drawer = sut.provider.usageLimits()
+
+        XCTAssertEqual(drawer?.message, UserText.aiChatUsageWarningsWeeklyLimitReached)
+        XCTAssertEqual(drawer?.icon, .alert)
+        XCTAssertNil(drawer?.percent)
+        XCTAssertNil(drawer?.severity)
+        XCTAssertEqual(drawer?.blocksPrompt, true)
+        XCTAssertEqual(drawer?.dismissible, false)
+        XCTAssertNil(drawer?.cta)
+    }
+
+    func testUsageLimits_subscribeCtaOffersNoModelAndNoMenu() throws {
+        let sut = try makeUsageLimitsProvider(seed: .freeDailyReached)
+
+        let cta = sut.provider.usageLimits()?.cta
+
+        XCTAssertEqual(cta?.label, UserText.aiChatUsageWarningsSubscribe)
+        XCTAssertEqual(cta?.leadingIcon, .textOnly)
+        XCTAssertNil(cta?.primaryModelId)
+        XCTAssertEqual(cta?.showMenu, false)
+    }
+
+    func testSelectUsageLimitsCta_withoutAModelAsksForTheSubscriptionUpsell() throws {
+        let sut = try makeUsageLimitsProvider(seed: .freeDailyReached)
+
+        XCTAssertEqual(sut.provider.selectUsageLimitsCta(modelId: nil), .requiresSubscriptionUpsell)
+    }
+
+    func testSelectUsageLimitsCta_withThePrimaryModelPersistsItAndStandsTheMessageDown() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        XCTAssertEqual(sut.provider.selectUsageLimitsCta(modelId: "claude-haiku-4-5"), .handled)
+
+        XCTAssertEqual(sut.persistor.selectedModelId, "claude-haiku-4-5")
+        XCTAssertEqual(sut.persistor.selectedModelShortName, "Haiku 4.5")
+        XCTAssertNil(sut.provider.usageLimits())
+    }
+
+    /// Settles the message even for a model web never named as a step down.
+    func testSelectUsageLimitsCta_withAMenuAlternativePersistsItAndStandsTheMessageDown() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        XCTAssertEqual(sut.provider.selectUsageLimitsCta(modelId: "gpt-5.6-luna"), .handled)
+
+        XCTAssertEqual(sut.persistor.selectedModelId, "gpt-5.6-luna")
+        XCTAssertEqual(sut.persistor.selectedModelShortName, "5.6 Luna")
+        XCTAssertNil(sut.provider.usageLimits())
+    }
+
+    func testSelectUsageLimitsCta_ignoresAModelThatIsNotSelectable() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        XCTAssertEqual(sut.provider.selectUsageLimitsCta(modelId: "gated-model"), .handled)
+
+        XCTAssertEqual(sut.persistor.selectedModelId, "claude-opus-4-8")
+        XCTAssertNotNil(sut.provider.usageLimits())
+    }
+
+    func testSelectUsageLimitsCta_clearsAReasoningEffortTheNewModelDoesNotSupport() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+        sut.persistor.selectedReasoningEffort = AIChatReasoningEffort.medium.rawValue
+
+        _ = sut.provider.selectUsageLimitsCta(modelId: "claude-haiku-4-5")
+
+        XCTAssertNil(sut.persistor.selectedReasoningEffort)
+    }
+
+    /// On a model with no high-usage notice behind it, so a dismissed warning leaves nothing.
+    func testDismissUsageLimits_hidesTheWarning() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75, selectedModelId: "gpt-5.6-luna")
+
+        sut.provider.dismissUsageLimits()
+
+        XCTAssertNil(sut.provider.usageLimits())
+    }
+
+    func testSelectedModelId_switchingToTheSuggestedModelStandsTheWarningDown() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        sut.provider.selectedModelId = "claude-haiku-4-5"
+
+        XCTAssertNil(sut.provider.usageLimits())
+    }
+
+    func testSelectedModelId_switchingToAModelTheDrawerDidNotOfferLeavesTheWarningUp() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        sut.provider.selectedModelId = "gpt-5.6-luna"
+
+        XCTAssertEqual(sut.provider.usageLimits()?.message, UserText.aiChatUsageWarningsDailyUsage(percent: 75))
+    }
+
+    func testUsageLimits_isNilWhenTheFeatureFlagIsOff() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75, isUsageWarningsEnabled: false)
+
+        XCTAssertNil(sut.provider.usageLimits())
+    }
+
+    func testUsageLimits_fallsBackToTheHighUsageNoticeWhenNoAllowanceMessageApplies() throws {
+        let sut = try makeUsageLimitsProvider(seed: nil)
+
+        let drawer = sut.provider.usageLimits()
+
+        XCTAssertEqual(drawer?.message, UserText.aiChatUsageWarningsHighUsageModel("Opus 4.8"))
+        XCTAssertEqual(drawer?.icon, .info)
+        XCTAssertEqual(drawer?.dismissible, true)
+        XCTAssertEqual(drawer?.blocksPrompt, false)
+        XCTAssertNil(drawer?.cta)
+    }
+
+    func testUsageLimits_prefersTheWarningOverTheHighUsageNotice() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
+
+        XCTAssertEqual(sut.provider.usageLimits()?.message, UserText.aiChatUsageWarningsDailyUsage(percent: 75))
+    }
+
+    func testDismissUsageLimits_dismissesTheHighUsageNoticeWhenThatIsWhatIsShowing() throws {
+        let sut = try makeUsageLimitsProvider(seed: nil)
+
+        sut.provider.dismissUsageLimits()
+
+        XCTAssertNil(sut.provider.usageLimits())
+    }
+
+    /// Defaults to a high-usage model, so the notice fallback has something to resolve.
+    @MainActor
+    private func makeUsageLimitsProvider(
+        seed: DuckAiUsageSnapshotSeed?,
+        selectedModelId: String = "claude-opus-4-8",
+        isUsageWarningsEnabled: Bool = true
+    ) throws -> (provider: NewTabPageOmnibarConfigProvider, persistor: MockAIChatPreferencesPersisting) {
+        let paid = ["plus", "pro"]
+        let free = ["free"] + paid
+        let models = [
+            makeModel(id: "claude-opus-4-8", shortName: "Opus 4.8", accessTier: paid, supportedReasoningEffort: [.medium]),
+            makeModel(id: "gpt-5.6-luna", shortName: "5.6 Luna", accessTier: paid, supportedReasoningEffort: [.medium]),
+            makeModel(id: "claude-haiku-4-5", shortName: "Haiku 4.5", accessTier: free),
+            makeModel(id: "gpt-5.4-mini", shortName: "5.4 mini", accessTier: free),
+            makeModel(id: "gated-model", shortName: "Gated", entityHasAccess: false, accessTier: free)
+        ]
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = selectedModelId
+        persistor.selectedModelShortName = models.first { $0.id == selectedModelId }?.shortName
+
+        let storage = DuckAiNativeMemoryStorageHandler()
+        if let seed {
+            try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue,
+                                 value: seed.entryValue(switchTargets: ["claude-haiku-4-5", "gpt-5.4-mini"],
+                                                        selectedModelId: selectedModelId))
+        }
+
+        let flagger = MockFeatureFlagger()
+        flagger.featuresStub[FeatureFlag.aiChatUsageWarnings.rawValue] = isUsageWarningsEnabled
+
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flagger,
+            windowControllersManager: WindowControllersManagerMock(),
+            duckAiStorageHandler: storage,
+            availableModelsProvider: { models }
+        )
+        provider.refreshUsageLimits(requestingWebView: nil)
+        return (provider, persistor)
+    }
+
     @MainActor
     private func makeProvider(
         persistor: AIChatPreferencesPersisting,
         keyValueStore: ThrowingKeyValueStoring? = nil,
         featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
-        searchPreferences: SearchPreferences? = nil
+        searchPreferences: SearchPreferences? = nil,
+        windowControllersManager: WindowControllersManagerProtocol? = nil,
+        duckAiStorageHandler: DuckAiNativeStorageHandling? = nil,
+        availableModelsProvider: @escaping () -> [AIChatModel] = { [] }
     ) throws -> NewTabPageOmnibarConfigProvider {
         NewTabPageOmnibarConfigProvider(
             keyValueStore: try keyValueStore ?? makeStore(),
@@ -279,6 +517,9 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
             featureFlagger: featureFlagger,
             aiChatPreferencesPersistor: persistor,
             searchPreferences: searchPreferences ?? makeSearchPreferences(),
+            windowControllersManager: windowControllersManager,
+            duckAiStorageHandlerProvider: { _ in duckAiStorageHandler },
+            availableModelsProvider: availableModelsProvider,
             firePixel: { _ in }
         )
     }
@@ -290,6 +531,39 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         flagger.featuresStub[FeatureFlag.aiChatNtpChatTools.rawValue] = true
         flagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         return flagger
+    }
+
+    private func flaggerWithUpdatedCreateImageOn() -> MockFeatureFlagger {
+        let flagger = MockFeatureFlagger()
+        flagger.featuresStub[FeatureFlag.aiChatNtpImageGeneration.rawValue] = true
+        flagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        return flagger
+    }
+
+    private func makeModel(
+        id: String,
+        shortName: String? = nil,
+        provider: AIChatModel.ModelProvider = .openAI,
+        supportsImageGeneration: Bool = false,
+        entityHasAccess: Bool = true,
+        accessTier: [String] = [],
+        supportedReasoningEffort: [AIChatReasoningEffort] = [],
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil,
+        label: AIChatModelLabel? = nil
+    ) -> AIChatModel {
+        AIChatModel(
+            id: id,
+            name: id,
+            shortName: shortName,
+            provider: provider,
+            supportsImageUpload: false,
+            supportedTools: supportsImageGeneration ? [.imageGeneration] : [],
+            entityHasAccess: entityHasAccess,
+            accessTier: accessTier,
+            supportedReasoningEffort: supportedReasoningEffort,
+            reasoningEffortAccess: reasoningEffortAccess,
+            label: label
+        )
     }
 
     func testSelectedModelId_readsFromInjectedPersistor() throws {
@@ -399,6 +673,143 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         // Second launch: legacy key is gone, so nothing is overwritten.
         _ = try makeProvider(persistor: persistor, keyValueStore: store)
         XCTAssertEqual(persistor.selectedModelId, "claude-4")
+    }
+
+    // MARK: - Create Image model resolution
+
+    func testImageGenerationModelId_usesSelectedAccessibleImageModel() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "selected-image-model"
+        let models = [
+            makeModel(id: "preferred-image-model", supportsImageGeneration: true, label: .everydayUse),
+            makeModel(id: "selected-image-model", supportsImageGeneration: true, label: .usesLimitsFaster)
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        XCTAssertEqual(provider.imageGenerationModelId, "selected-image-model")
+    }
+
+    func testImageGenerationModelId_usesPreferredModelWhenSelectionIsUnsupported() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "unsupported-model"
+        let models = [
+            makeModel(id: "unsupported-model"),
+            makeModel(id: "first-image-model", supportsImageGeneration: true, label: .usesLimitsFaster),
+            makeModel(id: "preferred-image-model", supportsImageGeneration: true, label: .everydayUse)
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        XCTAssertEqual(provider.imageGenerationModelId, "preferred-image-model")
+    }
+
+    func testActivateImageGeneration_withMissingSelectionPersistsPreferredModelWithoutNotice() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        let models = [makeModel(id: "preferred-image-model", shortName: "Luna", supportsImageGeneration: true, label: .everydayUse)]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        let notice = provider.activateImageGeneration()
+
+        XCTAssertEqual(persistor.selectedModelId, "preferred-image-model")
+        XCTAssertEqual(persistor.selectedModelShortName, "Luna")
+        XCTAssertNil(notice)
+    }
+
+    func testActivateImageGeneration_withKnownUnsupportedSelectionReturnsSharedLocalizedNotice() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "oss-model"
+        let previousModel = makeModel(id: "oss-model", shortName: "Open Model", provider: .oss)
+        let imageModel = makeModel(id: "image-model", shortName: "Luna", supportsImageGeneration: true, label: .everydayUse)
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { [previousModel, imageModel] }
+        )
+
+        let notice = provider.activateImageGeneration()
+
+        XCTAssertEqual(
+            notice,
+            NewTabPageDataModel.OmnibarCreateImageModelSwitch(
+                message: UserText.aiChatCreateImageModelSwitchTitle("Luna"),
+                secondaryText: UserText.aiChatCreateImageModelSwitchPrivacySubtitle("Open Model")
+            )
+        )
+    }
+
+    func testActivateImageGeneration_clearsInvalidReasoningEffort() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "unsupported-model"
+        persistor.selectedReasoningEffort = "invalid"
+        let models = [
+            makeModel(id: "unsupported-model"),
+            makeModel(id: "image-model", supportsImageGeneration: true, label: .everydayUse)
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        _ = provider.activateImageGeneration()
+
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testActivateImageGeneration_clearsUnsupportedReasoningEffort() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "unsupported-model"
+        persistor.selectedReasoningEffort = AIChatReasoningEffort.high.rawValue
+        let models = [
+            makeModel(id: "unsupported-model"),
+            makeModel(id: "image-model", supportsImageGeneration: true, supportedReasoningEffort: [.low], label: .everydayUse)
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        _ = provider.activateImageGeneration()
+
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testActivateImageGeneration_preservesSupportedGatedReasoningEffort() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "unsupported-model"
+        persistor.selectedReasoningEffort = AIChatReasoningEffort.medium.rawValue
+        let gatedEffort = AIChatReasoningEffortAccess(effort: .medium, accessTier: ["pro"], entityHasAccess: false)
+        let models = [
+            makeModel(id: "unsupported-model"),
+            makeModel(
+                id: "image-model",
+                supportsImageGeneration: true,
+                supportedReasoningEffort: [.medium],
+                reasoningEffortAccess: [gatedEffort],
+                label: .everydayUse
+            )
+        ]
+        let provider = try makeProvider(
+            persistor: persistor,
+            featureFlagger: flaggerWithUpdatedCreateImageOn(),
+            availableModelsProvider: { models }
+        )
+
+        _ = provider.activateImageGeneration()
+
+        XCTAssertEqual(persistor.selectedReasoningEffort, AIChatReasoningEffort.medium.rawValue)
     }
 
     // MARK: - Reasoning effort

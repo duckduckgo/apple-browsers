@@ -134,6 +134,11 @@ final class PasswordManagementLoginModel: ObservableObject, PasswordManagementIt
 
     private let tld: TLD
     private let urlSort: AutofillDomainNameUrlSort
+    private let pasteboard: NSPasteboard
+    private let clipboardExpirationInterval: TimeInterval
+    private let notificationCenter: NotificationCenter
+    private let workspaceNotificationCenter: NotificationCenter
+    private let scheduleClipboardClear: (TimeInterval, @escaping () -> Void) -> Void
     private static let randomColorsCount = 15
 
     init(onSaveRequested: @escaping (SecureVaultModels.WebsiteCredentials) -> Void,
@@ -141,13 +146,25 @@ final class PasswordManagementLoginModel: ObservableObject, PasswordManagementIt
          urlMatcher: AutofillDomainNameUrlMatcher,
          emailManager: EmailManager,
          tld: TLD,
-         urlSort: AutofillDomainNameUrlSort) {
+         urlSort: AutofillDomainNameUrlSort,
+         pasteboard: NSPasteboard = .general,
+         clipboardExpirationInterval: TimeInterval = .minutes(1),
+         notificationCenter: NotificationCenter = .default,
+         workspaceNotificationCenter: NotificationCenter = NSWorkspace.shared.notificationCenter,
+         scheduleClipboardClear: @escaping (TimeInterval, @escaping () -> Void) -> Void = { interval, clear in
+             DispatchQueue.main.asyncAfter(wallDeadline: .now() + interval, execute: clear)
+         }) {
         self.onSaveRequested = onSaveRequested
         self.onDeleteRequested = onDeleteRequested
         self.urlMatcher = urlMatcher
         self.emailManager = emailManager
         self.tld = tld
         self.urlSort = urlSort
+        self.pasteboard = pasteboard
+        self.clipboardExpirationInterval = clipboardExpirationInterval
+        self.notificationCenter = notificationCenter
+        self.workspaceNotificationCenter = workspaceNotificationCenter
+        self.scheduleClipboardClear = scheduleClipboardClear
         self.emailManager.requestDelegate = self
     }
 
@@ -164,12 +181,34 @@ final class PasswordManagementLoginModel: ObservableObject, PasswordManagementIt
     }
 
     func copy(_ value: String, fieldType: FieldType? = nil) {
-        NSPasteboard.general.copy(value)
+        pasteboard.copy(value)
         if let fieldType = fieldType {
             switch fieldType {
             case .username:
                 PixelKit.fire(GeneralPixel.autofillManagementCopyUsername)
             case .password:
+                let pasteboard = pasteboard
+                let changeCount = pasteboard.changeCount
+                let clearPassword = {
+                    guard pasteboard.changeCount == changeCount else { return }
+                    pasteboard.clearContents()
+                }
+                let notificationCenter = notificationCenter
+                let workspaceNotificationCenter = workspaceNotificationCenter
+                let quitObserver = notificationCenter.addObserver(forName: NSApplication.willTerminateNotification,
+                                                                  object: nil, queue: .main) { _ in
+                    clearPassword()
+                }
+                let sleepObserver = workspaceNotificationCenter.addObserver(forName: NSWorkspace.willSleepNotification,
+                                                                            object: nil, queue: .main) { _ in
+                    clearPassword()
+                }
+                // Keep cleanup alive even after the password manager closes, without retaining the password or model.
+                scheduleClipboardClear(clipboardExpirationInterval) {
+                    notificationCenter.removeObserver(quitObserver)
+                    workspaceNotificationCenter.removeObserver(sleepObserver)
+                    clearPassword()
+                }
                 PixelKit.fire(GeneralPixel.autofillManagementCopyPassword)
             }
         }

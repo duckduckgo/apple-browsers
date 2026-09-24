@@ -11,8 +11,10 @@ on:
       - 'SharedPackages/BrowserServicesKit/**'
       - 'SharedPackages/Common/**'
       - 'SharedPackages/DDGError/**'
+      - 'SharedPackages/Networking/**'
       - 'SharedPackages/Persistence/**'
       - 'SharedPackages/PixelKit/**'
+      - 'SharedPackages/WideEvent/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
     # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
@@ -23,8 +25,10 @@ on:
       - 'SharedPackages/BrowserServicesKit/**'
       - 'SharedPackages/Common/**'
       - 'SharedPackages/DDGError/**'
+      - 'SharedPackages/Networking/**'
       - 'SharedPackages/Persistence/**'
       - 'SharedPackages/PixelKit/**'
+      - 'SharedPackages/WideEvent/**'
   schedule:
     - cron: '10,30,50 4,5,6 * * *'
 
@@ -44,11 +48,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: [image:osx-tahoe-26, size:large]
+      runs-on: [image:osx-tahoe-26, general-purpose]
       timeout-minutes: 45
 
       env:
-        RUNS_ON: bitrise:macos26-m4 # keep this in sync with runs-on above
+        RUNS_ON: image:osx-tahoe-26,general-purpose # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       outputs:
@@ -66,15 +70,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: recursive
-
-      - name: Override RUNS_ON
-        if: runner.environment == 'self-hosted'
-        run: |
-          if [[ "${{ contains(runner.name, 'm4pro') }}" == "true" ]]; then
-            echo "RUNS_ON=bitrise:macos26-m4pro" >> $GITHUB_ENV
-          else
-            echo "RUNS_ON=bitrise:macos26-m4" >> $GITHUB_ENV
-          fi
 
       - name: Print macOS version
         run: sw_vers
@@ -106,13 +101,6 @@ jobs:
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
-
-      - name: Setup Bitrise Build Cache
-        uses: ./.github/actions/bitrise-build-cache
-        with:
-          enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
-          token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-          workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
       - name: Run tests
         id: run-unit-tests
@@ -219,11 +207,11 @@ jobs:
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: [image:osx-tahoe-26, size:large]
+      runs-on: [image:osx-tahoe-26, general-purpose]
       timeout-minutes: 45
 
       env:
-        RUNS_ON: bitrise:macos26-m4 # keep this in sync with runs-on above
+        RUNS_ON: image:osx-tahoe-26,general-purpose # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       steps:
@@ -237,15 +225,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: recursive
-
-      - name: Override RUNS_ON
-        if: runner.environment == 'self-hosted'
-        run: |
-          if [[ "${{ contains(runner.name, 'm4pro') }}" == "true" ]]; then
-            echo "RUNS_ON=bitrise:macos26-m4pro" >> $GITHUB_ENV
-          else
-            echo "RUNS_ON=bitrise:macos26-m4" >> $GITHUB_ENV
-          fi
 
       - name: Print macOS version
         run: sw_vers
@@ -315,13 +294,6 @@ jobs:
 
           echo "::error::Package resolution failed after $max_attempts attempts"
           exit 1
-
-      - name: Setup Bitrise Build Cache
-        uses: ./.github/actions/bitrise-build-cache
-        with:
-          enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
-          token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-          workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
       - name: Run tests
         id: run-unit-tests-ios
@@ -431,17 +403,17 @@ jobs:
 
   shared-package-unit-tests:
 
-      # Common, DDGError, Persistence and PixelKit were BSK targets until #6405 split them into
-      # their own packages. Their tests ran under this workflow as part of the BSK suite and had no
-      # home afterwards, so they run here. One job for all four rather than one each: they are small,
-      # and a job apiece meant four checkouts, four Xcode selects and four cache setups to run a few
-      # hundred fast tests.
+      # Common, DDGError, Persistence, PixelKit and Networking were BSK targets until they were
+      # split into their own packages (#6405 for the first four). Their tests ran under this
+      # workflow as part of the BSK suite and had no home afterwards, so they run here alongside
+      # WideEvent, extracted from PixelKit.
+      # Keep these small suites in one job to share checkout, Xcode selection and cache setup.
       name: Run unit tests (shared packages, macOS)
 
       needs: should-run-checks
       if: needs.should-run-checks.outputs.should_run == 'true'
 
-      runs-on: [image:osx-tahoe-26, size:large]
+      runs-on: [image:osx-tahoe-26, general-purpose]
       timeout-minutes: 30
 
       defaults:
@@ -469,21 +441,13 @@ jobs:
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
 
-      - name: Setup Bitrise Build Cache
-        if: runner.environment == 'self-hosted'
-        uses: ./.github/actions/bitrise-build-cache
-        with:
-          enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
-          token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-          workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
-
       - name: Run tests
         id: run-unit-tests
         run: |
           # Every package runs even if an earlier one fails, so one broken package cannot hide
           # another. Each writes its own report next to its manifest, matching the BSK job layout.
           failed=()
-          for package in Common DDGError Persistence PixelKit; do
+          for package in Common DDGError Networking Persistence PixelKit WideEvent; do
             echo "::group::${package}"
             (
               cd "SharedPackages/${package}" || exit 1
@@ -530,6 +494,16 @@ jobs:
           title: DDGError (macOS)
           test-outcome: ${{ steps.run-unit-tests.outcome }}
 
+      - name: Process test results (Networking)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/Networking
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: Networking (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
       - name: Process test results (Persistence)
         if: always()
         uses: ./.github/actions/process-test-results
@@ -550,6 +524,16 @@ jobs:
           title: PixelKit (macOS)
           test-outcome: ${{ steps.run-unit-tests.outcome }}
 
+      - name: Process test results (WideEvent)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/WideEvent
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: WideEvent (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v6
         if: always()
@@ -558,12 +542,16 @@ jobs:
           path: |
             SharedPackages/Common/package-tests.xml
             SharedPackages/DDGError/package-tests.xml
+            SharedPackages/Networking/package-tests.xml
             SharedPackages/Persistence/package-tests.xml
             SharedPackages/PixelKit/package-tests.xml
+            SharedPackages/WideEvent/package-tests.xml
             SharedPackages/Common/package-tests-crash-details.json
             SharedPackages/DDGError/package-tests-crash-details.json
+            SharedPackages/Networking/package-tests-crash-details.json
             SharedPackages/Persistence/package-tests-crash-details.json
             SharedPackages/PixelKit/package-tests-crash-details.json
+            SharedPackages/WideEvent/package-tests-crash-details.json
           retention-days: 7
 
       - name: Publish Unit Tests Report
@@ -574,8 +562,10 @@ jobs:
           report_paths: |
             SharedPackages/Common/package-tests.xml
             SharedPackages/DDGError/package-tests.xml
+            SharedPackages/Networking/package-tests.xml
             SharedPackages/Persistence/package-tests.xml
             SharedPackages/PixelKit/package-tests.xml
+            SharedPackages/WideEvent/package-tests.xml
           require_tests: true
           check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
           job_summary: 'false'
@@ -587,7 +577,7 @@ jobs:
         run: |
           # Extract failed tests from the junit reports
           # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
-          for package in Common DDGError Persistence PixelKit; do
+          for package in Common DDGError Networking Persistence PixelKit WideEvent; do
             report="SharedPackages/${package}/package-tests.xml"
             [[ -f "$report" ]] || continue
             yq < "$report" -p xml -o json -r \
@@ -604,8 +594,10 @@ jobs:
           path: |
             SharedPackages/Common/build-log.txt
             SharedPackages/DDGError/build-log.txt
+            SharedPackages/Networking/build-log.txt
             SharedPackages/Persistence/build-log.txt
             SharedPackages/PixelKit/build-log.txt
+            SharedPackages/WideEvent/build-log.txt
           retention-days: 7
           if-no-files-found: ignore
 
@@ -617,8 +609,10 @@ jobs:
           path: |
             SharedPackages/Common/DerivedData/Logs/Test/*.xcresult
             SharedPackages/DDGError/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/Networking/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Persistence/DerivedData/Logs/Test/*.xcresult
             SharedPackages/PixelKit/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/WideEvent/DerivedData/Logs/Test/*.xcresult
           retention-days: 7
           if-no-files-found: ignore
 

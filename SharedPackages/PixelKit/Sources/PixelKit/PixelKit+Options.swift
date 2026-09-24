@@ -30,6 +30,15 @@ extension PixelKit {
         /// merged. Leave `nil` to send `defaultHeaders`.
         public var headers: [String: String]?
 
+        /// Overrides the `User-Agent` the host sends this pixel with. Leave `nil` for the host's
+        /// own pixel user agent.
+        ///
+        /// PixelKit delivers this to the host's `FireRequest` closure as the `Header.userAgent`
+        /// entry of that closure's `headers` argument, which the host reads in preference to its
+        /// own default. Set it here rather than through `headers`: a `User-Agent` put there
+        /// directly is not guaranteed to survive how a host builds its request headers.
+        public var userAgent: String?
+
         /// Extra query parameters, merged over the event's own. These win on key collision.
         public var additionalParameters: [String: String]?
 
@@ -53,12 +62,14 @@ extension PixelKit {
         public var includeATB: Bool
 
         public init(headers: [String: String]? = nil,
+                    userAgent: String? = nil,
                     additionalParameters: [String: String]? = nil,
                     allowedQueryReservedCharacters: CharacterSet? = nil,
                     includeAppVersionParameter: Bool = true,
                     retryOnFailure: Bool = false,
                     includeATB: Bool = false) {
             self.headers = headers
+            self.userAgent = userAgent
             self.additionalParameters = additionalParameters
             self.allowedQueryReservedCharacters = allowedQueryReservedCharacters
             self.includeAppVersionParameter = includeAppVersionParameter
@@ -88,6 +99,11 @@ extension PixelKit {
         /// Attaches extra query parameters.
         public static func parameters(_ parameters: [String: String]) -> Options {
             Options(additionalParameters: parameters)
+        }
+
+        /// See `userAgent`.
+        public static func userAgent(_ userAgent: String) -> Options {
+            Options(userAgent: userAgent)
         }
 
     }

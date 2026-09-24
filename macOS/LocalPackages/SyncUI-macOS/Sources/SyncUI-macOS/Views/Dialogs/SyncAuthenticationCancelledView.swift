@@ -23,6 +23,12 @@ import DesignResourcesKit
 struct SyncAuthenticationCancelledView: View {
     @EnvironmentObject var model: ManagementDialogModel
 
+    private var buttonTitle: String {
+        model.authenticationCancelledPromptOffersRetry
+            ? UserText.syncAuthenticationCancelledTryAgainButtonV2
+            : UserText.syncAuthenticationCancelledCloseButtonV2
+    }
+
     var body: some View {
         SyncDialogV2(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
@@ -33,9 +39,11 @@ struct SyncAuthenticationCancelledView: View {
         } buttons: {
             Spacer()
             Button {
-                model.endFlow()
+                Task {
+                    await model.delegate?.authenticationCancelledPromptClosePressed()
+                }
             } label: {
-                Text(UserText.syncAuthenticationCancelledCloseButtonV2)
+                Text(buttonTitle)
             }
         }
     }

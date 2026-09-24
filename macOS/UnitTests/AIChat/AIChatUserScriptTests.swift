@@ -143,6 +143,52 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertTrue(mockHandler.didGetAIChatTabContent, "getAIChatTabContent should be called")
     }
 
+    // MARK: - Browser tools
+
+    @MainActor func testWhenInitializeIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.initialize.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPInitialize)
+    }
+
+    @MainActor func testWhenInitializedNotificationIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.notificationsInitialized.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPNotificationsInitialized)
+    }
+
+    @MainActor func testWhenToolsListIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsList.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPToolsList)
+    }
+
+    @MainActor func testWhenToolsCallIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsCall.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPToolsCall)
+    }
+
+    /// A prompt raised by the call must go back to the page that made it, so the script hands
+    /// itself over as the pusher.
+    @MainActor func testWhenToolsCallIsReceivedThenTheScriptIsTheElicitationPusher() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsCall.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.receivedElicitationPusher === userScript)
+    }
+
+    @MainActor func testWhenElicitationResponseIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.elicitationResponse.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPElicitationResponse)
+    }
+
     // MARK: - Open Settings handshake
 
     @MainActor func testRequestOpenSettingsActionArmsHandshake() {
@@ -377,6 +423,39 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    var didCallMCPInitialize = false
+    var didCallMCPNotificationsInitialized = false
+    var didCallMCPToolsList = false
+    var didCallMCPToolsCall = false
+    var didCallMCPElicitationResponse = false
+    var receivedElicitationPusher: (any AIChatElicitationPushing)?
+
+    func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didCallMCPInitialize = true
+        return nil
+    }
+
+    func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didCallMCPNotificationsInitialized = true
+        return nil
+    }
+
+    func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didCallMCPToolsList = true
+        return nil
+    }
+
+    func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable? {
+        didCallMCPToolsCall = true
+        receivedElicitationPusher = elicitationPusher
+        return nil
+    }
+
+    func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didCallMCPElicitationResponse = true
+        return nil
+    }
+
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> {
         chatRestorationDataSubject.eraseToAnyPublisher()
     }
@@ -388,6 +467,8 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
         didSubmitAIChatPageContext = true
     }
+
+    func resetConversationSourceForNewDocument() {}
 
     func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {
         didSubmitAIChatSelectionContext = true

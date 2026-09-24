@@ -112,6 +112,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
         didSet {
             guard oldValue != aiChatInputBoxVisibility else { return }
+            Logger.unifiedInputState.debug("aiChatInputBoxVisibility \(oldValue.rawValue, privacy: .public) → \(self.aiChatInputBoxVisibility.rawValue, privacy: .public) [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
             persistDraftToStore()
         }
     }
@@ -121,6 +122,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             persistDraftToStore()
         }
     }
+    /// Hex colour the FE sends with `voiceModeOpened` so native chrome matches the web surface exactly.
+    /// Not persisted per tab (the value is constant across sessions); consumers fall back to the token.
+    var voiceModeBackgroundColorHex: String?
     @Published var attachmentUsage: AIChatAttachmentUsage?
 
     /// Rides the draft-changed callback, which fires only on attachment mutations.
@@ -178,7 +182,22 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// Window-space X of the resting omnibar placeholder text, captured at focus time (before the
     /// bottom floating omnibar is detached from the toolbar). Reused on dismiss to slide the UTI
     /// text back onto the omnibar's text leading edge — the omnibar can't be measured live then.
-    var cachedOmnibarPlaceholderWindowX: CGFloat?
+    /// Absolute window coordinate, so it only holds while the window keeps the size it was taken at.
+    private var omnibarPlaceholderHandoff: (windowX: CGFloat, windowSize: CGSize)?
+
+    func cacheOmnibarPlaceholderWindowX(_ windowX: CGFloat?, windowSize: CGSize?) {
+        guard let windowX, let windowSize else {
+            omnibarPlaceholderHandoff = nil
+            return
+        }
+        omnibarPlaceholderHandoff = (windowX, windowSize)
+    }
+
+    func omnibarPlaceholderWindowX(validFor windowSize: CGSize?) -> CGFloat? {
+        guard let handoff = omnibarPlaceholderHandoff, handoff.windowSize == windowSize else { return nil }
+        return handoff.windowX
+    }
+
     private var keyboardMonitor: UTIKeyboardMonitor!
     private var pixelReporter: UTIPixelReporter!
     private var wideEventReporter: UTIWideEventReporter!
@@ -262,6 +281,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var chatUpdatesCancellable: AnyCancellable?
     private let toolsController = UTIToolsController()
     private let toolsMenuFactory = UTIToolsMenuFactory()
+    private let isUpdatedCreateImageEnabled: Bool
+    private lazy var createImagePixelFiring: CreateImagePixelFiring = CreateImagePixelAdapter(
+        surface: { [weak self] in self?.pixelSurface ?? .addressBar }
+    )
+    private lazy var createImageModelSwitcher = CreateImageModelSwitcher(
+        isFeatureEnabled: isUpdatedCreateImageEnabled,
+        pixelFiring: createImagePixelFiring
+    )
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -284,6 +311,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private let usageLimitsStore: DuckAiUsageLimitsStore?
     private let subscriptionUpsellPresenter: DuckAISubscriptionUpselling
+    var onSubscriptionUpsellAvailabilityChanged: (() -> Void)?
+
+    var subscriptionUpsellPolicy: DuckAISubscriptionUpsellPolicy { modelStore.upsellPolicy }
     /// `nil` when the usage-warnings feature isn't active, which differs from having nothing to show.
     private var footerController: UTIFooterController?
 
@@ -317,11 +347,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentPasteEnabled: Bool = false,
         placesAttachmentsAboveInput: Bool = false,
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
+        updatedCreateImageFeature: UpdatedCreateImageFeatureProviding = UpdatedCreateImageFeature(),
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
-        subscriptionUpsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter(),
+        subscriptionUpsellPresenter: DuckAISubscriptionUpselling? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
     ) {
+        let upsellPolicy = DuckAISubscriptionUpsellPolicy(subscriptionManager: subscriptionManager)
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
+        self.isUpdatedCreateImageEnabled = updatedCreateImageFeature.isAvailable
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
@@ -355,7 +388,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled,
                                                          isFireTab: isFireTab,
                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput)
-        self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
+        self.subscriptionUpsellPresenter = subscriptionUpsellPresenter ?? DuckAISubscriptionUpsellPresenter(policy: upsellPolicy)
         // One coordinator serves both normal and fire tabs, so the fire state is read per refresh
         // rather than bound here — see `setUpUsageWarnings`.
         self.usageLimitsStore = usageLimitsStore
@@ -422,6 +455,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 setModelName: { [weak self] in self?.viewController.modelName = $0 },
                 setModelPickerMenu: { [weak self] in self?.viewController.modelPickerMenu = $0 },
                 setModelChipHidden: { [weak self] in self?.viewController.isModelChipHidden = $0 },
+                setModelChipMenuIndicatorHidden: { [weak self] in self?.viewController.isModelChipMenuIndicatorHidden = $0 },
                 setSelectedReasoningMode: { [weak self] in self?.viewController.selectedReasoningMode = $0 },
                 setReasoningButtonHidden: { [weak self] in self?.viewController.isReasoningButtonHidden = $0 },
                 setReasoningPickerMenu: { [weak self] in self?.viewController.reasoningPickerMenu = $0 }
@@ -437,9 +471,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 onUserChoiceRecorded: { [weak self] in self?.recordUserChoiceToStore() },
                 clearSubmitRecoveryBlock: { [weak self] in self?.isSubmitBlockedByRecoveryCard = false },
                 onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) },
-                onModelSelectionChanged: { [weak self] _ in self?.footerController?.recordModelSwitched() }
+                onModelSelectionChanged: { [weak self] previousModelId, modelId in
+                    self?.footerController?.userSwitchedModel(from: previousModelId, to: modelId)
+                }
             ),
-            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled
+            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
+            isUpdatedCreateImageEnabled: isUpdatedCreateImageEnabled,
+            subscriptionUpsellPresenter: self.subscriptionUpsellPresenter
         )
         attachmentController = UTIAttachmentController(
             pixelReporter: pixelReporter,
@@ -466,6 +504,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 supportsImageUpload: { [weak self] in self?.selectedModelSupportsImageUpload ?? false },
                 supportedFileTypes: { [weak self] in self?.selectedModelSupportedFileTypes ?? [] },
                 hasSelectedModel: { [weak self] in self?.selectedModel != nil },
+                keepsUnavailableAttachmentButtonVisible: { [weak self] in self?.isUpdatedCreateImageEnabled ?? false },
                 attachmentLimits: { [weak self] in self?.modelStore.attachmentLimits },
                 currentTabUID: { [weak self] in self?.currentTabUID },
                 isPageContextAttachable: { [weak self] in self?.isPageContextAttachable?() },
@@ -675,6 +714,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         } else {
             toolsController.clearSelection()
         }
+        footerController?.clearModelSwitchNotice()
         refreshToolsPresentation()
     }
 
@@ -690,6 +730,32 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isVoiceSessionActive: isVoiceSessionActive,
             isModelPickerForcedVisible: isModelPickerForcedVisible
         )
+    }
+
+    /// A committed navigation replaces the tab's FE document: FE-asserted visibility/voice state
+    /// resets (unless natively pre-asserted for it), and a chat change discards the draft.
+    func handleNavigationCommit(tabUID: TabUID, didChangeChat: Bool, startsWithHiddenInput: Bool = false) {
+        Logger.unifiedInputState.debug("handleNavigationCommit [\(tabUID, privacy: .public)] didChangeChat=\(didChangeChat, privacy: .public) startsHidden=\(startsWithHiddenInput, privacy: .public) — live tab [\(self.currentTabUID ?? "nil", privacy: .public)]")
+        let visibility: AIChatInputBoxVisibility = startsWithHiddenInput ? .hidden : .unknown
+        if tabUID == currentTabUID {
+            aiChatInputBoxVisibility = visibility
+            isVoiceSessionActive = false
+            if didChangeChat {
+                if !currentText.isEmpty { setText("") }
+                clearAttachments()
+                if toolsController.selectedTool != nil { resetToolsSelection() }
+            }
+        }
+        let current = stateStore.state(for: tabUID)
+        var updated = current
+        updated.aiChatInputBoxVisibility = visibility
+        updated.isVoiceSessionActive = false
+        if didChangeChat {
+            updated.clearDraft()
+        }
+        if updated != current {
+            stateStore.update(updated, for: tabUID)
+        }
     }
 
     /// Persists per-tab-only state — text and attachments. These are drafts the user
@@ -726,9 +792,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         textModel.resetToEmpty()
         guard let uid = currentTabUID else { return }
         var cleared = snapshotCurrentState()
-        cleared.text = ""
-        cleared.attachments = []
-        cleared.selectedTool = nil
+        cleared.clearDraft()
         stateStore.recordUserChoice(cleared, for: uid, isNewChatContext: false)
         Logger.unifiedInputState.debug("submission cleared store text + attachments + tool for tab [\(uid)]")
     }
@@ -906,8 +970,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         footerController = UTIFooterController(viewModel: viewModel,
                                               highUsageNotice: makeHighUsageNoticeSource(),
-                                              measurement: makeUsageWarningMeasurement())
+                                              measurement: makeUsageWarningMeasurement(),
+                                              createImagePixelFiring: createImagePixelFiring,
+                                              allowsSubscriptionUpsell: { [weak self] in
+                                                  self?.modelStore.allowsSubscriptionUpsell ?? false
+                                              })
         footerController?.presenter = viewController
+        footerController?.onInputBlockChanged = { [weak self] blocked in
+            self?.viewController.isInputBlockedByUsageLimit = blocked
+        }
 
         // Also what brings a message back after the user has acted on the previous one.
         usageLimitsStore?.snapshotUpdates?
@@ -952,8 +1023,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         case .tryForFree:
             subscriptionUpsellPresenter.presentPurchaseFlow(origin: usageWarningFunnelOrigin)
         case .startUsingWeeklyLimit(let entries):
-            // Web reads the entry before its next /status and /chat, so there is nothing to reload.
-            usageLimitsStore?.write(entries)
+            // Pushed to the live chat, the way a model change is. With no chat bound there is
+            // nothing to push to, so it falls back to the entry web reads on its next hydration —
+            // which is what macOS does throughout.
+            if let boundUserScript {
+                Logger.duckAIUsageWarnings.debug("[UsageWarnings] weekly-limit hand-off: chat is live, pushing the action")
+                boundUserScript.submitStartUsingWeeklyLimitAction()
+            } else {
+                Logger.duckAIUsageWarnings.debug("[UsageWarnings] weekly-limit hand-off: no chat bound, writing the entry")
+                usageLimitsStore?.write(entries)
+            }
         }
     }
 
@@ -1000,7 +1079,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - Omnibar State
 
-    func activateFromOmnibar(prefilledText: String? = nil, shouldSelectAllText: Bool = true, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
+    func activateFromOmnibar(prefilledText: String? = nil, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
         keyboardMonitor.arm(awaiting: cardPosition == .top)
         displayState = .omnibar(.active)
         if host == .omnibar {
@@ -1025,15 +1104,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         // Set text before apply so clearDismissSnapshot sees the correct handler state when
         // it fires inside applyCardLayout — otherwise textRightInset starts at the no-button value.
-        let selectsAllText: Bool
         if let text = prefilledText, !text.isEmpty {
             textModel.setText(text)
             textModel.markPrefilledSelected()
             omnibarPrefilledText = text
-            selectsAllText = shouldSelectAllText
         } else {
             omnibarPrefilledText = nil
-            selectsAllText = false
         }
         updateFloatingReturnKeyState()
 
@@ -1058,11 +1134,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             guard omnibarPrefilledText != nil else { return }
             DispatchQueue.main.async { [weak self] in
                 guard let self, isOmnibarEditing else { return }
-                if selectsAllText {
-                    viewController.selectAllText()
-                } else {
-                    viewController.moveCaretToStart()
-                }
+                viewController.selectAllText()
             }
         }
     }
@@ -1091,12 +1163,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if resetView {
             let renderState = computeRenderState()
             viewController.apply(renderState.viewConfig, animated: false)
-            applyToolbarPresentation()
-            viewController.deactivateInput()
-        } else {
-            applyToolbarPresentation()
-            viewController.deactivateInput()
         }
+        applyToolbarPresentation()
+        // Resign is sequenced by the dismiss animation, not here — see `hideUnifiedToggleInputOmnibar`.
         return true
     }
 
@@ -1200,11 +1269,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             recordUserChoiceToStore()
             refreshFooterSuppression()
         }
-    }
-
-    func updateAIVoiceChatAvailability(_ enabled: Bool) {
-        viewController.handler.isAIVoiceChatEnabled = enabled
-        updateToolbarAIVoiceChat()
     }
 
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
@@ -1438,7 +1502,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Models
 
     let modelStore: UTIModelStore
-    private(set) var hasSubmittedPrompt = false
+    /// Last `syncChipVisibility` input, so it can act on transitions rather than one-shot upgrades.
+    private var lastSyncedHasExistingChat: Bool?
+    private(set) var hasSubmittedPrompt = false {
+        didSet {
+            guard oldValue != hasSubmittedPrompt else { return }
+            Logger.unifiedInputState.debug("hasSubmittedPrompt \(oldValue, privacy: .public) → \(self.hasSubmittedPrompt, privacy: .public) [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
+        }
+    }
 
     var models: [AIChatModel] { modelStore.models }
     var subscriptionState: SubscriptionState { modelStore.subscriptionState }
@@ -1460,9 +1531,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func startNewChat() {
+        Logger.unifiedInputState.debug("startNewChat [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
         attachmentController.resetPasteConversation()
         isNewChatPending = true
         hasSubmittedPrompt = false
+        // The context is a fresh chat now — a leftover `true` would read the settling
+        // chatID-less URL as a chat exit and reset a prompt submitted in the meantime.
+        lastSyncedHasExistingChat = false
         isModelPickerForcedVisible = false
         isSubmitBlockedByRecoveryCard = false
         resetToolsSelection()
@@ -1571,8 +1646,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         pixelReporter.reportModelPickerShown()
     }
 
-    func selectTool(_ tool: AIChatRAGTool) {
-        toolsController.select(tool, for: modelStore)
+    func selectTool(_ tool: AIChatRAGTool, createImageEntryPoint: CreateImageEntryPoint? = nil) {
+        if tool == .imageGeneration {
+            selectImageGeneration(entryPoint: createImageEntryPoint)
+        } else {
+            toolsController.select(tool, for: modelStore)
+        }
         refreshToolsPresentation()
         recordUserChoiceToStore()
     }
@@ -1648,7 +1727,7 @@ extension UnifiedToggleInputCoordinator {
         case .webSearch:
             toolsController.toggleSelection(for: .webSearch, modelStore: modelStore)
         case .imageGeneration:
-            toolsController.toggleSelection(for: .imageGeneration, modelStore: modelStore)
+            toggleImageGenerationSelection()
         case .customizeResponses:
             return
         }
@@ -1656,6 +1735,34 @@ extension UnifiedToggleInputCoordinator {
         fireToolToggleTransitionPixel(previous: previousTool, current: currentTool)
         refreshToolsPresentation()
         recordUserChoiceToStore()
+    }
+
+    /// Selecting Create Image on a model that can't generate images moves the user to one that can, and says so in the footer.
+    private func toggleImageGenerationSelection() {
+        let notice = createImageModelSwitcher.toggle(
+            toolsController: toolsController,
+            modelStore: modelStore,
+            canSwitchModel: canSwitchModelForImageGeneration,
+            entryPoint: .toolsMenu,
+            applyModel: { modelSelector.updateSelectedModel($0) }
+        )
+        showModelSwitchNoticeIfNeeded(notice)
+    }
+
+    private func selectImageGeneration(entryPoint: CreateImageEntryPoint?) {
+        let notice = createImageModelSwitcher.select(
+            toolsController: toolsController,
+            modelStore: modelStore,
+            canSwitchModel: canSwitchModelForImageGeneration,
+            entryPoint: entryPoint,
+            applyModel: { modelSelector.updateSelectedModel($0) }
+        )
+        showModelSwitchNoticeIfNeeded(notice)
+    }
+
+    private func showModelSwitchNoticeIfNeeded(_ notice: CreateImageModelSwitchNotice?) {
+        guard let notice else { return }
+        footerController?.showModelSwitchNotice(notice)
     }
 
     private func fireToolToggleTransitionPixel(previous: AIChatRAGTool?, current: AIChatRAGTool?) {
@@ -1997,17 +2104,25 @@ private extension UnifiedToggleInputCoordinator {
             return
         }
         isNewChatPending = false
-        // Upgrade only — the chat URL gets its chatID after the page loads, so downgrading
-        // here would clobber a just-submitted prompt. Explicit resets cover the rest.
-        guard hasExistingChat, !hasSubmittedPrompt else { return }
-        hasSubmittedPrompt = true
-        modelSelector.updateModelChipVisibility()
-        syncHasSubmittedPromptToHandler()
+        defer { lastSyncedHasExistingChat = hasExistingChat }
+        if hasExistingChat, !hasSubmittedPrompt {
+            hasSubmittedPrompt = true
+            modelSelector.updateModelChipVisibility()
+            syncHasSubmittedPromptToHandler()
+        } else if !hasExistingChat, lastSyncedHasExistingChat == true, hasSubmittedPrompt {
+            // The page left a chat with an ID for a fresh chat without announcing it (e.g. the
+            // context-limit banner's Start New Chat). A just-submitted prompt can't hit this:
+            // its URL never had a chatID yet, so there is no true → false transition to see.
+            hasSubmittedPrompt = false
+            modelSelector.updateModelChipVisibility()
+            syncHasSubmittedPromptToHandler()
+        }
     }
 
     func syncHasSubmittedPromptToHandler() {
         syncInputBehaviorToHandler()
         switchBarHandler.hasSubmittedPrompt = hasSubmittedPrompt
+        updateToolbarAIVoiceChat()
         // Beat the view's async sink so the flanked UTI's first frame uses the new placeholder.
         viewController.refreshPlaceholderForCurrentMode()
         updateFloatingReturnKeyState()
@@ -2016,6 +2131,7 @@ private extension UnifiedToggleInputCoordinator {
     private func markActiveChatPromptSubmitted() {
         let wasInRecoveryPickerSession = isModelPickerForcedVisible
         hasSubmittedPrompt = true
+        footerController?.clearModelSwitchNotice()
         isModelPickerForcedVisible = false
         persistModelPickerPinClearedAfterHideIfNeeded()
         modelSelector.updateModelChipVisibility()
@@ -2036,6 +2152,7 @@ private extension UnifiedToggleInputCoordinator {
         aiChatStatus = .unknown
         attachmentUsage = nil
         hasSubmittedPrompt = false
+        lastSyncedHasExistingChat = nil
         // Do not clear the model-picker pin here. It is stored per tab in TabInputState and
         // restored by applyState during activateForTab. bindToTab calls resetSessionState
         // immediately after that restore when switching Duck.ai tabs, so resetting the pin
@@ -2048,7 +2165,7 @@ private extension UnifiedToggleInputCoordinator {
     // MARK: Toolbar
 
     func updateToolbarAIVoiceChat() {
-        viewController.isToolbarAIVoiceChatActive = viewController.handler.isAIVoiceChatEnabled && inputMode == .aiChat
+        viewController.isToolbarAIVoiceChatActive = inputMode == .aiChat && !hasSubmittedPrompt
     }
 
     func applyToolbarPresentation() {
@@ -2060,6 +2177,7 @@ private extension UnifiedToggleInputCoordinator {
     // MARK: Tools
 
     func handleModelsUpdated() {
+        onSubscriptionUpsellAvailabilityChanged?()
         toolsController.clearSelectionIfUnsupported(for: modelStore)
         attachmentController.removeUnsupportedAttachmentsForSelectedModel()
         // The model-switch CTA needs the fetched list, so the card is resolved again once it lands.
@@ -2078,8 +2196,12 @@ private extension UnifiedToggleInputCoordinator {
         let presentation = toolsController.presentation(
             isActive: isActive,
             modelStore: modelStore,
-            canShowCustomizeResponses: canShowCustomizeResponsesMenuItem
+            canShowCustomizeResponses: canShowCustomizeResponsesMenuItem,
+            createImagePolicy: createImageMenuPolicy
         )
+        if toolsController.selectedTool != .imageGeneration {
+            footerController?.clearModelSwitchNotice()
+        }
         let toolsMenu = presentation.toolsMenu.map { [weak self] menu in
             self?.toolsMenuFactory.makeMenu(menu) { identifier in
                 self?.handleToolsMenuSelection(identifier)
@@ -2101,6 +2223,15 @@ private extension UnifiedToggleInputCoordinator {
     func resetToolsSelection() {
         toolsController.clearSelection()
         refreshToolsPresentation()
+    }
+
+    var createImageMenuPolicy: CreateImageMenuPolicy {
+        guard isUpdatedCreateImageEnabled else { return .legacy }
+        return .updated(canSwitchModel: canSwitchModelForImageGeneration)
+    }
+
+    var canSwitchModelForImageGeneration: Bool {
+        !hasSubmittedPrompt && modelStore.imageGenerationFallbackModel != nil
     }
 
     var canShowCustomizeResponsesMenuItem: Bool {
@@ -2183,8 +2314,7 @@ private extension UnifiedToggleInputCoordinator {
         viewController.handler.microphoneButtonTappedPublisher
             .sink { [weak self] in
                 guard let self else { return }
-                let isCollapsedAIVoiceChatButton = viewController.handler.isAIVoiceChatEnabled
-                    && viewController.inputMode == .aiChat
+                let isCollapsedAIVoiceChatButton = viewController.inputMode == .aiChat
                     && !isInputPaneExpanded
                     && !stateMachine.prefersDictationOverVoiceChat
                 if isCollapsedAIVoiceChatButton {

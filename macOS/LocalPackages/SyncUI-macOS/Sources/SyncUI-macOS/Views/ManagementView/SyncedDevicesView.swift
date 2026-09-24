@@ -92,7 +92,7 @@ struct SyncedDevicesList: View {
 
     @State var hoveredDevice: SyncDevice?
 
-    var presentDeviceDetails: ((SyncDevice) -> Void)?
+    var presentDeviceDetails: ((SyncDevice) async -> Void)?
     var presentRemoveDevice: ((SyncDevice) -> Void)?
 
     var body: some View {
@@ -123,7 +123,9 @@ struct SyncedDevicesList: View {
                     } rightContent: {
                         if let presentDeviceDetails {
                             Button(UserText.currentDeviceDetails) {
-                                presentDeviceDetails(device)
+                                Task {
+                                    await presentDeviceDetails(device)
+                                }
                             }
                         }
                     }

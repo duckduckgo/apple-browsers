@@ -68,6 +68,13 @@ public struct DuckAiUsageCta: Equatable {
         case switchToCheaper
         case switchToFree
         case subscribe
+
+        var asksForModelSwitch: Bool {
+            switch self {
+            case .switchToCheaper, .switchToFree: return true
+            case .bypassWeekly, .subscribe: return false
+            }
+        }
     }
 
     /// `modelIds` never includes the id it is keyed against.

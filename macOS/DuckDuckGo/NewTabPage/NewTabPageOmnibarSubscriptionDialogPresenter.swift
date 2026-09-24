@@ -107,6 +107,7 @@ final class NewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubsc
         switch source {
         case .model: .newTabPageModelPicker
         case .reasoning: .newTabPageReasoningDropdown
+        case .usageLimit: .newTabPageUsageLimit
         }
     }
 

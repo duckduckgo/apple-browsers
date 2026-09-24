@@ -64,6 +64,7 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
         store.models = [makeModel(id: "gpt-5.2", supportsImageUpload: true)]
 
         XCTAssertTrue(sut.isAttachButtonAvailable)
+        XCTAssertTrue(sut.isAttachButtonVisible)
         XCTAssertNotNil(sut.makeMenu())
     }
 
@@ -77,6 +78,27 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
         store.models = [makeModel(id: "gpt-oss", supportsImageUpload: false)]
 
         XCTAssertFalse(sut.isAttachButtonAvailable)
+        XCTAssertNil(sut.makeMenu())
+    }
+
+    func testWhenUnavailableButtonShouldRemainVisibleAndSelectedModelSupportsNoAttachmentsThenVisibleWithoutMenu() {
+        store.models = [makeModel(id: "gpt-oss", supportsImageUpload: false)]
+        sut = IPadOmnibarAttachmentController(store: store, keepsUnavailableAttachmentButtonVisible: true)
+
+        XCTAssertTrue(sut.isAttachButtonVisible)
+        XCTAssertNil(sut.makeMenu())
+    }
+
+    func testWhenUnavailableButtonShouldNotRemainVisibleAndSelectedModelSupportsNoAttachmentsThenHidden() {
+        store.models = [makeModel(id: "gpt-oss", supportsImageUpload: false)]
+
+        XCTAssertFalse(sut.isAttachButtonVisible)
+    }
+
+    func testWhenUnavailableButtonShouldRemainVisibleAndModelIsUnknownThenHidden() {
+        sut = IPadOmnibarAttachmentController(store: store, keepsUnavailableAttachmentButtonVisible: true)
+
+        XCTAssertFalse(sut.isAttachButtonVisible)
         XCTAssertNil(sut.makeMenu())
     }
 
@@ -195,6 +217,40 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
             fileName: "doc.pdf",
             mimeType: "application/pdf"
         )
+    }
+}
+
+@MainActor
+final class IPadOmnibarAttachmentButtonPresentationTests: XCTestCase {
+
+    func testWhenVisibleAttachmentButtonHasNoMenuThenItIsShownDisabled() {
+        let sut = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        sut.frame = CGRect(x: 0, y: 0, width: 1024, height: DefaultOmniBarView.expectedHeight)
+        sut.setLayoutMode(.expandedPad)
+        sut.isAttachButtonEnabled = true
+        sut.isAIChatAttachmentButtonVisible = true
+        sut.aiChatAttachmentMenu = nil
+
+        sut.setSearchAreaExpanded(true, animated: false)
+
+        XCTAssertFalse(sut.attachButton.isHidden)
+        XCTAssertFalse(sut.attachButton.isEnabled)
+        XCTAssertNil(sut.attachButton.menu)
+    }
+
+    func testWhenVisibleAttachmentButtonHasMenuThenItIsShownEnabled() {
+        let sut = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        sut.frame = CGRect(x: 0, y: 0, width: 1024, height: DefaultOmniBarView.expectedHeight)
+        sut.setLayoutMode(.expandedPad)
+        sut.isAttachButtonEnabled = true
+        sut.isAIChatAttachmentButtonVisible = true
+        sut.aiChatAttachmentMenu = UIMenu(children: [])
+
+        sut.setSearchAreaExpanded(true, animated: false)
+
+        XCTAssertFalse(sut.attachButton.isHidden)
+        XCTAssertTrue(sut.attachButton.isEnabled)
+        XCTAssertNotNil(sut.attachButton.menu)
     }
 }
 

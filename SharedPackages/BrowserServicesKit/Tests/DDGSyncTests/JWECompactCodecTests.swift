@@ -63,6 +63,20 @@ final class JWECompactCodecTests: XCTestCase {
         XCTAssertEqual(decrypted, payload)
     }
 
+    func testWhenDecryptingDirectTokenWithUnexpectedKidThenThrows() throws {
+        let codec = JWECompactCodec()
+        let contentEncryptionKey = Data(repeating: 0x2B, count: 32)
+        let token = try codec.encryptDirect(payload: Data("payload".utf8),
+                                            contentEncryptionKey: contentEncryptionKey,
+                                            kid: "3party")
+
+        XCTAssertThrowsError(try codec.decryptDirect(token: token,
+                                                     contentEncryptionKey: contentEncryptionKey,
+                                                     expectedKid: "ddg")) { error in
+            XCTAssertEqual(error as? JWECompactCodecError, .unsupportedProtectedHeader)
+        }
+    }
+
     func testWhenRoundTrippingRSAOAEP256ModeThenRecoversPayloadAndProducesExpectedCompactShape() throws {
         let codec = JWECompactCodec()
         let keyPair = try RSAKeyPairGenerator.makeKeyPair()
@@ -100,7 +114,7 @@ final class JWECompactCodecTests: XCTestCase {
         XCTAssertThrowsError(try codec.decryptRSAOAEP256(token: token,
                                                          privateKey: keyPair.privateKey,
                                                          expectedKid: "other-sender")) { error in
-            XCTAssertEqual(error as? JWECompactCodecError, .unsupportedProtectedHeader)
+            XCTAssertEqual(error as? JWECompactCodecError, .unexpectedKeyID)
         }
     }
 

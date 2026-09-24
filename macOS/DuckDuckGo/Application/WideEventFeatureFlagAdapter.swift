@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import PixelKit
+import WideEvent
 import PrivacyConfig
 
 struct WideEventFeatureFlagAdapter: WideEventFeatureFlagProviding {

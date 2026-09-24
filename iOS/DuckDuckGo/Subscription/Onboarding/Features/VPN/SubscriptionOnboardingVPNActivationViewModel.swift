@@ -35,9 +35,9 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     typealias ConnectionInfoState = SubscriptionOnboardingPrefetcher.FetchState<SubscriptionOnboardingConnectionInfo>
 
     /// Shown in the IP row of an info card until the corresponding fetch resolves (or when it has no value.
-    static let ipPlaceholder = "-.-.-"
+    static let ipPlaceholder = "XXX.XXX.XX.XXX"
     /// Shown in the location row of an info card until the corresponding fetch resolves.
-    static let locationPlaceholder = "-,-"
+    static let locationPlaceholder = "XX,XX"
 
     @Published private(set) var connectionState: ConnectionState
 
@@ -58,7 +58,8 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     private let vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding
     private let serverInfoObserver: ConnectionServerInfoObserver
     private let errorObserver: ConnectionErrorObserver
-    private weak var delegate: SubscriptionOnboardingSectionDelegate?
+    private let onComplete: () -> Void
+    private let onNext: () -> Void
     private let locale: Locale
 
     private var hasReportedCompletion = false
@@ -70,14 +71,16 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
          vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding = DefaultSubscriptionOnboardingVPNLocationProvider(),
          serverInfoObserver: ConnectionServerInfoObserver = AppDependencyProvider.shared.serverInfoObserver,
          errorObserver: ConnectionErrorObserver = AppDependencyProvider.shared.connectionErrorObserver,
-         delegate: SubscriptionOnboardingSectionDelegate? = nil,
+         onComplete: @escaping () -> Void = {},
+         onNext: @escaping () -> Void = {},
          locale: Locale = .current) {
         self.prefetcher = prefetcher
         self.vpnController = vpnController
         self.vpnLocationProvider = vpnLocationProvider
         self.serverInfoObserver = serverInfoObserver
         self.errorObserver = errorObserver
-        self.delegate = delegate
+        self.onComplete = onComplete
+        self.onNext = onNext
         self.locale = locale
         self.connectionState = vpnController.isConnected ? .on : .off
     }
@@ -97,6 +100,14 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
                                                                     country: attributes.country,
                                                                     locale: locale)
     }
+
+    /// Whether the original (pre-VPN) info has loaded — gates the non-blurred real-IP card.
+    var isOriginalInfoAvailable: Bool {
+        if case .loaded = originalConnectionInfo { return true }
+        return false
+    }
+    /// Whether the VPN egress IP or location has arrived — gates the new-IP card.
+    var isVPNInfoAvailable: Bool { vpnServerInfo.serverAddress != nil || vpnServerInfo.serverLocation != nil }
 
     /// The "(Nearest)" indicator the existing VPN status/location UI shows when the "nearest available"
     var vpnLocationNearestIndicator: String? {
@@ -135,14 +146,9 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         cancellables.removeAll()
     }
 
-    /// Leaves this section, going back to the previous one.
-    func goBack() {
-        delegate?.sectionDidRequestGoBack()
-    }
-
     /// Finishes this section, moving the flow to the next one.
     func advance() {
-        delegate?.sectionDidRequestAdvance()
+        onNext()
     }
 
     /// Starts the VPN.
@@ -218,7 +224,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     private func reportCompletionIfNeeded() {
         guard !hasReportedCompletion else { return }
         hasReportedCompletion = true
-        delegate?.sectionDidComplete(.vpn)
+        onComplete()
     }
 }
 

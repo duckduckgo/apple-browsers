@@ -50,7 +50,7 @@ class MainViewFactory {
     }
 
     var isWindowControlsRowEnabled: Bool {
-        WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)
+        WindowControlsRowLayout.isEnabled()
     }
 
     private init(parentController: UIViewController,
@@ -110,9 +110,9 @@ class MainViewFactory {
 /// Uses corner adapted layout regions because UIKit does not expose window control frames.
 enum WindowControlsRowLayout {
 
-    static func isEnabled(featureFlagger: FeatureFlagger?) -> Bool {
-        guard #available(iOS 26, *), UIDevice.current.userInterfaceIdiom == .pad, let featureFlagger else { return false }
-        return featureFlagger.isFeatureOn(.iPadTabsBarInWindowControlsRow)
+    static func isEnabled() -> Bool {
+        guard #available(iOS 26, *) else { return false }
+        return UIDevice.current.userInterfaceIdiom == .pad
     }
 
     /// Returns false in full screen because horizontal adaptation also reserves display corner space.
@@ -633,14 +633,25 @@ extension MainViewFactory {
 
         // Changing this?  Best change TabSwitcherViewController too
         let isFloatingUIEnabled = floatingUIManager.isFloatingUIEnabled
-        let toolbarWidthMod = isFloatingUIEnabled ? 0.0 : (isiOS26 ? 14.0 : 4.0)
-
         let toolbar = coordinator.toolbar!
-        coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
-        // Match the toolbar's internal buttons-only height for the current style so the initial
-        // constraint doesn't conflict before `updateToolbarLayoutForAddressBarPosition` runs.
+
         let initialToolbarHeight = isFloatingUIEnabled ? BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled) : BrowserToolbarView.legacyButtonsHeight
         coordinator.constraints.toolbarHeight = toolbar.constrainAttribute(.height, to: initialToolbarHeight)
+
+        if #available(iOS 26.0, *), isFloatingUIEnabled {
+            let verticalGuide = superview.layoutGuide(for: .safeArea(cornerAdaptation: .vertical))
+            coordinator.constraints.toolbarBottom = toolbar.bottomAnchor.constraint(equalTo: verticalGuide.bottomAnchor)
+            NSLayoutConstraint.activate([
+                toolbar.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+                toolbar.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
+                coordinator.constraints.toolbarHeight,
+                coordinator.constraints.toolbarBottom,
+            ])
+            return
+        }
+
+        let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
+        coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
         NSLayoutConstraint.activate([
             toolbar.constrainView(superview, by: .width, constant: toolbarWidthMod),
             toolbar.constrainView(superview, by: .centerX),

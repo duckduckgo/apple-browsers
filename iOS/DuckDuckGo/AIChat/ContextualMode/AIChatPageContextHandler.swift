@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import DesignResourcesKitIcons
 import os.log
 import UIKit
 import WebKit
@@ -33,7 +34,9 @@ struct AIChatPageContext: Equatable {
 
     init(contextData: AIChatPageContextData, favicon: UIImage?) {
         self.title = contextData.title
-        self.favicon = favicon
+        self.favicon = contextData.mimeType == AIChatPageContextData.pdfMIMEType
+            ? DesignSystemImages.Color.Size24.filePDF
+            : favicon
         self.contextData = contextData
     }
 
@@ -76,6 +79,9 @@ extension PageContextUserScript: PageContextCollecting {}
 protocol AIChatPageContextHandling: AnyObject {
     /// Publisher for context updates. Subscribe to receive results after triggering collection.
     var contextPublisher: AnyPublisher<AIChatPageContext?, Never> { get }
+
+    /// True while a document tab's bytes are being read;
+    var documentReadInProgressPublisher: AnyPublisher<Bool, Never> { get }
 
     /// Triggers context collection from JS. Does not return the result directly.
     /// Callers should subscribe to `contextPublisher` for results.
@@ -132,12 +138,17 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
     private static let collectionTimeout: TimeInterval = 30
 
     private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
+    private let documentReadInProgressSubject = CurrentValueSubject<Bool, Never>(false)
     private var updatesCancellable: AnyCancellable?
 
     // MARK: - AIChatPageContextHandling
 
     var contextPublisher: AnyPublisher<AIChatPageContext?, Never> {
         contextSubject.eraseToAnyPublisher()
+    }
+
+    var documentReadInProgressPublisher: AnyPublisher<Bool, Never> {
+        documentReadInProgressSubject.eraseToAnyPublisher()
     }
 
     // MARK: - Initialization
@@ -214,6 +225,7 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
 
     func isCurrentPageAttachable() -> Bool {
         let url = currentURLProvider()
+        if let url, url.isFileURL { return false }
         if let url, isDocumentTab(url) { return true }
         guard let policy = attachabilityPolicyProvider() else { return true }
         return policy.verdict(url: url, mimeType: url.flatMap { mimeTypeProvider($0) }).isAttachable
@@ -267,6 +279,12 @@ private extension AIChatPageContextHandler {
     /// gate and the standalone sheet-open/navigation measurement.
     @discardableResult
     func firePreventedIfNonAttachable(for url: URL?, trigger: PageContextExtractionTrigger) -> Bool {
+        // Local (file://) pages are never attachable — independent of the blocklist config.
+        if let url, url.isFileURL {
+            Logger.aiChat.debug("[PageContext] 🚫 gate: prevented attach (local file)")
+            fireExtractionPixel(.prevented(PageContextExtractionOutcome.localFileCategory), trigger: trigger, latency: nil)
+            return true
+        }
         if let url, isDocumentTab(url) { return false }
         guard let policy = attachabilityPolicyProvider() else { return false }
         let verdict = policy.verdict(url: url, mimeType: url.flatMap { mimeTypeProvider($0) })
@@ -281,7 +299,8 @@ private extension AIChatPageContextHandler {
 
     /// Whether this tab's page goes to Duck.ai as document bytes rather than markdown.
     func isDocumentTab(_ url: URL) -> Bool {
-        isDocumentContextEnabled()
+        !url.isFileURL
+            && isDocumentContextEnabled()
             && DocumentPageContextProvider.isSupportedDocument(mimeType: mimeTypeProvider(url), url: url)
     }
 
@@ -298,7 +317,6 @@ private extension AIChatPageContextHandler {
         publishContextUpdate(context)
     }
 
-    /// Reads the document out of the web view and delivers it as page context.
     func collectDocumentContext(for url: URL, trigger: PageContextExtractionTrigger) {
         guard let webView = webViewProvider() else {
             Logger.aiChat.debug("[PageContext] Document collect skipped - no web view available")
@@ -309,8 +327,10 @@ private extension AIChatPageContextHandler {
 
         let title = documentTitle(for: url, webView: webView)
         let startedAt = Date()
+        documentReadInProgressSubject.send(true)
         Task { @MainActor [weak self] in
             guard let self else { return }
+            defer { self.documentReadInProgressSubject.send(false) }
             let result = await self.makeDocumentContext(webView, url, title)
             let latency = PageContextExtractionLatencyBucket(seconds: Date().timeIntervalSince(startedAt))
 
@@ -356,6 +376,7 @@ private extension AIChatPageContextHandler {
         extractionResolver.reset()
         didReportExtractionForCurrentNavigation = false
         lastCollectedURL = nil
+        documentReadInProgressSubject.send(false)
     }
 
     /// No pending request => a duplicate or a collect we didn't initiate; skip.

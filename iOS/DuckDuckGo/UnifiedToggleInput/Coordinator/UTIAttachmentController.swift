@@ -57,6 +57,7 @@ final class UTIAttachmentController {
         let supportsImageUpload: () -> Bool
         let supportedFileTypes: () -> [String]
         let hasSelectedModel: () -> Bool
+        let keepsUnavailableAttachmentButtonVisible: () -> Bool
         let attachmentLimits: () -> AIChatAttachmentTierLimits?
         let currentTabUID: () -> TabUID?
         let isPageContextAttachable: () -> Bool?
@@ -411,7 +412,8 @@ final class UTIAttachmentController {
         let supportsAttachments = environment.supportsImageUpload() || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment
         let hasAvailableAttachmentAction = policy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment
         let canAttachMore = hasAvailableAttachmentAction && !view.isGenerating()
-        view.setImageButtonHidden(!supportsAttachments)
+        let showsUnavailableAttachmentButton = environment.hasSelectedModel() && environment.keepsUnavailableAttachmentButtonVisible()
+        view.setImageButtonHidden(!supportsAttachments && !showsUnavailableAttachmentButton)
         view.setImageButtonEnabled(canAttachMore)
         view.setAttachmentMenu(supportsAttachments && canAttachMore ? makeAttachmentMenu() : nil)
     }

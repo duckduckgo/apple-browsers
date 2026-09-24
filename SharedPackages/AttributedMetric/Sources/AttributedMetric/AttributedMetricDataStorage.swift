@@ -46,6 +46,8 @@ public protocol AttributedMetricDataStoring {
     var subscriptionDate: Date? { get set }
     var subscriptionFreeTrialFired: Bool { get set }
     var subscriptionMonth1Fired: Bool { get set }
+    /// Highest month value already reported
+    var subscriptionLastMonthFired: Int? { get set }
 
     // Sync
     var syncDevicesCount: Int { get set }
@@ -130,6 +132,7 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
         case subscriptionDate
         case subscriptionFreeTrial
         case subscriptionMonth1
+        case subscriptionLastMonthFired
         case syncDevicesCount
         case debugDate
         case debugOrigin
@@ -236,6 +239,11 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
     public var subscriptionMonth1Fired: Bool {
         get { return decode(from: userDefaults, key: .subscriptionMonth1) ?? false }
         set { encode(newValue, to: userDefaults, key: .subscriptionMonth1) }
+    }
+
+    public var subscriptionLastMonthFired: Int? {
+        get { return decode(from: userDefaults, key: .subscriptionLastMonthFired) }
+        set { encode(newValue, to: userDefaults, key: .subscriptionLastMonthFired) }
     }
 
     // MARK: - Sync

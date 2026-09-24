@@ -38,11 +38,13 @@ protocol SettingsIconsProviding {
     var dataClearingIcon: NSImage { get }
     var duckPlayerIcon: NSImage { get }
     var youTubeAdBlockingIcon: NSImage { get }
+    var websitePermissionsIcon: NSImage { get }
     var duckAIIcon: NSImage { get }
     var aiGeneralIcon: NSImage { get }
     var paidAIChatIcon: NSImage { get }
     var aboutIcon: NSImage { get }
     var otherPlatformsIcon: NSImage { get }
+    var subscriberOffersIcon: NSImage { get }
 }
 
 final class LegacySettingsIconProvider: SettingsIconsProviding {
@@ -65,10 +67,12 @@ final class LegacySettingsIconProvider: SettingsIconsProviding {
     var dataClearingIcon: NSImage = .fireSettings
     var duckPlayerIcon: NSImage = .duckPlayerSettings
     var youTubeAdBlockingIcon: NSImage = .duckPlayerSettings
+    var websitePermissionsIcon: NSImage = DesignSystemImages.Glyphs.Size16.permissions
     var duckAIIcon: NSImage = .aiChatPreferencesLegacy
     var paidAIChatIcon: NSImage = .duckAiPaidColor16
     var aboutIcon: NSImage = .about
     var otherPlatformsIcon: NSImage = .otherPlatformsPreferences
+    var subscriberOffersIcon: NSImage = .subscriptionGift
 }
 
 final class CurrentSettingsIconProvider: SettingsIconsProviding {
@@ -91,8 +95,10 @@ final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var dataClearingIcon: NSImage = DesignSystemImages.Color.Size16.fire
     var duckPlayerIcon: NSImage = DesignSystemImages.Color.Size16.videoPlayer
     var youTubeAdBlockingIcon: NSImage = DesignSystemImages.Color.Size16.adsBlocked
+    var websitePermissionsIcon: NSImage = DesignSystemImages.Glyphs.Size16.permissions
     var duckAIIcon: NSImage = DesignSystemImages.Color.Size16.aiChat
     var paidAIChatIcon: NSImage = DesignSystemImages.Color.Size16.paidAiChat
     var aboutIcon: NSImage = DesignSystemImages.Color.Size16.duckDuckGo
     var otherPlatformsIcon: NSImage = DesignSystemImages.Color.Size16.downloads
+    var subscriberOffersIcon: NSImage = .subscriptionGift
 }

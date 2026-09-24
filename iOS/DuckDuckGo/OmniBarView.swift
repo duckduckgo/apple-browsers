@@ -141,6 +141,18 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     func setFloatingMinimalChromeBar(_ enabled: Bool)
 }
 
+extension OmniBarView {
+    /// Size of the visible search field (the glass). Local bounds stay stable while the bar slides,
+    /// unlike the bar's window frame. Falls back to the full bar size before the first layout.
+    var restingSearchFieldSize: CGSize {
+        let size = searchContainer.bounds.size
+        if size.width > 0, size.height > 0 {
+            return size
+        }
+        return CGSize(width: frame.width, height: expectedHeight)
+    }
+}
+
 /// iPad-specific extension for the duck.ai mode toggle and expandable search area.
 /// Separated from `OmniBarView` so the base protocol stays lean for all omnibar implementations.
 protocol ExpandableOmniBarView: OmniBarView {

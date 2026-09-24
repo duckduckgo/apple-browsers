@@ -1070,7 +1070,7 @@
         ]
     },
     "m_ios_dbp_data_broker_action-failed_error": {
-        "description": "Fired when a scan or opt-out action fails while processing a data broker.",
+        "description": "Fired when a scan or opt-out action fails while processing a data broker, including executeScript failures silenced by failSilently. A silenced failure does not stop the job, so this pixel does not necessarily indicate a failed scan or opt-out; filter on the isSilentFailure parameter to separate the two.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
@@ -1096,6 +1096,11 @@
                 "description": "Identifies the failing step type (scan or optOut)",
                 "type": "string",
                 "enum": ["scan", "optOut", "unknown"]
+            },
+            {
+                "key": "isSilentFailure",
+                "description": "True when the failure was silenced by failSilently on an executeScript action and the job continued to the next action",
+                "type": "boolean"
             },
             "dbpParentBroker",
             "dbpIsFreeScan"

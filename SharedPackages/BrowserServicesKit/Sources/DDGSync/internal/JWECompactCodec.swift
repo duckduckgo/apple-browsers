@@ -24,6 +24,7 @@ enum JWECompactCodecError: Error, Equatable {
     case invalidDirectTokenShape
     case invalidBase64URLComponent
     case unsupportedProtectedHeader
+    case unexpectedKeyID
     case invalidDirectProtectedHeaderKid
     case invalidPublicKey
     case invalidPrivateKey
@@ -90,12 +91,16 @@ final class JWECompactCodec {
 
     /// Decrypts direct JWE compact tokens created by `encryptDirect`.
     func decryptDirect(token: String,
-                       contentEncryptionKey: Data) throws -> Data {
+                       contentEncryptionKey: Data,
+                       expectedKid: String? = nil) throws -> Data {
         guard contentEncryptionKey.count == Self.contentEncryptionKeyLength else {
             throw JWECompactCodecError.invalidContentEncryptionKeyLength(contentEncryptionKey.count)
         }
         let components = try decodeCompactToken(token)
-        _ = try decodeDirectProtectedHeader(components.protectedHeader)
+        let protectedHeader = try decodeDirectProtectedHeader(components.protectedHeader)
+        if let expectedKid, protectedHeader.kid != expectedKid {
+            throw JWECompactCodecError.unsupportedProtectedHeader
+        }
         guard components.encryptedContentEncryptionKey.isEmpty else {
             throw JWECompactCodecError.invalidDirectTokenShape
         }
@@ -139,7 +144,7 @@ final class JWECompactCodec {
         let components = try decodeCompactToken(token)
         let protectedHeader = try decodeRSAOAEP256ProtectedHeader(components.protectedHeader)
         if let expectedKid, protectedHeader.kid != expectedKid {
-            throw JWECompactCodecError.unsupportedProtectedHeader
+            throw JWECompactCodecError.unexpectedKeyID
         }
 
         let contentEncryptionKey = try decryptContentEncryptionKey(components.encryptedContentEncryptionKey, privateKey: privateKey)

@@ -600,10 +600,10 @@
                                 </connections>
                             </containerView>
                             <customView horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="JKb-5c-xaF" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="508" y="8" width="118" height="16"/>
+                                <rect key="frame" x="550" y="8" width="110" height="16"/>
                                 <subviews>
                                     <customView horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="JKb-5c-xaD" userLabel="Rounded Corners View" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="8" y="-3" width="110" height="22"/>
+                                        <rect key="frame" x="0.0" y="-3" width="110" height="22"/>
                                         <subviews>
                                             <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="LBz-Pz-Fw5">
                                                 <rect key="frame" x="10" y="4" width="75" height="14"/>
@@ -631,24 +631,16 @@
                                             <constraint firstItem="LBz-Pz-Fw5" firstAttribute="leading" secondItem="JKb-5c-xaD" secondAttribute="leading" constant="12" id="XGh-oj-HqL"/>
                                             <constraint firstItem="LBz-Pz-Fw5" firstAttribute="centerY" secondItem="JKb-5c-xaD" secondAttribute="centerY" id="bQo-e4-IPs"/>
                                         </constraints>
-                                        <userDefinedRuntimeAttributes>
-                                            <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
-                                                <color key="value" name="ButtonMouseOverColor"/>
-                                            </userDefinedRuntimeAttribute>
-                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                                <real key="value" value="6"/>
-                                            </userDefinedRuntimeAttribute>
-                                        </userDefinedRuntimeAttributes>
                                     </customView>
                                 </subviews>
                                 <constraints>
                                     <constraint firstItem="JKb-5c-xaD" firstAttribute="centerY" secondItem="JKb-5c-xaF" secondAttribute="centerY" id="D2F-WV-eVc"/>
-                                    <constraint firstItem="JKb-5c-xaD" firstAttribute="leading" secondItem="JKb-5c-xaF" secondAttribute="leading" constant="8" id="ZHq-NY-UuQ"/>
+                                    <constraint firstItem="JKb-5c-xaD" firstAttribute="leading" secondItem="JKb-5c-xaF" secondAttribute="leading" id="ZHq-NY-UuQ"/>
                                     <constraint firstAttribute="trailing" secondItem="JKb-5c-xaD" secondAttribute="trailing" id="bpq-Ui-dn5"/>
                                 </constraints>
                                 <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
-                                        <color key="value" name="AddressBarBackgroundColor"/>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                        <real key="value" value="6"/>
                                     </userDefinedRuntimeAttribute>
                                 </userDefinedRuntimeAttributes>
                             </customView>

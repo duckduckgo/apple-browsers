@@ -25,6 +25,7 @@ import FoundationExtensions
 import ContentBlocking
 import PrivacyConfig
 import PixelExperimentKit
+import PixelKit
 
 public final class ContentBlocking {
     
@@ -123,7 +124,7 @@ public final class ContentBlocking {
             
             let tmpDirectory = FileManager.default.temporaryDirectory
             if !FileManager.default.fileExists(atPath: tmpDirectory.path) {
-                Pixel.fire(pixel: .contentBlockingCompilationFailedMissingTmpDir)
+                PixelKit.fire(Pixel.Event.contentBlockingCompilationFailedMissingTmpDir)
             }
 
         case .contentBlockingLookupRulesSucceeded:
@@ -147,16 +148,22 @@ public final class ContentBlocking {
             }
         }
 
-        if let error = error {
-            Pixel.fire(pixel: domainEvent,
-                       error: error,
-                       withAdditionalParameters: finalParameters,
-                       onComplete: onComplete)
-        } else {
-            Pixel.fire(pixel: domainEvent,
-                       withAdditionalParameters: finalParameters,
-                       includedParameters: [],
-                       onComplete: onComplete)
+        // `ContentBlockerRulesSourceManager` traps on an embedded rules list that will not compile,
+        // and it waits on this completion to do it, so the pixel has to resolve it.
+        Task {
+            do {
+                if let error {
+                    try await PixelKit.fireAsync(domainEvent.withError(error),
+                                                 options: .parameters(finalParameters))
+                } else {
+                    try await PixelKit.fireAsync(domainEvent,
+                                                 options: PixelKit.Options(additionalParameters: finalParameters,
+                                                                           includeAppVersionParameter: false))
+                }
+                onComplete(nil)
+            } catch let fireError {
+                onComplete(fireError)
+            }
         }
 
     }
@@ -189,7 +196,9 @@ public final class ContentBlocking {
             shouldIncludeAppVersion = false
         }
 
-        Pixel.fire(pixel: domainEvent, withAdditionalParameters: parameters ?? [:], includedParameters: shouldIncludeAppVersion ? [.appVersion] : [])
+        PixelKit.fire(domainEvent,
+                      options: PixelKit.Options(additionalParameters: parameters ?? [:],
+                                                includeAppVersionParameter: shouldIncludeAppVersion))
     }
 
     private let attributionDebugEvents = EventMapping<AdClickAttributionDebugEvents> { event, _, _, _ in
@@ -217,7 +226,7 @@ public final class ContentBlocking {
             domainEvent = .adAttributionLogicWrongVendorOnFailedCompilation
         }
 
-        Pixel.fire(pixel: domainEvent, includedParameters: [])
+        PixelKit.fire(domainEvent, options: .withoutAppVersion)
     }
 
 }

@@ -20,7 +20,7 @@
 import Foundation
 import BrowserServicesKit
 import PrivacyConfig
-import PixelKit
+import WideEvent
 import Subscription
 import VPN
 

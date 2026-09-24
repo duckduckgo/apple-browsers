@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import BrowserServicesKit
 import Core
+import PixelKit
 
 class PasswordGenerationPromptViewController: UIViewController {
 
@@ -49,7 +50,7 @@ class PasswordGenerationPromptViewController: UIViewController {
 
         setupPasswordGenerationPromptView()
 
-        Pixel.fire(pixel: .autofillLoginsPasswordGenerationPromptDisplayed)
+        PixelKit.fire(Pixel.Event.autofillLoginsPasswordGenerationPromptDisplayed)
     }
 
     private func setupPasswordGenerationPromptView() {
@@ -80,7 +81,7 @@ class PasswordGenerationPromptViewController: UIViewController {
 
 extension PasswordGenerationPromptViewController: UISheetPresentationControllerDelegate {
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        Pixel.fire(pixel: .autofillLoginsPasswordGenerationPromptDismissed)
+        PixelKit.fire(Pixel.Event.autofillLoginsPasswordGenerationPromptDismissed)
 
         self.completion?(false)
     }
@@ -88,13 +89,13 @@ extension PasswordGenerationPromptViewController: UISheetPresentationControllerD
 
 extension PasswordGenerationPromptViewController: PasswordGenerationPromptViewModelDelegate {
     func passwordGenerationPromptViewModelDidSelect(_ viewModel: PasswordGenerationPromptViewModel) {
-        Pixel.fire(pixel: .autofillLoginsPasswordGenerationPromptConfirmed)
+        PixelKit.fire(Pixel.Event.autofillLoginsPasswordGenerationPromptConfirmed)
 
         dismissSheetWithRetry(useGeneratedPassword: true)
     }
 
     func passwordGenerationPromptViewModelDidCancel(_ viewModel: PasswordGenerationPromptViewModel) {
-        Pixel.fire(pixel: .autofillLoginsPasswordGenerationPromptDismissed)
+        PixelKit.fire(Pixel.Event.autofillLoginsPasswordGenerationPromptDismissed)
 
         dismissSheetWithRetry(useGeneratedPassword: false)
     }

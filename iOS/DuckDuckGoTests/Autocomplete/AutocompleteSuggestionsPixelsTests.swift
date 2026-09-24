@@ -21,25 +21,26 @@ import XCTest
 import Core
 import Suggestions
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 final class AutocompleteSuggestionsPixelsTests: XCTestCase {
 
     private var pixels: AutocompleteSuggestionsPixels!
+    private var pixelKitMock: PixelKitMock!
 
     override func setUp() {
         super.setUp()
-        PixelFiringMock.tearDown()
-        pixels = AutocompleteSuggestionsPixels(pixelFiring: PixelFiringMock.self,
-                                               dailyPixelFiring: PixelFiringMock.self)
+        pixelKitMock = PixelKitMock()
+        pixels = AutocompleteSuggestionsPixels(pixelFiring: pixelKitMock)
     }
 
     override func tearDown() {
-        PixelFiringMock.tearDown()
+        pixelKitMock = nil
         pixels = nil
         super.tearDown()
     }
 
-    private var firedNames: [String] { PixelFiringMock.allPixelsFired.compactMap { $0.pixelName } }
+    private var firedNames: [String] { pixelKitMock.actualFireCalls.map { $0.pixel.name } }
 
     private func url(_ string: String) -> URL { URL(string: string)! }
 
@@ -130,17 +131,48 @@ final class AutocompleteSuggestionsPixelsTests: XCTestCase {
         XCTAssertTrue(firedNames.isEmpty)
     }
 
+    // MARK: - Click (total entry point)
+
+    func testClickPixelsFiresOnlyTheStandardPixelForANonAIChatSuggestion() {
+        pixels.fireClickPixels(for: .phrase(phrase: "q"),
+                               isExperimentalAIChatExperience: true,
+                               aiChatDiscoveryParameters: [:])
+
+        XCTAssertEqual(firedNames, [Pixel.Event.autocompleteClickPhrase.name])
+    }
+
+    func testClickPixelsFiresTheDailyPixelForAskAIChat() {
+        pixels.fireClickPixels(for: .askAIChat(value: "q"),
+                               isExperimentalAIChatExperience: true,
+                               aiChatDiscoveryParameters: ["was_used_before": "1"])
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name,
+                       Pixel.Event.autocompleteAskAIChatExperimentalExperience.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["was_used_before"], "1")
+    }
+
+    /// The AI-chat context reads settings and feature-discovery state, so it must stay unevaluated on
+    /// the common (non-AI-chat) tap.
+    func testClickPixelsDoesNotResolveTheAIChatContextForOtherSuggestions() {
+        var didResolveContext = false
+        pixels.fireClickPixels(for: .website(url: url("https://a.com")),
+                               isExperimentalAIChatExperience: { didResolveContext = true; return true }(),
+                               aiChatDiscoveryParameters: [:])
+
+        XCTAssertFalse(didResolveContext)
+    }
+
     // MARK: - Ask AI Chat (daily)
 
     func testAskAIChatExperimentalDailyPixel() {
         pixels.fireAskAIChatClickPixel(isExperimentalExperience: true, additionalParameters: [:])
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName,
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name,
                        Pixel.Event.autocompleteAskAIChatExperimentalExperience.name)
     }
 
     func testAskAIChatLegacyDailyPixel() {
         pixels.fireAskAIChatClickPixel(isExperimentalExperience: false, additionalParameters: [:])
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName,
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name,
                        Pixel.Event.autocompleteAskAIChatLegacyExperience.name)
     }
 }

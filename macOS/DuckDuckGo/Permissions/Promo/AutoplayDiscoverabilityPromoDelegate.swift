@@ -18,9 +18,7 @@
 
 import Combine
 import Foundation
-import FeatureFlags_macOS
 import PixelKit
-import PrivacyConfig
 
 /// Opens the Permission Center by itself the first time a page displays the autoplay policy, so users discover the autoplay controls and the disclaimer UI.
 ///
@@ -32,38 +30,25 @@ import PrivacyConfig
 ///
 final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
 
-    /// How long the Permission Center stays open before the promo is retired. `PromoServiceFactory` hands this to
-    /// `PromoType` as the promo's custom timeout; the debug force-show path has to apply it itself, see `show(history:force:)`.
-    static let displayDuration: TimeInterval = .seconds(5)
-
-    private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
     private let pixelFiring: PixelFiring?
     private let isNewUserProvider: () -> Bool
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
 
-    init(featureFlagger: FeatureFlagger,
-         windowControllersManager: WindowControllersManagerProtocol,
+    init(windowControllersManager: WindowControllersManagerProtocol,
          pixelFiring: PixelFiring? = PixelKit.shared,
          isNewUserProvider: @escaping () -> Bool) {
-        self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
         self.isNewUserProvider = isNewUserProvider
     }
 
     var isEligible: Bool {
-        featureFlagger.isFeatureOn(.autoplayPolicy)
+        true
     }
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
-        featureFlagger.updatesPublisher
-            .map { [featureFlagger] _ in
-                featureFlagger.isFeatureOn(.autoplayPolicy)
-            }
-            .prepend(isEligible)
-            .removeDuplicates()
-            .eraseToAnyPublisher()
+        Just(true).eraseToAnyPublisher()
     }
 
     @MainActor
@@ -77,17 +62,17 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
             return .noChange
         }
 
-        if force {
-            addressBarButtonsViewController.forcePresentPermissionCenterForAutoplayPromo()
-            try? await Task.sleep(nanoseconds: UInt64(Self.displayDuration * TimeInterval(NSEC_PER_SEC)))
-            return .ignored()
-        }
+        let didPresent = force
+            ? addressBarButtonsViewController.forcePresentPermissionCenterForAutoplayPromo()
+            : addressBarButtonsViewController.presentPermissionCenterForAutoplayPromoIfPossible()
 
-        guard addressBarButtonsViewController.presentPermissionCenterForAutoplayPromoIfPossible() else {
+        guard didPresent else {
             return .noChange
         }
 
-        pixelFiring?.fire(AutoplayPromoPixel.shown)
+        if !force {
+            pixelFiring?.fire(AutoplayPromoPixel.shown)
+        }
 
         return await withCheckedContinuation { continuation in
             showContinuation = continuation

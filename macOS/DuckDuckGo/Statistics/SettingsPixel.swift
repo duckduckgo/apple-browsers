@@ -131,6 +131,7 @@ enum SettingsPixel: PixelKit.Event {
             case .dataClearing: return "settings_data_clearing_opened"
             case .duckPlayer: return "settings_duckplayer_opened"
             case .youTubeAdBlocking: return "settings_youtubeadblocking_opened"
+            case .websitePermissions: return "settings_website_permissions_opened"
             case .aiChat:
                 assertionFailure("This pixel is not in use and AIChatPixel.aiChatSettingsDisplayed should be used instead")
                 return "settings_duck_ai_opened"
@@ -141,6 +142,11 @@ enum SettingsPixel: PixelKit.Event {
             case .subscriptionSettings: return "settings_subscription_opened"
             case .about: return "settings_about_opened"
             case .otherPlatforms: return "settings_other_platforms_clicked"
+            case .partnershipsHub:
+                // Never selected as a pane: `PreferencesSidebarModel.selectPane(_:)` opens a tab and
+                // fires `SubscriptionPixel.subscriptionPartnerBenefitsSettings` instead.
+                assertionFailure("Subscriber Offers opens a tab rather than a settings pane")
+                return "settings_subscriber_offers_opened"
             case .paidAIChat:
                 return "settings_paid_ai_chat_opened"
             }

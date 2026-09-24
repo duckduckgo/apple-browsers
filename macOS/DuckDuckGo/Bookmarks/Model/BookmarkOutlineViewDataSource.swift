@@ -84,7 +84,6 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
     private let treeController: BookmarkTreeController
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
-    private let presentFaviconsFetcherOnboarding: (() -> Void)?
     private let themeManager: ThemeManaging
 
     init(
@@ -93,14 +92,12 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         treeController: BookmarkTreeController,
         dragDropManager: BookmarkDragDropManager,
         sortMode: BookmarksSortMode,
-        presentFaviconsFetcherOnboarding: (() -> Void)? = nil,
         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
     ) {
         self.contentMode = contentMode
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.treeController = treeController
-        self.presentFaviconsFetcherOnboarding = presentFaviconsFetcherOnboarding
         self.sortMode = sortMode
         self.themeManager = themeManager
 
@@ -230,7 +227,7 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         cell.update(from: node, isSearch: isSearching)
 
         if let bookmark = node.representedObject as? Bookmark, bookmark.favicon(.small) == nil {
-            presentFaviconsFetcherOnboarding?()
+            NotificationCenter.default.post(name: .missingBookmarkFaviconEncountered, object: nil)
         }
 
         return cell

@@ -43,11 +43,16 @@ final class UTIFooterController {
 
     weak var presenter: UTIFooterPresenting?
 
+    /// Reported when the spent-allowance state changes, so the input goes inert alongside the card.
+    var onInputBlockChanged: ((Bool) -> Void)?
+
     private let viewModel: DuckAiUsageWarningViewModel
     private let highUsageNotice: UTIFooterHighUsageNoticeSource?
     private let mapper: UTIFooterMessageMapper
     private let measurement: DuckAiUsageWarningMeasurement
+    private let createImagePixelFiring: CreateImagePixelFiring
     private let animator: Animator
+    private let allowsSubscriptionUpsell: () -> Bool
 
     private var isSuppressed = false
     /// The message the user acted on, held so the CTA can retire one that carries no close button.
@@ -55,18 +60,26 @@ final class UTIFooterController {
     /// What the current message is about, for the pixels. Kept in step with `currentMessage`.
     private var currentExposure: DuckAiUsageWarningExposure?
 
+    private var modelSwitchNotice: CreateImageModelSwitchNotice?
+
+    private var isInputBlocked = false
+
     private(set) var currentMessage: UTIFooterMessage?
 
     init(viewModel: DuckAiUsageWarningViewModel,
          highUsageNotice: UTIFooterHighUsageNoticeSource? = nil,
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
          measurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
+         createImagePixelFiring: CreateImagePixelFiring,
+         allowsSubscriptionUpsell: @escaping () -> Bool = { true },
          animator: Animator? = nil) {
         self.viewModel = viewModel
         self.highUsageNotice = highUsageNotice
         self.mapper = mapper
         self.measurement = measurement
+        self.createImagePixelFiring = createImagePixelFiring
         self.animator = animator ?? Self.springAnimator
+        self.allowsSubscriptionUpsell = allowsSubscriptionUpsell
     }
 
     /// Synchronous: a lookup in the already-loaded entries blob.
@@ -85,6 +98,7 @@ final class UTIFooterController {
         highUsageNotice?.clear()
         currentMessage = nil
         currentExposure = nil
+        updateInputBlock()
         // Keeps the view's copy in lockstep — otherwise a later refresh that resolves to no
         // warning no-ops (nil == nil) and the view resurrects the stale card on the next expand.
         presenter?.clearPendingFooterMessage()
@@ -101,8 +115,26 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
-    /// The user closing the card.
+    func showModelSwitchNotice(_ notice: CreateImageModelSwitchNotice) {
+        modelSwitchNotice = notice
+        applyCurrentState()
+    }
+
+    func clearModelSwitchNotice() {
+        guard modelSwitchNotice != nil else { return }
+        modelSwitchNotice = nil
+        applyCurrentState()
+    }
+
+    /// The user closing the card. A model switch is not a usage warning. It spends neither the
+    /// warning's dismissal record nor its pixel.
     func dismissCurrent() {
+        if modelSwitchNotice != nil {
+            modelSwitchNotice = nil
+            createImagePixelFiring.modelSwitchNoticeDismissed()
+            applyCurrentState()
+            return
+        }
         measurement.warningDismissed()
         retireCurrent()
     }
@@ -118,12 +150,19 @@ final class UTIFooterController {
         measurement.promptSubmitted()
     }
 
-    /// A switch the user made themselves; the card's own switch CTA reports its own tap.
-    func recordModelSwitched() {
+    /// A switch from the bar's picker: always reported, but it only retires the message when it is the
+    /// step down the message asked for. The card's own CTA reports and retires itself.
+    func userSwitchedModel(from previousModelId: String?, to modelId: String) {
         measurement.modelSwitched()
+        viewModel.userSwitchedModel(from: previousModelId, to: modelId)
+        applyCurrentState()
     }
 
     func performPrimaryAction() {
+        if case .tryForFree = viewModel.warning?.action, !allowsSubscriptionUpsell() {
+            applyCurrentState()
+            return
+        }
         guard let message = currentMessage, message.primaryAction != nil else { return }
 
         if let cta = Self.cta(for: viewModel.warning?.action) {
@@ -166,6 +205,7 @@ final class UTIFooterController {
     }
 
     private func applyCurrentState() {
+        updateInputBlock()
         let card = resolveCard()
         let message = card?.message
         guard message != currentMessage else {
@@ -176,25 +216,42 @@ final class UTIFooterController {
         currentMessage = message
         // Set before the presenter runs: applying can reveal the card synchronously, and the
         // impression that reports needs the exposure it belongs to.
-        currentExposure = card?.exposure
+        currentExposure = card.flatMap(\.exposure)
         animator { [weak self] in
             self?.presenter?.applyFooterMessage(message)
         }
     }
 
-    private struct ResolvedCard {
-        let message: UTIFooterMessage
-        let exposure: DuckAiUsageWarningExposure
+    private func updateInputBlock() {
+        let blocked = !isSuppressed && viewModel.warning?.blocksInput == true
+        guard blocked != isInputBlocked else { return }
+        isInputBlocked = blocked
+        Logger.duckAIUsageWarnings.debug("[UsageWarnings] input blocked=\(blocked, privacy: .public)")
+        onInputBlockChanged?(blocked)
     }
 
-    /// One slot: an actionable warning outranks the informational notice.
+    private struct ResolvedCard {
+        let message: UTIFooterMessage
+        /// `nil` for a card that is not a usage warning, so it reports no usage-warning pixel.
+        let exposure: DuckAiUsageWarningExposure?
+    }
+
+    /// One slot: the model switch outranks an actionable warning, which outranks the informational
+    /// notice.
     private func resolveCard() -> ResolvedCard? {
         guard !isSuppressed else {
             Logger.duckAIUsageWarnings.debug("[UsageWarnings] nothing to show: suppressed (editing or Search mode)")
             return nil
         }
+        // The model switch is something the app just did to the user's selection, so it outranks a
+        // usage warning, which stays available once the notice is gone. It carries no CTA, so the
+        // acted-on check never applies to it.
+        if let modelSwitchNotice {
+            return ResolvedCard(message: mapper.message(for: modelSwitchNotice), exposure: nil)
+        }
         if let warning = viewModel.warning {
-            guard let message = unlessActedOn(mapper.message(for: warning)) else { return nil }
+            let warningMessage = mapper.message(for: warning, allowsSubscriptionUpsell: allowsSubscriptionUpsell())
+            guard let message = unlessActedOn(warningMessage) else { return nil }
             return ResolvedCard(message: message, exposure: DuckAiUsageWarningExposure(warning: warning))
         }
         if let notice = highUsageNotice?.notice {
@@ -204,9 +261,11 @@ final class UTIFooterController {
         return nil
     }
 
-    /// Releases as soon as the resolver produces a different message, so the next rung still shows.
+    /// Releases as soon as the resolver produces a different message, so the next rung still shows,
+    /// and once the acted-on record is gone, so clearing it is not undone by this copy.
     private func unlessActedOn(_ message: UTIFooterMessage) -> UTIFooterMessage? {
-        message == actedOnMessage ? nil : message
+        guard viewModel.hasActedOnCurrentNotice, message == actedOnMessage else { return message }
+        return nil
     }
 
     static let springAnimator: Animator = { changes in

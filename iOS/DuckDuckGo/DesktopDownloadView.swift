@@ -24,6 +24,7 @@ import DuckUI
 import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import PixelKit
 
 struct DesktopDownloadView: View {
 
@@ -86,7 +87,7 @@ struct DesktopDownloadView: View {
                                 activityItem = ShareItem(value: viewModel.downloadURL.absoluteString,
                                                          title: viewModel.browserDetails.shareTitle,
                                                          message: viewModel.browserDetails.shareMessage)
-                                Pixel.fire(pixel: .getDesktopShare)
+                                PixelKit.fire(Pixel.Event.getDesktopShare)
                             } else {
                                 activityItem = ShareItem(value: viewModel.downloadURL.absoluteString, title: nil, message: nil)
                             }
@@ -176,7 +177,7 @@ struct DesktopDownloadView: View {
                 .menuController(UserText.macWaitlistCopy) {
                     viewModel.copyLink()
                     if viewModel.browserDetails.platform == .desktop {
-                        Pixel.fire(pixel: .getDesktopCopy)
+                        PixelKit.fire(Pixel.Event.getDesktopCopy)
                     }
                 }
         }

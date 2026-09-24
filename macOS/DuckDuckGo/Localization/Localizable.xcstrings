@@ -160,6 +160,7 @@
     },
     "%@ does not support storing passwords" : {
       "comment" : "Data Import disabled checkbox message about a browser (%@) not supporting storing passwords",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -717,6 +718,66 @@
         }
       }
     },
+    "action.title.chats" : {
+      "comment" : "Open Duck.ai chat history from the tab-bar menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discussions"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czaty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чаты"
+          }
+        }
+      }
+    },
     "Activate to select" : {
       "localizations" : {
         "de" : {
@@ -824,6 +885,7 @@
     },
     "Add any details that you think may help us fix the problem" : {
       "comment" : "Data import failure Report dialog suggestion to provide a comments with extra details helping to identify the data import problem.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1470,6 +1532,7 @@
     },
     "After clicking import, your computer may ask you to enter a password. You may need to enter your password two times before importing starts. DuckDuckGo will not see that password.\n\nImported passwords are stored securely using encryption." : {
       "comment" : "Warning that Chromium data import would require entering system passwords.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2008,55 +2071,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "KI-Einstellungen öffnen"
+            "value" : "KI-Einstellungen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open AI Settings"
+            "value" : "AI Settings"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir ajustes de IA"
+            "value" : "Ajustes de IA"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrir les réglages IA"
+            "value" : "Réglages IA"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apri le impostazioni AI"
+            "value" : "Impostazioni AI"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AI-instellingen openen"
+            "value" : "AI-instellingen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otwórz ustawienia AI"
+            "value" : "Ustawienia AI"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir definições de IA"
+            "value" : "Definições de IA"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Открыть настройки ИИ"
+            "value" : "Настройки ИИ"
           }
         }
       }
@@ -4348,55 +4411,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "KI-Einstellungen öffnen"
+            "value" : "KI-Einstellungen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open AI Settings"
+            "value" : "AI Settings"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir ajustes de IA"
+            "value" : "Ajustes de IA"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrir les réglages IA"
+            "value" : "Réglages IA"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apri le impostazioni AI"
+            "value" : "Impostazioni AI"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AI-instellingen openen"
+            "value" : "AI-instellingen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otwórz ustawienia AI"
+            "value" : "Ustawienia AI"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir definições de IA"
+            "value" : "Definições de IA"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Открыть настройки ИИ"
+            "value" : "Настройки ИИ"
           }
         }
       }
@@ -4577,6 +4640,186 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показать кнопку боковой панели"
+          }
+        }
+      }
+    },
+    "aichat.createImage.modelSwitch.privacy.subtitle" : {
+      "comment" : "Subtitle shown after switching away from a Zero Provider Visibility model for image creation. Parameter is the previous model's short name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ kann keine Bilder erstellen. Keine Sichtbarkeit auf Anbieterseite gilt erst wieder, wenn du zurückwechselst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ can't create images. Zero Provider Visibility won't apply until you switch back."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ no puede crear imágenes. La visibilidad cero del proveedor no se aplicará hasta que vuelvas a cambiar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ne peut pas créer d’images. L’option Zéro visibilité du fournisseur ne s’appliquera pas tant que tu ne reviendras pas à ce modèle."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ non può creare immagini. La visibilità zero del fornitore non verrà applicata finché non tornerai indietro."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ kan geen afbeeldingen maken. Geen zichtbaarheid van de provider is pas van toepassing als je terugschakelt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ nie może tworzyć obrazów. Zerowa widoczność dostawcy nie będzie obowiązywać, dopóki nie przełączysz się z powrotem."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ não pode criar imagens. A funcionalidade Sem visibilidade do fornecedor não se aplicará até voltares a mudar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ не может создавать изображения. Защита Zero Provider Visibility не будет действовать, пока вы не переключитесь обратно."
+          }
+        }
+      }
+    },
+    "aichat.createImage.modelSwitch.subtitle" : {
+      "comment" : "Subtitle explaining why Duck.ai switched models. Parameter is the previous model's short name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ unterstützt keine Bilderstellung."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ doesn't support image creation."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ no admite la creación de imágenes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ne prend pas en charge la création d’images."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ non supporta la creazione di immagini."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ biedt geen ondersteuning voor het maken van afbeeldingen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ nie obsługuje tworzenia obrazów."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ não suporta a criação de imagens."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ не поддерживает создание изображений."
+          }
+        }
+      }
+    },
+    "aichat.createImage.modelSwitch.title" : {
+      "comment" : "Title of the Duck.ai input card shown after switching to an image-capable model. Parameter is the new model's short name.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt wird %@ verwendet"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Now using %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora usas %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilise désormais %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ora usi %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ wordt nu gebruikt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teraz używasz %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora a utilizar %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сейчас используется %@"
           }
         }
       }
@@ -10577,6 +10820,906 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Инструменты"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.advanced-models-limit-reached" : {
+      "comment" : "Headline on the Duck.ai usage card when the allowance for advanced AI models specifically is spent, while free models remain available",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limit für fortschrittliche KI-Modelle erreicht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Advanced AI models limit reached"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Límite de modelos de IA avanzados alcanzado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite de modèles d'IA avancés atteinte"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite di modelli AI avanzati raggiunto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limiet voor geavanceerde AI-modellen bereikt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osiągnięto limit zaawansowanych modeli AI"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite de modelos avançados de IA atingido"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Достигнут лимит использования продвинутых моделей ИИ"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.daily-limit-reached" : {
+      "comment" : "Headline on the Duck.ai usage card when the user's daily allowance is fully spent",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tageslimit erreicht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Daily limit reached"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se ha alcanzado el límite diario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite quotidienne atteinte"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite giornaliero raggiunto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dagelijkse limiet bereikt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osiągnięto dzienny limit"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite diário atingido"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Достигнут дневной лимит"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.daily-usage" : {
+      "comment" : "Headline on the Duck.ai usage card as the user approaches their daily limit. Parameter is the percentage of the daily allowance already used.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d %% des Tageslimits"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%d%% of daily limit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d%% del límite diario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d %% de la limite quotidienne"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d%% del limite giornaliero"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d%% van de dagelijkse limiet"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d%% limitu dziennego"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d%% do limite diário"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d %% от суточного лимита"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.dismiss.accessibility" : {
+      "comment" : "Accessibility label for the close button on the Duck.ai usage card",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwerfen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dismiss"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descartar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignorer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignora"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Negeren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odrzuć"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignorar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.high-usage-model" : {
+      "comment" : "Duck.ai usage card notice shown while a model that spends the allowance quickly is selected. Parameter is the model's short name, e.g. \"Opus 4.8\".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ erreicht Nutzungslimits 2–5 x schneller als Basismodelle."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ reaches usage limits 2-5x sooner than basic models."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ alcanza los límites de uso de 2 a 5 veces antes que los modelos básicos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ atteint les limites d'utilisation 2 à 5 fois plus vite que les modèles de base."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ raggiunge i limiti di utilizzo 2-5 volte prima rispetto ai modelli di base."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ bereikt gebruikslimieten 2-5x sneller dan basismodellen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ osiąga limity użycia 2–5 razy szybciej niż podstawowe modele."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O %@ atinge os limites de utilização 2 a 5 vezes mais depressa do que os modelos básicos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ расходует лимиты в 2–5 раз быстрее, чем базовые модели."
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.model-picker.accessibility" : {
+      "comment" : "Accessibility label for the chevron on the Duck.ai usage card, which opens the model picker",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modell auswählen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Choose a model"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige un modelo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir un modèle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli un modello"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kies een model"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz model"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolher um modelo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать модель"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.resets-in" : {
+      "comment" : "Trailing detail on the Duck.ai usage card saying when the limit resets. Parameter is a short interval such as \"7d\" or \"12h\".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird in %@ zurückgesetzt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Resets in %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se reinicia en %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réinitialisation dans %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si ripristina tra %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wordt over %@ gereset"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resetuje się za %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reinicia em %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сброс через %@"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.start-using-weekly-limit" : {
+      "comment" : "Button on the Duck.ai usage card letting a paid user keep chatting on their weekly allowance after the daily one is spent",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit der Nutzung des Wochenlimits beginnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Start Using Weekly Limit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empezar a usar el límite semanal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commencer à utiliser la limite hebdomadaire"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inizia a usare il limite settimanale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weeklimiet gebruiken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zacznij korzystać z limitu tygodniowego"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Começar a usar o limite semanal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начать использовать недельный лимит"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.subscribe" : {
+      "comment" : "Button on the Duck.ai usage card taking a user who has already used their free trial to the subscription flow",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscribe"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suscríbete"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S'abonner"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbonati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonneer"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subskrybuj"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscrever"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подписаться"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.switch-model" : {
+      "comment" : "Button on the Duck.ai usage card offering a model that uses the allowance more slowly, used when the suggested model has no short name to show",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modell wechseln"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Switch Model"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambiar modelo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changer de modèle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambia modello"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wisselen van model"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmień model"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mudar de modelo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать другую модель"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.switch-to-free-model" : {
+      "comment" : "Button on the Duck.ai usage card offering a free-tier model, shown once the advanced-model allowance is spent",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu einem kostenlosen Modell wechseln"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Switch to a Free Model"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pásate a un modelo gratuito"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passer à un modèle gratuit"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passa a un modello gratuito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overstappen naar een gratis model"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przełącz się na bezpłatny model"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mudar para um modelo gratuito"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать бесплатную модель"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.switch-to-model" : {
+      "comment" : "Button on the Duck.ai usage card offering a model that uses the allowance more slowly. Parameter is the model's short name, e.g. \"5.4 mini\".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu %@ wechseln"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Switch to %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambiar a %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passer à %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passa a %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overschakelen naar %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przełącz na %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muda para o %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перейти на %@"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.try-for-free" : {
+      "comment" : "Button on the Duck.ai usage card taking a user who is still eligible for a free trial to the subscription flow",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnement kostenlos testen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Subscription for Free"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba la suscripción gratis"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essayer l'abonnement gratuitement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prova l'abbonamento gratuitamente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probeer het abonnement gratis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypróbuj subskrypcję bezpłatnie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experimenta a subscrição gratuitamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробовать подписку бесплатно"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.weekly-limit-reached" : {
+      "comment" : "Headline on the Duck.ai usage card when the user's weekly allowance is fully spent",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wöchentliches Nutzungslimit erreicht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Weekly usage limit reached"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se ha alcanzado el límite de uso semanal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite d'utilisation hebdomadaire atteinte"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite di utilizzo settimanale raggiunto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wekelijkse gebruikslimiet bereikt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osiągnięto tygodniowy limit użycia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite de utilização semanal atingido"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Достигнут недельный лимит использования"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.weekly-usage" : {
+      "comment" : "Headline on the Duck.ai usage card as the user approaches their weekly limit. Parameter is the percentage of the weekly allowance already used.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d%% des Wochenlimits"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%d%% of weekly limit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d%% del límite semanal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d %% de la limite hebdomadaire"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d%% del limite settimanale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d%% van de wekelijkse limiet"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d%% limitu tygodniowego"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d%% do limite semanal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d %% от недельного лимита"
           }
         }
       }
@@ -19419,6 +20562,7 @@
     },
     "Bookmark import failed:" : {
       "comment" : "Data import summary format of how many bookmarks (%lld) failed to import.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -19472,6 +20616,7 @@
     },
     "Bookmark import failed." : {
       "comment" : "Data import summary message of failed bookmarks import.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -19885,6 +21030,7 @@
     },
     "Bookmarks Import Complete:" : {
       "comment" : "Bookmarks Data Import result summary headline",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -19938,6 +21084,7 @@
     },
     "Bookmarks:" : {
       "comment" : "Data import summary format of how many bookmarks (%lld) were successfully imported.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -28526,6 +29673,7 @@
       }
     },
     "Credit card import failed: " : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -28578,6 +29726,7 @@
       }
     },
     "Credit card import failed." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -28631,6 +29780,7 @@
     },
     "Credit cards import complete. You can now delete the saved credit cards file." : {
       "comment" : "message about Credit Cards Data Import completion",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -28683,6 +29833,7 @@
       }
     },
     "Credit Cards:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -33939,7 +35090,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Öffnet Videos im Theatermodus, der verhindert, dass das, was du ansiehst, deinen YouTube-Feed beeinflusst."
+            "value" : "Öffnet Videos im Kino-Modus, der verhindert, dass das, was du ansiehst, deinen YouTube-Feed beeinflusst."
           }
         },
         "en" : {
@@ -38049,6 +39200,7 @@
       }
     },
     "Duplicates Skipped:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38101,6 +39253,7 @@
       }
     },
     "Duplicates Skipped: " : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -56994,6 +58147,7 @@
     },
     "Import Bookmarks" : {
       "comment" : "Title of dialog with instruction for the user to import bookmarks from another browser",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -57099,6 +58253,7 @@
     },
     "Import Passwords" : {
       "comment" : "Title of dialog with instruction for the user to import passwords from another browser",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -57152,6 +58307,7 @@
     },
     "Import Results:" : {
       "comment" : "Data Import result summary headline",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -57805,7 +58961,7 @@
     },
     "import.bookmarks.select-html-file" : {
       "comment" : "Button text for selecting HTML Bookmarks file",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -57865,7 +59021,7 @@
     },
     "import.browser.data" : {
       "comment" : "Import Browser Data dialog title",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58045,7 +59201,7 @@
     },
     "import.browser.data.complete.sync.button.title" : {
       "comment" : "Import Browser Data dialog button title to sync imported data at completion stage",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58105,7 +59261,7 @@
     },
     "import.browser.data.import-type.subtitle.bookmarks.and.passwords" : {
       "comment" : "Import Browser Data dialog subtitle for option to choose what to import in collapsed state",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58165,7 +59321,7 @@
     },
     "import.browser.data.import-type.subtitle.none" : {
       "comment" : "Import Browser Data dialog subtitle for option to choose what to import in collapsed state",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58285,7 +59441,7 @@
     },
     "import.browser.data.import-type.title.collapsed.all" : {
       "comment" : "Import Browser Data dialog title for option to choose what to import in collapsed state",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58345,7 +59501,7 @@
     },
     "import.browser.data.onboarding" : {
       "comment" : "Import Browser Data dialog title",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58465,7 +59621,7 @@
     },
     "import.browser.data.select.profile.title" : {
       "comment" : "Title for the data import browser profile picker",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58525,7 +59681,7 @@
     },
     "import.browser.data.selection.sync.button.title" : {
       "comment" : "Import Browser Data dialog button title to sync imported data at selection stage",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58585,7 +59741,7 @@
     },
     "import.browser.data.shortcuts" : {
       "comment" : "Import Browser Data dialog title for final stage when choosing shortcuts to enable",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58645,7 +59801,7 @@
     },
     "import.browser.data.shortcuts.subtitle" : {
       "comment" : "Subtitle explaining how users can find toolbar shortcuts.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58705,7 +59861,7 @@
     },
     "import.browser.data.source.subtitle" : {
       "comment" : "Subtitle explaining where users can find imported passwords.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58765,7 +59921,7 @@
     },
     "import.browser.data.source.title" : {
       "comment" : "Import Browser Data title for option to choose source browser to import from",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58825,7 +59981,7 @@
     },
     "import.browser.data.success.title" : {
       "comment" : "message about Passwords and or bookmarks Data Import completion",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59785,7 +60941,7 @@
     },
     "import.csv.instructions.bitwarden" : {
       "comment" : "Instructions to import Passwords as CSV from Bitwarden.\n%2$s - app name (Bitwarden)\n%7$@ - hamburger menu icon\n%9$@ - “Select Bitwarden CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59905,7 +61061,7 @@
     },
     "import.csv.instructions.brave" : {
       "comment" : "Instructions to import Passwords as CSV from Brave browser.\n%N$d - step number\n%2$s - browser name (Brave)\n%4$@, %6$@ - hamburger menu icon\n%10$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -60025,7 +61181,7 @@
     },
     "import.csv.instructions.chrome" : {
       "comment" : "Instructions to import Passwords as CSV from Google Chrome browser.\n%N$d - step number\n%2$s - browser name (Chrome)\n%4$@ - hamburger menu icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -60145,7 +61301,7 @@
     },
     "import.csv.instructions.chromium" : {
       "comment" : "Instructions to import Passwords as CSV from Chromium-based browsers.\n%N$d - step number\n%2$s - browser name\n%4$@ - hamburger menu icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -60265,7 +61421,7 @@
     },
     "import.csv.instructions.coccoc" : {
       "comment" : "Instructions to import Passwords as CSV from Cốc Cốc browser.\n%N$d - step number\n%2$s - browser name (Cốc Cốc)\n%5$@ - hamburger menu icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -60385,7 +61541,7 @@
     },
     "import.csv.instructions.firefox" : {
       "comment" : "Instructions to import Passwords as CSV from Firefox.\n%N$d - step number\n%2$s - browser name (Firefox)\n%4$@, %6$@ - hamburger menu icon\n%9$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -60505,7 +61661,7 @@
     },
     "import.csv.instructions.generic" : {
       "comment" : "Instructions to import a generic CSV passwords file.\n%N$d - step number\n%3$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -60625,7 +61781,7 @@
     },
     "import.csv.instructions.lastpass" : {
       "comment" : "Instructions to import Passwords as CSV from LastPass.\n%2$s - app name (LastPass)\n%8$@ - “Select LastPass CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -60745,7 +61901,7 @@
     },
     "import.csv.instructions.onePassword7" : {
       "comment" : "Instructions to import Passwords as CSV from 1Password 7.\n%2$s - app name (1Password)\n%9$@ - “Select 1Password CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -60865,7 +62021,7 @@
     },
     "import.csv.instructions.onePassword8" : {
       "comment" : "Instructions to import Passwords as CSV from 1Password 8.\n%2$s - app name (1Password)\n%8$@ - “Select 1Password CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -60985,7 +62141,7 @@
     },
     "import.csv.instructions.opera" : {
       "comment" : "Instructions to import Passwords as CSV from Opera browser.\n%N$d - step number\n%2$s - browser name (Opera)\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -61105,7 +62261,7 @@
     },
     "import.csv.instructions.operagx" : {
       "comment" : "Instructions to import Passwords as CSV from Opera GX browsers.\n%N$d - step number\n%2$s - browser name (Opera GX)\n%5$@ - menu button icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -61224,7 +62380,7 @@
       }
     },
     "import.csv.instructions.safari" : {
-      "comment" : "Instructions to import Passwords as CSV from Safari.\n%N$d - step number\n%5$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_\nInstructions to import Passwords as CSV from Safari.\n%N$d - step number\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Safari.\n%N$d - step number\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -61345,7 +62501,7 @@
     },
     "import.csv.instructions.safari.macos15-2.old" : {
       "comment" : "Instructions to import Passwords as CSV from Safari zip file on >= macOS 15.2.\n%N$d - step number\n%5$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -61405,7 +62561,7 @@
     },
     "import.csv.instructions.vivaldi" : {
       "comment" : "Instructions to import Passwords exported as CSV from Vivaldi browser.\n%N$d - step number\n%2$s - browser name (Vivaldi)\n%5$@ - menu button icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -61525,7 +62681,7 @@
     },
     "import.csv.instructions.yandex" : {
       "comment" : "Instructions to import Passwords as CSV from Yandex Browser.\n%N$d - step number\n%2$s - browser name (Yandex)\n%4$@ - hamburger menu icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -61825,7 +62981,7 @@
     },
     "import.data.initiate" : {
       "comment" : "Button text for importing data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -62425,7 +63581,7 @@
     },
     "import.html.instructions.chromium" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Chromium-based browsers.\n%N$d - step number\n%2$s - browser name\n%5$@ - hamburger menu icon\n%8$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -62545,7 +63701,7 @@
     },
     "import.html.instructions.firefox" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Firefox based browsers.\n%N$d - step number\n%2$s - browser name (Firefox)\n%5$@ - hamburger menu icon\n%8$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -62665,7 +63821,7 @@
     },
     "import.html.instructions.generic" : {
       "comment" : "Instructions to import a generic HTML Bookmarks file.\n%N$d - step number\n%6$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -62785,7 +63941,7 @@
     },
     "import.html.instructions.opera" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Opera browser.\n%N$d - step number\n%2$s - browser name (Opera)\n%8$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -62905,7 +64061,7 @@
     },
     "import.html.instructions.operagx" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Opera GX browser.\n%N$d - step number\n%2$s - browser name (Opera GX)\n%7$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -63025,7 +64181,7 @@
     },
     "import.html.instructions.safari" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Safari.\n%N$d - step number\n%5$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -63145,7 +64301,7 @@
     },
     "import.html.instructions.vivaldi" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Vivaldi browser.\n%N$d - step number\n%2$s - browser name (Vivaldi)\n%6$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -63265,7 +64421,7 @@
     },
     "import.html.instructions.yandex" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Yandex Browser.\n%N$d - step number\n%2$s - browser name (Yandex)\n%5$@ - hamburger menu icon\n%8$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -63745,7 +64901,7 @@
     },
     "import.logins.select-csv-file" : {
       "comment" : "Button text for selecting a CSV file",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -63805,7 +64961,7 @@
     },
     "import.logins.select-csv-file.source" : {
       "comment" : "Button text for selecting a CSV file exported from (LastPass or Bitwarden or 1Password - %@)",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -63865,7 +65021,7 @@
     },
     "import.nodata.bookmarks.subtitle" : {
       "comment" : "Data import error subtitle: suggestion to import Bookmarks manually by selecting a CSV or HTML file. The placeholder here represents the source browser, e.g Firefox.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -63925,7 +65081,7 @@
     },
     "import.nodata.passwords.subtitle" : {
       "comment" : "Data import error subtitle: suggestion to import passwords manually by selecting a CSV or HTML file. The placeholder here represents the source browser, e.g Firefox.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -64045,7 +65201,7 @@
     },
     "import.onePassword.app.version.info" : {
       "comment" : "Instructions how to find an installed 1Password password manager app version.\n%1$s, %2$s - app name (1Password)",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -65305,7 +66461,7 @@
     },
     "import.shortcuts.bookmarks.subtitle" : {
       "comment" : "Description for the setting to enable the bookmarks bar",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -65425,7 +66581,7 @@
     },
     "import.shortcuts.passwords.subtitle" : {
       "comment" : "Description for the setting to enable the passwords shortcut",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -66924,6 +68080,7 @@
       }
     },
     "Incorrect file type or format. Please select a different file." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -67563,6 +68720,7 @@
     },
     "Let’s try doing it manually. It won’t take long." : {
       "comment" : "Suggestion to switch to a Manual File Data Import when data import fails.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -73571,55 +74729,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "KI-Einstellungen öffnen"
+            "value" : "KI-Einstellungen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open AI Settings"
+            "value" : "AI Settings"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir ajustes de IA"
+            "value" : "Ajustes de IA"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrir les réglages IA"
+            "value" : "Réglages IA"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apri le impostazioni AI"
+            "value" : "Impostazioni AI"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AI-instellingen openen"
+            "value" : "AI-instellingen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otwórz ustawienia AI"
+            "value" : "Ustawienia AI"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir definições de IA"
+            "value" : "Definições de IA"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Открыть настройки ИИ"
+            "value" : "Настройки ИИ"
           }
         }
       }
@@ -79342,6 +80500,7 @@
     },
     "Password import complete. You can now delete the saved passwords file." : {
       "comment" : "message about Passwords Data Import completion",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -79395,6 +80554,7 @@
     },
     "Password import failed: " : {
       "comment" : "Data import summary format of how many passwords (%lld) failed to import.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -79448,6 +80608,7 @@
     },
     "Password import failed." : {
       "comment" : "Data import summary message of failed passwords import.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -79801,6 +80962,7 @@
     },
     "Passwords:" : {
       "comment" : "Data import summary format of how many passwords were successfully imported.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86075,6 +87237,7 @@
     },
     "Please submit a report to help us fix the issue." : {
       "comment" : "Data import failure Report dialog title.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -115483,6 +116646,186 @@
         }
       }
     },
+    "sync.close-setup-v2.confirmation.action" : {
+      "comment" : "Button that confirms closing the Sync setup dialog before the devices finished connecting (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schließen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть"
+          }
+        }
+      }
+    },
+    "sync.close-setup-v2.confirmation.message" : {
+      "comment" : "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn du dieses Fenster schließt, wird die Verbindung mit Sync & Backup beendet."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Closing this window will stop connecting Sync & Backup."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al cerrar esta ventana, se dejará de conectar Sync & Backup."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La fermeture de cette fenêtre interrompra la connexion à Sync & Backup."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se chiudi la finestra, la connessione a Sync & Backup verrà interrotta."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als je dit venster sluit, wordt het verbinden met Sync & Backup gestopt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknięcie tego okna zatrzyma łączenie z funkcją Sync & Backup."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar esta janela irá interromper a ligação ao Sync & Backup."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если закрыть это окно, подключение к Sync & Backup будет прервано."
+          }
+        }
+      }
+    },
+    "sync.close-setup-v2.confirmation.title" : {
+      "comment" : "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bist du sicher, dass du dieses Fenster schließen möchtest?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Are you sure you want to close this window?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Seguro que quieres cerrar esta ventana?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voulez-vous vraiment fermer cette fenêtre ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudere la finestra?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weet je zeker dat je dit venster wilt sluiten?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czy na pewno chcesz zamknąć to okno?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tens a certeza de que pretendes fechar esta janela?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы уверены, что хотите закрыть это окно?"
+          }
+        }
+      }
+    },
     "sync.pairing-v2.confirmation.action" : {
       "comment" : "Caption for a button to confirm sync setup with another device",
       "extractionState" : "extracted_with_value",
@@ -116978,6 +118321,7 @@
     },
     "That didn’t work either. Please submit a report to help us fix the issue." : {
       "comment" : "Data import failure Report dialog title containing a message that not only automatic data import has failed failed but manual browser data import didn‘t work either.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -117031,6 +118375,7 @@
     },
     "The following information will be sent to DuckDuckGo. No personally identifiable information will be sent." : {
       "comment" : "Data import failure Report dialog subtitle about the data being collected with the report.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -126828,6 +128173,7 @@
     },
     "We couldn‘t find any bookmarks." : {
       "comment" : "Data import error message: Bookmarks weren‘t found.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -126881,6 +128227,7 @@
     },
     "We couldn't find any credit cards." : {
       "comment" : "Data import error message: Credit cards weren't found.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -126934,6 +128281,7 @@
     },
     "We couldn‘t find any passwords." : {
       "comment" : "Data import error message: Passwords weren‘t found.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -126987,6 +128335,7 @@
     },
     "We were unable to import bookmarks directly from %@." : {
       "comment" : "Message when data import fails from a browser. %@ - a browser name",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -127040,6 +128389,7 @@
     },
     "We were unable to import passwords directly from %@." : {
       "comment" : "Message when data import fails from a browser. %@ - a browser name",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -127979,6 +129329,7 @@
     },
     "You'll be asked to enter your Primary Password for %@.\n\nImported passwords are encrypted and only stored on this computer." : {
       "comment" : "Warning that Firefox-based browser name (%@) data import would require entering a Primary Password for the browser.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

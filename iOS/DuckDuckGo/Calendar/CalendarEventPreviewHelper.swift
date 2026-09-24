@@ -23,6 +23,7 @@ import EventKitUI
 import ICSParser
 import UIKit
 import UIKitExtensions
+import PixelKit
 
 /// Owner must keep a strong reference until `onDismiss` fires — the editor's delegate is weak.
 final class CalendarEventPreviewHelper: NSObject, FilePreview {
@@ -73,19 +74,19 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
         }
         let result = ICSFileReader.read(at: filePath)
         if result.warnings.contains(.unsupportedRRulePart) {
-            Pixel.fire(pixel: .icsCalendarUnsupportedRRule)
+            PixelKit.fire(Pixel.Event.icsCalendarUnsupportedRRule)
         }
         switch result.outcome {
         case .singleEvent(let event):
             presentEventEditor(for: event)
         case .multipleEvents:
-            Pixel.fire(pixel: .icsCalendarFallbackMultipleEvents)
+            PixelKit.fire(Pixel.Event.icsCalendarFallbackMultipleEvents)
             fallbackToQuickLook(reporting: .multipleEvents)
         case .unrecognizedTimeZone:
-            Pixel.fire(pixel: .icsCalendarFallbackUnrecognizedTimeZone)
+            PixelKit.fire(Pixel.Event.icsCalendarFallbackUnrecognizedTimeZone)
             fallbackToQuickLook(reporting: .unrecognizedTimeZone)
         case .parseFailure:
-            Pixel.fire(pixel: .icsCalendarFallbackParseFailure)
+            PixelKit.fire(Pixel.Event.icsCalendarFallbackParseFailure)
             reportFailureWithoutPreview(.parseFailure)
         }
     }
@@ -102,7 +103,7 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
         editor.event = Self.makeEKEvent(from: icsEvent, in: store)
         editor.eventStore = store
         editor.editViewDelegate = self
-        Pixel.fire(pixel: .icsCalendarEditorPresented)
+        PixelKit.fire(Pixel.Event.icsCalendarEditorPresented)
         presenter.present(editor, animated: true)
     }
 
@@ -110,9 +111,9 @@ final class CalendarEventPreviewHelper: NSObject, FilePreview {
     static func firePixel(for action: EKEventEditViewAction) {
         switch action {
         case .saved:
-            Pixel.fire(pixel: .icsCalendarEditorSaved)
+            PixelKit.fire(Pixel.Event.icsCalendarEditorSaved)
         case .canceled, .deleted:
-            Pixel.fire(pixel: .icsCalendarEditorCancelled)
+            PixelKit.fire(Pixel.Event.icsCalendarEditorCancelled)
         @unknown default:
             break
         }

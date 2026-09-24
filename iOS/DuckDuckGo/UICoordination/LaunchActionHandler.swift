@@ -19,6 +19,7 @@
 
 import UIKit
 import Core
+import PixelKit
 
 enum LaunchAction {
 
@@ -78,7 +79,7 @@ final class LaunchActionHandler: LaunchActionHandling {
     private let shortcutItemHandler: ShortcutItemHandling
     private let userActivityHandler: UserActivityHandling
     private let keyboardPresenter: KeyboardPresenting
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private let launchSourceManager: LaunchSourceManaging
     private let idleReturnEvaluator: IdleReturnEvaluating
     private weak var idleReturnDelegate: IdleReturnLaunchDelegate?
@@ -90,7 +91,7 @@ final class LaunchActionHandler: LaunchActionHandling {
          launchSourceService: LaunchSourceManaging,
          idleReturnEvaluator: IdleReturnEvaluating,
          idleReturnDelegate: IdleReturnLaunchDelegate? = nil,
-         pixelFiring: PixelFiring.Type = Pixel.self) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.urlHandler = urlHandler
         self.shortcutItemHandler = shortcutItemHandler
         self.userActivityHandler = userActivityHandler
@@ -147,9 +148,9 @@ final class LaunchActionHandler: LaunchActionHandling {
         // Websites or searches opened via share extensions have `ddgQuickLink` scheme.
         // If scheme is either `http` or `https` we know the app has been opened by clicking directly an external link.
         if url.scheme == "http" || url.scheme == "https" {
-            pixelFiring.fire(.appLaunchFromExternalLink, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.appLaunchFromExternalLink)
         } else if url.scheme == AppDeepLinkSchemes.quickLink.rawValue {
-            pixelFiring.fire(.appLaunchFromShareExtension, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.appLaunchFromShareExtension)
         }
     }
 

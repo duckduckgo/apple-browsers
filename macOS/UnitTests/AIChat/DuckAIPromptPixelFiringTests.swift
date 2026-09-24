@@ -54,6 +54,15 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
          .aiChatAddressBarGatedRowClick(origin: "funnel_addressbar_macos__modelpicker")),
         (.gatedRowClick(origin: "funnel_addressbar_macos__reasoningdropdown"),
          .aiChatAddressBarGatedRowClick(origin: "funnel_addressbar_macos__reasoningdropdown")),
+        (.createImageModelSwitched(fromModelId: "gpt-oss-120b",
+                                   toModelId: "gpt-5.4",
+                                   fromModelPrivacyPreserving: true),
+         .aiChatAddressBarCreateImageModelSwitched(fromModelId: "gpt-oss-120b",
+                                                   toModelId: "gpt-5.4",
+                                                   fromModelPrivacyPreserving: true)),
+        (.createImageModelSwitchNoticeDismissed, .aiChatAddressBarCreateImageModelSwitchNoticeDismissed),
+        (.createImageUnavailable, .aiChatAddressBarCreateImageUnavailable),
+        (.createImageSubmittedWithUnsupportedModel, .aiChatAddressBarCreateImageSubmittedWithUnsupportedModel),
         (.subscriptionUpsellShown(origin: "funnel_addressbar_macos__modelpicker"),
          .aiChatAddressBarSubscriptionUpsellShown(origin: "funnel_addressbar_macos__modelpicker")),
         (.subscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal", origin: "funnel_addressbar_macos__modelpicker"),
@@ -91,6 +100,15 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.modelPickerShown, .modelPickerShown(origin: "funnel_promptbar_macos__modelpicker")),
         (.reasoningPickerShown, .reasoningPickerShown(origin: "funnel_promptbar_macos__reasoningdropdown")),
         (.gatedRowClick(origin: "x"), nil),
+        (.createImageModelSwitched(fromModelId: "gpt-oss-120b",
+                                   toModelId: "gpt-5.4",
+                                   fromModelPrivacyPreserving: true),
+         .createImageModelSwitched(fromModelId: "gpt-oss-120b",
+                                   toModelId: "gpt-5.4",
+                                   fromModelPrivacyPreserving: true)),
+        (.createImageModelSwitchNoticeDismissed, .createImageModelSwitchNoticeDismissed),
+        (.createImageUnavailable, .createImageUnavailable),
+        (.createImageSubmittedWithUnsupportedModel, .createImageSubmittedWithUnsupportedModel),
         (.subscriptionUpsellShown(origin: "x"), nil),
         (.subscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal", origin: "x"), nil),
         (.voiceChatOpened, .newVoiceChat)
@@ -123,6 +141,75 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
             XCTAssertEqual(pixel.parameters, ["origin": "x"])
             XCTAssertEqual(pixel.namePrefix, .none)
         }
+
+    func testWhenCreateImagePixelsAreMappedThenNamesAndParametersMatchDefinitions() {
+        let modelSwitched = AIChatPixel.aiChatAddressBarCreateImageModelSwitched(
+            fromModelId: "gpt-oss-120b",
+            toModelId: "gpt-5.4",
+            fromModelPrivacyPreserving: true
+        )
+
+        XCTAssertEqual(modelSwitched.name, "aichat_addressbar_create_image_model_switched")
+        XCTAssertEqual(modelSwitched.parameters, [
+            "from_model_id": "gpt-oss-120b",
+            "to_model_id": "gpt-5.4",
+            "from_model_privacy_preserving": "true",
+            "entry_point": "tools_menu"
+        ])
+        XCTAssertEqual(AIChatPixel.aiChatAddressBarCreateImageModelSwitchNoticeDismissed.name,
+                       "aichat_addressbar_create_image_model_switch_notice_dismissed")
+        XCTAssertNil(AIChatPixel.aiChatAddressBarCreateImageModelSwitchNoticeDismissed.parameters)
+        XCTAssertEqual(AIChatPixel.aiChatAddressBarCreateImageUnavailable.name,
+                       "aichat_addressbar_create_image_unavailable")
+        XCTAssertNil(AIChatPixel.aiChatAddressBarCreateImageUnavailable.parameters)
+        XCTAssertEqual(AIChatPixel.aiChatAddressBarCreateImageSubmittedWithUnsupportedModel.name,
+                       "aichat_addressbar_create_image_submitted_with_unsupported_model")
+        XCTAssertNil(AIChatPixel.aiChatAddressBarCreateImageSubmittedWithUnsupportedModel.parameters)
+    }
+
+    func testWhenCreateImagePixelsAreFiredThenFrequenciesMirrorIOS() {
+        XCTAssertEqual(AddressBarPromptPixelHandler.frequency(for: .createImageModelSwitched(
+            fromModelId: "from",
+            toModelId: "to",
+            fromModelPrivacyPreserving: false
+        )), .dailyAndCount)
+        XCTAssertEqual(AddressBarPromptPixelHandler.frequency(for: .createImageModelSwitchNoticeDismissed), .dailyAndCount)
+        XCTAssertEqual(AddressBarPromptPixelHandler.frequency(for: .createImageUnavailable), .daily)
+        XCTAssertEqual(AddressBarPromptPixelHandler.frequency(for: .createImageSubmittedWithUnsupportedModel), .dailyAndCount)
+        XCTAssertEqual(PromptBarPixelHandler.frequency(for: .createImageModelSwitched(
+            fromModelId: "from",
+            toModelId: "to",
+            fromModelPrivacyPreserving: false
+        )), .dailyAndCount)
+        XCTAssertEqual(PromptBarPixelHandler.frequency(for: .createImageModelSwitchNoticeDismissed), .dailyAndCount)
+        XCTAssertEqual(PromptBarPixelHandler.frequency(for: .createImageUnavailable), .daily)
+        XCTAssertEqual(PromptBarPixelHandler.frequency(for: .createImageSubmittedWithUnsupportedModel), .dailyAndCount)
+    }
+
+    func testWhenPromptBarCreateImagePixelsAreMappedThenNamesAndParametersMatchDefinitions() {
+        let modelSwitched = PromptBarPixel.createImageModelSwitched(
+            fromModelId: "gpt-oss-120b",
+            toModelId: "gpt-5.4",
+            fromModelPrivacyPreserving: true
+        )
+
+        XCTAssertEqual(modelSwitched.name, "aichat_promptbar_create_image_model_switched")
+        XCTAssertEqual(modelSwitched.parameters, [
+            "from_model_id": "gpt-oss-120b",
+            "to_model_id": "gpt-5.4",
+            "from_model_privacy_preserving": "true",
+            "entry_point": "tools_menu"
+        ])
+        XCTAssertEqual(PromptBarPixel.createImageModelSwitchNoticeDismissed.name,
+                       "aichat_promptbar_create_image_model_switch_notice_dismissed")
+        XCTAssertNil(PromptBarPixel.createImageModelSwitchNoticeDismissed.parameters)
+        XCTAssertEqual(PromptBarPixel.createImageUnavailable.name,
+                       "aichat_promptbar_create_image_unavailable")
+        XCTAssertNil(PromptBarPixel.createImageUnavailable.parameters)
+        XCTAssertEqual(PromptBarPixel.createImageSubmittedWithUnsupportedModel.name,
+                       "aichat_promptbar_create_image_submitted_with_unsupported_model")
+        XCTAssertNil(PromptBarPixel.createImageSubmittedWithUnsupportedModel.parameters)
+>>>>>>> aebafc92e21e244b1aa0c887e447c8ee4d21a651
     }
 
     func testWhenAddressBarHandlerMapsAnEvent_ThenItKeepsThePixelItFiredBefore() {

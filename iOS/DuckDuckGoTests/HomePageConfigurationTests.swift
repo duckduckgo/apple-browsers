@@ -493,7 +493,8 @@ struct HomePageConfigurationTests {
             modalPromptCoordinationManager: modalManager,
             mode: .coordinated,
             promoQueueLeaseArbiter: arbiter,
-            promoQueueCooldownPolicy: policy
+            promoQueueCooldownPolicy: policy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
         )
         let sut = HomePageConfiguration(
             remoteMessagingStore: store,
@@ -638,7 +639,8 @@ struct HomePageConfigurationTests {
             modalPromptCoordinationManager: modalManager,
             mode: .coordinated,
             promoQueueLeaseArbiter: arbiter,
-            promoQueueCooldownPolicy: cooldownPolicy
+            promoQueueCooldownPolicy: cooldownPolicy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
         )
         let sut = HomePageConfiguration(
             remoteMessagingStore: store,
@@ -971,7 +973,8 @@ struct HomePageConfigurationTests {
             modalPromptCoordinationManager: MockModalPromptCoordinationManager(),
             mode: .coordinated,
             promoQueueLeaseArbiter: arbiter,
-            promoQueueCooldownPolicy: cooldownPolicy
+            promoQueueCooldownPolicy: cooldownPolicy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
         )
     }
 

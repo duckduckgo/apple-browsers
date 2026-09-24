@@ -96,6 +96,7 @@ extension WebExtensionManager {
                     // Install before uninstalling: the versions have distinct identifiers and can
                     // coexist, so a failed upgrade leaves the old version installed and working.
                     try await installEmbeddedExtension(from: bundledURL, type: descriptor.type, requiresExtraction: bundledMetadata.requiresExtraction)
+                    cpmDiagnosticsRecorder?.extensionDidUpdate(type: descriptor.type)
 
                     // Only unload the old version once its own load has settled.
                     await unloadGuard.awaitSettled(context(for: oldIdentifier))
@@ -146,7 +147,7 @@ extension WebExtensionManager {
             Logger.webExtensions.warning("⚠️ Cannot reload extension for type '\(type.rawValue)': not installed")
             return
         }
-        try await reloadExtension(identifier: installed.uniqueIdentifier)
+        try await reloadExtension(identifier: installed.uniqueIdentifier, trigger: .scriptletUpdate)
     }
 
     /// Installs an embedded extension from the given URL.
@@ -174,6 +175,7 @@ extension WebExtensionManager {
             )
 
             installationStore.add(installedExtension)
+            reportLifecycleEvent(.loaded(identifier: identifier, type: type))
             Logger.webExtensions.info("✅ Installed embedded extension \(type.rawValue) v\(loadResult.version ?? "?")")
             notifyUpdate()
 

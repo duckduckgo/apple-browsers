@@ -18,8 +18,28 @@
 
 import AppKit
 import AppKitExtensions
-import WebExtensions
+import Combine
+import FeatureFlags_macOS
 import PrivacyConfig
+import WebExtensions
+
+@available(macOS 15.4, *)
+@MainActor
+private final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsProviding {
+    private let featureFlagger: FeatureFlagger
+
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
+    }
+
+    var isBackgroundDelegateProxyEnabled: Bool {
+        featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
+    }
+
+    var updatesPublisher: AnyPublisher<Void, Never> {
+        featureFlagger.updatesPublisher
+    }
+}
 
 // MARK: - macOS-specific WebExtensionManager Extensions
 
@@ -50,16 +70,34 @@ enum WebExtensionManagerFactory {
         scriptletConfiguration: ScriptletConfiguration? = nil
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
+        let pixelFiring = MacOSWebExtensionPixelFiring()
+        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+        let cpmDiagnosticsRecorder = Application.appDelegate.featureFlagger.isFeatureOn(.cpmDiagnosticsRecorder) ? CPMMessagingDiagnosticsRecorder(
+            tabResolver: { tabIdentifier in
+                for windowController in Application.appDelegate.windowControllersManager.mainWindowControllers {
+                    let viewModel = windowController.mainViewController.tabCollectionViewModel
+                    if let tab = (viewModel.loadedPinnedTabs + viewModel.loadedTabs).first(where: { $0.uuid == tabIdentifier }) {
+                        return (webView: tab.webView, extensionTab: tab)
+                    }
+                }
+                return nil
+            },
+            featureFlags: MacOSCPMDiagnosticsFeatureFlags(featureFlagger: Application.appDelegate.featureFlagger),
+            appSession: Application.appDelegate.cpmAppSessionDiagnostics
+        ) : nil
 
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(),
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
             internalSiteHandler: internalSiteHandler,
-            pixelFiring: MacOSWebExtensionPixelFiring(),
+            pixelFiring: pixelFiring,
+            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+            cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
+                cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
             ),
             scriptletConfiguration: scriptletConfiguration

@@ -21,6 +21,7 @@ import Foundation
 import SwiftUI
 import Core
 import DesignResourcesKitIcons
+import PixelKit
 
 protocol ImportPasswordsViaSyncViewModelDelegate: AnyObject {
     func importPasswordsViaSyncViewModelDidRequestOpenSync(_ viewModel: ImportPasswordsViaSyncViewModel)
@@ -87,10 +88,10 @@ final class ImportPasswordsViaSyncViewModel {
 
         switch type {
         case .getBrowser:
-            Pixel.fire(pixel: .autofillLoginsImportGetDesktop)
+            PixelKit.fire(Pixel.Event.autofillLoginsImportGetDesktop)
         case .sync:
             openSync()
-            Pixel.fire(pixel: .autofillLoginsImportSync)
+            PixelKit.fire(Pixel.Event.autofillLoginsImportSync)
         }
     }
 

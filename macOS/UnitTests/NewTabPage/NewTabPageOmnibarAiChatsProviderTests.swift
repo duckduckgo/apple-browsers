@@ -343,6 +343,9 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var showViewAllAiChatsPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var isAIChatToolsEnabled: Bool = false
     var isImageGenerationEnabled: Bool = false
+    var isUpdatedCreateImageEnabled: Bool = false
+    @MainActor var imageGenerationModelId: String? { nil }
+    @MainActor func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? { nil }
     var isWebSearchEnabled: Bool = false
     var isCustomizeResponsesEnabled: Bool = false
     @MainActor
@@ -350,6 +353,11 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var customizeResponsesStatePublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
     @MainActor
     func refreshUsageLimits(requestingWebView: WKWebView?) {}
+    @MainActor func usageLimits() -> NewTabPageDataModel.OmnibarUsageLimits? { nil }
+    @MainActor func dismissUsageLimits() {}
+    @MainActor
+    func selectUsageLimitsCta(modelId: String?) -> NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome { .handled }
+    var usageLimitsPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
     var isAttachTabsEnabled: Bool = false
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var selectedModelId: String?

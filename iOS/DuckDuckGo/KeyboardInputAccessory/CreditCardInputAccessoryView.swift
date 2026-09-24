@@ -24,6 +24,7 @@ import BrowserServicesKit
 import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import PixelKit
 
 class CreditCardInputAccessoryView: UIView {
 
@@ -395,7 +396,7 @@ class CreditCardInputAccessoryView: UIView {
     @objc private func cardTapped(_ gesture: UITapGestureRecognizer) {
         if let view = gesture.view,
            let index = creditCards.indices.contains(view.tag) ? view.tag : nil {
-            Pixel.fire(pixel: .autofillCardsKeyboardFill)
+            PixelKit.fire(Pixel.Event.autofillCardsKeyboardFill)
             
             if AppDependencyProvider.shared.autofillLoginSession.isSessionValid {
                 onCardSelected?(creditCards[index].creditCard)
@@ -424,7 +425,7 @@ class CreditCardInputAccessoryView: UIView {
     
     @objc private func manageButtonTapped() {
         onCardManagementSelected?()
-        Pixel.fire(pixel: .autofillCardsKeyboardOpenSettings)
+        PixelKit.fire(Pixel.Event.autofillCardsKeyboardOpenSettings)
     }
 
     @objc private func doneButtonTapped() {

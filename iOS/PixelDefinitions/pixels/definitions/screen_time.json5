@@ -1,0 +1,9 @@
+{
+    "screen-time_records-present": {
+        "description": "Fires when Screen Time records are found during an app launch.",
+        "owners": ["brindy"],
+        "triggers": ["startup"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

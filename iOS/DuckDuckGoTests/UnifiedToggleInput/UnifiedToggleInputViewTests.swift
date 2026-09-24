@@ -88,6 +88,21 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(outlinedCard.layer.borderWidth, 0)
     }
 
+    func testWhenFocusedInSplitOmnibarSessionThenCardMatchesRestingAddressBarInset() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.cardPosition = .top
+        sut.usesOmnibarMargins = true
+        sut.prepareForOmnibarEditingShow()
+        sut.applyOmnibarEditingShowPose()
+        prepareForFitting(sut, width: 402, height: 192)
+        applyFittingHeight(to: sut, width: 402)
+
+        let inset = try XCTUnwrap(activeCardHorizontalInset(in: sut))
+
+        XCTAssertEqual(inset, 16)
+    }
+
     func testWhenToggleIsEnabledOnExpandedSearchInputThenOutlineAppears() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler, isToggleEnabled: false)
@@ -749,6 +764,16 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         wait(for: [expectation], timeout: 1)
     }
 
+    private func activeCardHorizontalInset(in view: UnifiedToggleInputView) -> CGFloat? {
+        view.constraints.first { constraint in
+            constraint.isActive
+                && constraint.firstAttribute == .leading
+                && constraint.secondAttribute == .leading
+                && constraint.secondItem === view
+                && (constraint.firstItem as? UIView)?.isUserInteractionEnabled == false
+        }?.constant
+    }
+
     private func prepareForFitting(_ view: UIView, width: CGFloat = 320, height: CGFloat = 68) {
         view.frame = CGRect(x: 0, y: 0, width: width, height: height)
         view.setNeedsLayout()
@@ -872,7 +897,6 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var currentText: String = ""
     var currentToggleState: TextEntryMode
     var isVoiceSearchEnabled: Bool = false
-    var isAIVoiceChatEnabled: Bool = false
     var hasUserInteractedWithText: Bool = false
     var isCurrentTextValidURL: Bool = false
     var buttonState: SwitchBarButtonState = .noButtons

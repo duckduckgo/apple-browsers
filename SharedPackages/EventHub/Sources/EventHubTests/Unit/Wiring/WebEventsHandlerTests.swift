@@ -28,8 +28,7 @@ struct WebEventsHandlerTests {
         func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {
             handledWebEvents.append((webEventData, tabID))
         }
-        func handleImmediateEvent(_ type: String, data: Encodable?) {}
-        func handleAggregatedEvent(_ type: String, data: Encodable?) {}
+        func handleNativeEvent(_ type: String, data: Encodable?) {}
         func onNavigationStarted(tabID: EventHubTabID, url: String) {}
         func onTabClosed(tabID: EventHubTabID) {}
         func onConfigChanged() {}

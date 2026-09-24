@@ -42,6 +42,10 @@ final class FloatingDomainCapsuleController {
         addressBarPosition == .top ? 1 : handoffEnd
     }
 
+    /// The pill's domain text only starts appearing below `handoffStart`, i.e. once the bar's own URL
+    /// text has fully faded. Crossfading the two reads as a single text morphing in place.
+    static let domainLabelFadeInEnd: CGFloat = 0.45
+
     /// Gap between the pill and the adjacent screen edge at rest. Used by the bottom capsule, and
     /// by the top capsule only as a fallback before the expanded frame is known (see `restCenterY`).
     static let restEdgePadding: CGFloat = 8
@@ -98,6 +102,25 @@ final class FloatingDomainCapsuleController {
         case .bottom:
             return Self.restPaddingFromPhysicalBottom(safeAreaBottom: safeAreaInsets.bottom) + capsuleHeight
         }
+    }
+
+    /// Height obscured by the pill in its *current* morph pose, measured from the top of the screen.
+    /// The resting height is only correct once the pill has fully shrunk; using it mid-morph, while the
+    /// pill is still near the expanded bar's size, lets page content slide underneath it.
+    func obscuredHeightFromTop(barsVisibilityPercent: CGFloat,
+                               safeAreaInsets: UIEdgeInsets,
+                               expandedFrame: CGRect,
+                               reduceMotion: Bool) -> CGFloat {
+        let restHeight = restObscuredHeightFromScreenEdge(
+            for: .top, safeAreaInsets: safeAreaInsets, expandedFrame: expandedFrame)
+        guard !reduceMotion, !expandedFrame.isEmpty else { return restHeight }
+
+        // Mirrors `applyMorphGeometry`, so the inset and the rendered pill can't disagree.
+        let morphP = min(1, max(0, barsVisibilityPercent) / Self.handoffStart)
+        let restCenterY = expandedFrame.minY + capsuleHeight / 2
+        let height = capsuleHeight + (expandedFrame.height - capsuleHeight) * morphP
+        let centerY = restCenterY + (expandedFrame.midY - restCenterY) * morphP
+        return max(restHeight, centerY + height / 2)
     }
 
     private let onTap: () -> Void
@@ -224,7 +247,9 @@ final class FloatingDomainCapsuleController {
             return
         }
 
-        domainLabel.alpha = reduceMotion ? 1 : max(0, min(1, 1 - p))
+        domainLabel.alpha = reduceMotion
+            ? 1
+            : 1 - FloatingUILayoutPolicy.rampedProgress(p, from: Self.domainLabelFadeInEnd, to: Self.handoffStart)
         button.isHidden = false
         button.alpha = pillAlpha
         if view.subviews.last !== button {

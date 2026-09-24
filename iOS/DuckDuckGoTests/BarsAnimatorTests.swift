@@ -354,121 +354,23 @@ class BarsAnimatorFloatingTests: XCTestCase {
         XCTAssertNil(delegate.lastAnimationDuration)
     }
 
-    // Simulates the display-link morph still catching up toward an earlier target when the next
-    // scroll frame arrives. The render hasn't caught up yet, so the new frame must retarget the
-    // running morph (animated) instead of letting a small per-frame delta cancel and snap it.
-    func testWhenCatchUpIsInFlightAndRenderedLagsThenNextUpdateRetargetsAnimated() {
-        let (sut, delegate, clock) = makeFloatingSUT()
-        let scrollView = mockTallScrollView()
-
-        scrollView.contentOffset.y = 0
-        sut.didStartScrolling(in: scrollView)
-
-        scrollView.contentOffset.y = travel * 0.6
-        clock.advance(by: 1.0 / 60.0)
-        sut.didScroll(in: scrollView)
-        XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated)
-
-        // The morph is still running toward 0.6 in ratio space (40% visibility) but has only
-        // rendered as far as 30% collapsed (70% visibility) so far.
-        delegate.isAnimatingBarsVisibility = true
-        delegate.currentBarsVisibility = 0.7
-        delegate.receivedMessages.removeAll()
-
-        scrollView.contentOffset.y = travel * 0.62
-        clock.advance(by: 1.0 / 60.0)
-        sut.didScroll(in: scrollView)
-
-        XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated, "a still-lagging catch-up should retarget animated instead of snapping")
-    }
-
-    // Once the running morph's rendered value has nearly caught up to the latest scroll ratio,
-    // 1:1 scroll tracking should resume rather than kicking off another animation for a
-    // sub-pixel residual.
-    func testWhenCatchUpIsInFlightAndRenderedIsWithinEpsilonThenTrackingResumesUnanimated() {
-        let (sut, delegate, clock) = makeFloatingSUT()
-        let scrollView = mockTallScrollView()
-
-        scrollView.contentOffset.y = 0
-        sut.didStartScrolling(in: scrollView)
-
-        scrollView.contentOffset.y = travel * 0.6
-        clock.advance(by: 1.0 / 60.0)
-        sut.didScroll(in: scrollView)
-
-        delegate.isAnimatingBarsVisibility = true
-        delegate.currentBarsVisibility = 1 - 0.59
-        delegate.receivedMessages.removeAll()
-
-        scrollView.contentOffset.y = travel * 0.61
-        clock.advance(by: 1.0 / 60.0)
-        sut.didScroll(in: scrollView)
-
-        XCTAssertFalse(delegate.lastVisibilityUpdateWasAnimated, "once rendered is within epsilon, tracking should resume 1:1 unanimated")
-    }
-
-    // The page-top clamp used to always force `animated: false`, which cancelled and snapped a
-    // running catch-up if the user dragged back above the top mid-collapse.
-    func testWhenPageTopClampFiresDuringCatchUpThenRevealIsAnimated() {
-        let (sut, delegate, clock) = makeFloatingSUT()
-        let scrollView = mockTallScrollView()
-
-        scrollView.contentOffset.y = 0
-        sut.didStartScrolling(in: scrollView)
-
-        scrollView.contentOffset.y = travel * 0.6
-        clock.advance(by: 1.0 / 60.0)
-        sut.didScroll(in: scrollView)
-        XCTAssertEqual(sut.barsState, .transitioning)
-
-        delegate.isAnimatingBarsVisibility = true
-        delegate.receivedMessages.removeAll()
-
-        scrollView.contentOffset.y = -5
-        sut.didScroll(in: scrollView)
-
-        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(1.0))
-        XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated, "the page-top clamp should retarget a running catch-up instead of snapping it")
-    }
-
-    // `revealBars` used to suppress its own animation whenever bars were already `.revealed`, even
-    // if a catch-up morph toward some intermediate value was still running underneath.
-    func testWhenFastFlickUpEndsDuringRevealCatchUpThenRevealBarsStaysAnimated() {
+    // The animator's speed limit decides pacing now, so every floating scroll update simply hands
+    // over a target. Nothing in the scroll path may reintroduce an unanimated fast path: that is
+    // what let a fast flick apply a large step in one frame and skip the morph entirely.
+    func testWhenFloatingChromeScrollsThenEveryUpdateIsHandedOverAsAnAnimatedTarget() {
         let (sut, delegate, _) = makeFloatingSUT()
-
-        sut.revealBars(animated: false)
-        XCTAssertEqual(sut.barsState, .revealed)
-
-        delegate.isAnimatingBarsVisibility = true
-        delegate.receivedMessages.removeAll()
-
-        sut.revealBars(animated: true)
-
-        XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated, "settling into an already-revealed state should still retarget a running catch-up")
-        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(1.0))
-    }
-
-    // `hideBars` already retargets correctly from a `.transitioning` state; guard against a
-    // regression since it sits right next to the `revealBars` fix above.
-    func testWhenScrollEndsDuringIntermediateCatchUpThenHideBarsRetargets() {
-        let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
 
         scrollView.contentOffset.y = 0
         sut.didStartScrolling(in: scrollView)
-        scrollView.contentOffset.y = travel * 0.6
-        clock.advance(by: 1.0 / 60.0)
-        sut.didScroll(in: scrollView)
-        XCTAssertEqual(sut.barsState, .transitioning)
 
-        delegate.isAnimatingBarsVisibility = true
-        delegate.receivedMessages.removeAll()
-
-        sut.hideBars(animated: true)
-
-        XCTAssertEqual(sut.barsState, .hidden)
-        XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated)
-        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
+        // A tiny step, a mid-travel step and a full-travel jump must all take the same path.
+        for offset in [travel * 0.02, travel * 0.5, travel] {
+            scrollView.contentOffset.y = offset
+            sut.didScroll(in: scrollView)
+            XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated, "offset \(offset) must be animated")
+            XCTAssertNil(delegate.lastAnimationDuration, "the animator owns pacing, not the caller")
+        }
     }
 
     func testWhenNewDragInterruptsSettlingThenProgressStartsFromRenderedVisibility() throws {
@@ -819,7 +721,6 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var isFloatingChromeEnabled: Bool = false
 
-    var isAnimatingBarsVisibility: Bool = false
 
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat { 0 }
 

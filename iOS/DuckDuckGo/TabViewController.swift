@@ -3588,7 +3588,7 @@ extension TabViewController: WKNavigationDelegate {
         }
 
         // Geolocation must be installed before the first document, including SERP and content-blocking-off loads.
-        // Track these additional waits so tab teardown resolves WebKit's outstanding decisions.
+        // Keep these wait tasks so tab teardown resolves WebKit's outstanding decisions.
         rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
         showProgressIndicator()
         let waitID = UUID()

@@ -73,6 +73,35 @@ final class NativeMessagingHostSessionTests: XCTestCase {
         XCTAssertTrue(waitForNoRunningHosts(), "The host process outlived stop()")
     }
 
+    func testWhenManyMessagesAreSentInABurstThenTheHostReceivesThemInOrder() throws {
+        let executable = try makeHost(named: "echo-host", script: Self.echoHostScript)
+        let session = makeSession(executable: executable)
+
+        let count = 50
+        let received = expectation(description: "every message echoed back")
+        received.expectedFulfillmentCount = count
+        var sequence: [Int] = []
+        session.messageHandler = { payload in
+            if let message = payload as? [String: Any], let index = message["index"] as? Int {
+                sequence.append(index)
+            }
+            received.fulfill()
+        }
+
+        try session.start()
+        for index in 0..<count {
+            // Each message carries a payload large enough that interleaved writes would corrupt a
+            // frame, not only reorder it.
+            try session.send(["index": index, "padding": Array(repeating: index, count: 512)] as [String: Any])
+        }
+
+        wait(for: [received], timeout: 10)
+        XCTAssertEqual(sequence, Array(0..<count), "The host saw the messages in a different order than they were sent")
+
+        session.stop()
+        XCTAssertTrue(waitForNoRunningHosts(), "The host process outlived stop()")
+    }
+
     func testWhenHostSendsAMessageAndExitsThenTheMessageArrivesBeforeTermination() throws {
         let executable = try makeHost(named: "farewell-host", script: Self.farewellHostScript)
         let session = makeSession(executable: executable)

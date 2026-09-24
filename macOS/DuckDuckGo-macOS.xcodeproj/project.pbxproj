@@ -1778,7 +1778,7 @@
 		4B9EE3222D76C83900DDC75C /* DuckPlayer in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE3212D76C83900DDC75C /* DuckPlayer */; };
 		4B9EE3242D76C84800DDC75C /* History in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE3232D76C84800DDC75C /* History */; };
 		4B9EE3262D76C85100DDC75C /* MaliciousSiteProtection in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE3252D76C85100DDC75C /* MaliciousSiteProtection */; };
-		4B9EE3282D76C85900DDC75C /* Navigation in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE3272D76C85900DDC75C /* Navigation */; };
+		4B9EE3282D76C85900DDC75C /* DDGNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE3272D76C85900DDC75C /* DDGNavigation */; };
 		4B9EE32C2D76C87100DDC75C /* Onboarding in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE32B2D76C87100DDC75C /* Onboarding */; };
 		4B9EE32E2D76C87C00DDC75C /* PageRefreshMonitor in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE32D2D76C87C00DDC75C /* PageRefreshMonitor */; };
 		4B9EE3302D76C88300DDC75C /* Persistence in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE32F2D76C88300DDC75C /* Persistence */; };
@@ -1798,7 +1798,7 @@
 		4B9EE34C2D76C98800DDC75C /* DuckPlayer in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE34B2D76C98800DDC75C /* DuckPlayer */; };
 		4B9EE34E2D76C9B900DDC75C /* History in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE34D2D76C9B900DDC75C /* History */; };
 		4B9EE3502D76C9DA00DDC75C /* MaliciousSiteProtection in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE34F2D76C9DA00DDC75C /* MaliciousSiteProtection */; };
-		4B9EE3522D76C9EB00DDC75C /* Navigation in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE3512D76C9EB00DDC75C /* Navigation */; };
+		4B9EE3522D76C9EB00DDC75C /* DDGNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE3512D76C9EB00DDC75C /* DDGNavigation */; };
 		4B9EE3562D76CA1500DDC75C /* Onboarding in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE3552D76CA1500DDC75C /* Onboarding */; };
 		4B9EE3582D76CA3500DDC75C /* PageRefreshMonitor in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE3572D76CA3500DDC75C /* PageRefreshMonitor */; };
 		4B9EE35A2D76CA4100DDC75C /* Persistence in Frameworks */ = {isa = PBXBuildFile; productRef = 4B9EE3592D76CA4100DDC75C /* Persistence */; };
@@ -7546,7 +7546,7 @@
 				7B7614392D79F85D00BC6293 /* VPNAppState in Frameworks */,
 				37EACB062EF4C3BD002C06F9 /* PrivacyConfig in Frameworks */,
 				8518F1322F74318B00B53C75 /* ScreenTimeDataCleaner in Frameworks */,
-				4B9EE3522D76C9EB00DDC75C /* Navigation in Frameworks */,
+				4B9EE3522D76C9EB00DDC75C /* DDGNavigation in Frameworks */,
 				4B9EE34E2D76C9B900DDC75C /* History in Frameworks */,
 				374EFDED2D01A1DE00B30939 /* Utilities in Frameworks */,
 				9DC70B1A2AA1FA5B005A844B /* LoginItems in Frameworks */,
@@ -7930,7 +7930,7 @@
 				4B9EE3222D76C83900DDC75C /* DuckPlayer in Frameworks */,
 				379230942D38527E0019E130 /* HistoryView in Frameworks */,
 				B6F7128129F681EB00594A45 /* QuickLookUI.framework in Frameworks */,
-				4B9EE3282D76C85900DDC75C /* Navigation in Frameworks */,
+				4B9EE3282D76C85900DDC75C /* DDGNavigation in Frameworks */,
 				7BECF1A92D4905DA00C1D691 /* PreferencesUI-macOS in Frameworks */,
 				4B9EE3142D76C7F900DDC75C /* Bookmarks in Frameworks */,
 				1E7D3C302F2232620099611C /* WebExtensions in Frameworks */,
@@ -14066,7 +14066,7 @@
 				4B9EE34B2D76C98800DDC75C /* DuckPlayer */,
 				4B9EE34D2D76C9B900DDC75C /* History */,
 				4B9EE34F2D76C9DA00DDC75C /* MaliciousSiteProtection */,
-				4B9EE3512D76C9EB00DDC75C /* Navigation */,
+				4B9EE3512D76C9EB00DDC75C /* DDGNavigation */,
 				4B9EE3552D76CA1500DDC75C /* Onboarding */,
 				4B9EE3572D76CA3500DDC75C /* PageRefreshMonitor */,
 				4B9EE3592D76CA4100DDC75C /* Persistence */,
@@ -14671,7 +14671,7 @@
 				4B9EE3212D76C83900DDC75C /* DuckPlayer */,
 				4B9EE3232D76C84800DDC75C /* History */,
 				4B9EE3252D76C85100DDC75C /* MaliciousSiteProtection */,
-				4B9EE3272D76C85900DDC75C /* Navigation */,
+				4B9EE3272D76C85900DDC75C /* DDGNavigation */,
 				4B9EE32B2D76C87100DDC75C /* Onboarding */,
 				4B9EE32D2D76C87C00DDC75C /* PageRefreshMonitor */,
 				4B9EE32F2D76C88300DDC75C /* Persistence */,
@@ -21930,9 +21930,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = MaliciousSiteProtection;
 		};
-		4B9EE3272D76C85900DDC75C /* Navigation */ = {
+		4B9EE3272D76C85900DDC75C /* DDGNavigation */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = Navigation;
+			productName = DDGNavigation;
 		};
 		4B9EE32B2D76C87100DDC75C /* Onboarding */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -22010,9 +22010,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = MaliciousSiteProtection;
 		};
-		4B9EE3512D76C9EB00DDC75C /* Navigation */ = {
+		4B9EE3512D76C9EB00DDC75C /* DDGNavigation */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = Navigation;
+			productName = DDGNavigation;
 		};
 		4B9EE3552D76CA1500DDC75C /* Onboarding */ = {
 			isa = XCSwiftPackageProductDependency;

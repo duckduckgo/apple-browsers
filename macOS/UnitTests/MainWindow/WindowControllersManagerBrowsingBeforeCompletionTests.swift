@@ -17,7 +17,7 @@
 //
 
 import FeatureFlags_macOS
-import Navigation
+import DDGNavigation
 @_spi(Testing) import PixelKit
 import SharedTestUtilities
 import XCTest

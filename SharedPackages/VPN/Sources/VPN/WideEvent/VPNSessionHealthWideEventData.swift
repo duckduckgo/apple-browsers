@@ -155,8 +155,6 @@ extension VPNSessionHealthWideEventData {
     public var connectionTestFailureActive: Bool { activeOutageFailedCheckCount > 0 }
 
     func completedOutcome() -> EventOutcome {
-        precondition(hasEnded, "A session health outcome requires an ended event")
-
         if let failureReason {
             return .failure(failureReason)
         }

@@ -330,22 +330,16 @@ jobs:
         path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
         retention-days: 1
 
-    - name: Upload xcresult files (failed, cancelled, or passed on retry)
-      if: >-
-        always() && steps.run-ui-tests.outcome != 'skipped' &&
-        (steps.run-ui-tests.outcome == 'failure' || steps.run-ui-tests.outcome == 'cancelled' ||
-        steps.check-failures.outputs.had_failures == 'true')
+    - name: Upload xcresult files (passed on retry)
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: "xcresult-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
         path: "macOS/DerivedData/Logs/Test/*.xcresult"
         retention-days: 1
 
-    - name: Upload app console log (failed, cancelled, or passed on retry)
-      if: >-
-        always() && steps.run-ui-tests.outcome != 'skipped' &&
-        (steps.run-ui-tests.outcome == 'failure' || steps.run-ui-tests.outcome == 'cancelled' ||
-        steps.check-failures.outputs.had_failures == 'true')
+    - name: Upload app console log (passed on retry)
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: "app-console-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"

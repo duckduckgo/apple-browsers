@@ -90,6 +90,7 @@ public final class AIChatQuickActionChipView: UIView {
         label.font = UIFont.daxButton()
         label.adjustsFontForContentSizeCategory = true
         label.textColor = UIColor(designSystemColor: .textPrimary)
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()

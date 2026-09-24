@@ -26,6 +26,7 @@ struct UnifiedSuggestionsView: View {
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
     let favoritesPresentation: FocusedFavoritesPresentation
+    var usesRedesignedNewTabPageLayout = false
     var showsRedesignedSearchModules = false
 
     var body: some View {
@@ -69,14 +70,19 @@ struct UnifiedSuggestionsView: View {
         // Favorites renders on top; the list is hidden + non-interactive beneath it.
         ZStack {
             listLayer
-            SuggestionsFavoritesView(presentation: favoritesPresentation,
-                                     isVisible: isShowingFavorites && !showsRedesignedSearchModules)
-            if showsRedesignedSearchModules {
+            if usesRedesignedNewTabPageLayout {
                 RedesignedFocusedSearchModulesView(favoritesModel: favoritesPresentation.viewController?.favoritesModel)
-                    // A mode switch must remove the Search modules immediately; the default
-                    // insertion/removal fade otherwise leaves them underneath the Duck.ai logo.
+                    // Keep expansion and scroll state while typing or switching modes. Only one
+                    // favorites hierarchy is mounted for the selected layout.
+                    .opacity(showsRedesignedSearchModules ? 1 : 0)
+                    .animation(nil, value: showsRedesignedSearchModules)
+                    .allowsHitTesting(showsRedesignedSearchModules)
+                    .accessibilityHidden(!showsRedesignedSearchModules)
                     .transition(.identity)
                     .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
+            } else {
+                SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: isShowingFavorites)
+                    .transition(.identity)
             }
         }
     }

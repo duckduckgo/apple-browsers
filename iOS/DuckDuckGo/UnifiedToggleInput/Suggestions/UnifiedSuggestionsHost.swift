@@ -85,6 +85,7 @@ final class UnifiedSuggestionsHost {
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             favoritesPresentation: favoritesPresentation,
+            usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
             showsRedesignedSearchModules: redesignedSearchPresentation?.showsSearchModules ?? false)
         let hosting = UIHostingController(rootView: view)
         hosting.view.backgroundColor = .clear
@@ -237,6 +238,7 @@ final class UnifiedSuggestionsHost {
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             favoritesPresentation: favoritesPresentation,
+            usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
             showsRedesignedSearchModules: showsRedesignedSearchModules ?? redesignedSearchPresentation?.showsSearchModules ?? false)
     }
 }

@@ -1,6 +1,3 @@
-/* No comment provided by engineer. */
-"%@\n%@" = "%@\n%@";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Συνεχίστε τη συνεδρία του Sync & Backup για να επαναφέρετε τους σελιδοδείκτες, τους κωδικούς πρόσβασης και άλλα στοιχεία ή συνεχίστε με μια νέα ρύθμιση.";
 
@@ -295,7 +292,7 @@
 /* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo για υπολογιστές";
 
-/* Heading overlaid on the camera on the scan-QR tab of the scan screen */
+/* Heading overlaid on the camera on the scan-QR tab */
 "sync.simplified.scan.v2.qr.heading" = "Σάρωσε τον κωδικό QR για συγχρονισμό.";
 
 /* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */

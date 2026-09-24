@@ -28,33 +28,40 @@ PACKAGE_NAME="${PACKAGE_NAME%.git}"
 
 die() { echo "::error::$1" >&2; exit 1; }
 
-is_release_version() {
-    [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+# Query GitHub for the latest release tag (strips leading "v" if present)
+get_latest_version() {
+    local tag
+    tag=$(gh api "repos/${DEP_REPO}/releases/latest" --jq '.tag_name') || die "Failed to query GitHub API"
+    echo "${tag#v}"
 }
 
-# Succeeds when version $1 is greater than version $2 (both plain X.Y.Z)
-version_gt() {
-    local a_major a_minor a_patch b_major b_minor b_patch
-    IFS=. read -r a_major a_minor a_patch <<< "$1"
-    IFS=. read -r b_major b_minor b_patch <<< "$2"
-
-    (( a_major != b_major )) && { (( a_major > b_major )); return; }
-    (( a_minor != b_minor )) && { (( a_minor > b_minor )); return; }
-    (( a_patch > b_patch ))
+# Parse semver into components: "2.8.1" -> "2 8 1"
+parse_semver() {
+    local v="${1#v}"
+    if [[ "$v" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+        echo "${BASH_REMATCH[1]} ${BASH_REMATCH[2]} ${BASH_REMATCH[3]}"
+    fi
 }
 
-# Outputs: major, minor, or patch. Assumes latest > current.
-bump_type() {
-    local cur_major cur_minor lat_major lat_minor
-    IFS=. read -r cur_major cur_minor _ <<< "$1"
-    IFS=. read -r lat_major lat_minor _ <<< "$2"
+# Compare two semver strings. Outputs: major, minor, patch, or up-to-date
+compare_versions() {
+    local cur_parts lat_parts
+    cur_parts=$(parse_semver "$1")
+    lat_parts=$(parse_semver "$2")
+
+    [[ -z "$cur_parts" || -z "$lat_parts" ]] && { echo "unknown"; return; }
+
+    read -r cur_major cur_minor cur_patch <<< "$cur_parts"
+    read -r lat_major lat_minor lat_patch <<< "$lat_parts"
 
     if (( lat_major > cur_major )); then
         echo "major"
-    elif (( lat_minor > cur_minor )); then
+    elif (( lat_major == cur_major && lat_minor > cur_minor )); then
         echo "minor"
-    else
+    elif (( lat_major == cur_major && lat_minor == cur_minor && lat_patch > cur_patch )); then
         echo "patch"
+    else
+        echo "up-to-date"
     fi
 }
 
@@ -125,30 +132,32 @@ write_pin() {
 # Releases
 # ---------------------------------------------------------------------------
 
-# Prints "<version> <tag>" for every published, non-prerelease X.Y.Z release, oldest first.
-list_releases() {
-    local tags tag ver
+# Collect release notes for all versions between current (exclusive) and latest (inclusive).
+# Outputs markdown.
+collect_release_notes() {
+    local current="$1"
+    local latest="$2"
+
+    # Fetch non-prerelease tags in order (newest first, the API default)
+    local tags
     tags=$(gh api "repos/${DEP_REPO}/releases" --paginate --jq \
-        '.[] | select(.prerelease == false and .draft == false) | .tag_name') || die "Failed to query GitHub API"
+        '[.[] | select(.prerelease == false) | .tag_name] | .[]') || return 0
+
+    local notes=""
+    local found_latest=false
 
     while IFS= read -r tag; do
-        ver="${tag#v}"
-        if is_release_version "$ver"; then
-            echo "${ver} ${tag}"
+        local ver="${tag#v}"
+
+        if [[ "$found_latest" == false ]]; then
+            [[ "$ver" == "$latest" ]] && found_latest=true || continue
         fi
-    done <<< "$tags" | sort -V
-}
 
-# Collect release notes for all releases between current (exclusive) and latest (inclusive),
-# newest first. Outputs markdown.
-collect_release_notes() {
-    local current="$1" latest="$2" releases="$3"
-    local notes="" ver tag release_json name body
+        # Stop when we reach the current version (exclusive)
+        [[ "$ver" == "$current" ]] && break
 
-    while read -r ver tag; do
-        version_gt "$ver" "$current" || continue
-        version_gt "$ver" "$latest" && continue
-
+        # Fetch individual release details
+        local release_json name body
         release_json=$(gh api "repos/${DEP_REPO}/releases/tags/${tag}") || true
         name=$(echo "$release_json" | jq -r '.name // empty')
         body=$(echo "$release_json" | jq -r '.body // empty')
@@ -157,7 +166,7 @@ collect_release_notes() {
         if [[ -n "$body" ]]; then
             notes+="$body"$'\n\n'
         fi
-    done < <(echo "$releases" | sort -r -V)
+    done <<< "$tags"
 
     echo "$notes"
 }
@@ -185,41 +194,41 @@ main() {
 
     echo "Current ${PACKAGE_NAME} version: ${current}"
 
-    is_release_version "$current" || die "Current ${PACKAGE_NAME} pin '${current}' is not a plain X.Y.Z release"
-
-    local releases latest
-    releases=$(list_releases)
-    latest=$(echo "$releases" | tail -n 1 | cut -d ' ' -f 1)
+    local latest bump_type
+    latest=$(get_latest_version)
     [[ -n "$latest" ]] || die "Could not determine latest ${PACKAGE_NAME} release"
 
     echo "Latest ${PACKAGE_NAME} version:  ${latest}"
 
-    if ! version_gt "$latest" "$current"; then
+    bump_type=$(compare_versions "$current" "$latest")
+
+    if [[ "$bump_type" == "up-to-date" ]]; then
         echo "${PACKAGE_NAME} is already up-to-date."
         echo "update_available=false" >> "$output"
         exit 0
     fi
 
-    local bump
-    bump=$(bump_type "$current" "$latest")
-    echo "Update type: ${bump}"
+    if [[ "$bump_type" == "unknown" ]]; then
+        die "Could not parse semver from current='${current}' or latest='${latest}'"
+    fi
 
+    echo "Update type: ${bump_type}"
+
+    # Collect release notes
     local release_notes
-    release_notes=$(collect_release_notes "$current" "$latest" "$releases")
+    release_notes=$(collect_release_notes "$current" "$latest")
 
     # Export outputs for the workflow
     echo "update_available=true" >> "$output"
     echo "current_version=${current}" >> "$output"
     echo "latest_version=${latest}" >> "$output"
-    echo "bump_type=${bump}" >> "$output"
+    echo "bump_type=${bump_type}" >> "$output"
 
-    # Multi-line release notes output, with a delimiter that can't appear in the notes
-    local delimiter
-    delimiter="RELEASE_NOTES_$(openssl rand -hex 16)"
+    # Multi-line release notes output
     {
-        echo "release_notes<<${delimiter}"
+        echo "release_notes<<RELEASE_NOTES_EOF"
         echo "$release_notes"
-        echo "${delimiter}"
+        echo "RELEASE_NOTES_EOF"
     } >> "$output"
 
     if [[ "${DRY_RUN:-0}" == "1" ]]; then

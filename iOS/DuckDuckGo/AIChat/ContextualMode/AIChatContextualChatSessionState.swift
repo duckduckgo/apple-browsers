@@ -119,6 +119,8 @@ final class AIChatContextualChatSessionState {
     /// Supplied from outside because the host that answers it is created after this object.
     var inputAttachmentCount: () -> Int = { 0 }
 
+    var currentPageURL: () -> URL? = { nil }
+
     // MARK: - Core State (private(set) - mutations happen via methods)
 
     private(set) var frontendState: FrontendChatState = .noChat
@@ -246,6 +248,15 @@ final class AIChatContextualChatSessionState {
     /// Whether automatic context collection is enabled
     var shouldAutoCollectContext: Bool {
         aiChatSettings.isAutomaticContextAttachmentEnabled
+    }
+
+    var searchQuickActionQuery: String? {
+        guard hasActiveChat,
+              let url = currentPageURL(),
+              url.isDuckDuckGoSearch,
+              let query = url.searchQuery,
+              !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return query
     }
 
     var showsSuggestionsStartSurface: Bool {
@@ -669,6 +680,8 @@ final class AIChatContextualChatSessionState {
 
         if isManualAttachInProgress {
             handleManualAttach(context)
+        } else if contextualChatURL?.isDuckDuckGoSearch ?? false {
+            handleSerpAction()
         } else if shouldAutoCollectContext, !suppressesAutoAttachForSelectionEntry {
             handleAutoAttach(context)
         } else if shouldOfferPageContext(for: URL(string: context.contextData.url)), !suppressesAutoAttachForSelectionEntry {
@@ -797,6 +810,11 @@ private extension AIChatContextualChatSessionState {
         isManualAttachInProgress = false
         isManualAttachFromFrontend = false
         pixelHandler.endManualAttach()
+    }
+    
+    func handleSerpAction() {
+        chipState = .placeholder
+        
     }
 
     func handleOfferedContext(_ context: AIChatPageContext) {

@@ -4609,8 +4609,6 @@ extension MainViewController: FindInPageViewDelegate {
 
 extension MainViewController: BrowserChromeDelegate {
 
-    static let morphPathLog = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "FloatingChromeMorph")
-
     struct ChromeAnimationConstants {
         static let duration = 0.1
 
@@ -4620,10 +4618,6 @@ extension MainViewController: BrowserChromeDelegate {
         /// frames; smoothstep spreads it evenly so a fast scroll still renders several blended frames.
         static let morphCollapseDuration = 0.30
         static let morphExpandDuration = 0.34
-
-        static let morphCollapseCurve = ChromeMorphAnimator.Curve.smoothstep
-
-        static let morphExpandCurve = ChromeMorphAnimator.Curve.spring(dampingRatio: 0.82, naturalFrequency: 8.84)
 
         /// The top address bar collapses into the pill a little slower than the bottom one, so the
         /// transformation reads as deliberate rather than a snap.
@@ -4660,12 +4654,6 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
-        // Start any morph scrub from where the chrome visually is (a scrub already in flight, or the
-        // last committed fraction) so an interruption resumes smoothly rather than snapping.
-        let wasMorphing = chromeMorphAnimator.isAnimating
-        let fromPercent = wasMorphing ? chromeMorphAnimator.currentValue : lastChromeVisibilityPercent
-        let wasHeadingSameWay = wasMorphing
-            && (percent >= fromPercent) == (chromeMorphAnimator.targetValue >= fromPercent)
         lastChromeVisibilityPercent = percent
 
         if percent < 1 {
@@ -4682,46 +4670,15 @@ extension MainViewController: BrowserChromeDelegate {
 
         // The floating capsule morph geometry and its chrome-alpha handoff are non-linear in
         // `percent`, so a single `UIView.animate` (which only interpolates the endpoints) skips the
-        // morph and the bars pop/slide in. Replay the exact per-frame state the scroll path applies
-        // by scrubbing `percent` with a display link instead.
+        // morph and the bars pop/slide in. Drive `percent` frame by frame instead.
         let useMorphScrub = animated
             && isFloatingCapsuleActive
             && !UIAccessibility.isReduceMotionEnabled
-            && abs(fromPercent - percent) > 0.001
-
-        // A morph already heading the same way just gets a new target: it keeps its deadline, so a
-        // fast scroll can't stretch the transition or restart it into a stall.
-        if useMorphScrub, wasHeadingSameWay {
-            Self.morphPathLog.debug("PATH=retarget pct=\(percent, privacy: .public) from=\(fromPercent, privacy: .public)")
-            chromeMorphAnimator.retarget(to: percent)
-            return
-        }
-
-        Self.morphPathLog.debug("PATH=\(useMorphScrub ? "scrub" : (animated ? "uiview" : "instant"), privacy: .public) pct=\(percent, privacy: .public) from=\(fromPercent, privacy: .public) animated=\(animated, privacy: .public) wasMorphing=\(wasMorphing, privacy: .public)")
-        chromeMorphAnimator.cancel()
 
         if useMorphScrub {
-            let isExpanding = percent > fromPercent
-            let isTopAddressBar = appSettings.currentAddressBarPosition == .top
-            let collapseDuration = isTopAddressBar
-                ? ChromeAnimationConstants.morphCollapseDuration * ChromeAnimationConstants.topMorphCollapseDurationMultiplier
-                : ChromeAnimationConstants.morphCollapseDuration
-            let baseDuration = isExpanding
-                ? ChromeAnimationConstants.morphExpandDuration
-                : collapseDuration
-            // Debug -> Slow Animations sets `window.layer.speed`, which slows every other CA
-            // animation on screen; this display-link scrub integrates wall-clock time instead, so it
-            // would otherwise run at full speed while everything around it crawls. Scale the target
-            // duration by the same factor so the morph can be inspected frame by frame like the rest.
-            let slowAnimationsScale = 1 / Double(max(view.window?.layer.speed ?? 1, 0.01))
-
-            chromeMorphAnimator.animate(
-                from: fromPercent,
-                to: percent,
-                duration: (animationDuration ?? baseDuration) * slowAnimationsScale,
-                curve: isExpanding
-                    ? ChromeAnimationConstants.morphExpandCurve
-                    : ChromeAnimationConstants.morphCollapseCurve,
+            chromeMorphAnimator.setTarget(
+                percent,
+                fullTraversalDuration: animationDuration.map(Double.init),
                 onProgress: { [weak self] progress in
                     guard let self else { return }
                     self.applyBarsVisibilityState(progress, postChromeVisibilityNotification: false)
@@ -4729,19 +4686,19 @@ extension MainViewController: BrowserChromeDelegate {
                 },
                 onComplete: { [weak self] in
                     guard let self else { return }
-                    // A retarget can move the target after this animation started, so settle on the
-                    // latest committed value rather than the one captured here.
                     let settled = self.lastChromeVisibilityPercent
                     self.applyBarsVisibilityState(settled, postChromeVisibilityNotification: settled == 0 || settled == 1)
                     self.view.layoutIfNeeded()
                 })
         } else if animated {
+            chromeMorphAnimator.jump(to: percent)
             self.view.layoutIfNeeded()
             UIView.animate(withDuration: animationDuration ?? ChromeAnimationConstants.duration) {
                 self.applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
                 self.view.layoutIfNeeded()
             }
         } else {
+            chromeMorphAnimator.jump(to: percent)
             applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
 
             if isFloatingUIEnabled, percent > 0, percent < 1 {
@@ -5046,10 +5003,6 @@ extension MainViewController: BrowserChromeDelegate {
     /// fraction.
     var currentBarsVisibility: CGFloat {
         chromeMorphAnimator.isAnimating ? chromeMorphAnimator.currentValue : lastChromeVisibilityPercent
-    }
-
-    var isAnimatingBarsVisibility: Bool {
-        chromeMorphAnimator.isAnimating
     }
 
     func restoreCurrentBarsVisibilityAfterLayoutRefresh() {

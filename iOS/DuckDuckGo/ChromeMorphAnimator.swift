@@ -18,48 +18,106 @@
 //
 
 import UIKit
-import os
 
-/// Drives a value from a start to a target over a duration using a `CADisplayLink`, emitting an
-/// eased progress each frame.
+/// Moves the chrome visibility fraction toward a target, never faster than `maxSpeed`.
 ///
-/// Used to replay the floating-UI capsule morph — the same per-frame chrome state the scroll path
-/// applies — during a discrete animated bar reveal/hide. A single `UIView.animate` can't reproduce
-/// the morph because its geometry and alpha handoff are non-linear in the visibility percent, so it
-/// only interpolates the endpoints (the bars pop or slide in). Scrubbing the percent replays the
-/// exact transition instead.
+/// That speed limit is the entire timing model. A scroll only ever assigns a new target; the
+/// animator decides nothing. Changes slower than the limit land exactly on their target each frame,
+/// so an unhurried drag still reads as direct manipulation; anything faster is paced out, so a full
+/// hide or reveal always takes `fullTraversalDuration` however hard the page was flicked.
+///
+/// There is deliberately no elapsed clock, no from/to pair and no notion of "retargeting": a new
+/// target mid-flight is a plain assignment, which is what removes the stall and snap failure modes
+/// a start-time-based animation needs explicit handling to avoid.
 final class ChromeMorphAnimator {
 
-    enum Curve {
-        case smoothstep
+    static let defaultTraversalDuration: CFTimeInterval = 0.30
 
-        case easeOutCubic
+    /// Below this the remaining distance is not worth another frame.
+    private static let settleEpsilon: CGFloat = 0.001
 
-        case spring(dampingRatio: CGFloat, naturalFrequency: CGFloat)
+    private let maxSpeed: CGFloat
+    private var legSpeed: CGFloat
 
-        func value(at t: CGFloat) -> CGFloat {
-            switch self {
-            case .smoothstep:
-                return t * t * (3 - 2 * t)
+    private var displayLink: CADisplayLink?
+    private var target: CGFloat = 1
+    private var onProgress: ((CGFloat) -> Void)?
+    private var onComplete: (() -> Void)?
 
-            case .easeOutCubic:
-                let remaining = 1 - t
-                return 1 - remaining * remaining * remaining
+    /// The value last emitted, so an interrupted morph resumes from where it visually is.
+    private(set) var currentValue: CGFloat = 1
 
-            case .spring(let dampingRatio, let naturalFrequency):
-                let decay = exp(-dampingRatio * naturalFrequency * t)
-                guard dampingRatio < 1 else {
-                    return 1 - decay * (1 + naturalFrequency * t)
-                }
-                let dampedFrequency = naturalFrequency * sqrt(1 - dampingRatio * dampingRatio)
-                let phase = dampedFrequency * t
-                return 1 - decay * (cos(phase) + (dampingRatio * naturalFrequency / dampedFrequency) * sin(phase))
-            }
-        }
+    var isAnimating: Bool { displayLink != nil }
+
+    var targetValue: CGFloat { target }
+
+    init(fullTraversalDuration: CFTimeInterval = ChromeMorphAnimator.defaultTraversalDuration) {
+        maxSpeed = 1 / CGFloat(max(fullTraversalDuration, 0.0001))
+        legSpeed = maxSpeed
     }
 
-    /// Forwards display-link ticks without the link retaining the animator, so the animator (and its
-    /// link) deallocate naturally when their owner goes away even if `cancel()` is never called.
+    /// Aims the morph at `value`. `fullTraversalDuration` overrides the pace for this leg only, for
+    /// the few callers that need a specific length (find-in-page, onboarding).
+    func setTarget(_ value: CGFloat,
+                   fullTraversalDuration: CFTimeInterval? = nil,
+                   onProgress: @escaping (CGFloat) -> Void,
+                   onComplete: @escaping () -> Void) {
+        target = value
+        legSpeed = fullTraversalDuration.map { 1 / CGFloat(max($0, 0.0001)) } ?? maxSpeed
+        self.onProgress = onProgress
+        self.onComplete = onComplete
+
+        guard abs(target - currentValue) > Self.settleEpsilon else {
+            settle()
+            return
+        }
+        guard displayLink == nil else { return }
+
+        let link = CADisplayLink(target: WeakDisplayLinkProxy(target: self), selector: #selector(WeakDisplayLinkProxy.tick(_:)))
+        link.add(to: .main, forMode: .common)
+        displayLink = link
+    }
+
+    /// Applies `value` with no motion, abandoning anything in flight. For callers that supersede the
+    /// morph entirely rather than redirecting it.
+    func jump(to value: CGFloat) {
+        cancel()
+        currentValue = value
+        target = value
+    }
+
+    /// Stops motion without firing completion. Safe to call when idle.
+    func cancel() {
+        displayLink?.invalidate()
+        displayLink = nil
+        onProgress = nil
+        onComplete = nil
+    }
+
+    private func handleTick(_ link: CADisplayLink) {
+        // The frame's own duration, so there is no start timestamp to seed, carry over or go stale.
+        let frameDuration = CGFloat(max(link.targetTimestamp - link.timestamp, 0))
+        let remaining = target - currentValue
+        let maxStep = legSpeed * frameDuration
+
+        guard abs(remaining) > maxStep else {
+            settle()
+            return
+        }
+        currentValue += remaining < 0 ? -maxStep : maxStep
+        onProgress?(currentValue)
+    }
+
+    private func settle() {
+        currentValue = target
+        let progress = onProgress
+        let completion = onComplete
+        cancel()
+        progress?(currentValue)
+        completion?()
+    }
+
+    /// Forwards ticks without the link retaining the animator.
     private final class WeakDisplayLinkProxy {
         weak var target: ChromeMorphAnimator?
 
@@ -70,113 +128,6 @@ final class ChromeMorphAnimator {
         @objc func tick(_ link: CADisplayLink) {
             target?.handleTick(link)
         }
-    }
-
-    private static let morphLog = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "FloatingChromeMorph")
-    private var sequenceStart: CFTimeInterval = 0
-    private var tickCount = 0
-
-    private var displayLink: CADisplayLink?
-    private var startTimestamp: CFTimeInterval = 0
-    private var hasStartTimestamp = false
-    private var duration: CFTimeInterval = 0
-    private var fromValue: CGFloat = 0
-    private var toValue: CGFloat = 0
-    private var onProgress: ((CGFloat) -> Void)?
-    private var onComplete: (() -> Void)?
-    private var curve: Curve = .smoothstep
-
-    /// The last value emitted, so an interrupted animation can resume from where it visually is
-    /// rather than snapping back to a stale endpoint.
-    private(set) var currentValue: CGFloat = 1
-
-    var isAnimating: Bool {
-        displayLink != nil
-    }
-
-    /// Starts scrubbing `from` -> `to` over `duration`, calling `onProgress` each frame (including
-    /// immediately with `from`) and `onComplete` once settled. A zero/negative duration applies the
-    /// target synchronously. Any in-flight animation is cancelled first.
-    func animate(from: CGFloat,
-                 to: CGFloat,
-                 duration: CFTimeInterval,
-                 curve: Curve = .smoothstep,
-                 onProgress: @escaping (CGFloat) -> Void,
-                 onComplete: @escaping () -> Void) {
-        cancel()
-
-        guard duration > 0 else {
-            currentValue = to
-            onProgress(to)
-            onComplete()
-            return
-        }
-
-        self.fromValue = from
-        self.toValue = to
-        self.duration = duration
-        self.curve = curve
-        self.onProgress = onProgress
-        self.onComplete = onComplete
-        currentValue = from
-        hasStartTimestamp = false
-        sequenceStart = CACurrentMediaTime()
-        tickCount = 0
-        Self.morphLog.debug("ANIMATE from=\(from, privacy: .public) to=\(to, privacy: .public) dur=\(duration, privacy: .public)")
-
-        let link = CADisplayLink(target: WeakDisplayLinkProxy(target: self), selector: #selector(WeakDisplayLinkProxy.tick(_:)))
-        link.add(to: .main, forMode: .common)
-        displayLink = link
-
-        // Apply the starting state immediately; the elapsed clock starts on the first tick.
-        onProgress(from)
-    }
-
-    /// The value a running animation is heading toward.
-    var targetValue: CGFloat { toValue }
-
-    /// Redirects a running animation to a new target, keeping its clock and duration so it still
-    /// lands on the original deadline rather than restarting. No-op when not animating.
-    func retarget(to newValue: CGFloat) {
-        guard isAnimating else { return }
-        Self.morphLog.debug("RETARGET \(self.toValue, privacy: .public) -> \(newValue, privacy: .public) at value=\(self.currentValue, privacy: .public)")
-        toValue = newValue
-    }
-
-    /// Stops the animation without firing completion. Safe to call when not animating.
-    func cancel() {
-        displayLink?.invalidate()
-        displayLink = nil
-        onProgress = nil
-        onComplete = nil
-    }
-
-    private func handleTick(_ link: CADisplayLink) {
-        // Start the clock on the first tick (the starting state was already applied in `animate`),
-        // so the animation runs for the full requested duration from here.
-        guard hasStartTimestamp else {
-            startTimestamp = link.timestamp
-            hasStartTimestamp = true
-            return
-        }
-
-        let elapsed = link.timestamp - startTimestamp
-        let t = max(0, min(1, duration > 0 ? elapsed / duration : 1))
-
-        tickCount += 1
-        if t >= 1 {
-            Self.morphLog.debug("COMPLETE at=\(self.toValue, privacy: .public) wall=\(CACurrentMediaTime() - self.sequenceStart, privacy: .public) ticks=\(self.tickCount, privacy: .public)")
-            currentValue = toValue
-            let completion = onComplete
-            cancel()
-            completion?()
-            return
-        }
-
-        let value = fromValue + (toValue - fromValue) * curve.value(at: CGFloat(t))
-        Self.morphLog.debug("TICK t=\(t, privacy: .public) v=\(value, privacy: .public)")
-        currentValue = value
-        onProgress?(value)
     }
 
     deinit {

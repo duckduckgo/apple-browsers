@@ -68,7 +68,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let onboardingFlowProvider: OnboardingFlowProviding
 
     private let newTabPageViewModel: NewTabPageViewModel
-    private let messagesModel: NewTabPageMessagesModel
+    let messagesModel: NewTabPageMessagesModel
     let favoritesModel: FavoritesViewModel
     private let associatedTab: Tab
 

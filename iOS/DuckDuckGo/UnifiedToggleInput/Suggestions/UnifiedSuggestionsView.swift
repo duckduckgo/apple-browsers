@@ -71,7 +71,8 @@ struct UnifiedSuggestionsView: View {
         ZStack {
             listLayer
             if usesRedesignedNewTabPageLayout {
-                RedesignedFocusedSearchModulesView(favoritesModel: favoritesPresentation.viewController?.favoritesModel)
+                RedesignedFocusedSearchModulesView(favoritesModel: favoritesPresentation.viewController?.favoritesModel,
+                                                   messagesModel: favoritesPresentation.viewController?.messagesModel)
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.
                     .opacity(showsRedesignedSearchModules ? 1 : 0)

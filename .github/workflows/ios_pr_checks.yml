@@ -202,7 +202,6 @@ jobs:
         xcrun simctl runtime list
         xcrun simctl runtime match list
 
-
     - name: Build and test
       id: run-unit-tests
       env:

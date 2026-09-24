@@ -77,7 +77,6 @@ jobs:
         xcrun simctl runtime list
         xcrun simctl runtime match list
 
-
     - name: Run UI test
       run: |
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
@@ -99,7 +98,7 @@ jobs:
 
     - name: Upload UI test diagnostics
       if: failure() || cancelled()
-      uses: actions/upload-artifact@v6
+      uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: ios-ui-test-diagnostics
         path: |

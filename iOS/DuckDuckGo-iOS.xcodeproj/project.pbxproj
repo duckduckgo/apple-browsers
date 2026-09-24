@@ -4304,6 +4304,7 @@
 		235670BC1070E414F1E7544E /* Application */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Application; sourceTree = "<group>"; };
 		3B46025F7CA04F35950FEBBD /* History */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = History; sourceTree = "<group>"; };
 		6F1BCF03304ED17200FC56CC /* NewTabPage */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = NewTabPage; sourceTree = "<group>"; };
+		962012D03065654300A1B6A2 /* Main */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Main; sourceTree = "<group>"; };
 		965AF9723046C6170061F70C /* Autoplay */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Autoplay; sourceTree = "<group>"; };
 		965AF9823046C6210061F70C /* BrowsingMenu */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = BrowsingMenu; sourceTree = "<group>"; };
 		965AF9923046C6260061F70C /* Configuration */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Configuration; sourceTree = "<group>"; };
@@ -4343,7 +4344,6 @@
 		B0BBF14930501D6600BEC3C8 /* DefaultBrowserPiPVideo */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = DefaultBrowserPiPVideo; sourceTree = "<group>"; };
 		C9E9F82404DB4D0A9D6CA59F /* WebsiteData */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = WebsiteData; sourceTree = "<group>"; };
 		E5DD6A2E95504643A9EF50AA /* UITests */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (FF204FAADFC540C083B7C6C3 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = UITests; sourceTree = "<group>"; };
-		9BE38E52BC262380191F45B3 /* Main */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Main; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -5943,7 +5943,7 @@
 				4B6D43062F0F6988006AB68F /* Info-Experimental.plist */,
 				98B001B1251EABB40090EC07 /* InfoPlist.strings */,
 				85DFEDEB24C7CC7600973FE7 /* iPad */,
-				9BE38E52BC262380191F45B3 /* Main */,
+				962012D03065654300A1B6A2 /* Main */,
 				96F9308430406AF5002F612A /* MaliciousSiteProtection */,
 				96F9304730406AD9002F612A /* ModalPromptCoordination */,
 				965AF9BA3046C64E0061F70C /* MarketplaceAdPostback */,
@@ -9323,11 +9323,11 @@
 				C1EF5B2D2CC0457B002980E6 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				9BE38E52BC262380191F45B3 /* Main */,
 				1E01F8AB1D5EE5C631F73260 /* Downloads */,
 				235670BC1070E414F1E7544E /* Application */,
 				3B46025F7CA04F35950FEBBD /* History */,
 				6F1BCF03304ED17200FC56CC /* NewTabPage */,
+				962012D03065654300A1B6A2 /* Main */,
 				965AF9723046C6170061F70C /* Autoplay */,
 				965AF9823046C6210061F70C /* BrowsingMenu */,
 				965AF9923046C6260061F70C /* Configuration */,

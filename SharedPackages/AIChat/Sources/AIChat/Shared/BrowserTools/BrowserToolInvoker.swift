@@ -25,15 +25,25 @@ public final class BrowserToolInvoker {
 
     private let catalog: BrowserToolCatalog
     private let configuration: BrowserToolsConfiguration
+    private let permissions: BrowserToolPermissionStoring
+    private let elicitations: AIChatElicitationCoordinator
 
-    public init(catalog: BrowserToolCatalog, configuration: BrowserToolsConfiguration) {
+    public init(catalog: BrowserToolCatalog,
+                configuration: BrowserToolsConfiguration,
+                permissions: BrowserToolPermissionStoring,
+                elicitations: AIChatElicitationCoordinator) {
         self.catalog = catalog
         self.configuration = configuration
+        self.permissions = permissions
+        self.elicitations = elicitations
     }
 
+    /// - Parameter elicitationPusher: where a permission prompt for this call is delivered. `nil`
+    ///   means it cannot be, so an `ask` tool completes as `cancelled`.
     public func invoke(toolNamed name: String,
                        arguments: JSONValue?,
-                       context: BrowserToolCallContext) async -> BrowserToolResult {
+                       context: BrowserToolCallContext,
+                       elicitationPusher: (any AIChatElicitationPushing)?) async -> BrowserToolResult {
         guard configuration.isEnabled else { return .failure(.unavailable) }
 
         // Covers an unknown name and a disabled sub-feature alike: the front end learns only that
@@ -44,8 +54,50 @@ public final class BrowserToolInvoker {
         // call that can never succeed here cannot persist a decision.
         guard !context.isBurner else { return .failure(.unavailable) }
 
-        assert(tool.permissionMode == .auto, "Ask-mode tools need consent, which does not exist yet")
+        switch permissions.effectiveState(for: tool) {
+        case .allow:
+            break
+        case .deny:
+            return .failure(.denied)
+        case .ask:
+            guard context.supportsElicitationForm else { return .failure(.elicitationUnsupported) }
+            let answer = await elicitations.elicit(toolName: tool.name,
+                                                   message: tool.permissionReason,
+                                                   requestedSchema: BrowserToolPermissionElicitation.choiceSchema,
+                                                   ownerTabID: context.ownerTabID,
+                                                   pusher: elicitationPusher)
+            if let refusal = apply(answer, forToolNamed: tool.name) {
+                return .failure(refusal)
+            }
+        }
 
         return await tool.execute(arguments: arguments, context: context)
+    }
+
+    /// Records Always/Never and says whether the call may proceed. Anything unexpected is a refusal,
+    /// so nothing here can let a call through by accident.
+    private func apply(_ answer: MCPElicitationResult, forToolNamed name: String) -> BrowserToolFailure? {
+        switch MCPElicitationAction(rawValue: answer.action) {
+        case .decline:
+            return .denied
+        case .cancel, .none:
+            return .cancelled
+        case .accept:
+            guard let choice = answer.content?["choice"]?.stringValue, !choice.isEmpty else {
+                return .invalidArguments
+            }
+            switch BrowserToolPermissionChoice(rawValue: choice) {
+            case .allowOnce:
+                return nil
+            case .alwaysAllow:
+                permissions.setState(.allow, forToolNamed: name)
+                return nil
+            case .neverAllow:
+                permissions.setState(.deny, forToolNamed: name)
+                return .denied
+            case .none:
+                return .invalidPermissionChoice
+            }
+        }
     }
 }

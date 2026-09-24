@@ -24,7 +24,7 @@ import BrowserServicesKit
 import SubscriptionTestingUtilities
 import Subscription
 @testable import DuckDuckGo_Privacy_Browser
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 
 @MainActor
 final class NetworkProtectionNavBarButtonModelTests: XCTestCase {

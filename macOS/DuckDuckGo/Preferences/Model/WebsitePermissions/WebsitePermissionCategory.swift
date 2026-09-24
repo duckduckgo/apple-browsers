@@ -54,17 +54,6 @@ enum WebsitePermissionCategory: CaseIterable, Hashable, Identifiable {
         allCases.first { $0.contains(permissionType) }
     }
 
-    /// The categories the pane lists. Autoplay only appears while its feature flag is on, since
-    /// nothing applies the saved decisions otherwise.
-    static func visibleCases(featureFlagger: FeatureFlagger) -> [WebsitePermissionCategory] {
-        allCases.filter { $0.isVisible(featureFlagger: featureFlagger) }
-    }
-
-    func isVisible(featureFlagger: FeatureFlagger) -> Bool {
-        guard self == .autoplay else { return true }
-        return featureFlagger.isFeatureOn(.autoplayPolicy)
-    }
-
     /// Copy for one of this category's decisions.
     func decisionTitle(for decision: PersistedPermissionDecision) -> String {
         self == .autoplay ? decision.autoplayTitle : decision.websitePermissionsTitle

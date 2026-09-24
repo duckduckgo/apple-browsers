@@ -19,6 +19,7 @@
 import Combine
 import FeatureFlags_macOS
 import Foundation
+import PixelKit
 import PrivacyConfig
 
 @MainActor
@@ -33,6 +34,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
     private let permissionManager: PermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
     private let defaults: WebsitePermissionDefaultsProtocol
+    private let pixelFiring: PixelFiring?
     private var permissionsCancellable: AnyCancellable?
     private var latestEntries = [WebsitePermissionEntry]()
 
@@ -40,12 +42,16 @@ final class WebsitePermissionsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow)
     }
 
-    init(permissionManager: PermissionManagerProtocol,
-         featureFlagger: FeatureFlagger,
-         defaults: WebsitePermissionDefaultsProtocol) {
+    init(
+        permissionManager: PermissionManagerProtocol,
+        featureFlagger: FeatureFlagger,
+        defaults: WebsitePermissionDefaultsProtocol,
+        pixelFiring: PixelFiring? = PixelKit.shared
+    ) {
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
         self.defaults = defaults
+        self.pixelFiring = pixelFiring
     }
 
     // MARK: - Public
@@ -59,18 +65,22 @@ final class WebsitePermissionsViewModel: ObservableObject {
             guard row.permissionType.isUserEditable(forDomain: row.domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled),
                   decision != row.decision else { return }
             permissionManager.setPermission(decision, forDomain: row.domain, permissionType: row.permissionType)
+            pixelFiring?.fire(PermissionPixel.settingsSiteChanged(permissionType: row.permissionType, to: decision), frequency: .dailyAndCount)
 
         case .removeRecent(let row):
             guard row.permissionType.isUserEditable(forDomain: row.domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled) else { return }
             permissionManager.removePermission(forDomain: row.domain, permissionType: row.permissionType)
+            pixelFiring?.fire(PermissionPixel.settingsSiteRemoved(permissionType: row.permissionType), frequency: .dailyAndCount)
 
         case .openDetail(let category):
             viewState.detailModel = WebsitePermissionDetailViewModel(
                 initialState: makeDetailInitialState(for: category),
                 permissionManager: permissionManager,
                 featureFlagger: featureFlagger,
-                defaults: defaults
+                defaults: defaults,
+                pixelFiring: pixelFiring
             )
+            pixelFiring?.fire(PermissionPixel.settingsDetailOpened(category: category), frequency: .dailyAndCount)
 
         case .closeDetail:
             viewState.detailModel = nil
@@ -144,7 +154,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
     }
 
     private var visibleCategories: [WebsitePermissionCategory] {
-        WebsitePermissionCategory.visibleCases(featureFlagger: featureFlagger)
+        WebsitePermissionCategory.allCases
     }
 
     private func makeRows(from entries: [WebsitePermissionEntry]) -> [WebsitePermissionsViewState.Row] {

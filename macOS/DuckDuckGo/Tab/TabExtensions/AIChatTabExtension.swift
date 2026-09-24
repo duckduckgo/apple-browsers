@@ -315,6 +315,10 @@ extension AIChatTabExtension: NavigationResponder {
             featureDiscovery.setWasUsedBefore(.aiChat)
         }
     }
+
+    func didCommit(_ navigation: Navigation) {
+        aiChatUserScript?.handler.resetConversationSourceForNewDocument()
+    }
 }
 
 // MARK: - Native Storage Bootstrap Refresh

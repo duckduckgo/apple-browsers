@@ -1330,7 +1330,7 @@ extension Tab {
 private extension Tab {
 
     func refreshAutoplayState(videoPlaybackDetected: Bool, videoAutoplayDetected: Bool) {
-        let isEligible = featureFlagger.isFeatureOn(.autoplayPolicy) && content.urlForWebView?.isHttpOrHttps == true
+        let isEligible = content.urlForWebView?.isHttpOrHttps == true
 
         // Please do note that both conditions (`PlaybackDetected` + `AutoplayDetected`) may not necessarily be both true simultaneously
         // Our Autoplay Policy may prevent Playback, but we might detect Videos with Autoplay.

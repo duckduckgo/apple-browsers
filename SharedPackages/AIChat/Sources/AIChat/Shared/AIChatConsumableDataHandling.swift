@@ -113,6 +113,10 @@ public enum AIChatConversationSource: String, CaseIterable {
 
     case settings = "settings"
 
+    /// No native surface opens this one; it is read from the funnel marker duckduckgo.com puts on
+    /// the chat URL when its homepage hands a prompt over (`URL.isDuckAIOpenedFromHomepage`).
+    case duckduckgoHomepage = "duckduckgo-homepage"
+
     /// Named for the attribution gap it measures, not "direct": the app cannot tell deliberate
     /// direct navigation from an entry point nobody has instrumented yet.
     case unattributed = "unattributed"

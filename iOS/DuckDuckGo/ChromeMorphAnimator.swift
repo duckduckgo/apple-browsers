@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import os
 
 /// Drives a value from a start to a target over a duration using a `CADisplayLink`, emitting an
 /// eased progress each frame.
@@ -71,14 +72,13 @@ final class ChromeMorphAnimator {
         }
     }
 
+    private static let morphLog = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "FloatingChromeMorph")
+    private var sequenceStart: CFTimeInterval = 0
+    private var tickCount = 0
+
     private var displayLink: CADisplayLink?
     private var startTimestamp: CFTimeInterval = 0
     private var hasStartTimestamp = false
-    /// Timestamp of the last tick actually processed, so a retarget mid-flight (`animate` called
-    /// again while a link is already running) can carry the clock over instead of restarting it —
-    /// otherwise the new link's first tick only records a timestamp and returns, and a caller that
-    /// retargets every frame (e.g. scroll tracking) would never see `currentValue` advance.
-    private var lastTickTimestamp: CFTimeInterval?
     private var duration: CFTimeInterval = 0
     private var fromValue: CGFloat = 0
     private var toValue: CGFloat = 0
@@ -103,9 +103,6 @@ final class ChromeMorphAnimator {
                  curve: Curve = .smoothstep,
                  onProgress: @escaping (CGFloat) -> Void,
                  onComplete: @escaping () -> Void) {
-        // A retarget carries the clock over (see `lastTickTimestamp`); read it before `cancel()`
-        // tears down the current link.
-        let carriedOverTimestamp = displayLink != nil ? lastTickTimestamp : nil
         cancel()
 
         guard duration > 0 else {
@@ -122,21 +119,28 @@ final class ChromeMorphAnimator {
         self.onProgress = onProgress
         self.onComplete = onComplete
         currentValue = from
-
-        if let carriedOverTimestamp {
-            startTimestamp = carriedOverTimestamp
-            hasStartTimestamp = true
-        } else {
-            hasStartTimestamp = false
-        }
+        hasStartTimestamp = false
+        sequenceStart = CACurrentMediaTime()
+        tickCount = 0
+        Self.morphLog.debug("ANIMATE from=\(from, privacy: .public) to=\(to, privacy: .public) dur=\(duration, privacy: .public)")
 
         let link = CADisplayLink(target: WeakDisplayLinkProxy(target: self), selector: #selector(WeakDisplayLinkProxy.tick(_:)))
         link.add(to: .main, forMode: .common)
         displayLink = link
 
-        // Apply the starting state immediately; the elapsed clock starts on the first tick (or,
-        // for a carried-over retarget, continues from where the previous run's clock left off).
+        // Apply the starting state immediately; the elapsed clock starts on the first tick.
         onProgress(from)
+    }
+
+    /// The value a running animation is heading toward.
+    var targetValue: CGFloat { toValue }
+
+    /// Redirects a running animation to a new target, keeping its clock and duration so it still
+    /// lands on the original deadline rather than restarting. No-op when not animating.
+    func retarget(to newValue: CGFloat) {
+        guard isAnimating else { return }
+        Self.morphLog.debug("RETARGET \(self.toValue, privacy: .public) -> \(newValue, privacy: .public) at value=\(self.currentValue, privacy: .public)")
+        toValue = newValue
     }
 
     /// Stops the animation without firing completion. Safe to call when not animating.
@@ -153,15 +157,15 @@ final class ChromeMorphAnimator {
         guard hasStartTimestamp else {
             startTimestamp = link.timestamp
             hasStartTimestamp = true
-            lastTickTimestamp = link.timestamp
             return
         }
 
-        lastTickTimestamp = link.timestamp
         let elapsed = link.timestamp - startTimestamp
         let t = max(0, min(1, duration > 0 ? elapsed / duration : 1))
 
+        tickCount += 1
         if t >= 1 {
+            Self.morphLog.debug("COMPLETE at=\(self.toValue, privacy: .public) wall=\(CACurrentMediaTime() - self.sequenceStart, privacy: .public) ticks=\(self.tickCount, privacy: .public)")
             currentValue = toValue
             let completion = onComplete
             cancel()
@@ -170,6 +174,7 @@ final class ChromeMorphAnimator {
         }
 
         let value = fromValue + (toValue - fromValue) * curve.value(at: CGFloat(t))
+        Self.morphLog.debug("TICK t=\(t, privacy: .public) v=\(value, privacy: .public)")
         currentValue = value
         onProgress?(value)
     }

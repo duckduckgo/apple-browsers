@@ -58,11 +58,11 @@ enum FloatingUILayoutPolicy {
         return ((percent - start) / (end - start)).clamped(to: 0...1)
     }
 
-    /// The bottom toolbar's button-row collapse progress: fully collapsed by `handoffEnd`, so the
-    /// toolbar has already reached its one-row (pill) height *before* the domain pill fades in over
-    /// `[handoffStart, handoffEnd]` — otherwise the pill would sit on top of a still-two-row toolbar.
-    static func toolbarButtonRowCollapseProgress(barsVisibilityPercent: CGFloat, handoffEnd: CGFloat) -> CGFloat {
-        1 - rampedProgress(barsVisibilityPercent, from: handoffEnd, to: 1)
+    /// The bottom toolbar's button-row collapse progress, ramped over `[collapseStart, 1]`. The band
+    /// must stay wide: it carries a ~56pt height change, so a narrow one turns an ordinary unanimated
+    /// scroll frame into a visible jolt before the morph even starts.
+    static func toolbarButtonRowCollapseProgress(barsVisibilityPercent: CGFloat, collapseStart: CGFloat) -> CGFloat {
+        1 - rampedProgress(barsVisibilityPercent, from: collapseStart, to: 1)
     }
 
     /// Height obscured by the visible bottom chrome, measured from the web view container's bottom edge

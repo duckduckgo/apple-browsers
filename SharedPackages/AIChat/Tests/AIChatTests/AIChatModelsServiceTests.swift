@@ -18,7 +18,7 @@
 
 import XCTest
 import AIChat
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 import Subscription
 
 @MainActor

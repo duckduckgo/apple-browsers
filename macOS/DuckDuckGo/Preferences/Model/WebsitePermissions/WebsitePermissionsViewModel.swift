@@ -144,7 +144,7 @@ final class WebsitePermissionsViewModel: ObservableObject {
     }
 
     private var visibleCategories: [WebsitePermissionCategory] {
-        WebsitePermissionCategory.visibleCases(featureFlagger: featureFlagger)
+        WebsitePermissionCategory.allCases
     }
 
     private func makeRows(from entries: [WebsitePermissionEntry]) -> [WebsitePermissionsViewState.Row] {

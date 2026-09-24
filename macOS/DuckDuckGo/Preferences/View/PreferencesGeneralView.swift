@@ -370,18 +370,16 @@ extension Preferences {
                 }
 
                 // SECTION: Permissions
-                if featureFlagger.isFeatureOn(.autoplayPolicy) {
-                    PreferencePaneSection(UserText.permissionsSection) {
-                        PreferencePaneSubSection {
-                            if featureFlagger.isFeatureOn(.websitePermissionsSettings) {
-                                autoplayMovedNotice
-                            } else {
-                                autoplayPicker
-                            }
+                PreferencePaneSection(UserText.permissionsSection) {
+                    PreferencePaneSubSection {
+                        if featureFlagger.isFeatureOn(.websitePermissionsSettings) {
+                            autoplayMovedNotice
+                        } else {
+                            autoplayPicker
                         }
                     }
-                    .id(PreferencesScrollAnchor.permissions)
                 }
+                .id(PreferencesScrollAnchor.permissions)
             }
             .sheet(isPresented: isPresentingAddToDockDemoVideo) {
                 PreferencesVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,

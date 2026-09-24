@@ -65,6 +65,7 @@ final class AIChatTabChatHeaderView: UIView {
         /// `nil` until the first subscription-state check resolves, so we can render a blank
         /// title slot rather than flashing "Free Plan" before flipping to "Duck.ai".
         var isSubscriptionActive: Bool?
+        var allowsSubscriptionUpsell = true
         /// Non-nil while the voice surface is on screen; the value is the colour to paint the header.
         var voiceBackgroundColor: UIColor?
         /// Hides the free/upgrade title during the Duck.ai fire onboarding step.
@@ -85,7 +86,7 @@ final class AIChatTabChatHeaderView: UIView {
 
     /// `nil` subscription state means unresolved, not free — hence the explicit `== false`.
     private var isTitleContainerVisible: Bool {
-        !state.isOnboardingLocked && state.isSubscriptionActive == false
+        !state.isOnboardingLocked && state.isSubscriptionActive == false && state.allowsSubscriptionUpsell
     }
 
     private var isTitleHolderVisible: Bool {
@@ -391,8 +392,15 @@ final class AIChatTabChatHeaderView: UIView {
         }
     }
 
-    func configure(isSubscriptionActive: Bool) {
-        state.isSubscriptionActive = isSubscriptionActive
+    func configure(isSubscriptionActive: Bool, allowsSubscriptionUpsell: Bool = true) {
+        var updatedState = state
+        updatedState.isSubscriptionActive = isSubscriptionActive
+        updatedState.allowsSubscriptionUpsell = allowsSubscriptionUpsell
+        state = updatedState
+    }
+
+    func setAllowsSubscriptionUpsell(_ allowed: Bool) {
+        state.allowsSubscriptionUpsell = allowed
     }
 
     func setContainerVisible(_ visible: Bool) {
@@ -425,7 +433,9 @@ final class AIChatTabChatHeaderView: UIView {
     private func applyState() {
         // During fire onboarding, hide the free/upgrade title to avoid distraction.
         titleContainer.isHidden = !isTitleContainerVisible
-        paidTitleStack.isHidden = state.isSubscriptionActive != true
+        let showsNeutralTitle = state.isSubscriptionActive == false && !state.allowsSubscriptionUpsell && !state.isOnboardingLocked
+        paidTitleStack.isHidden = state.isSubscriptionActive != true && !showsNeutralTitle
+        titleContainer.accessibilityElementsHidden = !isTitleContainerVisible
         let voiceActive = state.voiceBackgroundColor != nil
         applyVoiceSessionAppearance(state.voiceBackgroundColor)
         titleHolder.isHidden = !isTitleHolderVisible
@@ -545,7 +555,8 @@ final class AIChatTabChatHeaderView: UIView {
 
         upgradeLabel.accessibilityCustomActions = [
             UIAccessibilityCustomAction(name: UserText.aiChatHeaderUpgrade) { [weak self] _ in
-                self?.upgradeTapped()
+                guard let self, self.isUpgradePlateVisible else { return false }
+                self.upgradeTapped()
                 return true
             }
         ]
@@ -581,7 +592,7 @@ final class AIChatTabChatHeaderView: UIView {
     @objc private func newChatTapped() { delegate?.aiChatTabChatHeaderDidTapNewChat() }
     @objc private func tabSwitcherTapped() { delegate?.aiChatTabChatHeaderDidTapTabSwitcher() }
     @objc private func upgradeTapped() {
-        if state.isSubscriptionActive == false {
+        if isUpgradePlateVisible {
             delegate?.aiChatTabChatHeaderDidTapUpgrade()
         }
     }

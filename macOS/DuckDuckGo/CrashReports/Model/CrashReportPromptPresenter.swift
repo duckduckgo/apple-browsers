@@ -19,23 +19,32 @@
 import Cocoa
 import CrashReportingShared
 
+@MainActor
 final class CrashReportPromptPresenter: NSObject {
+
+    private enum Constants {
+        static let initialContentRect = NSRect(x: 0, y: 0, width: 550, height: 427)
+    }
+
     enum Response: Equatable {
         case allow, deny
     }
 
+    let viewController = CrashReportPromptViewController()
+
     lazy var windowController: NSWindowController = {
-        let storyboard = NSStoryboard(name: "CrashReports", bundle: nil)
-        return storyboard.instantiateController(identifier: "CrashReportPromptWindowController")
+        let window = NSWindow(contentRect: Constants.initialContentRect,
+                              styleMask: [.titled, .closable],
+                              backing: .buffered,
+                              defer: true)
+        // The storyboard hard-coded an unlocalized "Problem Report". Reusing the feedback form's
+        // title avoids a new Smartling job for a string that is already translated.
+        window.title = UserText.reportProblemFormTitle
+        window.autorecalculatesKeyViewLoop = false
+        window.contentViewController = viewController
+        return NSWindowController(window: window)
     }()
 
-    var viewController: CrashReportPromptViewController {
-        // swiftlint:disable force_cast
-        return windowController.contentViewController as! CrashReportPromptViewController
-        // swiftlint:enable force_cast
-    }
-
-    @MainActor
     func showPrompt(for crashReport: CrashReportPresenting) async -> Response {
         await withCheckedContinuation { continuation in
             self.continuation = continuation

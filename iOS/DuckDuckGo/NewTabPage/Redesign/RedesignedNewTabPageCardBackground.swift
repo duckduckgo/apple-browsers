@@ -22,20 +22,31 @@ import SwiftUI
 
 /// Shared raised surface for controls on the redesigned New Tab Page.
 struct RedesignedNewTabPageCardBackground: View {
-    var cornerRadius: CGFloat = 28
+    var cornerRadius: CGFloat = Metrics.cornerRadius
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         return shape
             .fill(Color(designSystemColor: .surfaceSecondary))
-            .overlay(shape.strokeBorder(Color(designSystemColor: .shadowPrimary), lineWidth: 1))
+            .overlay(shape.strokeBorder(Color(designSystemColor: .shadowPrimary), lineWidth: Metrics.borderWidth))
             .overlay(
                 shape
-                    .inset(by: 0.5)
-                    .stroke(Color(designSystemColor: .highlightDecoration), lineWidth: 1)
+                    .inset(by: Metrics.highlightInset)
+                    .stroke(Color(designSystemColor: .highlightDecoration), lineWidth: Metrics.highlightWidth)
                     .mask(LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .center))
             )
-            .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 4, y: 2)
-            .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 16, y: 8)
+            .shadow(color: Color(designSystemColor: .shadowSecondary), radius: Metrics.nearShadowRadius, y: Metrics.nearShadowOffset)
+            .shadow(color: Color(designSystemColor: .shadowSecondary), radius: Metrics.farShadowRadius, y: Metrics.farShadowOffset)
     }
+}
+
+private enum Metrics {
+    static let cornerRadius: CGFloat = 28
+    static let borderWidth: CGFloat = 1
+    static let highlightInset: CGFloat = 0.5
+    static let highlightWidth: CGFloat = 1
+    static let nearShadowRadius: CGFloat = 4
+    static let nearShadowOffset: CGFloat = 2
+    static let farShadowRadius: CGFloat = 16
+    static let farShadowOffset: CGFloat = 8
 }

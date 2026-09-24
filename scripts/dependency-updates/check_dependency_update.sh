@@ -75,7 +75,7 @@ read_pin() {
 
     case "$PIN_KIND" in
         package-swift)
-            grep -F "github.com/${DEP_REPO}" "$file" \
+            { grep -F "github.com/${DEP_REPO}" "$file" || true; } \
                 | sed -nE 's/.*\.package\(url:.*exact:[[:space:]]*"([^"]+)".*/\1/p' \
                 | head -n 1
             ;;

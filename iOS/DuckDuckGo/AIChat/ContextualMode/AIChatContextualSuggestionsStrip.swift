@@ -263,5 +263,6 @@ final class AIChatContextualSuggestionsStrip {
 
 #if DEBUG
     var chipCountForTesting: Int { controller.startActionCount }
+    var hasShownForTesting: Bool { hasShown }
 #endif
 }

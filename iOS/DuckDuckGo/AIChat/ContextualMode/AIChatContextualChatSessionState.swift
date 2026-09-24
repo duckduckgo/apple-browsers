@@ -996,8 +996,8 @@ private extension AIChatContextualChatSessionState {
             chipState: chipState,
             quickActions: quickActions,
             suggestions: (shouldHideSuggestions || !canShowSuggestions) ? [] : visibleSuggestions(reserving: quickActions.count),
-            // Nothing can show, so nothing is loading: a resolve in flight when the suggestions
-            // stopped qualifying never lands, and the surfaces would sit on its loader.
+            // Nothing can show, so nothing is loading: a resolve in flight when the suggestions stopped
+            // qualifying never lands, and the surfaces would sit on its loader.
             suggestionsLoadState: (isDocumentChipLoading || !canShowSuggestions) ? .loaded : suggestionsLoadState,
             suggestionsAreSmart: suggestionsAreSmart,
             suggestionsPageType: suggestionsPageType,

@@ -29,37 +29,30 @@ final class ChipHitTestingView: UIView {
     }
 }
 
-/// The input the strip hangs off. Implemented by the UTI host, which owns the bar the strip sits above.
 @MainActor
 protocol AIChatContextualSuggestionsStripAnchoring: AnyObject {
     var inputCardTopAnchor: NSLayoutYAxisAnchor { get }
     var inputCardLeadingAnchor: NSLayoutXAxisAnchor { get }
     var inputCardTrailingAnchor: NSLayoutXAxisAnchor { get }
-    /// The mounted input bar, so the scrim can be layered beneath it.
     var mountedInputView: UIView? { get }
     var isInputExpanded: Bool { get }
 }
 
-/// The row of suggestion chips shown above the input card.
-///
-/// One strip serves both contextual surfaces, borrowed by whichever is up the same way the input bar is:
-/// it reads the session's view state itself, so a surface only says that it holds it and in which style.
+/// The row of suggestion chips above the input card, borrowed by whichever surface is up the same way
+/// the input bar is. It reads the session's view state itself, so no surface writes to it.
 @MainActor
 final class AIChatContextualSuggestionsStrip {
 
-    /// How a surface wears the strip. The two differ together, so they travel as one value.
     enum Style {
-        /// Over the page, which the surface already dims. Carries the attach offer, its only one.
         case floating
-        /// Over a chat transcript, which needs scrimming. The input card's placeholder chip already
-        /// carries the attach offer here, so the strip must not repeat it.
+        /// Scrimmed, and without the attach offer: the input card's placeholder chip carries that here.
         case activeChat
 
         var isDimmed: Bool { self == .activeChat }
         var offersQuickActions: Bool { self == .floating }
     }
 
-    /// The content of one emission, so view-state changes that leave the chips alone don't rebuild them.
+    /// Compared between emissions, so view-state changes that leave the chips alone don't rebuild them.
     private struct Content: Equatable {
         let suggestions: [ContextualSuggestedPrompt]
         let quickActions: [AIChatContextualQuickAction]
@@ -75,15 +68,13 @@ final class AIChatContextualSuggestionsStrip {
     private let controller: AIChatContextualInputViewController
     private unowned let input: AIChatContextualSuggestionsStripAnchoring
 
-    /// The surface currently holding the strip, so it can be detached before it moves to another.
     private weak var parent: UIViewController?
     private var style: Style = .floating
-    /// True once the strip has shown for the current mount: the first batch appears instantly (riding the
-    /// input's entrance), later ones fade. Reset when the strip leaves a surface.
+    /// The first batch of a mount appears instantly, riding the input's entrance; later ones fade.
     private var hasShown = false
     private var cancellable: AnyCancellable?
-    /// Kept while unmounted: the subscription is made once, so a surface taking the strip would otherwise
-    /// wait for the next emission to learn what to show.
+    /// The subscription is made once, so a surface taking the strip would otherwise wait for the next
+    /// emission to learn what to show.
     private var latestContent: Content?
 
     private lazy var container: ChipHitTestingView = {
@@ -98,8 +89,7 @@ final class AIChatContextualSuggestionsStrip {
         return view
     }()
 
-    /// Scrims the content above the input while the strip is up, so the chips read against a bright
-    /// transcript. Only `.activeChat` enables it; `.floating` already dims the whole page.
+    /// So the chips read against a bright transcript. `.floating` already dims the whole page.
     private lazy var dimView: UIView = {
         let view = UIView()
         view.backgroundColor = .black
@@ -114,11 +104,9 @@ final class AIChatContextualSuggestionsStrip {
         self.input = input
     }
 
-    /// The strip's container, so a hosting surface can move it with the input.
+    /// So a hosting surface can move it with the input.
     var containerView: UIView { container }
 
-    /// The single writer: the strip follows the session's view state rather than being pushed at by each
-    /// surface, so a dismissed-but-retained surface can't overwrite what the current one is showing.
     func bind(to viewState: AnyPublisher<SheetViewState, Never>) {
         cancellable = viewState
             .map(Content.init(viewState:))
@@ -132,8 +120,7 @@ final class AIChatContextualSuggestionsStrip {
 
     // MARK: - Mounting
 
-    /// Mounts the strip above the input card in `parent`. Taps in the gaps pass through. The strip is
-    /// shared across surfaces, so mounting it here first detaches it from wherever it was.
+    /// Shared across surfaces, so this first detaches the strip from wherever it was.
     func embed(in parent: UIViewController, style: Style) {
         guard self.parent !== parent else { return }
         detachFromCurrentParent()
@@ -161,15 +148,14 @@ final class AIChatContextualSuggestionsStrip {
         if let latestContent { apply(latestContent) }
     }
 
-    /// Detaches from `parent`, but only if it still holds the strip: a surface animating out finishes
-    /// after the next one may already have taken it.
+    /// Only if `parent` still holds it: a surface animating out finishes after the next one took it.
     func detach(from parent: UIViewController) {
         guard self.parent === parent else { return }
         detachFromCurrentParent()
     }
 
-    /// A full-screen scrim layered below the input card, so the card and the strip float on top of it —
-    /// one continuous dim rather than a band that ends in a hard line above the input.
+    /// Below the input card, so the card and the strip float on one continuous dim rather than a band
+    /// that ends in a hard line above the input.
     private func embedDimView(in parent: UIViewController) {
         if let inputView = input.mountedInputView, inputView.superview === parent.view {
             parent.view.insertSubview(dimView, belowSubview: inputView)
@@ -185,8 +171,7 @@ final class AIChatContextualSuggestionsStrip {
     }
 
     private func detachFromCurrentParent() {
-        // Reused across mounts, so it is handed back the way it started: no slide transform, invisible,
-        // and empty. Otherwise the next surface mounts it showing the previous one's chips.
+        // Handed back the way it started, or the next surface mounts it showing the previous one's chips.
         container.transform = .identity
         container.alpha = 0
         container.removeFromSuperview()
@@ -195,7 +180,6 @@ final class AIChatContextualSuggestionsStrip {
             dimView.removeFromSuperview()
         }
         parent = nil
-        // The next surface's first batch should appear instantly again.
         hasShown = false
         guard controller.parent != nil else { return }
         controller.willMove(toParent: nil)
@@ -207,7 +191,6 @@ final class AIChatContextualSuggestionsStrip {
     // MARK: - Content
 
     private func apply(_ content: Content) {
-        // Nothing to show it in: the surface that takes the strip next gets the state current then.
         guard parent != nil else { return }
 
         guard content.isLoaded else {
@@ -249,7 +232,7 @@ final class AIChatContextualSuggestionsStrip {
     }
 
     /// Chips arrive asynchronously with the page context, so this waits for the first batch with content
-    /// rather than showing at mount. They ride the input's entrance the first time and fade in thereafter.
+    /// rather than showing at mount.
     private func showIfNeeded() {
         guard controller.startActionCount > 0, input.isInputExpanded else { return }
         guard !hasShown else {
@@ -279,7 +262,6 @@ final class AIChatContextualSuggestionsStrip {
     }
 
 #if DEBUG
-    /// Test-only: the chips the strip is actually showing.
     var chipCountForTesting: Int { controller.startActionCount }
 #endif
 }

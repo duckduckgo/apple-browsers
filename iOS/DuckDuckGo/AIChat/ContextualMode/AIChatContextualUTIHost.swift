@@ -64,12 +64,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     // MARK: - Suggestions strip (owned by the host, shown above the input card)
 
     private let suggestionsController: AIChatContextualInputViewController
-    /// Lent to whichever surface is up, the same way the input bar is. Built after `init` so it can
-    /// hold the host as its anchor.
+    /// Built after `init` so it can hold the host as its anchor.
     private(set) var suggestionsStrip: AIChatContextualSuggestionsStrip!
-    /// Fires when the user taps a suggestion chip.
     var onSuggestionSelected: ((ContextualSuggestedPrompt) -> Void)?
-    /// Fires when the user taps a quick-action chip (the floating surface offers these alongside suggestions).
     var onQuickActionSelected: ((AIChatContextualQuickAction) -> Void)?
 
     /// Raised by the input's microphone, which dictates into the field rather than opening voice chat.

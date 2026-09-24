@@ -416,7 +416,6 @@ final class AIChatContextualSheetCoordinator {
     /// The strip itself follows the view state; this reports what the floating surface showed.
     private func observeViewStateForFloatingChips() {
         floatingChipsCancellable = sessionState.$viewState
-            // `rebuildViewState` fires on many changes that leave the chips alone.
             .map { StartActionsContent(viewState: $0) }
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
@@ -829,8 +828,6 @@ private extension AIChatContextualSheetCoordinator {
         )
     }
 
-    /// Everything riding on the input: the page-context chip, the offer to attach the page just
-    /// navigated to, and the file attachments strip.
     private func bindAttachmentHandlers(on host: AIChatContextualUTIHost) {
         host.onAttachRequested = { [weak self] in
             self?.requestManualPageContextAttach()
@@ -872,7 +869,6 @@ private extension AIChatContextualSheetCoordinator {
         }
     }
 
-    /// Voice chat replaces the surface; dictation types into the input it is already showing.
     private func bindVoiceHandlers(on host: AIChatContextualUTIHost) {
         host.onAIVoiceChatRequested = { [weak self] in
             self?.requestNewVoiceChatLeavingCurrentSurface()
@@ -883,7 +879,6 @@ private extension AIChatContextualSheetCoordinator {
         }
     }
 
-    /// The strip follows the session's view state; these are the taps coming back out of it.
     private func bindSuggestionsStrip(on host: AIChatContextualUTIHost) {
         host.suggestionsStrip.bind(to: sessionState.$viewState.eraseToAnyPublisher())
         host.onSuggestionSelected = { [weak self] suggestion in

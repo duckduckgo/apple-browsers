@@ -2343,8 +2343,8 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
     }
 
-    /// A resolve still in flight when the context is used stops being deliverable, so the state must not
-    /// keep reporting `.loading` — the surfaces would sit on a loader that nothing ever clears.
+    /// A resolve still in flight when the context is used never lands, so the state must stop reporting
+    /// `.loading` — the surfaces would sit on a loader that nothing clears.
     func testActiveChatSuggestionsStopLoadingOnceContextIsUsedInAPrompt() {
         let provider = GatedContextualSuggestedPromptsProvider()
         sessionState = makeActiveChatSessionState(activeChatSuggestionsEnabled: true, provider: provider)

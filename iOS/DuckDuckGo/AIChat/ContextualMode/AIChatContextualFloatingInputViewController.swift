@@ -37,7 +37,6 @@ protocol AIChatContextualFloatingInputHosting: AnyObject {
     func unmount(from parent: UIViewController)
     var isInputFirstResponder: Bool { get }
 
-    /// The host owns the suggestions strip; this surface mounts it above the input and moves it with the bar.
     func embedSuggestions(in parent: UIViewController, style: AIChatContextualSuggestionsStrip.Style)
     func detachSuggestions(from parent: UIViewController)
     var suggestionsContainerView: UIView { get }

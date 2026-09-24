@@ -23,7 +23,7 @@ import XCTest
 @MainActor
 final class ListOpenTabsBrowserToolTests: XCTestCase {
 
-    func testWhenCalledThenItListsTheWindowsPagesWithTheOwnerMarkedCurrent() async throws {
+    func testWhenCalledThenItListsTheWindowsPagesWithTheSelectedOneMarkedCurrent() async throws {
         let collection = regularCollection(urls: ["https://apple.com", "https://example.com/page"])
         let owner = collection.tabCollection.tabs[0]
         let (tool, context) = make(collection: collection, ownerTabID: owner.uuid)
@@ -39,6 +39,20 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
         XCTAssertEqual(tabs[0]["isAttachable"], true)
         XCTAssertEqual(tabs[1]["url"], "https://example.com/page")
         XCTAssertEqual(tabs[1]["isCurrentTab"], false)
+    }
+
+    /// The owner is the chat's host tab, which a sidebar can leave backgrounded while the user
+    /// works in another tab of the same window.
+    func testWhenTheOwnerTabIsNotSelectedThenTheSelectedTabIsMarkedCurrent() async throws {
+        let collection = regularCollection(urls: ["https://owner.example", "https://selected.example"])
+        let owner = collection.tabCollection.tabs[0]
+        collection.select(at: .unpinned(1))
+        let (tool, context) = make(collection: collection, ownerTabID: owner.uuid)
+
+        let result = await tool.execute(arguments: nil, context: context)
+
+        let tabs = try XCTUnwrap(tabsPayload(from: result))
+        XCTAssertEqual(tabs.map { $0["isCurrentTab"] }, [false, true])
     }
 
     func testWhenAWindowHasDuckAIAndNonPageTabsThenOnlyPagesAreListed() async throws {

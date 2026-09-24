@@ -90,6 +90,8 @@ final class ListOpenTabsBrowserTool: BrowserTool {
         }
 
         let tabs = (collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs
+        // The window's selection, not the chat's owner: a sidebar's host tab may be backgrounded.
+        let selectedTabID = collection.selectedTabViewModel?.tab.uuid
         // Only pages with a URL are listed, and never Duck.ai itself.
         let pages: [JSONValue] = tabs.compactMap { tab in
             guard case .url(let url, _, _) = tab.content, !url.isDuckAIURL else { return nil }
@@ -97,7 +99,7 @@ final class ListOpenTabsBrowserTool: BrowserTool {
                 "tabId": .string(tab.uuid),
                 "title": .string(tab.title ?? url.host ?? ""),
                 "url": .string(url.absoluteString),
-                "isCurrentTab": .bool(tab.uuid == context.ownerTabID),
+                "isCurrentTab": .bool(tab.uuid == selectedTabID),
                 "isAttachable": .bool(!AIChatTabMetadata.shouldExcludeFromTabPicker(url))
             ]
         }

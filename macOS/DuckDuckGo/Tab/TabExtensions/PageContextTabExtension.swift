@@ -42,6 +42,7 @@ final class PageContextTabExtension {
     private var userScriptCancellables = Set<AnyCancellable>()
     private var sidebarCancellables = Set<AnyCancellable>()
     private let tabID: TabIdentifier
+    private let browserTools: AIChatBrowserToolsService
     private var content: Tab.TabContent = .none
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -124,9 +125,11 @@ final class PageContextTabExtension {
         aiChatSessionStore: AIChatSessionStoring,
         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
         isLoadedInSidebar: Bool,
-        faviconManagement: FaviconManagement
+        faviconManagement: FaviconManagement,
+        browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService
     ) {
         self.tabID = tabID
+        self.browserTools = browserTools
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.extractionPixelHandler = extractionPixelHandler
@@ -876,6 +879,9 @@ extension PageContextTabExtension: NavigationResponder {
     func navigationDidFinish(_ navigation: Navigation) {
         guard !isLoadedInSidebar else { return }
         reCollectForSettledNavigation(navigation)
+        if ["http", "https"].contains(navigation.url.scheme?.lowercased()) {
+            browserTools.notifyTabChanged(ownerTabID: tabID, url: navigation.url)
+        }
     }
 
     /// Back/forward cache restores can end in `didFail` (NSURLError -999) after committing — the page

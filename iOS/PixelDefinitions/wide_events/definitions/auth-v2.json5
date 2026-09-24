@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "ios-authv2-token-refresh",
-            "version": "2.0"
+            "version": "3.0"
         },
         "feature": {
             "name": "authv2-token-refresh",
@@ -54,6 +54,23 @@
                         "type": "string",
                         "description": "Outcome of invalid-token recovery for this refresh: not_attempted (no recovery handler or a non-App-Store platform), or a restore ran and succeeded/failed.",
                         "enum": ["not_attempted", "succeeded", "failed"]
+                    },
+                    "signed_out": {
+                        "type": "boolean",
+                        "description": "Whether this refresh ended with the user being signed out. Always emitted; false unless invalid-token recovery failed or was not attempted."
+                    },
+                    "subscription_status": {
+                        "type": "string",
+                        "description": "Status of the cached subscription when the refresh started. unavailable means no subscription was cached; unknown is a status returned by the backend.",
+                        "enum": ["auto_renewable", "not_auto_renewable", "grace_period", "inactive", "expired", "unknown", "unavailable"]
+                    },
+                    "netp_is_enabled": {
+                        "type": "boolean",
+                        "description": "Whether the VPN is configured, as observed by the process handling the refresh. Only emitted from the packet tunnel extension."
+                    },
+                    "netp_is_running": {
+                        "type": "boolean",
+                        "description": "Whether the VPN tunnel is connected, as observed by the process handling the refresh. Only emitted from the packet tunnel extension."
                     },
                     "error": "errorParameters"
                 }

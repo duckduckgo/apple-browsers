@@ -433,9 +433,11 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         detailModel.send(action: .setDefaultDecision(.deny))
 
         XCTAssertEqual(firedPixelNames, [
-            "permission_settings_detail_camera",
-            "permission_settings_default_camera_deny",
+            "permission_settings_detail_camera_macos",
+            "permission_settings_default_camera_deny_macos",
         ])
+        XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.pixel.namePrefix == .none },
+                      "Settings pixels are sent without the m_mac_ prefix")
     }
 
     private var firedPixelNames: [String] {

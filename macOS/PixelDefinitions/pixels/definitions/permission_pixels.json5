@@ -70,7 +70,7 @@
         ],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_permission_settings_detail": {
+    "permission_settings_detail": {
         "description": "Fired when user opens a permission category's detail page in Settings > Website Permissions, from the overview or a deep link",
         "owners": ["andremartingo"],
         "triggers": ["other"],
@@ -78,11 +78,15 @@
             {
                 "description": "Permission category whose detail page is opened",
                 "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external-scheme", "autoplay-policy"]
+            },
+            {
+                "description": "Platform marker",
+                "enum": ["macos"]
             }
         ],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_permission_settings_default": {
+    "permission_settings_default": {
         "description": "Fired when user changes a permission category's default decision in Settings > Website Permissions",
         "owners": ["andremartingo"],
         "triggers": ["other"],
@@ -94,11 +98,15 @@
             {
                 "description": "New default decision. Only autoplay offers 'allow'",
                 "enum": ["ask", "allow", "deny"]
+            },
+            {
+                "description": "Platform marker",
+                "enum": ["macos"]
             }
         ],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_permission_settings_site_changed": {
+    "permission_settings_site_changed": {
         "description": "Fired when user changes a site's decision in Settings > Website Permissions, from Recents or a detail page",
         "owners": ["andremartingo"],
         "triggers": ["other"],
@@ -114,11 +122,15 @@
             {
                 "description": "New decision value",
                 "enum": ["ask", "allow", "deny"]
+            },
+            {
+                "description": "Platform marker",
+                "enum": ["macos"]
             }
         ],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_permission_settings_removed": {
+    "permission_settings_removed": {
         "description": "Fired when user removes a site's decision in Settings > Website Permissions, from Recents or a detail page",
         "owners": ["andremartingo"],
         "triggers": ["other"],
@@ -126,6 +138,10 @@
             {
                 "description": "Permission type being removed",
                 "enum": ["camera", "microphone", "geolocation", "popups", "notification", "external-scheme", "autoplay-policy"]
+            },
+            {
+                "description": "Platform marker",
+                "enum": ["macos"]
             }
         ],
         "parameters": ["appVersion", "pixelSource", "channel"]

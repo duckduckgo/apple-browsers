@@ -470,8 +470,8 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         sut.send(action: .remove(rowID: row.id))
 
         XCTAssertEqual(firedPixelNames, [
-            "permission_settings_site_changed_camera_to_deny",
-            "permission_settings_removed_camera",
+            "permission_settings_site_changed_camera_to_deny_macos",
+            "permission_settings_removed_camera_macos",
         ])
     }
 

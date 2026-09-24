@@ -117,16 +117,16 @@ enum PermissionPixel: PixelKit.Event {
             return "m_mac_permission_system_preferences_\(permissionType.pixelName)"
 
         case .settingsDetailOpened(let category):
-            return "permission_settings_detail_\(category.pixelName)"
+            return "permission_settings_detail_\(category.pixelName)_macos"
 
         case .settingsDefaultChanged(let category, let to):
-            return "permission_settings_default_\(category.pixelName)_\(to.pixelName)"
+            return "permission_settings_default_\(category.pixelName)_\(to.pixelName)_macos"
 
         case .settingsSiteChanged(let permissionType, let to):
-            return "permission_settings_site_changed_\(permissionType.pixelName)_to_\(to.pixelName)"
+            return "permission_settings_site_changed_\(permissionType.pixelName)_to_\(to.pixelName)_macos"
 
         case .settingsSiteRemoved(let permissionType):
-            return "permission_settings_removed_\(permissionType.pixelName)"
+            return "permission_settings_removed_\(permissionType.pixelName)_macos"
         }
     }
 
@@ -143,6 +143,10 @@ enum PermissionPixel: PixelKit.Event {
     var standardParameters: [PixelKitStandardParameter]? {
         return [.pixelSource]
     }
+
+    /// Every name is already complete: the older cases spell out `m_mac_`, and the Website
+    /// Permissions settings cases end in `_macos` so they reach the server without `m_mac_`.
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 // MARK: - Authorization Decision

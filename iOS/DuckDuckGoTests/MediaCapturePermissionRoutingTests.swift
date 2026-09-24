@@ -337,6 +337,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
     func testFlagOffPreservesLegacyRoutingForReplacedWebView() throws {
         let sut = makeSUT(featureEnabled: false)
+        let tabDelegate = MockTabDelegate()
+        sut.delegate = tabDelegate
         let staleWebView = WKWebView()
         var decisions = [WKPermissionDecision]()
 
@@ -355,6 +357,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         }
 
         XCTAssertEqual(decisions, [.prompt, .grant])
+        XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
     }
 
     func testDisabledLaunchInstallsBridgeButRemoteActivationStillBypasses() async {
@@ -1108,6 +1111,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let sut = makeSUT(systemPermissionClient: systemPermissionClient,
                               committedURL: URL(string: "https://www.example.com/page")!,
                               eventHandler: { events.append($0) })
+            let tabDelegate = MockTabDelegate()
+            sut.delegate = tabDelegate
             let userScript = GeolocationUserScript(installImmediately: true)
             sut.configureSitePermissionsGeolocation(with: userScript)
             let delegate = try XCTUnwrap(userScript.delegate)
@@ -1147,6 +1152,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                 await Task.yield()
             }
             XCTAssertEqual(locationManager.startUpdatingCallCount, 1, "isMainFrame: \(isMainFrame)")
+            XCTAssertEqual(tabDelegate.grantedSitePermissions, [[.location]])
 
             let location = CLLocation(latitude: 52.2297, longitude: 21.0122)
             locationManager.send(location)
@@ -1158,6 +1164,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             XCTAssertEqual(position.coordinates.latitude, location.coordinate.latitude)
             XCTAssertEqual(position.coordinates.longitude, location.coordinate.longitude)
             XCTAssertEqual(locationManager.stopUpdatingCallCount, 1, "isMainFrame: \(isMainFrame)")
+            XCTAssertEqual(tabDelegate.grantedSitePermissions, [[.location]])
             // Location Allow Once lasts for the page, so a completed request keeps it granted.
             XCTAssertEqual(delegate.geolocationUserScript(userScript,
                                                           permissionStatusID: "status-after-request",
@@ -1672,6 +1679,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                 completion(true)
             }
         )
+        let tabDelegate = MockTabDelegate()
+        sut.delegate = tabDelegate
         sut.sitePermissionsPromptHandlerOverride = { _, completion in
             timeline.append(.sitePrompt)
             promptCompletion = completion
@@ -1689,6 +1698,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
         XCTAssertEqual(bridgeDecision, .allow)
         XCTAssertEqual(timeline, [.sitePrompt, .systemPrompt])
+        XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
 
         var decisions = [WKPermissionDecision]()
         requestPermission(on: sut,
@@ -1701,6 +1711,10 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                           decisionHandler: { decisions.append($0) })
 
         XCTAssertEqual(decisions, [.grant, .deny])
+        XCTAssertEqual(tabDelegate.grantedSitePermissions, [[.camera]])
+
+        sut.sitePermissionsDidStartProvisionalNavigation(sut.webView, navigation: nil)
+        XCTAssertEqual(tabDelegate.sitePermissionAnimationCancellationCount, 1)
     }
 
     func testPreapprovalIsBoundToTrustedFrameOriginAndCaptureType() async {

@@ -239,6 +239,8 @@ final class MainCoordinator {
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability,
                                 eventHub: eventHub,
                                 clearAppSwitcherSnapshots: clearAppSwitcherSnapshots)
+        // Start before any tab saves a decision, so each saved site keeps its favicon.
+        _ = tabManager.sitePermissionsFavicons
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,

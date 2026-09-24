@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import DesignResourcesKitIcons
 import UIKit
 import XCTest
@@ -259,6 +260,29 @@ final class UTIFooterCardViewTests: XCTestCase {
             }
             XCTAssertEqual(label.bounds.width, stack.bounds.width, accuracy: 0.5,
                            "The title has to own the room the CTA leaves it, at card width \(width)")
+        }
+    }
+
+    func testPurchaseAvailabilityRemovesAndRestoresRenderedButtonWhileKeepingNotice() throws {
+        let card = UTIFooterCardView()
+        let mapper = UTIFooterMessageMapper()
+        for trialEligible in [true, false] {
+            let warning = DuckAiUsageWarning(window: .daily, message: .freeReached, severity: .reached,
+                                            percent: 100, resetsIn: .days(1), isDismissible: false,
+                                            action: .tryForFree(isTrialEligible: trialEligible))
+            for available in [true, false, true] {
+                let message = mapper.message(for: warning, allowsSubscriptionUpsell: available)
+                card.configure(with: message, animateIcon: false)
+                card.frame = CGRect(x: 0, y: 0, width: phoneWidth, height: height(of: card))
+                card.setNeedsLayout()
+                card.layoutIfNeeded()
+
+                let button = try XCTUnwrap(actionButton(in: card))
+                XCTAssertEqual(button.isHidden, !available)
+                XCTAssertEqual(titleLabel(in: card)?.text, message.title)
+                XCTAssertEqual(subtitleLabel(in: card)?.text, message.subtitle)
+                XCTAssertGreaterThan(height(of: card), 0)
+            }
         }
     }
 

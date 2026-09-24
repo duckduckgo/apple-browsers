@@ -610,7 +610,34 @@ extension MainWindowController: NSWindowDelegate {
         // Because it's also the delegate, deinit within this method caused crash
         // Push the Window Controller into current autorelease pool so it‘s released when the event loop pass ends
         _=Unmanaged.passRetained(self).autorelease()
-        Application.appDelegate.windowControllersManager.unregister(self)
+
+        let windowControllersManager = Application.appDelegate.windowControllersManager
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            // Shared pinned tabs remain open when another window still contains the same Tab instance.
+            let tabsInRemainingWindows = windowControllersManager.mainWindowControllers
+                .filter { $0 !== self }
+                .flatMap { windowController in
+                    windowController.mainViewController.tabCollectionViewModel.loadedPinnedTabs
+                        + windowController.mainViewController.tabCollectionViewModel.loadedTabs
+                }
+            // Shared pinned tabs are owned by the app-level manager and survive even when the last
+            // window closes. They must stay registered with WebKit until they are actually removed.
+            let sharedPinnedTabs = windowControllersManager.pinnedTabsManagerProvider.pinnedTabsMode == .shared
+                ? windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap(\.tabCollection.loadedTabs)
+                : []
+            let tabsInClosingWindow = mainViewController.tabCollectionViewModel.loadedPinnedTabs
+                + mainViewController.tabCollectionViewModel.loadedTabs
+
+            for tab in Self.tabsToCloseForWebExtensions(
+                in: tabsInClosingWindow,
+                retainedByOpenWindows: tabsInRemainingWindows,
+                retainedBySharedPinnedTabs: sharedPinnedTabs
+            ) {
+                webExtensionManager.eventsListener.didCloseTab(tab, windowIsClosing: true)
+            }
+        }
+
+        windowControllersManager.unregister(self)
 
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
             webExtensionManager.eventsListener.didCloseWindow(self)
@@ -626,6 +653,13 @@ extension MainWindowController: NSWindowDelegate {
 
         burnAndClose(window)
         return false
+    }
+
+    static func tabsToCloseForWebExtensions(in closingWindow: [Tab],
+                                            retainedByOpenWindows: [Tab],
+                                            retainedBySharedPinnedTabs: [Tab]) -> [Tab] {
+        let retainedTabIdentifiers = Set((retainedByOpenWindows + retainedBySharedPinnedTabs).map(ObjectIdentifier.init))
+        return closingWindow.filter { !retainedTabIdentifiers.contains(ObjectIdentifier($0)) }
     }
 
     /// `NSWindow.close()` bypasses `windowShouldClose(_:)`, so programmatic Fire Window closes have to come

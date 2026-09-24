@@ -20,6 +20,7 @@
 import AIChat
 import Bookmarks
 import BrowserServicesKit
+import Combine
 import Core
 import Onboarding
 import RemoteMessaging
@@ -47,6 +48,9 @@ struct NewTabPageBuilder {
     let redesignFeature: NewTabPageRedesignFeatureProviding
     let toggleModeStorage: ToggleModeStoring
     let voiceSearchHelper: VoiceSearchHelperProtocol
+    let daxGreetingProvider: DaxGreetingProviding
+    let daxGreetingChanges: AnyPublisher<Void, Never>
+    let updateDaxGreetingAppearance: (DaxGreetingContext.Appearance) -> Void
 
     /// `daxDialogFactory` is supplied per page rather than stored.
     func makeNewTabPage(tab: Tab,
@@ -83,7 +87,10 @@ struct NewTabPageBuilder {
             })
 
         let page = RedesignedNewTabPageViewController(blocks: [
-            NewTabPageSwiftUIBlock(id: .welcome, rootView: NewTabPageWelcomeView()),
+            NewTabPageSwiftUIBlock(id: .welcome, rootView: NewTabPageWelcomeView(
+                model: NewTabPageWelcomeModel(greetingProvider: daxGreetingProvider,
+                                             contextChanges: daxGreetingChanges,
+                                             updateAppearance: updateDaxGreetingAppearance))),
             NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView)
         ])
         newTabPage = page

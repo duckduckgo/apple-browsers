@@ -745,10 +745,10 @@ struct UserText {
     static let aiChatChromeShowSidebarButton = NSLocalizedString("aichat.chrome.show-sidebar-button", value: "Show Sidebar Button", comment: "Context menu item to show the Duck.ai sidebar toggle button in the tab bar")
     static let aiChatShowSidebar = NSLocalizedString("aichat.view.show-sidebar", value: "Show Duck.ai Sidebar", comment: "View menu item to open the Duck.ai sidebar")
     static let aiChatHideSidebar = NSLocalizedString("aichat.view.hide-sidebar", value: "Hide Duck.ai Sidebar", comment: "View menu item to close the Duck.ai sidebar")
-    static let aiChatChromeOpenAISettings = NSLocalizedString("aichat.chrome.open-ai-settings", value: "Open AI Settings", comment: "Context menu item to open AI Features settings pane")
+    static let aiChatChromeOpenAISettings = NSLocalizedString("aichat.chrome.open-ai-settings", value: "AI Settings", comment: "Context menu item to open AI Features settings pane")
     static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
     static let aiChatAddressBarHideToggle = NSLocalizedString("aichat.address-bar.hide-toggle", value: "Hide Duck.ai Toggle", comment: "Button to hide duck.ai toggle in address bar")
-    static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "Open AI Settings", comment: "Button to open AI settings")
+    static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "AI Settings", comment: "Button to open AI settings")
     static let askAIChatButtonTitle = NSLocalizedString("aichat.address-bar.ask-button.title", value: "Ask Duck.ai", comment: "Title for button to ask Duck.ai")
 
     static let searchAssistSettings = NSLocalizedString("duckai.search-assist-settings", value: "Search Assist Settings", comment: "The section name in preferences for Search Assist Settings")
@@ -1142,21 +1142,8 @@ struct UserText {
     static let importBookmarks = NSLocalizedString("import.browser.data.bookmarks", value: "Import Bookmarks", comment: "Opens Import Browser Data dialog")
     static let importPasswords = NSLocalizedString("import.browser.data.passwords", value: "Import Passwords…", comment: "Opens Import Browser Data dialog")
 
-    static let importDataTitle = NSLocalizedString("import.browser.data", value: "Import to DuckDuckGo", comment: "Import Browser Data dialog title")
-    static let importDataTitleOnboarding = NSLocalizedString("import.browser.data.onboarding", value: "Great, let’s keep this simple!", comment: "Import Browser Data dialog title")
-    static let importDataShortcutsTitle = NSLocalizedString("import.browser.data.shortcuts", value: "Almost done!", comment: "Import Browser Data dialog title for final stage when choosing shortcuts to enable")
-    static let importDataShortcutsSubtitle = NSLocalizedString("import.browser.data.shortcuts.subtitle", value: "You can always right-click on the browser toolbar to find more shortcuts like these.", comment: "Subtitle explaining how users can find toolbar shortcuts.")
-    static let importDataSourceTitle = NSLocalizedString("import.browser.data.source.title", value: "Where do you want to import from?", comment: "Import Browser Data title for option to choose source browser to import from")
-    static let importDataSubtitle = NSLocalizedString("import.browser.data.source.subtitle", value: "Access and manage your passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Subtitle explaining where users can find imported passwords.")
-    static let importDataSuccessTitle = NSLocalizedString("import.browser.data.success.title", value: "Import complete!", comment: "message about Passwords and or bookmarks Data Import completion")
     static let importDataSummaryTitle = NSLocalizedString("import.browser.data.summary.title", value:"Import Summary", comment: "Title for screen shown after importing data (passwords / bookmarks)")
-    static let importDataImportTypeTitleCollapsedAll = NSLocalizedString("import.browser.data.import-type.title.collapsed.all", value: "Import all available data", comment: "Import Browser Data dialog title for option to choose what to import in collapsed state")
     static let importDataImportTypeTitleSelected = NSLocalizedString("import.browser.data.import-type.title.collapsed", value: "Import selected data", comment: "Import Browser Data dialog title for option to choose what to import in collapsed state")
-    static let importDataImportTypeSubtitleBookmarksAndPasswords = NSLocalizedString("import.browser.data.import-type.subtitle.bookmarks.and.passwords", value: "Bookmarks and passwords", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
-    static let importDataImportTypeSubtitleNone = NSLocalizedString("import.browser.data.import-type.subtitle.none", value: "None", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
-    static let importDataSelectProfileTitle = NSLocalizedString("import.browser.data.select.profile.title", value: "Select profile:", comment: "Title for the data import browser profile picker")
-    static let importDataSelectionSyncButtonTitle = NSLocalizedString("import.browser.data.selection.sync.button.title", value: "Sync from DuckDuckGo on another device", comment: "Import Browser Data dialog button title to sync imported data at selection stage")
-    static let legacyImportDataCompleteSyncButtonTitle = NSLocalizedString("import.browser.data.complete.sync.button.title", value: "Sync to DuckDuckGo on Mobile", comment: "Import Browser Data dialog button title to sync imported data at completion stage")
     static let importDataCompleteSyncButtonTitle = NSLocalizedString("import.browser.data.complete.set.up.sync.button.title", value: "Set Up Sync", comment: "Import Browser Data dialog button title to set up data sync at completion stage")
 
     static let exportLogins = NSLocalizedString("export.logins.data", value: "Export Passwords…", comment: "Opens Export Logins Data dialog")
@@ -1559,6 +1546,14 @@ struct UserText {
     static let websitePermissionsRecentsSection = NotLocalizedString("preferences.website-permissions.recents", value: "Recents", comment: "Section header above the most recently changed website permissions")
     static let websitePermissionsExternalAppFormat = NotLocalizedString("preferences.website-permissions.external-app.format", value: "Open “%@”", comment: "Label for an external app permission row, %@ is the app name such as Mail")
     static let websitePermissionsRemovePermission = NotLocalizedString("preferences.website-permissions.remove", value: "Remove", comment: "Accessibility label for the button that removes a saved website permission")
+    static let websitePermissionsBack = NotLocalizedString("preferences.website-permissions.back", value: "Back", comment: "Accessibility label for the button returning to Website Permissions")
+    static let websitePermissionsWebsites = NotLocalizedString("preferences.website-permissions.websites", value: "Websites", comment: "Header above saved website permissions")
+    static let websitePermissionsSearchPlaceholder = NotLocalizedString("preferences.website-permissions.search.placeholder", value: "Search…", comment: "Placeholder in the Website Permissions search field")
+    static let websitePermissionsClearSearch = NotLocalizedString("preferences.website-permissions.search.clear", value: "Clear search", comment: "Accessibility label for the button that clears Website Permissions search")
+    static let websitePermissionsEmpty = NotLocalizedString("preferences.website-permissions.empty", value: "No websites saved yet.", comment: "Empty state for a Website Permissions category")
+    static let websitePermissionsNoResults = NotLocalizedString("preferences.website-permissions.no-results", value: "No matches. Try a different search term.", comment: "Search result when no website permission matches the search query")
+    static let websitePermissionsDecisionAccessibilityLabel = NotLocalizedString("preferences.website-permissions.decision.accessibility", value: "Permission for %@", comment: "Accessibility label for a website permission decision menu, %@ is the domain")
+    static let websitePermissionsRemovePermissionAccessibilityLabel = NotLocalizedString("preferences.website-permissions.remove.accessibility", value: "Remove permission for %@", comment: "Accessibility label for a button that removes a website permission, %@ is the domain")
     static let webTrackingProtection = NSLocalizedString("preferences.web-tracking-protection", value: "Web Tracking Protection", comment: "Title of the option to show the Web Tracking Protection preferences")
     static let threatProtection = NSLocalizedString("preferences.threat-protection", value: "Threat Protection", comment: "Title of the option to show the Threat Protection preferences")
     static let threatProtectionCaption = NSLocalizedString("preferences.threat-protection.caption", value: "DuckDuckGo's enhanced protections stop common threats while keeping your connection secure.", comment: "Caption of the option to show the Threat Protection preferences")
@@ -1839,20 +1834,8 @@ struct UserText {
     static let importLoginsCSVShort = NSLocalizedString("import.logins.csv.short.title", value: "CSV Passwords", comment: "Short title text for the CSV importer")
     static let importBookmarksHTML = NSLocalizedString("import.bookmarks.html.title", value: "HTML Bookmarks File (for other browsers)", comment: "Title text for the HTML Bookmarks importer")
     static let importBookmarksHTMLShort = NSLocalizedString("import.bookmarks.html.short.title", value: "HTML Bookmarks", comment: "Short title text for the HTML Bookmarks importer")
-    static let importBookmarksSelectHTMLFile = NSLocalizedString("import.bookmarks.select-html-file", value: "Select Bookmarks HTML File…", comment: "Button text for selecting HTML Bookmarks file")
-    static let importLoginsSelectCSVFile = NSLocalizedString("import.logins.select-csv-file", value: "Select Passwords CSV File…", comment: "Button text for selecting a CSV file")
-    static func importLoginsSelectCSVFile(from source: DataImport.Source) -> String {
-        String(format: NSLocalizedString("import.logins.select-csv-file.source", value: "Select %@ CSV File…", comment: "Button text for selecting a CSV file exported from (LastPass or Bitwarden or 1Password - %@)"), source.importSourceName)
-    }
     static let importDataSelectFileButtonTitle = NSLocalizedString("import.data.select-file.button.title", value: "Select File…", comment: "Button text for selecting a file")
     static let importDragAndDropFile = NSLocalizedString("import.drag-and-drop-file", value: "Drop your file here", comment: "Drag-and-drop instruction for importing a file")
-
-    static func importNoDataBookmarksSubtitle(from source: DataImport.Source) -> String {
-        String(format: NSLocalizedString("import.nodata.bookmarks.subtitle", value: "If you have %@ bookmarks, try importing them manually instead.", comment: "Data import error subtitle: suggestion to import Bookmarks manually by selecting a CSV or HTML file. The placeholder here represents the source browser, e.g Firefox."), source.importSourceName)
-    }
-    static func importNoDataPasswordsSubtitle(from source: DataImport.Source) -> String {
-        String(format: NSLocalizedString("import.nodata.passwords.subtitle", value: "If you have %@ passwords, try importing them manually instead.", comment: "Data import error subtitle: suggestion to import passwords manually by selecting a CSV or HTML file. The placeholder here represents the source browser, e.g Firefox."), source.importSourceName)
-    }
 
     static let importLoginsPasswords = NSLocalizedString("import.logins.passwords", value: "Passwords", comment: "Title text for the Passwords import option")
     static let importLoginsPasswordsExplainer = NSLocalizedString("import.logins.passwords.explainer2", value: "Passwords are encrypted. Nobody but you can see your passwords, not even us. Find Passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage.")
@@ -1862,7 +1845,6 @@ struct UserText {
     static let importCreditCards = NSLocalizedString("import.credit-cards", value: "Credit Cards", comment: "Title text for the Credit Card import option")
 
     static let importBookmarksButtonTitle = NSLocalizedString("bookmarks.import.button.title", value: "Import", comment: "Button text to open bookmark import dialog")
-    static let initiateImport = NSLocalizedString("import.data.initiate", value: "Import", comment: "Button text for importing data")
     static let skipBookmarksImport = NSLocalizedString("import.data.skip.bookmarks", value: "Skip bookmarks", comment: "Button text to skip bookmarks manual import")
     static let skipPasswordsImport = NSLocalizedString("import.data.skip.passwords", value: "Skip passwords", comment: "Button text to skip bookmarks manual import")
     static let skip = NSLocalizedString("import.data.skip", value: "Skip", comment: "Button text to skip an import step")
@@ -1897,9 +1879,7 @@ struct UserText {
     static let bookmarkImportBookmarks = NSLocalizedString("import.bookmarks.bookmarks", value: "Bookmarks", comment: "Title text for the Bookmarks import option")
 
     static let importShortcutsBookmarksTitle = NSLocalizedString("import.shortcuts.bookmarks.title", value: "Show Bookmarks Bar", comment: "Title for the setting to enable the bookmarks bar")
-    static let importShortcutsBookmarksSubtitle = NSLocalizedString("import.shortcuts.bookmarks.subtitle", value: "Put your favorite bookmarks in easy reach", comment: "Description for the setting to enable the bookmarks bar")
     static let importShortcutsPasswordsTitle = NSLocalizedString("import.shortcuts.passwords.title", value: "Show Passwords Shortcut", comment: "Title for the setting to enable the passwords shortcut")
-    static let importShortcutsPasswordsSubtitle = NSLocalizedString("import.shortcuts.passwords.subtitle", value: "Keep passwords nearby in the address bar", comment: "Description for the setting to enable the passwords shortcut")
 
     static func importSummaryBookmarksImported(_ count: Int) -> String {
         let localized = NSLocalizedString("import.summary.bookmarks.imported", value: "Bookmarks Imported: %d", comment: "Summary text showing number of bookmarks successfully imported")
@@ -2361,7 +2341,7 @@ struct UserText {
     static let newTabPageContextMenuFavorites = NSLocalizedString("newtabpage.context.menu.favorites", value: "Favorites", comment: "Context menu item to manage Favorites section on the New Tab Page")
     static let newTabPageContextMenuProtectionsReport = NSLocalizedString("newtabpage.context.menu.protections.report", value: "Protections Report", comment: "Context menu item to manage Protections Report section on the New Tab Page")
     static let newTabPageContextMenuShowDuckAI = NSLocalizedString("newtabpage.context.menu.show.duckai", value: "Show Duck.ai in Search Box", comment: "Context menu item to manage Duck.ai on the New Tab Page")
-    static let newTabPageContextMenuOpenDuckAISettings = NSLocalizedString("newtabpage.context.menu.open.duckai.settings", value: "Open AI Settings", comment: "Context menu item to open AI Settings from the New Tab Page")
+    static let newTabPageContextMenuOpenDuckAISettings = NSLocalizedString("newtabpage.context.menu.open.duckai.settings", value: "AI Settings", comment: "Context menu item to open AI Settings from the New Tab Page")
 
     // Favorites
     static let newTabFavoriteSectionTitle = NSLocalizedString("newTab.favorites.section.title", value: "Favorites", comment: "Title of the Favorites section in the home page")

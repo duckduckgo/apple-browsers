@@ -631,8 +631,12 @@ extension WindowControllersManagerProtocol {
     }
 
     func windowController(for tab: Tab) -> MainWindowController? {
+        if let windowController = tab.webView.window?.windowController as? MainWindowController,
+           windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tab) != nil {
+            return windowController
+        }
         return mainWindowControllers.first(where: {
-            $0.mainViewController.tabCollectionViewModel.tabCollection.contains(tab: tab)
+            $0.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tab) != nil
         })
     }
 
@@ -670,7 +674,7 @@ extension WindowControllersManager: OnboardingNavigating {
 
     @MainActor
     func showImportDataView() {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
     @MainActor

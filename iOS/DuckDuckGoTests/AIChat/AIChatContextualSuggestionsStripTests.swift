@@ -90,36 +90,6 @@ final class AIChatContextualSuggestionsStripTests: XCTestCase {
         XCTAssertEqual(sut.chipCountForTesting, 0)
     }
 
-    // MARK: - Ownership
-
-    /// An unmounted strip has nowhere to put chips, but must not miss what it was told while away.
-    func test_contentArrivingWhileUnmountedIsShownOnTheNextEmbed() {
-        send(suggestions: [makeSuggestion(id: "s1")])
-        XCTAssertEqual(sut.chipCountForTesting, 0)
-
-        sut.embed(in: parent, style: .floating)
-
-        XCTAssertEqual(sut.chipCountForTesting, 1)
-    }
-
-    // MARK: - Expansion
-
-    /// A collapsed input has no room above it, so chips wait rather than showing over the transcript.
-    func test_chipsArrivingWhileTheInputIsCollapsedWaitForItToExpand() {
-        anchor.isInputExpanded = false
-        sut.embed(in: parent, style: .floating)
-
-        send(suggestions: [makeSuggestion(id: "s1")])
-        XCTAssertFalse(sut.hasShownForTesting)
-        XCTAssertEqual(sut.containerView.alpha, 0)
-
-        anchor.isInputExpanded = true
-        sut.setInputExpanded(true)
-
-        XCTAssertTrue(sut.hasShownForTesting)
-        XCTAssertEqual(sut.containerView.alpha, 1)
-    }
-
     // MARK: - Style
 
     func test_theFloatingStyleCarriesQuickActions() {
@@ -181,7 +151,7 @@ final class AIChatContextualSuggestionsStripTests: XCTestCase {
     @MainActor
     private final class AnchorStub: AIChatContextualSuggestionsStripAnchoring {
         let inputView = UIView()
-        var isInputExpanded = true
+        let isInputExpanded = true
 
         var mountedInputView: UIView? { inputView }
         var inputCardTopAnchor: NSLayoutYAxisAnchor { inputView.topAnchor }

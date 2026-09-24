@@ -52,6 +52,7 @@ final class BrowserToolsDebugViewController: NSViewController {
     private var argumentFields: [ArgumentField] = []
     private let logStack = NSStackView()
     private let logScroll = NSScrollView()
+    private let permissionsStack = NSStackView()
     private var promptEntries: [String: LogEntryView] = [:]
 
     init(windowControllersManager: WindowControllersManagerProtocol,
@@ -149,6 +150,7 @@ final class BrowserToolsDebugViewController: NSViewController {
     /// The owner tab is re-read on every click, so the header shows which one and its session state.
     @objc func refreshTarget() {
         reloadToolPicker()
+        refreshPermissions()
         guard let tab = ownerTabProvider() else {
             targetLabel.stringValue = "No owner tab — open a tab to act as the Duck.ai owner tab."
             return
@@ -181,6 +183,54 @@ final class BrowserToolsDebugViewController: NSViewController {
             toolPicker.selectItem(at: 0)
             toolPicked()
         }
+    }
+
+    // MARK: - Permissions
+
+    /// Stored Always/Never decisions per tool, editable in place: the same store the debug menu manages.
+    private func refreshPermissions() {
+        for row in permissionsStack.arrangedSubviews {
+            permissionsStack.removeArrangedSubview(row)
+            row.removeFromSuperview()
+        }
+        let header = NSTextField(labelWithString: "Permissions")
+        header.font = .systemFont(ofSize: 11, weight: .semibold)
+        permissionsStack.addArrangedSubview(header)
+
+        let decisions = service.permissions.storedDecisions
+        for tool in service.catalog.enabledTools where tool.permissionMode == .ask {
+            let state = decisions[tool.name]
+            let label = NSTextField(labelWithString: "\(tool.name): \(state?.rawValue ?? "ask")")
+            label.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+            label.textColor = state == nil ? .secondaryLabelColor : .labelColor
+            var views: [NSView] = [label]
+            if state != nil {
+                let reset = PermissionButton(title: "Reset", target: self, action: #selector(resetPermission(_:)))
+                reset.bezelStyle = .rounded
+                reset.controlSize = .mini
+                reset.toolName = tool.name
+                views.append(reset)
+            }
+            let row = NSStackView(views: views)
+            row.orientation = .horizontal
+            row.spacing = 6
+            permissionsStack.addArrangedSubview(row)
+        }
+        if !decisions.isEmpty {
+            permissionsStack.addArrangedSubview(makeButton("Reset all", #selector(resetAllPermissions)))
+        }
+    }
+
+    @objc private func resetPermission(_ sender: PermissionButton) {
+        service.permissions.setState(.ask, forToolNamed: sender.toolName)
+        appendToLog(summary: "· reset permission for \(sender.toolName)", detail: nil)
+        refreshPermissions()
+    }
+
+    @objc private func resetAllPermissions() {
+        service.permissions.clearAll()
+        appendToLog(summary: "· reset all permissions", detail: nil)
+        refreshPermissions()
     }
 
     // MARK: - Arguments form
@@ -445,6 +495,10 @@ final class BrowserToolsDebugViewController: NSViewController {
         argumentsForm.spacing = 4
         argumentsForm.edgeInsets = NSEdgeInsets(top: 0, left: 16, bottom: 0, right: 0)
 
+        permissionsStack.orientation = .vertical
+        permissionsStack.alignment = .leading
+        permissionsStack.spacing = 3
+
         logStack.orientation = .vertical
         logStack.alignment = .leading
         logStack.spacing = 2
@@ -466,7 +520,7 @@ final class BrowserToolsDebugViewController: NSViewController {
         targetLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         targetLabel.lineBreakMode = .byTruncatingMiddle
 
-        let stack = NSStackView(views: [targetLabel, buttons, call, argumentsForm, logScroll])
+        let stack = NSStackView(views: [targetLabel, buttons, call, argumentsForm, logScroll, permissionsStack])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 8
@@ -685,6 +739,10 @@ private final class LogDocumentView: NSView {
 private final class PromptButton: NSButton {
     var promptID = ""
     var result = MCPElicitationResult.cancel
+}
+
+private final class PermissionButton: NSButton {
+    var toolName = ""
 }
 
 /// Stands in for the `WKScriptMessage` a real page would send. Only `messageWebView` matters to the

@@ -52,6 +52,8 @@ final class PermissionModel {
     /// Holds the set of permissions the user manually removed (to avoid adding them back via updatePermissions)
     private var removedPermissions = Set<PermissionType>()
 
+    private var deniedByCategoryDefault = Set<PermissionType>()
+
     weak var webView: WKWebView? {
         didSet {
             guard let webView = webView else { return }
@@ -123,6 +125,7 @@ final class PermissionModel {
         }
         authorizationQueries = []
         removedPermissions.removeAll()
+        deniedByCategoryDefault.removeAll()
         clearPermissionsNeedReload()
     }
 
@@ -403,8 +406,12 @@ final class PermissionModel {
     }
 
     func isPopupBlockedByDefault(forDomain domain: String) -> Bool {
-        !permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: .popups)
-            && permissionManager.permission(forDomain: domain, permissionType: .popups) == .deny
+        isBlockedByCategoryDefault(.popups, forDomain: domain)
+    }
+
+    private func isBlockedByCategoryDefault(_ permission: PermissionType, forDomain domain: String) -> Bool {
+        !permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permission)
+            && permissionManager.permission(forDomain: domain, permissionType: permission) == .deny
     }
 
     private func shouldApplyDenial(of permission: PermissionType, isPersistedForDomain: Bool) -> Bool {
@@ -426,7 +433,7 @@ final class PermissionModel {
                 switch state {
                 // deny if already denied during current page being displayed
                 case .denied, .revoking:
-                    grant = .deny
+                    grant = deniedByCategoryDefault.contains(permission) ? .ask : .deny
                 // ask otherwise
                 case .disabled, .requested, .active, .inactive, .paused, .reloading:
                     grant = .ask
@@ -493,6 +500,7 @@ final class PermissionModel {
                 // Fire event for view layer to show informational popover
                 permissionBlockedBySystem.send((domain: domain, permissionType: permissions.first!))
             } else {
+                deniedByCategoryDefault.subtract(permissions)
                 self.queryAuthorization(for: permissions, domain: domain, url: url,
                                         isSystemPermissionDisabled: false,
                                         decisionHandler: wrappedDecisionHandler)
@@ -501,7 +509,12 @@ final class PermissionModel {
             wrappedDecisionHandler(true)
         case .some(false):
             wrappedDecisionHandler(false)
+            let isDeniedByCategoryDefault = permissions.contains { isBlockedByCategoryDefault($0, forDomain: domain) }
             for permission in permissions {
+                let wasDeniedEarlierOnPage = self.permissions[permission] == .denied
+                if isDeniedByCategoryDefault, !wasDeniedEarlierOnPage {
+                    deniedByCategoryDefault.insert(permission)
+                }
                 self.permissions[permission].denied()
             }
         }

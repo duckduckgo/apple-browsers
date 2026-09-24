@@ -245,9 +245,6 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
-    /// When true, non-expandable text shows as a single truncated line instead of wrapping.
-    var truncatesTextWhenCollapsed = false
-
     var isExpandable: Bool = false {
         didSet {
             updatePoseForCurrentState()
@@ -773,7 +770,6 @@ class SwitchBarTextEntryView: UIView {
 
         // Reset defaults
         textView.textContainer.lineBreakMode = .byWordWrapping
-        textView.textContainer.maximumNumberOfLines = 0
 
         if isUnexpandedURL() ||
             // https://app.asana.com/1/137249556945/project/392891325557410/task/1210916875279070?focus=true
@@ -810,10 +806,6 @@ class SwitchBarTextEntryView: UIView {
             heightConstraint?.constant = currentMinHeight
             textView.isScrollEnabled = true
             textView.showsVerticalScrollIndicator = true
-            if truncatesTextWhenCollapsed {
-                textView.textContainer.maximumNumberOfLines = 1
-                textView.textContainer.lineBreakMode = .byTruncatingTail
-            }
             return
         }
 

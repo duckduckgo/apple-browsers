@@ -1204,7 +1204,6 @@ final class UnifiedToggleInputView: UIView {
             bottomMargin = Constants.cardVerticalMargin
         }
 
-        textEntryView.truncatesTextWhenCollapsed = layout == .flanked
         textEntryView.isExpandable = expanded
 
         let useCompositeShadow = expanded || layout == .flanked

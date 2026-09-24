@@ -511,18 +511,6 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(placeholderLabel.center.y, textView.center.y, accuracy: 1)
     }
 
-    func test_whenDuckAITabPillCollapsesWithMultilineDraft_thenDraftLaysOutAsASingleLine() throws {
-        let lineCount = try collapsedDraftLineCount(collapsingTo: .flanked)
-
-        XCTAssertEqual(lineCount, 1)
-    }
-
-    func test_whenPlainPillCollapsesWithMultilineDraft_thenDraftStillWraps() throws {
-        let lineCount = try collapsedDraftLineCount(collapsingTo: .collapsed)
-
-        XCTAssertGreaterThan(lineCount, 1)
-    }
-
     func test_expandedSearchPlaceholderStaysVerticallyCenteredInPill() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         handler.setToggleState(.search)
@@ -784,27 +772,6 @@ final class UnifiedToggleInputViewTests: XCTestCase {
                 && constraint.secondItem === view
                 && (constraint.firstItem as? UIView)?.isUserInteractionEnabled == false
         }?.constant
-    }
-
-    private func collapsedDraftLineCount(collapsingTo layout: UnifiedToggleInputCardLayout) throws -> Int {
-        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
-        let sut = UnifiedToggleInputView(handler: handler)
-        sut.frame = CGRect(x: 0, y: 0, width: 390, height: 200)
-        sut.setInputMode(.aiChat, animated: false)
-        sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: true), animated: false)
-        let textEntry = try XCTUnwrap(firstDescendant(of: SwitchBarTextEntryView.self, in: sut))
-        textEntry.setQueryText("Please also cover how domestic ducks were bred\nfrom wild mallards over the centuries")
-
-        sut.applyCardLayout(layout, animated: false)
-        sut.layoutIfNeeded()
-
-        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: textEntry))
-        let layoutManager = textView.layoutManager
-        var lineCount = 0
-        layoutManager.enumerateLineFragments(forGlyphRange: layoutManager.glyphRange(for: textView.textContainer)) { _, _, _, _, _ in
-            lineCount += 1
-        }
-        return lineCount
     }
 
     private func prepareForFitting(_ view: UIView, width: CGFloat = 320, height: CGFloat = 68) {

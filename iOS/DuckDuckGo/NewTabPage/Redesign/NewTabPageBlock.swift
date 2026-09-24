@@ -22,7 +22,8 @@ import UIKit
 enum NewTabPageBlockID: String {
     case welcome
     case searchInput
-    case optionalContent
+    case escapeHatch
+    case messages
     case favorites
 }
 

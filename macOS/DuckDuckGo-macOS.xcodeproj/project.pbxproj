@@ -900,7 +900,6 @@
 		3706FCB5293F65D500E42796 /* trackerData.json in Resources */ = {isa = PBXBuildFile; fileRef = 9833913027AAA4B500DAF119 /* trackerData.json */; };
 		3706FCB7293F65D500E42796 /* 01_Fire_really_small.json in Resources */ = {isa = PBXBuildFile; fileRef = 8511E18325F82B34002F516B /* 01_Fire_really_small.json */; };
 		3706FCBE293F65D500E42796 /* autoconsent-bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = B31055C327A1BA1D001AC618 /* autoconsent-bundle.js */; };
-		3706FCC0293F65D500E42796 /* FindInPage.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 85A0117325AF2EDF00FA6A0C /* FindInPage.storyboard */; };
 		3706FCC3293F65D500E42796 /* userscript.js in Resources */ = {isa = PBXBuildFile; fileRef = B31055BE27A1BA1D001AC618 /* userscript.js */; };
 		3706FCC8293F65D500E42796 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA585D85248FD31400E9A3E2 /* Assets.xcassets */; };
 		3706FCD0293F65D500E42796 /* BookmarksBarCollectionViewItem.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4BE53369286912D40019DBFD /* BookmarksBarCollectionViewItem.xib */; };
@@ -2751,7 +2750,6 @@
 		859F30652A72A9FA00C20372 /* BookmarksBarPromptPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 859F30632A72A7BB00C20372 /* BookmarksBarPromptPopover.swift */; };
 		859F30672A72B38500C20372 /* BookmarksBarPromptAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 859F30662A72B38500C20372 /* BookmarksBarPromptAssets.xcassets */; };
 		85A0116925AF1D8900FA6A0C /* FindInPageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A0116825AF1D8900FA6A0C /* FindInPageViewController.swift */; };
-		85A0117425AF2EDF00FA6A0C /* FindInPage.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 85A0117325AF2EDF00FA6A0C /* FindInPage.storyboard */; };
 		85A0118225AF60E700FA6A0C /* FindInPageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A0118125AF60E700FA6A0C /* FindInPageModel.swift */; };
 		85AC3AEF25D5CE9800C7D2AA /* UserScripts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85AC3AEE25D5CE9800C7D2AA /* UserScripts.swift */; };
 		85AC3B0525D6B1D800C7D2AA /* ScriptSourceProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85AC3B0425D6B1D800C7D2AA /* ScriptSourceProviding.swift */; };
@@ -6317,7 +6315,6 @@
 		859F30632A72A7BB00C20372 /* BookmarksBarPromptPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarPromptPopover.swift; sourceTree = "<group>"; };
 		859F30662A72B38500C20372 /* BookmarksBarPromptAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = BookmarksBarPromptAssets.xcassets; sourceTree = "<group>"; };
 		85A0116825AF1D8900FA6A0C /* FindInPageViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindInPageViewController.swift; sourceTree = "<group>"; };
-		85A0117325AF2EDF00FA6A0C /* FindInPage.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = FindInPage.storyboard; sourceTree = "<group>"; };
 		85A0118125AF60E700FA6A0C /* FindInPageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindInPageModel.swift; sourceTree = "<group>"; };
 		85AC3AEE25D5CE9800C7D2AA /* UserScripts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserScripts.swift; sourceTree = "<group>"; };
 		85AC3B0425D6B1D800C7D2AA /* ScriptSourceProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptSourceProviding.swift; sourceTree = "<group>"; };
@@ -10755,7 +10752,6 @@
 		85A0115D25AF1C4700FA6A0C /* FindInPage */ = {
 			isa = PBXGroup;
 			children = (
-				85A0117325AF2EDF00FA6A0C /* FindInPage.storyboard */,
 				85A0118125AF60E700FA6A0C /* FindInPageModel.swift */,
 				85A0116825AF1D8900FA6A0C /* FindInPageViewController.swift */,
 			);
@@ -15009,7 +15005,6 @@
 				ED314ECA301CC10E00D1A0A0 /* AppIcon-Review.icon in Resources */,
 				BB1F8E132E3CC5C40043648F /* sparkleloop_wide_legacy.json in Resources */,
 				B5EA14AB2FFFDB8000FC2512 /* Shield-Color-24.json in Resources */,
-				3706FCC0293F65D500E42796 /* FindInPage.storyboard in Resources */,
 				37EE56012D5F197300D53C7C /* dark-flame-mouse-over.json in Resources */,
 				37EE56022D5F197300D53C7C /* dark-shield.json in Resources */,
 				37EE56032D5F197300D53C7C /* dark-shield-dot.json in Resources */,
@@ -15271,7 +15266,6 @@
 				844178682EE9799B009BDC3A /* TabBar.storyboard in Resources */,
 				B5EA14AA2FFFDB8000FC2512 /* Shield-Color-24.json in Resources */,
 				BB1F8E142E3CC5C40043648F /* sparkleloop_wide_legacy.json in Resources */,
-				85A0117425AF2EDF00FA6A0C /* FindInPage.storyboard in Resources */,
 				37EE55D82D5F197300D53C7C /* dark-flame-mouse-over.json in Resources */,
 				37EE55D92D5F197300D53C7C /* dark-shield.json in Resources */,
 				37EE55DA2D5F197300D53C7C /* dark-shield-dot.json in Resources */,

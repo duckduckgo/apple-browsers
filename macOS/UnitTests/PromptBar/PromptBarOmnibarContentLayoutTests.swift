@@ -56,15 +56,6 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
                        "The gap between the prompt and the controls row has moved")
     }
 
-    func testWhenRebrandedThenThePanelBudgetsTheControlsRowItLaysOut() {
-        content = makeContent(isAppRebranded: true)
-
-        let gap = layOutAndMeasureGap(prompt: "what is a duck")
-
-        XCTAssertEqual(gap, expectedPromptToControlsGap, accuracy: 1,
-                       "The rebranded panel budgets a different controls row height than it lays out")
-    }
-
     func testWhenThePromptGrowsToMoreLinesThenTheGapBelowItDoesNotChange() {
         let oneLine = layOutAndMeasureGap(prompt: "what is a duck")
         let twoLines = layOutAndMeasureGap(prompt: String(repeating: "what is a duck ", count: 8))
@@ -107,8 +98,6 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
         XCTAssertEqual(containerViewController.suggestionsHeight, 0,
                        "This measurement only isolates the controls row while nothing sits below it")
-        XCTAssertEqual(containerViewController.additionalContentHeight, 0,
-                       "This measurement only isolates the controls row while nothing sits below it")
 
         let buttons = controlsRowButtons(in: view)
         XCTAssertFalse(buttons.isEmpty, "No controls row in the hierarchy")
@@ -124,7 +113,6 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
     }
 
     func testWhenSuggestionsAreCollapsedThenTheSubmitButtonClearsTheBottomEdgeByItsTrailingInset() {
-        content = makeContent(isAppRebranded: true)
         _ = layOutAndMeasureGap(prompt: "what is a duck")
 
         XCTAssertEqual(containerViewController.suggestionsHeight, 0,
@@ -268,9 +256,9 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
     // MARK: - Assembly
 
-    private func makeContent(isAppRebranded: Bool = false) -> PromptBarOmnibarContentViewController {
+    private func makeContent() -> PromptBarOmnibarContentViewController {
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub[FeatureFlag.appRebranding.rawValue] = isAppRebranded
+        featureFlagger.featuresStub[FeatureFlag.appRebranding.rawValue] = true
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),

@@ -218,7 +218,7 @@ final class ExcludedDomainsViewController: NSViewController {
         tableView.reloadData()
     }
 
-    /// Code-built replacement for the `ExcludedDomainCell` prototype that used to live in the storyboard.
+    /// Builds a reusable `ExcludedDomainCell` row: favicon plus domain.
     /// Laid out like `FireproofDomainCellView`, but keeps this screen's own favicon lookup:
     /// `FaviconView` resolves by exact URL at `.medium` and drops anything under 16pt, which falls
     /// back to a letter placeholder for hosts this screen used to show an icon for.

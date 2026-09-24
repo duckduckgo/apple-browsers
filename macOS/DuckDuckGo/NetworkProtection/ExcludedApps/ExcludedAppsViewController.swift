@@ -178,7 +178,7 @@ final class ExcludedAppsViewController: NSViewController {
         self.view = view
     }
 
-    /// Code-built replacement for the `ExcludedAppCell` prototype that used to live in the storyboard.
+    /// Builds a reusable `ExcludedAppCell` row: app icon plus name.
     private func makeAppCellView() -> NSTableCellView {
         let cell = NSTableCellView()
         cell.identifier = Constants.cellIdentifier

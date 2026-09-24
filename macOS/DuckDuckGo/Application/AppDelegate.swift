@@ -109,6 +109,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
     let applicationUpdateDetector: ApplicationUpdateDetector
+    var cpmAppSessionDiagnostics: CPMAppSessionDiagnostics {
+        let versionChange: CPMAppSessionDiagnostics.VersionChange?
+        switch applicationUpdateDetector.isApplicationUpdated() {
+        case .updated: versionChange = .updated
+        case .downgraded: versionChange = .downgraded
+        case .noChange: versionChange = nil
+        }
+        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate)
+    }
     private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider

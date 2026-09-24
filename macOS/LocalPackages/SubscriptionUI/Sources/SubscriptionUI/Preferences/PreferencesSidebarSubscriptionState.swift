@@ -37,6 +37,10 @@ public struct PreferencesSidebarSubscriptionState: Equatable {
     public let isIdentityTheftRestorationAvailable: Bool
     public let isPaidAIChatAvailable: Bool
 
+    /// Whether the Subscriber Offers entry point should be shown: an active subscription plus the
+    /// `partnershipsHub` subfeature. Unlike the entries above it needs no entitlement of its own.
+    public let isPartnershipsHubAvailable: Bool
+
     public init(hasSubscription: Bool = false,
                 shouldHideSubscriptionPurchase: Bool = true,
                 isNetworkProtectionRemovalEnabled: Bool = false,
@@ -46,7 +50,8 @@ public struct PreferencesSidebarSubscriptionState: Equatable {
                 isNetworkProtectionRemovalAvailable: Bool = false,
                 isPersonalInformationRemovalAvailable: Bool = false,
                 isIdentityTheftRestorationAvailable: Bool = false,
-                isPaidAIChatAvailable: Bool = false) {
+                isPaidAIChatAvailable: Bool = false,
+                isPartnershipsHubAvailable: Bool = false) {
         self.hasSubscription = hasSubscription
         self.shouldHideSubscriptionPurchase = shouldHideSubscriptionPurchase
         self.isNetworkProtectionRemovalEnabled = isNetworkProtectionRemovalEnabled
@@ -57,6 +62,7 @@ public struct PreferencesSidebarSubscriptionState: Equatable {
         self.isPersonalInformationRemovalAvailable = isPersonalInformationRemovalAvailable
         self.isIdentityTheftRestorationAvailable = isIdentityTheftRestorationAvailable
         self.isPaidAIChatAvailable = isPaidAIChatAvailable
+        self.isPartnershipsHubAvailable = isPartnershipsHubAvailable
     }
 
     public var hasAnyEntitlement: Bool {
@@ -69,6 +75,6 @@ public struct PreferencesSidebarSubscriptionState: Equatable {
 
 extension PreferencesSidebarSubscriptionState: CustomDebugStringConvertible {
     public var debugDescription: String {
-        return "PreferencesSidebarSubscriptionState(hasSubscription: \(hasSubscription), shouldHideSubscriptionPurchase: \(shouldHideSubscriptionPurchase), isNetworkProtectionRemovalEnabled: \(isNetworkProtectionRemovalEnabled), isPersonalInformationRemovalEnabled: \(isPersonalInformationRemovalEnabled), isIdentityTheftRestorationEnabled: \(isIdentityTheftRestorationEnabled), isPaidAIChatEnabled: \(isPaidAIChatEnabled), isNetworkProtectionRemovalAvailable: \(isNetworkProtectionRemovalAvailable), isPersonalInformationRemovalAvailable: \(isPersonalInformationRemovalAvailable), isIdentityTheftRestorationAvailable: \(isIdentityTheftRestorationAvailable), isPaidAIChatAvailable: \(isPaidAIChatAvailable))"
+        return "PreferencesSidebarSubscriptionState(hasSubscription: \(hasSubscription), shouldHideSubscriptionPurchase: \(shouldHideSubscriptionPurchase), isNetworkProtectionRemovalEnabled: \(isNetworkProtectionRemovalEnabled), isPersonalInformationRemovalEnabled: \(isPersonalInformationRemovalEnabled), isIdentityTheftRestorationEnabled: \(isIdentityTheftRestorationEnabled), isPaidAIChatEnabled: \(isPaidAIChatEnabled), isNetworkProtectionRemovalAvailable: \(isNetworkProtectionRemovalAvailable), isPersonalInformationRemovalAvailable: \(isPersonalInformationRemovalAvailable), isIdentityTheftRestorationAvailable: \(isIdentityTheftRestorationAvailable), isPaidAIChatAvailable: \(isPaidAIChatAvailable), isPartnershipsHubAvailable: \(isPartnershipsHubAvailable))"
     }
 }

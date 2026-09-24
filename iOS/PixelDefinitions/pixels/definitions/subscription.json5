@@ -1052,5 +1052,12 @@
                 "enum": ["missingPersistor", "emptyChecklist"]
             }
         ]
+    },
+    "m_privacy-pro_app-settings_partner-benefits_click": {
+        "description": "Fires when the user taps 'Subscriber Offers' in the DuckDuckGo Subscription section of Settings, which opens the Partnerships Hub. The name says 'partner-benefits' because it is shared verbatim with Android and Windows, and predates the label being renamed to 'Subscriber Offers'.",
+        "owners": ["bwaresiak", "jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

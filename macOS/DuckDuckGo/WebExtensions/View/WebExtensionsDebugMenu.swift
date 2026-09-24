@@ -66,6 +66,11 @@ final class WebExtensionsDebugMenu: NSMenu {
         addItem(printScriptletInfoMenuItem)
         updateSimulateCPMBreakageMenuItem()
         addItem(simulateCPMBreakageMenuItem)
+        let processIdentifier = (webExtensionManager as? WebExtensionManager)?.cpmDiagnosticsRecorder?.currentBackgroundWebProcessIdentifier
+        let processLabel = processIdentifier.map { $0 > 0 ? String($0) : "not running" } ?? "unavailable"
+        let processMenuItem = NSMenuItem(title: "CPM Background WebContent PID: \(processLabel)", action: nil)
+        processMenuItem.isEnabled = false
+        addItem(processMenuItem)
         addItem(.separator())
         addItem(openExtensionsFolderMenuItem)
 

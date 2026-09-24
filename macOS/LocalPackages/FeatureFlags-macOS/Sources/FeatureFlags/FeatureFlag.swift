@@ -95,6 +95,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451266423288
     case webExtensionLightweightReload
 
+    /// Failsafe for Web Extensions background-process diagnostics observation.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444683902
+    case cpmBackgroundDelegateProxy
+
+    /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218781680888931
+    case cpmDiagnosticsRecorder
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
 
@@ -221,6 +229,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211969496845106?focus=true
     case blackFridayCampaign
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218699650746481
+    case partnershipsHub
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477844148
     case syncCreditCards
@@ -408,10 +419,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enable Look Up (three-finger click) while keeping link preview disabled
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
-
-    /// Autoplay policy control via WKWebpagePreferences
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213734484627619
-    case autoplayPolicy
 
     /// Enables the Bookmark Toolbar ("Show Bookmarks Bar?") promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218028792667616?focus=true
@@ -671,6 +678,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
         case .webExtensionLightweightReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
+        case .cpmBackgroundDelegateProxy:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy), category: .webExtensions)
+        case .cpmDiagnosticsRecorder:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:
@@ -751,6 +762,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.winBackOffer), category: .vpn)
         case .blackFridayCampaign:
             Config(source: .remoteReleasable(PrivacyProSubfeature.blackFridayCampaign), category: .subscription)
+        case .partnershipsHub:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.partnershipsHub), category: .subscription)
         case .syncCreditCards:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncCreditCards))
         case .syncIdentities:
@@ -906,8 +919,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                    source: .remoteReleasable(AIChatSubfeature.nativeVoicePermissionFlow),
                    supportsLocalOverriding: true,
                    category: .duckAI)
-        case .autoplayPolicy:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.autoplayPolicy), supportsLocalOverriding: true)
         case .newErrorPageReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.newErrorPageReload))
         case .aiChatSettingsLinkInAiFeatures:

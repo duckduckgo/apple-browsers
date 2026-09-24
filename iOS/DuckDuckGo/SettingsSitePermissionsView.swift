@@ -314,11 +314,12 @@ struct SettingsSitePermissionsView: View {
     }
 
     private var systemSettingsFooter: AttributedString {
-        var footer = AttributedString(UserText.settingsSitePermissionsSystemSettingsFooterPrefix)
-        var link = AttributedString(UserText.settingsSitePermissionsSystemSettingsLink)
-        link.foregroundColor = Color(designSystemColor: .accentPrimary)
-        link.link = SettingsSitePermissionsFooterAction.systemSettings.url
-        footer.append(link)
+        let linkText = UserText.settingsSitePermissionsSystemSettingsLink
+        var footer = AttributedString(String(format: UserText.settingsSitePermissionsSystemSettingsFooterFormat, linkText))
+        if let range = footer.range(of: linkText) {
+            footer[range].foregroundColor = Color(designSystemColor: .accentPrimary)
+            footer[range].link = SettingsSitePermissionsFooterAction.systemSettings.url
+        }
         return footer
     }
 }

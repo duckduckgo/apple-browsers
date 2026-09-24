@@ -71,7 +71,7 @@ for dir in "$@"; do
 done
 
 # Add LocalPackages sub-directories here when needed
-set -- "${base_dir}/LocalPackages/SyncUI-iOS/Sources/SyncUI-iOS"
+set -- "${base_dir}/LocalPackages/SyncUI-iOS/Sources/SyncUI-iOS" "${base_dir}/LocalPackages/SitePermissions/Sources/SitePermissions"
 
 for dir in "$@"; do
 	update_localizable_strings "${dir}" "${dir}/Resources/en.lproj"

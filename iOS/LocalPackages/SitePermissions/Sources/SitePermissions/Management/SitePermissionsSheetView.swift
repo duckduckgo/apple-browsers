@@ -117,12 +117,22 @@ public struct SitePermissionsSheetView: View {
     private var header: some View {
         HStack(spacing: 8) {
             HStack(spacing: 0) {
-                Text(UserText.PermissionManagement.titlePrefix + " ")
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("“\(viewModel.site.host)”")
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                let title = viewModel.title
+                let domain = viewModel.site.host
+                if let domainRange = title.range(of: domain) {
+                    Text(String(title[..<domainRange.lowerBound]))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(domain)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(String(title[domainRange.upperBound...]))
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text(title)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
             }
             .daxHeadline()
             .padding(.leading, Constants.horizontalPadding)

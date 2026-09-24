@@ -103,6 +103,7 @@ enum Preferences {
             wideEvent: WideEventManaging,
             pinningManager: PinningManager,
             permissionManager: PermissionManagerProtocol,
+            websitePermissionDefaults: WebsitePermissionDefaultsProtocol = NSApp.delegateTyped.websitePermissionDefaults,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
@@ -118,7 +119,8 @@ enum Preferences {
             self.aiChatURLSettings = aiChatURLSettings
             self.wideEvent = wideEvent
             self._websitePermissionsModel = StateObject(wrappedValue: WebsitePermissionsViewModel(permissionManager: permissionManager,
-                                                                                                 featureFlagger: featureFlagger))
+                                                                                                 featureFlagger: featureFlagger,
+                                                                                                 defaults: websitePermissionDefaults))
             self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
             self.blackFridayCampaignProvider = blackFridayCampaignProvider
             self.pixelHandler = pixelHandler
@@ -159,6 +161,14 @@ enum Preferences {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(colorsProvider.settingsBackgroundColor))
             .environment(\.designSystemPalette, themeManager.designColorPalette)
+            .onReceive(model.$websitePermissionTarget) { category in
+                guard let category else { return }
+                DispatchQueue.main.async {
+                    guard model.selectedPane == .websitePermissions, model.websitePermissionTarget == category else { return }
+                    websitePermissionsModel.send(action: .openDetail(category))
+                    model.resetWebsitePermissionRequest()
+                }
+            }
             .onChange(of: model.selectedPane) { selectedPane in
                 guard selectedPane != .websitePermissions else { return }
                 websitePermissionsModel.send(action: .closeDetail)
@@ -202,7 +212,8 @@ enum Preferences {
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 autoplayModel: NSApp.delegateTyped.autoplayPreferences,
-                                dockModel: model.dockPreferences)
+                                dockModel: model.dockPreferences,
+                                showWebsitePermissions: { model.selectPane(.websitePermissions) })
                 case .sync:
                     SyncView()
                 case .appearance:
@@ -231,7 +242,7 @@ enum Preferences {
                     DuckPlayerView(model: model.duckPlayerPreferences)
                 case .websitePermissions:
                     PreferencesWebsitePermissionsView(model: websitePermissionsModel)
-                case .otherPlatforms:
+                case .otherPlatforms, .partnershipsHub:
                     // Opens a new tab
                     Spacer()
                 case .about:

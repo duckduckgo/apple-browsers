@@ -131,7 +131,8 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable?
-    @MainActor func mcpToolsCall(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable?
+    @MainActor func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
@@ -1252,13 +1253,17 @@ extension AIChatUserScriptHandler {
 
         // No Fire check, mirroring Windows: a Fire window is advertised the catalogue and refused
         // on every call. Detectable, and a known cross-platform gap to close on both sides together.
-        return BrowserToolsListResponse(tools: browserTools.catalog.enabledTools.map { $0.descriptor() })
+        let permissions = browserTools.permissions
+        return BrowserToolsListResponse(tools: browserTools.catalog.enabledTools.map {
+            $0.descriptor(permissionState: permissions.effectiveState(for: $0).rawValue)
+        })
     }
 
     /// Every outcome is a well-formed reply carrying the request's `callId`. A refusal rides in
     /// `isError`; the envelope status describes the round trip only, and is always `ok`.
+    /// - Parameter elicitationPusher: where a permission prompt raised by this call is delivered.
     @MainActor
-    func mcpToolsCall(params: Any, message: UserScriptMessage) async -> Encodable? {
+    func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable? {
         guard let request: InvokeBrowserToolRequest = DecodableHelper.decode(from: params), !request.name.isEmpty else {
             // Recover the call id even from a payload we could not read, so the front end can still
             // match the failure to the call it made rather than being left guessing.
@@ -1287,8 +1292,19 @@ extension AIChatUserScriptHandler {
 
         let result = await browserTools.invoker.invoke(toolNamed: request.name,
                                                        arguments: request.arguments,
-                                                       context: context)
+                                                       context: context,
+                                                       elicitationPusher: elicitationPusher)
         return InvokeBrowserToolResponse(callId: request.callId, result: result.callToolResult)
+    }
+
+    /// Always acknowledged, even for a malformed payload, so a front end that sends this as a
+    /// request cannot hang. An unreadable `result` completes the prompt as `cancel`.
+    @MainActor
+    func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let response: AIChatElicitationResponseRequest = DecodableHelper.decode(from: params), !response.id.isEmpty {
+            browserTools.elicitations.complete(id: response.id, result: response.result ?? .cancel)
+        }
+        return MCPEmptyResult()
     }
 
     private static func callID(fromRawParams params: Any) -> String {

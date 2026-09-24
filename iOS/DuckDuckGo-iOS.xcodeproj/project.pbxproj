@@ -343,6 +343,8 @@
 		5BF65FD42F58C01F00BCC9F4 /* SettingsAutoplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BF65FD32F58C01C00BCC9F4 /* SettingsAutoplayView.swift */; };
 		5BF65FDD2F5A2CFB00BCC9F4 /* AutoplaySettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BF65FDC2F5A2CF700BCC9F4 /* AutoplaySettingsTests.swift */; };
 		5BF65FE22F5F224000BCC9F4 /* ListBasedPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BF65FE12F5F224000BCC9F4 /* ListBasedPicker.swift */; };
+		FA57C0DE000000000000000A /* HangMetricsProcessorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA57C0DE0000000000000009 /* HangMetricsProcessorTests.swift */; };
+		FA57C0DE000000000000000C /* HangMetricsSubscriberTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA57C0DE000000000000000B /* HangMetricsSubscriberTests.swift */; };
 		5F94A9DD9D48374FDBD4EC49 /* RebrandedAddToDockTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3E2B5140E5464B0AA21D09 /* RebrandedAddToDockTutorialView.swift */; };
 		60F0888B646078A1C54D7C2E /* SearchTokenRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CBE907E9CAC75F8561B75D4 /* SearchTokenRequestTests.swift */; };
 		64C0847679ED02196F3D425D /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 3D0759507C5E488826CC23DC /* WideEvent */; };
@@ -3460,6 +3462,8 @@
 		AD5E1ED02B0000000000F209 /* SelectionFrameUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionFrameUserScriptTests.swift; sourceTree = "<group>"; };
 		AEC7FF2261884003814DB9D0 /* OnboardingSearchAIToggle_dark.lottie */ = {isa = PBXFileReference; lastKnownFileType = file; path = OnboardingSearchAIToggle_dark.lottie; sourceTree = "<group>"; };
 		AF81E0C6EDC46254CF28AFCB /* OnboardingView+SearchExperienceContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "OnboardingView+SearchExperienceContent.swift"; sourceTree = "<group>"; };
+		FA57C0DE0000000000000009 /* HangMetricsProcessorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HangMetricsProcessorTests.swift; sourceTree = "<group>"; };
+		FA57C0DE000000000000000B /* HangMetricsSubscriberTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HangMetricsSubscriberTests.swift; sourceTree = "<group>"; };
 		B4E5D6C7A8F9012345678901 /* AIChatTabChatHeaderViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabChatHeaderViewTests.swift; sourceTree = "<group>"; };
 		B50DAF4E2FBE4FD3007BFA26 /* EscapeHatchModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EscapeHatchModelTests.swift; sourceTree = "<group>"; };
 		B56252F0D368C46F50BE864C /* MockSubscriptionOnboardingActivationRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSubscriptionOnboardingActivationRecorder.swift; sourceTree = "<group>"; };
@@ -7981,6 +7985,8 @@
 				85C11E4020904BBE00BFFEB4 /* VariantManagerTests.swift */,
 				A6E8A70CF1DFF21DC84B150F /* LaunchTimeMetricsProcessorTests.swift */,
 				B8FD41799FD12C35CD0E1600 /* LaunchTimeMetricsSubscriberTests.swift */,
+				FA57C0DE0000000000000009 /* HangMetricsProcessorTests.swift */,
+				FA57C0DE000000000000000B /* HangMetricsSubscriberTests.swift */,
 			);
 			name = Statistics;
 			sourceTree = "<group>";
@@ -11011,6 +11017,8 @@
 				45865446DBAA91F852E4AEA1 /* SearchTokenExperimentTests.swift in Sources */,
 				E7BE23F1F67AF41F9871BC6F /* LaunchTimeMetricsProcessorTests.swift in Sources */,
 				C256781EC700D62BEDE36B94 /* LaunchTimeMetricsSubscriberTests.swift in Sources */,
+				FA57C0DE000000000000000A /* HangMetricsProcessorTests.swift in Sources */,
+				FA57C0DE000000000000000C /* HangMetricsSubscriberTests.swift in Sources */,
 				53FC97E1D0E95EA8B6ECD771 /* SearchTokenFetcherTests.swift in Sources */,
 				60F0888B646078A1C54D7C2E /* SearchTokenRequestTests.swift in Sources */,
 				E85300B61A233D45A5D82FFC /* SearchTokenExperimentSettingsTests.swift in Sources */,

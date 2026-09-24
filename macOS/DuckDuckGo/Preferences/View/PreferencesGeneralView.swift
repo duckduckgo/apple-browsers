@@ -72,7 +72,6 @@ extension Preferences {
                 String(format: UserText.autoplayMovedCaption,
                        "[\(UserText.websitePermissions)](\(URL.settingsPane(.websitePermissions)))")
             )
-            // The link takes its colour from the tint, which would otherwise be the theme's accent.
             .tint(Color.rebrandableLink(palette: palette))
             .environment(\.openURL, OpenURLAction { _ in
                 showWebsitePermissions()

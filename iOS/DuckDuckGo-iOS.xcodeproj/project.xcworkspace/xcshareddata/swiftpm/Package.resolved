@@ -1,5 +1,5 @@
 {
-  "originHash" : "6fc27ddfa515ed46eea207ad55b5f5d1e8305670bd4677309edf4e7bfda82858",
+  "originHash" : "659e172654fca4e4f38f695f0770beb3833e0ff643c7333f1b0601fe7f05b9d0",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -258,8 +258,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/wireguard-apple",
       "state" : {
-        "revision" : "6398967e9c110406847142d4d75f0a6ee4006921",
-        "version" : "1.1.2"
+        "revision" : "13fd026384b1af11048451061cc1b21434990668",
+        "version" : "1.1.3"
       }
     },
     {

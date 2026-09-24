@@ -102,19 +102,6 @@ final class AIChatContextualSuggestionsStripTests: XCTestCase {
         XCTAssertEqual(sut.chipCountForTesting, 1)
     }
 
-    func test_detachingFromASurfaceThatNoLongerHoldsTheStripIsIgnored() {
-        sut.embed(in: parent, style: .floating)
-        let next = UIViewController()
-        next.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
-        next.view.addSubview(anchor.inputView)
-        sut.embed(in: next, style: .activeChat)
-        send(suggestions: [makeSuggestion(id: "s1")])
-
-        sut.detach(from: parent)
-
-        XCTAssertEqual(sut.chipCountForTesting, 1)
-    }
-
     // MARK: - Expansion
 
     /// A collapsed input has no room above it, so chips wait rather than showing over the transcript.

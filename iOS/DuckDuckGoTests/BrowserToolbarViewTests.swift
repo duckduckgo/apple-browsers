@@ -17,7 +17,9 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKitIcons
 import XCTest
+import SitePermissions
 @testable import DuckDuckGo
 
 final class BrowserToolbarViewTests: XCTestCase {
@@ -515,6 +517,81 @@ final class BrowserToolbarViewTests: XCTestCase {
             BrowserToolbarView.totalHeight(withOmnibarHeight: 60, isFloating: false),
             115,
             accuracy: 0.01)
+    }
+}
+
+@MainActor
+final class SitePermissionMenuAnimationTests: XCTestCase {
+
+    func testCancellationRestoresMenuAndAccessibility() throws {
+        let button = UIButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
+        button.accessibilityLabel = "Menu"
+        button.setMenuAlertVisible(true, animated: false)
+        let originalImage = try XCTUnwrap(button.image(for: .normal))
+        let originalSubviews = button.subviews
+        let downloadIndicator = try XCTUnwrap(originalSubviews.first { $0 is UIImageView && $0 !== button.imageView })
+        button.animateSitePermissionGranted([.location], reduceMotion: false)
+
+        XCTAssertTrue(downloadIndicator.isHidden)
+        XCTAssertNotNil(button.imageView?.layer.mask)
+        let badge = try XCTUnwrap(button.subviews.first { !originalSubviews.contains($0) })
+        XCTAssertFalse(badge.isUserInteractionEnabled)
+        XCTAssertTrue(badge.accessibilityElementsHidden)
+
+        button.cancelSitePermissionAnimation()
+
+        XCTAssertFalse(downloadIndicator.isHidden)
+        XCTAssertNil(badge.superview)
+        XCTAssertNil(button.imageView?.layer.mask)
+        XCTAssertEqual(button.image(for: .normal), originalImage)
+        XCTAssertEqual(button.accessibilityLabel, "Menu")
+        XCTAssertEqual(button.subviews, originalSubviews)
+    }
+
+    func testReducedMotionDoesNotScaleBadgeOrAnimateBars() throws {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        let button = UIButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
+        window.addSubview(button)
+        window.isHidden = false
+        defer {
+            button.cancelSitePermissionAnimation()
+            window.isHidden = true
+        }
+        button.setMenuAlertVisible(false, animated: false)
+        let originalSubviews = button.subviews
+        button.animateSitePermissionGranted([.microphone], reduceMotion: true)
+        CATransaction.flush()
+
+        let badge = try XCTUnwrap(button.subviews.first { !originalSubviews.contains($0) })
+        XCTAssertEqual(badge.transform, .identity)
+        XCTAssertFalse(badge.layer.animationKeys()?.contains { $0.hasPrefix("transform") } ?? false)
+        let mask = try XCTUnwrap(button.imageView?.layer.mask)
+        XCTAssertTrue(mask.animationKeys()?.isEmpty ?? true)
+    }
+
+    func testRepeatedGrantRestartsCombinedBadgeSequence() async throws {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        let button = UIButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
+        window.addSubview(button)
+        window.isHidden = false
+        defer {
+            button.cancelSitePermissionAnimation()
+            window.isHidden = true
+        }
+        button.setMenuAlertVisible(false, animated: false)
+        let originalSubviews = button.subviews
+
+        button.animateSitePermissionGranted([.camera, .microphone], reduceMotion: true)
+        let firstBadge = try XCTUnwrap(button.subviews.first { !originalSubviews.contains($0) })
+        button.animateSitePermissionGranted([.camera, .microphone], reduceMotion: true)
+        XCTAssertNil(firstBadge.superview)
+
+        let microphoneBadgeAppeared = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            button.subviews.contains {
+                ($0 as? UIImageView)?.image == DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid
+            }
+        }, object: nil)
+        await fulfillment(of: [microphoneBadgeAppeared], timeout: 5)
     }
 }
 

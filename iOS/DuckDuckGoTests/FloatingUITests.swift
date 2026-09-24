@@ -468,11 +468,24 @@ final class FloatingGlassAppearancePolicyTests: XCTestCase {
         XCTAssertEqual(interfaceStyle, .dark)
     }
 
-    func testWhenNormalModeUsesDarkDeviceAppearanceThenInterfaceStyleIsDark() {
+    func testWhenNormalModeUsesDarkDeviceAppearanceThenInterfaceStyleFollowsPageAppearance() {
+        let traitCollection = UITraitCollection(userInterfaceStyle: .dark)
+
+        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
+                                                                    traitCollection: traitCollection,
+                                                                    pageBackgroundColor: .black),
+                       .dark)
+        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
+                                                                    traitCollection: traitCollection,
+                                                                    pageBackgroundColor: .white),
+                       .light)
+    }
+
+    func testWhenDarkDeviceAppearanceHasNoPageColorThenInterfaceStyleIsDark() {
         let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
             isFireMode: false,
             traitCollection: UITraitCollection(userInterfaceStyle: .dark),
-            pageBackgroundColor: .white)
+            pageBackgroundColor: nil)
 
         XCTAssertEqual(interfaceStyle, .dark)
     }

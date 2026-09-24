@@ -95,11 +95,12 @@ enum FloatingGlassAppearancePolicy {
     static func interfaceStyle(isFireMode: Bool,
                                traitCollection: UITraitCollection,
                                pageBackgroundColor: UIColor?) -> UIUserInterfaceStyle {
-        if isFireMode || traitCollection.userInterfaceStyle == .dark {
+        if isFireMode {
             return .dark
         }
+        // Follow the page in both themes: forcing dark glass over a light page leaves its white icons washed out.
         guard let pageBackgroundColor else {
-            return .light
+            return traitCollection.userInterfaceStyle == .dark ? .dark : .light
         }
         let resolvedColor = pageBackgroundColor.resolvedColor(with: traitCollection)
         return resolvedColor.brightnessPercentage < 50 ? .dark : .light

@@ -40,6 +40,7 @@ extension Preferences {
         /// Opens the Website Permissions pane, where the all-sites autoplay setting now lives.
         let showWebsitePermissions: () -> Void
         @State private var showingCustomHomePageSheet = false
+        @Environment(\.designSystemPalette) private var palette
         let featureFlagger = NSApp.delegateTyped.featureFlagger
         let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
@@ -71,6 +72,8 @@ extension Preferences {
                 String(format: UserText.autoplayMovedCaption,
                        "[\(UserText.websitePermissions)](\(URL.settingsPane(.websitePermissions)))")
             )
+            // The link takes its colour from the tint, which would otherwise be the theme's accent.
+            .tint(Color.rebrandableLink(palette: palette))
             .environment(\.openURL, OpenURLAction { _ in
                 showWebsitePermissions()
                 return .handled

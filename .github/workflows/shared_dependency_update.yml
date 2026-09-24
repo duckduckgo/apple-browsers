@@ -1,0 +1,251 @@
+name: Shared - Check Dependency Update
+
+on:
+  workflow_call:
+    inputs:
+      dependency-slug:
+        description: "Short identifier used in the update branch name, e.g. sparkle"
+        required: true
+        type: string
+      display-name:
+        description: "Name used in the PR title and Asana task, e.g. Sparkle"
+        required: true
+        type: string
+      repo:
+        description: "GitHub repository of the dependency, e.g. sparkle-project/Sparkle"
+        required: true
+        type: string
+      pin-kind:
+        description: "package-swift or pbxproj (see scripts/dependency-updates/check_dependency_update.sh)"
+        required: true
+        type: string
+      pin-files:
+        description: "Space-separated files holding the exact version pin"
+        required: true
+        type: string
+      lockfiles:
+        description: "Space-separated Package.resolved files that must pick up the new version"
+        required: true
+        type: string
+      resolve-targets:
+        description: "One target per line, as <-project|-workspace>|<path>|<scheme>"
+        required: true
+        type: string
+      owners:
+        description: "Space-separated GitHub handles. Used for PR reviewers; the first one is the Asana assignee."
+        required: true
+        type: string
+      asana-parent-task-id:
+        description: "Asana task the update and failure subtasks are created under"
+        required: true
+        type: string
+      labels:
+        description: "Comma-separated PR labels. 'breaking' is added for major updates."
+        required: true
+        type: string
+    secrets:
+      SSH_PRIVATE_KEY_DUCKSANS_FONT:
+        required: true
+      ASANA_ACCESS_TOKEN:
+        required: true
+
+jobs:
+  check-and-update:
+    runs-on: [image:osx-tahoe-26, general-purpose]
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      OWNERS: ${{ inputs.owners }}
+    steps:
+      - name: Checkout repository
+        # Pinned to v5: v6 duplicates the git Authorization header and breaks
+        # peter-evans/create-pull-request (Duplicate header: "Authorization", HTTP 400).
+        uses: actions/checkout@v5
+
+      - name: Print macOS version
+        run: sw_vers
+
+      - name: Assign SSH keys
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+      - name: Check for ${{ inputs.display-name }} update
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEP_REPO: ${{ inputs.repo }}
+          PIN_KIND: ${{ inputs.pin-kind }}
+          PIN_FILES: ${{ inputs.pin-files }}
+        run: bash scripts/dependency-updates/check_dependency_update.sh
+
+      - name: Check for existing update PR
+        id: dedupe
+        if: steps.check.outputs.update_available == 'true'
+        env:
+          BRANCH: automation/${{ inputs.dependency-slug }}-update-${{ steps.check.outputs.latest_version }}
+        run: |
+          if git ls-remote --exit-code --heads origin "${BRANCH}" >/dev/null 2>&1; then
+            echo "Branch ${BRANCH} already exists — skipping task and PR creation."
+            echo "should_create=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_create=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve SPM packages
+        if: steps.dedupe.outputs.should_create == 'true'
+        env:
+          RESOLVE_TARGETS: ${{ inputs.resolve-targets }}
+        run: |
+          # gym builds via the project files, so each project's own lockfile is
+          # what the build consumes and must be bumped too.
+          while IFS='|' read -r flag path scheme; do
+            [[ -z "$flag" ]] && continue
+
+            echo "Resolving packages for ${path} (${scheme})"
+            xcodebuild -resolvePackageDependencies "$flag" "$path" -scheme "$scheme"
+          done <<< "$RESOLVE_TARGETS"
+
+      - name: Verify lockfiles
+        id: verify
+        if: steps.dedupe.outputs.should_create == 'true'
+        env:
+          REPO: ${{ inputs.repo }}
+          LOCKFILES: ${{ inputs.lockfiles }}
+          PIN_FILES: ${{ inputs.pin-files }}
+          LATEST: ${{ steps.check.outputs.latest_version }}
+        run: |
+          identity="${REPO##*/}"
+          identity="$(echo "${identity%.git}" | tr '[:upper:]' '[:lower:]')"
+
+          for lockfile in $LOCKFILES; do
+            version=$(jq -r --arg id "$identity" '.pins[] | select(.identity == $id) | .state.version' "$lockfile")
+            if [[ "$version" != "$LATEST" ]]; then
+              echo "::error::${lockfile} resolves ${identity} to '${version}', expected '${LATEST}'"
+              exit 1
+            fi
+            echo "${lockfile}: ${identity} ${version}"
+          done
+
+          # Only pin files and lockfiles go into the PR; surface anything else resolution touched.
+          expected=" ${PIN_FILES} ${LOCKFILES} "
+          git status --porcelain | cut -c4- | while read -r changed; do
+            [[ "$expected" == *" ${changed} "* ]] || echo "::warning::Not included in the PR: ${changed}"
+          done
+
+          # create-pull-request takes a comma-separated list
+          add_paths=$(echo ${PIN_FILES} ${LOCKFILES} | tr ' ' ',')
+          echo "add_paths=${add_paths}" >> "$GITHUB_OUTPUT"
+
+      - name: Create draft Pull Request
+        id: create-pr
+        if: steps.dedupe.outputs.should_create == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          add-paths: ${{ steps.verify.outputs.add_paths }}
+          commit-message: "Update ${{ inputs.display-name }} to ${{ steps.check.outputs.latest_version }}"
+          committer: Dax the Duck <dax@duckduckgo.com>
+          author: Dax the Duck <dax@duckduckgo.com>
+          branch: automation/${{ inputs.dependency-slug }}-update-${{ steps.check.outputs.latest_version }}
+          title: "Update ${{ inputs.display-name }} to ${{ steps.check.outputs.latest_version }}"
+          body: |
+            Updates ${{ inputs.display-name }} from `${{ steps.check.outputs.current_version }}` to `${{ steps.check.outputs.latest_version }}` (${{ steps.check.outputs.bump_type }} update).
+
+            [Compare changes on GitHub](https://github.com/${{ inputs.repo }}/compare/${{ steps.check.outputs.current_version }}...${{ steps.check.outputs.latest_version }})
+
+            ---
+
+            ${{ steps.check.outputs.release_notes }}
+          labels: ${{ inputs.labels }}${{ steps.check.outputs.bump_type == 'major' && ',breaking' || '' }}
+          draft: true
+
+      - name: Create Asana task
+        id: create-asana-task
+        if: steps.create-pr.outputs.pull-request-url
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          ASANA_PARENT_TASK_ID: ${{ inputs.asana-parent-task-id }}
+          DISPLAY_NAME: ${{ inputs.display-name }}
+          BUMP_TYPE: ${{ steps.check.outputs.bump_type }}
+          CURRENT_VERSION: ${{ steps.check.outputs.current_version }}
+          LATEST_VERSION: ${{ steps.check.outputs.latest_version }}
+          PR_URL: ${{ steps.create-pr.outputs.pull-request-url }}
+        run: |
+          primary_owner="${OWNERS%% *}"
+          mapping=$(curl -fLSs "https://raw.githubusercontent.com/duckduckgo/apple-toolbox/main/actions/asana-get-user-id-for-github-handle/github-asana-user-id-mapping.yml")
+
+          asana_user_id=$(echo "$mapping" | grep "^${primary_owner}:" | awk '{print $2}' | tr -d '"') || true
+          if [[ -z "$asana_user_id" || "$asana_user_id" == "null" ]]; then
+            echo "::warning::No Asana user found for ${primary_owner}"
+            asana_user_id=""
+          fi
+
+          case "$BUMP_TYPE" in
+            major) emoji="🔴" ;;
+            minor) emoji="🟡" ;;
+            *)     emoji="🟢" ;;
+          esac
+
+          task_name="${DISPLAY_NAME} ${emoji} [${BUMP_TYPE}] ${CURRENT_VERSION} → ${LATEST_VERSION}"
+          notes="PR: ${PR_URL}"
+
+          payload=$(jq -n \
+            --arg parent "$ASANA_PARENT_TASK_ID" \
+            --arg name "$task_name" \
+            --arg notes "$notes" \
+            --arg assignee "$asana_user_id" \
+            '{data: ({parent: $parent, name: $name, notes: $notes} + (if $assignee == "" then {} else {assignee: $assignee} end))}')
+
+          response=$(curl -fLSs "https://app.asana.com/api/1.0/tasks" \
+            --header "Accept: application/json" \
+            --header "Authorization: Bearer ${ASANA_ACCESS_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data "$payload")
+
+          task_id=$(echo "$response" | jq -r '.data.gid')
+          echo "task_url=https://app.asana.com/0/0/${task_id}/f" >> "$GITHUB_OUTPUT"
+
+      - name: Add Asana task URL to PR and mark ready for review
+        if: steps.create-asana-task.outputs.task_url
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.create-pr.outputs.pull-request-number }}
+          TASK_URL: ${{ steps.create-asana-task.outputs.task_url }}
+        run: |
+          {
+            echo "Task/Issue URL: ${TASK_URL}"
+            echo
+            gh pr view "$PR_NUMBER" --json body --jq '.body'
+          } | gh pr edit "$PR_NUMBER" --body-file -
+
+          gh pr ready "$PR_NUMBER"
+          gh pr edit "$PR_NUMBER" --add-reviewer "${OWNERS// /,}"
+
+      - name: Report failure to Asana
+        if: failure()
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          ASANA_PARENT_TASK_ID: ${{ inputs.asana-parent-task-id }}
+          DISPLAY_NAME: ${{ inputs.display-name }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+        run: |
+          primary_owner="${OWNERS%% *}"
+          mapping=$(curl -fLSs "https://raw.githubusercontent.com/duckduckgo/apple-toolbox/main/actions/asana-get-user-id-for-github-handle/github-asana-user-id-mapping.yml") || true
+
+          asana_user_id=$(echo "$mapping" | grep "^${primary_owner}:" | awk '{print $2}' | tr -d '"') || true
+          [[ "$asana_user_id" == "null" ]] && asana_user_id=""
+
+          payload=$(jq -n \
+            --arg parent "$ASANA_PARENT_TASK_ID" \
+            --arg name "⚠️ ${DISPLAY_NAME} update check failed" \
+            --arg notes "The ${WORKFLOW_NAME} workflow failed. See ${RUN_URL}" \
+            --arg assignee "$asana_user_id" \
+            '{data: ({parent: $parent, name: $name, notes: $notes} + (if $assignee == "" then {} else {assignee: $assignee} end))}')
+
+          curl -fLSs "https://app.asana.com/api/1.0/tasks" \
+            --header "Accept: application/json" \
+            --header "Authorization: Bearer ${ASANA_ACCESS_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data "$payload"

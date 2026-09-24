@@ -1,0 +1,35 @@
+name: iOS & macOS - Check WireGuard Update
+
+on:
+  schedule:
+    - cron: '30 1 * * 5'  # Every Friday at 01:30 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-and-update:
+    uses: ./.github/workflows/shared_dependency_update.yml
+    with:
+      dependency-slug: wireguard
+      display-name: WireGuard
+      repo: duckduckgo/wireguard-apple
+      pin-kind: pbxproj
+      pin-files: >-
+        iOS/DuckDuckGo-iOS.xcodeproj/project.pbxproj
+        macOS/DuckDuckGo-macOS.xcodeproj/project.pbxproj
+      lockfiles: >-
+        iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+        macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+      resolve-targets: |
+        -project|iOS/DuckDuckGo-iOS.xcodeproj|iOS Browser
+        -project|macOS/DuckDuckGo-macOS.xcodeproj|macOS Browser
+      # Feature owners (GitHub handles, space-separated). Used for PR reviewers and Asana assignee.
+      owners: diegoreymendez samsymons
+      asana-parent-task-id: "1212461351428219"
+      labels: dependencies,iOS,macOS
+    secrets:
+      SSH_PRIVATE_KEY_DUCKSANS_FONT: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}

@@ -603,6 +603,7 @@
 		85482D992462F1C600EDEDD1 /* ActionIcons.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85482D982462F1C600EDEDD1 /* ActionIcons.xcassets */; };
 		8548D95E25262B1B005AAE49 /* ViewHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8548D95D25262B1B005AAE49 /* ViewHighlighter.swift */; };
 		8548D96825262C33005AAE49 /* view_highlight.json in Resources */ = {isa = PBXBuildFile; fileRef = 8548D96725262C33005AAE49 /* view_highlight.json */; };
+		854A012F2A5563A400FCC628 /* FindInPage.xib in Resources */ = {isa = PBXBuildFile; fileRef = 854A012E2A5563A400FCC628 /* FindInPage.xib */; };
 		854A01332A558B3A00FCC628 /* UIView+Constraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854A01322A558B3A00FCC628 /* UIView+Constraints.swift */; };
 		854D678D2F6D4BA8008707A3 /* TabSwitcherMenuBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854D678C2F6D4BA8008707A3 /* TabSwitcherMenuBuilder.swift */; };
 		854D678F2F6D4C71008707A3 /* TabSwitcherMenuBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854D678E2F6D4C71008707A3 /* TabSwitcherMenuBuilderTests.swift */; };
@@ -2735,6 +2736,7 @@
 		85482D982462F1C600EDEDD1 /* ActionIcons.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ActionIcons.xcassets; sourceTree = "<group>"; };
 		8548D95D25262B1B005AAE49 /* ViewHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewHighlighter.swift; sourceTree = "<group>"; };
 		8548D96725262C33005AAE49 /* view_highlight.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = view_highlight.json; sourceTree = "<group>"; };
+		854A012E2A5563A400FCC628 /* FindInPage.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = FindInPage.xib; sourceTree = "<group>"; };
 		854A01322A558B3A00FCC628 /* UIView+Constraints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Constraints.swift"; sourceTree = "<group>"; };
 		854D678C2F6D4BA8008707A3 /* TabSwitcherMenuBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherMenuBuilder.swift; sourceTree = "<group>"; };
 		854D678E2F6D4C71008707A3 /* TabSwitcherMenuBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherMenuBuilderTests.swift; sourceTree = "<group>"; };
@@ -6452,6 +6454,7 @@
 				8586A10C24CBA7070049720E /* FindInPageActivity.swift */,
 				85BDC30F243359040053DB07 /* FindInPageUserScript.swift */,
 				85F200032216F5D8006BB258 /* FindInPageView.swift */,
+				854A012E2A5563A400FCC628 /* FindInPage.xib */,
 			);
 			name = FindInPage;
 			sourceTree = "<group>";
@@ -9929,6 +9932,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				854A012F2A5563A400FCC628 /* FindInPage.xib in Resources */,
 				ED737415300F9964006C656D /* AppIcon-Alpha.icon in Resources */,
 				F47E53DB250A9A1C0037C686 /* OnboardingAnimations.xcassets in Resources */,
 				F126CB512F86A608001562BA /* Rebranded-AddToDock-promo.mp4 in Resources */,

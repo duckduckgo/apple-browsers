@@ -29,7 +29,7 @@ jobs:
         -project|iOS/DuckDuckGo-iOS.xcodeproj|iOS Browser
         -project|macOS/DuckDuckGo-macOS.xcodeproj|macOS Browser
       # Feature owners (GitHub handles, space-separated). Used for PR reviewers and Asana assignee.
-      owners: diegoreymendez samsymons
+      owners: diegoreymendez  # TEMP: test run, restore "diegoreymendez samsymons"
       asana-parent-task-id: "1212461351428219"
       labels: dependencies,iOS,macOS
     secrets:

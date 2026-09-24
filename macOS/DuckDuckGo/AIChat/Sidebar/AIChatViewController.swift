@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Persistence
 import AppKit
 import BrowserServicesKit
 import AIChat
@@ -157,6 +158,9 @@ final class AIChatViewController: NSViewController {
         createAndSetupSeparator(in: container)
         createAndSetupTopBar(in: container)
         createAndSetupWebViewContainer(in: container)
+#if DEBUG
+        embedBrowserToolsDebugPanelIfEnabled(in: container)
+#endif
 
         NSLayoutConstraint.activate([
             topBar.topAnchor.constraint(equalTo: container.topAnchor),
@@ -653,3 +657,35 @@ private final class FloatingWindowTitleDragButton: MouseOverButton {
         isMouseDown = false
     }
 }
+
+#if DEBUG
+// MARK: - Browser tools debug panel in the sidebar
+
+extension AIChatViewController {
+
+    /// Replaces the chat with the browser tools panel, owned by this sidebar's host tab, so tool
+    /// calls, prompts and pushes resolve exactly as they would for a real chat docked here.
+    fileprivate func embedBrowserToolsDebugPanelIfEnabled(in container: NSView) {
+        let settings: any KeyedStoring<BrowserToolsDebugSettings> = UserDefaults.standard.keyedStoring()
+        guard settings.showsPanelInSidebar == true else { return }
+
+        let windowControllersManager = NSApp.delegateTyped.windowControllersManager
+        let panel = BrowserToolsDebugViewController(windowControllersManager: windowControllersManager) { [weak self] in
+            guard let tabID = self?.tabID,
+                  let collection = AIChatTabPickerSource.collection(containingTabID: tabID, in: windowControllersManager),
+                  let index = collection.indexInAllTabs(where: { $0.uuid == tabID }) else { return nil }
+            return collection.materialize(at: index)
+        }
+        addChild(panel)
+        panel.view.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(panel.view)
+        webViewContainer.isHidden = true
+        NSLayoutConstraint.activate([
+            panel.view.topAnchor.constraint(equalTo: webViewContainer.topAnchor),
+            panel.view.leadingAnchor.constraint(equalTo: webViewContainer.leadingAnchor),
+            panel.view.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor),
+            panel.view.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
+        ])
+    }
+}
+#endif

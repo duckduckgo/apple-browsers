@@ -66,6 +66,7 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem(title: "Browser Tools Panel…", action: #selector(openBrowserToolsPanel))
                 .targetting(self)
+            browserToolsPanelInSidebarMenuItem
             browserToolPermissionsMenuItem
 #endif
         }
@@ -84,6 +85,18 @@ final class AIChatDebugMenu: NSMenu {
         browserToolsPanel = panel
         panel.showWindow(nil)
         panel.window?.makeKeyAndOrderFront(nil)
+    }
+
+    private let browserToolsDebugSettings: any KeyedStoring<BrowserToolsDebugSettings> = UserDefaults.standard.keyedStoring()
+
+    private lazy var browserToolsPanelInSidebarMenuItem = NSMenuItem(title: "Show Browser Tools Panel in Sidebar",
+                                                                     action: #selector(toggleBrowserToolsPanelInSidebar))
+        .targetting(self)
+
+    /// Takes effect for sidebars opened after the toggle; open ones keep their chat.
+    @MainActor
+    @objc private func toggleBrowserToolsPanelInSidebar() {
+        browserToolsDebugSettings.showsPanelInSidebar = !(browserToolsDebugSettings.showsPanelInSidebar ?? false)
     }
 
     private lazy var browserToolPermissionsMenuItem: NSMenuItem = {
@@ -242,6 +255,9 @@ final class AIChatDebugMenu: NSMenu {
     // MARK: - Menu State Update
 
     override func update() {
+#if DEBUG
+        browserToolsPanelInSidebarMenuItem.state = browserToolsDebugSettings.showsPanelInSidebar == true ? .on : .off
+#endif
         updateWebUIMenuItemsState()
     }
 

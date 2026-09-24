@@ -46,6 +46,7 @@ struct AppServices {
     let subscriptionService: SubscriptionService
     let crashCollectionService: CrashCollectionService
     let launchTimeMetricsService: LaunchTimeMetricsService
+    let hangMetricsService: HangMetricsService
     let maliciousSiteProtectionService: MaliciousSiteProtectionService
     let statisticsService: StatisticsService
     let keyValueFileStoreService: AppKeyValueFileStoreService

@@ -196,6 +196,7 @@ struct Launching: LaunchingHandling {
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
         let launchTimeMetricsService = LaunchTimeMetricsService(featureFlagger: featureFlagger)
+        let hangMetricsService = HangMetricsService()
         let statisticsService = StatisticsService()
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared)
@@ -422,6 +423,7 @@ struct Launching: LaunchingHandling {
                                subscriptionService: subscriptionService,
                                crashCollectionService: crashCollectionService,
                                launchTimeMetricsService: launchTimeMetricsService,
+                               hangMetricsService: hangMetricsService,
                                maliciousSiteProtectionService: maliciousSiteProtectionService,
                                statisticsService: statisticsService,
                                keyValueFileStoreService: appKeyValueFileStoreService,

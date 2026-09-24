@@ -36,6 +36,10 @@ public struct PixelParameters {
     public static let launchTimeMinMs = "min_launch_duration_ms"
     public static let launchTimeMaxMs = "max_launch_duration_ms"
 
+    public static let hangTimeMinMs = "min_hang_duration_ms"
+    public static let hangTimeMaxMs = "max_hang_duration_ms"
+    public static let hangCount = "hang_count"
+
     public static let autocompleteBookmarkCapable = "bc"
     public static let autocompleteIncludedLocalResults = "sb"
 

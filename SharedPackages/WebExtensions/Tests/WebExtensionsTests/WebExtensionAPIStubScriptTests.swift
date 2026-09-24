@@ -32,45 +32,20 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     private var context: JSContext!
     private var exceptions: [String] = []
     private var scheduledTimers: [ScheduledTimer] = []
+    /// Backs the fake `chrome.storage.local`, as JSON per key, so it outlives a context: two
+    /// contexts made in one test see the same storage, like two pages of one extension.
+    private var storageLocalItems: [String: String] = [:]
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-
-        context = try XCTUnwrap(JSContext())
-        context.exceptionHandler = { [weak self] _, exception in
-            self?.exceptions.append(exception?.toString() ?? "unknown exception")
-        }
-
-        // WebKit's background page exposes only a subset of `chrome.*`; `console` is provided so the
-        // script's summary log does not throw.
-        context.evaluateScript("""
-        var consoleMessages = [];
-        var console = {
-            info: function(message) { consoleMessages.push(message); },
-            log: function(message) { consoleMessages.push(message); },
-            warn: function(message) { consoleMessages.push(message); },
-            error: function(message) { consoleMessages.push(message); }
-        };
-        var chrome = {
-            runtime: {},
-            webNavigation: { onCommitted: { addListener: function() {} } },
-            tabs: {},
-            storage: { local: {} }
-        };
-        var originalRuntime = chrome.runtime;
-        var originalTabs = chrome.tabs;
-        var originalWebNavigation = chrome.webNavigation;
-        var originalOnCommitted = chrome.webNavigation.onCommitted;
-        var originalStorage = chrome.storage;
-        var originalStorageLocal = chrome.storage.local;
-        """)
-        try assertNoExceptions()
+        try makeExtensionPageContext()
     }
 
     override func tearDownWithError() throws {
         context = nil
         exceptions = []
         scheduledTimers = []
+        storageLocalItems = [:]
         try super.tearDownWithError()
     }
 
@@ -402,7 +377,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
 
         try assertTrue("permissionsResult === false")
     }
@@ -422,7 +397,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['nativeMessaging', 'privacy'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['nativeMessaging', 'idle'] })")
 
         try assertTrue("permissionsResult === false")
     }
@@ -443,7 +418,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context.evaluateScript("""
         var unknownCallbackResult = 'pending';
         var grantedCallbackResult = 'pending';
-        chrome.permissions.contains({ permissions: ['privacy'] }, function(result) { unknownCallbackResult = result; });
+        chrome.permissions.contains({ permissions: ['idle'] }, function(result) { unknownCallbackResult = result; });
         chrome.permissions.contains({ permissions: ['nativeMessaging'] }, function(result) { grantedCallbackResult = result; });
         """)
         try assertNoExceptions()
@@ -456,7 +431,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("(function() { var contains = chrome.permissions.contains; return contains({ permissions: ['privacy'] }); })()")
+        try evaluatePermissionsCall("(function() { var contains = chrome.permissions.contains; return contains({ permissions: ['idle'] }); })()")
 
         try assertTrue("permissionsResult === false")
     }
@@ -465,7 +440,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy'] })")
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['idle'] })")
         try assertTrue("permissionsResult === false")
 
         try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['nativeMessaging'] })")
@@ -476,7 +451,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.remove({ permissions: ['privacy', 'nativeMessaging'] })")
+        try evaluatePermissionsCall("chrome.permissions.remove({ permissions: ['idle', 'nativeMessaging'] })")
 
         try assertTrue("permissionsResult === true")
         try assertTrue("permissionsLog.removed.length === 1 && permissionsLog.removed[0] === 'nativeMessaging'")
@@ -492,7 +467,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
         context.evaluateScript("""
         var permissionsError = 'pending';
-        chrome.permissions.contains({ permissions: ['privacy'] }).then(function() {
+        chrome.permissions.contains({ permissions: ['idle'] }).then(function() {
             permissionsError = 'unexpectedly resolved';
         }, function(error) {
             permissionsError = String(error && error.message);
@@ -508,13 +483,13 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context.evaluateScript("""
         chrome.permissions.contains = function(descriptor) {
             permissionsLog.contains.push(descriptor);
-            throw invalidPermissionError('contains', 'privacy');
+            throw invalidPermissionError('contains', 'idle');
         };
         """)
         try assertNoExceptions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
 
         try assertTrue("permissionsResult === false")
     }
@@ -523,11 +498,11 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
-        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['idle'] })")
 
-        try assertTrue("consoleMessages.filter(function(message) { return message.indexOf(\"'privacy' permission\") !== -1; }).length === 1")
+        try assertTrue("consoleMessages.filter(function(message) { return message.indexOf(\"'idle' permission\") !== -1; }).length === 1")
     }
 
     func testWhenPermissionsIsWrapped_ThenTheNamespaceEventsAndGetAllAreUntouched() throws {
@@ -556,6 +531,186 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
         try assertTrue("permissionsResult === true")
         try assertTrue("permissionsLog.contains.length === 1")
+    }
+
+    // MARK: - Virtual Permissions
+
+    func testWhenPrivacyIsUnknownToTheHost_ThenContainsResolvesTrueWithoutAskingTheHost() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+
+        try assertTrue("permissionsResult === true")
+        try assertTrue("permissionsLog.contains.length === 0")
+    }
+
+    func testWhenContainsMixesPrivacyWithAHostPermission_ThenTheHostAnswersForTheRest() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'tabs'] })")
+        try assertTrue("permissionsResult === false")
+        try assertTrue("permissionsLog.contains.length === 1")
+        try assertTrue("permissionsLog.contains[0].permissions.join(',') === 'tabs'")
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'nativeMessaging'] })")
+        try assertTrue("permissionsResult === true")
+    }
+
+    func testWhenContainsMixesPrivacyWithAnUnknownPermission_ThenItResolvesFalse() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'idle'] })")
+
+        try assertTrue("permissionsResult === false")
+    }
+
+    func testWhenPrivacyIsRequested_ThenRequestResolvesTrueWithBothStyles() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy'] })")
+        try assertTrue("permissionsResult === true")
+        try assertTrue("permissionsLog.request.length === 0")
+
+        // Bitwarden's popup asks this way from its click handler.
+        context.evaluateScript("""
+        var requestCallbackResult = 'pending';
+        chrome.permissions.request({ permissions: ['privacy'] }, function(granted) { requestCallbackResult = granted; });
+        """)
+        try assertNoExceptions()
+        try assertTrue("requestCallbackResult === true")
+    }
+
+    func testWhenOnlyPrivacyIsRemoved_ThenRemoveResolvesFalseAndTheHostIsNotAsked() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.remove({ permissions: ['privacy'] })")
+
+        try assertTrue("permissionsResult === false")
+        try assertTrue("permissionsLog.remove.length === 0")
+    }
+
+    // MARK: - Privacy Settings
+
+    func testWhenPrivacyIsStubbed_ThenServicesIsAnObjectAndNetworkIsANestableStub() throws {
+        try evaluateStubScript()
+
+        try assertTrue("chrome.privacy.services !== null && typeof chrome.privacy.services === 'object'")
+        try assertTrue("typeof chrome.privacy.network === 'function'")
+        try assertTrue("typeof chrome.privacy.network.webRTCIPHandlingPolicy.get === 'function'")
+        try assertTrue("typeof chrome.privacy.websites.thirdPartyCookiesAllowed.set === 'function'")
+        try assertTrue("globalThis.\(WebExtensionAPIStubScript.retentionPropertyName).indexOf(chrome.privacy) !== -1")
+        try assertTrue("consoleMessages[0].indexOf('privacy') !== -1")
+    }
+
+    func testWhenEachServicesSettingIsInspected_ThenItHasTheChromeSettingShape() throws {
+        try evaluateStubScript()
+
+        for name in ["passwordSavingEnabled", "autofillAddressEnabled", "autofillCreditCardEnabled"] {
+            let setting = "chrome.privacy.services.\(name)"
+            try assertTrue("typeof \(setting).get === 'function'")
+            try assertTrue("typeof \(setting).set === 'function'")
+            try assertTrue("typeof \(setting).clear === 'function'")
+            try assertTrue("typeof \(setting).onChange.addListener === 'function'")
+        }
+    }
+
+    func testWhenNothingWasSet_ThenGetAnswersTheControllableDefaultWithBothStyles() throws {
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var callbackResult = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.get({}, function(details) { callbackResult = details; });
+        var promiseResult = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.get({}).then(function(details) { promiseResult = details; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("callbackResult.value === true && callbackResult.levelOfControl === 'controllable_by_this_extension'")
+        try assertTrue("promiseResult.value === true && promiseResult.levelOfControl === 'controllable_by_this_extension'")
+    }
+
+    func testWhenASettingIsSetToFalse_ThenGetAnswersControlledAndTheValueIsStored() throws {
+        try evaluateStubScript()
+
+        try disableBrowserPasswordManagerTheWayBitwardenDoes()
+
+        try assertTrue("setResult === undefined")
+        try assertTrue("overridden === true")
+        try assertTrue("passwordSaving.value === false && passwordSaving.levelOfControl === 'controlled_by_this_extension'")
+
+        XCTAssertEqual(try storedPrivacySettings(), [
+            "passwordSavingEnabled": false,
+            "autofillAddressEnabled": false,
+            "autofillCreditCardEnabled": false
+        ])
+    }
+
+    func testWhenAnotherPageOpens_ThenItReadsTheStoredSettingBack() throws {
+        try evaluateStubScript()
+        try disableBrowserPasswordManagerTheWayBitwardenDoes()
+
+        // A fresh popup: a new page with its own script run, sharing the extension's storage.
+        try makeExtensionPageContext()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var reopened = 'pending';
+        chrome.privacy.services.autofillCreditCardEnabled.get({}, function(details) { reopened = details; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("reopened.value === false && reopened.levelOfControl === 'controlled_by_this_extension'")
+    }
+
+    func testWhenASettingIsSetBackToTrue_ThenItStaysControlledWithTheNewValue() throws {
+        try evaluateStubScript()
+        try disableBrowserPasswordManagerTheWayBitwardenDoes()
+
+        context.evaluateScript("""
+        var restored = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.set({ value: true }).then(function() {
+            return chrome.privacy.services.passwordSavingEnabled.get({});
+        }).then(function(details) { restored = details; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("restored.value === true && restored.levelOfControl === 'controlled_by_this_extension'")
+    }
+
+    func testWhenASettingIsCleared_ThenGetAnswersTheDefaultAgain() throws {
+        try evaluateStubScript()
+        try disableBrowserPasswordManagerTheWayBitwardenDoes()
+
+        context.evaluateScript("""
+        var clearCallbackResult = 'pending';
+        var cleared = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.clear({}, function(result) { clearCallbackResult = result; });
+        chrome.privacy.services.passwordSavingEnabled.get({}).then(function(details) { cleared = details; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("clearCallbackResult === undefined")
+        try assertTrue("cleared.value === true && cleared.levelOfControl === 'controllable_by_this_extension'")
+        // Only the cleared setting went back to the default.
+        let settings = try storedPrivacySettings()
+        XCTAssertNil(settings["passwordSavingEnabled"])
+        XCTAssertEqual(settings["autofillAddressEnabled"], false)
+    }
+
+    func testWhenStorageIsUnavailable_ThenSettingsLiveInMemoryAndNothingThrows() throws {
+        context.evaluateScript("delete chrome.storage;")
+        try assertNoExceptions()
+        try evaluateStubScript()
+
+        try disableBrowserPasswordManagerTheWayBitwardenDoes()
+
+        try assertTrue("overridden === true")
+        XCTAssertTrue(storageLocalItems.isEmpty)
     }
 
     // MARK: - Retention
@@ -667,6 +822,120 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     // MARK: - Helpers
 
+    /// A fresh `JSContext` shaped like an extension page: WebKit exposes only a subset of `chrome.*`,
+    /// and `console` is provided so the script's summary log does not throw. `storage.local` is
+    /// backed by `storageLocalItems`, so a second context sees what the first one stored.
+    private func makeExtensionPageContext() throws {
+        exceptions = []
+        context = try XCTUnwrap(JSContext())
+        context.exceptionHandler = { [weak self] _, exception in
+            self?.exceptions.append(exception?.toString() ?? "unknown exception")
+        }
+
+        context.evaluateScript("""
+        var consoleMessages = [];
+        var console = {
+            info: function(message) { consoleMessages.push(message); },
+            log: function(message) { consoleMessages.push(message); },
+            warn: function(message) { consoleMessages.push(message); },
+            error: function(message) { consoleMessages.push(message); }
+        };
+        var chrome = {
+            runtime: {},
+            webNavigation: { onCommitted: { addListener: function() {} } },
+            tabs: {},
+            storage: { local: {} }
+        };
+        var originalRuntime = chrome.runtime;
+        var originalTabs = chrome.tabs;
+        var originalWebNavigation = chrome.webNavigation;
+        var originalOnCommitted = chrome.webNavigation.onCommitted;
+        var originalStorage = chrome.storage;
+        var originalStorageLocal = chrome.storage.local;
+        """)
+        try assertNoExceptions()
+        try installFakeStorageLocal()
+    }
+
+    /// Callback-style `storage.local.get`/`set`, answering on a microtask like the real one. Only
+    /// the key shapes the script under test uses are supported: a single key, or an array of keys.
+    private func installFakeStorageLocal() throws {
+        let readItem: @convention(block) (String) -> String = { [weak self] key in
+            self?.storageLocalItems[key] ?? ""
+        }
+        let writeItem: @convention(block) (String, String) -> Void = { [weak self] key, json in
+            self?.storageLocalItems[key] = json
+        }
+        context.setObject(readItem, forKeyedSubscript: "__readStorageLocalItem" as NSString)
+        context.setObject(writeItem, forKeyedSubscript: "__writeStorageLocalItem" as NSString)
+
+        context.evaluateScript("""
+        chrome.storage.local.get = function(keys, callback) {
+            var names = Array.isArray(keys) ? keys : [keys];
+            var items = {};
+            names.forEach(function(name) {
+                var json = __readStorageLocalItem(String(name));
+                if (json !== "") {
+                    items[name] = JSON.parse(json);
+                }
+            });
+            Promise.resolve().then(function() { callback(items); });
+        };
+        chrome.storage.local.set = function(items, callback) {
+            Object.keys(items).forEach(function(name) {
+                __writeStorageLocalItem(name, JSON.stringify(items[name]));
+            });
+            Promise.resolve().then(function() { callback(); });
+        };
+        """)
+        try assertNoExceptions()
+    }
+
+    /// What the stub script stored under its reserved `storage.local` key.
+    private func storedPrivacySettings(file: StaticString = #filePath, line: UInt = #line) throws -> [String: Bool] {
+        let stored = try XCTUnwrap(storageLocalItems["__ddgPrivacySettings"], file: file, line: line)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(stored.utf8)) as? [String: Bool], file: file, line: line)
+    }
+
+    /// Turns the three settings off in Bitwarden's order and reads them back with its check, leaving
+    /// the last `set` result in `setResult`, the combined check in `overridden`, and the password
+    /// saving details in `passwordSaving`.
+    private func disableBrowserPasswordManagerTheWayBitwardenDoes() throws {
+        context.evaluateScript("""
+        var setResult = 'pending';
+        var overridden = 'pending';
+        var passwordSaving = 'pending';
+        (function() {
+            var services = chrome.privacy.services;
+            function isOverridden(details) {
+                return details.levelOfControl === 'controlled_by_this_extension' && !details.value;
+            }
+            function read(setting) {
+                return new Promise(function(resolve) {
+                    setting.get({}, function(details) { resolve(details); });
+                });
+            }
+            services.autofillAddressEnabled.set({ value: false }).then(function() {
+                return services.autofillCreditCardEnabled.set({ value: false });
+            }).then(function() {
+                return services.passwordSavingEnabled.set({ value: false });
+            }).then(function(result) {
+                setResult = result;
+                return Promise.all([
+                    read(services.passwordSavingEnabled),
+                    read(services.autofillAddressEnabled),
+                    read(services.autofillCreditCardEnabled)
+                ]);
+            }).then(function(details) {
+                passwordSaving = details[0];
+                overridden = details.every(isOverridden);
+            });
+        })();
+        """)
+        try assertNoExceptions()
+        try assertTrue("overridden !== 'pending'")
+    }
+
     /// `JSContext` has no DOM, no timers and no `URL`, so the offscreen stub gets the minimum it
     /// touches: a document that records the elements it hands out, a background page URL to resolve
     /// against, a minimal `URL` to resolve it with, and a `setTimeout` that parks its callback for
@@ -750,7 +1019,8 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     /// Mirrors WebKit's `chrome.permissions`: it answers for the permissions it implements and
     /// rejects the whole call with its validation error as soon as one name is not among them.
-    /// `nativeMessaging` is granted, `tabs` is implemented but not granted, `privacy` is unknown.
+    /// `nativeMessaging` is granted, `tabs` is implemented but not granted, `privacy` and `idle` are
+    /// unknown — the stub script answers for `privacy` itself, so `idle` stands in for a truly unknown name.
     private func installFakePermissions() throws {
         context.evaluateScript("""
         var unknownPermissions = ['privacy', 'idle', 'offscreen'];

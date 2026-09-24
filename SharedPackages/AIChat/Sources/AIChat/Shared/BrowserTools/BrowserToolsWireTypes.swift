@@ -244,6 +244,67 @@ public struct MCPTextContentBlock: Encodable, Equatable {
     }
 }
 
+// MARK: - Elicitation
+
+/// Pushed as the `elicitation/create` subscription event. The correlation `id` rides in the params
+/// because a subscription event has no envelope id of its own.
+public struct MCPElicitationCreateParams: Encodable, Equatable, Sendable {
+    public let id: String
+    public let mode: String
+    public let message: String
+    public let requestedSchema: JSONValue
+
+    public init(id: String, message: String, requestedSchema: JSONValue) {
+        self.id = id
+        self.mode = "form"
+        self.message = message
+        self.requestedSchema = requestedSchema
+    }
+}
+
+public enum MCPElicitationAction: String, Equatable, Sendable {
+    case accept
+    case decline
+    case cancel
+}
+
+/// The front end's answer. Lenient: an unreadable `action` decodes as an unknown string, which the
+/// invoker treats as `cancel`, so a shape mismatch fails the call instead of hanging it.
+public struct MCPElicitationResult: Codable, Equatable, Sendable {
+    public let action: String
+    public let content: JSONValue?
+
+    public static let cancel = MCPElicitationResult(action: .cancel)
+
+    public init(action: MCPElicitationAction, content: JSONValue? = nil) {
+        self.action = action.rawValue
+        self.content = content
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        action = (try? container.decodeIfPresent(String.self, forKey: .action)) ?? ""
+        content = try? container.decodeIfPresent(JSONValue.self, forKey: .content)
+    }
+
+    private enum CodingKeys: String, CodingKey { case action, content }
+}
+
+/// Inbound `elicitation/response`. `result` is optional so a malformed answer still correlates by
+/// `id` and completes the prompt as `cancel`.
+public struct AIChatElicitationResponseRequest: Decodable, Equatable, Sendable {
+    public let id: String
+    public let result: MCPElicitationResult?
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        result = try? container.decodeIfPresent(MCPElicitationResult.self, forKey: .result)
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, result }
+}
+
 // MARK: - Failures
 
 /// Stable failure tokens the front end may branch on.

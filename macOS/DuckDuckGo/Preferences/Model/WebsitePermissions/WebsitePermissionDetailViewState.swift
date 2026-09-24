@@ -22,6 +22,9 @@ import PrivacyConfig
 
 struct WebsitePermissionDetailViewState: Equatable {
     var category: WebsitePermissionCategory = .notifications
+    /// Behaviour applied to websites with no saved decision of their own.
+    var defaultDecision: PersistedPermissionDecision = .ask
+    var availableDefaultDecisions: [PersistedPermissionDecision] = []
     var searchQuery = ""
     var sites: [SiteRow] = []
     var visibleSites: [SiteRow] = []
@@ -37,10 +40,12 @@ struct WebsitePermissionDetailViewState: Equatable {
 
     init(
         category: WebsitePermissionCategory = .notifications,
+        defaultDecision: PersistedPermissionDecision = .ask,
         searchQuery: String = "",
         sites: [SiteRow] = []
     ) {
         self.category = category
+        self.defaultDecision = defaultDecision
         self.searchQuery = searchQuery
         self.sites = sites
         self.visibleSites = sites
@@ -48,6 +53,7 @@ struct WebsitePermissionDetailViewState: Equatable {
 
     init(
         category: WebsitePermissionCategory,
+        defaultDecision: PersistedPermissionDecision = .ask,
         searchQuery: String = "",
         entries: [WebsitePermissionEntry],
         featureFlagger: FeatureFlagger
@@ -73,7 +79,7 @@ struct WebsitePermissionDetailViewState: Equatable {
                 return $0.permissionType.rawValue < $1.permissionType.rawValue
             }
 
-        self.init(category: category, searchQuery: searchQuery, sites: sites)
+        self.init(category: category, defaultDecision: defaultDecision, searchQuery: searchQuery, sites: sites)
     }
 
     /// Collapses rows into one group per domain, so a site holding several permissions is listed once.

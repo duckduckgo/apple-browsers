@@ -824,16 +824,17 @@ extension TabViewController {
             && !host.hasSuffix(".duck.ai")
     }
 
+    /// Cross-origin delegation is intentionally unsupported in v1 because the shim cannot reliably
+    /// evaluate subframe response headers and `allow="geolocation"`. Revisit only with breakage evidence
+    /// or an availability-gated OS-managed API; until then, native attribution denies every cross-origin frame.
     func makeGeolocationSitePermissionContext(for frame: GeolocationFrame) -> SitePermissionRequestContext? {
         guard !sitePermissionsState.isClosed,
               frame.isAssociated(with: webView),
               !isLinkPreview,
               !isError,
               !sitePermissionsState.isCommittedGeolocationPolicyBlocked,
-              let committedURL = sitePermissionsState.committedMainFrameURL,
               let topLevelSite = currentSitePermissionKey(),
-              SitePermissionSecurityOrigin(frame.securityOrigin).isPotentiallyTrustworthy,
-              Self.isSameOrigin(frame.securityOrigin, as: committedURL) else {
+              isSameOriginAsCommittedMainFrame(SitePermissionSecurityOrigin(frame.securityOrigin)) else {
             return nil
         }
 
@@ -844,38 +845,6 @@ extension TabViewController {
             webContentProcessGeneration: sitePermissionsState.webContentProcessGeneration,
             navigationGeneration: sitePermissionsState.navigationGeneration
         )
-    }
-
-    /// Cross-origin delegation is intentionally unsupported in v1 because the shim cannot reliably
-    /// evaluate subframe response headers and `allow="geolocation"`. Revisit only with breakage evidence
-    /// or an availability-gated OS-managed API; until then, native attribution denies every cross-origin frame.
-    private static func isSameOrigin(_ origin: WKSecurityOrigin, as url: URL) -> Bool {
-        let originScheme = origin.protocol.lowercased()
-        let urlScheme = url.scheme?.lowercased()
-        guard let urlScheme,
-              let urlHost = url.host,
-              !origin.host.isEmpty,
-              originScheme == urlScheme,
-              normalizedOriginHost(origin.host) == normalizedOriginHost(urlHost) else { return false }
-
-        let originPort = origin.port == 0 ? defaultPort(for: originScheme) : origin.port
-        let urlPort = url.port ?? defaultPort(for: urlScheme)
-        return originPort == urlPort
-    }
-
-    private static func normalizedOriginHost(_ host: String) -> String {
-        host.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
-    }
-
-    private static func defaultPort(for scheme: String) -> Int? {
-        switch scheme {
-        case "http":
-            return 80
-        case "https":
-            return 443
-        default:
-            return nil
-        }
     }
 
     func captureSitePermissionsGeolocationPolicy(from response: URLResponse, isForMainFrame: Bool) {
@@ -1145,7 +1114,7 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
         pruneExpiredMediaCapturePreapprovals()
         guard webView === self.webView,
               !isLinkPreview,
-              isMediaCaptureAllowed(for: origin),
+              isSameOriginAsCommittedMainFrame(origin),
               sitePermissionsState.committedMediaPolicyBlocks.isDisjoint(with: permissionTypes),
               sitePermissionsState.pendingBridgeRequests[requestID] == nil,
               !sitePermissionsState.handledBridgeRequestIDs.contains(requestID),
@@ -1219,7 +1188,7 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
             || permissionTypes == [.camera, .microphone]
     }
 
-    private func isMediaCaptureAllowed(for origin: SitePermissionSecurityOrigin) -> Bool {
+    private func isSameOriginAsCommittedMainFrame(_ origin: SitePermissionSecurityOrigin) -> Bool {
         guard origin.isPotentiallyTrustworthy,
               let committedURL = sitePermissionsState.committedMainFrameURL,
               let topLevelOrigin = SitePermissionSecurityOrigin(committedURL) else {

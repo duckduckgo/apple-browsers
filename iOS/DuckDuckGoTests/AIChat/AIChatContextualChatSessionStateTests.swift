@@ -2846,30 +2846,48 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     func testTheSearchSuggestionGoesOnceItsPromptIsSent() {
         arrangeChat(onPage: Self.searchURL)
 
-        sessionState.markSearchPromptDelivered()
+        sessionState.markSearchPromptSent("tokamak")
 
-        XCTAssertNil(sessionState.searchOnScreenQuery)
+        XCTAssertNil(sessionState.searchChipQuery)
         XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
     }
 
     func testANewSearchOffersTheSuggestionAgain() {
         arrangeChat(onPage: Self.searchURL)
-        sessionState.markSearchPromptDelivered()
+        sessionState.markSearchPromptSent("tokamak")
 
         sessionState.currentPageURL = { URL(string: "https://duckduckgo.com/?q=stellarator") }
         sessionState.refreshForCurrentPage()
 
-        XCTAssertEqual(sessionState.searchOnScreenQuery, "stellarator")
+        XCTAssertEqual(sessionState.searchChipQuery, "stellarator")
     }
 
-    /// Away and back is a fresh ask about the same search.
-    func testTheSameSearchOffersTheSuggestionAgainAfterNavigation() {
+    /// The signals a dismissed and reopened sheet goes through, and a results page that finishes
+    /// loading again: none of them is the user asking a second time.
+    func testASentSearchStaysGoneWhileTheChatLasts() {
         arrangeChat(onPage: Self.searchURL)
-        sessionState.markSearchPromptDelivered()
+        sessionState.markSearchPromptSent("tokamak")
 
         sessionState.notifyPageChanged()
+        sessionState.refreshForCurrentPage()
+        sessionState.refreshAutoAttachSetting()
+        sessionState.updateContext(makeTestContext(url: Self.searchURL))
 
-        XCTAssertEqual(sessionState.searchOnScreenQuery, "tokamak")
+        XCTAssertNil(sessionState.searchChipQuery)
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+        XCTAssertEqual(sessionState.chipState, .placeholder, "a spent chip is not a reason to attach the results")
+        XCTAssertFalse(sessionState.shouldTriggerAutoCollect())
+    }
+
+    /// A new chat is a new conversation to ask in.
+    func testANewChatOffersTheSearchAgain() {
+        arrangeChat(onPage: Self.searchURL)
+        sessionState.markSearchPromptSent("tokamak")
+
+        sessionState.resetToNoChat()
+        sessionState.beginChatForUTISubmission()
+
+        XCTAssertEqual(sessionState.searchChipQuery, "tokamak")
     }
 
     /// Off, a search is the page it always was: attached, with no chip standing in for it.

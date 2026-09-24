@@ -233,7 +233,7 @@ enum Preferences {
                     DuckPlayerView(model: model.duckPlayerPreferences)
                 case .websitePermissions:
                     PreferencesWebsitePermissionsView(model: websitePermissionsModel)
-                case .otherPlatforms:
+                case .otherPlatforms, .partnershipsHub:
                     // Opens a new tab
                     Spacer()
                 case .about:

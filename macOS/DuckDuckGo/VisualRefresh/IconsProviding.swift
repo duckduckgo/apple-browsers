@@ -34,27 +34,11 @@ protocol IconsProviding {
 struct IconsProvidingFactory {
 
     static func buildColorsProvider(featureFlagger: FeatureFlagger) -> IconsProviding {
-        if featureFlagger.isFeatureOn(.appRebranding) {
-            return CurrentIconsProvider()
-        }
-
-        return LegacyIconsProvider()
+        IconsProvider()
     }
 }
 
-final class LegacyIconsProvider: IconsProviding {
-    var addressBarCookiesIconsProvider: AddressBarCookiesIconsProviding = CurrentAddressBarCookiesIconsProvider()
-    var navigationToolbarIconsProvider: NavigationToolbarIconsProviding = CurrentNavigationToolbarIconsProvider()
-    var moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding = CurrentMoreOptionsMenuIcons()
-    var fireButtonStyleProvider: FireButtonIconStyleProviding = LegacyFireButtonIconStyleProvider()
-    var settingsIconProvider: SettingsIconsProviding = CurrentSettingsIconProvider()
-    var bookmarksIconsProvider: BookmarksIconsProviding = CurrentBookmarksIconsProvider()
-    var vpnNavigationIconsProvider: IconProvider = CurrentVPNNavigationBarIconProvider()
-    var suggestionsIconsProvider: SuggestionsIconsProviding = CurrentSuggestionsIconsProvider()
-    var addressBarButtonsIconsProvider: AddressBarPermissionButtonsIconsProviding = CurrentAddressBarPermissionButtonIconsProvider()
-}
-
-final class CurrentIconsProvider: IconsProviding {
+final class IconsProvider: IconsProviding {
     var addressBarCookiesIconsProvider: AddressBarCookiesIconsProviding = CurrentAddressBarCookiesIconsProvider()
     var navigationToolbarIconsProvider: NavigationToolbarIconsProviding = CurrentNavigationToolbarIconsProvider()
     var moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding = CurrentMoreOptionsMenuIcons()

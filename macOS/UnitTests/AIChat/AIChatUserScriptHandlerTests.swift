@@ -1384,6 +1384,43 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("When reportMetric has an unknown metric name, the unknown metric event is fired instead of a decode failure", .timeLimit(.minutes(1)))
+    @MainActor
+    func testWhenReportMetricHasUnknownMetricNameThenUnknownMetricEventIsFired() async {
+        _ = await handler.reportMetric(params: ["metricName": "userDidDoSomethingNew", "modelTier": "free"], message: WKScriptMessage.mock())
+
+        #expect(userScriptErrorEventMapper.events == [.reportMetricUnknown(metricName: "userDidDoSomethingNew")])
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("When reportMetric has a known metric name but an undecodable field, the decode failure event is fired", .timeLimit(.minutes(1)))
+    @MainActor
+    func testWhenReportMetricHasKnownMetricNameButUndecodableFieldThenDecodeFailureIsFired() async {
+        _ = await handler.reportMetric(params: ["metricName": "userDidSubmitPrompt", "modelTier": "not-a-real-tier"], message: WKScriptMessage.mock())
+
+        guard case .reportMetricDecodingFailed(_, let failureReason) = userScriptErrorEventMapper.events.first else {
+            Issue.record("Expected reportMetricDecodingFailed event")
+            return
+        }
+        #expect(failureReason == .dataCorrupted)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("AIChatUserScriptErrorEventMapper maps unknown metrics to a pixel carrying the metric name", .timeLimit(.minutes(1)))
+    @MainActor
+    func testUserScriptErrorEventMapperMapsUnknownMetricToPixelWithMetricName() {
+        let mapper = AIChatUserScriptErrorEventMapper(pixelFiring: pixelFiring)
+
+        mapper.fire(.reportMetricUnknown(metricName: "userDidDoSomethingNew"))
+
+        #expect(pixelFiring.actualFireCalls.count == 1)
+        #expect(pixelFiring.actualFireCalls.first?.pixel.name == "aichat_report_metric_unknown")
+        #expect(pixelFiring.actualFireCalls.first?.frequency == .dailyAndCount)
+        #expect(pixelFiring.actualFireCalls.first?.pixel.parameters == ["metricName": "userDidDoSomethingNew"])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("AIChatUserScriptErrorEventMapper maps reportMetric decode failures to pixels", .timeLimit(.minutes(1)))
     @MainActor
     func testUserScriptErrorEventMapperMapsReportMetricDecodeFailureToPixel() {

@@ -104,6 +104,7 @@ enum AIChatUserScriptErrorFailureReason: String {
 
 enum AIChatUserScriptErrorEvent: Equatable {
     case reportMetricDecodingFailed(error: Error?, failureReason: AIChatUserScriptErrorFailureReason)
+    case reportMetricUnknown(metricName: String)
     case responseStateDecodingFailed(error: Error?, failureReason: AIChatUserScriptErrorFailureReason)
 
     static func == (lhs: AIChatUserScriptErrorEvent, rhs: AIChatUserScriptErrorEvent) -> Bool {
@@ -111,6 +112,8 @@ enum AIChatUserScriptErrorEvent: Equatable {
         case (.reportMetricDecodingFailed, .reportMetricDecodingFailed),
              (.responseStateDecodingFailed, .responseStateDecodingFailed):
             return true
+        case (.reportMetricUnknown(let lhsMetricName), .reportMetricUnknown(let rhsMetricName)):
+            return lhsMetricName == rhsMetricName
         default:
             return false
         }
@@ -131,6 +134,11 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
                     Pixel.Event.aiChatReportMetricDecodeError.withError(error),
                     frequency: .dailyAndCount,
                     options: .parameters([Parameters.failureReason: failureReason.rawValue])
+                )
+            case .reportMetricUnknown(let metricName):
+                pixelFiring?.fire(
+                    AIChatReportMetricUnknownPixel(metricName: metricName),
+                    frequency: .dailyAndCount
                 )
             case .responseStateDecodingFailed(let error, let failureReason):
                 pixelFiring?.fire(
@@ -324,6 +332,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 error: nil,
                 failureReason: .typeMismatch
             ))
+            return nil
+        }
+
+        if let unknownMetricName = AIChatMetric.unknownMetricName(in: paramsDict) {
+            aiChatUserScriptErrorEventMapper.fire(.reportMetricUnknown(metricName: unknownMetricName))
             return nil
         }
 

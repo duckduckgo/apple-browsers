@@ -105,6 +105,15 @@ public struct AIChatMetric: Codable {
 }
 
 extension AIChatMetric {
+    /// The payload's `metricName` when it is a string with no `AIChatMetricName` case, which would otherwise fail decoding.
+    public static func unknownMetricName(in payload: [String: Any]) -> String? {
+        guard let metricName = payload["metricName"] as? String,
+              AIChatMetricName(rawValue: metricName) == nil else {
+            return nil
+        }
+        return metricName
+    }
+
     public var shouldIncludeTimestampParameters: Bool {
         switch metricName {
         case .userDidTapKeyboardReturnKey:

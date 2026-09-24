@@ -58,11 +58,16 @@ enum AIChatUserScriptErrorFailureReason: String {
 
 enum AIChatUserScriptErrorEvent: Equatable {
     case reportMetricDecodingFailed(error: Error?, failureReason: AIChatUserScriptErrorFailureReason)
+    case reportMetricUnknown(metricName: String)
 
     static func == (lhs: AIChatUserScriptErrorEvent, rhs: AIChatUserScriptErrorEvent) -> Bool {
         switch (lhs, rhs) {
         case (.reportMetricDecodingFailed, .reportMetricDecodingFailed):
             return true
+        case (.reportMetricUnknown(let lhsMetricName), .reportMetricUnknown(let rhsMetricName)):
+            return lhsMetricName == rhsMetricName
+        default:
+            return false
         }
     }
 }
@@ -76,6 +81,11 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
                 let nsError = error.map { $0 as NSError }
                 pixelFiring?.fire(
                     AIChatPixel.aiChatReportMetricDecodeError(nsError, failureReason: failureReason),
+                    frequency: .dailyAndCount
+                )
+            case .reportMetricUnknown(let metricName):
+                pixelFiring?.fire(
+                    AIChatPixel.aiChatReportMetricUnknown(metricName: metricName),
                     frequency: .dailyAndCount
                 )
             }
@@ -494,6 +504,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 error: nil,
                 failureReason: .typeMismatch
             ))
+            return nil
+        }
+
+        if let unknownMetricName = AIChatMetric.unknownMetricName(in: paramsDict) {
+            aiChatUserScriptErrorEventMapper.fire(.reportMetricUnknown(metricName: unknownMetricName))
             return nil
         }
 

@@ -2708,6 +2708,39 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         XCTAssertEqual(sessionState.attachedSelections.map(\.id), [selection.id])
     }
+
+    // MARK: - Search on screen
+
+    private func arrangeChat(onPage urlString: String) {
+        sessionState.currentPageURL = { URL(string: urlString) }
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.beginChatForUTISubmission()
+    }
+
+    func testTheSearchOnScreenIsReadFromThePage() {
+        arrangeChat(onPage: "https://duckduckgo.com/?q=tokamak%20fuel&ia=web")
+
+        XCTAssertEqual(sessionState.searchQuickActionQuery, "tokamak fuel")
+    }
+
+    func testThatSiteURLOffersNothingToSend() {
+        arrangeChat(onPage: "https://example.com/reactor")
+
+        XCTAssertNil(sessionState.searchQuickActionQuery)
+    }
+
+    /// Nothing to send it to: the chip belongs to a chat under way.
+    func testThereIsNoSearchToSendWithoutAChat() {
+        sessionState.currentPageURL = { URL(string: "https://duckduckgo.com/?q=tokamak") }
+
+        XCTAssertNil(sessionState.searchQuickActionQuery)
+    }
+
+    func testABlankSearchOffersNothingToSend() {
+        arrangeChat(onPage: "https://duckduckgo.com/?q=%20%20")
+
+        XCTAssertNil(sessionState.searchQuickActionQuery)
+    }
 }
 
 // MARK: - Mock Pixel Handler

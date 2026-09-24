@@ -280,6 +280,7 @@ final class AIChatContextualSheetCoordinator {
         )
         self.sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
         self.sessionState.inputAttachmentCount = { [weak self] in self?.persistentUTIHost?.attachmentCount ?? 0 }
+        self.sessionState.currentPageURL = { [weak self] in self?.currentPageURL }
         self.sessionEffectCancellable = self.sessionState.effects
             .sink { [weak self] effect in
                 guard case .deliverPageContext(let context, let targets) = effect else { return }

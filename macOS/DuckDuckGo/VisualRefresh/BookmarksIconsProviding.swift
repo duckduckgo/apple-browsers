@@ -34,21 +34,6 @@ protocol BookmarksIconsProviding {
     var bookmarkFilledIcon: NSImage { get }
 }
 
-final class LegacyBookmarksIconsProvider: BookmarksIconsProviding {
-    var bookmarksManagerRootIcon: NSImage = .bookmarksFolder
-    var bookmarkFolderColorIcon: NSImage = .folderLegacy
-    var bookmarkFolderIcon: NSImage = .folder16
-    var bookmarkIcon: NSImage = .bookmark
-    var bookmarkColorIcon: NSImage = .bookmarkDefaultFavicon
-    var addBookmarkFolderIcon: NSImage = .addBookmark
-    var addBookmarkIcon: NSImage = .addFolder
-    var deleteBookmarkIcon: NSImage = .trash
-    var sortBookmarkAscendingIcon: NSImage = .sortAscending
-    var sortBookmarkDescendingIcon: NSImage = .sortDescending
-    var sortBookmarkManuallyIcon: NSImage = .sortAscending
-    var bookmarkFilledIcon: NSImage = .bookmarkFilled
-}
-
 final class CurrentBookmarksIconsProvider: BookmarksIconsProviding {
     var bookmarksManagerRootIcon: NSImage = DesignSystemImages.Color.Size16.bookmarksNew
     var bookmarkFolderColorIcon: NSImage = DesignSystemImages.Color.Size16.folder

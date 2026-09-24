@@ -62,27 +62,30 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [])
         let messages = createSUT(configuration: configuration)
         let pageModel = NewTabPageViewModel(fireTab: false, pixelFiring: nil)
-        var page: RedesignedNewTabPageViewController? = RedesignedNewTabPageViewController(
-            blocks: [], pageModel: pageModel, messagesModel: messages)
-        page?.setEscapeHatch(nil)
-        XCTAssertEqual(configuration.subscriptionCount, 0)
+        weak var weakPage: RedesignedNewTabPageViewController?
 
-        page?.loadViewIfNeeded()
-        page?.loadViewIfNeeded()
-        XCTAssertEqual(configuration.subscriptionCount, 1)
-        XCTAssertTrue(messages.homeMessageViewModels.isEmpty)
-        XCTAssertEqual(configuration.didAppearCallCount, 0)
+        // Drain UIKit's temporary references before checking controller ownership.
+        autoreleasepool {
+            let page = RedesignedNewTabPageViewController(blocks: [], pageModel: pageModel, messagesModel: messages)
+            weakPage = page
+            page.setEscapeHatch(nil)
+            XCTAssertEqual(configuration.subscriptionCount, 0)
 
-        configuration.homeMessages = [.placeholder]
-        configuration.sendContentDidChange()
-        XCTAssertEqual(messages.homeMessageViewModels.count, 1)
-        configuration.homeMessages = []
-        configuration.sendContentDidChange()
-        XCTAssertTrue(messages.homeMessageViewModels.isEmpty)
-        XCTAssertEqual(configuration.refreshCallCount, 0)
+            page.loadViewIfNeeded()
+            page.loadViewIfNeeded()
+            XCTAssertEqual(configuration.subscriptionCount, 1)
+            XCTAssertTrue(messages.homeMessageViewModels.isEmpty)
+            XCTAssertEqual(configuration.didAppearCallCount, 0)
 
-        weak var weakPage = page
-        page = nil
+            configuration.homeMessages = [.placeholder]
+            configuration.sendContentDidChange()
+            XCTAssertEqual(messages.homeMessageViewModels.count, 1)
+            configuration.homeMessages = []
+            configuration.sendContentDidChange()
+            XCTAssertTrue(messages.homeMessageViewModels.isEmpty)
+            XCTAssertEqual(configuration.refreshCallCount, 0)
+        }
+
         XCTAssertNil(weakPage)
     }
 

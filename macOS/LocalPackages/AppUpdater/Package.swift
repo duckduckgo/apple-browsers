@@ -14,7 +14,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../../SharedPackages/WideEvent"),
-        .package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.10.0"),
+        .package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.9.6"),
         .package(path: "../../../SharedPackages/DDGError"),
         .package(path: "../../../SharedPackages/Common"),
         .package(path: "../../../SharedPackages/Persistence"),

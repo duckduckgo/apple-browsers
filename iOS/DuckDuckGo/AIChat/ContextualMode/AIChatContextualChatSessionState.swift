@@ -144,6 +144,10 @@ final class AIChatContextualChatSessionState {
         unsubmittedSelectionCount > 0
     }
 
+    /// Searches already sent to this chat from their chip, so the same one is not offered again.
+    /// Lasts as long as the chat: a reload, a reopen and a return to the page are all the same ask.
+    private var searchesSentToChat = Set<String>()
+
     /// URL included in the last submitted prompt with no navigation since; used to spot a stale auto-attach echo.
     private var deliveredContextURLWithNoNavigationSince: URL?
 
@@ -260,9 +264,14 @@ final class AIChatContextualChatSessionState {
               hasActiveChat,
               let url = currentPageURL(),
               url.isDuckDuckGoSearch,
-              !hasDeliveredPrompt(for: url),
               let query = url.searchQuery,
               !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return query
+    }
+
+    /// What the chip offers: the search on screen, until it has been sent to this chat.
+    var searchChipQuery: String? {
+        guard let query = searchOnScreenQuery, !searchesSentToChat.contains(query) else { return nil }
         return query
     }
 
@@ -436,6 +445,7 @@ final class AIChatContextualChatSessionState {
         chipState = .placeholder
         contextualChatURL = nil
         deliveredContextURLWithNoNavigationSince = nil
+        searchesSentToChat = []
         declinedOfferURL = nil
         userDowngradedToPlaceholder = false
         isManualAttachInProgress = false
@@ -773,14 +783,15 @@ final class AIChatContextualChatSessionState {
         isStaleEchoOfDeliveredContext(context) ? .delivered : .pendingSubmit
     }
 
-    /// Marks the attached context delivered on submit so it stops riding later prompts and the chip hides.
-    /// The chip is spent by the prompt it sent, the way an attached page is. A new search offers it
-    /// again, and so does navigating away and back.
-    func markSearchPromptDelivered() {
-        deliveredContextURLWithNoNavigationSince = currentPageURL()
+    /// Takes the query from the chip that was tapped rather than reading the page again, so nothing
+    /// about the page's own timing can lose it.
+    func markSearchPromptSent(_ query: String) {
+        searchesSentToChat.insert(query)
         rebuildViewState()
+        Logger.aiChat.debug("[SessionState] Search sent to chat - chip spent")
     }
 
+    /// Marks the attached context delivered on submit so it stops riding later prompts and the chip hides.
     func markUTIContextDelivered() {
         guard case .attached(let context) = chipState else { return }
         deliveredContextURLWithNoNavigationSince = URL(string: context.contextData.url)
@@ -884,15 +895,9 @@ private extension AIChatContextualChatSessionState {
 
     /// Whether `context` is a passive same-page re-collection already submitted with no navigation since.
     func isStaleEchoOfDeliveredContext(_ context: AIChatPageContextData) -> Bool {
-        guard let contextURL = URL(string: context.url) else { return false }
-        return hasDeliveredPrompt(for: contextURL)
-    }
-
-    /// Whether the last prompt went out for `url`, with no navigation since. Query-sensitive, so one
-    /// search does not stand for another.
-    func hasDeliveredPrompt(for url: URL) -> Bool {
-        guard let deliveredContextURLWithNoNavigationSince else { return false }
-        return url.equals(deliveredContextURLWithNoNavigationSince, by: .sameDocument)
+        guard let deliveredContextURLWithNoNavigationSince,
+              let contextURL = URL(string: context.url) else { return false }
+        return contextURL.equals(deliveredContextURLWithNoNavigationSince, by: .sameDocument)
     }
 
     func cleanupFlags() {
@@ -1055,7 +1060,7 @@ private extension AIChatContextualChatSessionState {
     func visibleSuggestions(reserving slots: Int) -> [ContextualSuggestedPrompt] {
         // The app's own chip in place of the catalog's, which a search would not qualify for: it
         // attaches nothing, and that is what they are gated on.
-        if let query = searchOnScreenQuery {
+        if let query = searchChipQuery {
             return [.askAboutSearch(query: query)]
         }
         guard !shouldHideSuggestions, canShowSuggestions else { return [] }

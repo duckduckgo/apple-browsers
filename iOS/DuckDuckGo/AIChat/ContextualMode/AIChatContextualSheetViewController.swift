@@ -1042,9 +1042,9 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
 
         submitSuggestionPrompt(suggestion.prompt)
-        // No context was attached, so nothing else records this page's prompt as sent.
+        // No context was attached, so nothing else records this prompt as sent.
         if !attachingPage {
-            sessionState.markSearchPromptDelivered()
+            sessionState.markSearchPromptSent(suggestion.prompt)
         }
         return true
     }

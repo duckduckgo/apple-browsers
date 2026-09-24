@@ -74,32 +74,47 @@ public struct PermissionsPolicy {
         guard let pageURL, let pageScheme = pageURL.scheme?.lowercased(),
               ["http", "https"].contains(pageScheme), let pageHost = pageURL.host?.lowercased() else { return false }
         if expression == "*" { return true }
+
         if expression.hasSuffix(":"), !expression.contains("/") {
             return scheme(String(expression.dropLast()).lowercased(), matches: pageScheme)
         }
 
-        let parts = expression.components(separatedBy: "://")
-        let sourceScheme = parts.count == 2 ? parts[0].lowercased() : pageScheme
-        guard parts.count <= 2, scheme(sourceScheme, matches: pageScheme) else { return false }
-        let hostAndPath = (parts.count == 2 ? parts[1] : parts[0]).split(separator: "/", maxSplits: 1, omittingEmptySubsequences: false)
+        let schemeAndAuthority = expression.components(separatedBy: "://")
+        guard schemeAndAuthority.count <= 2 else { return false }
+        let hasExplicitScheme = schemeAndAuthority.count == 2
+        let sourceScheme = hasExplicitScheme ? schemeAndAuthority[0].lowercased() : pageScheme
+        guard scheme(sourceScheme, matches: pageScheme) else { return false }
+
+        let authority = hasExplicitScheme ? schemeAndAuthority[1] : schemeAndAuthority[0]
+        let authorityAndPath = authority.split(separator: "/", maxSplits: 1, omittingEmptySubsequences: false)
         // Permissions Policy matches the serialized origin, whose path is always empty or '/'.
-        guard hostAndPath.count == 1 || hostAndPath[1].isEmpty else { return false }
-        let hostAndPort = hostAndPath[0].split(separator: ":", omittingEmptySubsequences: false)
-        let sourceHost = hostAndPort[0].lowercased()
-        let host = sourceHost.hasPrefix("*.") ? String(sourceHost.dropFirst(2)) : sourceHost
+        guard let hostAndPortSource = authorityAndPath.first,
+              authorityAndPath.count == 1 || authorityAndPath[1].isEmpty else { return false }
+        let hostAndPort = hostAndPortSource.split(separator: ":", omittingEmptySubsequences: false)
+        guard let hostPart = hostAndPort.first, hostAndPort.count <= 2 else { return false }
+
+        let sourceHost = hostPart.lowercased()
+        let isWildcardSubdomain = sourceHost.hasPrefix("*.")
+        let hostWithoutWildcard = isWildcardSubdomain ? String(sourceHost.dropFirst(2)) : sourceHost
         let labelCharacters = "abcdefghijklmnopqrstuvwxyz0123456789-"
-        let labels = (host.hasSuffix(".") ? host.dropLast() : host[...]).split(separator: ".", omittingEmptySubsequences: false)
-        guard hostAndPort.count <= 2,
-              sourceHost == "*" || labels.allSatisfy({ !$0.isEmpty && $0.allSatisfy(labelCharacters.contains) }) else { return false }
-        let hostMatches = sourceHost == "*" || sourceHost == pageHost
-            || (sourceHost.hasPrefix("*.") && pageHost.hasSuffix(String(sourceHost.dropFirst())))
-        guard hostMatches else { return false }
+        let hostLabels = (hostWithoutWildcard.hasSuffix(".") ? hostWithoutWildcard.dropLast() : hostWithoutWildcard[...])
+            .split(separator: ".", omittingEmptySubsequences: false)
+        guard sourceHost == "*" || (!hostWithoutWildcard.isEmpty && hostLabels.allSatisfy({
+            !$0.isEmpty && $0.allSatisfy(labelCharacters.contains)
+        })) else { return false }
+
+        let matchesExactHost = sourceHost == pageHost
+        let matchesWildcardSubdomain = isWildcardSubdomain && pageHost.hasSuffix(String(sourceHost.dropFirst()))
+        guard sourceHost == "*" || matchesExactHost || matchesWildcardSubdomain else { return false }
+
         let defaultPort = pageScheme == "https" ? 443 : 80
-        guard hostAndPort.count == 2 else { return (pageURL.port ?? defaultPort) == defaultPort }
+        let pagePort = pageURL.port ?? defaultPort
+        guard hostAndPort.count == 2 else { return pagePort == defaultPort }
         if hostAndPort[1] == "*" { return true }
-        guard !hostAndPort[1].isEmpty, hostAndPort[1].allSatisfy({ ("0"..."9").contains($0) }),
+        let portDigits = "0123456789"
+        guard !hostAndPort[1].isEmpty, hostAndPort[1].allSatisfy(portDigits.contains),
               let sourcePort = UInt16(hostAndPort[1]) else { return false }
-        return Int(sourcePort) == (pageURL.port ?? defaultPort)
+        return Int(sourcePort) == pagePort
     }
 
     private static func scheme(_ source: String, matches target: String) -> Bool {

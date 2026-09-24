@@ -41,7 +41,7 @@ final class PermissionsPolicyTests: XCTestCase {
     }
 
     func testEmptyAndNonmatchingAllowlistsBlockTheResponseOrigin() {
-        for value in ["()", #"("https://other.example")"#, #"("https://www.example.com:8443")"#,
+        for value in ["()", #"("")"#, #"("https://other.example")"#, #"("https://www.example.com:8443")"#,
                       #"("https://*.www.example.com")"#, #"("https://*.ample.com")"#,
                       #"("https://www.example.com/path")"#, #"("https://user@www.example.com")"#,
                       #"("https://www.example.com?query")"#, #"("https://www.example.com#fragment")"#,

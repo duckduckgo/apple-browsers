@@ -68,7 +68,6 @@ public enum PrivacyFeature: String {
     case experimentalTheming
     case setAsDefaultAndAddToDock
     case contentScopeExperiments
-    case extendedOnboarding
     case macOSBrowserConfig
     case iOSBrowserConfig
     // Demonstrative case for default value. Remove once a real-world feature is added
@@ -89,6 +88,7 @@ public enum PrivacyFeature: String {
     case promoQueue
     case adBlockingExtension
     case eventHub
+    case aiChatBrowserTools
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -524,12 +524,38 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Supports Duck.ai edit prompt from the native input field.
     case nativePromptEditing
 
-    /// Re-enables Duck.ai promo cards on the native input (their CTAs open native pickers).
-    case nativePromoCards
-
     /// Warns users as they approach their daily/weekly Duck.ai limits, using the usage snapshot the
     /// web app writes into the reserved `usageLimits` native-storage entry.
     case usageWarnings
+}
+
+/// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool
+/// also has its own gate, so one can be withdrawn without touching the rest.
+public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .aiChatBrowserTools
+    }
+
+    /// Kill switch for the whole browser-tools bridge.
+    case featureEnabled
+
+    /// Lists the open tabs of the owner tab's window (title and URL only).
+    case listOpenTabs
+
+    /// Searches local browsing history.
+    case searchHistory
+
+    /// Switches to an open tab in the owner tab's window.
+    case switchToTab
+
+    /// Reads the text content of an open tab.
+    case readTabContent
+
+    /// Finds text on a page and reports match counts and snippets.
+    case findInPage
+
+    /// Paints previously-found matches on a page.
+    case highlightInPage
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -657,6 +683,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification
     case subscriptionPromoForExistingUsers
+    case subscriptionConcurrentExperiments
     case monthlyFreeTrialExperiment2
     case subscriptionOnboardingFreeTrialsSep2026
     case subscriptionOnboardingPaidSubsSep2026
@@ -744,12 +771,6 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     case scamProtection
 }
 
-public enum OnboardingSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .extendedOnboarding }
-
-    case showSettingsCompleteSetupSection
-}
-
 public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .experimentalTheming }
 
@@ -806,6 +827,10 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case lightweightReloadOnDataClear
     /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.
     case protectedDataLoadGate
+    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health.
+    case cpmBackgroundDelegateProxy
+    /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
+    case cpmDiagnosticsRecorder
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

@@ -295,11 +295,6 @@ extension DataImport {
 
 extension DataImport.Source {
 
-    /// Sources available for legacy import flows (excludes .fileImport)
-    static var allCasesForLegacyImports: [Self] {
-        allCases.filter(\.isAvailableForLegacyImports)
-    }
-
     var importSourceName: String {
         switch self {
         case .brave:
@@ -361,9 +356,6 @@ extension DataImport.Source {
     }
 
     var importSourceImage: NSImage? {
-        guard Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewExperience) else {
-            return ThirdPartyBrowser.browser(for: self)?.applicationIcon
-        }
         switch self {
         case .csv, .bookmarksHTML, .fileImport:
             return AppRebrand.isAppRebranded() ? DesignSystemImages.Color.Size56.fileCSV : DesignSystemImages.Color.Size32.document

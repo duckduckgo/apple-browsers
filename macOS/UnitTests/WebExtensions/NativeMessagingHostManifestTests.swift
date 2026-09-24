@@ -225,6 +225,22 @@ final class NativeMessagingHostManifestTests: XCTestCase {
         XCTAssertFalse(directories.contains { $0.path.contains("Mozilla") })
     }
 
+    func testWhenSearchDirectoriesAreOmittedThenTheUserLevelChromeDirectoryPrecedesTheSystemLevelOne() throws {
+        let paths = NativeMessagingHostManifestLocator.searchDirectories.map(\.path)
+        let userLibrary = try XCTUnwrap(FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first)
+        let userChrome = userLibrary.appendingPathComponent("Application Support/Google/Chrome/NativeMessagingHosts").path
+        let systemChrome = "/Library/Google/Chrome/NativeMessagingHosts"
+
+        let userIndex = try XCTUnwrap(paths.firstIndex(of: userChrome))
+        let systemIndex = try XCTUnwrap(paths.firstIndex(of: systemChrome))
+        XCTAssertLessThan(userIndex, systemIndex)
+
+        // Every user-level directory is searched before any system-level one.
+        let firstSystemIndex = try XCTUnwrap(paths.firstIndex { $0.hasPrefix("/Library/") })
+        XCTAssertTrue(paths[..<firstSystemIndex].allSatisfy { $0.hasPrefix(userLibrary.path) })
+        XCTAssertTrue(paths[firstSystemIndex...].allSatisfy { $0.hasPrefix("/Library/") })
+    }
+
     // MARK: - Helpers
 
     private func assertInvalidName(_ name: String, searchDirectories: [URL], file: StaticString = #filePath, line: UInt = #line) {

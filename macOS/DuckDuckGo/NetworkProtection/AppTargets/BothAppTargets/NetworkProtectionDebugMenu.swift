@@ -120,6 +120,9 @@ final class NetworkProtectionDebugMenu: NSMenu {
             NSMenuItem(title: "Show Excluded Sites", action: #selector(NetworkProtectionDebugMenu.showExcludedDomainsScreen(_:)))
                 .targetting(self)
 
+            NSMenuItem(title: "Show Excluded Apps", action: #selector(NetworkProtectionDebugMenu.showExcludedAppsScreen(_:)))
+                .targetting(self)
+
             NSMenuItem.separator()
 
             NSMenuItem(title: "Adapter") {
@@ -312,6 +315,12 @@ final class NetworkProtectionDebugMenu: NSMenu {
     @objc func showExcludedDomainsScreen(_ sender: Any?) {
         Task { @MainActor in
             Application.appDelegate.windowControllersManager.showVPNDomainExclusions()
+        }
+    }
+
+    @objc func showExcludedAppsScreen(_ sender: Any?) {
+        Task { @MainActor in
+            Application.appDelegate.windowControllersManager.showVPNAppExclusions()
         }
     }
 

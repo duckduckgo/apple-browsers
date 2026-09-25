@@ -686,6 +686,35 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(failureReason, .typeMismatch)
     }
 
+    func testWhenReportMetricHasUnknownMetricNameThenUnknownMetricEventIsReportedInsteadOfDecodeFailure() async {
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(aiChatUserScriptErrorEventMapper: mockUserScriptErrorEventMapper)
+        let metricHandler = RecordingMetricReportingHandler()
+        aiChatUserScriptHandler.setMetricReportingHandler(metricHandler)
+
+        _ = await aiChatUserScriptHandler.reportMetric(
+            params: ["metricName": "userDidDoSomethingNew", "modelTier": "free"],
+            message: MockUserScriptMessage(name: "test", body: [:])
+        )
+
+        XCTAssertEqual(mockUserScriptErrorEventMapper.events, [.reportMetricUnknown(metricName: "userDidDoSomethingNew")])
+        XCTAssertTrue(metricHandler.reportedMetrics.isEmpty)
+    }
+
+    func testWhenReportMetricHasKnownMetricNameButUndecodableFieldThenDecodeFailureIsReported() async {
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(aiChatUserScriptErrorEventMapper: mockUserScriptErrorEventMapper)
+
+        _ = await aiChatUserScriptHandler.reportMetric(
+            params: ["metricName": "userDidSubmitPrompt", "modelTier": "not-a-real-tier"],
+            message: MockUserScriptMessage(name: "test", body: [:])
+        )
+
+        guard case .reportMetricDecodingFailed(_, let failureReason) = mockUserScriptErrorEventMapper.events.first else {
+            XCTFail("Expected reportMetricDecodingFailed event")
+            return
+        }
+        XCTAssertEqual(failureReason, .dataCorrupted)
+    }
+
     @MainActor
     func testGetResponseStateDecodeFailureReportsEvent() async {
         aiChatUserScriptHandler = makeAIChatUserScriptHandler(aiChatUserScriptErrorEventMapper: mockUserScriptErrorEventMapper)
@@ -716,6 +745,17 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(fireCall?.pixel.name, Pixel.Event.aiChatReportMetricDecodeError.name)
         XCTAssertNotNil(fireCall?.pixel.error)
         XCTAssertEqual(fireCall?.additionalParameters, ["failureReason": "type_mismatch"])
+    }
+
+    func testUserScriptErrorEventMapperMapsUnknownMetricToPixelWithMetricName() {
+        let mapper = AIChatUserScriptErrorEventMapper(pixelFiring: pixelKitMock)
+
+        mapper.fire(.reportMetricUnknown(metricName: "userDidDoSomethingNew"))
+
+        let fireCall = pixelKitMock.actualFireCalls.last
+        XCTAssertEqual(fireCall?.pixel.name, "aichat_report_metric_unknown")
+        XCTAssertEqual(fireCall?.pixel.parameters, ["metricName": "userDidDoSomethingNew"])
+        XCTAssertEqual(fireCall?.frequency, .dailyAndCount)
     }
 
     func testUserScriptErrorEventMapperMapsResponseStateDecodeFailureToPixel() {
@@ -1249,6 +1289,15 @@ extension AIChatUserScriptHandlerTests {
 
         // Then
         XCTAssertEqual(configValues?.supportsNativePrompt, false)
+    }
+}
+
+private final class RecordingMetricReportingHandler: AIChatMetricReportingHandling {
+
+    private(set) var reportedMetrics: [AIChatMetric] = []
+
+    func didReportMetric(_ metric: AIChatMetric) {
+        reportedMetrics.append(metric)
     }
 }
 

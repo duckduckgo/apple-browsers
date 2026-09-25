@@ -256,6 +256,23 @@
             }
         ]
     },
+    "m_mac_aichat_report_metric_unknown": {
+        "description": "Fired instead of m_mac_aichat_report_metric_decode_error when the Duck.ai frontend sends a reportMetric payload whose metricName native code does not recognize",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "metricName",
+                "description": "The unrecognized metric name the frontend sent",
+                "type": "string",
+                "enum": ["userDidViewSettingsResubscribeButton", "userDidClickSettingsResubscribeButton"]
+            }
+        ]
+    },
     "m_mac_aichat_sidebar_detached": {
         "description": "Fired when user detaches the AI Chat sidebar into a floating window",
         "owners": ["jaceklyp"],

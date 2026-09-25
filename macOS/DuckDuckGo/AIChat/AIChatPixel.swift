@@ -233,6 +233,8 @@ enum AIChatPixel: PixelKit.Event {
     case aiChatTermsAcceptedDuplicateSyncOff
     case aiChatTermsAcceptedDuplicateSyncOn
     case aiChatReportMetricDecodeError(NSError?, failureReason: AIChatUserScriptErrorFailureReason)
+    /// Event Trigger: The Duck.ai frontend reports a metric name native code has no case for.
+    case aiChatReportMetricUnknown(metricName: String)
 
     // MARK: - Image Attachments
 
@@ -683,6 +685,8 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_terms_accepted_duplicate_sync_on"
         case .aiChatReportMetricDecodeError:
             return "aichat_report_metric_decode_error"
+        case .aiChatReportMetricUnknown:
+            return "aichat_report_metric_unknown"
         case .aiChatOnboardingTogglePreferenceOn:
             return "aichat_onboarding_toggle_preference_on"
         case .aiChatOnboardingTogglePreferenceOff:
@@ -1082,6 +1086,8 @@ enum AIChatPixel: PixelKit.Event {
             return ["reason": reason]
         case .aiChatReportMetricDecodeError(_, let failureReason):
             return ["failureReason": failureReason.rawValue]
+        case .aiChatReportMetricUnknown(let metricName):
+            return ["metricName": metricName]
         case .aiChatVoiceChatStartFailed(let reason):
             return ["reason": reason.rawValue]
         case .aiChatSuggestionSelected(let suggestionId, let pageType):
@@ -1213,6 +1219,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatTermsAcceptedDuplicateSyncOff,
                 .aiChatTermsAcceptedDuplicateSyncOn,
                 .aiChatReportMetricDecodeError,
+                .aiChatReportMetricUnknown,
                 .aiChatOpenDuckAiMainMenu,
                 .aiChatNewChatMainMenu,
                 .aiChatNewVoiceChatMainMenu,

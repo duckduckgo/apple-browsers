@@ -203,12 +203,12 @@ final class PermissionModel {
 
                 if case .success( (let granted, let remember) ) = result {
                     for permission in permissions {
-                        // Preserve existing Always Allow/Deny decisions; don't downgrade to Ask
-                        let isPersisting = remember == true || persistsWhen(permission: permission, domain: domain)
+                        // An explicit temporary decision overrides the legacy notification persistence behavior.
+                        let isPersisting = remember ?? persistsWhen(permission: permission, domain: domain)
                         if isPersisting {
                             self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
                         } else {
-                            // Other permissions: one-time decisions store .ask for permission center visibility
+                            // One-time decisions store .ask for permission center visibility
                             self.permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
                         }
                     }

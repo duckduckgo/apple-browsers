@@ -68,13 +68,10 @@ enum PermissionPromptDecision {
     case alwaysAllow
     case neverAllow
 
-    /// The query output for this decision. Allow this visit persists exactly like the Allow button of the Allow / Deny prompt.
-    func output(for query: PermissionAuthorizationQuery) -> PermissionAuthorizationQueryOutput {
+    var output: PermissionAuthorizationQueryOutput {
         switch self {
         case .allowThisVisit:
-            // For duck.ai microphone, persist "always allow" so voice chat doesn't re-prompt on every session.
-            let alwaysRemember = query.permissions.contains(.microphone) && query.domain.isDuckAIHost
-            return (granted: true, remember: alwaysRemember ? true : nil)
+            return (granted: true, remember: false)
         case .alwaysAllow:
             return (granted: true, remember: true)
         case .neverAllow:
@@ -204,8 +201,9 @@ final class PermissionAuthorizationViewController: NSViewController {
         guard let query else { return }
 
         fireAuthorizationPixel(decision: .allow)
-        let output = PermissionPromptDecision.allowThisVisit.output(for: query)
-        query.handleDecision(grant: output.granted, remember: output.remember)
+        // Preserve the legacy Duck.ai microphone behavior for the Allow / Deny prompt.
+        let alwaysRemember = query.permissions.contains(.microphone) && query.domain.isDuckAIHost
+        query.handleDecision(grant: true, remember: alwaysRemember ? true : nil)
     }
 
     private func handle(_ decision: PermissionPromptDecision) {
@@ -215,7 +213,8 @@ final class PermissionAuthorizationViewController: NSViewController {
         }
         guard let query else { return }
 
-        let output = decision.output(for: query)
+        let output = decision.output
+        fireAuthorizationPixel(decision: output.granted ? .allow : .deny)
         query.handleDecision(grant: output.granted, remember: output.remember)
     }
 

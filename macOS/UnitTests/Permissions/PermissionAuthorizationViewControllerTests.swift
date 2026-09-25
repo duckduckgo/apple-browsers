@@ -39,17 +39,15 @@ final class PermissionAuthorizationViewControllerTests: XCTestCase {
     }
 
     func testDecisionsMapToQueryOutput() {
-        let query = makeQuery(permissions: [.camera])
-
-        let allowThisVisit = PermissionPromptDecision.allowThisVisit.output(for: query)
+        let allowThisVisit = PermissionPromptDecision.allowThisVisit.output
         XCTAssertTrue(allowThisVisit.granted)
-        XCTAssertNil(allowThisVisit.remember)
+        XCTAssertEqual(allowThisVisit.remember, false)
 
-        let alwaysAllow = PermissionPromptDecision.alwaysAllow.output(for: query)
+        let alwaysAllow = PermissionPromptDecision.alwaysAllow.output
         XCTAssertTrue(alwaysAllow.granted)
         XCTAssertEqual(alwaysAllow.remember, true)
 
-        let neverAllow = PermissionPromptDecision.neverAllow.output(for: query)
+        let neverAllow = PermissionPromptDecision.neverAllow.output
         XCTAssertFalse(neverAllow.granted)
         XCTAssertEqual(neverAllow.remember, true)
     }

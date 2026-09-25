@@ -20,7 +20,7 @@ import Combine
 import Common
 import FoundationExtensions
 import CommonObjCExtensions
-import Navigation
+import DDGNavigation
 import os.log
 import WebKit
 

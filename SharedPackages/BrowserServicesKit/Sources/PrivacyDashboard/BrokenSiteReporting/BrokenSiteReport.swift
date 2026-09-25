@@ -17,7 +17,7 @@
 //
 //  Implementation guidelines: https://app.asana.com/0/1198207348643509/1200202563872939/f
 
-import Navigation
+import DDGNavigation
 import Foundation
 import Common
 import FoundationExtensions

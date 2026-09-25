@@ -21,7 +21,7 @@
 import Common
 import WebKit
 import XCTest
-@testable import Navigation
+@testable import DDGNavigation
 
 @available(iOS 15.0, *)
 final class FrameInfoTests: XCTestCase {

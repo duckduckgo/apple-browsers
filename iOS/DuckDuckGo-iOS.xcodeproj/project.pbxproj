@@ -296,7 +296,7 @@
 		4BC5E8672E174D6A00391C19 /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC5E8662E174D6A00391C19 /* DesignResourcesKit */; };
 		4BC8948C2C7902E6009AA141 /* WireGuard in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC8948B2C7902E6009AA141 /* WireGuard */; };
 		4BC95E792D7416A1002FAB32 /* Crashes in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95E782D7416A1002FAB32 /* Crashes */; };
-		4BC95E7B2D7416AD002FAB32 /* Navigation in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95E7A2D7416AD002FAB32 /* Navigation */; };
+		4BC95E7B2D7416AD002FAB32 /* DDGNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95E7A2D7416AD002FAB32 /* DDGNavigation */; };
 		4BC95E7D2D7416B2002FAB32 /* Onboarding in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95E7C2D7416B2002FAB32 /* Onboarding */; };
 		4BC95E7F2D7416C1002FAB32 /* PrivacyDashboard in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95E7E2D7416C1002FAB32 /* PrivacyDashboard */; };
 		4BC95E812D7416D7002FAB32 /* Bookmarks in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95E802D7416D7002FAB32 /* Bookmarks */; };
@@ -4750,7 +4750,7 @@
 				F143C2EB1E4A4CD400CFDE3A /* Core.framework in Frameworks */,
 				9FB71C982F342B4F000AD042 /* MetricBuilder in Frameworks */,
 				4BC95E792D7416A1002FAB32 /* Crashes in Frameworks */,
-				4BC95E7B2D7416AD002FAB32 /* Navigation in Frameworks */,
+				4BC95E7B2D7416AD002FAB32 /* DDGNavigation in Frameworks */,
 				4BC95E7F2D7416C1002FAB32 /* PrivacyDashboard in Frameworks */,
 				315E39652F86ABEE00D2289D /* DebugServer in Frameworks */,
 				31E69A63280F4CB600478327 /* DuckUI in Frameworks */,
@@ -10072,7 +10072,7 @@
 				4B94B79D2D4831D90014AAB8 /* SyncUI-iOS */,
 				9F254AF02CF8D5250063B308 /* MaliciousSiteProtection */,
 				4BC95E782D7416A1002FAB32 /* Crashes */,
-				4BC95E7A2D7416AD002FAB32 /* Navigation */,
+				4BC95E7A2D7416AD002FAB32 /* DDGNavigation */,
 				4BC95E7C2D7416B2002FAB32 /* Onboarding */,
 				4BC95E7E2D7416C1002FAB32 /* PrivacyDashboard */,
 				AA3000060000000000000006 /* PrivacyStats */,
@@ -16558,9 +16558,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = Crashes;
 		};
-		4BC95E7A2D7416AD002FAB32 /* Navigation */ = {
+		4BC95E7A2D7416AD002FAB32 /* DDGNavigation */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = Navigation;
+			productName = DDGNavigation;
 		};
 		4BC95E7C2D7416B2002FAB32 /* Onboarding */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -28,7 +28,7 @@ import Foundation
 import FoundationExtensions
 import History
 import MaliciousSiteProtection
-import Navigation
+import DDGNavigation
 import Onboarding
 import os.log
 import PageRefreshMonitor
@@ -526,7 +526,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
 #if DEBUG
     /// set this to true when Navigation-related decision making is expected to take significant time to avoid assertions
-    /// used by BSK: Navigation.DistributedNavigationDelegate
+    /// used by BSK: DDGNavigation.DistributedNavigationDelegate
     var shouldDisableLongDecisionMakingChecks: Bool = false
     func disableLongDecisionMakingChecks() { shouldDisableLongDecisionMakingChecks = true }
     func enableLongDecisionMakingChecks() { shouldDisableLongDecisionMakingChecks = false }
@@ -1330,7 +1330,7 @@ extension Tab {
 private extension Tab {
 
     func refreshAutoplayState(videoPlaybackDetected: Bool, videoAutoplayDetected: Bool) {
-        let isEligible = featureFlagger.isFeatureOn(.autoplayPolicy) && content.urlForWebView?.isHttpOrHttps == true
+        let isEligible = content.urlForWebView?.isHttpOrHttps == true
 
         // Please do note that both conditions (`PlaybackDetected` + `AutoplayDetected`) may not necessarily be both true simultaneously
         // Our Autoplay Policy may prevent Playback, but we might detect Videos with Autoplay.

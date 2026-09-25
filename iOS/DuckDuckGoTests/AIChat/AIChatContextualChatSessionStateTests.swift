@@ -2708,6 +2708,152 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         XCTAssertEqual(sessionState.attachedSelections.map(\.id), [selection.id])
     }
+
+    // MARK: - Search on screen
+
+    private func arrangeChat(onPage urlString: String) {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts, .contextualActiveChatSuggestions]
+        sessionState.currentPageURL = { URL(string: urlString) }
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.beginChatForUTISubmission()
+    }
+
+    func testTheSearchOnScreenIsReadFromThePage() {
+        arrangeChat(onPage: "https://duckduckgo.com/?q=tokamak%20fuel&ia=web")
+
+        XCTAssertEqual(sessionState.searchOnScreenQuery, "tokamak fuel")
+    }
+
+    func testThatSiteURLOffersNothingToSend() {
+        arrangeChat(onPage: "https://example.com/reactor")
+
+        XCTAssertNil(sessionState.searchOnScreenQuery)
+    }
+
+    /// Nothing to send it to: the chip belongs to a chat under way.
+    func testThereIsNoSearchToSendWithoutAChat() {
+        sessionState.currentPageURL = { URL(string: "https://duckduckgo.com/?q=tokamak") }
+
+        XCTAssertNil(sessionState.searchOnScreenQuery)
+    }
+
+    func testABlankSearchOffersNothingToSend() {
+        arrangeChat(onPage: "https://duckduckgo.com/?q=%20%20")
+
+        XCTAssertNil(sessionState.searchOnScreenQuery)
+    }
+
+    // MARK: - A search is not attached
+
+    private static let searchURL = "https://duckduckgo.com/?q=tokamak"
+
+    func testASearchIsNotCollectedForAttaching() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        arrangeChat(onPage: Self.searchURL)
+
+        XCTAssertFalse(sessionState.shouldTriggerAutoCollect())
+    }
+
+    func testASearchIsNotOfferedAsAnAttachment() {
+        arrangeOfferConditions()
+        mockFeatureFlagger.enabledFeatureFlags += [.contextualSuggestedPrompts, .contextualActiveChatSuggestions]
+        sessionState.currentPageURL = { URL(string: Self.searchURL) }
+
+        XCTAssertFalse(sessionState.shouldOfferPageContext(for: URL(string: Self.searchURL)))
+
+        sessionState.updateContext(makeTestContext(url: Self.searchURL))
+
+        XCTAssertNil(sessionState.suggestedContext)
+    }
+
+    func testASearchThatStillArrivesAsContextIsNotAttached() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        arrangeChat(onPage: Self.searchURL)
+
+        sessionState.updateContext(makeTestContext(url: Self.searchURL))
+
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertNil(sessionState.intendedAttachedContext)
+    }
+
+    func testTheAutoAttachedPageIsDroppedWhenASearchArrives() {
+        var deliveredNil = false
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(let context, _) = effect, context == nil { deliveredNil = true }
+            }
+            .store(in: &cancellables)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        arrangeChat(onPage: "https://example.com/reactor")
+        sessionState.updateContext(makeTestContext(url: "https://example.com/reactor"))
+        XCTAssertNotNil(sessionState.intendedAttachedContext)
+
+        sessionState.currentPageURL = { URL(string: Self.searchURL) }
+        sessionState.refreshForCurrentPage()
+
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertTrue(deliveredNil, "the chip and the frontend have to be told the page went")
+        XCTAssertFalse(sessionState.userDowngradedToPlaceholder, "the user did not remove it")
+    }
+
+    func testTheSearchSuggestionGoesOnceItsPromptIsSent() {
+        arrangeChat(onPage: Self.searchURL)
+
+        sessionState.markSearchPromptSent("tokamak")
+
+        XCTAssertNil(sessionState.searchChipQuery)
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
+    func testANewSearchOffersTheSuggestionAgain() {
+        arrangeChat(onPage: Self.searchURL)
+        sessionState.markSearchPromptSent("tokamak")
+
+        sessionState.currentPageURL = { URL(string: "https://duckduckgo.com/?q=stellarator") }
+        sessionState.refreshForCurrentPage()
+
+        XCTAssertEqual(sessionState.searchChipQuery, "stellarator")
+    }
+
+    func testASentSearchStaysGoneWhileTheChatLasts() {
+        arrangeChat(onPage: Self.searchURL)
+        sessionState.markSearchPromptSent("tokamak")
+
+        sessionState.notifyPageChanged()
+        sessionState.refreshForCurrentPage()
+        sessionState.refreshAutoAttachSetting()
+        sessionState.updateContext(makeTestContext(url: Self.searchURL))
+
+        XCTAssertNil(sessionState.searchChipQuery)
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+        XCTAssertEqual(sessionState.chipState, .placeholder, "a spent chip is not a reason to attach the results")
+        XCTAssertFalse(sessionState.shouldTriggerAutoCollect())
+    }
+
+    func testANewChatOffersTheSearchAgain() {
+        arrangeChat(onPage: Self.searchURL)
+        sessionState.markSearchPromptSent("tokamak")
+
+        sessionState.resetToNoChat()
+        sessionState.beginChatForUTISubmission()
+
+        XCTAssertEqual(sessionState.searchChipQuery, "tokamak")
+    }
+
+    func testWithoutTheFlagsASearchIsAttachedAsBefore() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        arrangeChat(onPage: Self.searchURL)
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        XCTAssertNil(sessionState.searchOnScreenQuery)
+        XCTAssertTrue(sessionState.shouldTriggerAutoCollect())
+
+        sessionState.updateContext(makeTestContext(url: Self.searchURL))
+
+        XCTAssertEqual(sessionState.intendedAttachedContext?.contextData.url, Self.searchURL)
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
 }
 
 // MARK: - Mock Pixel Handler

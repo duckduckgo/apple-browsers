@@ -119,6 +119,8 @@ final class AIChatContextualChatSessionState {
     /// Supplied from outside because the host that answers it is created after this object.
     var inputAttachmentCount: () -> Int = { 0 }
 
+    var currentPageURL: () -> URL? = { nil }
+
     // MARK: - Core State (private(set) - mutations happen via methods)
 
     private(set) var frontendState: FrontendChatState = .noChat
@@ -141,6 +143,10 @@ final class AIChatContextualChatSessionState {
     var hasUnsubmittedSelections: Bool {
         unsubmittedSelectionCount > 0
     }
+
+    /// Searches already sent to this chat from their chip, so the same one is not offered again.
+    /// Lasts as long as the chat: a reload, a reopen and a return to the page are all the same ask.
+    private var searchesSentToChat = Set<String>()
 
     /// URL included in the last submitted prompt with no navigation since; used to spot a stale auto-attach echo.
     private var deliveredContextURLWithNoNavigationSince: URL?
@@ -246,6 +252,27 @@ final class AIChatContextualChatSessionState {
     /// Whether automatic context collection is enabled
     var shouldAutoCollectContext: Bool {
         aiChatSettings.isAutomaticContextAttachmentEnabled
+    }
+
+    private var isSearchSuggestionEnabled: Bool {
+        featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+            && featureFlagger.isFeatureOn(.contextualActiveChatSuggestions)
+    }
+
+    var searchOnScreenQuery: String? {
+        guard isSearchSuggestionEnabled,
+              hasActiveChat,
+              let url = currentPageURL(),
+              url.isDuckDuckGoSearch,
+              let query = url.searchQuery,
+              !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return query
+    }
+
+    /// What the chip offers: the search on screen, until it has been sent to this chat.
+    var searchChipQuery: String? {
+        guard let query = searchOnScreenQuery, !searchesSentToChat.contains(query) else { return nil }
+        return query
     }
 
     var showsSuggestionsStartSurface: Bool {
@@ -418,6 +445,7 @@ final class AIChatContextualChatSessionState {
         chipState = .placeholder
         contextualChatURL = nil
         deliveredContextURLWithNoNavigationSince = nil
+        searchesSentToChat = []
         declinedOfferURL = nil
         userDowngradedToPlaceholder = false
         isManualAttachInProgress = false
@@ -483,6 +511,14 @@ final class AIChatContextualChatSessionState {
         Logger.aiChat.debug("[SessionState] Chip downgraded to placeholder via coordinator")
     }
 
+    func clearAutoAttachedContextForSearchOnScreen() {
+        guard searchOnScreenQuery != nil, shouldAutoCollectContext, case .attached = chipState else { return }
+        chipState = .placeholder
+        emitDeliveryIfNeeded(nil)
+        rebuildViewState()
+        Logger.aiChat.debug("[SessionState] Search on screen - dropped the auto-attached page")
+    }
+
     // MARK: - Context Management
 
     /// Begin a manual attach operation (user tapped "Attach Page")
@@ -526,6 +562,7 @@ final class AIChatContextualChatSessionState {
     /// Re-evaluate the sheet view state (e.g. "Ask about page" quick action) for the current page's
     /// attachability. Driven by the URL-change signal so it stays in sync on back/forward navigation.
     func refreshForCurrentPage() {
+        clearAutoAttachedContextForSearchOnScreen()
         rebuildViewState()
     }
 
@@ -545,11 +582,12 @@ final class AIChatContextualChatSessionState {
     }
 
     func shouldTriggerAutoCollect(for pageURL: URL? = nil) -> Bool {
-        shouldAutoCollectContext && shouldCollectPage(for: pageURL)
+        searchOnScreenQuery == nil && shouldAutoCollectContext && shouldCollectPage(for: pageURL)
     }
 
     func shouldOfferPageContext(for pageURL: URL? = nil) -> Bool {
         featureFlagger.isFeatureOn(.contextualPagePlaceholder)
+            && searchOnScreenQuery == nil
             && !shouldAutoCollectContext
             && isUnifiedToggleInputActive
             && hasActiveChat
@@ -669,6 +707,8 @@ final class AIChatContextualChatSessionState {
 
         if isManualAttachInProgress {
             handleManualAttach(context)
+        } else if searchOnScreenQuery != nil {
+            clearAutoAttachedContextForSearchOnScreen()
         } else if shouldAutoCollectContext, !suppressesAutoAttachForSelectionEntry {
             handleAutoAttach(context)
         } else if shouldOfferPageContext(for: URL(string: context.contextData.url)), !suppressesAutoAttachForSelectionEntry {
@@ -741,6 +781,14 @@ final class AIChatContextualChatSessionState {
     /// `.delivered` when `context` is a stale echo of the already-submitted page (chip stays hidden); else `.pendingSubmit`.
     func utiChipDeliveryState(forDelivering context: AIChatPageContextData) -> PageContextAttachmentDeliveryState {
         isStaleEchoOfDeliveredContext(context) ? .delivered : .pendingSubmit
+    }
+
+    /// Takes the query from the chip that was tapped rather than reading the page again, so nothing
+    /// about the page's own timing can lose it.
+    func markSearchPromptSent(_ query: String) {
+        searchesSentToChat.insert(query)
+        rebuildViewState()
+        Logger.aiChat.debug("[SessionState] Search sent to chat - chip spent")
     }
 
     /// Marks the attached context delivered on submit so it stops riding later prompts and the chip hides.
@@ -912,6 +960,9 @@ private extension AIChatContextualChatSessionState {
         if isDocumentChipLoading {
             return []
         }
+        if searchOnScreenQuery != nil {
+            return []
+        }
         if !attachedSelections.isEmpty, frontendState == .noChat {
             return []
         }
@@ -995,7 +1046,7 @@ private extension AIChatContextualChatSessionState {
             shouldShowNewChatButton: frontendState != .noChat,
             chipState: chipState,
             quickActions: quickActions,
-            suggestions: (shouldHideSuggestions || !canShowSuggestions) ? [] : visibleSuggestions(reserving: quickActions.count),
+            suggestions: visibleSuggestions(reserving: quickActions.count),
             // Nothing can show, so nothing is loading: a resolve in flight when the suggestions stopped
             // qualifying never lands, and the surfaces would sit on its loader.
             suggestionsLoadState: (isDocumentChipLoading || !canShowSuggestions) ? .loaded : suggestionsLoadState,
@@ -1005,7 +1056,15 @@ private extension AIChatContextualChatSessionState {
         )
     }
 
+    /// The chips the row shows, within the budget the quick actions leave it.
     func visibleSuggestions(reserving slots: Int) -> [ContextualSuggestedPrompt] {
+        // The app's own chip in place of the catalog's, which a search would not qualify for: it
+        // attaches nothing, and that is what they are gated on.
+        if let query = searchChipQuery {
+            return [.askAboutSearch(query: query)]
+        }
+        guard !shouldHideSuggestions, canShowSuggestions else { return [] }
+
         let cap = max(0, suggestedPromptsProvider.maxSuggestedPrompts - slots)
         guard suggestions.count > cap else { return suggestions }
 

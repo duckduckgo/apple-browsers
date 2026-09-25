@@ -757,6 +757,17 @@ private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
     }
 }
 
+private extension Bundle {
+
+    static let keychainType: KeychainType = {
+#if NETP_SYSTEM_EXTENSION
+        .system
+#else
+        .dataProtection(.named(Bundle.main.appGroup(bundle: .netP)))
+#endif
+    }()
+}
+
 final class DefaultWireGuardInterface: WireGuardGoInterface {
     func turnOn(settings: UnsafePointer<CChar>, handle: Int32) -> Int32 {
         wgTurnOn(settings, handle)

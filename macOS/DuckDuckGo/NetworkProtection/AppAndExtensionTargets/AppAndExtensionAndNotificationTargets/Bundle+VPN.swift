@@ -53,25 +53,4 @@ extension Bundle {
 
         return bundleID
     }
-
-#if !NETWORK_EXTENSION
-    // for the Main or Launcher Agent app
-    static func mainAppBundle() -> Bundle {
-        return Bundle.main
-    }
-#elseif NETP_SYSTEM_EXTENSION
-    // for the System Extension (Developer ID)
-    static func mainAppBundle() -> Bundle {
-        return Bundle(url: .mainAppBundleURL)!
-    }
-    // AppEx (App Store) can‘t access Main App Bundle
-#endif
-
-    static let keychainType: KeychainType = {
-#if NETP_SYSTEM_EXTENSION
-        .system
-#else
-        .dataProtection(.named(Bundle.main.appGroup(bundle: .netP)))
-#endif
-    }()
 }

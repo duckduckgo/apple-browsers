@@ -251,6 +251,12 @@ struct PermissionAuthorizationSwiftUIView: View {
 
     private let stepIndicatorSize: CGFloat = 32
 
+    private enum DecisionDialogConstants {
+        static let width: CGFloat = 252
+        static let buttonHeight: CGFloat = 32
+        static let closeButtonSize: CGFloat = 20
+    }
+
     private var promptText: String {
         switch permissionType {
         case .geolocation:
@@ -311,7 +317,7 @@ struct PermissionAuthorizationSwiftUIView: View {
 
                 Button(action: onDismiss) {
                     Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
-                        .frame(width: 20, height: 20)
+                        .frame(width: DecisionDialogConstants.closeButtonSize, height: DecisionDialogConstants.closeButtonSize)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(HoverHighlightButtonStyle(cornerRadius: 4))
@@ -338,7 +344,7 @@ struct PermissionAuthorizationSwiftUIView: View {
             }
         }
         .padding(20)
-        .frame(width: 252)
+        .frame(width: DecisionDialogConstants.width)
         .background(Color(designSystemColor: .surfaceSecondary))
     }
 
@@ -348,7 +354,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .frame(maxWidth: .infinity)
-                .frame(height: 32)
+                .frame(height: DecisionDialogConstants.buttonHeight)
                 .background(Color(designSystemColor: .controlsFillPrimary))
                 .clipShape(Capsule())
                 .contentShape(Capsule())

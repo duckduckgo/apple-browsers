@@ -62,24 +62,6 @@ extension Array where Element == PermissionType {
 
 }
 
-/// A choice made in the Allow this visit / Always allow / Never allow dialog.
-enum PermissionPromptDecision {
-    case allowThisVisit
-    case alwaysAllow
-    case neverAllow
-
-    var output: PermissionAuthorizationQueryOutput {
-        switch self {
-        case .allowThisVisit:
-            return (granted: true, remember: false)
-        case .alwaysAllow:
-            return (granted: true, remember: true)
-        case .neverAllow:
-            return (granted: false, remember: true)
-        }
-    }
-}
-
 final class PermissionAuthorizationViewController: NSViewController {
 
     let systemPermissionManager = SystemPermissionManager()

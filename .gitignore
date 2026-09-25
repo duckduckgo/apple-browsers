@@ -80,7 +80,6 @@ default.profraw
 
 # Cursor
 .cursor/*
-!.cursor/BUGBOT.md
 !.cursor/rules/
 
 # AI assistants

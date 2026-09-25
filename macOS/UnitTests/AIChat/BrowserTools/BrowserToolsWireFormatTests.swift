@@ -23,6 +23,76 @@ import XCTest
 /// front end, so changing one changes an agreed contract.
 final class BrowserToolsWireFormatTests: XCTestCase {
 
+    // MARK: - elicitation
+
+    /// The id rides inside the params: a subscription event has no envelope id of its own.
+    func testWhenElicitationCreateParamsAreEncodedThenTheIdModeMessageAndSchemaAreWritten() throws {
+        let params = MCPElicitationCreateParams(id: "e1",
+                                                message: "Duck.ai wants to see your open tabs.",
+                                                requestedSchema: BrowserToolPermissionElicitation.choiceSchema)
+
+        try assertEncodes(params, to: """
+        {
+          "id": "e1",
+          "mode": "form",
+          "message": "Duck.ai wants to see your open tabs.",
+          "requestedSchema": {
+            "type": "object",
+            "properties": {
+              "choice": { "type": "string", "enum": ["allowOnce", "alwaysAllow", "neverAllow"] }
+            },
+            "required": ["choice"]
+          }
+        }
+        """)
+    }
+
+    func testWhenElicitationResponseIsDecodedThenItCarriesTheIdActionAndChoice() throws {
+        let response = try decodeElicitationResponse("""
+        { "id": "e1", "result": { "action": "accept", "content": { "choice": "alwaysAllow" } } }
+        """)
+
+        XCTAssertEqual(response.id, "e1")
+        XCTAssertEqual(response.result, MCPElicitationResult(action: .accept, content: ["choice": "alwaysAllow"]))
+    }
+
+    func testWhenElicitationResponseHasNoContentThenContentIsNil() throws {
+        let response = try decodeElicitationResponse("""
+        { "id": "e1", "result": { "action": "decline" } }
+        """)
+
+        XCTAssertEqual(response.result, MCPElicitationResult(action: .decline))
+    }
+
+    /// A malformed answer still correlates by id, so the prompt resolves instead of timing out.
+    func testWhenElicitationResponseResultIsUnreadableThenItStillCorrelatesById() throws {
+        let response = try decodeElicitationResponse("""
+        { "id": "e1", "result": "nonsense" }
+        """)
+
+        XCTAssertEqual(response.id, "e1")
+        XCTAssertNil(response.result)
+    }
+
+    func testWhenElicitationResultActionIsMissingThenItDecodesAsUnknown() throws {
+        let response = try decodeElicitationResponse("""
+        { "id": "e1", "result": { "content": { "choice": "allowOnce" } } }
+        """)
+
+        XCTAssertEqual(response.result?.action, "")
+        XCTAssertNil(MCPElicitationAction(rawValue: response.result?.action ?? ""))
+    }
+
+    func testWhenElicitationResponseHasNoIdThenItDoesNotDecode() {
+        XCTAssertThrowsError(try decodeElicitationResponse("""
+        { "result": { "action": "accept" } }
+        """))
+    }
+
+    private func decodeElicitationResponse(_ json: String) throws -> AIChatElicitationResponseRequest {
+        try JSONDecoder().decode(AIChatElicitationResponseRequest.self, from: Data(json.utf8))
+    }
+
     // MARK: - initialize
 
     func testWhenInitializeResultIsEncodedThenItAdvertisesToolsWithListChanged() throws {

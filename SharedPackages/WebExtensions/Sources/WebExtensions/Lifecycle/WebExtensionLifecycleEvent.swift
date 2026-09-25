@@ -23,6 +23,8 @@ import Foundation
 public enum WebExtensionReloadTrigger: Equatable, Sendable {
     /// Browser data clearing unloaded and then restored extensions.
     case dataClearing
+    /// CPM messaging reported a confirmed hang after an initialization failure.
+    case cpmMessagingHang
     /// A scriptlet update required the affected extension to reload.
     case scriptletUpdate
     /// A caller explicitly requested an extension reload.

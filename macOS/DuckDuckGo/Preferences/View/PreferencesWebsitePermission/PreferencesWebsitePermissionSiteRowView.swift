@@ -67,6 +67,7 @@ struct PreferencesWebsitePermissionSiteRowView: View {
                 onDecisionChanged: onDecisionChanged,
                 onRemove: onRemove
             )
+            .layoutPriority(1)
         }
         .padding(Constants.rowPadding)
         .frame(height: Constants.rowHeight)

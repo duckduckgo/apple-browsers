@@ -116,12 +116,20 @@ extension MainViewController {
                 inputContainer.transform = restingTransform
                 self?.viewCoordinator.unifiedInputContentContainer.alpha = 0
                 restingSnapshot?.alpha = 1
+                if restingSnapshot == nil {
+                    // Appearance or size changes invalidate the cached page. Reveal the live
+                    // input during the crossfade while keeping its editing interaction state.
+                    source?.alpha = 1
+                }
             },
             interruptCleanup: { [weak self] in
                 restingSnapshot?.removeFromSuperview()
                 inputContainer.transform = .identity
                 self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 self?.viewCoordinator.unifiedToggleInputContainer.alpha = 1
+                if restingSnapshot == nil {
+                    source?.alpha = 0
+                }
             },
             resigningInput: { [weak coordinator] in
                 coordinator?.viewController.deactivateInput()

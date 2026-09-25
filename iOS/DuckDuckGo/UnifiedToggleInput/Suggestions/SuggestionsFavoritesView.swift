@@ -20,9 +20,28 @@
 import SwiftUI
 import UIKit
 
-/// Hosts an already-built `NewTabPageViewController` (favorites/NTP) inside the unified view's
-/// `.favorites` state. The controller is constructed by the host with full NTP dependencies.
-struct SuggestionsFavoritesView: UIViewControllerRepresentable {
+/// Keeps focused favorites mounted while the shared resolver switches between content states.
+/// Layout owners can reuse the presentation without creating another favorites controller.
+struct SuggestionsFavoritesView: View {
+    let presentation: FocusedFavoritesPresentation
+    let isVisible: Bool
+
+    var body: some View {
+        if let controller = presentation.viewController {
+            // Extend under the top safe area so the frame stays static; the nested NTP receives
+            // its top inset through its scroll view, preserving the existing input animation.
+            FavoritesControllerView(controller: controller)
+                .ignoresSafeArea(.container, edges: .top)
+                // Keep visibility instant during mode changes so favorites do not linger over
+                // the incoming Duck.ai list. Keeping it mounted also preserves interrupted toggles.
+                .opacity(isVisible ? 1 : 0)
+                .animation(nil, value: isVisible)
+                .allowsHitTesting(isVisible)
+        }
+    }
+}
+
+private struct FavoritesControllerView: UIViewControllerRepresentable {
     let controller: NewTabPageViewController
 
     func makeUIViewController(context: Context) -> NewTabPageViewController { controller }

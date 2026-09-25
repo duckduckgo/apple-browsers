@@ -2245,7 +2245,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // Resolved once and passed on: `modelPickerItems` records a free-trial badge impression, so
         // asking for it twice per open would burn through the badge's view cap at double speed.
         let items = omnibarController.modelPickerItems(selectedModelId: selectedModelId,
-                                                       freeModelsOnly: freeModelsOnly)
+                                                       freeModelsOnly: freeModelsOnly,
+                                                       hidesGatedModels: raisedFromUsageCard)
         // Only a picker that actually shows a gated row is a subscription-funnel impression.
         if items.contains(where: { if case .gatedModel = $0 { return true } else { return false } }) {
             omnibarController.pixelHandler.fire(.modelPickerShown)
@@ -2472,6 +2473,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         dialog.onHaveSubscription = { [weak self] in
             self?.omnibarController.presentSubscriptionActivationFlow()
         }
+        omnibarController.pixelHandler.fire(.gatedRowClick(origin: origin.rawValue))
         omnibarController.pixelHandler.fire(.subscriptionUpsellShown(origin: origin.rawValue))
         dialog.show()
     }

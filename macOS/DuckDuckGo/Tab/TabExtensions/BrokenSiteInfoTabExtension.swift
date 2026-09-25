@@ -19,7 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Foundation
-import Navigation
+import DDGNavigation
 import PrivacyDashboard
 import UserScript
 import WebKit

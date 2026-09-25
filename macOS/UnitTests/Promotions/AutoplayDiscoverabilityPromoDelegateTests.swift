@@ -16,17 +16,13 @@
 //  limitations under the License.
 //
 
-import Combine
-import FeatureFlags_macOS
 @_spi(Testing) import PixelKit
-import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
 final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
 
-    private var featureFlagger: MockFeatureFlagger!
     private var windowControllersManager: WindowControllersManagerMock!
     private var pixelFiring: PixelKitMock!
     private var sut: AutoplayDiscoverabilityPromoDelegate!
@@ -35,15 +31,13 @@ final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.autoplayPolicy.rawValue: true])
         windowControllersManager = WindowControllersManagerMock()
         pixelFiring = PixelKitMock()
         sut = makeSUT()
     }
 
     private func makeSUT(isNewUser: Bool = false) -> AutoplayDiscoverabilityPromoDelegate {
-        AutoplayDiscoverabilityPromoDelegate(featureFlagger: featureFlagger,
-                                             windowControllersManager: windowControllersManager,
+        AutoplayDiscoverabilityPromoDelegate(windowControllersManager: windowControllersManager,
                                              pixelFiring: pixelFiring,
                                              isNewUserProvider: { isNewUser })
     }
@@ -52,18 +46,11 @@ final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
         sut = nil
         pixelFiring = nil
         windowControllersManager = nil
-        featureFlagger = nil
         super.tearDown()
     }
 
-    func testWhenFeatureFlagOnThenEligible() {
+    func testThenPromoIsAlwaysEligible() {
         XCTAssertTrue(sut.isEligible)
-    }
-
-    func testWhenFeatureFlagOffThenNotEligible() {
-        featureFlagger.featuresStub = [FeatureFlag.autoplayPolicy.rawValue: false]
-
-        XCTAssertFalse(sut.isEligible)
     }
 
     // MARK: - Audience
@@ -77,21 +64,6 @@ final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
         let result = await sut.show(history: PromoHistoryRecord(id: "autoplay-discoverability"), force: false)
 
         XCTAssertEqual(result, .retired)
-    }
-
-    // MARK: - Eligibility Publisher
-
-    func testWhenFeatureFlagChangesThenEligibilityPublisherEmits() {
-        var received: [Bool] = []
-        let cancellable = sut.isEligiblePublisher.sink { received.append($0) }
-
-        featureFlagger.featuresStub = [FeatureFlag.autoplayPolicy.rawValue: false]
-        featureFlagger.triggerUpdate()
-        featureFlagger.featuresStub = [FeatureFlag.autoplayPolicy.rawValue: true]
-        featureFlagger.triggerUpdate()
-
-        cancellable.cancel()
-        XCTAssertEqual(received, [true, false, true])
     }
 
     /// No window to anchor to: the promo must end its session rather than leave the queue waiting on

@@ -53,7 +53,7 @@ pixelKit.fire(uniqueEvent, frequency: .uniqueByName)
 
 `Pixel.Event` in `iOS/Core/PixelEvent.swift` is the catalogue of iOS pixel names that predate PixelKit. The iOS-only firing classes it was written for no longer exist, so it now serves purely to name pixels: each case maps to an HTTP pixel name string via a computed `name` property, and every case fires through PixelKit (`PixelKit.fire(Pixel.Event.someCase, ...)`).
 
-**`iOS/Core/PixelEvent.swift` does not take new pixels.** The file carries a top-of-file notice to that effect, and a Danger check hard-fails a PR that adds a new case (to the enum or to the `name` switch) - see `iOS Pixel Injection Pattern (PixelKit)` in `.cursor/BUGBOT.md`. Modifying or removing an existing case is fine. Define a new iOS pixel as its own `PixelKit.Event`-conforming type in a new file instead, the same way macOS already does (see `macOS Pixels (PixelKit)` below).
+**`iOS/Core/PixelEvent.swift` does not take new pixels.** The file carries a top-of-file notice to that effect, and a Danger check hard-fails a PR that adds a new case (to the enum or to the `name` switch) - see `PixelKit injection` in `REVIEW-pixels.md`. Modifying or removing an existing case is fine. Define a new iOS pixel as its own `PixelKit.Event`-conforming type in a new file instead, the same way macOS already does (see `macOS Pixels (PixelKit)` below).
 
 #### Existing Structure
 
@@ -103,7 +103,7 @@ New iOS and macOS pixel names follow these conventions:
 - **Separators**: Use underscores (`_`) or hyphens (`-`) between words.
 - **Format**: Use `feature_action` or `feature-sub-feature_action`.
 - **iOS platform context**: You do not need to include `ios` in the event name. For a new unprefixed event, conform to `PixelKitEventWithCustomPrefix` with an empty `namePrefix`; PixelKit then appends `_ios_phone` or `_ios_tablet`. A plain `PixelKit.Event` name is otherwise unchanged on iOS.
-- **macOS platform context**: The feature-grouped naming convention also applies to macOS. Plain event names can still receive PixelKit's legacy `m_mac_` prefix at firing time; use `.unenforcedPrefix` only when the event name is already fully qualified and must be sent unchanged.
+- **macOS platform context**: New macOS pixels must not be sent with `m_mac_`, because it breaks ClickHouse queries. End the name with `_macos` (e.g. `fire_started_macos`) and declare `var namePrefix: PixelKitNamePrefix { .none }` on the event; otherwise PixelKit prepends `m_mac_` at firing time. See `macOS/DuckDuckGo/Statistics/FireButtonPixel.swift`.
 - **Clarity**: Names should be clear and self-documenting. Anyone reading the pixel name should understand what it represents without needing additional context.
 
 **Avoid legacy shorthand naming.** The codebase contains legacy pixels with cryptic names like `ml`, `mp`, `mf`, `m_r`. These are difficult to understand and should not be used as a template for new pixels. New pixels should use descriptive names.
@@ -321,6 +321,8 @@ name.
 Both event properties default to what a new pixel wants: `.platformDefault` (`m_mac_` on macOS,
 nothing on iOS) and `.standard` (`..._count_ios_phone` on iOS, nothing on macOS). Declare the pixel
 as `"suffixes": ["first_daily_count", "platform", "form_factor"]` and write no naming code.
+On macOS, new pixels are the exception: use `.none` and a `_macos` suffix (see the macOS platform
+context rule above).
 
 Use `.none` when `name` is already complete. Never use a `legacy` case of
 `PixelKitPlatformSuffixPolicy` on a new pixel.

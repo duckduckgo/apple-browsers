@@ -392,7 +392,13 @@ class MainViewController: UIViewController {
         return viewModel
     }()
 
-    weak var tabSwitcherController: TabSwitcherViewController?
+    weak var tabSwitcherController: TabSwitcherViewController? {
+        didSet {
+            if tabSwitcherController != nil {
+                remoteMessageImpressionReporter.reset()
+            }
+        }
+    }
     var tabSwitcherButton: TabSwitcherButton?
     var omniBarTabSwitcherButton: TabSwitcherButton?
 
@@ -513,7 +519,9 @@ class MainViewController: UIViewController {
         unifiedToggleInputFeature: unifiedToggleInputFeature
     )
     lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
-    var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
+    var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator? {
+        didSet { remoteMessageImpressionReporter.observeInputVisibility(unifiedToggleInputCoordinator) }
+    }
     var unifiedInputStateStore: UnifiedInputStateStore?
     var isPaidAIChatEnabledForSwipe = false
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
@@ -534,6 +542,18 @@ class MainViewController: UIViewController {
     /// Owns the iPad popover's suggestion decision + Duck.ai surface lifecycle (built in `loadSuggestionTray`).
     private var popoverSuggestionsCoordinator: PopoverSuggestionsCoordinator?
     private var homePageMessagesCancellable: AnyCancellable?
+
+    private lazy var remoteMessageImpressionReporter = RemoteMessageImpressionReporter(
+        contentDidChangePublisher: homePageConfiguration.contentDidChangePublisher,
+        hasCurrentMessage: { [weak self] in self?.homePageConfiguration.currentRemoteMessageID != nil },
+        snapshot: { [weak self] in self?.remoteMessageVisibilitySnapshot() },
+        reportVisibleMessage: { [weak self] messageID in
+            self?.homePageConfiguration.reportVisibleRemoteMessage(expectedMessageID: messageID) ?? false
+        },
+        messageDidStopBeingVisible: { [weak self] messageID in
+            self?.homePageConfiguration.remoteMessageDidStopBeingVisible(messageID: messageID)
+        }
+    )
 
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     func setWebExtensionEventsCoordinator(_ coordinator: WebExtensionEventsCoordinator?) {
@@ -946,6 +966,7 @@ class MainViewController: UIViewController {
         mobileCustomization.delegate = self
 
         installContextualSheetDismissGesture()
+        remoteMessageImpressionReporter.observeVisibilityChanges()
     }
 
     private func configureStartupPresentation() {
@@ -973,6 +994,7 @@ class MainViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        remoteMessageImpressionReporter.browserDidAppear()
 
         loadFindInPage()
 
@@ -1011,6 +1033,11 @@ class MainViewController: UIViewController {
         if #available(iOS 26, *), isPad {
             view.setNeedsUpdateConstraints()
         }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        remoteMessageImpressionReporter.browserWillDisappear()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -1151,7 +1178,7 @@ class MainViewController: UIViewController {
         if newTabPageViewController?.hasInlineSearchInput == true {
             swipeTabsCoordinator?.updateFullScreenSnapshotForCurrentTab()
         }
-        
+
         if !viewCoordinator.logoContainer.isHidden,
            self.tabManager.current()?.link == nil,
            let tab = self.tabManager.currentTabsModel.currentTab {
@@ -1221,6 +1248,53 @@ class MainViewController: UIViewController {
         }
 
         observeHomePageMessageChanges()
+    }
+
+    private func remoteMessageVisibilitySnapshot() -> RemoteMessageImpressionReporter.Snapshot? {
+        guard !isStartupOnboardingPending,
+              let window = viewIfLoaded?.window,
+              window.isKeyWindow,
+              window.windowScene?.activationState == .foregroundActive,
+              presentedViewController == nil,
+              let tab = tabManager.currentTabsModel.currentTab,
+              !tab.isAITab, !tab.fireTab,
+              let messageID = homePageConfiguration.currentRemoteMessageID else {
+            return nil
+        }
+
+        return RemoteMessageImpressionReporter.Snapshot(tabID: tab.uid,
+                                                        messageID: messageID,
+                                                        window: window,
+                                                        surfaceRoot: remoteMessageSurfaceRoot,
+                                                        searchDismissSurface: remoteMessageSearchDismissSurface)
+    }
+
+    private var remoteMessageSearchDismissSurface: NewTabPageViewController? {
+        guard tabManager.currentTabsModel.currentTab?.link == nil,
+              viewCoordinator.isOmnibarDismissInProgress,
+              let coordinator = unifiedToggleInputCoordinator,
+              coordinator.isOmnibarSession,
+              coordinator.inputMode == .search,
+              coordinator.contentViewController.isShowingFavoritesContent,
+              let restingPage = newTabPageViewController as? NewTabPageViewController else { return nil }
+        return restingPage
+    }
+
+    private var remoteMessageSurfaceRoot: UIViewController? {
+        if let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession {
+            // The focused NTP stays mounted even while Duck.ai or suggestions cover it.
+            guard coordinator.inputMode == .search,
+                  coordinator.contentViewController.isShowingFavoritesContent else { return nil }
+            return coordinator.contentViewController
+        }
+        guard !isModeToggleInAIChatMode else { return nil }
+        if let tray = suggestionTrayController, isPopoverVisible {
+            return tray.isShowingFavorites ? tray : nil
+        }
+        // Focused Search can show RMF over a loaded website. Only the resting surface requires an NTP tab.
+        guard tabManager.currentTabsModel.currentTab?.link == nil else { return nil }
+        // The redesigned resting NTP has no RMF block. Only the legacy page renders a card.
+        return newTabPageViewController as? NewTabPageViewController
     }
 
     private func observeHomePageMessageChanges() {
@@ -1675,6 +1749,7 @@ class MainViewController: UIViewController {
         if tabSwitcherController != nil {
             currentTab?.webView.resignFirstResponder()
         }
+        remoteMessageImpressionReporter.reset()
     }
 
     @objc func onAddressBarPositionChanged() {
@@ -2402,6 +2477,7 @@ class MainViewController: UIViewController {
         isAddressBarHandOffInProgress = false
         clearEscapeHatch()
         updateAddressBarSuppressionForNewTabPage()
+        remoteMessageImpressionReporter.reset()
     }
 
     @IBAction func onFirePressed() {
@@ -3442,6 +3518,7 @@ class MainViewController: UIViewController {
         }
         viewCoordinator.suggestionTrayContainer.isHidden = false
         currentTab?.webView.accessibilityElementsHidden = true
+        remoteMessageImpressionReporter.scheduleCheck()
     }
     
     func hideSuggestionTray() {
@@ -3449,6 +3526,7 @@ class MainViewController: UIViewController {
         viewCoordinator.suggestionTrayContainer.isHidden = true
         currentTab?.webView.accessibilityElementsHidden = false
         suggestionTrayController?.didHide(animated: false)
+        remoteMessageImpressionReporter.scheduleCheck()
     }
     
     func launchAutofillLogins(with currentTabUrl: URL? = nil, currentTabUid: String? = nil, openSearch: Bool = false, source: AutofillSettingsSource, selectedAccount: SecureVaultModels.WebsiteAccount? = nil, extensionPromotionManager: AutofillExtensionPromotionManaging? = nil) {
@@ -6285,6 +6363,7 @@ extension MainViewController: OmniBarDelegate {
         // Only this callback carries the direction; `onToggleModeSwitched` does not.
         recordNewTabPageSessionToggleSwitch(to: mode)
         onToggleModeSwitched()
+        remoteMessageImpressionReporter.inputModeDidChange(mode)
     }
 
     func preferredTextEntryModeForCurrentTab() -> TextEntryMode? {
@@ -6339,6 +6418,7 @@ extension MainViewController: PopoverSuggestionsHosting {
         viewCoordinator.omniBar.showSeparator()
         viewCoordinator.suggestionTrayContainer.isHidden = true
         currentTab?.webView.accessibilityElementsHidden = false
+        remoteMessageImpressionReporter.scheduleCheck()
     }
 }
 
@@ -7328,6 +7408,10 @@ extension MainViewController: TabDelegate {
 }
 
 extension MainViewController: TabSwitcherDelegate {
+
+    func tabSwitcherDidDismiss(_ tabSwitcher: TabSwitcherViewController) {
+        remoteMessageImpressionReporter.scheduleCheck()
+    }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?) {
         defer {

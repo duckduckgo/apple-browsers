@@ -19,9 +19,11 @@
 
 import Foundation
 import BrowserServicesKit
+import Common
 import Configuration
 import RemoteMessaging
 import Core
+import PixelKit
 import Persistence
 import PrivacyConfig
 import BackgroundTasks
@@ -56,7 +58,8 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
          subscriptionDataReporter: SubscriptionDataReporting,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          idleReturnEligibilityManager: IdleReturnEligibilityManaging,
-         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
+         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
         remoteMessagingActionHandler = RemoteMessagingActionHandler(
             surveyUsageStateRefresher: RemoteMessagingSurveyUsageStateRefresher()
@@ -65,6 +68,7 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
 
         pixelReporter = RemoteMessagePixelReporter(
+            pixelFiring: pixelFiring,
             parameterRandomiser: subscriptionDataReporter.mergeRandomizedParameters(for:with:)
         )
 
@@ -75,6 +79,12 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
             configurationStore: configurationStore,
             database: database,
             errorEvents: RemoteMessagingStoreErrorHandling(),
+            autoDismissEvents: EventMapping<RemoteMessageAutoDismissEvent> { event, _, _, _ in
+                switch event {
+                case .messageAutoDismissed(let messageID):
+                    pixelFiring?.fire(RemoteMessagePixel.autoDismissed(messageID: messageID))
+                }
+            },
             remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
                 privacyConfigurationManager: privacyConfigurationManager
             ),

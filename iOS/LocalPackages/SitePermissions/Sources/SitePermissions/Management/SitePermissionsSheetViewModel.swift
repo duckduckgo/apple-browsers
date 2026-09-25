@@ -32,6 +32,7 @@ public enum SitePermissionPickerOption: String, Hashable, Sendable {
     case askEachTime
     case alwaysAllow
     case neverAllow
+    case deny
 
     public var decision: SitePermissionDecision {
         switch self {
@@ -39,7 +40,7 @@ public enum SitePermissionPickerOption: String, Hashable, Sendable {
             return .ask
         case .alwaysAllow:
             return .allow
-        case .neverAllow:
+        case .neverAllow, .deny:
             return .deny
         }
     }
@@ -97,8 +98,10 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
         public let accessibilityValue: String
 
         public var id: SitePermissionType { permissionType }
-        public var options: [SitePermissionPickerOption] { [.askEachTime, .alwaysAllow, .neverAllow] }
-        public var selectedOption: SitePermissionPickerOption { decision.pickerOption }
+        public let options: [SitePermissionPickerOption]
+        public var selectedOption: SitePermissionPickerOption {
+            options.first { $0.decision == decision } ?? .askEachTime
+        }
     }
 
     public typealias DecisionChangedHandler = (SitePermissionDecisionChange) -> Void
@@ -199,7 +202,7 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
         }
 
         isEditing = false
-        guard option != row.selectedOption else { return }
+        guard option.decision != row.decision else { return }
 
         let change = SitePermissionDecisionChange(permissionType: permissionType,
                                                   from: row.decision,
@@ -210,7 +213,7 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
                 store.resetDecision(for: permissionType, at: site)
             case .alwaysAllow:
                 store.setPersistentDecision(.allow, for: permissionType, at: site)
-            case .neverAllow:
+            case .neverAllow, .deny:
                 store.setPersistentDecision(.deny, for: permissionType, at: site)
             }
         }
@@ -227,14 +230,14 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
         hasCommittedChanges = true
 
         onDecisionChanged(change)
-        if option == .neverAllow {
+        if option.decision == .deny {
             revokePermissions([permissionType])
         }
     }
 
     public func removePermissions() {
         let permissionTypes = relevantPermissionTypes
-        let snapshot = isFireMode ? SitePermissionsSnapshot.empty : store.removePermissions(for: site)
+        let snapshot = store.removePermissions(for: site)
 
         onRemovePermissions(SitePermissionsRemoval(snapshot: snapshot,
                                                     permissionTypes: permissionTypes))
@@ -284,7 +287,12 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
     private func makeRow(for permissionType: SitePermissionType) -> Row {
         let decision = storedPermissions[permissionType] ?? .ask
         let captureState = captureStates[permissionType] ?? .inactive
-        let stateText = UserText.PermissionManagement.title(for: decision.pickerOption)
+        // A Fire override in the management snapshot is not a durable decision.
+        let options: [SitePermissionPickerOption] = isFireMode && store.decision(for: permissionType, at: site) == nil
+            ? [.askEachTime, .deny]
+            : [.askEachTime, .alwaysAllow, .neverAllow]
+        let selectedOption = options.first { $0.decision == decision } ?? .askEachTime
+        let stateText = UserText.PermissionManagement.title(for: selectedOption)
         let accessibilityValue: String
         switch captureState {
         case .active:
@@ -301,7 +309,8 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
                    iconState: iconState(decision: decision, captureState: captureState),
                    title: UserText.PermissionManagement.title(for: permissionType),
                    stateText: stateText,
-                   accessibilityValue: accessibilityValue)
+                   accessibilityValue: accessibilityValue,
+                   options: options)
     }
 
     private func iconState(decision: SitePermissionDecision, captureState: SitePermissionCaptureState) -> Row.IconState {
@@ -332,19 +341,6 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
             systemBlockedPermissionTypes.insert(permissionType)
         case .notDetermined, .authorized, nil:
             systemBlockedPermissionTypes.remove(permissionType)
-        }
-    }
-}
-
-private extension SitePermissionDecision {
-    var pickerOption: SitePermissionPickerOption {
-        switch self {
-        case .ask:
-            return .askEachTime
-        case .allow:
-            return .alwaysAllow
-        case .deny:
-            return .neverAllow
         }
     }
 }

@@ -36,11 +36,14 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
         for fireTab in [false, true] {
             for invalidation in ["none", "navigation", "processReplacement", "close"] {
-                let sut = makeSUT(fireTab: fireTab)
-                var restored = false
-                let undo = sut.makeSitePermissionsRemovalUndoAction(site: site, permissionTypes: [.camera]) {
-                    restored = true
-                }
+                let sut = makeSUT(featureEnabled: true, fireTab: fireTab)
+                var restoredState = [String]()
+                let undo = sut.makeSitePermissionsRemovalUndoAction(
+                    site: site,
+                    permissionTypes: [.camera],
+                    restore: { restoredState.append("durable") },
+                    restoreSessionState: { restoredState.append("session") }
+                )
                 switch invalidation {
                 case "navigation":
                     sut.sitePermissionsDidStartProvisionalNavigation(sut.webView, navigation: nil)
@@ -57,10 +60,67 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
                 undo()
 
-                XCTAssertEqual(restored, !fireTab || invalidation == "none", "Fire: \(fireTab), invalidation: \(invalidation)")
+                XCTAssertEqual(restoredState, invalidation == "none" ? ["session", "durable"] : ["durable"],
+                               "Fire: \(fireTab), invalidation: \(invalidation)")
                 XCTAssertNil(sut.presentedViewController)
                 sut.closeSitePermissions()
             }
+        }
+    }
+
+    func testWhenFireRemovalUndoFollowsNavigationThenOrdinaryTabUsesRestoredDecisionsWithoutReplacingNewerRecords() async throws {
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
+        let otherSite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://other.example")!))
+        for hasNewerRecord in [false, true] {
+            let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+            store.setPersistentDecision(.allow, for: .camera, at: site)
+            store.resetDecision(for: .microphone, at: site)
+            store.setPersistentDecision(.deny, for: .camera, at: otherSite)
+            store.setGlobalDefault(.deny, for: .location)
+            let fireTab = makeSUT(featureEnabled: true, fireTab: true, store: store)
+            let ordinaryTab = makeSUT(featureEnabled: true, fireTab: false, store: store)
+            defer {
+                fireTab.closeSitePermissions()
+                ordinaryTab.closeSitePermissions()
+            }
+            var ordinaryPromptCount = 0
+            ordinaryTab.sitePermissionsPromptHandlerOverride = { _, completion in
+                ordinaryPromptCount += 1
+                completion(.denyOnce)
+            }
+            let beforeRemoval = await requestPermissionThroughBridge(on: ordinaryTab, originHost: site.host, captureType: .camera)
+            XCTAssertEqual(beforeRemoval, .allow)
+            XCTAssertEqual(ordinaryPromptCount, 0)
+
+            let removed = store.removePermissions(for: site)
+            let undo = fireTab.makeSitePermissionsRemovalUndoAction(
+                site: site,
+                permissionTypes: [.camera, .microphone],
+                restore: { store.restore(removed) },
+                restoreSessionState: { XCTFail("Navigation must prevent restoration of the old Fire session") }
+            )
+            XCTAssertTrue(store.permissions(for: site).isEmpty)
+            XCTAssertEqual(ordinaryTab.sitePermissionsState.coordinator?.managementSnapshot(for: site).storedPermissions, [:])
+            let afterRemoval = await requestPermissionThroughBridge(on: ordinaryTab, originHost: site.host, captureType: .camera)
+            XCTAssertEqual(afterRemoval, .deny)
+            XCTAssertEqual(ordinaryPromptCount, 1)
+            fireTab.sitePermissionsDidStartProvisionalNavigation(fireTab.webView, navigation: nil)
+            fireTab.sitePermissionsDidCommit(fireTab.webView, navigation: nil)
+            if hasNewerRecord {
+                store.setPersistentDecision(.deny, for: .camera, at: site)
+            }
+
+            undo()
+
+            XCTAssertEqual(store.permissions(for: site), hasNewerRecord ? [.camera: .deny] : [.camera: .allow, .microphone: .ask])
+            XCTAssertEqual(store.permissions(for: otherSite), [.camera: .deny])
+            XCTAssertEqual(store.globalDefault(for: .location), .deny)
+            XCTAssertTrue(ordinaryTab.isSitePermissionsManagementAvailable)
+            ordinaryTab.sitePermissionsDidStartProvisionalNavigation(ordinaryTab.webView, navigation: nil)
+            ordinaryTab.sitePermissionsDidCommit(ordinaryTab.webView, navigation: nil)
+            let afterUndo = await requestPermissionThroughBridge(on: ordinaryTab, originHost: site.host, captureType: .camera)
+            XCTAssertEqual(afterUndo, hasNewerRecord ? .deny : .allow)
+            XCTAssertEqual(ordinaryPromptCount, 1)
         }
     }
 

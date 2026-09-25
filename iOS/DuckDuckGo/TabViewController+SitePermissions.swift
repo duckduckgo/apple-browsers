@@ -476,7 +476,7 @@ extension TabViewController {
             return false
         }
 
-        // Fire-mode removals hide saved permissions for the tab's session without changing the store.
+        // Include Fire-session overrides and page-scoped permissions in the menu's visibility.
         if let coordinator = sitePermissionsState.coordinator {
             return coordinator.managementSnapshot(for: site).showsMenuEntry
         }
@@ -517,18 +517,21 @@ extension TabViewController {
             onRemovePermissions: { [weak self, weak coordinator] removal in
                 guard let self else { return }
                 coordinator?.removeManagementSessionState(for: removal.permissionTypes, at: site)
-                let restore: () -> Void
-                if self.tabModel.fireTab {
-                    restore = { [weak self, weak coordinator] in
+                if self.tabModel.fireTab, !removal.snapshot.isEmpty {
+                    dependencies.revokePermissionsInOtherTabs(site, Set(SitePermissionType.allCases), self.tabModel.uid)
+                }
+                self.presentSitePermissionsRemovalUndo(
+                    site: site,
+                    permissionTypes: removal.permissionTypes,
+                    restore: { [store = dependencies.store] in
+                        store.restore(removal.snapshot)
+                    },
+                    restoreSessionState: { [weak self, weak coordinator, store = dependencies.store] in
+                        guard self?.tabModel.fireTab == true, store.permissions(for: site).isEmpty else { return }
                         coordinator?.restoreFireModeManagementState(for: removal.permissionTypes, at: site)
                         self?.sitePermissionsState.geolocationProvider?.refreshPermissionStatuses()
                     }
-                } else {
-                    restore = { [store = dependencies.store] in
-                        store.restore(removal.snapshot)
-                    }
-                }
-                self.presentSitePermissionsRemovalUndo(site: site, permissionTypes: removal.permissionTypes, restore: restore)
+                )
                 self.fireSitePermissionsEvent(.permissionRemoveSite)
             },
             onOpenSystemSettings: { [weak self] permissionTypes in
@@ -664,12 +667,16 @@ extension TabViewController {
 
     private func presentSitePermissionsRemovalUndo(site: SitePermissionKey,
                                                    permissionTypes: Set<SitePermissionType>,
-                                                   restore: @escaping () -> Void) {
+                                                   restore: @escaping () -> Void,
+                                                   restoreSessionState: @escaping () -> Void) {
         let messageView = ActionMessageView.presentTracked(
             message: String(format: UserText.settingsSitePermissionsRemovedSiteFormat, site.host),
             actionTitle: UserText.actionGenericUndo,
             presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom),
-            onAction: makeSitePermissionsRemovalUndoAction(site: site, permissionTypes: permissionTypes, restore: restore)
+            onAction: makeSitePermissionsRemovalUndoAction(site: site,
+                                                           permissionTypes: permissionTypes,
+                                                           restore: restore,
+                                                           restoreSessionState: restoreSessionState)
         )
         messageView?.accessibilityIdentifier = "SitePermissions.Toast"
         messageView?.actionButton.accessibilityIdentifier = "SitePermissions.Toast.Undo"
@@ -677,10 +684,10 @@ extension TabViewController {
 
     func makeSitePermissionsRemovalUndoAction(site: SitePermissionKey,
                                               permissionTypes: Set<SitePermissionType>,
-                                              restore: @escaping () -> Void) -> () -> Void {
+                                              restore: @escaping () -> Void,
+                                              restoreSessionState: @escaping () -> Void = {}) -> () -> Void {
         let navigationGeneration = sitePermissionsState.navigationGeneration
         let processGeneration = sitePermissionsState.webContentProcessGeneration
-        let isFireTab = tabModel.fireTab
         let isCurrentPage = { [weak self] in
             guard let self else { return false }
             return !self.sitePermissionsState.isClosed
@@ -690,9 +697,11 @@ extension TabViewController {
         }
 
         return { [weak self] in
-            if !isFireTab || isCurrentPage() {
-                restore()
+            // Check session conflicts before restoring the durable record it previously overlaid.
+            if isCurrentPage() {
+                restoreSessionState()
             }
+            restore()
             self?.fireSitePermissionsEvent(.permissionRemoveUndo)
             guard let self, isCurrentPage() else { return }
 

@@ -1965,6 +1965,95 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).ephemeralPermissionTypes, [.camera])
     }
 
+    func testWhenFireSheetDeniesAndAsksThenSessionChangesWithoutAffectingOrdinaryOrOtherFireTabs() throws {
+        let keyValueStore = MockKeyValueStore()
+        let fireTab = try Harness(isFireMode: true, keyValueStore: keyValueStore)
+        let ordinaryTab = try Harness(isFireMode: false, keyValueStore: keyValueStore)
+        let otherFireTab = try Harness(isFireMode: true, keyValueStore: keyValueStore)
+        let sut = SitePermissionsSheetViewModel(
+            snapshot: fireTab.coordinator.managementSnapshot(for: fireTab.site),
+            store: fireTab.store,
+            displayedPermissionTypes: Set(SitePermissionType.allCases),
+            onDecisionChanged: {
+                fireTab.coordinator.applyFireModeManagementDecision($0.to, for: $0.permissionType, at: fireTab.site)
+            }
+        )
+
+        for permissionType in SitePermissionType.allCases {
+            sut.select(.deny, for: permissionType)
+            sut.refresh(with: fireTab.coordinator.managementSnapshot(for: fireTab.site))
+            XCTAssertEqual(sut.rows.first { $0.permissionType == permissionType }?.options, [.askEachTime, .deny])
+            XCTAssertEqual(fireTab.coordinator.queryState(for: permissionType, context: fireTab.context), .denied)
+            XCTAssertEqual(ordinaryTab.coordinator.queryState(for: permissionType, context: ordinaryTab.context), .prompt)
+            XCTAssertEqual(otherFireTab.coordinator.queryState(for: permissionType, context: otherFireTab.context), .prompt)
+            XCTAssertTrue(fireTab.store.storedSites.isEmpty)
+
+            sut.select(.askEachTime, for: permissionType)
+            XCTAssertEqual(fireTab.coordinator.queryState(for: permissionType, context: fireTab.context), .prompt)
+            XCTAssertTrue(fireTab.store.storedSites.isEmpty)
+        }
+    }
+
+    func testWhenFireSheetRemovesAndUndoesThenOrdinaryTabReadsDurableStateAndFireSessionIsRestoredSeparately() throws {
+        let keyValueStore = MockKeyValueStore()
+        let fireTab = try Harness(isFireMode: true, keyValueStore: keyValueStore)
+        let ordinaryTab = try Harness(isFireMode: false, keyValueStore: keyValueStore)
+        fireTab.store.setPersistentDecision(.allow, for: .camera, at: fireTab.site)
+        fireTab.store.resetDecision(for: .location, at: fireTab.site)
+        fireTab.coordinator.applyFireModeManagementDecision(.deny, for: .camera, at: fireTab.site)
+        fireTab.coordinator.applyFireModeManagementDecision(.deny, for: .microphone, at: fireTab.site)
+        var removal: SitePermissionsRemoval?
+        let sut = SitePermissionsSheetViewModel(
+            snapshot: fireTab.coordinator.managementSnapshot(for: fireTab.site),
+            store: fireTab.store,
+            onRemovePermissions: {
+                removal = $0
+                fireTab.coordinator.removeManagementSessionState(for: $0.permissionTypes, at: fireTab.site)
+            }
+        )
+        XCTAssertEqual(ordinaryTab.coordinator.queryState(for: .camera, context: ordinaryTab.context), .granted)
+
+        sut.removePermissions()
+
+        XCTAssertTrue(fireTab.store.storedSites.isEmpty)
+        XCTAssertTrue(fireTab.coordinator.managementSnapshot(for: fireTab.site).storedPermissions.isEmpty)
+        XCTAssertTrue(ordinaryTab.coordinator.managementSnapshot(for: ordinaryTab.site).storedPermissions.isEmpty)
+        for permissionType in SitePermissionType.allCases {
+            XCTAssertEqual(fireTab.coordinator.queryState(for: permissionType, context: fireTab.context), .prompt)
+            XCTAssertEqual(ordinaryTab.coordinator.queryState(for: permissionType, context: ordinaryTab.context), .prompt)
+        }
+
+        let removed = try XCTUnwrap(removal)
+        fireTab.coordinator.restoreFireModeManagementState(for: removed.permissionTypes, at: fireTab.site)
+        fireTab.store.restore(removed.snapshot)
+
+        XCTAssertEqual(fireTab.store.permissions(for: fireTab.site), [.camera: .allow, .location: .ask])
+        XCTAssertEqual(ordinaryTab.coordinator.queryState(for: .camera, context: ordinaryTab.context), .granted)
+        let restoredFire = fireTab.coordinator.managementSnapshot(for: fireTab.site)
+        XCTAssertEqual(restoredFire.storedPermissions, [.camera: .deny, .microphone: .deny, .location: .ask])
+        XCTAssertTrue(restoredFire.ephemeralPermissionTypes.isEmpty)
+        XCTAssertTrue(restoredFire.captureStates.isEmpty)
+    }
+
+    func testWhenFireRemovalIsUndoneAfterNewChoicesThenNewDurableRecordAndFireOverrideRemain() throws {
+        let harness = try Harness(isFireMode: true)
+        harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
+        harness.store.resetDecision(for: .location, at: harness.site)
+        harness.coordinator.applyFireModeManagementDecision(.deny, for: .camera, at: harness.site)
+        let snapshot = harness.store.removePermissions(for: harness.site)
+        harness.coordinator.removeManagementSessionState(for: [.camera, .location], at: harness.site)
+        harness.store.setPersistentDecision(.deny, for: .microphone, at: harness.site)
+        harness.coordinator.applyFireModeManagementDecision(.ask, for: .camera, at: harness.site)
+
+        harness.coordinator.restoreFireModeManagementState(for: [.camera, .location], at: harness.site)
+        harness.store.restore(snapshot)
+
+        XCTAssertEqual(harness.store.permissions(for: harness.site), [.microphone: .deny])
+        XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).storedPermissions,
+                       [.camera: .ask, .microphone: .deny])
+        XCTAssertEqual(harness.coordinator.queryState(for: .camera, context: harness.context), .prompt)
+    }
+
     func testWhenFireModeUserChoosesPersistentOptionsThenOnlyMemoryChanges() async throws {
         let harness = try Harness(isFireMode: true)
         harness.store.setGlobalDefault(.deny, for: .microphone)

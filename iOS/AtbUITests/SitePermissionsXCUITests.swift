@@ -333,9 +333,126 @@ final class SitePermissionsXCUITests: XCTestCase {
         try assertLocationAllowOnceLastsUntilNewDocument(fireMode: true)
     }
 
+    func testWhenFireTabRequestsPermissionsThenWebsiteAlertOffersExactlyDenyAndAllowOnce() {
+        launchApp(additionalArguments: ["-ff.fireMode", "true"])
+        openNewPermissionTab(fireMode: true)
+
+        for (index, permission) in ["camera", "microphone", "location"].enumerated() {
+            request(permission)
+            assertSiteDialog(permission: permission, fireMode: true)
+            let dialog = element("SitePermissions.Dialog")
+            XCTAssertEqual(Set(dialog.buttons.allElementsBoundByIndex.map(\.label)), ["Deny", "Allow Once"])
+            XCTAssertFalse(dialog.buttons["Allow While Using Site"].exists)
+            XCTAssertFalse(dialog.buttons["Always Allow"].exists)
+            XCTAssertFalse(dialog.buttons["Never Allow"].exists)
+            tap(dialog.buttons["Deny"])
+            assertResult(permission == "location" ? "location error 1 1" : "NotAllowedError \(index + 1)")
+        }
+        openPermissionSettings()
+        XCTAssertFalse(element("Settings.SitePermissions.Site.127.0.0.1").exists)
+    }
+
+    func testWhenFireTabRemovesPermissionsThenSettingsAndOrdinaryTabsSeeRemoval() {
+        let decisions = "{ camera = deny; microphone = deny; geolocation = deny; }"
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = \(decisions); \"other.example\" = \(decisions); }",
+                  additionalArguments: ["-ff.fireMode", "true"])
+        openPermissionPage()
+        request("camera and microphone")
+        assertResult("NotAllowedError 1")
+        assertNoPermissionPrompt()
+        openNewPermissionTab(fireMode: true)
+        openPermissionsSheet()
+        tap(element("SitePermissions.Sheet.RemovePermissions"))
+        XCTAssertTrue(element("SitePermissions.Sheet").waitForNonExistence(timeout: timeout))
+
+        openPermissionSettings()
+        XCTAssertFalse(element("Settings.SitePermissions.Site.127.0.0.1").exists)
+        XCTAssertTrue(element("Settings.SitePermissions.Site.other.example").exists)
+        for permission in ["camera", "microphone", "geolocation"] {
+            XCTAssertEqual(element("Settings.SitePermissions.Global.\(permission)").value as? String, "Ask Each Time")
+        }
+        closeSettings()
+        openNewPermissionTab(fireMode: false)
+        request("camera and microphone")
+        assertSiteDialog(permission: "camera and microphone")
+        tap(element("SitePermissions.Dialog.NeverAllow"))
+        assertResult("NotAllowedError 1")
+        request("location")
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.NeverAllow"))
+        assertResult("location error 1 1")
+    }
+
+    func testWhenFireSheetHasDurableDecisionsThenEachMenuKeepsPersistentOptionsWithoutChangingStorage() {
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = allow; microphone = deny; geolocation = ask; }; }",
+                  additionalArguments: ["-ff.fireMode", "true"])
+        openNewPermissionTab(fireMode: true)
+        openPermissionsSheet()
+        let options = ["Never Allow", "Always Allow", "Ask Each Time"]
+        for (row, initial) in [("Camera", "Always Allow"), ("Microphone", "Never Allow"), ("Geolocation", "Ask Each Time")] {
+            var selected = initial
+            for choice in options {
+                assertSheetMenu(row, options: options, selected: selected, choosing: choice)
+                selected = choice
+            }
+            assertSheetMenu(row, options: options, selected: selected, choosing: selected)
+        }
+        tap(element("SitePermissions.Sheet.Close"))
+        openPermissionSettings()
+        tap(element("Settings.SitePermissions.Site.127.0.0.1"))
+        XCTAssertEqual(element("Settings.SitePermissions.Site.camera").value as? String, "Always Allow")
+        XCTAssertEqual(element("Settings.SitePermissions.Site.microphone").value as? String, "Never Allow")
+        XCTAssertEqual(element("Settings.SitePermissions.Site.geolocation").value as? String, "Ask Each Time")
+    }
+
+    func testWhenFireSheetHasNoDurableDecisionsThenEachMenuOffersOnlyDenyAndAskEachTime() {
+        launchApp(additionalArguments: ["-ff.fireMode", "true"])
+        openNewPermissionTab(fireMode: true)
+        for (index, permission) in ["camera", "microphone", "location"].enumerated() {
+            request(permission)
+            assertSiteDialog(permission: permission, fireMode: true)
+            tap(element("SitePermissions.Dialog.NeverAllow"))
+            assertResult(permission == "location" ? "location error 1 1" : "NotAllowedError \(index + 1)")
+        }
+        openPermissionsSheet()
+        for row in ["Camera", "Microphone", "Geolocation"] {
+            assertSheetMenu(row, options: ["Deny", "Ask Each Time"], selected: "Deny", choosing: "Ask Each Time")
+            assertSheetMenu(row, options: ["Deny", "Ask Each Time"], selected: "Ask Each Time", choosing: "Deny")
+            assertSheetMenu(row, options: ["Deny", "Ask Each Time"], selected: "Deny", choosing: "Ask Each Time")
+            assertSheetMenu(row, options: ["Deny", "Ask Each Time"], selected: "Ask Each Time", choosing: "Ask Each Time")
+        }
+        tap(element("SitePermissions.Sheet.Close"))
+        openPermissionSettings()
+        XCTAssertFalse(element("Settings.SitePermissions.Site.127.0.0.1").exists)
+    }
+
+    func testWhenFireSheetHasSavedCameraOnlyThenMicrophoneMenuDoesNotInheritPersistentOptions() {
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = deny; }; }", additionalArguments: ["-ff.fireMode", "true"])
+        openNewPermissionTab(fireMode: true)
+        request("microphone")
+        assertSiteDialog(permission: "microphone", fireMode: true)
+        tap(element("SitePermissions.Dialog.NeverAllow"))
+        assertResult("NotAllowedError 1")
+        openPermissionsSheet()
+        assertSheetMenu("Camera", options: ["Never Allow", "Always Allow", "Ask Each Time"],
+                        selected: "Never Allow", choosing: "Ask Each Time")
+        assertSheetMenu("Microphone", options: ["Deny", "Ask Each Time"], selected: "Deny", choosing: "Ask Each Time")
+        assertSheetMenu("Microphone", options: ["Deny", "Ask Each Time"], selected: "Ask Each Time", choosing: "Deny")
+        assertSheetMenu("Microphone", options: ["Deny", "Ask Each Time"], selected: "Deny", choosing: "Deny")
+        assertSheetMenu("Camera", options: ["Never Allow", "Always Allow", "Ask Each Time"],
+                        selected: "Ask Each Time", choosing: "Ask Each Time")
+        XCTAssertFalse(element("SitePermissions.Sheet.Geolocation").exists)
+        tap(element("SitePermissions.Sheet.Close"))
+        openPermissionSettings()
+        tap(element("Settings.SitePermissions.Site.127.0.0.1"))
+        XCTAssertEqual(element("Settings.SitePermissions.Site.camera").value as? String, "Never Allow")
+        XCTAssertFalse(element("Settings.SitePermissions.Site.microphone").exists)
+        XCTAssertFalse(element("Settings.SitePermissions.Site.geolocation").exists)
+    }
+
     func testWhenFireTabSetsAlwaysAllowInSheetThenDecisionSurvivesReloadAndStaysInThatTab() throws {
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        launchApp(additionalArguments: ["-ff.fireMode", "true"])
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { geolocation = ask; }; }", additionalArguments: ["-ff.fireMode", "true"])
         openNewPermissionTab(fireMode: true)
         request("location")
         assertSiteDialog(permission: "location", fireMode: true)
@@ -363,7 +480,9 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertResult("location success 1 37.3317,-122.0301")
         assertNoPermissionPrompt()
         openPermissionSettings()
-        XCTAssertFalse(element("Settings.SitePermissions.Site.127.0.0.1").exists)
+        tap(element("Settings.SitePermissions.Site.127.0.0.1"))
+        XCTAssertEqual(element("Settings.SitePermissions.Site.geolocation").value as? String, "Ask Each Time")
+        tap(app.navigationBars.buttons["Site Permissions"])
         closeSettings()
 
         // Neither a normal tab nor another Fire tab inherits the session-only choice.
@@ -379,7 +498,7 @@ final class SitePermissionsXCUITests: XCTestCase {
 
     func testWhenFireTabSetsAlwaysAllowInSheetThenReloadAndRemovalUndoKeepSessionDecision() throws {
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        launchApp(additionalArguments: ["-ff.fireMode", "true"])
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { geolocation = ask; }; }", additionalArguments: ["-ff.fireMode", "true"])
         openNewPermissionTab(fireMode: true)
         request("location")
         assertSiteDialog(permission: "location", fireMode: true)
@@ -429,7 +548,9 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertResult("location success 2 51.5007,-0.1246")
         assertNoPermissionPrompt()
         openPermissionSettings()
-        XCTAssertFalse(element("Settings.SitePermissions.Site.127.0.0.1").exists)
+        tap(element("Settings.SitePermissions.Site.127.0.0.1"))
+        XCTAssertEqual(element("Settings.SitePermissions.Site.geolocation").value as? String, "Ask Each Time")
+        tap(app.navigationBars.buttons["Site Permissions"])
     }
 
     func testWhenActiveLocationWatchIsDeniedThenItStopsAndReallowDoesNotRestartIt() throws {
@@ -1008,6 +1129,24 @@ final class SitePermissionsXCUITests: XCTestCase {
                                      file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue((element("SitePermissions.Sheet.\(permission)").value as? String)?.contains(value) == true,
                       app.debugDescription, file: file, line: line)
+    }
+
+    private func assertSheetMenu(_ permission: String, options: [String], selected: String, choosing choice: String,
+                                 file: StaticString = #filePath, line: UInt = #line) {
+        let row = element("SitePermissions.Sheet.\(permission)")
+        XCTAssertEqual(row.label, permission == "Geolocation" ? "Location" : permission, file: file, line: line)
+        XCTAssertEqual(row.value as? String, selected, file: file, line: line)
+        tap(row, file: file, line: line)
+        // SwiftUI's native picker presents its actions as buttons in a collection view.
+        let menu = app.collectionViews.containing(.button, identifier: selected).firstMatch
+        XCTAssertTrue(menu.waitForExistence(timeout: timeout), app.debugDescription, file: file, line: line)
+        let actions = menu.buttons.allElementsBoundByIndex
+        XCTAssertEqual(actions.map(\.label).sorted(), options.sorted(), app.debugDescription, file: file, line: line)
+        for action in actions {
+            XCTAssertEqual(action.isSelected, action.label == selected, file: file, line: line)
+        }
+        tap(menu.buttons[choice], file: file, line: line)
+        XCTAssertEqual(row.value as? String, choice, file: file, line: line)
     }
 
     private func setGlobalDefault(_ permission: String, decision: String) {

@@ -94,6 +94,14 @@ private actor PairingV2CoordinatorTestGate {
     }
 }
 
+private final class PairingV2CoordinatorTestClock {
+    var now = Date(timeIntervalSince1970: 0)
+
+    func advance(by interval: TimeInterval) {
+        now.addTimeInterval(interval)
+    }
+}
+
 final class PairingV2CoordinatorTests: XCTestCase {
 
     private static let cachedPeerKeyPair: Result<PairingV2KeyPair, Error> = Result {
@@ -819,6 +827,82 @@ final class PairingV2CoordinatorTests: XCTestCase {
         try await coordinator.pollOnce()
 
         XCTAssertEqual(coordinator.state, .completed(.recoveryCodeSent(credentialKind: .ddg)))
+    }
+
+    func testJoinStatusDeadlineRemoteSettingUsesDefaultAndClampsBounds() {
+        let key = "joinStatusDeadlineMs"
+
+        XCTAssertEqual(PairingV2PollingDefaults.resolvedJoinStatusDeadline(from: [:]), 30)
+        XCTAssertEqual(PairingV2PollingDefaults.resolvedJoinStatusDeadline(from: [key: "invalid"]), 30)
+        XCTAssertEqual(PairingV2PollingDefaults.resolvedJoinStatusDeadline(from: [key: 1_000]), 5)
+        XCTAssertEqual(PairingV2PollingDefaults.resolvedJoinStatusDeadline(from: [key: 45_000]), 45)
+        XCTAssertEqual(PairingV2PollingDefaults.resolvedJoinStatusDeadline(from: [key: 180_000]), 120)
+    }
+
+    func testJoinStatusDeadlineStartsAfterRecoveryCodeIsSentAndExpiresAtBoundary() async throws {
+        let clock = PairingV2CoordinatorTestClock()
+        clock.advance(by: 100)
+        let setup = try await makeV21HostWaitingForJoinStatus(joinStatusDeadline: 10, now: { clock.now })
+        setup.messageExchanger.fetchMessagesStub = []
+
+        clock.advance(by: 9.999)
+        try await setup.coordinator.pollOnce()
+        guard case .hostWaitingForJoinStatus = setup.coordinator.state else {
+            XCTFail("Expected host to keep waiting before the deadline, got \(setup.coordinator.state)")
+            return
+        }
+
+        clock.advance(by: 0.001)
+        try await setup.coordinator.pollOnce()
+        guard case .hostJoinOutcomeUnknown = setup.coordinator.state else {
+            XCTFail("Expected unknown host outcome at the deadline, got \(setup.coordinator.state)")
+            return
+        }
+        XCTAssertTrue(setup.messageExchanger.closeChannelCalls.isEmpty)
+    }
+
+    func testRecoveryCodeDoneJustBeforeJoinStatusDeadlineCompletesHost() async throws {
+        let clock = PairingV2CoordinatorTestClock()
+        let setup = try await makeV21HostWaitingForJoinStatus(joinStatusDeadline: 10, now: { clock.now })
+        clock.advance(by: 9.999)
+        setup.messageExchanger.fetchMessagesStub = [try encryptedDoneMessage(for: setup)]
+
+        try await setup.coordinator.pollOnce()
+
+        XCTAssertEqual(setup.coordinator.state, .completed(.recoveryCodeSent(credentialKind: .ddg)))
+    }
+
+    func testRecoveryCodeDoneAfterJoinStatusDeadlineCompletesHost() async throws {
+        let clock = PairingV2CoordinatorTestClock()
+        let setup = try await makeV21HostWaitingForJoinStatus(joinStatusDeadline: 10, now: { clock.now })
+        setup.messageExchanger.fetchMessagesStub = []
+        clock.advance(by: 10)
+        try await setup.coordinator.pollOnce()
+        guard case .hostJoinOutcomeUnknown = setup.coordinator.state else {
+            XCTFail("Expected unknown host outcome at the deadline, got \(setup.coordinator.state)")
+            return
+        }
+
+        clock.advance(by: 1)
+        setup.messageExchanger.fetchMessagesStub = [try encryptedDoneMessage(for: setup)]
+        try await setup.coordinator.pollOnce()
+
+        XCTAssertEqual(setup.coordinator.state, .completed(.recoveryCodeSent(credentialKind: .ddg)))
+    }
+
+    func testGlobalSessionTimeoutStillTerminatesUnknownHost() async throws {
+        let clock = PairingV2CoordinatorTestClock()
+        let setup = try await makeV21HostWaitingForJoinStatus(joinStatusDeadline: 5, now: { clock.now })
+        setup.messageExchanger.fetchMessagesStub = []
+
+        do {
+            _ = try await setup.coordinator.pollUntilFinished(timeout: 300, pollInterval: 0) { _ in
+                clock.advance(by: 301)
+            }
+            XCTFail("Expected the global session timeout")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, .pollingDidTimeOut)
+        }
     }
 
     func testWhenV21PeerCancelsWhileConfirmationIsPendingThenDismissesAndNeverReleasesRecoveryCode() async throws {
@@ -2006,6 +2090,70 @@ final class PairingV2CoordinatorTests: XCTestCase {
         return (coordinator, upgradeCoordinator, messageExchanger, messageCrypto, peerKeyPair)
     }
 
+    private func makeV21HostWaitingForJoinStatus(
+        joinStatusDeadline: TimeInterval,
+        now: @escaping () -> Date
+    ) async throws -> (
+        coordinator: PairingV2Coordinator,
+        messageExchanger: PairingV2MessageExchangingMock,
+        messageCrypto: PairingV2MessageCrypto,
+        peerKeyPair: PairingV2KeyPair,
+        payload: PairingV2QRCodePayload,
+        confirmationDelegate: PairingV2ConfirmationDelegateMock
+    ) {
+        let dependencies = MockSyncDependencies()
+        try dependencies.secureStore.persistAccount(SyncAccount.mock)
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let messageCrypto = PairingV2MessageCrypto()
+        let peerKeyPair = try makePeerKeyPair()
+        let confirmationDelegate = PairingV2ConfirmationDelegateMock()
+        let coordinator = makeCoordinator(syncService: syncService,
+                                          messageExchanger: messageExchanger,
+                                          messageCrypto: messageCrypto,
+                                          confirmationDelegate: confirmationDelegate,
+                                          advertisedVersion: .v2Point1,
+                                          joinStatusDeadline: joinStatusDeadline,
+                                          now: now)
+
+        let payload = try await coordinator.startPresenting()
+        messageExchanger.fetchMessagesStub = try encryptedPeerMessages(
+            [
+                .hello(.init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey, version: "2.1")),
+                .recoveryCodeRequest(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest,
+                                           name: "Peer",
+                                           kind: .ddg))
+            ],
+            recipientPublicKey: payload.publicKey,
+            peerKeyPair: peerKeyPair,
+            messageCrypto: messageCrypto
+        )
+        try await coordinator.pollOnce()
+        try await settlePendingConfirmation(in: coordinator)
+        guard case .hostWaitingForJoinStatus = coordinator.state else {
+            XCTFail("Expected host to wait for join status, got \(coordinator.state)")
+            throw PairingV2CoordinatorTestError.expectedPendingConfirmation
+        }
+
+        return (coordinator, messageExchanger, messageCrypto, peerKeyPair, payload, confirmationDelegate)
+    }
+
+    private func encryptedDoneMessage(for setup: (
+        coordinator: PairingV2Coordinator,
+        messageExchanger: PairingV2MessageExchangingMock,
+        messageCrypto: PairingV2MessageCrypto,
+        peerKeyPair: PairingV2KeyPair,
+        payload: PairingV2QRCodePayload,
+        confirmationDelegate: PairingV2ConfirmationDelegateMock
+    )) throws -> PairingV2SequencedMessage {
+        let encrypted = try setup.messageCrypto.encrypt(
+            .recoveryCodeDone(.init(reason: .success)),
+            recipientPublicKey: setup.payload.publicKey,
+            senderChannelID: setup.peerKeyPair.channelID
+        )
+        return .init(seq: 3, version: encrypted.version, payload: encrypted.payload)
+    }
+
     private func makeNativeJoinerReadyForLogin(loginError: Error? = nil) async throws -> (
         coordinator: PairingV2Coordinator,
         messageExchanger: PairingV2MessageExchangingMock,
@@ -2076,6 +2224,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                  confirmationDelegate: PairingV2ConfirmationDelegate? = nil,
                                  canSendExchangeChannelSecret: Bool = false,
                                  advertisedVersion: PairingV2ProtocolVersion = .v2,
+                                 joinStatusDeadline: TimeInterval = PairingV2PollingDefaults.joinStatusDeadline,
+                                 now: @escaping () -> Date = Date.init,
                                  makeKeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() },
                                  makeChannelSecret: @escaping () throws -> String = {
                                      try PairingV2ChannelSecretFactory.makeSecret()
@@ -2089,6 +2239,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
                              canSendExchangeChannelSecret: canSendExchangeChannelSecret,
                              advertisedVersion: advertisedVersion,
                              confirmationDelegate: confirmationDelegate,
+                             joinStatusDeadline: joinStatusDeadline,
+                             now: now,
                              makeKeyPair: makeKeyPair,
                              makeChannelSecret: makeChannelSecret)
     }

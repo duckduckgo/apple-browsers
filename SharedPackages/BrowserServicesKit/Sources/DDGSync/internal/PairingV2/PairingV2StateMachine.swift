@@ -146,6 +146,7 @@ enum PairingV2Event: Equatable {
     case receivedRecoveryCode(String)
     case receivedRecoveryCodeDone(PairingV2RecoveryCodeDoneReason)
     case receivedBye(PairingV2ByeReason)
+    case joinStatusDeadlineReached
     case loginSucceeded
     case failed(PairingV2Error)
 }
@@ -159,6 +160,7 @@ enum PairingV2Command: Equatable {
     case sendRecoveryCodeConfirmed
     case sendRecoveryCodeDenied
     case sendRecoveryCodeUnavailable
+    case startJoinStatusDeadline
     case requestHostConfirmation(peerName: String?, peerKind: PairingV2DeviceKind)
     case requestJoinerConfirmation(peerName: String?, peerKind: PairingV2DeviceKind)
     case prepareRecoveryCode(credentialKind: PairingV2DeviceKind, purpose: String)
@@ -351,6 +353,9 @@ struct PairingV2StateMachine {
 
         case .receivedBye(let reason):
             return handleReceivedBye(reason)
+
+        case .joinStatusDeadlineReached:
+            return handleJoinStatusDeadlineReached()
 
         case .loginSucceeded:
             return handleLoginSucceeded()
@@ -570,7 +575,7 @@ struct PairingV2StateMachine {
 
         if shouldWaitForJoinStatus {
             state = .hostWaitingForJoinStatus(session, credentialKind: credentialKind)
-            return []
+            return [.startJoinStatusDeadline]
         }
 
         state = .completed(.recoveryCodeSent(credentialKind: credentialKind))
@@ -579,15 +584,24 @@ struct PairingV2StateMachine {
 
     private mutating func handleReceivedRecoveryCodeDone() -> [PairingV2Command] {
         switch state {
-        case .hostWaitingForJoinStatus(_, let credentialKind):
+        case .hostWaitingForJoinStatus(_, let credentialKind),
+                .hostJoinOutcomeUnknown(_, let credentialKind):
             state = .completed(.recoveryCodeSent(credentialKind: credentialKind))
             return [.stopPolling]
         case .completed(.recoveryCodeSent):
             return []
         default:
-            // hostJoinOutcomeUnknown intentionally falls through until follow-up PR adds late-status handling.
             return fail(with: .unexpectedEvent(.recoveryCodeDoneWhileNotWaitingForJoinStatus))
         }
+    }
+
+    private mutating func handleJoinStatusDeadlineReached() -> [PairingV2Command] {
+        guard case .hostWaitingForJoinStatus(let session, let credentialKind) = state else {
+            return []
+        }
+
+        state = .hostJoinOutcomeUnknown(session, credentialKind: credentialKind)
+        return []
     }
 
     private mutating func handleReceivedBye(_ reason: PairingV2ByeReason) -> [PairingV2Command] {

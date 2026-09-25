@@ -517,6 +517,7 @@
 		84AD2FE12F87E95200151B7F /* OnboardingResumeStepStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84AD2FE02F87E95200151B7F /* OnboardingResumeStepStore.swift */; };
 		84D6780A2D830E9F0030BC82 /* SuggestionJsonScenarioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D678092D830E9F0030BC82 /* SuggestionJsonScenarioTests.swift */; };
 		84E341A01E2F7EFB00BDBA6F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 84E3419E1E2F7EFB00BDBA6F /* LaunchScreen.storyboard */; };
+		E39C5E2B444579C0FD8B2A84 /* LaunchScreen.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A90B8D216CF7F11355D6B2BE /* LaunchScreen.xcassets */; };
 		84EFBCC92D81796000706739 /* AutocompleteSuggestionsDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84EFBCC52D81796000706739 /* AutocompleteSuggestionsDataSourceTests.swift */; };
 		85010502292FB1000033978F /* FireproofFaviconUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85010501292FB1000033978F /* FireproofFaviconUpdater.swift */; };
 		85010504292FFB080033978F /* FireproofFaviconUpdaterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85010503292FFB080033978F /* FireproofFaviconUpdaterTests.swift */; };
@@ -2702,6 +2703,7 @@
 		85C297032476C1FD0063A335 /* DaxDialogsSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxDialogsSettings.swift; sourceTree = "<group>"; };
 		85C29706247BDCFF0063A335 /* DaxDialogsBrowsingSpecTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxDialogsBrowsingSpecTests.swift; sourceTree = "<group>"; };
 		85C29709247EB7AA0063A335 /* Text.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Text.xcassets; sourceTree = "<group>"; };
+		A90B8D216CF7F11355D6B2BE /* LaunchScreen.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = LaunchScreen.xcassets; sourceTree = "<group>"; };
 		85C298552E9699B800C35DD0 /* SERPSettingsViewPageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SERPSettingsViewPageTests.swift; sourceTree = "<group>"; };
 		85CA53A324B9F2BD00A6288C /* Favicons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Favicons.swift; sourceTree = "<group>"; };
 		85CA53A924BB376800A6288C /* NotFoundCachingDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotFoundCachingDownloader.swift; sourceTree = "<group>"; };
@@ -5773,6 +5775,7 @@
 				F143C2B11E49D78C00CFDE3A /* Assets.xcassets */,
 				85514FFC2372DA0000DBC528 /* ios13-home-row.mp4 */,
 				84E3419E1E2F7EFB00BDBA6F /* LaunchScreen.storyboard */,
+				A90B8D216CF7F11355D6B2BE /* LaunchScreen.xcassets */,
 				F1F533861F26ABAC00D80D4F /* Localizable.strings */,
 				98788E9C2521DA1E00D55218 /* Localizable.stringsdict */,
 				85DFEDF624CB1CAB00973FE7 /* ShareSheet.xcassets */,
@@ -9456,6 +9459,7 @@
 				98B001B3251EABB40090EC07 /* InfoPlist.strings in Resources */,
 				F1E4A4451EE89460006F2EAE /* Bookmarks.storyboard in Resources */,
 				84E341A01E2F7EFB00BDBA6F /* LaunchScreen.storyboard in Resources */,
+				E39C5E2B444579C0FD8B2A84 /* LaunchScreen.xcassets in Resources */,
 				F4F7F10C25813FE200045D62 /* 03_Airstream_divided_by_four.json in Resources */,
 				D664C7B72B289AA200CBFA76 /* Subscription.storekit in Resources */,
 				85AE668E2097206E0014CF04 /* NotificationView.xib in Resources */,

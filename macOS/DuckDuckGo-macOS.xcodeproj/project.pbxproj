@@ -1319,6 +1319,16 @@
 		AB1E70080000000000000003 /* BrowserToolPermissionStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70080000000000000001 /* BrowserToolPermissionStoreTests.swift */; };
 		AB1E70090000000000000002 /* AIChatElicitationCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70090000000000000001 /* AIChatElicitationCoordinatorTests.swift */; };
 		AB1E70090000000000000003 /* AIChatElicitationCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70090000000000000001 /* AIChatElicitationCoordinatorTests.swift */; };
+		AB1E70150000000000000002 /* BrowserToolCatalogChangeNotifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70150000000000000001 /* BrowserToolCatalogChangeNotifierTests.swift */; };
+		AB1E70150000000000000003 /* BrowserToolCatalogChangeNotifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70150000000000000001 /* BrowserToolCatalogChangeNotifierTests.swift */; };
+		AB1E70160000000000000002 /* HighlightInPageBrowserToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70160000000000000001 /* HighlightInPageBrowserToolTests.swift */; };
+		AB1E70160000000000000003 /* HighlightInPageBrowserToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70160000000000000001 /* HighlightInPageBrowserToolTests.swift */; };
+		AB1E70170000000000000002 /* FindInPageBrowserToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70170000000000000001 /* FindInPageBrowserToolTests.swift */; };
+		AB1E70170000000000000003 /* FindInPageBrowserToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70170000000000000001 /* FindInPageBrowserToolTests.swift */; };
+		AB1E70180000000000000002 /* ReadTabContentBrowserToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70180000000000000001 /* ReadTabContentBrowserToolTests.swift */; };
+		AB1E70180000000000000003 /* ReadTabContentBrowserToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70180000000000000001 /* ReadTabContentBrowserToolTests.swift */; };
+		AB1E70190000000000000002 /* SearchHistoryBrowserToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70190000000000000001 /* SearchHistoryBrowserToolTests.swift */; };
+		AB1E70190000000000000003 /* SearchHistoryBrowserToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70190000000000000001 /* SearchHistoryBrowserToolTests.swift */; };
 		AB1E70020000000000000006 /* BrowserToolCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70020000000000000004 /* BrowserToolCatalogTests.swift */; };
 		AB1E70020000000000000008 /* BrowserToolsWireFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70020000000000000007 /* BrowserToolsWireFormatTests.swift */; };
 		AB1E70020000000000000009 /* BrowserToolsWireFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70020000000000000007 /* BrowserToolsWireFormatTests.swift */; };
@@ -4409,6 +4419,16 @@
 		AB1E70030000000000000002 /* SwitchToTabBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */; };
 		AB1E70060000000000000002 /* ListOpenTabsBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70060000000000000001 /* ListOpenTabsBrowserTool.swift */; };
 		AB1E70060000000000000003 /* ListOpenTabsBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70060000000000000001 /* ListOpenTabsBrowserTool.swift */; };
+		AB1E70100000000000000002 /* BrowserToolPageAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70100000000000000001 /* BrowserToolPageAccess.swift */; };
+		AB1E70100000000000000003 /* BrowserToolPageAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70100000000000000001 /* BrowserToolPageAccess.swift */; };
+		AB1E70110000000000000002 /* SearchHistoryBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70110000000000000001 /* SearchHistoryBrowserTool.swift */; };
+		AB1E70110000000000000003 /* SearchHistoryBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70110000000000000001 /* SearchHistoryBrowserTool.swift */; };
+		AB1E70120000000000000002 /* ReadTabContentBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70120000000000000001 /* ReadTabContentBrowserTool.swift */; };
+		AB1E70120000000000000003 /* ReadTabContentBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70120000000000000001 /* ReadTabContentBrowserTool.swift */; };
+		AB1E70130000000000000002 /* FindInPageBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70130000000000000001 /* FindInPageBrowserTool.swift */; };
+		AB1E70130000000000000003 /* FindInPageBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70130000000000000001 /* FindInPageBrowserTool.swift */; };
+		AB1E70140000000000000002 /* HighlightInPageBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70140000000000000001 /* HighlightInPageBrowserTool.swift */; };
+		AB1E70140000000000000003 /* HighlightInPageBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70140000000000000001 /* HighlightInPageBrowserTool.swift */; };
 		AB1E70050000000000000002 /* BrowserToolsDebugPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70050000000000000001 /* BrowserToolsDebugPanel.swift */; };
 		AB1E70050000000000000003 /* BrowserToolsDebugPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70050000000000000001 /* BrowserToolsDebugPanel.swift */; };
 		AB1E70030000000000000003 /* SwitchToTabBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */; };
@@ -5576,6 +5596,11 @@
 		AB1E70070000000000000001 /* ListOpenTabsBrowserToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListOpenTabsBrowserToolTests.swift; sourceTree = "<group>"; };
 		AB1E70080000000000000001 /* BrowserToolPermissionStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolPermissionStoreTests.swift; sourceTree = "<group>"; };
 		AB1E70090000000000000001 /* AIChatElicitationCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatElicitationCoordinatorTests.swift; sourceTree = "<group>"; };
+		AB1E70150000000000000001 /* BrowserToolCatalogChangeNotifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolCatalogChangeNotifierTests.swift; sourceTree = "<group>"; };
+		AB1E70160000000000000001 /* HighlightInPageBrowserToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightInPageBrowserToolTests.swift; sourceTree = "<group>"; };
+		AB1E70170000000000000001 /* FindInPageBrowserToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindInPageBrowserToolTests.swift; sourceTree = "<group>"; };
+		AB1E70180000000000000001 /* ReadTabContentBrowserToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadTabContentBrowserToolTests.swift; sourceTree = "<group>"; };
+		AB1E70190000000000000001 /* SearchHistoryBrowserToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchHistoryBrowserToolTests.swift; sourceTree = "<group>"; };
 		AB1E70020000000000000007 /* BrowserToolsWireFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolsWireFormatTests.swift; sourceTree = "<group>"; };
 		37ABFE7B2DED901000DE39F2 /* SettingsPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPixel.swift; sourceTree = "<group>"; };
 		37ADC3ED2DF031830001CA03 /* MoreOptionsMenuPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreOptionsMenuPixel.swift; sourceTree = "<group>"; };
@@ -7299,6 +7324,11 @@
 		AB1E70010000000000000002 /* AIChatBrowserToolsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatBrowserToolsService.swift; sourceTree = "<group>"; };
 		AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchToTabBrowserTool.swift; sourceTree = "<group>"; };
 		AB1E70060000000000000001 /* ListOpenTabsBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListOpenTabsBrowserTool.swift; sourceTree = "<group>"; };
+		AB1E70100000000000000001 /* BrowserToolPageAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolPageAccess.swift; sourceTree = "<group>"; };
+		AB1E70110000000000000001 /* SearchHistoryBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchHistoryBrowserTool.swift; sourceTree = "<group>"; };
+		AB1E70120000000000000001 /* ReadTabContentBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadTabContentBrowserTool.swift; sourceTree = "<group>"; };
+		AB1E70130000000000000001 /* FindInPageBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindInPageBrowserTool.swift; sourceTree = "<group>"; };
+		AB1E70140000000000000001 /* HighlightInPageBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightInPageBrowserTool.swift; sourceTree = "<group>"; };
 		AB1E70050000000000000001 /* BrowserToolsDebugPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolsDebugPanel.swift; sourceTree = "<group>"; };
 		D1A7B0010000000000000021 /* AIChatTabPickerSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabPickerSourceTests.swift; sourceTree = "<group>"; };
 		D1A7B0010000000000000041 /* AIChatSelectionActionPageContextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSelectionActionPageContextTests.swift; sourceTree = "<group>"; };
@@ -8463,6 +8493,11 @@
 				AB1E70070000000000000001 /* ListOpenTabsBrowserToolTests.swift */,
 				AB1E70080000000000000001 /* BrowserToolPermissionStoreTests.swift */,
 				AB1E70090000000000000001 /* AIChatElicitationCoordinatorTests.swift */,
+				AB1E70150000000000000001 /* BrowserToolCatalogChangeNotifierTests.swift */,
+				AB1E70160000000000000001 /* HighlightInPageBrowserToolTests.swift */,
+				AB1E70170000000000000001 /* FindInPageBrowserToolTests.swift */,
+				AB1E70180000000000000001 /* ReadTabContentBrowserToolTests.swift */,
+				AB1E70190000000000000001 /* SearchHistoryBrowserToolTests.swift */,
 				AB1E70020000000000000007 /* BrowserToolsWireFormatTests.swift */,
 			);
 			path = BrowserTools;
@@ -8474,6 +8509,11 @@
 				AB1E70010000000000000002 /* AIChatBrowserToolsService.swift */,
 				AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */,
 				AB1E70060000000000000001 /* ListOpenTabsBrowserTool.swift */,
+				AB1E70100000000000000001 /* BrowserToolPageAccess.swift */,
+				AB1E70110000000000000001 /* SearchHistoryBrowserTool.swift */,
+				AB1E70120000000000000001 /* ReadTabContentBrowserTool.swift */,
+				AB1E70130000000000000001 /* FindInPageBrowserTool.swift */,
+				AB1E70140000000000000001 /* HighlightInPageBrowserTool.swift */,
 				AB1E70050000000000000001 /* BrowserToolsDebugPanel.swift */,
 			);
 			path = BrowserTools;
@@ -16311,6 +16351,11 @@
 				AB1E70010000000000000003 /* AIChatBrowserToolsService.swift in Sources */,
 				AB1E70030000000000000002 /* SwitchToTabBrowserTool.swift in Sources */,
 				AB1E70060000000000000002 /* ListOpenTabsBrowserTool.swift in Sources */,
+				AB1E70100000000000000002 /* BrowserToolPageAccess.swift in Sources */,
+				AB1E70110000000000000002 /* SearchHistoryBrowserTool.swift in Sources */,
+				AB1E70120000000000000002 /* ReadTabContentBrowserTool.swift in Sources */,
+				AB1E70130000000000000002 /* FindInPageBrowserTool.swift in Sources */,
+				AB1E70140000000000000002 /* HighlightInPageBrowserTool.swift in Sources */,
 				AB1E70050000000000000002 /* BrowserToolsDebugPanel.swift in Sources */,
 				84CE00162DAE41F100852AA2 /* ResizablePreviewView.swift in Sources */,
 				96B6A494304EC0B5009BF9EC /* WebsitePermissionCategory.swift in Sources */,
@@ -17493,6 +17538,11 @@
 				AB1E70070000000000000003 /* ListOpenTabsBrowserToolTests.swift in Sources */,
 				AB1E70080000000000000003 /* BrowserToolPermissionStoreTests.swift in Sources */,
 				AB1E70090000000000000003 /* AIChatElicitationCoordinatorTests.swift in Sources */,
+				AB1E70150000000000000003 /* BrowserToolCatalogChangeNotifierTests.swift in Sources */,
+				AB1E70160000000000000003 /* HighlightInPageBrowserToolTests.swift in Sources */,
+				AB1E70170000000000000003 /* FindInPageBrowserToolTests.swift in Sources */,
+				AB1E70180000000000000003 /* ReadTabContentBrowserToolTests.swift in Sources */,
+				AB1E70190000000000000003 /* SearchHistoryBrowserToolTests.swift in Sources */,
 				AB1E70020000000000000009 /* BrowserToolsWireFormatTests.swift in Sources */,
 				D1A7B0010000000000000022 /* AIChatTabPickerSourceTests.swift in Sources */,
 				D1A7B0010000000000000042 /* AIChatSelectionActionPageContextTests.swift in Sources */,
@@ -18363,6 +18413,11 @@
 				AB1E70010000000000000004 /* AIChatBrowserToolsService.swift in Sources */,
 				AB1E70030000000000000003 /* SwitchToTabBrowserTool.swift in Sources */,
 				AB1E70060000000000000003 /* ListOpenTabsBrowserTool.swift in Sources */,
+				AB1E70100000000000000003 /* BrowserToolPageAccess.swift in Sources */,
+				AB1E70110000000000000003 /* SearchHistoryBrowserTool.swift in Sources */,
+				AB1E70120000000000000003 /* ReadTabContentBrowserTool.swift in Sources */,
+				AB1E70130000000000000003 /* FindInPageBrowserTool.swift in Sources */,
+				AB1E70140000000000000003 /* HighlightInPageBrowserTool.swift in Sources */,
 				AB1E70050000000000000003 /* BrowserToolsDebugPanel.swift in Sources */,
 				C1D3C5682E747BBE0086A2BD /* CreditCardsCleanupErrorHandling.swift in Sources */,
 				C1D3C5692E747BBE0086A2BD /* SyncCreditCardsAdapter.swift in Sources */,
@@ -19909,6 +19964,11 @@
 				AB1E70070000000000000002 /* ListOpenTabsBrowserToolTests.swift in Sources */,
 				AB1E70080000000000000002 /* BrowserToolPermissionStoreTests.swift in Sources */,
 				AB1E70090000000000000002 /* AIChatElicitationCoordinatorTests.swift in Sources */,
+				AB1E70150000000000000002 /* BrowserToolCatalogChangeNotifierTests.swift in Sources */,
+				AB1E70160000000000000002 /* HighlightInPageBrowserToolTests.swift in Sources */,
+				AB1E70170000000000000002 /* FindInPageBrowserToolTests.swift in Sources */,
+				AB1E70180000000000000002 /* ReadTabContentBrowserToolTests.swift in Sources */,
+				AB1E70190000000000000002 /* SearchHistoryBrowserToolTests.swift in Sources */,
 				AB1E70020000000000000008 /* BrowserToolsWireFormatTests.swift in Sources */,
 				D1A7B0010000000000000023 /* AIChatTabPickerSourceTests.swift in Sources */,
 				D1A7B0010000000000000043 /* AIChatSelectionActionPageContextTests.swift in Sources */,

@@ -44,6 +44,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     public func with(broker: UserScriptMessageBroker) {
         self.broker = broker
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.browserTools?.register(self)
+        }
     }
 
     /// Arms the two-phase open-settings handshake. Called when a Duck.ai tab is opened
@@ -54,8 +58,13 @@ final class AIChatUserScript: NSObject, Subfeature {
         openSettingsMessageCount = 0
     }
 
-    init(handler: AIChatUserScriptHandling, urlSettings: any KeyedStoring<AIChatDebugURLSettings>) {
+    private let browserTools: AIChatBrowserToolsService?
+
+    init(handler: AIChatUserScriptHandling,
+         urlSettings: any KeyedStoring<AIChatDebugURLSettings>,
+         browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService) {
         self.handler = handler
+        self.browserTools = browserTools
         var originRules = [HostnameMatchingRule]()
         var destinationRules = [HostnameMatchingRule]()
 
@@ -269,5 +278,28 @@ extension AIChatUserScript: AIChatElicitationPushing {
         guard let webView, let broker else { return false }
         broker.push(method: AIChatUserScriptMessages.elicitationCreate.rawValue, params: params, for: self, into: webView)
         return true
+    }
+}
+
+extension AIChatUserScript: AIChatBrowserToolsPushing {
+
+    var pushTargetWebView: WKWebView? { webView }
+
+    @MainActor
+    func pushToolsListChanged() {
+        pushToDuckAI(.toolsListChanged, params: nil)
+    }
+
+    @MainActor
+    func pushTabChanged(_ data: AIChatTabChangedData) {
+        pushToDuckAI(.aiChatTabChanged, params: data)
+    }
+
+    /// Only a Duck.ai page can receive these; every tab has this script, so the host is checked.
+    private func pushToDuckAI(_ message: AIChatUserScriptMessages, params: Encodable?) {
+        guard let webView, let broker,
+              let host = webView.url?.host,
+              messageDestinationPolicy.isAllowed(host) else { return }
+        broker.push(method: message.rawValue, params: params, for: self, into: webView)
     }
 }

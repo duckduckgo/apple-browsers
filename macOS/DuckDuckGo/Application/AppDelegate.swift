@@ -898,7 +898,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
         aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
-                                                              windowControllersManager: windowControllersManager)
+                                                              windowControllersManager: windowControllersManager,
+                                                              historyCoordinator: historyCoordinator)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)

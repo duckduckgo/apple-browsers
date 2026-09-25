@@ -80,6 +80,9 @@ struct HomeMessageView: View {
         .onAppear {
             viewModel.onDidAppear()
         }
+        .onDisappear {
+            viewModel.onDidDisappear()
+        }
     }
 
     private var closeButton: some View {
@@ -323,6 +326,7 @@ private enum HomeMessagePreviewSamples {
                                                         loadRemoteImage: nil,
                                                         onDidClose: { _ in },
                                                         onDidAppear: {},
+                                                        onDidDisappear: {},
                                                         onAttachAdditionalParameters: { _, params in params }))
     }
 

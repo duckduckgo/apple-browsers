@@ -55,10 +55,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
 
-    /// Enables sending MetricKit launch-time telemetry pixels.
-    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1214963974721156
-    case launchTimeMetrics
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
     case tabTerminationTelemetry
 

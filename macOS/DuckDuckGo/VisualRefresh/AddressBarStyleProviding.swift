@@ -78,7 +78,7 @@ protocol AddressBarStyleProviding {
 
 struct AddressBarStyleProvidingFactory {
 
-    static func buildStyleProvider(featureFlagger: FeatureFlagger) -> AddressBarStyleProviding {
+    static func buildStyleProvider() -> AddressBarStyleProviding {
         AddressBarStyleProvider()
     }
 }

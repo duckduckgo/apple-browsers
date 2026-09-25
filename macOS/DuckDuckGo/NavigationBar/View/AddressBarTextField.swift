@@ -760,15 +760,12 @@ final class AddressBarTextField: NSTextField {
 
     @objc dynamic private var suggestionWindowController: NSWindowController?
     private(set) lazy var suggestionViewController: SuggestionViewController = {
-        NSStoryboard.suggestion.instantiateController(identifier: "SuggestionViewController") { coder in
-            let suggestionViewController = SuggestionViewController(coder: coder,
-                                                                    suggestionContainerViewModel: self.suggestionContainerViewModel!,
-                                                                    themeManager: self.themeManager,
-                                                                    aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage(),
-                                                                    featureFlagger: Application.appDelegate.featureFlagger)
-            suggestionViewController?.delegate = self
-            return suggestionViewController
-        }
+        let suggestionViewController = SuggestionViewController(suggestionContainerViewModel: self.suggestionContainerViewModel!,
+                                                                themeManager: self.themeManager,
+                                                                aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage(),
+                                                                featureFlagger: Application.appDelegate.featureFlagger)
+        suggestionViewController.delegate = self
+        return suggestionViewController
     }()
 
     var isSuggestionWindowVisiblePublisher: AnyPublisher<Bool, Never> {
@@ -782,10 +779,18 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func initSuggestionWindow() {
-        let windowController = NSStoryboard.suggestion
-            .instantiateController(withIdentifier: "SuggestionWindowController") as? NSWindowController
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 218),
+                              styleMask: [.fullSizeContentView],
+                              backing: .buffered,
+                              defer: true)
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.autorecalculatesKeyViewLoop = false
+        window.isRestorable = false
+        window.hasShadow = false
 
-        windowController?.contentViewController = suggestionViewController
+        let windowController = NSWindowController(window: window)
+        windowController.contentViewController = suggestionViewController
         self.suggestionWindowController = windowController
     }
 
@@ -1583,10 +1588,6 @@ extension AddressBarTextField: SuggestionViewControllerDelegate {
 enum SuggestionInputMethod {
     case keyboard
     case mouse
-}
-
-fileprivate extension NSStoryboard {
-    static let suggestion = NSStoryboard(name: "Suggestion", bundle: .main)
 }
 
 extension URL {

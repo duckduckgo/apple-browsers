@@ -19,7 +19,7 @@
 import AIChat
 import AppKit
 import Combine
-import Navigation
+import DDGNavigation
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 

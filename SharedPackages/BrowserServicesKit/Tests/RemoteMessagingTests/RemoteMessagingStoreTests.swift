@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKitTestsUtils
+import Common
 import ConcurrencyExtensions
 import CoreData
 import Foundation
@@ -33,6 +34,7 @@ class RemoteMessagingStoreTests: XCTestCase {
     var availabilityProvider: MockRemoteMessagingAvailabilityProvider!
     var remoteMessagingDatabase: CoreDataDatabase!
     var location: URL!
+    var autoDismissedMessageIDs: [String] = []
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -47,11 +49,19 @@ class RemoteMessagingStoreTests: XCTestCase {
         remoteMessagingDatabase.loadStore()
 
         availabilityProvider = MockRemoteMessagingAvailabilityProvider()
+        autoDismissedMessageIDs = []
 
         store = RemoteMessagingStore(
             database: remoteMessagingDatabase,
             notificationCenter: notificationCenter,
             errorEvents: nil,
+            autoDismissEvents: EventMapping { [weak self] event, _, _, _ in
+                switch event {
+                case .messageAutoDismissed(let messageID):
+                    self?.autoDismissedMessageIDs.append(messageID)
+                }
+            },
+            enforcesMaxImpressions: true,
             remoteMessagingAvailabilityProvider: availabilityProvider
         )
 
@@ -631,6 +641,120 @@ class RemoteMessagingStoreTests: XCTestCase {
         XCTAssertNotNil(result)
     }
 
+    func testWhenMessageIsWithinDaysShownAndBelowMaxImpressionsThenItIsReturned() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "below-impression-cap"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.firstShownDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+            message.impressionCount = 1
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"below-impression-cap","exclusionRules":[],"matchingRules":[],"displayConditions":{"dismissAfterDaysShown":3,"maxImpressions":2}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+
+        XCTAssertEqual(result?.id, "below-impression-cap")
+        XCTAssertTrue(autoDismissedMessageIDs.isEmpty)
+    }
+
+    func testWhenMessageReachesMaxImpressionsThenItIsDismissedAndEventFiresOnce() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "at-impression-cap"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.impressionCount = 2
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"at-impression-cap","exclusionRules":[],"matchingRules":[],"displayConditions":{"maxImpressions":2}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+
+        await store.waitForStoreInitiatedTasks()
+
+        XCTAssertEqual(store.fetchDismissedRemoteMessageIDs(), ["at-impression-cap"])
+        XCTAssertEqual(autoDismissedMessageIDs, ["at-impression-cap"])
+    }
+
+    func testWhenMaxImpressionsEnforcementIsDisabledThenMessageRemainsScheduled() throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "cap-not-enforced"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.impressionCount = 1
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"cap-not-enforced","exclusionRules":[],"matchingRules":[],"displayConditions":{"maxImpressions":1}}
+              """
+            try context.save()
+        }
+
+        let storeWithoutCap = RemoteMessagingStore(database: remoteMessagingDatabase,
+                                                   notificationCenter: notificationCenter,
+                                                   errorEvents: nil,
+                                                   remoteMessagingAvailabilityProvider: availabilityProvider)
+
+        XCTAssertEqual(storeWithoutCap.fetchScheduledRemoteMessage(surfaces: .allCases)?.id, "cap-not-enforced")
+        XCTAssertTrue(autoDismissedMessageIDs.isEmpty)
+    }
+
+    func testWhenMessageIsAlreadyDismissedThenNoAutomaticDismissalEventIsEmitted() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "already-dismissed"
+            message.status = NSNumber(value: 1)
+            message.shown = true
+            message.impressionCount = 2
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"already-dismissed","exclusionRules":[],"matchingRules":[],"displayConditions":{"maxImpressions":2}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        await store.waitForStoreInitiatedTasks()
+
+        XCTAssertTrue(autoDismissedMessageIDs.isEmpty)
+        XCTAssertEqual(store.fetchDismissedRemoteMessageIDs(), ["already-dismissed"])
+    }
+
+    func testWhenMetricsAreDisabledThenReachingMaxImpressionsDoesNotFireEvent() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "metrics-disabled-impression-cap"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.impressionCount = 1
+            message.message = """
+              {"isMetricsEnabled":false,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"metrics-disabled-impression-cap","exclusionRules":[],"matchingRules":[],"displayConditions":{"maxImpressions":1}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+
+        await store.waitForStoreInitiatedTasks()
+
+        XCTAssertEqual(store.fetchDismissedRemoteMessageIDs(), ["metrics-disabled-impression-cap"])
+        XCTAssertTrue(autoDismissedMessageIDs.isEmpty)
+    }
+
     func testWhenMessageExceedsDismissThresholdThenItIsNotReturned() async throws {
         let context = store.context
         try context.performAndWait {
@@ -670,6 +794,7 @@ class RemoteMessagingStoreTests: XCTestCase {
         await store.waitForStoreInitiatedTasks()
 
         XCTAssertEqual(store.fetchDismissedRemoteMessageIDs(), ["auto-dismiss-pending"])
+        XCTAssertEqual(autoDismissedMessageIDs, ["auto-dismiss-pending"])
     }
 
     func testWhenMessageHasNilFirstShownDateThenItIsReturned() async throws {
@@ -817,6 +942,7 @@ class RemoteMessagingStoreTests: XCTestCase {
                 return
             }
             XCTAssertNotNil(result.firstShownDate)
+            XCTAssertEqual(result.impressionCount, 1)
         }
     }
 
@@ -848,7 +974,42 @@ class RemoteMessagingStoreTests: XCTestCase {
                 return
             }
             XCTAssertEqual(result.firstShownDate, pastDate)
+            XCTAssertEqual(result.impressionCount, 2)
         }
+    }
+
+    func testWhenRecordRemoteMessageImpressionThenItReturnsFirstAndIncrementsSerializedCount() async throws {
+        let remoteMessage = try await saveProcessedResultFetchRemoteMessage()
+
+        let firstResult = await store.recordRemoteMessageImpression(withID: remoteMessage.id)
+        let secondResult = await store.recordRemoteMessageImpression(withID: remoteMessage.id)
+
+        XCTAssertEqual(firstResult, .recorded(isFirstImpression: true, impressionCount: 1))
+        XCTAssertEqual(secondResult, .recorded(isFirstImpression: false, impressionCount: 2))
+        XCTAssertTrue(store.hasShownRemoteMessage(withID: remoteMessage.id))
+    }
+
+    func testWhenRecordRemoteMessageImpressionConcurrentlyThenEachOperationIsSerialized() async throws {
+        let remoteMessage = try await saveProcessedResultFetchRemoteMessage()
+
+        async let firstResult = store.recordRemoteMessageImpression(withID: remoteMessage.id)
+        async let secondResult = store.recordRemoteMessageImpression(withID: remoteMessage.id)
+        let results = await [firstResult, secondResult]
+
+        XCTAssertEqual(results.compactMap { result in
+            guard case .recorded(_, let count) = result else { return nil }
+            return count.map(Int.init)
+        }.sorted(), [1, 2])
+        XCTAssertEqual(results.filter { result in
+            guard case .recorded(isFirstImpression: true, _) = result else { return false }
+            return true
+        }.count, 1)
+    }
+
+    func testWhenRecordRemoteMessageImpressionCannotFindMessageThenItIsNotRecorded() async {
+        let result = await store.recordRemoteMessageImpression(withID: "missing")
+
+        XCTAssertEqual(result, .notRecorded)
     }
 
 }

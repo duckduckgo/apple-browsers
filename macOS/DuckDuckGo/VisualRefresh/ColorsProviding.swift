@@ -82,7 +82,7 @@ protocol ColorsProviding {
 
 struct ColorsProvidingFactory {
 
-    static func buildColorsProvider(featureFlagger: FeatureFlagger, palette: ThemeColors) -> ColorsProviding {
+    static func buildColorsProvider(palette: ThemeColors) -> ColorsProviding {
         ColorsProvider(palette: palette)
     }
 }

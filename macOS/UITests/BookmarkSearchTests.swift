@@ -126,12 +126,14 @@ class BookmarkSearchTests: UITestCase {
 
     private func searchInBookmarksPanel(for title: String) {
         bringFocusToBookmarksPanelSearchBar()
-        app.popovers.firstMatch.searchFields[AccessibilityIdentifiers.bookmarksPanelSearchBar].typeText(title)
+        let searchField = app.popovers.firstMatch.searchFields[AccessibilityIdentifiers.bookmarksPanelSearchBar]
+        searchField.clickAfterExistenceTestSucceeds()
+        searchField.typeText(title)
     }
 
     private func searchInBookmarksManager(for title: String) {
         let searchField = app.searchFields[AccessibilityIdentifiers.bookmarksManagerSearchBar]
-        searchField.tap()
+        searchField.clickAfterExistenceTestSucceeds()
         searchField.typeText(title)
     }
 
@@ -167,7 +169,7 @@ class BookmarkSearchTests: UITestCase {
 
     private func bringFocusToBookmarksPanelSearchBar() {
         let popover = app.popovers.firstMatch
-        popover.buttons[AccessibilityIdentifiers.searchBookmarksButton].tap()
+        popover.buttons[AccessibilityIdentifiers.searchBookmarksButton].clickAfterExistenceTestSucceeds()
     }
 
     private func openBookmarksManager() {

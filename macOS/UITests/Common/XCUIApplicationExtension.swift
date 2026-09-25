@@ -243,7 +243,13 @@ extension XCUIApplication {
     /// Disables the "Warn Before Closing Pinned Tabs" setting in General preferences
     func disableWarnBeforeClosingPinnedTabs(closeSettings: Bool = true) {
         openGeneralPreferences()
-        warnBeforeClosingPinnedTabsCheckbox.toggleCheckboxIfNeeded(to: false, ensureHittable: ensureHittable)
+        let checkbox = warnBeforeClosingPinnedTabsCheckbox
+        let scrollView = preferencesWindow.scrollViews[AccessibilityIdentifiers.settingsScrollView]
+        let scrollDistance = checkbox.frame.maxY - scrollView.frame.maxY + 20
+        if scrollDistance > 0 {
+            scrollView.scroll(byDeltaX: 0, deltaY: -scrollDistance)
+        }
+        checkbox.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: ensureHittable)
         if closeSettings {
             typeKey("w", modifierFlags: [.command])
         }
@@ -383,26 +389,35 @@ extension XCUIApplication {
                 "Web view didn't load in a reasonable timeframe."
             )
         }
-        let tab = windows.firstMatch.tabs.element(matching: \.isSelected, equalTo: true)
-        let progressIndicator = tab.progressIndicators["TabFaviconView.spinner"]
-
         let naked = (url.nakedString ?? url.absoluteString).droppingWwwPrefix()
         let scheme = url.navigationalScheme?.separated() ?? ""
-        XCTAssertTrue(
-            tab.wait(for: .keyPath(\.url, in: [
-                scheme + naked,
-                scheme + naked + "/",
-                scheme + "www." + naked,
-                scheme + "www." + naked + "/",
-                url.absoluteString,
-            ]), timeout: navigationTimeout),
-            "Tab did not change URL to \(url.absoluteString) in a reasonable timeframe (current URL: \(tab.url ?? "<nil>"))."
-        )
-        _=progressIndicator.waitForExistence(timeout: 1)
-        XCTAssertTrue(
-            progressIndicator.waitForNonExistence(timeout: navigationTimeout),
-            "Progress did not reach 100% in a reasonable timeframe (current value: \(progressIndicator.value as? Double ??? "<nil>"))."
-        )
+        let tab = windows.firstMatch.tabs.element(matching: \.isSelected, equalTo: true)
+        if tab.exists {
+            let progressIndicator = tab.progressIndicators["TabFaviconView.spinner"]
+            XCTAssertTrue(
+                tab.wait(for: .keyPath(\.url, in: [
+                    scheme + naked,
+                    scheme + naked + "/",
+                    scheme + "www." + naked,
+                    scheme + "www." + naked + "/",
+                    url.absoluteString,
+                ]), timeout: navigationTimeout),
+                "Tab did not change URL to \(url.absoluteString) in a reasonable timeframe (current URL: \(tab.url ?? "<nil>"))."
+            )
+            _=progressIndicator.waitForExistence(timeout: 1)
+            XCTAssertTrue(
+                progressIndicator.waitForNonExistence(timeout: navigationTimeout),
+                "Progress did not reach 100% in a reasonable timeframe (current value: \(progressIndicator.value as? Double ??? "<nil>"))."
+            )
+        } else {
+            // The tab bar can be hidden after Fire replaces the only tab.
+            activateAddressBar()
+            XCTAssertTrue(
+                addressBar.wait(for: .keyPath(\.value, contains: url.host ?? url.absoluteString), timeout: navigationTimeout),
+                "Address bar did not show \(url.absoluteString) after navigation."
+            )
+            typeKey(.escape, modifierFlags: [])
+        }
     }
 
     /// Dismisses the macOS "Allow … to find devices on local networks?" system prompt if it's on

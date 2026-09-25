@@ -148,14 +148,18 @@ extension XCUIElement {
         self.typeURL(url, pressingEnter: pressingEnter)
     }
 
-    /// Shows the bookmarks panel shortcut and taps it. If the bookmarks shortcut is visible, it only taps it.
+    /// Opens the bookmarks panel if it is not already visible.
     func openBookmarksPanel() {
+        let bookmarksPanel = popovers.firstMatch
+        if bookmarksPanel.exists { return }
+
         let bookmarksPanelShortcutButton = buttons[XCUIApplication.AccessibilityIdentifiers.bookmarksPanelShortcutButton]
         if !bookmarksPanelShortcutButton.exists {
             typeKey("k", modifierFlags: [.command, .shift])
         }
 
-        bookmarksPanelShortcutButton.tap()
+        bookmarksPanelShortcutButton.clickAfterExistenceTestSucceeds()
+        XCTAssertTrue(bookmarksPanel.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Bookmarks panel should open")
     }
 
     func clickAfterExistenceTestSucceeds() {
@@ -228,15 +232,9 @@ extension XCUIElement {
     @objc func closeTab() throws {
         // Hover the tab to reveal its close ("x") button
         self.hover()
-
-        XCTAssertTrue(self.exists)
-        let tabFrame = self.frame
-
-        let normalizedX = (tabFrame.width - 12) / tabFrame.width
-        let normalizedY = 0.5
-
-        let coordinate = self.coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: normalizedY))
-        coordinate.click()
+        let closeButton = buttons["TabBarViewItem.closeButton"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tab close button should appear on hover")
+        closeButton.click()
     }
 
     /// Performs a middle mouse click on the element

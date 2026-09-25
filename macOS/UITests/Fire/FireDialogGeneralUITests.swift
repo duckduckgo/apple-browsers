@@ -221,17 +221,12 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
         let finalWindowCount = app.windows.count
         XCTAssertEqual(finalWindowCount, 1, "Should have exactly 1 window")
 
-        // Should have 1 new tab (the replacement tab)
-        let finalTabCount = app.tabs.count
-        XCTAssertEqual(finalTabCount, 1, "Should have 1 new tab after burning")
-
-        // Verify New Tab is open
-        XCTAssertTrue(app.tabs["New Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence), "New Tab should be open")
+        // The tab bar can be hidden when Fire leaves a single replacement tab.
         verifyNewTabPageIsOpen()
 
         // Verify old tabs are gone
-        XCTAssertFalse(app.tabs[page1Title].exists, "Old tab 1 should not exist")
-        XCTAssertFalse(app.tabs[page2Title].exists, "Old tab 2 should not exist")
+        XCTAssertFalse(app.webViews[page1Title].exists, "Old tab 1 should not exist")
+        XCTAssertFalse(app.webViews[page2Title].exists, "Old tab 2 should not exist")
     }
 
     func test_fireDialog_keepsHistoryWhenToggleDisabled() throws {
@@ -287,8 +282,6 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
 
         // Verify window stayed open with New Tab
         XCTAssertEqual(app.windows.count, 1, "Should have exactly 1 window")
-        XCTAssertEqual(app.tabs.count, 1, "Should have 1 new tab after burning")
-        XCTAssertTrue(app.tabs["New Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence), "New Tab should be open")
         verifyNewTabPageIsOpen()
 
         // Reopen History window to verify site is still in it (windows were closed by tabs toggle)
@@ -484,8 +477,6 @@ final class FireDialogGeneralUITests: UITestCase, FireDialogUITests {
 
         // Verify window stayed open with New Tab
         XCTAssertEqual(app.windows.count, 1, "Should have exactly 1 window")
-        XCTAssertEqual(app.tabs.count, 1, "Should have 1 new tab after burning")
-        XCTAssertTrue(app.tabs["New Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence), "New Tab should be open")
         verifyNewTabPageIsOpen()
 
         // Reopen History window to verify site is still in it

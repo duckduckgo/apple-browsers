@@ -53,6 +53,8 @@ extension FireDialogUITests {
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         fireDialogBurnButton.click()
         waitForFireAnimationToComplete()
+        app.enforceSingleWindow()
+        XCTAssertEqual(app.tabs.count, 1, "A tab should exist after the initial Fire burn")
     }
 
     // MARK: - Helper Methods

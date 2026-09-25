@@ -219,8 +219,8 @@ class PinnedTabsTests: UITestCase {
         let pinnedTab2 = app.pinnedTabs.element(boundBy: 1)
         let pinnedTab1 = app.pinnedTabs.element(boundBy: 0)
         let startPoint = pinnedTab2.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        let endPoint = pinnedTab1.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        startPoint.press(forDuration: 0, thenDragTo: endPoint)
+        let endPoint = pinnedTab1.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
+        startPoint.click(forDuration: 0.5, thenDragTo: endPoint)
 
         sleep(1)
 

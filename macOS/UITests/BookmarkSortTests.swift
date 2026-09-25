@@ -174,28 +174,28 @@ class BookmarkSortTests: UITestCase {
     private func tapPanelSortButton() {
         let bookmarksPanelPopover = app.popovers.firstMatch
         let sortBookmarksButton = bookmarksPanelPopover.buttons[AccessibilityIdentifiers.sortBookmarksButtonPanel]
-        sortBookmarksButton.tap()
+        sortBookmarksButton.clickAfterExistenceTestSucceeds()
     }
 
     private func selectSortByName(mode: BookmarkMode, descending: Bool = false) {
         if mode == .panel {
             let bookmarksPanelPopover = app.popovers.firstMatch
             let sortBookmarksButton = bookmarksPanelPopover.buttons[AccessibilityIdentifiers.sortBookmarksButtonPanel]
-            sortBookmarksButton.tap()
-            bookmarksPanelPopover.menuItems["Name"].tap()
+            sortBookmarksButton.clickAfterExistenceTestSucceeds()
+            bookmarksPanelPopover.menuItems["Name"].clickAfterExistenceTestSucceeds()
 
             if descending {
-                sortBookmarksButton.tap()
-                bookmarksPanelPopover.menuItems["Descending"].tap()
+                sortBookmarksButton.clickAfterExistenceTestSucceeds()
+                bookmarksPanelPopover.menuItems["Descending"].clickAfterExistenceTestSucceeds()
             }
         } else {
             let sortBookmarksButton = app.buttons[AccessibilityIdentifiers.sortBookmarksButtonManager]
-            sortBookmarksButton.tap()
-            app.menuItems["Name"].tap()
+            sortBookmarksButton.clickAfterExistenceTestSucceeds()
+            app.menuItems["Name"].clickAfterExistenceTestSucceeds()
 
             if descending {
-                sortBookmarksButton.tap()
-                app.menuItems["Descending"].tap()
+                sortBookmarksButton.clickAfterExistenceTestSucceeds()
+                app.menuItems["Descending"].clickAfterExistenceTestSucceeds()
                 /// Here we hover over the sort button, because if we stay where the 'Descending' was selected
                 /// the label of the bookmark being hovered is different because it shows the URL.
                 sortBookmarksButton.hover()

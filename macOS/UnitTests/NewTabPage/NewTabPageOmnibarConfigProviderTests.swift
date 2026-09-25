@@ -49,7 +49,8 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     /// `DuckAiUsageLimitsStore` builds its dismissal stores over `UserDefaults.standard`, so the
     /// usage-limits tests would otherwise carry state into each other and into the rest of the suite.
     private static let usageWarningDefaultsKeys = [
-        "aichat.usage-warning.dismissal",
+        "aichat.usage-warning.dismissal.daily",
+        "aichat.usage-warning.dismissal.weekly",
         "aichat.usage-warning.acted-snapshot",
         "aichat.high-usage-notice.dismissed-models"
     ]
@@ -419,6 +420,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testDismissUsageLimits_hidesTheWarning() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75, selectedModelId: "gpt-5.6-luna")
 
+        XCTAssertEqual(sut.provider.usageLimits()?.message, UserText.aiChatUsageWarningsDailyUsage(percent: 75))
         sut.provider.dismissUsageLimits()
 
         XCTAssertNil(sut.provider.usageLimits())
@@ -428,6 +430,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testSelectedModelId_switchingToTheSuggestedModelStandsTheWarningDown() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
 
+        XCTAssertEqual(sut.provider.usageLimits()?.message, UserText.aiChatUsageWarningsDailyUsage(percent: 75))
         sut.provider.selectedModelId = "claude-haiku-4-5"
 
         XCTAssertNil(sut.provider.usageLimits())

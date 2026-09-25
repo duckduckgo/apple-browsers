@@ -137,9 +137,7 @@ final class CrashReportPromptViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Esc declines, matching the close button. It goes through `addKeyEquivalent` rather than
-        // `dontSendButton.keyEquivalent`, because the crash log text view is selectable, can take
-        // first responder and swallows the key.
+        // Esc declines, matching the close button.
         addKeyEquivalent(.escape, modifierFlags: []) { [weak self] _ in
             guard let self else { return false }
             dontSendAction(self)

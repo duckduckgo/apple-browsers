@@ -37,8 +37,7 @@ final class CrashReportPromptPresenter: NSObject {
                               styleMask: [.titled, .closable],
                               backing: .buffered,
                               defer: true)
-        // The storyboard hard-coded an unlocalized "Problem Report". Reusing the feedback form's
-        // title avoids a new Smartling job for a string that is already translated.
+        // Reusing the feedback form's "Report a Problem" title.
         window.title = UserText.reportProblemFormTitle
         window.autorecalculatesKeyViewLoop = false
         window.contentViewController = viewController

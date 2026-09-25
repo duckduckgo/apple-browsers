@@ -367,6 +367,10 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             return try await task.value
 
         case .createIfNeeded:
+            // A keychain read failure must surface as an error, not as a missing token that triggers account creation.
+            // Trigger the read here to ensure that the keychain is accessible before proceeding with the creation.
+            _ = try tokenStorage.getTokenContainer()
+
             do {
                 return try await getTokens(policy: .localValid, trigger: .createIfNeeded)
             } catch {

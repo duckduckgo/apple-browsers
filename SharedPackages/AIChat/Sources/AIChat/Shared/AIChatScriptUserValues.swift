@@ -139,6 +139,9 @@ public struct AIChatNativeConfigValues: Codable {
     /// to native after `getUserMedia` rejects. Native surfaces the OS microphone-disabled
     /// prompt with dictation-specific copy.
     public let supportsNativeDictationPermissionHandler: Bool
+    /// `true` when clearing Duck.ai data also removes the images' blob files from IndexedDB, so the FE
+    /// can run its one-time sweep of blob files orphaned by older clears.
+    public let supportsBlobSafeDataClearing: Bool
     /// Whether this is a new or returning (reinstall) install — `unknown` when the platform
     /// can't tell. Surfaced on the `web.conversion.duckai.prompt` pixel.
     public let installType: AIChatInstallType
@@ -218,6 +221,7 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsNativeUsageWarnings: Bool = false,
                 supportsNativeVoicePermissionHandler: Bool = false,
                 supportsNativeDictationPermissionHandler: Bool = false,
+                supportsBlobSafeDataClearing: Bool = false,
                 installType: AIChatInstallType = .new,
                 installAge: Int = 0,
                 attachmentLimits: AIChatNativeAttachmentLimits? = nil) {
@@ -246,6 +250,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsNativeUsageWarnings = supportsNativeUsageWarnings
         self.supportsNativeVoicePermissionHandler = supportsNativeVoicePermissionHandler
         self.supportsNativeDictationPermissionHandler = supportsNativeDictationPermissionHandler
+        self.supportsBlobSafeDataClearing = supportsBlobSafeDataClearing
         self.installType = installType
         self.installAge = installAge
         self.attachmentLimits = attachmentLimits

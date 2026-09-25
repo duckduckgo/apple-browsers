@@ -3,7 +3,7 @@ description: 'Selects the Xcode version based on input or .xcode-version file'
 
 inputs:
   xcode-version:
-    description: 'Xcode version to use (e.g. 16.2). If not provided, reads from .xcode-version file.'
+    description: 'Xcode version to use and require for CI app builds. Defaults to .xcode-version.'
     required: false
 
 outputs:

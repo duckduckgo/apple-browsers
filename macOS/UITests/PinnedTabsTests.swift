@@ -170,11 +170,11 @@ class PinnedTabsTests: UITestCase {
     }
 
     private func pinCurrentPage() {
-        app.menuItems["Pin Tab"].tap()
+        app.pinCurrentTab()
     }
 
     private func unpinCurrentPage() {
-        app.menuItems["Unpin Tab"].tap()
+        app.unpinCurrentTab()
     }
 
     private func assertsPageTwoIsPinned(file: StaticString = #file, line: UInt = #line) {

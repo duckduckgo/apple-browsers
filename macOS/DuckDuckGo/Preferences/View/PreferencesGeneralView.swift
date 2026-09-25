@@ -47,6 +47,15 @@ extension Preferences {
         @State private var showWarningAlert = false
         @State private var pendingSelection: PinnedTabsMode?
 
+        private func startupWindowTypeAccessibilityIdentifier(_ windowType: StartupWindowType) -> String {
+            switch windowType {
+            case .window:
+                "PreferencesGeneralView.stateRestorePicker.openANewWindow.regular"
+            case .fireWindow:
+                "PreferencesGeneralView.stateRestorePicker.openANewWindow.fireWindow"
+            }
+        }
+
         private func firePinnedTabsPixel(_ newMode: PinnedTabsMode) {
             if newMode == .shared {
                 PixelKit.fire(PinnedTabsPixel.userSwitchedToSharedPinnedTabs, frequency: .dailyAndStandard)
@@ -169,14 +178,7 @@ extension Preferences {
                                     Picker("", selection: $startupModel.startupWindowType) {
                                         ForEach(StartupWindowType.allCases, id: \.self) { windowType in
                                             Text(windowType.displayName).tag(windowType)
-                                                .accessibilityIdentifier({
-                                                    switch windowType {
-                                                    case .window:
-                                                        "PreferencesGeneralView.stateRestorePicker.openANewWindow.regular"
-                                                    case .fireWindow:
-                                                        "PreferencesGeneralView.stateRestorePicker.openANewWindow.fireWindow"
-                                                    }
-                                                }())
+                                                .accessibilityIdentifier(startupWindowTypeAccessibilityIdentifier(windowType))
                                         }
                                     }
                                     .pickerStyle(.menu)
@@ -189,6 +191,8 @@ extension Preferences {
                             .tint(nil)
                             .tag(false)
                             .padding(.bottom, 4)
+                            // SwiftUI can expose the entire radio option as one pop-up accessibility element.
+                            .accessibilityIdentifier(startupWindowTypeAccessibilityIdentifier(startupModel.startupWindowType))
 
                             Text(UserText.reopenAllWindowsFromLastSession).tag(true)
                                 .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession")

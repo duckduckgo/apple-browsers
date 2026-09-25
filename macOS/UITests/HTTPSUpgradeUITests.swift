@@ -73,7 +73,7 @@ class HTTPSUpgradeUITests: UITestCase {
         XCTAssertTrue(summary.waitForExistence(timeout: UITests.Timeouts.navigation), "Summary should appear after running tests")
 
         // Click by coordinate to expand details
-        summary.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        summary.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
 
         // Helper to find the last static text value that belongs to a header group
         func lastValue(afterHeaderWithPrefix prefix: String) -> String? {

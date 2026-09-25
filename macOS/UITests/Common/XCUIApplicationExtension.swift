@@ -150,7 +150,11 @@ extension XCUIApplication {
         if forceTerminate {
             terminate()
         } else {
-            menuItems[AccessibilityIdentifiers.quitMenuItem].tap()
+            typeKey("q", modifierFlags: .command)
+            guard wait(for: .notRunning, timeout: UITests.Timeouts.elementExistence) else {
+                XCTFail("The app did not quit before restarting")
+                return
+            }
         }
         launch()
     }
@@ -202,7 +206,14 @@ extension XCUIApplication {
 
     /// Pins current tab using the main menu
     func pinCurrentTab() {
-        mainMenuPinTabMenuItem.tap()
+        menuBars.menuBarItems["Window"].clickAfterExistenceTestSucceeds()
+        mainMenuPinTabMenuItem.clickAfterExistenceTestSucceeds()
+    }
+
+    /// Unpins current tab using the main menu
+    func unpinCurrentTab() {
+        menuBars.menuBarItems["Window"].clickAfterExistenceTestSucceeds()
+        mainMenuUnpinTabMenuItem.clickAfterExistenceTestSucceeds()
     }
 
     /// Checks if the current tab can be pinned (i.e., is not already pinned)
@@ -644,6 +655,33 @@ extension XCUIApplication {
     }
 
     func preferencesSetRestorePreviousSession(to state: StartupType, in prefs: XCUIElement) {
+        // Newer SwiftUI versions expose the combined radio button and window-type menu as a pop-up button.
+        let startupWindowPicker = prefs.radioGroups["PreferencesGeneralView.stateRestorePicker"].popUpButtons.firstMatch
+        if state != .restoreLastSession && startupWindowPicker.exists {
+            ensureHittable(startupWindowPicker)
+            if !startupWindowPicker.isSelected {
+                // Select the radio control at the leading edge before opening its window-type menu.
+                startupWindowPicker.coordinate(withNormalizedOffset: CGVector(dx: 0.03, dy: 0.5)).click()
+            }
+            startupWindowPicker.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).click()
+            // The popup menu's items are not exposed by newer SwiftUI accessibility trees.
+            // Select through the keyboard, then verify the selected type on the enclosing control.
+            typeKey(state == .fireWindow ? .downArrow : .upArrow, modifierFlags: [])
+            typeKey(.enter, modifierFlags: [])
+
+            let optionIdentifier = state == .fireWindow
+                ? AccessibilityIdentifiers.startupWindowTypeFireWindow
+                : AccessibilityIdentifiers.startupWindowTypeRegularWindow
+            // SwiftUI can combine the radio row and selected menu item's identifiers.
+            let combinedIdentifier = "\(optionIdentifier)-\(optionIdentifier)"
+            let selectedOption = prefs.popUpButtons.matching(NSPredicate(
+                format: "identifier == %@ OR identifier == %@", optionIdentifier, combinedIdentifier
+            )).firstMatch
+            XCTAssertTrue(selectedOption.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Requested startup window type was not selected")
+            XCTAssertTrue(selectedOption.isSelected)
+            return
+        }
+
         var radioButton: XCUIElement
         var picker: XCUIElement?
         var switchKey: XCUIKeyboardKey?

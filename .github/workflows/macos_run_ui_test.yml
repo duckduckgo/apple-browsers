@@ -14,16 +14,12 @@ on:
     inputs:
       runner:
         # A workflow_call input cannot be an array, so the caller passes toJSON of its label list.
-        description: "JSON array of runner labels, as a string. Examples: '[\"macos-15-xlarge\"]', '[\"image:osx-tahoe-26\",\"ui-tests\"]'."
-        required: true
-        type: string
-      os-version:
-        description: "macOS version of the runner (e.g. '26'). Used for names and conditional steps."
+        description: "JSON array of runner labels, as a string. Examples: '[\"macos-26-xlarge\"]', '[\"image:osx-goldengate\",\"ui-tests\"]'."
         required: true
         type: string
       xcode-version:
-        description: "Xcode version to select (e.g. '26.6')"
-        required: true
+        description: "Xcode version override; defaults to the checked-out .xcode-version file"
+        required: false
         type: string
       test:
         description: "The UITestCase class to run"
@@ -48,7 +44,7 @@ jobs:
     # Avoid '/' in the job name: GitHub joins the reusable-workflow job name onto the caller with
     # ' / ' and the UI splits that path on ' / ', so a '/' here would break the name into fake tree
     # nodes. It is also used to build the report filename, where '/' is a path separator.
-    name: ${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})
+    name: ${{ inputs.test }} (${{ inputs.user-mode == 'internal' && ', internal' || '' }})
     runs-on: ${{ fromJSON(inputs.runner) }}
 
     # Internal-mode failures are advance warning for features still gated to internal users; they
@@ -105,11 +101,9 @@ jobs:
         exit 1
 
     - name: Install screenresolution
-      if: inputs.os-version != '14'
       run: brew install screenresolution
 
     - name: Change screen resolution
-      if: inputs.os-version != '14'
       run: screenresolution set 1920x1080x32@60
 
     - name: Setup Ruby and dependencies
@@ -276,6 +270,7 @@ jobs:
         set -o pipefail && xcodebuild test-without-building \
           -scheme "${{ env.scheme }}" \
           -derivedDataPath DerivedData \
+          -resultBundlePath "DerivedData/Logs/Test/macOS-UI-Tests.xcresult" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
           -test-iterations 2 \
@@ -312,7 +307,7 @@ jobs:
       if: always() && steps.run-ui-tests.outcome != 'skipped'
       working-directory: macOS
       run: |
-        test_id="${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})"
+        test_id="${{ inputs.test }} (${{ inputs.user-mode == 'internal' && ', internal' || '' }})"
         file="${test_id}.xml"
         echo "file=$file" >> $GITHUB_OUTPUT
         xcbeautify --report junit --report-path . --junit-report-filename "$file" < ui-tests.log
@@ -325,23 +320,25 @@ jobs:
       if: always() && steps.run-ui-tests.outcome != 'skipped'
       uses: ./.github/actions/upload-artifact-with-retry
       with:
-        name: "testreport-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
+        name: "testreport-${{ inputs.test }}-${{ inputs.user-mode }}"
         path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
+        if-no-files-found: warn
         retention-days: 1
 
     - name: Upload xcresult files (passed on retry)
-      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome != 'skipped'
       uses: ./.github/actions/upload-artifact-with-retry
       with:
-        name: "xcresult-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
+        name: "xcresult-${{ inputs.test }}-${{ inputs.user-mode }}"
         path: "macOS/DerivedData/Logs/Test/*.xcresult"
+        if-no-files-found: warn
         retention-days: 1
 
     - name: Upload app console log (passed on retry)
-      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome != 'skipped'
       uses: ./.github/actions/upload-artifact-with-retry
       with:
-        name: "app-console-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
+        name: "app-console-${{ inputs.test }}-${{ inputs.user-mode }}"
         path: "macOS/app-console.log"
         if-no-files-found: warn
         retention-days: 1
@@ -351,12 +348,12 @@ jobs:
       working-directory: ${{ github.workspace }}
       run: |
         mkdir -p failure-marker
-        echo "macos-ui:${{ inputs.user-mode }}:${{ inputs.test }}:${{ inputs.os-version }}" > failure-marker/marker.txt
+        echo "macos-ui:${{ inputs.user-mode }}:${{ inputs.test }}" > failure-marker/marker.txt
     - name: Upload failure marker
       if: failure() || cancelled()
       uses: ./.github/actions/upload-artifact-with-retry
       with:
-        name: failure-marker-macos-ui-${{ inputs.user-mode }}-${{ inputs.test }}-${{ inputs.os-version }}
+        name: failure-marker-macos-ui-${{ inputs.user-mode }}-${{ inputs.test }}
         path: failure-marker/
         retention-days: 1
 
@@ -368,7 +365,7 @@ jobs:
 
         # Create staging directory with timestamp, OS version and failing test name
         timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
-        archive_name="BuildLogs ${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ' internal' || '' }}) ${timestamp}"
+        archive_name="BuildLogs ${{ inputs.test }} (${{ inputs.user-mode == 'internal' && ' internal' || '' }}) ${timestamp}"
         echo "Creating archive directory: $archive_name"
         mkdir -p "$archive_name"
 

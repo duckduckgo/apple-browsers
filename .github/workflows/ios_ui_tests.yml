@@ -36,7 +36,7 @@ jobs:
     name: UI Tests
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
-    runs-on: [image:osx-tahoe-26, ui-tests]
+    runs-on: [image:osx-goldengate, ui-tests]
     timeout-minutes: 45
 
     steps:
@@ -60,7 +60,22 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.5"
+        preferred-versions: "27.0"
+
+    - name: Record simulator runtime diagnostics
+      continue-on-error: true
+      run: |
+        xcode-select -p
+        for xcode_app in /Applications/Xcode*.app; do
+          [ -d "$xcode_app" ] || continue
+          echo "Installed Xcode: $xcode_app"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$xcode_app/Contents/version.plist" || true
+          /usr/libexec/PlistBuddy -c 'Print :ProductBuildVersion' "$xcode_app/Contents/version.plist" || true
+        done
+        xcodebuild -version
+        xcrun --sdk iphonesimulator --show-sdk-build-version
+        xcrun simctl runtime list
+        xcrun simctl runtime match list
 
     - name: Run UI test
       run: |
@@ -77,4 +92,16 @@ jobs:
           -retry-tests-on-failure \
           -test-repetition-relaunch-enabled YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+          2>&1 | tee ui-tests-xcodebuild.log \
           | xcbeautify
+
+    - name: Upload UI test diagnostics
+      if: failure() || cancelled()
+      uses: actions/upload-artifact@v6
+      with:
+        name: ios-ui-test-diagnostics
+        path: |
+          iOS/ui-tests-xcodebuild.log
+          iOS/DerivedData/Logs/Test/
+        if-no-files-found: warn
+        retention-days: 7

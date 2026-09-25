@@ -29,6 +29,7 @@ let package = Package(
         .library(name: "Configuration", targets: ["Configuration"]),
         .library(name: "RemoteMessaging", targets: ["RemoteMessaging"]),
         .library(name: "RemoteMessagingTestsUtils", targets: ["RemoteMessagingTestsUtils"]),
+        // Avoid shadowing Apple's Navigation.framework when Xcode dynamically links package targets.
         .library(name: "DDGNavigation", targets: ["DDGNavigation"]),
         .library(name: "SyncDataProviders", targets: ["SyncDataProviders"]),
         .library(name: "SecureStorage", targets: ["SecureStorage"]),

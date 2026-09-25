@@ -12,6 +12,8 @@
 
 This script reads the minimum required Xcode version specified in the `.xcode-version` file and compares it with the version returned by the `xcodebuild -version` command. If the installed Xcode version is lower than the required version, the script prints an error message and exits with a non-zero status code. If the installed Xcode version is higher than the required version, the script prints a warning message suggesting to update the `.xcode-version` file.
 
+In GitHub Actions, the `select-xcode-version` action sets `CI_XCODE_VERSION` to the requested version. The build check uses that requirement so jobs with explicit older-toolchain overrides can continue to run. Local builds always use `.xcode-version`.
+
 ### Requirements
 
 The script uses `xcodebuild` to check the currently installed version of Xcode, so a valid installation of Xcode and `xcodebuild` are required to run the script.

@@ -67,6 +67,9 @@ select_xcode_version() {
     XCODE_PATH="$XCODE_APP/Contents/Developer"
     echo "Selecting Xcode version $RESOLVED_VERSION at $XCODE_PATH"
     sudo xcode-select -s "$XCODE_PATH"
+
+    # App build checks use the selected requirement in CI, including explicit legacy overrides.
+    echo "CI_XCODE_VERSION=$XCODE_VERSION" >> "$GITHUB_ENV"
 }
 
 main() {

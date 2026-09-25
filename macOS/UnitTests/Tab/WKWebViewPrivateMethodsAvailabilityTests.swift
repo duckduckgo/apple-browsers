@@ -74,7 +74,9 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
     func testWKPDFHUDViewClassAvailable() {
         XCTAssertNotNil(WKPDFHUDViewWrapper.WKPDFHUDViewClass)
         XCTAssertTrue(WKPDFHUDViewWrapper.WKPDFHUDViewClass?.instancesRespond(to: WKPDFHUDViewWrapper.performActionForControlSelector) ==  true)
-        XCTAssertTrue(WKPDFHUDViewWrapper.WKPDFHUDViewClass?.instancesRespond(to: WKPDFHUDViewWrapper.setVisibleSelector) ==  true)
+        let supportsLegacyVisibility = WKPDFHUDViewWrapper.WKPDFHUDViewClass?.instancesRespond(to: WKPDFHUDViewWrapper.setVisibleSelector) == true
+        let supportsShow = WKPDFHUDViewWrapper.WKPDFHUDViewClass?.instancesRespond(to: WKPDFHUDViewWrapper.showSelector) == true
+        XCTAssertTrue(supportsLegacyVisibility || supportsShow, "The PDF HUD must support a visibility method used by the wrapper")
     }
 
     func testWebViewRespondsTo_isPlayingAudio() {

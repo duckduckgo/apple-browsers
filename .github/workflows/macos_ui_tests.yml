@@ -107,7 +107,7 @@ jobs:
     if: needs.should-run-checks.outputs.should_run == 'true'
 
     outputs:
-      # One object per runner configuration: {"runner": [labels], "os-version", "xcode-version"}.
+      # One object per runner configuration; an empty xcode-version uses .xcode-version.
       # The ui-tests jobs multiply this list by the test list to build their matrix.
       config: ${{ steps.define-runners.outputs.config }}
       test: ${{ steps.list-tests.outputs.test }}
@@ -135,21 +135,21 @@ jobs:
         run: |
           # scheduled runs don't have inputs so let's default to true for all_os_versions
           all_os_versions="${{ inputs.all_os_versions }}"
-          # "runner" is always a list of labels, even when the list holds one label. The macOS 26
-          # leg needs two labels to select the Bitrise runner. macos_run_ui_test.yml receives the
+          # "runner" is always a list of labels, even when the list holds one label. The Bitrise
+          # leg needs two labels to select the runner. macos_run_ui_test.yml receives the
           # list as a JSON string and expands it with fromJSON, because a workflow_call input
           # cannot be an array.
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" || "$all_os_versions" == "false" ]]; then
             all_os_versions='false'
             config=$(jq -c <<< '[
-              {"runner": ["image:osx-tahoe-26", "ui-tests"], "os-version": "26", "xcode-version": "26.6"}
+              {"runner": ["image:osx-goldengate", "ui-tests"], "xcode-version": ""}
             ]')
           else
             all_os_versions='true'
             config=$(jq -c <<< '[
-              {"runner": ["macos-14-xlarge"], "os-version": "14", "xcode-version": "16.2"},
-              {"runner": ["macos-15-xlarge"], "os-version": "15", "xcode-version": "26.2"},
-              {"runner": ["image:osx-tahoe-26", "ui-tests"], "os-version": "26", "xcode-version": "26.6"}
+              {"runner": ["macos-15-xlarge"], "xcode-version": "26.2"},
+              {"runner": ["macos-26-xlarge"], "xcode-version": "26.6"},
+              {"runner": ["image:osx-goldengate", "ui-tests"], "xcode-version": ""}
             ]')
           fi
           echo "all-os-versions=${all_os_versions}" >> $GITHUB_OUTPUT
@@ -247,7 +247,6 @@ jobs:
     uses: ./.github/workflows/macos_run_ui_test.yml
     with:
       runner: ${{ toJSON(matrix.config.runner) }}
-      os-version: ${{ matrix.config.os-version }}
       xcode-version: ${{ matrix.config.xcode-version }}
       test: ${{ matrix.test }}
       user-mode: production
@@ -269,7 +268,6 @@ jobs:
     uses: ./.github/workflows/macos_run_ui_test.yml
     with:
       runner: ${{ toJSON(matrix.config.runner) }}
-      os-version: ${{ matrix.config.os-version }}
       xcode-version: ${{ matrix.config.xcode-version }}
       test: ${{ matrix.test }}
       user-mode: internal

@@ -172,6 +172,19 @@ final class PermissionModel {
         }
     }
 
+    private func shouldPersistDecision(remember: Bool?, for permission: PermissionType, domain: String) -> Bool {
+        switch remember {
+        case .some(let remember):
+            // Explicit choice: `true` for Always allow / Never allow (and the Allow / Deny prompt's
+            // Duck.ai microphone exception), `false` for Allow this visit.
+            return remember
+        case .none:
+            // No explicit choice (the Allow / Deny prompt): keep the legacy rule,
+            // which saves a site's first notification decision.
+            return persistsWhen(permission: permission, domain: domain)
+        }
+    }
+
     private func queryAuthorization(for permissions: [PermissionType],
                                     domain: String,
                                     url: URL?,
@@ -203,9 +216,7 @@ final class PermissionModel {
 
                 if case .success( (let granted, let remember) ) = result {
                     for permission in permissions {
-                        // An explicit temporary decision overrides the legacy notification persistence behavior.
-                        let isPersisting = remember ?? persistsWhen(permission: permission, domain: domain)
-                        if isPersisting {
+                        if self.shouldPersistDecision(remember: remember, for: permission, domain: domain) {
                             self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
                         } else {
                             // One-time decisions store .ask for permission center visibility

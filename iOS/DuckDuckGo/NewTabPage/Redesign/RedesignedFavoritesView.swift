@@ -65,7 +65,7 @@ struct RedesignedFavoritesView: View {
                 if hasOverflow {
                     Button {
                         guard !isDraggingFavorite else { return }
-                        withAnimation { isExpanded.toggle() }
+                        isExpanded.toggle()
                     } label: {
                         VStack(spacing: Metrics.iconToTitleSpacing) {
                             Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronDownSmall)
@@ -82,6 +82,7 @@ struct RedesignedFavoritesView: View {
                     .disabled(isDraggingFavorite)
                 }
             }
+            .animation(.default, value: isExpanded)
             .clipped()
         }
     }

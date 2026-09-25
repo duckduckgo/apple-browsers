@@ -37,7 +37,9 @@ struct OmniBarNotification: View {
                 icon
                 text
             }
+            .frame(height: OmniBarMetrics.notificationLozengeHeight)
             .background(background)
+            .padding(.leading, OmniBarMetrics.notificationLozengeInset)
 
             Spacer()
         }
@@ -123,7 +125,6 @@ private struct IconSlotPadding: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(.leading, Constants.Spacing.leadingPadding(forIconWidth: Constants.Size.staticIcon.width))
-            .padding(.vertical, 7)
             .padding(.trailing, 9)
     }
 }
@@ -163,7 +164,7 @@ private enum Constants {
         static let textClippingShapeOffset: CGFloat = -7
         static let textTrailingPadding: CGFloat = 12
         static func leadingPadding(forIconWidth width: CGFloat) -> CGFloat {
-            OmniBarNotificationMetrics.iconLeadingPadding(forIconWidth: width)
+            OmniBarMetrics.notificationIconLeadingPadding(forIconWidth: width)
         }
     }
     

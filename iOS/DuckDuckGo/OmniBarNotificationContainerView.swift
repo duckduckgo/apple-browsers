@@ -26,23 +26,6 @@ protocol OmniBarNotificationAnimated: UIViewController {
     func startAnimation(_ completion: @escaping () -> Void)
 }
 
-enum OmniBarNotificationMetrics {
-
-    /// How far inside the omnibar's leading item slot the capsule starts.
-    static let leadingInset: CGFloat = 1
-
-    /// The centre of the leading item slot, where the address bar centres its privacy icon.
-    static let itemCentre: CGFloat = 22
-
-    /// Distance from the capsule's leading edge to the centre of its icon slot, so a notification's
-    /// icon lands on the privacy icon it sits over whatever size that icon is.
-    static var iconCentreFromLeading: CGFloat { itemCentre - leadingInset }
-
-    static func iconLeadingPadding(forIconWidth width: CGFloat) -> CGFloat {
-        iconCentreFromLeading - width / 2
-    }
-}
-
 final class OmniBarNotificationContainerView: UIView {
 
     var currentNotificationController: UIHostingController<OmniBarNotification>?

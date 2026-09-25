@@ -34,7 +34,6 @@ final class AIChatSuggestionsView: NSView {
         static let rowsHorizontalPadding: CGFloat = 6
         /// Space under the last row. Belongs here because this height is what panels are sized from.
         static let bottomPadding: CGFloat = 8
-        static let viewAllChatsSeparatorBottomPadding: CGFloat = 0
     }
 
     // MARK: - UI Components
@@ -65,7 +64,6 @@ final class AIChatSuggestionsView: NSView {
     private var viewTrackingArea: NSTrackingArea?
 
     private var viewAllChatsRowView: AIChatViewAllChatsRowView?
-    private var viewAllChatsSeparatorView: NSView?
 
     var isBurner: Bool = false
     var canDeleteSuggestions: Bool = false
@@ -173,13 +171,11 @@ final class AIChatSuggestionsView: NSView {
         }
 
         let rowHeight = Constants.rowHeight
-        let viewAllChatsSeparatorBottomPadding = Constants.viewAllChatsSeparatorBottomPadding
         let bottomPadding = Constants.bottomPadding
         let separatorTotalHeight = Constants.separatorHeight + Constants.separatorTopPadding + Constants.separatorBottomPadding
 
         let rowsHeight = CGFloat(count) * rowHeight
-        let viewAllChatsSeparatorHeight = showViewAllChats ? 0 : Constants.separatorHeight
-        let viewAllChatsHeight = showViewAllChats ? viewAllChatsSeparatorHeight + viewAllChatsSeparatorBottomPadding + rowHeight : 0
+        let viewAllChatsHeight = showViewAllChats ? rowHeight : 0
 
         return separatorTotalHeight + rowsHeight + viewAllChatsHeight + bottomPadding
     }
@@ -196,8 +192,6 @@ final class AIChatSuggestionsView: NSView {
         // Remove existing view-all-chats views
         viewAllChatsRowView?.removeFromSuperview()
         viewAllChatsRowView = nil
-        viewAllChatsSeparatorView?.removeFromSuperview()
-        viewAllChatsSeparatorView = nil
 
         // Create new row views
         for (index, suggestion) in suggestions.enumerated() {
@@ -247,8 +241,6 @@ final class AIChatSuggestionsView: NSView {
     private func updateViewAllChatsFooter(show: Bool) {
         viewAllChatsRowView?.removeFromSuperview()
         viewAllChatsRowView = nil
-        viewAllChatsSeparatorView?.removeFromSuperview()
-        viewAllChatsSeparatorView = nil
 
         guard show else { return }
 

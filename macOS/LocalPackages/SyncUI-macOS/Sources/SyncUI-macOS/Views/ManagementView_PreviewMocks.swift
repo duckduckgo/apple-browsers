@@ -27,7 +27,6 @@ final class PreviewManagementViewModel: ManagementViewModel {
     let isAccountRecoveryAvailable = true
     let isAppVersionNotSupported: Bool
     let isAIChatSyncEnabled = true
-    let isAppRebranded = true
     let isSimplifiedSyncSetupV2Enabled: Bool
 
     let isSyncEnabled: Bool

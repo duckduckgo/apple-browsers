@@ -145,7 +145,6 @@ final class SyncDialogController {
         self.keyValueStore = keyValueStore
         self.deviceNameProvider = deviceNameProvider ?? { Self.deviceInfo().name }
         self.managementDialogModel = managementDialogModel
-        self.managementDialogModel.isAppRebranded = DesignSystemRebrand.isAppRebranded()
         self.managementDialogModel.isSimplifiedSyncSetupV2Enabled = self.featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
         diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
 

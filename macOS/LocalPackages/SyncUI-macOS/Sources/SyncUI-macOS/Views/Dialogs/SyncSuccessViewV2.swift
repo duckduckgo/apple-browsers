@@ -142,7 +142,6 @@ struct SyncSuccessViewV2: View {
 
 #if DEBUG
 #Preview("Device Added") {
-    DesignSystemRebrand.isAppRebranded = { true }
     let model = ManagementDialogModel()
     model.thisDeviceName = "Dax’s MacBook Pro"
     return SyncSuccessViewV2(code: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ")

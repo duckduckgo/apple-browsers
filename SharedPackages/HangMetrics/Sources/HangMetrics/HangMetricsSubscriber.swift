@@ -1,6 +1,5 @@
 //
 //  HangMetricsSubscriber.swift
-//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,13 +18,14 @@
 
 import Foundation
 import MetricKit
-import Core
 import Common
 import Persistence
 import PixelKit
 
-@available(iOSApplicationExtension, unavailable)
-final class HangMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
+/// Subscribes to MetricKit metric payloads and turns `MXAppResponsivenessMetric`
+/// hang-time histograms into pixels. Shared by iOS and macOS; each platform owns only
+/// the service that registers it with `MXMetricManager` and drives `processPastPayloads`.
+public final class HangMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
 
     private let processor: HangMetricsProcessor
     private let store: KeyValueStoring
@@ -37,7 +37,11 @@ final class HangMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
     /// payloads (`didReceive`) and our own drain of retained payloads (`processPastPayloads`) —
     /// run here, off the main thread and never concurrently, so the `lastProcessedEnd`
     /// read-modify-write can't race.
-    private let processingQueue = DispatchQueue(label: "com.duckduckgo.ios.hangMetrics")
+    private let processingQueue = DispatchQueue(label: "com.duckduckgo.hangMetrics")
+
+    public convenience init(store: KeyValueStoring) {
+        self.init(processor: HangMetricsProcessor(), store: store)
+    }
 
     init(processor: HangMetricsProcessor = HangMetricsProcessor(),
          store: KeyValueStoring,
@@ -54,7 +58,7 @@ final class HangMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
 
     // MARK: - MXMetricManagerSubscriber
 
-    func didReceive(_ payloads: [MXMetricPayload]) {
+    public func didReceive(_ payloads: [MXMetricPayload]) {
         processingQueue.async { [weak self] in
             guard let self else { return }
             self.process(reports: payloads.compactMap(Self.report(from:)))
@@ -64,7 +68,7 @@ final class HangMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
     /// Drains MetricKit's retained past payloads. Called on launch and on every foreground.
     /// Reads `pastPayloads` and processes it on the serial queue, so nothing runs on the main
     /// thread; the dedup marker makes repeated calls safe.
-    func processPastPayloads() {
+    public func processPastPayloads() {
         processingQueue.async { [weak self] in
             guard let self else { return }
             self.process(reports: MXMetricManager.shared.pastPayloads.compactMap(Self.report(from:)))
@@ -119,28 +123,36 @@ final class HangMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
     }
 }
 
-enum HangMetricsPixel: PixelKit.Event {
+/// Parameter keys for the hang pixels. Declared here rather than in each app's parameter
+/// catalogue so the two platforms cannot drift apart on the wire.
+public enum HangMetricsPixelParameters {
+    public static let minMs = "min_hang_duration_ms"
+    public static let maxMs = "max_hang_duration_ms"
+    public static let count = "hang_count"
+}
+
+public enum HangMetricsPixel: PixelKit.Event {
 
     case hangBucket(minMs: Int, maxMs: Int, count: Int)
 
-    var name: String {
+    public var name: String {
         switch self {
         case .hangBucket: return "app-hangs_metrickit_hang-bucket"
         }
     }
 
-    var parameters: [String: String]? {
+    public var parameters: [String: String]? {
         switch self {
         case let .hangBucket(minMs, maxMs, count):
             return [
-                PixelParameters.hangTimeMinMs: String(minMs),
-                PixelParameters.hangTimeMaxMs: String(maxMs),
-                PixelParameters.hangCount: String(count)
+                HangMetricsPixelParameters.minMs: String(minMs),
+                HangMetricsPixelParameters.maxMs: String(maxMs),
+                HangMetricsPixelParameters.count: String(count)
             ]
         }
     }
 
-    var standardParameters: [PixelKitStandardParameter]? { nil }
+    public var standardParameters: [PixelKitStandardParameter]? { nil }
 }
 
 private extension HangDataPoint {

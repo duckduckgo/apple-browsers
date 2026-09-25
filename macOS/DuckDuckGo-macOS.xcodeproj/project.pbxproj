@@ -4791,7 +4791,9 @@
 		F1DA51982BF6083B00CF29FA /* SubscriptionPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F188267F2BBEB58100D9AC4F /* SubscriptionPixel.swift */; };
 		F1DA51992BF6083B00CF29FA /* SubscriptionPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F188267F2BBEB58100D9AC4F /* SubscriptionPixel.swift */; };
 		F1DF95E32BD1807C0045E591 /* Crashes in Frameworks */ = {isa = PBXBuildFile; productRef = 08D4923DC968236E22E373E2 /* Crashes */; };
+		FA57C0DE0000000000000012 /* HangMetrics in Frameworks */ = {isa = PBXBuildFile; productRef = FA57C0DE0000000000000010 /* HangMetrics */; };
 		F1DF95E42BD1807C0045E591 /* Crashes in Frameworks */ = {isa = PBXBuildFile; productRef = 537FC71EA5115A983FAF3170 /* Crashes */; };
+		FA57C0DE0000000000000013 /* HangMetrics in Frameworks */ = {isa = PBXBuildFile; productRef = FA57C0DE0000000000000011 /* HangMetrics */; };
 		F1DF95E52BD1807C0045E591 /* Subscription in Frameworks */ = {isa = PBXBuildFile; productRef = DC3F73D49B2D44464AFEFCD8 /* Subscription */; };
 		F1DF95E72BD188B60045E591 /* LoginItems in Frameworks */ = {isa = PBXBuildFile; productRef = F1DF95E62BD188B60045E591 /* LoginItems */; };
 		F1E720B32E9D585E00654B4E /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F1E720B22E9D585E00654B4E /* AttributedMetric */; };
@@ -5901,6 +5903,7 @@
 		4BE4005427CF3F19007D3161 /* SavePaymentMethodViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavePaymentMethodViewController.swift; sourceTree = "<group>"; };
 		4BE41A5D28446EAD00760399 /* BookmarksBarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarViewModel.swift; sourceTree = "<group>"; };
 		4BE4D0BA2D8D2DE400D63840 /* BrowserServicesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BrowserServicesKit; path = ../SharedPackages/BrowserServicesKit; sourceTree = SOURCE_ROOT; };
+		FA57C0DE0000000000000017 /* HangMetrics */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = HangMetrics; path = ../SharedPackages/HangMetrics; sourceTree = SOURCE_ROOT; };
 		4BE53369286912D40019DBFD /* BookmarksBarCollectionViewItem.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = BookmarksBarCollectionViewItem.xib; sourceTree = "<group>"; };
 		4BE5336A286912D40019DBFD /* BookmarksBarCollectionViewItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarCollectionViewItem.swift; sourceTree = "<group>"; };
 		4BE5336D286915A10019DBFD /* BookmarksBarCenterAlignedLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarCenterAlignedLayout.swift; sourceTree = "<group>"; };
@@ -7505,6 +7508,7 @@
 				23F31642A4C5168A6538E6FD /* EventHub in Frameworks */,
 				84DD63DB2E9662700043A25E /* FoundationExtensions in Frameworks */,
 				F1DF95E42BD1807C0045E591 /* Crashes in Frameworks */,
+				FA57C0DE0000000000000013 /* HangMetrics in Frameworks */,
 				4B9EE3502D76C9DA00DDC75C /* MaliciousSiteProtection in Frameworks */,
 				37DF37072CF38B9F005ED34B /* PrivacyStats in Frameworks */,
 				4BF97AD32B43C43F00EB4240 /* NetworkProtectionUI in Frameworks */,
@@ -7894,6 +7898,7 @@
 				84DD63DA2E9662700043A25E /* FoundationExtensions in Frameworks */,
 				C18BF9CC2C73678500ED6B8A /* Freemium in Frameworks */,
 				F1DF95E32BD1807C0045E591 /* Crashes in Frameworks */,
+				FA57C0DE0000000000000012 /* HangMetrics in Frameworks */,
 				4B9EE3322D76C89500DDC75C /* PixelKit in Frameworks */,
 				F1E720B32E9D585E00654B4E /* AttributedMetric in Frameworks */,
 				5641734B2CFE168700F4B716 /* PixelExperimentKit in Frameworks */,
@@ -8852,6 +8857,7 @@
 				BB7D100A2DE0D9370027222A /* DesignResourcesKitIcons */,
 				7B8FDD1E2CDD877000720907 /* FeatureFlags-macOS */,
 				9DF2DB592C73B52F0025F43C /* Freemium */,
+				FA57C0DE0000000000000017 /* HangMetrics */,
 				379D7A422D384E4F00E6E1CC /* HistoryView */,
 				84AECC4F2DFBF76400438ACC /* LetsMove */,
 				9DB6E7222AA0DA7A00A17F3C /* LoginItems */,
@@ -14015,6 +14021,7 @@
 				4BCBE4572BA7E17800FC75A1 /* SubscriptionUI */,
 				9FF521472BAA909C00B9819B /* Lottie */,
 				537FC71EA5115A983FAF3170 /* Crashes */,
+				FA57C0DE0000000000000011 /* HangMetrics */,
 				F198C71F2BD18D92000BF24D /* SwiftLintTool */,
 				7B2366852C09FACD002D393F /* VPNAppLauncher */,
 				9D9DE5742C63AA0C00D20B15 /* AppKitExtensions */,
@@ -14616,6 +14623,7 @@
 				F1D43AF22B98E47800BAB743 /* BareBonesBrowserKit */,
 				9FF521452BAA908500B9819B /* Lottie */,
 				08D4923DC968236E22E373E2 /* Crashes */,
+				FA57C0DE0000000000000010 /* HangMetrics */,
 				F1DF95E62BD188B60045E591 /* LoginItems */,
 				F198C71D2BD18D88000BF24D /* SwiftLintTool */,
 				7B2366832C09FAC2002D393F /* VPNAppLauncher */,
@@ -14876,6 +14884,7 @@
 				FCFC00012F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */,
 				FCFC00012F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */,
 				FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */,
+				FA57C0DE0000000000000015 /* XCLocalSwiftPackageReference "../SharedPackages/HangMetrics" */,
 				B6DA44152616C13800DD1EC2 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
 				B6EC37F529B5DAAC001ACE79 /* XCRemoteSwiftPackageReference "swifter" */,
 				B6F997B92B8F352500476735 /* XCRemoteSwiftPackageReference "apple-toolbox" */,
@@ -21375,6 +21384,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		FA57C0DE0000000000000015 /* XCLocalSwiftPackageReference "../SharedPackages/HangMetrics" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/HangMetrics;
+		};
 		315E395D2F86A36200D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/DebugServer;
@@ -21567,6 +21580,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FAE06B199CA1F209B55B34E9 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = Crashes;
+		};
+		FA57C0DE0000000000000010 /* HangMetrics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA57C0DE0000000000000015 /* XCLocalSwiftPackageReference "../SharedPackages/HangMetrics" */;
+			productName = HangMetrics;
 		};
 		1168B916E0045A81F307E9A8 /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -22192,6 +22210,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4311906792B7676CE9535D76 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = Crashes;
+		};
+		FA57C0DE0000000000000011 /* HangMetrics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA57C0DE0000000000000015 /* XCLocalSwiftPackageReference "../SharedPackages/HangMetrics" */;
+			productName = HangMetrics;
 		};
 		5641734A2CFE168700F4B716 /* PixelExperimentKit */ = {
 			isa = XCSwiftPackageProductDependency;

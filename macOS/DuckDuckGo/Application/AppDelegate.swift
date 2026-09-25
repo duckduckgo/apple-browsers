@@ -48,6 +48,7 @@ import History
 import HistoryView
 import Lottie
 import MetricKit
+import HangMetrics
 import Network
 import Networking
 import NetworkProtectionIPC
@@ -99,6 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let watchdog: Watchdog
     private let watchdogSleepMonitor: WatchdogSleepMonitor
     private var hangReportingFeatureMonitor: HangReportingFeatureMonitor?
+    private let hangMetricsService: HangMetricsService
 
     let keyValueStore: ThrowingKeyValueStoring
 
@@ -1229,6 +1231,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         watchdog = Watchdog(eventMapper: eventMapper)
         watchdogSleepMonitor = WatchdogSleepMonitor(watchdog: watchdog)
 
+        hangMetricsService = HangMetricsService()
+
 #if !DEBUG
         if AppVersion.runType == .normal {
             hangReportingFeatureMonitor = HangReportingFeatureMonitor(
@@ -1665,6 +1669,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Touch coordinator so Next Steps delegate is registered before promo service starts (1s fallback).
         _ = newTabPageCoordinator
         promoService?.applicationDidBecomeActive()
+
+        hangMetricsService.resume()
 
         // Fire quit survey return user pixel if the user completed the survey and returned within 8-14 day window
         let quitSurveyPersistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)

@@ -1,6 +1,5 @@
 //
 //  HangMetricsSubscriberTests.swift
-//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,9 +17,8 @@
 //
 
 import XCTest
-import Core
 @_spi(Testing) import Persistence
-@testable import DuckDuckGo
+@testable import HangMetrics
 
 final class HangMetricsSubscriberTests: XCTestCase {
 
@@ -50,9 +48,9 @@ final class HangMetricsSubscriberTests: XCTestCase {
 
         XCTAssertEqual(fired.count, 1)
         XCTAssertEqual(fired.first?.name, "app-hangs_metrickit_hang-bucket")
-        XCTAssertEqual(fired.first?.parameters?[PixelParameters.hangTimeMinMs], "123")
-        XCTAssertEqual(fired.first?.parameters?[PixelParameters.hangTimeMaxMs], "457")
-        XCTAssertEqual(fired.first?.parameters?[PixelParameters.hangCount], "17")
+        XCTAssertEqual(fired.first?.parameters?[HangMetricsPixelParameters.minMs], "123")
+        XCTAssertEqual(fired.first?.parameters?[HangMetricsPixelParameters.maxMs], "457")
+        XCTAssertEqual(fired.first?.parameters?[HangMetricsPixelParameters.count], "17")
     }
 
     func testFiresOncePerBucketRatherThanOncePerHang() {
@@ -65,7 +63,7 @@ final class HangMetricsSubscriberTests: XCTestCase {
         ])])
 
         XCTAssertEqual(fired.count, 2)
-        XCTAssertEqual(fired.compactMap { $0.parameters?[PixelParameters.hangCount] }, ["40", "9"])
+        XCTAssertEqual(fired.compactMap { $0.parameters?[HangMetricsPixelParameters.count] }, ["40", "9"])
     }
 
     func testPersistsMarkerAndSuppressesDuplicateDelivery() {

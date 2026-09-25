@@ -25,7 +25,7 @@ final class NewTabPageSwiftUIBlock<Content: View>: NewTabPageBlock {
 
     let id: NewTabPageBlockID
 
-    private let hostingController: UIHostingController<Content>
+    private let hostingController: UIHostingController<NewTabPageBlockContent<Content>>
 
     var viewController: UIViewController { hostingController }
 
@@ -34,11 +34,44 @@ final class NewTabPageSwiftUIBlock<Content: View>: NewTabPageBlock {
 
         // The page already positions blocks inside its own safe area, so a hosting controller
         // applying the safe area again would inset the block a second time.
-        hostingController = UIHostingController(rootView: rootView, ignoreSafeArea: true)
+        hostingController = UIHostingController(rootView: NewTabPageBlockContent(content: rootView), ignoreSafeArea: true)
         hostingController.view.backgroundColor = .clear
         if #available(iOS 16.0, *) {
             // The UIKit stack must resize when SwiftUI content changes, including See All/See Less.
             hostingController.sizingOptions = [.intrinsicContentSize]
+        } else {
+            // iOS 15 does not automatically notify the UIKit stack when SwiftUI's ideal
+            // height changes. Observe the content at its proposed width, including rotation.
+            hostingController.rootView.onHeightChanged = { [weak hostingController] in
+                hostingController?.view.invalidateIntrinsicContentSize()
+                hostingController?.view.superview?.setNeedsLayout()
+            }
         }
+    }
+}
+
+private struct NewTabPageBlockContent<Content: View>: View {
+    let content: Content
+    var onHeightChanged: (() -> Void)?
+
+    var body: some View {
+        content
+            .fixedSize(horizontal: false, vertical: true)
+            .background {
+                GeometryReader { geometry in
+                    Color.clear.preference(key: NewTabPageBlockHeightKey.self, value: geometry.size.height)
+                }
+            }
+            .onPreferenceChange(NewTabPageBlockHeightKey.self) { _ in
+                onHeightChanged?()
+            }
+    }
+}
+
+private struct NewTabPageBlockHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }

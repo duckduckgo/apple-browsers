@@ -139,6 +139,9 @@ public struct AIChatNativeConfigValues: Codable {
     /// to native after `getUserMedia` rejects. Native surfaces the OS microphone-disabled
     /// prompt with dictation-specific copy.
     public let supportsNativeDictationPermissionHandler: Bool
+    /// `true` when clearing Duck.ai data also removes the images' blob files from IndexedDB, so the FE
+    /// can run its one-time sweep of blob files orphaned by older clears.
+    public let supportsBlobSafeDataClearing: Bool
     /// Whether this is a new or returning (reinstall) install — `unknown` when the platform
     /// can't tell. Surfaced on the `web.conversion.duckai.prompt` pixel.
     public let installType: AIChatInstallType
@@ -147,6 +150,10 @@ public struct AIChatNativeConfigValues: Codable {
     public let installAge: Int
     /// Native-owned attachment caps read by the sidebar; nil (omitted) means no caps.
     public let attachmentLimits: AIChatNativeAttachmentLimits?
+    /// `true` when native exposes the browser tools bridge, so Duck.ai may open an MCP session
+    /// and discover tools. The front end must not open a session when this is false — it also
+    /// serves as version-skew protection against builds that predate the bridge.
+    public let supportsBrowserTools: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -218,9 +225,11 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsNativeUsageWarnings: Bool = false,
                 supportsNativeVoicePermissionHandler: Bool = false,
                 supportsNativeDictationPermissionHandler: Bool = false,
+                supportsBlobSafeDataClearing: Bool = false,
                 installType: AIChatInstallType = .new,
                 installAge: Int = 0,
-                attachmentLimits: AIChatNativeAttachmentLimits? = nil) {
+                attachmentLimits: AIChatNativeAttachmentLimits? = nil,
+                supportsBrowserTools: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -246,9 +255,11 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsNativeUsageWarnings = supportsNativeUsageWarnings
         self.supportsNativeVoicePermissionHandler = supportsNativeVoicePermissionHandler
         self.supportsNativeDictationPermissionHandler = supportsNativeDictationPermissionHandler
+        self.supportsBlobSafeDataClearing = supportsBlobSafeDataClearing
         self.installType = installType
         self.installAge = installAge
         self.attachmentLimits = attachmentLimits
+        self.supportsBrowserTools = supportsBrowserTools
     }
 
     /// Buckets the days between the install date and `now` into the values expected by the

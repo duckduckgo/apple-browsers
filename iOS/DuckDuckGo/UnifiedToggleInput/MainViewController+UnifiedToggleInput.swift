@@ -173,9 +173,19 @@ extension MainViewController {
         viewCoordinator.setAITabBottomChromeHidden(hidesInputBar)
     }
 
-    /// Hides the header chats/compose pill while a voice session is in progress. Idempotent.
+    /// Paints the header + status strip the voice colour while the voice chrome is active. Idempotent.
     func reconcileVoiceSessionChromeForCurrentTab() {
-        aiChatTabChatHeaderView?.setVoiceSessionActive(aiTabChromeDecision().voiceChromeActive)
+        let voiceChromeActive = aiTabChromeDecision().voiceChromeActive
+        let backgroundColor = voiceChromeActive ? voiceModeBackgroundColor : nil
+        aiChatTabChatHeaderView?.setVoiceSessionActive(voiceChromeActive, backgroundColor: backgroundColor)
+        viewCoordinator.setVoiceMode(backgroundColor: backgroundColor)
+        setNeedsStatusBarAppearanceUpdate()
+    }
+
+    /// The exact colour the FE sent via `voiceModeOpened`, falling back to the design-system token.
+    private var voiceModeBackgroundColor: UIColor {
+        let hex = unifiedToggleInputCoordinator?.voiceModeBackgroundColorHex
+        return hex.flatMap(UIColor.init(voiceModeHex:)) ?? UIColor(singleUseColor: .duckAIVoiceModeBackground)
     }
 
     /// Applies both AI-chrome reconciles together — call from every refresh path so adding a new
@@ -311,6 +321,7 @@ extension MainViewController {
             webView.backgroundColor = webViewBackgroundColor
             webView.scrollView.backgroundColor = webViewBackgroundColor
             webView.underPageBackgroundColor = webViewBackgroundColor
+            currentTab?.pullToRefreshViewAdapter?.webViewBackgroundDidChange()
         }
     }
 
@@ -588,6 +599,11 @@ private extension MainViewController {
     }
 
     func subscribeToSystemEvents() {
+        unifiedToggleInputCoordinator?.onSubscriptionUpsellAvailabilityChanged = { [weak self] in
+            guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+            self.aiChatTabChatHeaderView?.setAllowsSubscriptionUpsell(coordinator.modelStore.shouldShowHeaderUpsell)
+        }
+
         NotificationCenter.default.publisher(for: .speechRecognizerDidChangeAvailability)
             .sink { [weak self] _ in
                 guard let self else { return }
@@ -624,20 +640,21 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
-        // Per-tab so background voice tabs persist their state until re-activated.
-        NotificationCenter.default.publisher(for: .aiChatVoiceSessionStarted)
-            .compactMap { $0.object as? WKWebView }
+        // Voice chrome syncs off the FE's paint events (`voiceModeOpened`/`Closed`), not the mic events.
+        NotificationCenter.default.publisher(for: .aiChatVoiceModeOpened)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] webView in
-                self?.updateVoiceSessionActive(true, for: webView)
+            .sink { [weak self] notification in
+                guard let webView = notification.object as? WKWebView else { return }
+                let backgroundColorHex = notification.userInfo?[AIChatNotificationUserInfoKey.voiceModeBackgroundColor] as? String
+                self?.updateVoiceSessionActive(true, backgroundColorHex: backgroundColorHex, for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
 
-        NotificationCenter.default.publisher(for: .aiChatVoiceSessionEnded)
+        NotificationCenter.default.publisher(for: .aiChatVoiceModeClosed)
             .compactMap { $0.object as? WKWebView }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] webView in
-                self?.updateVoiceSessionActive(false, for: webView)
+                self?.updateVoiceSessionActive(false, backgroundColorHex: nil, for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
 
@@ -708,9 +725,10 @@ private extension MainViewController {
         }
     }
 
-    private func updateVoiceSessionActive(_ active: Bool, for webView: WKWebView) {
+    private func updateVoiceSessionActive(_ active: Bool, backgroundColorHex: String?, for webView: WKWebView) {
         guard let controller = tabManager.controller(forWebView: webView) else { return }
         if controller === currentTab, let coordinator = unifiedToggleInputCoordinator {
+            coordinator.voiceModeBackgroundColorHex = backgroundColorHex
             coordinator.isVoiceSessionActive = active
             return
         }
@@ -776,7 +794,8 @@ private extension MainViewController {
         // Assert input-hidden synchronously for voice-mode tabs so the bottom chrome doesn't
         // flash visible during the FE's "Connecting…" window. One-shot intent — consume the
         // flag here so later refreshes (e.g. AI→AI navigation taking the preserve-current
-        // path) don't re-hide the UTI after the FE has shown it.
+        // path) don't re-hide the UTI after the FE has shown it. The navy chrome itself is
+        // driven by the FE's `voiceModeOpened`/`Closed` events, which fire at the paint moment.
         if tab.isVoiceModeRequested, coordinator.aiChatInputBoxVisibility != .hidden {
             coordinator.aiChatInputBoxVisibility = .hidden
         }
@@ -924,7 +943,10 @@ private extension MainViewController {
         Task { @MainActor [weak self] in
             let isActive = (try? await AppDependencyProvider.shared.subscriptionManager.isFeatureEnabled(.paidAIChat)) ?? false
             self?.isPaidAIChatEnabledForSwipe = isActive
-            self?.aiChatTabChatHeaderView?.configure(isSubscriptionActive: isActive)
+            guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+            self.aiChatTabChatHeaderView?.configure(
+                isSubscriptionActive: isActive,
+                allowsSubscriptionUpsell: coordinator.modelStore.shouldShowHeaderUpsell)
         }
     }
 }
@@ -949,6 +971,7 @@ extension MainViewController {
     }
 
     func applyTopChromeState(renderState: UTIRenderState, isOnAITab: Bool, coordinator: UnifiedToggleInputCoordinator) {
+        updateUnifiedInputContentPresentation(presentation: newTabPageInputPresentation, isOnAITab: isOnAITab)
         if isOnAITab, viewCoordinator.isNavigationChromeHidden {
             let chromeBackgroundState = aiTabChromeBackgroundState(for: renderState)
             applyUnifiedInputChromeBackground(chromeBackgroundState, updateWebView: false)
@@ -993,6 +1016,7 @@ extension MainViewController {
         contentVC.onDismissRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             if coordinator.isOmnibarSession {
+                self.onExperimentalAddressBarCancelPressed()
                 if let tab = self.tabManager.currentTabsModel.currentTab, tab.link == nil {
                     self.ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
                 }
@@ -1019,6 +1043,13 @@ extension MainViewController {
             contentVC.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
         contentVC.didMove(toParent: self)
+        updateUnifiedInputContentPresentation(presentation: newTabPageInputPresentation, isOnAITab: currentTab?.isAITab == true)
+    }
+
+    /// Selects presentation only. The content controller and its view stay installed for the session.
+    func updateUnifiedInputContentPresentation(presentation: NewTabPageInputPresentation, isOnAITab: Bool) {
+        unifiedToggleInputCoordinator?.contentViewController.usesRedesignedNewTabPageLayout =
+            presentation.usesRedesignedFocusedLayout(isOnAITab: isOnAITab)
     }
 
     func installFloatingReturnKeyViewController() {
@@ -1078,6 +1109,11 @@ extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
+        if viewCoordinator.newTabPageInputPresentation.transition == .inlineInput {
+            dismissInlineNewTabPageInput(coordinator: coordinator, animated: true, completion: completion)
+            return
+        }
+
         let omnibarPlaceholderWindowX = omnibarPlaceholderWindowXForHandoff(coordinator)
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
@@ -1163,7 +1199,7 @@ extension MainViewController {
         newTabPageViewController?.setFavoritesHidden(false)
     }
 
-    private func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
+    func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         applyUnifiedInputChromeBackground(.standardChrome)
         applyFloatingUIIfNeeded()
@@ -1181,6 +1217,8 @@ extension MainViewController {
         coordinator.clearText()
         reconcileToolbarVisibilityForCurrentTab()
         reconcileFloatingLayoutAfterUTIExit()
+        // The unified input dismisses on its own path, apart from `dismissOmniBar`.
+        updateAddressBarSuppressionForNewTabPage()
         completion?()
     }
 
@@ -1279,6 +1317,9 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
               currentTab?.isAITab != true else {
             return .allowDefault
         }
+        // Reveal before unified input measures the bar for its transition.
+        revealAddressBarForEditing()
+        defer { finishNewTabPageInputHandoff() }
         if tapped {
             onExperimentalAddressBarTapped()
         }
@@ -1499,11 +1540,12 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapUpgrade() {
+        guard let policy = unifiedToggleInputCoordinator?.subscriptionUpsellPolicy, policy.isPurchaseEligible else { return }
         if let subscriptionState = unifiedToggleInputCoordinator?.subscriptionState, !subscriptionState.hasActiveSubscription {
             PixelKit.fire(Pixel.Event.unifiedToggleInputChatHeaderUpgradeTapped,
                           options: .parameters([AttributionParameter.origin: SubscriptionFunnelOrigin.duckAIFreeLabel.rawValue]))
         }
-        DuckAISubscriptionUpsellPresenter().presentPurchaseFlow(origin: .duckAIFreeLabel)
+        DuckAISubscriptionUpsellPresenter(policy: policy).presentPurchaseFlow(origin: .duckAIFreeLabel)
     }
 
     /// Close the chat tab. Selection follows the tab-switcher rule; chat is recoverable via Duck.ai → Recent chats.
@@ -1609,4 +1651,19 @@ extension MainViewController: UnifiedToggleInputFloatingReturnKeyDelegate {
         coordinator.insertNewlineFromFloatingReturnKey()
     }
 
+}
+
+private extension UIColor {
+    /// Parses an FE-provided `#RRGGBB` / `RRGGBB` (optionally `#RRGGBBAA`) hex string. Returns `nil` on
+    /// malformed input so callers can fall back to a design-system token.
+    convenience init?(voiceModeHex hex: String) {
+        var string = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if string.hasPrefix("#") { string.removeFirst() }
+        guard string.count == 6 || string.count == 8, var value = UInt64(string, radix: 16) else { return nil }
+        if string.count == 6 { value = (value << 8) | 0xFF }   // canonicalise to RRGGBBAA (opaque)
+        self.init(red: CGFloat((value >> 24) & 0xFF) / 255,
+                  green: CGFloat((value >> 16) & 0xFF) / 255,
+                  blue: CGFloat((value >> 8) & 0xFF) / 255,
+                  alpha: CGFloat(value & 0xFF) / 255)
+    }
 }

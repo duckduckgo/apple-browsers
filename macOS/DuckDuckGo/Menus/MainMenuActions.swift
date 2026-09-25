@@ -475,19 +475,19 @@ extension AppDelegate {
 
     @objc func openImportBookmarksWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportFlowLauncher(pinningManager: self.pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+            DataImportFlowLauncher(pinningManager: self.pinningManager).launchDataImport()
         }
     }
 
     @objc func openImportPasswordsWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportFlowLauncher(pinningManager: self.pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+            DataImportFlowLauncher(pinningManager: self.pinningManager).launchDataImport()
         }
     }
 
     @objc func openImportBrowserDataWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportFlowLauncher(pinningManager: self.pinningManager).launchDataImport(isDataTypePickerExpanded: false)
+            DataImportFlowLauncher(pinningManager: self.pinningManager).launchDataImport()
         }
     }
 
@@ -848,6 +848,7 @@ extension AppDelegate {
 
     @objc func resetOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
+        NonBlockingOnboardingPersistor().reset()
     }
 
     @objc func resetHomePageSettingsOnboarding(_ sender: Any?) {
@@ -891,6 +892,7 @@ extension AppDelegate {
     @objc func resetQuitSurveyWasShown(_ sender: Any?) {
         let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
         persistor.hasQuitAppBefore = false
+        promoService?.undismiss(promoId: PromoServiceFactory.quitSurveyPromoID, clearHistory: true)
     }
 
     @objc func resetTipKit(_ sender: Any?) {
@@ -1127,7 +1129,7 @@ extension MainViewController {
                 showFloatingAIChatShortcutCloseConfirmation(at: index, currentEvent: currentEvent) { [weak self] in
                     guard let self else { return }
                     self.aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
-                    self.tabCollectionViewModel.remove(at: index)
+                    self.tabCollectionViewModel.close(at: index)
                 }
                 return
             }
@@ -1138,13 +1140,13 @@ extension MainViewController {
                         showPinnedTabCloseConfirmation(atPinnedIndex: pinnedIndex, currentEvent: currentEvent) { [weak self] in
                             guard let self else { return }
                             self.aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
-                            self.tabCollectionViewModel.remove(at: .pinned(pinnedIndex))
+                            self.tabCollectionViewModel.close(at: .pinned(pinnedIndex))
                         }
                         return
                     }
 
                     aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
-                    tabCollectionViewModel.remove(at: index)
+                    tabCollectionViewModel.close(at: index)
                     return
                 }
 
@@ -1164,7 +1166,7 @@ extension MainViewController {
         }
 
         aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
-        tabCollectionViewModel.remove(at: index)
+        tabCollectionViewModel.close(at: index)
     }
 
     @MainActor
@@ -1625,11 +1627,19 @@ extension MainViewController {
     @objc func moveTabToNewWindow(_ sender: Any?) {
         guard let (tab, index) = getActiveTabAndIndex() else { return }
 
+        guard let oldWebExtensionIndex = tabCollectionViewModel.webExtensionIndex(for: index) else { return }
+        var destinationWindow: NSWindow?
+
         // The tab moves to a new window; it isn't closed and reopened.
         TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
             tabCollectionViewModel.remove(at: index)
-            WindowsManager.openNewWindow(with: tab)
+            destinationWindow = WindowsManager.openNewWindow(with: tab)
         }
+        guard let destinationWindow else {
+            assertionFailure("Failed to open new window")
+            return
+        }
+        tabCollectionViewModel.notifyWebExtensionTabMoved(tab, from: oldWebExtensionIndex)
     }
 
     @objc func newTabNextToActive(_ sender: Any?) {
@@ -1672,6 +1682,14 @@ extension MainViewController {
         let otherTabCollectionViewModels = otherMainViewControllers.map { $0.tabCollectionViewModel }
         let otherTabs = otherTabCollectionViewModels.flatMap { $0.tabCollection.tabs }
         let otherLocalHistoryOfRemovedTabs = Set(otherTabCollectionViewModels.flatMap { $0.tabCollection.localHistoryOfRemovedTabs })
+        let movedWebExtensionTabs = otherWindowControllers.flatMap { windowController in
+            let viewModel = windowController.mainViewController.tabCollectionViewModel
+            return viewModel.tabCollection.tabs.enumerated().compactMap { index, tab -> (Tab, Int, TabCollectionViewModel)? in
+                guard case .loaded(let tab) = tab,
+                      let oldIndex = viewModel.webExtensionIndex(for: .unpinned(index)) else { return nil }
+                return (tab, oldIndex, viewModel)
+            }
+        }
 
         // The merged tabs stay alive under the same identity; they aren't newly opened.
         TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
@@ -1682,6 +1700,10 @@ extension MainViewController {
         // Tabs from `otherTabCollectionViewModels` were moved to `tabCollectionViewModel`
         // clear the collection models so they are empty at `deinit` and no deinit checks assert.
         otherTabCollectionViewModels.forEach { $0.clearAfterMerge() }
+
+        for (tab, oldIndex, sourceViewModel) in movedWebExtensionTabs {
+            sourceViewModel.notifyWebExtensionTabMoved(tab, from: oldIndex)
+        }
 
         // Close the now-empty source windows last. Closing them while they still held the tabs would
         // let WebKit tear the (still-registered) moved tabs down together with their old window.
@@ -2072,7 +2094,7 @@ extension AppDelegate: NSMenuItemValidation {
 
     @MainActor
     private var isUserInteractionAllowed: Bool {
-        OnboardingActionsManager.isOnboardingFinished
+        OnboardingActionsManager.isOnboardingFinished || NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
     }
 
     private var areTherePasswords: Bool {

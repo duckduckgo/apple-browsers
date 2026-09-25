@@ -60,6 +60,101 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertEqual(tabCollectionViewModel.tabs[0].content, .newtab)
     }
 
+    // MARK: - Close lifecycle
+
+    @MainActor
+    func testLockedCloseDoesNotNotifyButForcedCloseDoes() {
+        let sut = TabCollectionViewModel.aTabCollectionViewModel()
+        guard case .loaded(let tab) = sut.tabs[0] else { return XCTFail("Expected loaded tab") }
+        var closes = 0
+        let tabID = tab.uuid
+        tab.onClose = { [weak sut] in
+            XCTAssertTrue(sut?.tabCollection.contains(uuid: tabID) == true)
+            closes += 1
+        }
+        sut.close(at: .unpinned(100))
+        XCTAssertEqual(closes, 0)
+        sut.changesEnabled = false
+        sut.close(at: .unpinned(0))
+        XCTAssertEqual(closes, 0)
+        XCTAssertEqual(sut.tabs.count, 1)
+        sut.close(at: .unpinned(0), forceChange: true)
+        XCTAssertEqual(closes, 1)
+        XCTAssertTrue(sut.tabs.isEmpty)
+    }
+
+    @MainActor
+    func testMovesPinningAndRawRemovalDoNotNotifyClose() {
+        let source = TabCollectionViewModel.aTabCollectionViewModel()
+        let destination = TabCollectionViewModel.aTabCollectionViewModel()
+        guard case .loaded(let tab) = source.tabs[0] else { return XCTFail("Expected loaded tab") }
+        var closes = 0
+        tab.onClose = { closes += 1 }
+
+        source.pinTab(at: 0)
+        XCTAssertEqual(source.pinnedTabs.count, 1)
+        source.unpinTab(at: 0)
+        XCTAssertTrue(source.tabCollection.contains(tab: tab))
+        source.moveTab(at: 0, to: destination, at: 1)
+        XCTAssertFalse(source.tabCollection.contains(tab: tab))
+        XCTAssertTrue(destination.tabCollection.contains(tab: tab))
+        destination.remove(at: .unpinned(1))
+        XCTAssertFalse(destination.tabCollection.contains(tab: tab))
+
+        XCTAssertEqual(closes, 0)
+    }
+
+    @MainActor
+    func testWhenReorderingTabThenWebExtensionMoveIsReportedWithOldIndexAndSameIdentity() {
+        let firstTab = Tab(content: .newtab)
+        let secondTab = Tab(content: .newtab)
+        let delegate = TabCollectionViewModelDelegateMock()
+        let sut = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [firstTab, secondTab]),
+            pinnedTabsManagerProvider: nil)
+        sut.delegate = delegate
+
+        sut.moveTab(at: .unpinned(0), to: .unpinned(1))
+
+        XCTAssertEqual(delegate.webExtensionTabMoves.count, 1)
+        XCTAssertIdentical(delegate.webExtensionTabMoves[0].tab, firstTab)
+        XCTAssertEqual(delegate.webExtensionTabMoves[0].oldIndex, 0)
+    }
+
+    @MainActor
+    func testWhenMovingTabToSameIndexThenWebExtensionMoveIsNotReported() {
+        let tab = Tab(content: .newtab)
+        let delegate = TabCollectionViewModelDelegateMock()
+        let sut = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [tab]),
+            pinnedTabsManagerProvider: nil)
+        sut.delegate = delegate
+
+        sut.moveTab(at: .unpinned(0), to: .unpinned(0))
+
+        XCTAssertTrue(delegate.webExtensionTabMoves.isEmpty)
+        XCTAssertIdentical(sut.tabCollection.loadedTabs.first, tab)
+    }
+
+    @MainActor
+    func testWhenMovingTabToAnotherViewModelThenWebExtensionMoveIsReportedBySource() {
+        let movedTab = Tab(content: .newtab)
+        let delegate = TabCollectionViewModelDelegateMock()
+        let source = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [movedTab]),
+            pinnedTabsManagerProvider: nil)
+        source.delegate = delegate
+        let destination = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [Tab(content: .newtab)]),
+            pinnedTabsManagerProvider: nil)
+
+        source.moveTab(at: .unpinned(0), to: destination, at: .unpinned(1))
+
+        XCTAssertEqual(delegate.webExtensionTabMoves.count, 1)
+        XCTAssertIdentical(delegate.webExtensionTabMoves[0].tab, movedTab)
+        XCTAssertEqual(delegate.webExtensionTabMoves[0].oldIndex, 0)
+    }
+
     // MARK: - Select
 
     @MainActor
@@ -504,6 +599,12 @@ final class TabCollectionViewModelTests: XCTestCase {
         tabCollectionViewModel.removeAllTabs(except: 0)
 
         XCTAssertEqual(firstTab, tabCollectionViewModel.selectedTabViewModel.map { .loaded($0.tab) })
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1)
+        guard case .loaded(let retainedTab) = tabCollectionViewModel.tabCollection.tabs[0],
+              case .loaded(let originalTab) = firstTab else {
+            return XCTFail("Expected the retained tab to stay loaded")
+        }
+        XCTAssertTrue(retainedTab === originalTab)
     }
 
     @MainActor
@@ -626,7 +727,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         // Select and remove childTab2
         tabCollectionViewModel.selectPrevious()
-        _ = tabCollectionViewModel.removeSelected()
+        _ = tabCollectionViewModel.closeSelected()
 
         XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.tab, childTab1)
     }
@@ -684,7 +785,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         tabCollectionViewModel.appendNewTab()
         let selectedTab = tabCollectionViewModel.selectedTabViewModel?.tab
 
-        _ = tabCollectionViewModel.removeSelected()
+        _ = tabCollectionViewModel.closeSelected()
 
         XCTAssertFalse(tabCollectionViewModel.tabCollection.contains(tab: selectedTab!))
     }
@@ -1110,7 +1211,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testPopupVM_WhenDuplicatingTab_OpensInCorrectLocation() {
+    func testPopupVM_WhenDuplicatingTab_OpensInCorrectLocation() throws {
         // Given: A popup window with a tab that has a parent
         let parentTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui))
         let initialTab = Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui), parentTab: parentTab)
@@ -1127,9 +1228,12 @@ final class TabCollectionViewModelTests: XCTestCase {
         // Verify window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
         XCTAssertEqual(windowControllersManager.openCalls, [])
-        XCTAssertEqual(windowControllersManager.openTabCalls, [
-            .init(tab: initialTab, parentTab: parentTab, selected: true)
-        ])
+        XCTAssertEqual(windowControllersManager.openTabCalls.count, 1)
+        let openTabCall = try XCTUnwrap(windowControllersManager.openTabCalls.first)
+        XCTAssertFalse(openTabCall.tab === initialTab)
+        XCTAssertEqual(openTabCall.tab.content, initialTab.content.loadedFromCache())
+        XCTAssertEqual(openTabCall.parentTab, parentTab)
+        XCTAssertTrue(openTabCall.selected)
         XCTAssertEqual(windowControllersManager.openWindowCalls, [])
     }
 
@@ -1603,6 +1707,9 @@ private final class ItemCountMirroringDelegateMock: TabCollectionViewModelDelega
 
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didReplaceTabAt index: TabIndex) {}
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: TabIndex, to newIndex: TabIndex) {}
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel,
+                                didMoveTab tab: Tab,
+                                fromWebExtensionIndex oldIndex: Int) {}
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?) {}
 
     private func apply(_ change: Int, in tabCollectionViewModel: TabCollectionViewModel, from method: String) {

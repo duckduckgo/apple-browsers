@@ -392,7 +392,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the model picker chip (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the model picker chip.
     var isModelPickerEnabled: Bool = false {
         didSet { refreshModelPickerVisibility() }
     }
@@ -443,7 +443,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the reasoning picker chip (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the reasoning picker chip.
     var isReasoningPickerEnabled: Bool = false {
         didSet { refreshReasoningPickerVisibility() }
     }
@@ -486,7 +486,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the tool picker chip (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the tool picker chip.
     var isToolPickerEnabled: Bool = false {
         didSet { refreshToolPickerVisibility() }
     }
@@ -610,7 +610,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the attach button (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the attach button.
     var isAttachButtonEnabled: Bool = false {
         didSet { refreshAttachButtonVisibility() }
     }
@@ -746,7 +746,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private lazy var glassEffect: UIVisualEffectView = makeGlassEffectView(configuration: desiredGlassConfiguration)
     private var glassEffectConfiguration: FloatingFieldGlassConfiguration?
-    private var embeddedGlassInterfaceStyle: UIUserInterfaceStyle?
+    private var pageGlassInterfaceStyle: UIUserInterfaceStyle?
 
     private var desiredGlassConfiguration: FloatingFieldGlassConfiguration {
         FloatingFieldGlassConfiguration(
@@ -757,8 +757,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private var desiredGlassInterfaceStyle: UIUserInterfaceStyle {
-        if isBottomFloatingField, !isFloatingMinimalChromeBar, let embeddedGlassInterfaceStyle {
-            return embeddedGlassInterfaceStyle
+        if let pageGlassInterfaceStyle {
+            return pageGlassInterfaceStyle
         }
         return window?.traitCollection.userInterfaceStyle ?? traitCollection.userInterfaceStyle
     }
@@ -934,7 +934,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle? = nil) {
         if let interfaceStyle {
-            embeddedGlassInterfaceStyle = interfaceStyle
+            pageGlassInterfaceStyle = interfaceStyle
         }
         glassEffectConfiguration = nil
         updateFireModeAppearance()
@@ -950,6 +950,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             removeMinimalChromeButtonGlass()
         }
         makeGlass()
+        applyPageGlassInterfaceStyle()
         setNeedsLayout()
     }
 
@@ -1328,9 +1329,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         // Stack siblings of searchAreaContainerView, so the loop above misses them — same override needed.
         leadingButtonsContainer.overrideUserInterfaceStyle = style
         trailingButtonsContainer.overrideUserInterfaceStyle = style
-        if isBottomFloatingField, !isFloatingMinimalChromeBar, !fireMode, let embeddedGlassInterfaceStyle {
-            glassEffect.overrideUserInterfaceStyle = embeddedGlassInterfaceStyle
-        }
         // When floating, the chrome (and the address text) lives inside `floatingGlassContentHostView`,
         // which in non-fire mode is reparented into `glassEffect.contentView` and so isn't reached by
         // the loop above. Apply the style directly so it resets to `.unspecified` in non-fire mode and
@@ -1339,7 +1337,16 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             floatingGlassContentHostView.overrideUserInterfaceStyle = style
         }
         refreshMinimalChromeGlassTint()
+        applyPageGlassInterfaceStyle()
         progressView?.updateFireModeAppearance(fireMode: fireMode)
+    }
+
+    /// Matches the field and minimal chrome button glass to the page, so a light page gets light glass in dark mode.
+    private func applyPageGlassInterfaceStyle() {
+        guard !fireMode, let pageGlassInterfaceStyle else { return }
+        glassEffect.overrideUserInterfaceStyle = pageGlassInterfaceStyle
+        leadingButtonsGlassView?.overrideUserInterfaceStyle = pageGlassInterfaceStyle
+        trailingButtonsGlassView?.overrideUserInterfaceStyle = pageGlassInterfaceStyle
     }
 
     private func updateShadows() {
@@ -1388,6 +1395,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         aiChatButton.accessibilityLabel = UserText.duckAiFeatureName
         aiChatButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
         aiChatButton.accessibilityTraits = .button
+
+        customizableButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Customizable"
 
         // This is for compatibility purposes with old OmniBar
         searchAreaView.textField.accessibilityIdentifier = "searchEntry"

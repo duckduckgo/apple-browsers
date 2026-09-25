@@ -73,4 +73,13 @@ protocol ExternalPromoDelegate: PromoDelegate {
 
     /// Result to apply when the external promo is hidden.
     var resultWhenHidden: PromoResult { get }
+
+    /// Called after visibility and any conflicting promo retractions have been applied.
+    @MainActor
+    func promoServiceDidApplyVisibility(_ isVisible: Bool)
+}
+
+extension ExternalPromoDelegate {
+    @MainActor
+    func promoServiceDidApplyVisibility(_ isVisible: Bool) { }
 }

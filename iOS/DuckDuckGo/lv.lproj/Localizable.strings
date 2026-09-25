@@ -223,6 +223,9 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
+"action.title.vpn.free-trial-badge" = "Bezm. izmēģin.";
+
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Bloķē uzmācīgus izsekotājus, pirms tie tiek ielādēti, tādējādi efektīvi novēršot reklāmas, kas balstās uz izsekošanu.";
 
@@ -477,6 +480,9 @@
 
 /* Title for the image generation tool in the unified input tools menu */
 "aichat.toolbar.tools.imagegeneration.title" = "Izveidot attēlu";
+
+/* Subtitle for the image generation tool in the unified input tools menu, shown when the chat is already under way on a model that cannot generate images */
+"aichat.toolbar.tools.imagegeneration.unavailable.subtitle" = "Nav pieejams izvēlētajam modelim";
 
 /* Subtitle for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.subtitle" = "Meklēt atbildes tīmeklī";

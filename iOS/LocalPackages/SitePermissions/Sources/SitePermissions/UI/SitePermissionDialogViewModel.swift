@@ -60,7 +60,7 @@ public struct SitePermissionDialogViewModel: Equatable, Sendable {
         }
     }
 
-    enum Icon: Equatable, Sendable {
+    enum Icon: Hashable, Sendable {
         case camera
         case microphone
     }
@@ -71,18 +71,18 @@ public struct SitePermissionDialogViewModel: Equatable, Sendable {
 
     let domain: String
     let permissionTypes: Set<SitePermissionType>
-    let icon: Icon?
+    let icons: [Icon]
 
     public init?(prompt: SitePermissionPrompt) {
         domain = prompt.site.host
         permissionTypes = prompt.permissionTypes
         switch prompt.permissionTypes {
         case [.camera]:
-            icon = .camera
+            icons = [.camera]
         case [.microphone]:
-            icon = .microphone
+            icons = [.microphone]
         case [.camera, .microphone]:
-            icon = nil
+            icons = [.camera, .microphone]
         default:
             return nil
         }

@@ -71,4 +71,12 @@ public enum SitePermissionsEvent: Equatable, Sendable {
     case permissionReminderDialog(type: PermissionType, action: ReminderDialogAction)
     case permissionSystemSettingsOpened(type: PermissionType)
     case voiceSearchPermissionPrompt(action: VoiceSearchPermissionPromptAction)
+    case permissionCenterOpened
+    case permissionCenterChanged(type: SitePermissionType, from: SitePermissionDecision, to: SitePermissionDecision)
+    case permissionCenterDismissedDirty
+    case permissionRemoveSite
+    case permissionRemoveAll
+    case permissionRemoveUndo
+    case settingsSitePermissionsOpen
+    case settingsSitePermissionsGlobalChanged(type: SitePermissionType, to: GlobalSitePermissionDecision)
 }

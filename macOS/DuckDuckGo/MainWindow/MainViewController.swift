@@ -177,6 +177,11 @@ final class MainViewController: NSViewController {
         self.pinningManager = pinningManager
         self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
 
+        let duckAiNativeStorageHandler = if tabCollectionViewModel.isBurner {
+            NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: tabCollectionViewModel.burnerMode)
+        } else {
+            NSApp.delegateTyped.duckAiNativeStorageHandler
+        }
         tabBarViewController = TabBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
@@ -184,6 +189,7 @@ final class MainViewController: NSViewController {
             activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel,
             featureFlagger: featureFlagger,
             aiChatMenuConfig: aiChatMenuConfig,
+            nativeStorageHandler: duckAiNativeStorageHandler,
             tabDragAndDropManager: tabDragAndDropManager,
             cookiePopupsBlockedPromoDelegate: NSApp.delegateTyped.cookiePopupsBlockedPromoDelegate
         )
@@ -335,10 +341,6 @@ final class MainViewController: NSViewController {
             ),
             historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
         )
-        // Fire Windows resolve to their own isolated handler, so a burner omnibar reads none of the
-        // regular session's Duck.ai storage.
-        let duckAiNativeStorageHandler = NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: tabCollectionViewModel.burnerMode)
-            ?? NSApp.delegateTyped.duckAiNativeStorageHandler
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,
             surface: .addressBar,
@@ -452,9 +454,6 @@ final class MainViewController: NSViewController {
         updateReloadMenuItem()
         updateStopMenuItem()
         browserTabViewController.windowDidBecomeKey()
-        if !featureFlagger.isFeatureOn(.promoQueue) {
-            showSetAsDefaultAndAddToDockIfNeeded()
-        }
         showWinBackOfferIfNeeded()
     }
 
@@ -602,11 +601,19 @@ final class MainViewController: NSViewController {
     }
 
     func openNewDuckAIChatTab() {
+        openDuckAIChatTab(with: .newChat, source: .tabBarButton)
+    }
+
+    func openDuckAIChatHistory() {
+        openDuckAIChatTab(with: .chatHistory, source: .tabBarChats)
+    }
+
+    private func openDuckAIChatTab(with trigger: AIChatOpenTrigger, source: AIChatConversationSource) {
         let behavior: LinkOpenBehavior = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
             ? .currentTab
             : .newTab(selected: true)
-        aiChatConversationSourceHandler.setData(.tabBarButton)
-        NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: behavior)
+        aiChatConversationSourceHandler.setData(source)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: trigger, behavior: behavior)
     }
 
     private func wireToggleReferenceToAIChatTextContainer() {
@@ -968,34 +975,6 @@ final class MainViewController: NSViewController {
             .sink { [weak self] in
                 self?.hideBanner()
             }
-    }
-
-    /// **ENTRY POINT for Default Browser & Dock Prompts**
-    ///
-    /// This is called when a main window becomes key (see `windowDidBecomeKey()`).
-    /// It triggers the prompt system to evaluate if any prompt should be shown.
-    ///
-    /// **Flow:**
-    /// 1. Calls `DefaultBrowserAndDockPromptPresenter.tryToShowPrompt()`
-    /// 2. Presenter asks `DefaultBrowserAndDockPromptCoordinator.getPromptType()` to determine eligibility
-    /// 3. Coordinator checks: onboarding status, default browser/dock status, and timing rules
-    /// 4. If eligible, shows one of three prompt types:
-    ///    - **Popover**: Small popup anchored to address bar (first prompt, shown once)
-    ///    - **Banner**: Persistent bar at top of window (shown after popover, can repeat)
-    ///    - **Inactive User Modal**: Sheet for users who haven't used the app in 7+ days
-    ///
-    /// **See also:**
-    /// - `DefaultBrowserAndDockPromptPresenter.tryToShowPrompt()` - orchestrates prompt display
-    /// - `DefaultBrowserAndDockPromptCoordinator.getPromptType()` - determines which prompt to show
-    /// - `DefaultBrowserAndDockPromptTypeDecider` - implements timing logic
-    @objc private func showSetAsDefaultAndAddToDockIfNeeded() {
-        guard !isInPopUpWindow else { return }
-
-        defaultBrowserAndDockPromptPresenting.tryToShowPrompt(
-            popoverAnchorProvider: getSourceViewToShowSetAsDefaultAndAddToDockPopover,
-            bannerViewHandler: showMessageBanner,
-            inactiveUserModalWindowProvider: getSourceWindowToShowInactiveUserModal
-        )
     }
 
     func getSourceViewToShowSetAsDefaultAndAddToDockPopover() -> NSView? {

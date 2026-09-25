@@ -68,7 +68,6 @@ public enum PrivacyFeature: String {
     case experimentalTheming
     case setAsDefaultAndAddToDock
     case contentScopeExperiments
-    case extendedOnboarding
     case macOSBrowserConfig
     case iOSBrowserConfig
     // Demonstrative case for default value. Remove once a real-world feature is added
@@ -89,6 +88,7 @@ public enum PrivacyFeature: String {
     case promoQueue
     case adBlockingExtension
     case eventHub
+    case aiChatBrowserTools
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -211,6 +211,12 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Option to install Chrome extension during onboarding (DMG only)
     case onboardingChromeExtension
 
+    /// Allows browsing before completing onboarding.
+    case onboardingAsync
+
+    /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
+    case onboardingNonBlocking
+
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
     /// trampoline if the SPI ever misbehaves.
@@ -318,6 +324,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Context-aware page suggestions shown in the iOS contextual Duck.ai sheet
     case contextualSuggestedPrompts
 
+    /// Offers the page navigated to as an attachment, in an active contextual chat with auto-attach off
+    case contextualPagePlaceholder
+
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 
@@ -369,8 +378,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// pre-submit contextual sheet on iPhone.
     case contextualFloatingInput
 
-    /// Enables Recent Chats in the iOS address-bar Duck.ai menu.
+    /// Enables Chats in the iOS address-bar and macOS tab-bar Duck.ai menus.
     case addressBarRecentChats
+
+    /// Makes the address-bar Duck.ai menu page-aware
+    case contextualAddressBarMenu
 
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
@@ -483,6 +495,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Displays the Duck.ai shortcut in the iPad browser chrome (tabs bar).
     case iPadChromeShortcut
 
+    /// Single Duck.ai menu button in the iPad tabs bar.
+    case iPadChromeMenuButton
+
     /// Enables moving the AI Chat native-storage container from the shared App
     /// Group into the app's Application Support directory on iOS. Off keeps the
     /// legacy App Group path.
@@ -497,10 +512,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
     case onboardingToggleAffectsNtpAndDdg
 
-    /// Enables the native Duck.ai bar controls (model picker) in the iPad address bar's
-    /// expanded Duck.ai input area.
-    case iPadDuckAIBarControls
-
     /// Enables the macOS native "Customize Responses" UI (omnibar + New Tab Page entry points).
     case customizeResponses
 
@@ -510,18 +521,41 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Replaces Duck.ai's web-based chat sidebar with native UI.
     case nativeSidebar
 
-    /// macOS only. System-wide Duck.ai entry point: global keyboard shortcut and menu bar icon.
-    case promptBar
-
     /// Supports Duck.ai edit prompt from the native input field.
     case nativePromptEditing
-
-    /// Re-enables Duck.ai promo cards on the native input (their CTAs open native pickers).
-    case nativePromoCards
 
     /// Warns users as they approach their daily/weekly Duck.ai limits, using the usage snapshot the
     /// web app writes into the reserved `usageLimits` native-storage entry.
     case usageWarnings
+}
+
+/// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool
+/// also has its own gate, so one can be withdrawn without touching the rest.
+public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .aiChatBrowserTools
+    }
+
+    /// Kill switch for the whole browser-tools bridge.
+    case featureEnabled
+
+    /// Lists the open tabs of the owner tab's window (title and URL only).
+    case listOpenTabs
+
+    /// Searches local browsing history.
+    case searchHistory
+
+    /// Switches to an open tab in the owner tab's window.
+    case switchToTab
+
+    /// Reads the text content of an open tab.
+    case readTabContent
+
+    /// Finds text on a page and reports match counts and snippets.
+    case findInPage
+
+    /// Paints previously-found matches on a page.
+    case highlightInPage
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -613,7 +647,9 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
+    case canUseExchangeV2Point1
     case canWriteUnifiedDeviceList
+    case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList
     case simplifiedSyncSetupV2
 }
@@ -647,10 +683,19 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification
     case subscriptionPromoForExistingUsers
+    case subscriptionConcurrentExperiments
     case monthlyFreeTrialExperiment2
     case subscriptionOnboardingFreeTrialsSep2026
     case subscriptionOnboardingPaidSubsSep2026
     case onboardingSubscriptionUpsellExperiment
+
+    /// Gates the server-rendered first paywall.
+    case performanceOptimizedPaywalls
+
+    /// Gates the Subscriber Offers settings entry point; its settings carry the Partnerships Hub URL
+    /// and the NEW badge toggle. Same subfeature key as Android and Windows, so one remote config
+    /// change covers every platform.
+    case partnershipsHub
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -731,12 +776,6 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     case scamProtection
 }
 
-public enum OnboardingSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .extendedOnboarding }
-
-    case showSettingsCompleteSetupSection
-}
-
 public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .experimentalTheming }
 
@@ -793,6 +832,12 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case lightweightReloadOnDataClear
     /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.
     case protectedDataLoadGate
+    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health.
+    case cpmBackgroundDelegateProxy
+    /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
+    case cpmDiagnosticsRecorder
+    /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
+    case cpmMessagingHangRecovery
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
@@ -830,8 +875,6 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
-    case featureEnabled
-
     /// Kill switch for the Bookmark Toolbar ("Show Bookmarks Bar?") promo.
     case bookmarkToolbarPromo
 
@@ -843,6 +886,15 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the Cookie Pop-ups Blocked promo.
     case cookiePopupsBlockedPromo
+
+    /// Kill switch for observing the Duck Player ("Watch in Duck Player?") overlay.
+    case duckPlayerOverlayPromo
+
+    /// Kill switch for the "Update available" promo.
+    case updateAvailablePromo
+
+    /// Kill switch for the "Browser updated" promo.
+    case browserUpdatedPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

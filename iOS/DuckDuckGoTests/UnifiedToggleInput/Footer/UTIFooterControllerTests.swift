@@ -31,6 +31,8 @@ final class UTIFooterControllerTests: XCTestCase {
     private var measurementFiring: RecordingUsageWarningPixelFiring!
     private var createImagePixelFiring: MockCreateImagePixelFiring!
     private var selectedModel: (id: String?, shortName: String?) = (nil, nil)
+    private var allowsSubscriptionUpsell = true
+    private var isTrialEligible = false
     private var animationCount = 0
     private var reportedBlocks: [Bool] = []
     private var sut: UTIFooterController!
@@ -45,6 +47,8 @@ final class UTIFooterControllerTests: XCTestCase {
         measurementFiring = RecordingUsageWarningPixelFiring()
         createImagePixelFiring = MockCreateImagePixelFiring()
         selectedModel = (nil, nil)
+        allowsSubscriptionUpsell = true
+        isTrialEligible = false
         animationCount = 0
         reportedBlocks = []
         viewModel = makeViewModel()
@@ -52,6 +56,7 @@ final class UTIFooterControllerTests: XCTestCase {
                                   highUsageNotice: makeNoticeSource(),
                                   measurement: DuckAiUsageWarningMeasurement(pixelFiring: measurementFiring),
                                   createImagePixelFiring: createImagePixelFiring,
+                                  allowsSubscriptionUpsell: { [unowned self] in allowsSubscriptionUpsell },
                                   animator: { [unowned self] changes in
                                       animationCount += 1
                                       changes()
@@ -183,9 +188,7 @@ final class UTIFooterControllerTests: XCTestCase {
 
     /// The dismissal is recorded against a rung of the redisplay ladder, so crossing the next one
     /// brings the card back.
-    /// Per the spec an approaching message is suppressed until `resetsAt`, so a higher percentage in
-    /// the same period is the same message and stays gone.
-    func test_dismissCurrent_keepsTheSameNoticeHiddenForThatResetPeriod() {
+    func test_dismissCurrent_doesNotHideTheNextThreshold() {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
         sut.dismissCurrent()
@@ -193,7 +196,7 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider.limits = weeklyUsage(90)
         sut.refresh()
 
-        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("90%") ?? false)
     }
 
     /// A dismissed approaching message must not take the reached one with it.
@@ -807,6 +810,82 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertTrue(createImagePixelFiring.isEmpty)
     }
 
+    func testUnavailablePurchaseRetainsBothTrialVariantsAndInputBlocking() {
+        allowsSubscriptionUpsell = false
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        for trialEligible in [true, false] {
+            isTrialEligible = trialEligible
+            sut.refresh()
+
+            XCTAssertNotNil(sut.currentMessage)
+            XCTAssertNil(sut.currentMessage?.primaryAction)
+            XCTAssertEqual(sut.currentMessage?.title, UserText.utiDuckAIWarningsWeeklyLimitReached)
+            XCTAssertNotNil(sut.currentMessage?.subtitle)
+            XCTAssertNil(presenter.appliedMessages.last??.primaryAction)
+            XCTAssertEqual(reportedBlocks, [true])
+        }
+    }
+
+    func testPurchaseAvailabilityRefreshRemovesAndRestoresActionWithoutRetiringCard() throws {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        for trialEligible in [true, false] {
+            isTrialEligible = trialEligible
+            allowsSubscriptionUpsell = true
+            sut.refresh()
+            let original = try XCTUnwrap(sut.currentMessage)
+            XCTAssertEqual(original.primaryAction?.title,
+                           trialEligible ? UserText.utiDuckAIWarningsTryForFree : UserText.utiDuckAIWarningsSubscribe)
+
+            allowsSubscriptionUpsell = false
+            sut.refresh()
+            XCTAssertNil(presenter.appliedMessages.last??.primaryAction)
+            XCTAssertEqual(sut.currentMessage?.title, original.title)
+            XCTAssertEqual(sut.currentMessage?.subtitle, original.subtitle)
+
+            allowsSubscriptionUpsell = true
+            sut.refresh()
+            XCTAssertEqual(sut.currentMessage, original)
+            XCTAssertEqual(presenter.appliedMessages.last ?? nil, original)
+            XCTAssertEqual(reportedBlocks, [true])
+        }
+    }
+
+    func testUnavailablePurchaseCannotExecuteOrMeasureHiddenOrStaleAction() {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        var actions: [DuckAiUsageAction] = []
+        viewModel.onAction = { actions.append($0) }
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        let eventsBeforeTap = measurementFiring.events
+
+        allowsSubscriptionUpsell = false
+        sut.performPrimaryAction()
+        sut.refresh()
+        sut.performPrimaryAction()
+
+        XCTAssertTrue(actions.isEmpty)
+        XCTAssertEqual(measurementFiring.events, eventsBeforeTap)
+        XCTAssertNil(sut.currentMessage?.primaryAction)
+        XCTAssertEqual(reportedBlocks, [true])
+    }
+
+    func testUnavailablePurchasePreservesOtherFooterActions() {
+        allowsSubscriptionUpsell = false
+        var actions: [DuckAiUsageAction] = []
+        viewModel.onAction = { actions.append($0) }
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        XCTAssertNotNil(sut.currentMessage?.primaryAction)
+        sut.performPrimaryAction()
+        XCTAssertEqual(actions.count, 1)
+
+        limitsProvider.limits = dailyReachedWithWeeklyHandOff()
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessage?.primaryAction?.title, UserText.utiDuckAIWarningsStartUsingWeeklyLimit)
+        sut.performPrimaryAction()
+        XCTAssertEqual(actions.count, 2)
+    }
+
     // MARK: - Helpers
 
     private func approachingExposure(percentBucket: Int) -> DuckAiUsageWarningExposure {
@@ -840,6 +919,7 @@ final class UTIFooterControllerTests: XCTestCase {
             snapshotProvider: limitsProvider,
             dismissalStore: dismissalStore,
             modelSuggester: StubCheaperModelSuggester(),
+            isTrialEligible: { [unowned self] in isTrialEligible },
             dateProvider: { [unowned self] in now }
         )
     }

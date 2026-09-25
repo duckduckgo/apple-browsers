@@ -21,7 +21,29 @@ import UIKit
 
 extension MainViewController {
 
+    func applyBottomOmnibarVisibility(_ state: UnifiedToggleInputDisplayState.OmnibarState) {
+        guard let coordinator = unifiedToggleInputCoordinator,
+              coordinator.cardPosition == .bottom,
+              viewCoordinator.addressBarPosition.isBottom else {
+            recomputeNavigationBarContainerHeightIfNeeded()
+            return
+        }
+        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
+        applyBottomOmnibarAnchor(state)
+        viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
+        recomputeNavigationBarContainerHeightIfNeeded()
+    }
+
+    /// The NTP replaces the web page behind the toolbar while the input is focused, so the glass has to
+    /// re-resolve at each settled end of the morph or it keeps the previous surface's appearance.
+    func refreshFloatingToolbarBackdrop() {
+        guard isFloatingUIEnabled else { return }
+        viewCoordinator.toolbar.refreshMaterialBackdrop()
+    }
+
     func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {
+        defer { updateAddressBarSuppressionForNewTabPage() }
+
         switch intent {
         case .showCollapsed:
             handleShowCollapsedIntent(animationStyle: intent.animationStyle(layoutTarget: viewCoordinator.superview))
@@ -239,16 +261,13 @@ private extension MainViewController {
         )
     }
 
-    /// The NTP replaces the web page behind the toolbar while the input is focused, so the glass has to
-    /// re-resolve at each settled end of the morph or it keeps the previous surface's appearance.
-    func refreshFloatingToolbarBackdrop() {
-        guard isFloatingUIEnabled else { return }
-        viewCoordinator.toolbar.refreshMaterialBackdrop()
-    }
-
     func handleShowOmnibarEditingIntent(height: CGFloat, pendingHeight: CGFloat?) {
         warmSearchTokenIfEligible()
         guard let coordinator = unifiedToggleInputCoordinator else { return }
+        if viewCoordinator.newTabPageInputPresentation.transition == .inlineInput {
+            showInlineNewTabPageInput(coordinator: coordinator, height: height, pendingHeight: pendingHeight)
+            return
+        }
 
         coordinator.contentViewController.refreshSuggestionsCaches()
 
@@ -332,6 +351,11 @@ private extension MainViewController {
     }
 
     func handleHideOmnibarEditingIntent(animated: Bool, reattachingOmnibar: Bool) {
+        if viewCoordinator.newTabPageInputPresentation.transition == .inlineInput,
+           let coordinator = unifiedToggleInputCoordinator {
+            dismissInlineNewTabPageInput(coordinator: coordinator, animated: animated)
+            return
+        }
         let coordinator = unifiedToggleInputCoordinator
         let fadesForFloatingBottom = animated && viewCoordinator.addressBarPosition.isBottom && isFloatingUIEnabled
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
@@ -433,19 +457,6 @@ private extension MainViewController {
             newTabPageViewController?.setLogoHidden(false)
             newTabPageViewController?.setFavoritesHidden(false)
         }
-    }
-
-    func applyBottomOmnibarVisibility(_ state: UnifiedToggleInputDisplayState.OmnibarState) {
-        guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.cardPosition == .bottom,
-              viewCoordinator.addressBarPosition.isBottom else {
-            recomputeNavigationBarContainerHeightIfNeeded()
-            return
-        }
-        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
-        applyBottomOmnibarAnchor(state)
-        viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-        recomputeNavigationBarContainerHeightIfNeeded()
     }
 
     func applyBottomOmnibarAnchor(_ state: UnifiedToggleInputDisplayState.OmnibarState) {

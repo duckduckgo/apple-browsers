@@ -27,7 +27,7 @@ final class SitePermissionDialogViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.title, "“example.com” website wants to access your camera")
         XCTAssertNil(viewModel.body)
-        XCTAssertEqual(viewModel.icon, .camera)
+        XCTAssertEqual(viewModel.icons, [.camera])
         XCTAssertEqual(viewModel.actions.map(\.action), [.allowOnce, .allowWhileUsingSite, .neverAllow])
         XCTAssertEqual(viewModel.actions.map(\.title), ["Allow Once", "Allow While Using Site", "Never Allow"])
     }
@@ -37,15 +37,15 @@ final class SitePermissionDialogViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.title, "“example.com” website wants to access your microphone")
         XCTAssertNil(viewModel.body)
-        XCTAssertEqual(viewModel.icon, .microphone)
+        XCTAssertEqual(viewModel.icons, [.microphone])
     }
 
-    func testCombinedPromptNamesBothPermissionsWithoutAnIcon() throws {
+    func testCombinedPromptNamesBothPermissionsAndShowsCameraThenMicrophoneIcons() throws {
         let viewModel = try XCTUnwrap(SitePermissionDialogViewModel(prompt: prompt(for: [.camera, .microphone])))
 
         XCTAssertEqual(viewModel.title, "“example.com” website wants to access your camera and microphone")
         XCTAssertNil(viewModel.body)
-        XCTAssertNil(viewModel.icon)
+        XCTAssertEqual(viewModel.icons, [.camera, .microphone])
         XCTAssertEqual(viewModel.actions.map(\.action), [.allowOnce, .allowWhileUsingSite, .neverAllow])
     }
 

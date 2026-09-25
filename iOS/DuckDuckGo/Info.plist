@@ -149,6 +149,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>DuckDuckGoGroupIdentifierPrefix</key>
 	<string>$(GROUP_ID_PREFIX)</string>
+	<key>STATISTICS_APP_GROUP</key>
+	<string>$(STATISTICS_APP_GROUP)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSApplicationQueriesSchemes</key>
@@ -198,6 +200,17 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>2tdux39lx8.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>gvmwg8q7h5.skadnetwork</string>
+		</dict>
+	</array>
 	<key>SUBSCRIPTION_APP_GROUP</key>
 	<string>$(AppIdentifierPrefix)$(SUBSCRIPTION_APP_GROUP)</string>
 	<key>UIApplicationSceneManifest</key>

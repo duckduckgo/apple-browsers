@@ -160,6 +160,7 @@
     },
     "%@ does not support storing passwords" : {
       "comment" : "Data Import disabled checkbox message about a browser (%@) not supporting storing passwords",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -717,6 +718,66 @@
         }
       }
     },
+    "action.title.chats" : {
+      "comment" : "Open Duck.ai chat history from the tab-bar menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discussions"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czaty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чаты"
+          }
+        }
+      }
+    },
     "Activate to select" : {
       "localizations" : {
         "de" : {
@@ -824,6 +885,7 @@
     },
     "Add any details that you think may help us fix the problem" : {
       "comment" : "Data import failure Report dialog suggestion to provide a comments with extra details helping to identify the data import problem.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1470,6 +1532,7 @@
     },
     "After clicking import, your computer may ask you to enter a password. You may need to enter your password two times before importing starts. DuckDuckGo will not see that password.\n\nImported passwords are stored securely using encryption." : {
       "comment" : "Warning that Chromium data import would require entering system passwords.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2008,55 +2071,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "KI-Einstellungen öffnen"
+            "value" : "KI-Einstellungen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open AI Settings"
+            "value" : "AI Settings"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir ajustes de IA"
+            "value" : "Ajustes de IA"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrir les réglages IA"
+            "value" : "Réglages IA"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apri le impostazioni AI"
+            "value" : "Impostazioni AI"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AI-instellingen openen"
+            "value" : "AI-instellingen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otwórz ustawienia AI"
+            "value" : "Ustawienia AI"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir definições de IA"
+            "value" : "Definições de IA"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Открыть настройки ИИ"
+            "value" : "Настройки ИИ"
           }
         }
       }
@@ -4348,55 +4411,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "KI-Einstellungen öffnen"
+            "value" : "KI-Einstellungen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open AI Settings"
+            "value" : "AI Settings"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir ajustes de IA"
+            "value" : "Ajustes de IA"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrir les réglages IA"
+            "value" : "Réglages IA"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apri le impostazioni AI"
+            "value" : "Impostazioni AI"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AI-instellingen openen"
+            "value" : "AI-instellingen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otwórz ustawienia AI"
+            "value" : "Ustawienia AI"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir definições de IA"
+            "value" : "Definições de IA"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Открыть настройки ИИ"
+            "value" : "Настройки ИИ"
           }
         }
       }
@@ -20499,6 +20562,7 @@
     },
     "Bookmark import failed:" : {
       "comment" : "Data import summary format of how many bookmarks (%lld) failed to import.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -20552,6 +20616,7 @@
     },
     "Bookmark import failed." : {
       "comment" : "Data import summary message of failed bookmarks import.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -20965,6 +21030,7 @@
     },
     "Bookmarks Import Complete:" : {
       "comment" : "Bookmarks Data Import result summary headline",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -21018,6 +21084,7 @@
     },
     "Bookmarks:" : {
       "comment" : "Data import summary format of how many bookmarks (%lld) were successfully imported.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -29606,6 +29673,7 @@
       }
     },
     "Credit card import failed: " : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -29658,6 +29726,7 @@
       }
     },
     "Credit card import failed." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -29711,6 +29780,7 @@
     },
     "Credit cards import complete. You can now delete the saved credit cards file." : {
       "comment" : "message about Credit Cards Data Import completion",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -29763,6 +29833,7 @@
       }
     },
     "Credit Cards:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -39129,6 +39200,7 @@
       }
     },
     "Duplicates Skipped:" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -39181,6 +39253,7 @@
       }
     },
     "Duplicates Skipped: " : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58074,6 +58147,7 @@
     },
     "Import Bookmarks" : {
       "comment" : "Title of dialog with instruction for the user to import bookmarks from another browser",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58179,6 +58253,7 @@
     },
     "Import Passwords" : {
       "comment" : "Title of dialog with instruction for the user to import passwords from another browser",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58232,6 +58307,7 @@
     },
     "Import Results:" : {
       "comment" : "Data Import result summary headline",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58885,7 +58961,7 @@
     },
     "import.bookmarks.select-html-file" : {
       "comment" : "Button text for selecting HTML Bookmarks file",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58945,7 +59021,7 @@
     },
     "import.browser.data" : {
       "comment" : "Import Browser Data dialog title",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59125,7 +59201,7 @@
     },
     "import.browser.data.complete.sync.button.title" : {
       "comment" : "Import Browser Data dialog button title to sync imported data at completion stage",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59185,7 +59261,7 @@
     },
     "import.browser.data.import-type.subtitle.bookmarks.and.passwords" : {
       "comment" : "Import Browser Data dialog subtitle for option to choose what to import in collapsed state",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59245,7 +59321,7 @@
     },
     "import.browser.data.import-type.subtitle.none" : {
       "comment" : "Import Browser Data dialog subtitle for option to choose what to import in collapsed state",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59365,7 +59441,7 @@
     },
     "import.browser.data.import-type.title.collapsed.all" : {
       "comment" : "Import Browser Data dialog title for option to choose what to import in collapsed state",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59425,7 +59501,7 @@
     },
     "import.browser.data.onboarding" : {
       "comment" : "Import Browser Data dialog title",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59545,7 +59621,7 @@
     },
     "import.browser.data.select.profile.title" : {
       "comment" : "Title for the data import browser profile picker",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59605,7 +59681,7 @@
     },
     "import.browser.data.selection.sync.button.title" : {
       "comment" : "Import Browser Data dialog button title to sync imported data at selection stage",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59665,7 +59741,7 @@
     },
     "import.browser.data.shortcuts" : {
       "comment" : "Import Browser Data dialog title for final stage when choosing shortcuts to enable",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59725,7 +59801,7 @@
     },
     "import.browser.data.shortcuts.subtitle" : {
       "comment" : "Subtitle explaining how users can find toolbar shortcuts.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59785,7 +59861,7 @@
     },
     "import.browser.data.source.subtitle" : {
       "comment" : "Subtitle explaining where users can find imported passwords.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59845,7 +59921,7 @@
     },
     "import.browser.data.source.title" : {
       "comment" : "Import Browser Data title for option to choose source browser to import from",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59905,7 +59981,7 @@
     },
     "import.browser.data.success.title" : {
       "comment" : "message about Passwords and or bookmarks Data Import completion",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -60865,7 +60941,7 @@
     },
     "import.csv.instructions.bitwarden" : {
       "comment" : "Instructions to import Passwords as CSV from Bitwarden.\n%2$s - app name (Bitwarden)\n%7$@ - hamburger menu icon\n%9$@ - “Select Bitwarden CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -60985,7 +61061,7 @@
     },
     "import.csv.instructions.brave" : {
       "comment" : "Instructions to import Passwords as CSV from Brave browser.\n%N$d - step number\n%2$s - browser name (Brave)\n%4$@, %6$@ - hamburger menu icon\n%10$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -61105,7 +61181,7 @@
     },
     "import.csv.instructions.chrome" : {
       "comment" : "Instructions to import Passwords as CSV from Google Chrome browser.\n%N$d - step number\n%2$s - browser name (Chrome)\n%4$@ - hamburger menu icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -61225,7 +61301,7 @@
     },
     "import.csv.instructions.chromium" : {
       "comment" : "Instructions to import Passwords as CSV from Chromium-based browsers.\n%N$d - step number\n%2$s - browser name\n%4$@ - hamburger menu icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -61345,7 +61421,7 @@
     },
     "import.csv.instructions.coccoc" : {
       "comment" : "Instructions to import Passwords as CSV from Cốc Cốc browser.\n%N$d - step number\n%2$s - browser name (Cốc Cốc)\n%5$@ - hamburger menu icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -61465,7 +61541,7 @@
     },
     "import.csv.instructions.firefox" : {
       "comment" : "Instructions to import Passwords as CSV from Firefox.\n%N$d - step number\n%2$s - browser name (Firefox)\n%4$@, %6$@ - hamburger menu icon\n%9$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -61585,7 +61661,7 @@
     },
     "import.csv.instructions.generic" : {
       "comment" : "Instructions to import a generic CSV passwords file.\n%N$d - step number\n%3$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -61705,7 +61781,7 @@
     },
     "import.csv.instructions.lastpass" : {
       "comment" : "Instructions to import Passwords as CSV from LastPass.\n%2$s - app name (LastPass)\n%8$@ - “Select LastPass CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -61825,7 +61901,7 @@
     },
     "import.csv.instructions.onePassword7" : {
       "comment" : "Instructions to import Passwords as CSV from 1Password 7.\n%2$s - app name (1Password)\n%9$@ - “Select 1Password CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -61945,7 +62021,7 @@
     },
     "import.csv.instructions.onePassword8" : {
       "comment" : "Instructions to import Passwords as CSV from 1Password 8.\n%2$s - app name (1Password)\n%8$@ - “Select 1Password CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -62065,7 +62141,7 @@
     },
     "import.csv.instructions.opera" : {
       "comment" : "Instructions to import Passwords as CSV from Opera browser.\n%N$d - step number\n%2$s - browser name (Opera)\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -62185,7 +62261,7 @@
     },
     "import.csv.instructions.operagx" : {
       "comment" : "Instructions to import Passwords as CSV from Opera GX browsers.\n%N$d - step number\n%2$s - browser name (Opera GX)\n%5$@ - menu button icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -62304,7 +62380,7 @@
       }
     },
     "import.csv.instructions.safari" : {
-      "comment" : "Instructions to import Passwords as CSV from Safari.\n%N$d - step number\n%5$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_\nInstructions to import Passwords as CSV from Safari.\n%N$d - step number\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Safari.\n%N$d - step number\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -62425,7 +62501,7 @@
     },
     "import.csv.instructions.safari.macos15-2.old" : {
       "comment" : "Instructions to import Passwords as CSV from Safari zip file on >= macOS 15.2.\n%N$d - step number\n%5$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -62485,7 +62561,7 @@
     },
     "import.csv.instructions.vivaldi" : {
       "comment" : "Instructions to import Passwords exported as CSV from Vivaldi browser.\n%N$d - step number\n%2$s - browser name (Vivaldi)\n%5$@ - menu button icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -62605,7 +62681,7 @@
     },
     "import.csv.instructions.yandex" : {
       "comment" : "Instructions to import Passwords as CSV from Yandex Browser.\n%N$d - step number\n%2$s - browser name (Yandex)\n%4$@ - hamburger menu icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -62905,7 +62981,7 @@
     },
     "import.data.initiate" : {
       "comment" : "Button text for importing data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -63505,7 +63581,7 @@
     },
     "import.html.instructions.chromium" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Chromium-based browsers.\n%N$d - step number\n%2$s - browser name\n%5$@ - hamburger menu icon\n%8$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -63625,7 +63701,7 @@
     },
     "import.html.instructions.firefox" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Firefox based browsers.\n%N$d - step number\n%2$s - browser name (Firefox)\n%5$@ - hamburger menu icon\n%8$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -63745,7 +63821,7 @@
     },
     "import.html.instructions.generic" : {
       "comment" : "Instructions to import a generic HTML Bookmarks file.\n%N$d - step number\n%6$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -63865,7 +63941,7 @@
     },
     "import.html.instructions.opera" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Opera browser.\n%N$d - step number\n%2$s - browser name (Opera)\n%8$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -63985,7 +64061,7 @@
     },
     "import.html.instructions.operagx" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Opera GX browser.\n%N$d - step number\n%2$s - browser name (Opera GX)\n%7$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -64105,7 +64181,7 @@
     },
     "import.html.instructions.safari" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Safari.\n%N$d - step number\n%5$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -64225,7 +64301,7 @@
     },
     "import.html.instructions.vivaldi" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Vivaldi browser.\n%N$d - step number\n%2$s - browser name (Vivaldi)\n%6$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -64345,7 +64421,7 @@
     },
     "import.html.instructions.yandex" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Yandex Browser.\n%N$d - step number\n%2$s - browser name (Yandex)\n%5$@ - hamburger menu icon\n%8$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -64825,7 +64901,7 @@
     },
     "import.logins.select-csv-file" : {
       "comment" : "Button text for selecting a CSV file",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -64885,7 +64961,7 @@
     },
     "import.logins.select-csv-file.source" : {
       "comment" : "Button text for selecting a CSV file exported from (LastPass or Bitwarden or 1Password - %@)",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -64945,7 +65021,7 @@
     },
     "import.nodata.bookmarks.subtitle" : {
       "comment" : "Data import error subtitle: suggestion to import Bookmarks manually by selecting a CSV or HTML file. The placeholder here represents the source browser, e.g Firefox.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -65005,7 +65081,7 @@
     },
     "import.nodata.passwords.subtitle" : {
       "comment" : "Data import error subtitle: suggestion to import passwords manually by selecting a CSV or HTML file. The placeholder here represents the source browser, e.g Firefox.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -65125,7 +65201,7 @@
     },
     "import.onePassword.app.version.info" : {
       "comment" : "Instructions how to find an installed 1Password password manager app version.\n%1$s, %2$s - app name (1Password)",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -66385,7 +66461,7 @@
     },
     "import.shortcuts.bookmarks.subtitle" : {
       "comment" : "Description for the setting to enable the bookmarks bar",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -66505,7 +66581,7 @@
     },
     "import.shortcuts.passwords.subtitle" : {
       "comment" : "Description for the setting to enable the passwords shortcut",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -68004,6 +68080,7 @@
       }
     },
     "Incorrect file type or format. Please select a different file." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -68643,6 +68720,7 @@
     },
     "Let’s try doing it manually. It won’t take long." : {
       "comment" : "Suggestion to switch to a Manual File Data Import when data import fails.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -74651,55 +74729,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "KI-Einstellungen öffnen"
+            "value" : "KI-Einstellungen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open AI Settings"
+            "value" : "AI Settings"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir ajustes de IA"
+            "value" : "Ajustes de IA"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrir les réglages IA"
+            "value" : "Réglages IA"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apri le impostazioni AI"
+            "value" : "Impostazioni AI"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AI-instellingen openen"
+            "value" : "AI-instellingen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otwórz ustawienia AI"
+            "value" : "Ustawienia AI"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir definições de IA"
+            "value" : "Definições de IA"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Открыть настройки ИИ"
+            "value" : "Настройки ИИ"
           }
         }
       }
@@ -80422,6 +80500,7 @@
     },
     "Password import complete. You can now delete the saved passwords file." : {
       "comment" : "message about Passwords Data Import completion",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -80475,6 +80554,7 @@
     },
     "Password import failed: " : {
       "comment" : "Data import summary format of how many passwords (%lld) failed to import.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -80528,6 +80608,7 @@
     },
     "Password import failed." : {
       "comment" : "Data import summary message of failed passwords import.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -80881,6 +80962,7 @@
     },
     "Passwords:" : {
       "comment" : "Data import summary format of how many passwords were successfully imported.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -87155,6 +87237,7 @@
     },
     "Please submit a report to help us fix the issue." : {
       "comment" : "Data import failure Report dialog title.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -118238,6 +118321,7 @@
     },
     "That didn’t work either. Please submit a report to help us fix the issue." : {
       "comment" : "Data import failure Report dialog title containing a message that not only automatic data import has failed failed but manual browser data import didn‘t work either.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -118291,6 +118375,7 @@
     },
     "The following information will be sent to DuckDuckGo. No personally identifiable information will be sent." : {
       "comment" : "Data import failure Report dialog subtitle about the data being collected with the report.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -128088,6 +128173,7 @@
     },
     "We couldn‘t find any bookmarks." : {
       "comment" : "Data import error message: Bookmarks weren‘t found.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -128141,6 +128227,7 @@
     },
     "We couldn't find any credit cards." : {
       "comment" : "Data import error message: Credit cards weren't found.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -128194,6 +128281,7 @@
     },
     "We couldn‘t find any passwords." : {
       "comment" : "Data import error message: Passwords weren‘t found.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -128247,6 +128335,7 @@
     },
     "We were unable to import bookmarks directly from %@." : {
       "comment" : "Message when data import fails from a browser. %@ - a browser name",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -128300,6 +128389,7 @@
     },
     "We were unable to import passwords directly from %@." : {
       "comment" : "Message when data import fails from a browser. %@ - a browser name",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -129239,6 +129329,7 @@
     },
     "You'll be asked to enter your Primary Password for %@.\n\nImported passwords are encrypted and only stored on this computer." : {
       "comment" : "Warning that Firefox-based browser name (%@) data import would require entering a Primary Password for the browser.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import BrowserServicesKit
 import PrivacyConfig
 import Common
 import FoundationExtensions
@@ -32,26 +33,25 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
     typealias CanPurchaseUpdater = () -> Bool
     private let canPurchase: CanPurchaseUpdater
     private let featureFlagger: FeatureFlagger
+    private let performanceOptimizedPaywalls: any PerformanceOptimizedPaywallsProviding
 
     init(featureFlagger: FeatureFlagger,
-         canPurchase: @escaping CanPurchaseUpdater
-    ) {
+         performanceOptimizedPaywalls: any PerformanceOptimizedPaywallsProviding,
+         canPurchase: @escaping CanPurchaseUpdater) {
         self.canPurchase = canPurchase
         self.featureFlagger = featureFlagger
+        self.performanceOptimizedPaywalls = performanceOptimizedPaywalls
     }
-
-    static let interceptedURLs = SubscriptionPurchaseFlowPath.allCases.map(\.rawValue)
     
     func allowsNavigatingTo(url: URL) -> Bool {
         guard url.isPart(ofDomain: "duckduckgo.com") || (url.isPart(ofDomain: "duck.co") && featureFlagger.internalUserDecider.isInternalUser),
               let components = normalizeScheme(url.absoluteString),
-              Self.interceptedURLs.contains(components.path) else {
+              let redirectComponents = subscriptionRedirectComponents(from: components) else {
             return true
         }
 
-        return interceptSubscriptionURL(components)
+        return interceptSubscriptionURL(redirectComponents)
     }
-
 }
 
 extension TabURLInterceptorDefault {
@@ -65,6 +65,19 @@ extension TabURLInterceptorDefault {
         let noScheme = rawUrl.dropping(prefix: URL.NavigationalScheme.https.separated()).dropping(prefix: URL.NavigationalScheme.http.separated())
 
         return URLComponents(string: "\(URL.NavigationalScheme.https.separated())\(noScheme)")
+    }
+
+    private func subscriptionRedirectComponents(from components: URLComponents) -> URLComponents? {
+        if SubscriptionPurchaseFlowPath.contains(components.path) {
+            return components
+        }
+
+        guard components.path.hasPrefix("\(SubscriptionPurchaseFlowPath.purchase.rawValue)/") else {
+            return nil
+        }
+
+        return performanceOptimizedPaywalls.paths.purchaseRedirectComponents(from: components)
+            ?? SubscriptionURL.PerformanceOptimizedPaywallPaths.default.purchaseRedirectComponents(from: components)
     }
 
     private func interceptSubscriptionURL(_ components: URLComponents) -> Bool {

@@ -1306,7 +1306,7 @@ final class AIChatOmnibarController {
     func viewAllChats() {
         PixelKit.fire(AIChatPixel.aiChatViewAllChatsClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
         aiChatConversationSourceHandler.setData(.omnibarViewAllChats)
-        aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
+        aiChatTabOpener.openAIChatTab(with: .chatHistory, behavior: .newTab(selected: true))
     }
 
     /// Fallback when no window can host the modal: opens the customize URL in a tab.
@@ -1699,7 +1699,11 @@ struct AIChatReasoningPickerItem {
 extension AIChatOmnibarController {
     /// Resolved picker contents (accessible first, then the gated upsell section); owns the flag, copy, and ordering so the VC just renders.
     /// `freeModelsOnly` is the free-model CTA's chevron: advanced models are what it has run out of.
-    func modelPickerItems(selectedModelId: String?, freeModelsOnly: Bool = false) -> [AIChatModelPickerItem] {
+    /// `hidesGatedModels` is the usage card's chevron: it offers a way out of a spent allowance, so a
+    /// row the user's plan can't pick has nothing to offer there.
+    func modelPickerItems(selectedModelId: String?,
+                          freeModelsOnly: Bool = false,
+                          hidesGatedModels: Bool = false) -> [AIChatModelPickerItem] {
         let source = freeModelsOnly ? models.filter { !$0.isAdvanced } : models
         let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: source)
         // Recommended = backend-labelled models, shown first with the label as a subtitle.
@@ -1719,7 +1723,7 @@ extension AIChatOmnibarController {
         }
         items += rest.map { item(for: $0) }
 
-        guard !gated.isEmpty, !freeModelsOnly else { return items }
+        guard !gated.isEmpty, !freeModelsOnly, !hidesGatedModels else { return items }
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {

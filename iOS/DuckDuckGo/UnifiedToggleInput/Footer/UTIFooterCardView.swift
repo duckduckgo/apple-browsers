@@ -107,7 +107,7 @@ final class UTIFooterCardView: UIView {
         titleLabel.font = isStandaloneCopy ? .daxFootnoteRegular() : .daxFootnoteSemibold()
         titleLabel.text = message.title
 
-        subtitleLabel.numberOfLines = message.primaryAction == nil ? 2 : 1
+        subtitleLabel.numberOfLines = message.icon == .modelSwitch ? 3 : (message.primaryAction == nil ? 2 : 1)
         subtitleLabel.text = message.subtitle
         subtitleLabel.isHidden = message.subtitle?.isEmpty ?? true
 

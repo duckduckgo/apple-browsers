@@ -16,6 +16,9 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_macOS
+import PrivacyConfig
+
 enum WebsitePermissionCategory: CaseIterable, Hashable, Identifiable {
     case notifications
     case location
@@ -23,8 +26,38 @@ enum WebsitePermissionCategory: CaseIterable, Hashable, Identifiable {
     case microphone
     case externalApps
     case popups
+    case autoplay
 
     var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .notifications:
+            return UserText.permissionNotification
+        case .location:
+            return UserText.permissionGeolocation
+        case .camera:
+            return UserText.permissionCamera
+        case .microphone:
+            return UserText.permissionMicrophone
+        case .externalApps:
+            return UserText.permissionCenterExternalApps
+        case .popups:
+            return UserText.permissionPopups
+        case .autoplay:
+            return UserText.permissionAutoplay
+        }
+    }
+
+    /// The category a permission belongs to, or `nil` for a type this pane has no section for.
+    static func category(for permissionType: PermissionType) -> WebsitePermissionCategory? {
+        allCases.first { $0.contains(permissionType) }
+    }
+
+    /// Copy for one of this category's decisions.
+    func decisionTitle(for decision: PersistedPermissionDecision) -> String {
+        self == .autoplay ? decision.autoplayTitle : decision.websitePermissionsTitle
+    }
 
     func contains(_ permissionType: PermissionType) -> Bool {
         switch (self, permissionType) {
@@ -33,7 +66,8 @@ enum WebsitePermissionCategory: CaseIterable, Hashable, Identifiable {
             (.camera, .camera),
             (.microphone, .microphone),
             (.externalApps, .externalScheme),
-            (.popups, .popups):
+            (.popups, .popups),
+            (.autoplay, .autoplayPolicy):
             return true
         default:
             return false

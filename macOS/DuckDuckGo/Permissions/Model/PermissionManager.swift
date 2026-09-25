@@ -32,9 +32,14 @@ protocol PermissionDecisionOverriding: AnyObject {
     func decision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision?
 }
 
+enum PermissionChange: Equatable {
+    case decisionChanged(PersistedPermissionDecision)
+    case removed
+}
+
 protocol PermissionManagerProtocol: AnyObject {
 
-    typealias PublishedPermission = (domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision)
+    typealias PublishedPermission = (domain: String, permissionType: PermissionType, change: PermissionChange)
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { get }
     var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> { get }
 
@@ -42,6 +47,7 @@ protocol PermissionManagerProtocol: AnyObject {
     func hasAnyPermissionPersisted(forDomain domain: String) -> Bool
     func persistedPermissionTypes(forDomain domain: String) -> [PermissionType]
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision
+    func defaultDecision(for permissionType: PermissionType) -> PersistedPermissionDecision
     /// Returns the underlying persisted decision, ignoring any active `PermissionDecisionOverriding`.
     /// `nil` when nothing is persisted. Use only for cleanup or migration paths that genuinely need
     /// to know the on-disk state; everything else should call `permission(forDomain:permissionType:)`.
@@ -68,6 +74,7 @@ final class PermissionManager: PermissionManagerProtocol {
     private let store: PermissionStore
     private var permissions = [String: [PermissionType: StoredPermission]]()
     private let decisionOverride: PermissionDecisionOverriding?
+    private let defaults: WebsitePermissionDefaultsProtocol?
 
     private let permissionSubject = PassthroughSubject<PublishedPermission, Never>()
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { permissionSubject.eraseToAnyPublisher() }
@@ -76,9 +83,12 @@ final class PermissionManager: PermissionManagerProtocol {
         persistedPermissionsSubject.eraseToAnyPublisher()
     }
 
-    init(store: PermissionStore, decisionOverride: PermissionDecisionOverriding? = nil) {
+    init(store: PermissionStore,
+         decisionOverride: PermissionDecisionOverriding? = nil,
+         defaults: WebsitePermissionDefaultsProtocol? = nil) {
         self.store = store
         self.decisionOverride = decisionOverride
+        self.defaults = defaults
         loadPermissions()
     }
 
@@ -104,7 +114,10 @@ final class PermissionManager: PermissionManagerProtocol {
     private func publishPersistedPermissions() {
         let entries = permissions.flatMap { domain, permissions in
             permissions.map { permissionType, storedPermission in
-                WebsitePermissionEntry(domain: domain, permissionType: permissionType, decision: storedPermission.decision)
+                WebsitePermissionEntry(domain: domain,
+                                       permissionType: permissionType,
+                                       decision: storedPermission.decision,
+                                       lastModified: storedPermission.lastModified)
             }
         }.sorted {
             if $0.domain == $1.domain {
@@ -122,7 +135,15 @@ final class PermissionManager: PermissionManagerProtocol {
         if let override = decisionOverride?.decision(forDomain: normalized, permissionType: permissionType) {
             return override
         }
-        return permissions[normalized]?[permissionType]?.decision ?? .ask
+        if let storedDecision = permissions[normalized]?[permissionType]?.decision {
+            return storedDecision
+        }
+        return defaultDecision(for: permissionType)
+    }
+
+    func defaultDecision(for permissionType: PermissionType) -> PersistedPermissionDecision {
+        guard let defaults, let category = WebsitePermissionCategory.category(for: permissionType) else { return .ask }
+        return defaults.defaultDecision(for: category)
     }
 
     func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision? {
@@ -160,7 +181,7 @@ final class PermissionManager: PermissionManagerProtocol {
         guard currentDecision != decision || !isAlreadyPersisted else { return }
 
         defer {
-            self.permissionSubject.send( (domain, permissionType, decision) )
+            self.permissionSubject.send((domain, permissionType, .decisionChanged(decision)))
         }
         if var oldValue = permissions[domain]?[permissionType] {
             oldValue.decision = decision
@@ -237,7 +258,7 @@ final class PermissionManager: PermissionManagerProtocol {
         store.remove(objectWithId: storedPermission.id)
 
         // Notify subscribers
-        permissionSubject.send((domain, permissionType, .ask))
+        permissionSubject.send((domain, permissionType, .removed))
     }
 
 }
@@ -295,8 +316,9 @@ extension PermissionManager: PermissionManagerDebugging {
             permissionsByType.keys.map { (domain: domain, type: $0) }
         }
         permissions.removeAll()
+        publishPersistedPermissions()
         for permission in removedPermissions {
-            permissionSubject.send((permission.domain, permission.type, .ask))
+            permissionSubject.send((permission.domain, permission.type, .removed))
         }
         store.clear(except: [])
         return count

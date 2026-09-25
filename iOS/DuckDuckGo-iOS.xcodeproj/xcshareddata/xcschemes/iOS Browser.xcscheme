@@ -76,6 +76,13 @@
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "SKIP_SNAPSHOT_TESTS"
+            value = "1"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
       <Testables>
          <TestableReference
             skipped = "NO"
@@ -286,6 +293,16 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "InstallStatisticsTests"
+               BuildableName = "InstallStatisticsTests"
+               BlueprintName = "InstallStatisticsTests"
+               ReferencedContainer = "container:LocalPackages/InstallStatistics">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "SnapshotTestingSupportTests"
                BuildableName = "SnapshotTestingSupportTests"
                BlueprintName = "SnapshotTestingSupportTests"
@@ -313,13 +330,6 @@
             </BuildableReference>
          </TestableReference>
       </Testables>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "SKIP_SNAPSHOT_TESTS"
-            value = "1"
-            isEnabled = "YES">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"

@@ -232,6 +232,9 @@ final class PasswordManagementViewController: NSViewController {
         NotificationCenter.default.publisher(for: .dataImportComplete)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
+                // A closed popover is never reshown (a new one is created each time), and refreshing it
+                // off-screen would re-select and render the Sync promo, firing a phantom displayed pixel.
+                guard self?.view.window?.isVisible == true else { return }
                 self?.refreshData()
             }
             .store(in: &cancellables)
@@ -429,7 +432,7 @@ final class PasswordManagementViewController: NSViewController {
     @IBAction func openImportBrowserDataWindow(_ sender: Any?) {
         self.dismiss()
         ensureMainWindowExists()
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
     @IBAction func openExportLogins(_ sender: Any) {
@@ -441,7 +444,7 @@ final class PasswordManagementViewController: NSViewController {
     @IBAction func onImportClicked(_ sender: NSButton) {
         self.dismiss()
         ensureMainWindowExists()
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
     @IBAction func onSyncClicked(_ sender: Any) {

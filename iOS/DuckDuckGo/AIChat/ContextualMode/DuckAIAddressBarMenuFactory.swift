@@ -25,29 +25,49 @@ import UIKit
 /// Builds the address-bar Duck.ai menu for new chats, page questions, and chat history.
 enum DuckAIAddressBarMenuFactory {
 
-    /// Groups New Chat and Ask About Page above a separator, with All Chats below.
+    static func isChatHistoryAvailable(featureFlagger: FeatureFlagger, userInterfaceIdiom: UIUserInterfaceIdiom) -> Bool {
+        userInterfaceIdiom != .pad
+            && featureFlagger.isFeatureOn(.aiChatNativeChatHistory)
+            && featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats)
+    }
+
+    /// Groups New Chat and, on non-home tabs, the page-context action above a separator, with Chats
+    /// below.
     static func makeActions(featureFlagger: FeatureFlagger,
                             userInterfaceIdiom: UIUserInterfaceIdiom,
+                            isHomeTab: Bool,
+                            type: DuckAIAddressBarMenuType,
                             onNewChat: @escaping () -> Void,
-                            onAskAboutPage: @escaping () -> Void,
+                            onContextAction: @escaping () -> Void,
                             onRecentChats: @escaping () -> Void) -> [UIMenuElement] {
-        var groups: [UIMenuElement] = [
-            UIMenu(title: "", options: .displayInline, children: [
-                UIAction(title: UserText.duckAiAddressBarMenuNewChat,
-                         image: DesignSystemImages.Glyphs.Size16.compose) { _ in
-                    onNewChat()
-                },
-                UIAction(title: UserText.aiChatAttachmentOptionAskAboutPage,
-                         image: DesignSystemImages.Glyphs.Size16.chevronCircleDown) { _ in
-                    onAskAboutPage()
-                }
-            ])
+        let contextActionTitle: String = {
+            switch type {
+            case .webPage:
+                UserText.aiChatAttachmentOptionAskAboutPage
+            case .search:
+                UserText.aiChatAttachmentOptionContinueInDuckAi
+            case .document:
+                UserText.aiChatAttachmentOptionAskAboutDocument
+            }
+        }()
+        var chatActions: [UIMenuElement] = [
+            UIAction(title: UserText.duckAiAddressBarMenuNewChat,
+                     image: DesignSystemImages.Glyphs.Size16.compose) { _ in
+                onNewChat()
+            }
         ]
-        if userInterfaceIdiom != .pad,
-           featureFlagger.isFeatureOn(.aiChatNativeChatHistory),
-           featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats) {
+        if !isHomeTab {
+            chatActions.append(UIAction(title: contextActionTitle,
+                                        image: DesignSystemImages.Glyphs.Size16.chevronCircleDown) { _ in
+                onContextAction()
+            })
+        }
+        var groups: [UIMenuElement] = [UIMenu(title: "", options: .displayInline, children: chatActions)]
+        let showsRecentChats = featureFlagger.isFeatureOn(.aiChatAddressBarRecentChats)
+            && (userInterfaceIdiom == .pad || featureFlagger.isFeatureOn(.aiChatNativeChatHistory))
+        if showsRecentChats {
             groups.append(UIMenu(title: "", options: .displayInline, children: [
-                UIAction(title: UserText.duckAiAddressBarMenuAllChats,
+                UIAction(title: UserText.actionChats,
                          image: DesignSystemImages.Glyphs.Size16.chats) { _ in
                     onRecentChats()
                 }

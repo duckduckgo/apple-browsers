@@ -74,7 +74,22 @@ final class PromoRegistryTests: XCTestCase {
                 onboardingStateUpdater: MockOnboardingStateUpdater(),
                 autoconsentStats: MockAutoconsentStats()
             ),
-            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator()
+            duckPlayerOverlayObserver: {
+                let featureFlagger = MockFeatureFlagger()
+                return DuckPlayerOverlayObserver(
+                    duckPlayer: DuckPlayer(
+                        preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
+                        privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                        internalUserDecider: featureFlagger.internalUserDecider
+                    ),
+                    windowControllersManager: windowControllersManager,
+                    featureFlagger: featureFlagger
+                )
+            }(),
+            updateController: nil,
+            updateNotificationBridge: nil,
+            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
+            quitSurveyPromoObserver: QuitSurveyPromoObserver()
         )
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 

@@ -26,10 +26,14 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
 
     private static let baseURL = URL(string: "https://dev.null")!
 
-    func testWhenEnsuringScopedPasswordAndCredentialExistsThenRecoversPasswordWithoutCreatingCredential() async throws {
+    func testWhenExistingThirdPartyCredentialAndAccountInfoWrappersAreCompleteThenReturnsSnapshotWithoutMutation() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
 
         let scopedPassword = Data(repeating: 8, count: 32)
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
@@ -38,7 +42,13 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                                                                            using: defaultCredentialMainKey,
                                                                                            kid: "ddg")
         let accessCredentials = [AccessCredential(id: "3party", scope: "sync", encrypted3PartyCredential: encryptedCredential)]
+        let storedKeys = [
+            makeProtectedKey(kid: "account-info", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "account-info", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "other", encryptedWith: SyncCredentialID.defaultCredential, purpose: "ai_chats")
+        ]
         api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody(accessCredentials))
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody(storedKeys))
 
         let result = try await manager.ensureThirdPartyScopedPassword(for: account,
                                                                       purpose: "ai_chats",
@@ -46,6 +56,134 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                                                           XCTFail("Existing credentials should not read cached scoped password")
                                                                           return nil
                                                                       })
+
+        XCTAssertEqual(result.scopedPassword, scopedPassword)
+        XCTAssertEqual(result.protectedKeysToCache.map(\.kid), storedKeys.map(\.kid))
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.accessCredentials, endpoints.keys])
+    }
+
+    func testWhenExistingThirdPartyCredentialHasDefaultAccountInfoWrapperThenRepairsAndReturnsRefetchedSnapshot() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let crypter = CryptingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
+        let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
+        let scopedPassword = Data((32..<64).map(UInt8.init))
+        let privateKeyPKCS8 = Data([0xFF] + Array("account-info-private-key".utf8))
+        let defaultWrapper = try makeNativeEncryptedProtectedKey(privateKey: privateKeyPKCS8,
+                                                                 account: account,
+                                                                 crypter: crypter,
+                                                                 purpose: ProtectedKeyPurpose.accountInfo)
+        let unrelatedKey = makeProtectedKey(kid: "other",
+                                            encryptedWith: SyncCredentialID.defaultCredential,
+                                            purpose: "ai_chats")
+        let defaultCredentialMainKey = ScopedAccessKeyDerivation.mainKey(from: account.primaryKey, userID: account.userId)
+        let encryptedCredential = try ScopedAccessCredentialEnvelope().encryptScopedPassword(scopedPassword,
+                                                                                             using: defaultCredentialMainKey,
+                                                                                             kid: SyncCredentialID.defaultCredential)
+        let accessCredentials = [
+            AccessCredential(id: SyncCredentialID.thirdParty,
+                             scope: "sync",
+                             encrypted3PartyCredential: encryptedCredential)
+        ]
+        let thirdPartyMainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: account.userId)
+        let thirdPartyWrapper = ProtectedKey(
+            kid: defaultWrapper.kid,
+            encryptedPrivateKey: try JWECompactCodec().encryptDirect(payload: privateKeyPKCS8,
+                                                                      contentEncryptionKey: thirdPartyMainKey,
+                                                                      kid: SyncCredentialID.thirdParty),
+            publicKey: defaultWrapper.publicKey,
+            encryptedWith: SyncCredentialID.thirdParty,
+            purpose: ProtectedKeyPurpose.accountInfo)
+        let repairedSnapshot = [defaultWrapper, thirdPartyWrapper, unrelatedKey]
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody(accessCredentials))
+        api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [
+            .init(data: Data(try protectedKeysBody([defaultWrapper, unrelatedKey]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
+            .init(data: Data(try protectedKeysBody(repairedSnapshot).utf8), response: makeHTTPURLResponse(statusCode: 200))
+        ])
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 201)
+
+        let result = try await manager.ensureThirdPartyScopedPassword(for: account,
+                                                                      purpose: "ai_chats",
+                                                                      cachedScopedPassword: {
+                                                                          XCTFail("Existing credentials should not read cached scoped password")
+                                                                          return nil
+                                                                      })
+
+        XCTAssertEqual(result.scopedPassword, scopedPassword)
+        XCTAssertEqual(result.protectedKeysToCache.map(\.kid), repairedSnapshot.map(\.kid))
+        XCTAssertEqual(Set(result.protectedKeysToCache.filter { $0.purpose == ProtectedKeyPurpose.accountInfo }.map(\.encryptedWith)),
+                       Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [
+            endpoints.accessCredentials,
+            endpoints.keys,
+            endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo),
+            endpoints.keys
+        ])
+    }
+
+    func testWhenExistingThirdPartyCredentialProtectedKeyFetchFailsThenDoesNotAttemptRepair() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
+        let scopedPassword = Data(repeating: 8, count: 32)
+        let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
+        let defaultCredentialMainKey = ScopedAccessKeyDerivation.mainKey(from: account.primaryKey, userID: account.userId)
+        let encryptedCredential = try ScopedAccessCredentialEnvelope().encryptScopedPassword(scopedPassword,
+                                                                                             using: defaultCredentialMainKey,
+                                                                                             kid: SyncCredentialID.defaultCredential)
+        let accessCredentials = [AccessCredential(id: SyncCredentialID.thirdParty,
+                                                  scope: "sync",
+                                                  encrypted3PartyCredential: encryptedCredential)]
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody(accessCredentials))
+        api.fakeRequests[endpoints.keys] = makeFailingRequest(statusCode: 500)
+
+        do {
+            _ = try await manager.ensureThirdPartyScopedPassword(for: account,
+                                                                 purpose: "ai_chats",
+                                                                 cachedScopedPassword: { nil })
+            XCTFail("Expected protected-key fetch failure")
+        } catch ScopedAccessCredentialError.accountExtendFailed {
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.accessCredentials, endpoints.keys])
+        XCTAssertFalse(api.createRequestCallArgs.contains {
+            $0.url == endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)
+        })
+    }
+
+    func testWhenRecoveringExistingThirdPartyCredentialWithUnifiedDeviceListWriteDisabledThenDoesNotFetchProtectedKeys() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { false })
+        let scopedPassword = Data(repeating: 8, count: 32)
+        let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
+        let defaultCredentialMainKey = ScopedAccessKeyDerivation.mainKey(from: account.primaryKey, userID: account.userId)
+        let encryptedCredential = try ScopedAccessCredentialEnvelope().encryptScopedPassword(scopedPassword,
+                                                                                             using: defaultCredentialMainKey,
+                                                                                             kid: SyncCredentialID.defaultCredential)
+        let accessCredentials = [AccessCredential(id: SyncCredentialID.thirdParty,
+                                                  scope: "sync",
+                                                  encrypted3PartyCredential: encryptedCredential)]
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody(accessCredentials))
+
+        let result = try await manager.ensureThirdPartyScopedPassword(for: account,
+                                                                      purpose: "ai_chats",
+                                                                      cachedScopedPassword: { nil })
 
         XCTAssertEqual(result.scopedPassword, scopedPassword)
         XCTAssertTrue(result.protectedKeysToCache.isEmpty)
@@ -62,7 +200,11 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                passwordHash: Data([0xAB]),
                                stretchedPrimaryKey: Data())
         }
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
 
         let scopedPassword = Data((32..<64).map(UInt8.init))
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
@@ -76,7 +218,9 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                                                       cachedScopedPassword: { scopedPassword })
 
         XCTAssertEqual(result.scopedPassword, scopedPassword)
-        XCTAssertEqual(result.protectedKeysToCache.map(\.kid), [protectedKey.kid])
+        XCTAssertEqual(result.protectedKeysToCache.map(\.kid), [protectedKey.kid, protectedKey.kid])
+        XCTAssertEqual(Set(result.protectedKeysToCache.map(\.encryptedWith)),
+                       Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
 
         let requestBody = try XCTUnwrap(api.createRequestCallArgs.last?.body)
         let payload = try decodeJSONObject(requestBody)
@@ -96,7 +240,11 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                passwordHash: Data([0xAB]),
                                stretchedPrimaryKey: Data())
         }
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
 
         let scopedPassword = Data((32..<64).map(UInt8.init))
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
@@ -123,7 +271,11 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     func testWhenFetchingAccessCredentialsReturns404ThenReturnsEmptyCredentials() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
         api.fakeRequests[endpoints.accessCredentials] = makeFailingRequest(statusCode: 404)
 
@@ -135,7 +287,11 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     func testWhenFetchingProtectedKeysReturns404ThenReturnsEmptyKeys() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
         api.fakeRequests[endpoints.keys] = makeFailingRequest(statusCode: 404)
 
@@ -154,7 +310,11 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                passwordHash: Data([0xAB]),
                                stretchedPrimaryKey: Data())
         }
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
 
         let accountPrimaryKey = Data((0..<32).map(UInt8.init))
         let scopedPassword = Data((32..<64).map(UInt8.init))
@@ -206,7 +366,11 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                passwordHash: Data([0xAB]),
                                stretchedPrimaryKey: Data())
         }
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
 
         let accountPrimaryKey = Data((0..<32).map(UInt8.init))
         let scopedPassword = Data((32..<64).map(UInt8.init))
@@ -237,6 +401,116 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         XCTAssertEqual(decryptedRewrappedPrivateKey, originalPrivateKey)
     }
 
+    func testWhenCreatingThirdPartyCredentialThenRewrapsAllExistingDefaultCredentialKeys() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let events = UnifiedDeviceListEventMappingMock()
+        var crypter = CryptingMock()
+        crypter._extractLoginInfo = { recoveryKey in
+            ExtractedLoginInfo(userId: recoveryKey.userId,
+                               primaryKey: recoveryKey.primaryKey,
+                               passwordHash: Data([0xAB]),
+                               stretchedPrimaryKey: Data())
+        }
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+
+        let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
+        let scopedPassword = Data((32..<64).map(UInt8.init))
+        let accountInfoPrivateKey = Data([0xFF] + Array("account-info-private-key".utf8))
+        let aiChatKey = try makeNativeEncryptedProtectedKey(privateKey: Data("ai-chat-private-key".utf8),
+                                                           account: account,
+                                                           crypter: crypter)
+        let accountInfoKey = try makeNativeEncryptedProtectedKey(privateKey: accountInfoPrivateKey,
+                                                                account: account,
+                                                                crypter: crypter,
+                                                                purpose: ProtectedKeyPurpose.accountInfo)
+        let bookmarksKey = try makeNativeEncryptedProtectedKey(privateKey: Data("bookmarks-private-key".utf8),
+                                                               account: account,
+                                                               crypter: crypter,
+                                                               purpose: "bookmarks")
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody([]))
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200,
+                                                       body: try protectedKeysBody([aiChatKey, accountInfoKey, bookmarksKey]))
+        api.fakeRequests[endpoints.accessCredential(SyncCredentialID.thirdParty)] = makeRequest(statusCode: 201)
+
+        let result = try await manager.ensureThirdPartyScopedPassword(for: account,
+                                                                      purpose: "ai_chats",
+                                                                      cachedScopedPassword: { scopedPassword })
+
+        XCTAssertEqual(Set(result.protectedKeysToCache.map(\.kid)), Set([aiChatKey.kid, accountInfoKey.kid, bookmarksKey.kid]))
+        XCTAssertEqual(Set(result.protectedKeysToCache.filter { $0.purpose == ProtectedKeyPurpose.accountInfo }.map(\.encryptedWith)),
+                       Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+        XCTAssertEqual(Set(result.protectedKeysToCache.filter { $0.purpose == "bookmarks" }.map(\.encryptedWith)),
+                       Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+        let requestBody = try XCTUnwrap(api.createRequestCallArgs.last?.body)
+        let payload = try decodeJSONObject(requestBody)
+        let keys = try XCTUnwrap(payload["keys"] as? [[String: Any]])
+        XCTAssertEqual(keys.count, 3)
+        XCTAssertTrue(keys.allSatisfy { $0["encrypted_with"] as? String == SyncCredentialID.thirdParty })
+        XCTAssertEqual(Set(keys.compactMap { $0["purpose"] as? String }),
+                       Set(["ai_chats", ProtectedKeyPurpose.accountInfo, "bookmarks"]))
+
+        let accountInfoWrapper = try XCTUnwrap(keys.first { $0["purpose"] as? String == ProtectedKeyPurpose.accountInfo })
+        XCTAssertEqual(accountInfoWrapper["kid"] as? String, accountInfoKey.kid)
+        let encryptedPrivateKey = try XCTUnwrap(accountInfoWrapper["encrypted_private_key"] as? String)
+        let thirdPartyMainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: account.userId)
+        let decryptedPrivateKey = try JWECompactCodec().decryptDirect(token: encryptedPrivateKey,
+                                                                     contentEncryptionKey: thirdPartyMainKey,
+                                                                     expectedKid: SyncCredentialID.thirdParty)
+        XCTAssertEqual(decryptedPrivateKey, accountInfoPrivateKey)
+        XCTAssertEqual(events.events, [.accountInfoKeyWrapSuccess])
+    }
+
+    func testWhenCreatingThirdPartyCredentialWithUnifiedDeviceListWriteDisabledThenRewrapsExistingAccountInfoKey() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let events = UnifiedDeviceListEventMappingMock()
+        var crypter = CryptingMock()
+        crypter._extractLoginInfo = { recoveryKey in
+            ExtractedLoginInfo(userId: recoveryKey.userId,
+                               primaryKey: recoveryKey.primaryKey,
+                               passwordHash: Data([0xAB]),
+                               stretchedPrimaryKey: Data())
+        }
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { false })
+
+        let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
+        let scopedPassword = Data((32..<64).map(UInt8.init))
+        let aiChatKey = try makeNativeEncryptedProtectedKey(privateKey: Data("ai-chat-private-key".utf8),
+                                                           account: account,
+                                                           crypter: crypter)
+        let accountInfoKey = try makeNativeEncryptedProtectedKey(privateKey: Data("account-info-private-key".utf8),
+                                                                account: account,
+                                                                crypter: crypter,
+                                                                purpose: ProtectedKeyPurpose.accountInfo)
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody([]))
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody([aiChatKey, accountInfoKey]))
+        api.fakeRequests[endpoints.accessCredential(SyncCredentialID.thirdParty)] = makeRequest(statusCode: 201)
+
+        _ = try await manager.ensureThirdPartyScopedPassword(for: account,
+                                                            purpose: "ai_chats",
+                                                            cachedScopedPassword: { scopedPassword })
+
+        let requestBody = try XCTUnwrap(api.createRequestCallArgs.last?.body)
+        let payload = try decodeJSONObject(requestBody)
+        let keys = try XCTUnwrap(payload["keys"] as? [[String: Any]])
+        XCTAssertEqual(keys.count, 2)
+        XCTAssertTrue(keys.allSatisfy { $0["encrypted_with"] as? String == SyncCredentialID.thirdParty })
+        XCTAssertEqual(keys.first { $0["purpose"] as? String == ProtectedKeyPurpose.accountInfo }?["kid"] as? String,
+                       accountInfoKey.kid)
+        XCTAssertEqual(events.events, [.accountInfoKeyWrapSuccess])
+    }
+
     func testWhenCreatingThirdPartyScopedPasswordReturns409ThenRefetchesAndRecoversScopedPassword() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
@@ -247,7 +521,11 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                passwordHash: Data([0xAB]),
                                stretchedPrimaryKey: Data())
         }
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
 
         let accountPrimaryKey = Data((0..<32).map(UInt8.init))
         let localScopedPassword = Data((32..<64).map(UInt8.init))
@@ -274,13 +552,15 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
             endpoints.accessCredentials,
             endpoints.keys,
             endpoints.accessCredential("3party"),
-            endpoints.accessCredentials
+            endpoints.accessCredentials,
+            endpoints.keys
         ])
     }
 
-    func testWhenDefaultCredentialProtectedKeyIsDirectJWEThenThrowsAccountExtendFailed() async throws {
+    func testWhenAccountInfoDefaultCredentialProtectedKeyIsDirectJWEThenFiresWrapFailureAndThrowsAccountExtendFailed() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
+        let events = UnifiedDeviceListEventMappingMock()
         var crypter = CryptingMock()
         crypter._extractLoginInfo = { recoveryKey in
             ExtractedLoginInfo(userId: recoveryKey.userId,
@@ -288,7 +568,12 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                passwordHash: Data([0xAB]),
                                stretchedPrimaryKey: Data())
         }
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
 
         let accountPrimaryKey = Data((0..<32).map(UInt8.init))
         let scopedPassword = Data((32..<64).map(UInt8.init))
@@ -296,7 +581,7 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let defaultCredentialMainKey = hkdf(input: accountPrimaryKey, salt: account.userId, info: "Main Key")
         let ddgWrappedProtectedKey = try ScopedAccessKeyFactory.makeJWEProtectedKey(wrappingKey: defaultCredentialMainKey,
                                                                                     encryptedWith: "ddg",
-                                                                                    purpose: "ai_chats")
+                                                                                    purpose: ProtectedKeyPurpose.accountInfo)
         api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody([]))
         api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody([ddgWrappedProtectedKey]))
 
@@ -309,175 +594,1172 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
+        XCTAssertEqual(events.events, [.accountInfoKeyWrapFailed(.unwrapFailed)])
     }
 
-    func testWhenSetKeyIfAbsentReturns409ThenRefetchesAndReconciles() async throws {
+    func testWhenEnsuringAccountInfoProtectedKeysWithUnifiedDeviceListWriteDisabledThenDoesNotMakeNetworkRequests() async throws {
         let api = RemoteAPIRequestCreatingMock()
-        let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
-        let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
-        let requestedKey = makeProtectedKey(kid: "requested", encryptedWith: "ddg", purpose: "ai_chats")
+        let manager = ScopedAccessCredentialManager(endpoints: Endpoints(baseURL: Self.baseURL),
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { false })
 
-        let conflictRequest = HTTPRequestingMock()
-        conflictRequest.error = SyncError.unexpectedStatusCode(409)
-        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: "ai_chats")] = conflictRequest
-        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200,
-                                                       body: """
-                                                       {
-                                                         "keys": [
-                                                           {
-                                                             "kid": "requested",
-                                                             "encrypted_private_key": "enc-private",
-                                                             "public_key": {
-                                                               "kty": "RSA",
-                                                               "alg": "RSA-OAEP-256",
-                                                               "use": "enc",
-                                                               "n": "mod",
-                                                               "e": "AQAB"
-                                                             },
-                                                             "encrypted_with": "ddg",
-                                                             "purpose": "ai_chats"
-                                                           }
-                                                         ]
-                                                       }
-                                                       """)
+        let result = try await manager.ensureAccountInfoProtectedKeys(for: makeAccount(primaryKey: Data(repeating: 0x1, count: 32)))
 
-        let result = try await manager.setKeyIfAbsent(purpose: "ai_chats", key: requestedKey, for: account)
-
-        XCTAssertEqual(result?.kid, "requested")
-        XCTAssertEqual(result?.encryptedWith, "ddg")
-        XCTAssertEqual(result?.purpose, "ai_chats")
-        XCTAssertEqual(api.createRequestCallArgs.count, 2)
+        XCTAssertTrue(result.isEmpty)
+        XCTAssertTrue(api.createRequestCallArgs.isEmpty)
     }
 
-    func testWhenSetKeyIfAbsentReturns409WithOnlyPurposeMatchThenThrows() async throws {
+    func testWhenResolvingAccountInfoKeysIsRateLimitedThenFiresAdoptFailure() async {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
-        let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
-        let requestedKey = makeProtectedKey(kid: "requested", encryptedWith: "ddg", purpose: "ai_chats")
-
-        let conflictRequest = HTTPRequestingMock()
-        conflictRequest.error = SyncError.unexpectedStatusCode(409)
-        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: "ai_chats")] = conflictRequest
-        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200,
-                                                       body: """
-                                                       {
-                                                         "keys": [
-                                                           {
-                                                             "kid": "server-3party",
-                                                             "encrypted_private_key": "enc-private",
-                                                             "public_key": {
-                                                               "kty": "RSA",
-                                                               "alg": "RSA-OAEP-256",
-                                                               "use": "enc",
-                                                               "n": "mod",
-                                                               "e": "AQAB"
-                                                             },
-                                                             "encrypted_with": "3party",
-                                                             "purpose": "ai_chats"
-                                                           }
-                                                         ]
-                                                       }
-                                                       """)
+        let events = UnifiedDeviceListEventMappingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.keys] = makeFailingRequest(statusCode: 429)
 
         do {
-            _ = try await manager.setKeyIfAbsent(purpose: "ai_chats", key: requestedKey, for: account)
-            XCTFail("Expected setKeyIfAbsent to throw")
-        } catch SyncError.invalidDataInResponse(let message) {
-            XCTAssertTrue(message.contains("no matching key"))
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
-
-        XCTAssertEqual(api.createRequestCallArgs.count, 2)
-    }
-
-    func testWhenSetKeyIfAbsentReturnsWrappedKeysThenMatchingKeyIsReturned() async throws {
-        let api = RemoteAPIRequestCreatingMock()
-        let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
-        let account = makeAccount(primaryKey: Data(repeating: 0x3, count: 32))
-        let requestedKey = makeProtectedKey(kid: "requested", encryptedWith: "ddg", purpose: "ai_chats")
-
-        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: "ai_chats")] = makeRequest(statusCode: 201,
-                                                                                       body: """
-                                                                                       {
-                                                                                         "keys": [
-                                                                                           {
-                                                                                             "kid": "server-other",
-                                                                                             "encrypted_private_key": "enc-private-other",
-                                                                                             "public_key": {
-                                                                                               "kty": "RSA",
-                                                                                               "alg": "RSA-OAEP-256",
-                                                                                               "use": "enc",
-                                                                                               "n": "mod",
-                                                                                               "e": "AQAB"
-                                                                                             },
-                                                                                             "encrypted_with": "3party",
-                                                                                             "purpose": "bookmarks"
-                                                                                           },
-                                                                                           {
-                                                                                             "kid": "requested",
-                                                                                             "encrypted_private_key": "enc-private",
-                                                                                             "public_key": {
-                                                                                               "kty": "RSA",
-                                                                                               "alg": "RSA-OAEP-256",
-                                                                                               "use": "enc",
-                                                                                               "n": "mod",
-                                                                                               "e": "AQAB"
-                                                                                             },
-                                                                                             "encrypted_with": "ddg",
-                                                                                             "purpose": "ai_chats"
-                                                                                           }
-                                                                                         ]
-                                                                                       }
-                                                                                       """)
-
-        let result = try await manager.setKeyIfAbsent(purpose: "ai_chats", key: requestedKey, for: account)
-
-        XCTAssertEqual(result?.kid, "requested")
-        XCTAssertEqual(result?.encryptedWith, "ddg")
-        XCTAssertEqual(result?.purpose, "ai_chats")
-    }
-
-    func testWhenSetKeyIfAbsentReturns200ThenThrowsUnexpectedStatusCode() async throws {
-        let api = RemoteAPIRequestCreatingMock()
-        let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
-        let account = makeAccount(primaryKey: Data(repeating: 0x4, count: 32))
-        let requestedKey = makeProtectedKey(kid: "requested", encryptedWith: "ddg", purpose: "ai_chats")
-
-        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: "ai_chats")] = makeRequest(statusCode: 200)
-
-        do {
-            _ = try await manager.setKeyIfAbsent(purpose: "ai_chats", key: requestedKey, for: account)
-            XCTFail("Expected setKeyIfAbsent to throw")
+            _ = try await manager.ensureAccountInfoProtectedKeys(
+                for: makeAccount(primaryKey: Data(repeating: 0x1, count: 32)))
+            XCTFail("Expected account_info key resolution to fail")
         } catch SyncError.unexpectedStatusCode(let statusCode) {
-            XCTAssertEqual(statusCode, 200)
+            XCTAssertEqual(statusCode, 429)
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
 
+        XCTAssertEqual(events.events, [.accountInfoKeyAdoptFailed(.rateLimited)])
+    }
+
+    func testWhenAccessCredentialFetchFailsBeforeMintingAccountInfoKeyThenDoesNotFireCreateFailure() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let events = UnifiedDeviceListEventMappingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody([]))
+        api.fakeRequests[endpoints.accessCredentials] = makeFailingRequest(statusCode: 500)
+
+        do {
+            _ = try await manager.ensureAccountInfoProtectedKeys(
+                for: makeAccount(primaryKey: Data(repeating: 0x1, count: 32)))
+            XCTFail("Expected access credential fetch to fail")
+        } catch SyncError.unexpectedStatusCode(let statusCode) {
+            XCTAssertEqual(statusCode, 500)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.keys, endpoints.accessCredentials])
+        XCTAssertTrue(accountInfoKeyFactory.makeProtectedKeysCalls.isEmpty)
+        XCTAssertTrue(events.events.isEmpty)
+    }
+
+    func testWhenScopedPasswordRecoveryFailsBeforeMintingAccountInfoKeyThenDoesNotFireCreateFailure() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let events = UnifiedDeviceListEventMappingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        let accessCredentials = [
+            AccessCredential(id: SyncCredentialID.thirdParty,
+                             scope: "sync",
+                             encrypted3PartyCredential: "invalid")
+        ]
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody([]))
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody(accessCredentials))
+
+        do {
+            _ = try await manager.ensureAccountInfoProtectedKeys(
+                for: makeAccount(primaryKey: Data(repeating: 0x1, count: 32)))
+            XCTFail("Expected scoped password recovery to fail")
+        } catch ScopedAccessCredentialError.undecryptableThirdPartyCredential {
+            // Expected.
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.keys, endpoints.accessCredentials])
+        XCTAssertTrue(accountInfoKeyFactory.makeProtectedKeysCalls.isEmpty)
+        XCTAssertTrue(events.events.isEmpty)
+    }
+
+    func testWhenEnsuringAccountInfoWrappersWithDifferentKidsThenThrowsInvalidData() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let events = UnifiedDeviceListEventMappingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        let storedKeys = [
+            makeProtectedKey(kid: "first-key",
+                             encryptedWith: SyncCredentialID.defaultCredential,
+                             purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "second-key",
+                             encryptedWith: SyncCredentialID.thirdParty,
+                             purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody(storedKeys))
+
+        do {
+            _ = try await manager.ensureAccountInfoProtectedKeys(
+                for: makeAccount(primaryKey: Data(repeating: 0x1, count: 32)))
+            XCTFail("Expected inconsistent account_info wrappers to be rejected")
+        } catch SyncError.invalidDataInResponse(let message) {
+            XCTAssertEqual(message, "account_info protected key wrappers do not describe the same key")
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.keys])
+        XCTAssertTrue(events.events.isEmpty)
+    }
+
+    func testWhenAccessCredentialFetchFailsBeforeWrappingStoredKeyThenDoesNotFireAdoptFailure() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let events = UnifiedDeviceListEventMappingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        let storedKey = makeProtectedKey(kid: "account-info",
+                                         encryptedWith: SyncCredentialID.defaultCredential,
+                                         purpose: ProtectedKeyPurpose.accountInfo)
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody([storedKey]))
+        api.fakeRequests[endpoints.accessCredentials] = makeFailingRequest(statusCode: 500)
+
+        do {
+            _ = try await manager.ensureAccountInfoProtectedKeys(
+                for: makeAccount(primaryKey: Data(repeating: 0x1, count: 32)))
+            XCTFail("Expected access credential fetch to fail")
+        } catch SyncError.unexpectedStatusCode(let statusCode) {
+            XCTAssertEqual(statusCode, 500)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.keys, endpoints.accessCredentials])
+        XCTAssertTrue(events.events.isEmpty)
+    }
+
+    func testWhenEnsuringAccountInfoProtectedKeysAndKeysAreStoredThenReturnsThemWithoutCreatingKeys() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let events = UnifiedDeviceListEventMappingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
+        let storedKeys = [
+            makeProtectedKey(kid: "account-info", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "account-info", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "other", encryptedWith: SyncCredentialID.defaultCredential, purpose: "bookmarks")
+        ]
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody(storedKeys))
+
+        let result = try await manager.ensureAccountInfoProtectedKeys(for: account)
+
+        XCTAssertEqual(result.map(\.kid), ["account-info", "account-info"])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+        XCTAssertTrue(accountInfoKeyFactory.makeProtectedKeysCalls.isEmpty)
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.keys])
+        XCTAssertEqual(events.events, [.accountInfoKeyAdoptSuccess])
+    }
+
+    func testWhenEnsuringStoredDefaultAccountInfoKeyWithThirdPartyCredentialThenAddsThirdPartyWrapper() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let crypter = CryptingMock()
+        let events = UnifiedDeviceListEventMappingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
+        let scopedPassword = Data((32..<64).map(UInt8.init))
+        let privateKeyPKCS8 = Data([0xFF] + Array("account-info-private-key".utf8))
+        let storedKey = try makeNativeEncryptedProtectedKey(privateKey: privateKeyPKCS8,
+                                                            account: account,
+                                                            crypter: crypter,
+                                                            purpose: ProtectedKeyPurpose.accountInfo)
+        let defaultCredentialMainKey = ScopedAccessKeyDerivation.mainKey(from: account.primaryKey, userID: account.userId)
+        let encryptedCredential = try ScopedAccessCredentialEnvelope().encryptScopedPassword(scopedPassword,
+                                                                                             using: defaultCredentialMainKey,
+                                                                                             kid: SyncCredentialID.defaultCredential)
+        let accessCredentials = [
+            AccessCredential(id: SyncCredentialID.thirdParty,
+                             scope: "sync",
+                             encrypted3PartyCredential: encryptedCredential)
+        ]
+        let thirdPartyMainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: account.userId)
+        let storedThirdPartyEncryptedKey = try JWECompactCodec().encryptDirect(payload: privateKeyPKCS8,
+                                                                               contentEncryptionKey: thirdPartyMainKey,
+                                                                               kid: SyncCredentialID.thirdParty)
+        let storedThirdPartyKey = ProtectedKey(kid: storedKey.kid,
+                                               encryptedPrivateKey: storedThirdPartyEncryptedKey,
+                                               publicKey: storedKey.publicKey,
+                                               encryptedWith: SyncCredentialID.thirdParty,
+                                               purpose: ProtectedKeyPurpose.accountInfo)
+        api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [
+            .init(data: Data(try protectedKeysBody([storedKey]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
+            .init(data: Data(try protectedKeysBody([storedKey, storedThirdPartyKey]).utf8), response: makeHTTPURLResponse(statusCode: 200))
+        ])
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody(accessCredentials))
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 201)
+
+        let result = try await manager.ensureAccountInfoProtectedKeys(for: account)
+
+        XCTAssertEqual(result.map(\.kid), [storedKey.kid, storedKey.kid])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+        XCTAssertTrue(result.allSatisfy { $0.publicKey == storedKey.publicKey })
+        XCTAssertTrue(accountInfoKeyFactory.makeProtectedKeysCalls.isEmpty)
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [
+            endpoints.keys,
+            endpoints.accessCredentials,
+            endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo),
+            endpoints.keys
+        ])
+
+        let repairRequest = try XCTUnwrap(
+            api.createRequestCallArgs.first { $0.url == endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo) }
+        )
+        let requestBody = try XCTUnwrap(repairRequest.body)
+        let payload = try decodeJSONObject(requestBody)
+        let keys = try XCTUnwrap(payload["keys"] as? [[String: Any]])
+        let thirdPartyWrapper = try XCTUnwrap(keys.first { $0["encrypted_with"] as? String == SyncCredentialID.thirdParty })
+        XCTAssertEqual(thirdPartyWrapper["kid"] as? String, storedKey.kid)
+        let encryptedPrivateKey = try XCTUnwrap(thirdPartyWrapper["encrypted_private_key"] as? String)
+        let decryptedPrivateKey = try JWECompactCodec().decryptDirect(token: encryptedPrivateKey,
+                                                                     contentEncryptionKey: thirdPartyMainKey,
+                                                                     expectedKid: SyncCredentialID.thirdParty)
+        XCTAssertEqual(decryptedPrivateKey, privateKeyPKCS8)
+        XCTAssertEqual(events.events, [.accountInfoKeyWrapSuccess])
+    }
+
+    func testWhenEnsuringStoredThirdPartyAccountInfoKeyOnNativeThenAddsDefaultWrapper() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let crypter = CryptingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    canWriteUnifiedDeviceList: { true })
+        let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
+        let scopedPassword = Data((32..<64).map(UInt8.init))
+        let privateKeyPKCS8 = Data([0xFF] + Array("account-info-private-key".utf8))
+        let thirdPartyMainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: account.userId)
+        let encryptedPrivateKey = try JWECompactCodec().encryptDirect(payload: privateKeyPKCS8,
+                                                                      contentEncryptionKey: thirdPartyMainKey,
+                                                                      kid: SyncCredentialID.thirdParty)
+        let storedKey = ProtectedKey(kid: "account-info-key",
+                                     encryptedPrivateKey: encryptedPrivateKey,
+                                     publicKey: .mock,
+                                     encryptedWith: SyncCredentialID.thirdParty,
+                                     purpose: ProtectedKeyPurpose.accountInfo)
+        let defaultCredentialMainKey = ScopedAccessKeyDerivation.mainKey(from: account.primaryKey, userID: account.userId)
+        let encryptedCredential = try ScopedAccessCredentialEnvelope().encryptScopedPassword(scopedPassword,
+                                                                                             using: defaultCredentialMainKey,
+                                                                                             kid: SyncCredentialID.defaultCredential)
+        let accessCredentials = [
+            AccessCredential(id: SyncCredentialID.thirdParty,
+                             scope: "sync",
+                             encrypted3PartyCredential: encryptedCredential)
+        ]
+        let storedDefaultEncryptedKey = try crypter.encrypt(privateKeyPKCS8, using: account.secretKey)
+        let storedDefaultKey = ProtectedKey(kid: storedKey.kid,
+                                            encryptedPrivateKey: Base64URL.encode(storedDefaultEncryptedKey),
+                                            publicKey: storedKey.publicKey,
+                                            encryptedWith: SyncCredentialID.defaultCredential,
+                                            purpose: ProtectedKeyPurpose.accountInfo)
+        api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [
+            .init(data: Data(try protectedKeysBody([storedKey]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
+            .init(data: Data(try protectedKeysBody([storedKey, storedDefaultKey]).utf8), response: makeHTTPURLResponse(statusCode: 200))
+        ])
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody(accessCredentials))
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 201)
+
+        let result = try await manager.ensureAccountInfoProtectedKeys(for: account)
+
+        XCTAssertEqual(result.map(\.kid), [storedKey.kid, storedKey.kid])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+        XCTAssertTrue(result.allSatisfy { $0.publicKey == storedKey.publicKey })
+        XCTAssertTrue(accountInfoKeyFactory.makeProtectedKeysCalls.isEmpty)
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [
+            endpoints.keys,
+            endpoints.accessCredentials,
+            endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo),
+            endpoints.keys
+        ])
+
+        let repairRequest = try XCTUnwrap(
+            api.createRequestCallArgs.first { $0.url == endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo) }
+        )
+        let requestBody = try XCTUnwrap(repairRequest.body)
+        let payload = try decodeJSONObject(requestBody)
+        let keys = try XCTUnwrap(payload["keys"] as? [[String: Any]])
+        let defaultWrapper = try XCTUnwrap(keys.first { $0["encrypted_with"] as? String == SyncCredentialID.defaultCredential })
+        XCTAssertEqual(defaultWrapper["kid"] as? String, storedKey.kid)
+        let encodedPrivateKey = try XCTUnwrap(defaultWrapper["encrypted_private_key"] as? String)
+        let encryptedDefaultPrivateKey = try XCTUnwrap(Base64URL.decode(encodedPrivateKey))
+        let decryptedPrivateKey = try crypter.decryptData(encryptedDefaultPrivateKey, using: account.secretKey)
+        XCTAssertEqual(decryptedPrivateKey, privateKeyPKCS8)
+    }
+
+    func testWhenServerDoesNotPersistRepairedAccountInfoWrapperThenThrows() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let crypter = CryptingMock()
+        let events = UnifiedDeviceListEventMappingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
+        let scopedPassword = Data((32..<64).map(UInt8.init))
+        let storedKey = try makeNativeEncryptedProtectedKey(privateKey: Data([0xFF] + Array("account-info-private-key".utf8)),
+                                                            account: account,
+                                                            crypter: crypter,
+                                                            purpose: ProtectedKeyPurpose.accountInfo)
+        let defaultCredentialMainKey = ScopedAccessKeyDerivation.mainKey(from: account.primaryKey, userID: account.userId)
+        let encryptedCredential = try ScopedAccessCredentialEnvelope().encryptScopedPassword(scopedPassword,
+                                                                                             using: defaultCredentialMainKey,
+                                                                                             kid: SyncCredentialID.defaultCredential)
+        let accessCredentials = [
+            AccessCredential(id: SyncCredentialID.thirdParty,
+                             scope: "sync",
+                             encrypted3PartyCredential: encryptedCredential)
+        ]
+        let storedKeysResponse = HTTPResult(data: Data(try protectedKeysBody([storedKey]).utf8),
+                                            response: makeHTTPURLResponse(statusCode: 200))
+        api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [
+            storedKeysResponse,
+            storedKeysResponse
+        ])
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody(accessCredentials))
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 201)
+
+        do {
+            _ = try await manager.ensureAccountInfoProtectedKeys(for: account)
+            XCTFail("Expected an unmerged wrapper set to be rejected")
+        } catch SyncError.invalidDataInResponse(let message) {
+            XCTAssertTrue(message.contains("missing a 3party wrapper"))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [
+            endpoints.keys,
+            endpoints.accessCredentials,
+            endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo),
+            endpoints.keys
+        ])
+        XCTAssertEqual(events.events, [.accountInfoKeyWrapFailed(.requestFailed)])
+    }
+
+    func testWhenEnsuringAccountInfoProtectedKeysWithoutThirdPartyCredentialThenCreatesAndRegistersDefaultWrapper() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let account = makeAccount(primaryKey: Data(repeating: 0x2, count: 32))
+        let createdKey = makeProtectedKey(kid: "created",
+                                          encryptedWith: SyncCredentialID.defaultCredential,
+                                          purpose: ProtectedKeyPurpose.accountInfo)
+        accountInfoKeyFactory.makeProtectedKeysStub = [createdKey]
+        let events = UnifiedDeviceListEventMappingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [
+            .init(data: Data(try protectedKeysBody([]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
+            .init(data: Data(try protectedKeysBody([createdKey]).utf8), response: makeHTTPURLResponse(statusCode: 200))
+        ])
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody([]))
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 201)
+
+        let result = try await manager.ensureAccountInfoProtectedKeys(for: account)
+
+        XCTAssertEqual(result.map(\.kid), ["created"])
+        let factoryCall = try XCTUnwrap(accountInfoKeyFactory.makeProtectedKeysCalls.first)
+        XCTAssertEqual(factoryCall.accountSecretKey, account.secretKey)
+        XCTAssertNil(factoryCall.thirdPartyMainKey)
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [
+            endpoints.keys,
+            endpoints.accessCredentials,
+            endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo),
+            endpoints.keys
+        ])
+        XCTAssertEqual(events.events, [.accountInfoKeyCreateSuccess])
+    }
+
+    func testWhenCreatedAccountInfoKeyRefetchFailsThenDoesNotFireAdoptFailure() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let createdKey = makeProtectedKey(kid: "created",
+                                          encryptedWith: SyncCredentialID.defaultCredential,
+                                          purpose: ProtectedKeyPurpose.accountInfo)
+        accountInfoKeyFactory.makeProtectedKeysStub = [createdKey]
+        let events = UnifiedDeviceListEventMappingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [
+            .init(data: Data(try protectedKeysBody([]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
+            .init(data: nil, response: makeHTTPURLResponse(statusCode: 200))
+        ])
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody([]))
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 201)
+
+        do {
+            _ = try await manager.ensureAccountInfoProtectedKeys(
+                for: makeAccount(primaryKey: Data(repeating: 0x1, count: 32)))
+            XCTFail("Expected created key refetch to fail")
+        } catch SyncError.noResponseBody {
+            // Expected.
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [
+            endpoints.keys,
+            endpoints.accessCredentials,
+            endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo),
+            endpoints.keys
+        ])
+        XCTAssertEqual(events.events, [.accountInfoKeyCreateSuccess])
+    }
+
+    func testWhenAdoptedAccountInfoKeyRefetchFailsThenFiresAdoptFailure() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let candidateKey = makeProtectedKey(kid: "candidate",
+                                            encryptedWith: SyncCredentialID.defaultCredential,
+                                            purpose: ProtectedKeyPurpose.accountInfo)
+        let adoptedKey = makeProtectedKey(kid: "adopted",
+                                          encryptedWith: SyncCredentialID.defaultCredential,
+                                          purpose: ProtectedKeyPurpose.accountInfo)
+        accountInfoKeyFactory.makeProtectedKeysStub = [candidateKey]
+        let events = UnifiedDeviceListEventMappingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [
+            .init(data: Data(try protectedKeysBody([]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
+            .init(data: nil, response: makeHTTPURLResponse(statusCode: 200))
+        ])
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody([]))
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(
+            statusCode: 200,
+            body: try protectedKeysBody([adoptedKey]))
+
+        do {
+            _ = try await manager.ensureAccountInfoProtectedKeys(
+                for: makeAccount(primaryKey: Data(repeating: 0x1, count: 32)))
+            XCTFail("Expected adopted key refetch to fail")
+        } catch SyncError.noResponseBody {
+            // Expected.
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(events.events, [.accountInfoKeyAdoptFailed(.keysFetchFailed)])
+    }
+
+    func testWhenAdoptedAccountInfoKeyIsMissingFromRefetchThenFiresAdoptFailure() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let candidateKey = makeProtectedKey(kid: "candidate",
+                                            encryptedWith: SyncCredentialID.defaultCredential,
+                                            purpose: ProtectedKeyPurpose.accountInfo)
+        let adoptedKey = makeProtectedKey(kid: "adopted",
+                                          encryptedWith: SyncCredentialID.defaultCredential,
+                                          purpose: ProtectedKeyPurpose.accountInfo)
+        accountInfoKeyFactory.makeProtectedKeysStub = [candidateKey]
+        let events = UnifiedDeviceListEventMappingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [
+            .init(data: Data(try protectedKeysBody([]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
+            .init(data: Data(try protectedKeysBody([]).utf8), response: makeHTTPURLResponse(statusCode: 200))
+        ])
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody([]))
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(
+            statusCode: 200,
+            body: try protectedKeysBody([adoptedKey]))
+
+        do {
+            _ = try await manager.ensureAccountInfoProtectedKeys(
+                for: makeAccount(primaryKey: Data(repeating: 0x1, count: 32)))
+            XCTFail("Expected adopted key refetch to omit the account_info key")
+        } catch SyncError.invalidDataInResponse(let message) {
+            XCTAssertEqual(message, "account_info protected keys are missing")
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(events.events, [.accountInfoKeyAdoptFailed(.keysFetchFailed)])
+    }
+
+    func testWhenEnsuringAccountInfoProtectedKeysWithThirdPartyCredentialThenCreatesAndRegistersBothWrappers() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let accountPrimaryKey = Data((0..<32).map(UInt8.init))
+        let scopedPassword = Data((32..<64).map(UInt8.init))
+        let account = makeAccount(primaryKey: accountPrimaryKey)
+        let defaultCredentialMainKey = hkdf(input: accountPrimaryKey, salt: account.userId, info: "Main Key")
+        let encryptedCredential = try ScopedAccessCredentialEnvelope().encryptScopedPassword(scopedPassword,
+                                                                                             using: defaultCredentialMainKey,
+                                                                                             kid: SyncCredentialID.defaultCredential)
+        let accessCredentials = [
+            AccessCredential(id: SyncCredentialID.thirdParty,
+                             scope: "sync",
+                             encrypted3PartyCredential: encryptedCredential)
+        ]
+        let createdKeys = [
+            makeProtectedKey(kid: "created", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "created", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        accountInfoKeyFactory.makeProtectedKeysStub = createdKeys
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [
+            .init(data: Data(try protectedKeysBody([]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
+            .init(data: Data(try protectedKeysBody(createdKeys).utf8), response: makeHTTPURLResponse(statusCode: 200))
+        ])
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody(accessCredentials))
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 201)
+
+        let result = try await manager.ensureAccountInfoProtectedKeys(for: account)
+
+        XCTAssertEqual(result.map(\.kid), ["created", "created"])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+        let factoryCall = try XCTUnwrap(accountInfoKeyFactory.makeProtectedKeysCalls.first)
+        XCTAssertEqual(factoryCall.accountSecretKey, account.secretKey)
+        XCTAssertEqual(factoryCall.thirdPartyMainKey, hkdf(input: scopedPassword, salt: account.userId, info: "Main Key"))
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [
+            endpoints.keys,
+            endpoints.accessCredentials,
+            endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo),
+            endpoints.keys
+        ])
+    }
+
+    func testWhenFreshAccountInfoKeyThirdPartyWrappingFailsThenDoesNotFireOrRegister() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let accountPrimaryKey = Data((0..<32).map(UInt8.init))
+        let scopedPassword = Data((32..<64).map(UInt8.init))
+        let account = makeAccount(primaryKey: accountPrimaryKey)
+        let defaultCredentialMainKey = hkdf(input: accountPrimaryKey, salt: account.userId, info: "Main Key")
+        let encryptedCredential = try ScopedAccessCredentialEnvelope().encryptScopedPassword(scopedPassword,
+                                                                                             using: defaultCredentialMainKey,
+                                                                                             kid: SyncCredentialID.defaultCredential)
+        let accessCredentials = [
+            AccessCredential(id: SyncCredentialID.thirdParty,
+                             scope: "sync",
+                             encrypted3PartyCredential: encryptedCredential)
+        ]
+        accountInfoKeyFactory.makeProtectedKeysError = AccountInfoKeyFactoryError.thirdPartyWrappingFailed(
+            JWECompactCodecError.invalidContentEncryptionKeyLength(0))
+        let events = UnifiedDeviceListEventMappingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody([]))
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody(accessCredentials))
+
+        do {
+            _ = try await manager.ensureAccountInfoProtectedKeys(for: account)
+            XCTFail("Expected third-party wrapping to fail")
+        } catch JWECompactCodecError.invalidContentEncryptionKeyLength(let count) {
+            XCTAssertEqual(count, 0)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [
+            endpoints.keys,
+            endpoints.accessCredentials
+        ])
+        XCTAssertTrue(events.events.isEmpty)
+    }
+
+    func testWhenAnotherClientRegistersIncompleteAccountInfoKeyThenRepairsAdoptedKey() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let crypter = CryptingMock()
+        let accountPrimaryKey = Data((0..<32).map(UInt8.init))
+        let scopedPassword = Data((32..<64).map(UInt8.init))
+        let account = makeAccount(primaryKey: accountPrimaryKey)
+        let defaultCredentialMainKey = ScopedAccessKeyDerivation.mainKey(from: accountPrimaryKey, userID: account.userId)
+        let encryptedCredential = try ScopedAccessCredentialEnvelope().encryptScopedPassword(scopedPassword,
+                                                                                             using: defaultCredentialMainKey,
+                                                                                             kid: SyncCredentialID.defaultCredential)
+        let accessCredentials = [
+            AccessCredential(id: SyncCredentialID.thirdParty,
+                             scope: "sync",
+                             encrypted3PartyCredential: encryptedCredential)
+        ]
+        let createdKeys = [
+            makeProtectedKey(kid: "created", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "created", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        accountInfoKeyFactory.makeProtectedKeysStub = createdKeys
+        let events = UnifiedDeviceListEventMappingMock()
+        let adoptedPrivateKey = Data([0xFF] + Array("adopted-account-info-private-key".utf8))
+        let adoptedDefaultWrapper = try makeNativeEncryptedProtectedKey(privateKey: adoptedPrivateKey,
+                                                                         account: account,
+                                                                         crypter: crypter,
+                                                                         purpose: ProtectedKeyPurpose.accountInfo)
+        let thirdPartyMainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: account.userId)
+        let adoptedThirdPartyEncryptedKey = try JWECompactCodec().encryptDirect(payload: adoptedPrivateKey,
+                                                                                 contentEncryptionKey: thirdPartyMainKey,
+                                                                                 kid: SyncCredentialID.thirdParty)
+        let adoptedThirdPartyWrapper = ProtectedKey(kid: adoptedDefaultWrapper.kid,
+                                                     encryptedPrivateKey: adoptedThirdPartyEncryptedKey,
+                                                     publicKey: adoptedDefaultWrapper.publicKey,
+                                                     encryptedWith: SyncCredentialID.thirdParty,
+                                                     purpose: ProtectedKeyPurpose.accountInfo)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [
+            .init(data: Data(try protectedKeysBody([]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
+            .init(data: Data(try protectedKeysBody([adoptedDefaultWrapper]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
+            .init(data: Data(try protectedKeysBody([adoptedDefaultWrapper, adoptedThirdPartyWrapper]).utf8),
+                  response: makeHTTPURLResponse(statusCode: 200))
+        ])
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody(accessCredentials))
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = SequencedHTTPRequestingMock(results: [
+            .init(data: Data(try protectedKeysBody([adoptedDefaultWrapper]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
+            .init(data: nil, response: makeHTTPURLResponse(statusCode: 201))
+        ])
+
+        let result = try await manager.ensureAccountInfoProtectedKeys(for: account)
+
+        XCTAssertEqual(result.map(\.kid), [adoptedDefaultWrapper.kid, adoptedDefaultWrapper.kid])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [
+            endpoints.keys,
+            endpoints.accessCredentials,
+            endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo),
+            endpoints.keys,
+            endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo),
+            endpoints.keys
+        ])
+        XCTAssertEqual(events.events, [.accountInfoKeyWrapSuccess])
+    }
+
+    func testWhenServerDoesNotPersistAllCreatedAccountInfoWrappersThenThrows() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let crypter = CryptingMock()
+        let accountPrimaryKey = Data((0..<32).map(UInt8.init))
+        let scopedPassword = Data((32..<64).map(UInt8.init))
+        let account = makeAccount(primaryKey: accountPrimaryKey)
+        let defaultCredentialMainKey = hkdf(input: accountPrimaryKey, salt: account.userId, info: "Main Key")
+        let encryptedCredential = try ScopedAccessCredentialEnvelope().encryptScopedPassword(scopedPassword,
+                                                                                             using: defaultCredentialMainKey,
+                                                                                             kid: SyncCredentialID.defaultCredential)
+        let accessCredentials = [
+            AccessCredential(id: SyncCredentialID.thirdParty,
+                             scope: "sync",
+                             encrypted3PartyCredential: encryptedCredential)
+        ]
+        let defaultWrapper = try makeNativeEncryptedProtectedKey(
+            privateKey: Data([0xFF] + Array("account-info-private-key".utf8)),
+            account: account,
+            crypter: crypter,
+            purpose: ProtectedKeyPurpose.accountInfo)
+        let thirdPartyWrapper = makeProtectedKey(kid: defaultWrapper.kid,
+                                                 encryptedWith: SyncCredentialID.thirdParty,
+                                                 purpose: ProtectedKeyPurpose.accountInfo,
+                                                 publicKey: defaultWrapper.publicKey)
+        accountInfoKeyFactory.makeProtectedKeysStub = [defaultWrapper, thirdPartyWrapper]
+        let events = UnifiedDeviceListEventMappingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    unifiedDeviceListEvents: events,
+                                                    canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [
+            .init(data: Data(try protectedKeysBody([]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
+            .init(data: Data(try protectedKeysBody([defaultWrapper]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
+            .init(data: Data(try protectedKeysBody([defaultWrapper]).utf8), response: makeHTTPURLResponse(statusCode: 200))
+        ])
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody(accessCredentials))
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 201)
+
+        do {
+            _ = try await manager.ensureAccountInfoProtectedKeys(for: account)
+            XCTFail("Expected an incomplete persisted wrapper set to be rejected")
+        } catch SyncError.invalidDataInResponse(let message) {
+            XCTAssertTrue(message.contains("missing a 3party wrapper"))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [
+            endpoints.keys,
+            endpoints.accessCredentials,
+            endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo),
+            endpoints.keys,
+            endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo),
+            endpoints.keys
+        ])
+        XCTAssertEqual(events.events, [.accountInfoKeyCreateSuccess])
+    }
+
+    func testWhenRepairingAccountInfoProtectedKeysAndThirdPartyCredentialCannotBeRecoveredThenDoesNotRegisterKeys() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let crypter = CryptingMock()
+        let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
+        let storedKey = try makeNativeEncryptedProtectedKey(privateKey: Data("account-info-private-key".utf8),
+                                                            account: account,
+                                                            crypter: crypter,
+                                                            purpose: ProtectedKeyPurpose.accountInfo)
+        let accessCredentials = [
+            AccessCredential(id: SyncCredentialID.thirdParty,
+                             scope: "sync",
+                             encrypted3PartyCredential: "invalid")
+        ]
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody([storedKey]))
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody(accessCredentials))
+
+        do {
+            _ = try await manager.ensureAccountInfoProtectedKeys(for: account)
+            XCTFail("Expected account_info wrapper repair to fail")
+        } catch ScopedAccessCredentialError.undecryptableThirdPartyCredential {
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertTrue(accountInfoKeyFactory.makeProtectedKeysCalls.isEmpty)
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [
+            endpoints.keys,
+            endpoints.accessCredentials
+        ])
+        XCTAssertFalse(api.createRequestCallArgs.contains {
+            $0.url == endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)
+        })
+    }
+
+    func testWhenSetKeysIfAbsentReceivesNoKeysThenThrowsWithoutCreatingRequest() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: Endpoints(baseURL: Self.baseURL),
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
+        let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
+
+        do {
+            _ = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                  keys: [],
+                                                  for: account)
+            XCTFail("Expected setKeysIfAbsent to throw")
+        } catch SyncError.invalidDataInResponse(let message) {
+            XCTAssertTrue(message.contains("requires at least one protected key"))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertTrue(api.createRequestCallArgs.isEmpty)
+    }
+
+    func testWhenSetKeysIfAbsentReceivesKeyForDifferentPurposeThenThrowsWithoutCreatingRequest() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: Endpoints(baseURL: Self.baseURL),
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
+        let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
+        let key = makeProtectedKey(kid: "candidate",
+                                   encryptedWith: SyncCredentialID.defaultCredential,
+                                   purpose: "bookmarks")
+
+        do {
+            _ = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                  keys: [key],
+                                                  for: account)
+            XCTFail("Expected setKeysIfAbsent to throw")
+        } catch SyncError.invalidDataInResponse(let message) {
+            XCTAssertTrue(message.contains("must match purpose=account_info"))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertTrue(api.createRequestCallArgs.isEmpty)
+    }
+
+    func testWhenSetKeysIfAbsentReturns409ThenRefetchesStoredKeysForPurpose() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
+        let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
+        let requestedKeys = [
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        let storedKeys = [
+            makeProtectedKey(kid: "server", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "server", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "other", encryptedWith: SyncCredentialID.defaultCredential, purpose: "bookmarks")
+        ]
+
+        let conflictRequest = HTTPRequestingMock()
+        conflictRequest.error = SyncError.unexpectedStatusCode(409)
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = conflictRequest
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody(storedKeys))
+
+        let result = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                       keys: requestedKeys,
+                                                       for: account)
+
+        XCTAssertEqual(result.map(\.kid), ["server", "server"])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+        XCTAssertEqual(api.createRequestCallArgs.count, 2)
+    }
+
+    func testWhenSetKeysIfAbsentReturns409AndRefetchHasNoRequestedPurposeThenThrows() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
+        let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
+        let requestedKeys = [
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        let otherPurposeKeys = [
+            makeProtectedKey(kid: "other", encryptedWith: SyncCredentialID.defaultCredential, purpose: "bookmarks")
+        ]
+
+        let conflictRequest = HTTPRequestingMock()
+        conflictRequest.error = SyncError.unexpectedStatusCode(409)
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = conflictRequest
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody(otherPurposeKeys))
+
+        do {
+            _ = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                  keys: requestedKeys,
+                                                  for: account)
+            XCTFail("Expected setKeysIfAbsent to throw")
+        } catch SyncError.invalidDataInResponse(let message) {
+            XCTAssertTrue(message.contains("no protected keys for purpose=account_info"))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(api.createRequestCallArgs.count, 2)
+    }
+
+    func testWhenSetKeysIfAbsentCreatesKeysThenUploadsAllWrappersAndReturnsKeysForPurpose() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
+        let account = makeAccount(primaryKey: Data(repeating: 0x3, count: 32))
+        let requestedKeys = [
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        let responseKeys = [
+            makeProtectedKey(kid: "other", encryptedWith: SyncCredentialID.defaultCredential, purpose: "bookmarks")
+        ] + requestedKeys
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(
+            statusCode: 201,
+            body: try protectedKeysBody(responseKeys)
+        )
+
+        let result = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                       keys: requestedKeys,
+                                                       for: account)
+
+        XCTAssertEqual(result.map(\.kid), ["candidate", "candidate"])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+
+        let requestBody = try XCTUnwrap(api.createRequestCallArgs.last?.body)
+        let payload = try decodeJSONObject(requestBody)
+        let uploadedKeys = try XCTUnwrap(payload["keys"] as? [[String: Any]])
+        XCTAssertEqual(uploadedKeys.count, 2)
+        XCTAssertEqual(Set(uploadedKeys.compactMap { $0["encrypted_with"] as? String }),
+                       Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+    }
+
+    func testWhenSetKeysIfAbsentCreatesKeysWithoutResponseBodyThenReturnsUploadedKeys() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
+        let account = makeAccount(primaryKey: Data(repeating: 0x4, count: 32))
+        let requestedKeys = [
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 201)
+
+        let result = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                       keys: requestedKeys,
+                                                       for: account)
+
+        XCTAssertEqual(result.map(\.kid), ["candidate", "candidate"])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
         XCTAssertEqual(api.createRequestCallArgs.count, 1)
     }
 
-    func testWhenKeysPayloadIsRejectedThenThrowsUnexpectedStatusCode() async throws {
+    func testWhenSetKeysIfAbsentReceivesDuplicateWrappersThenUploadsEachIdentityOnce() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
+        let account = makeAccount(primaryKey: Data(repeating: 0x4, count: 32))
+        let defaultKey = makeProtectedKey(kid: "candidate",
+                                          encryptedWith: SyncCredentialID.defaultCredential,
+                                          purpose: ProtectedKeyPurpose.accountInfo)
+        let thirdPartyKey = makeProtectedKey(kid: "candidate",
+                                             encryptedWith: SyncCredentialID.thirdParty,
+                                             purpose: ProtectedKeyPurpose.accountInfo)
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 201)
+
+        let result = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                       keys: [defaultKey, defaultKey, thirdPartyKey, thirdPartyKey],
+                                                       for: account)
+
+        XCTAssertEqual(result.count, 2)
+        let requestBody = try XCTUnwrap(api.createRequestCallArgs.last?.body)
+        let payload = try decodeJSONObject(requestBody)
+        let uploadedKeys = try XCTUnwrap(payload["keys"] as? [[String: Any]])
+        XCTAssertEqual(uploadedKeys.count, 2)
+    }
+
+    func testWhenSetKeysIfAbsentReturnsExistingKeysThenUsesStoredKeysFromResponse() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
+        let account = makeAccount(primaryKey: Data(repeating: 0x5, count: 32))
+        let requestedKeys = [
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        let storedKeys = [
+            makeProtectedKey(kid: "server", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "server", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(
+            statusCode: 200,
+            body: try protectedKeysBody(storedKeys)
+        )
+
+        let result = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                       keys: requestedKeys,
+                                                       for: account)
+
+        XCTAssertEqual(result.map(\.kid), ["server", "server"])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+        XCTAssertEqual(api.createRequestCallArgs.count, 1)
+    }
+
+    func testWhenSetKeysIfAbsentReturnsExistingWithoutResponseBodyThenRefetchesStoredKeys() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
+        let account = makeAccount(primaryKey: Data(repeating: 0x6, count: 32))
+        let requestedKeys = [
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        let storedKeys = [
+            makeProtectedKey(kid: "server", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 200)
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody(storedKeys))
+
+        let result = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                       keys: requestedKeys,
+                                                       for: account)
+
+        XCTAssertEqual(result.map(\.kid), ["server"])
+        XCTAssertEqual(api.createRequestCallArgs.count, 2)
+    }
+
+    func testWhenSetKeysIfAbsentReturnsBodyWithoutRequestedPurposeThenThrowsForSuccessStatuses() async throws {
+        for statusCode in [200, 201] {
+            let api = RemoteAPIRequestCreatingMock()
+            let endpoints = Endpoints(baseURL: Self.baseURL)
+            let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                        api: api,
+                                                        crypter: CryptingMock(),
+                                                        accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                        canWriteUnifiedDeviceList: { true })
+            let account = makeAccount(primaryKey: Data(repeating: 0x7, count: 32))
+            let requestedKey = makeProtectedKey(kid: "candidate",
+                                                encryptedWith: SyncCredentialID.defaultCredential,
+                                                purpose: ProtectedKeyPurpose.accountInfo)
+            let otherPurposeKey = makeProtectedKey(kid: "other",
+                                                   encryptedWith: SyncCredentialID.defaultCredential,
+                                                   purpose: "bookmarks")
+            api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(
+                statusCode: statusCode,
+                body: try protectedKeysBody([otherPurposeKey])
+            )
+
+            do {
+                _ = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                      keys: [requestedKey],
+                                                      for: account)
+                XCTFail("Expected setKeysIfAbsent to throw for HTTP \(statusCode)")
+            } catch SyncError.invalidDataInResponse(let message) {
+                XCTAssertTrue(message.contains("no protected keys for purpose=account_info"))
+            } catch {
+                XCTFail("Unexpected error for HTTP \(statusCode): \(error)")
+            }
+        }
+    }
+
+    func testWhenSetKeysIfAbsentReturnsBodyWithoutKeysThenThrowsForSuccessStatuses() async throws {
+        for statusCode in [200, 201] {
+            let api = RemoteAPIRequestCreatingMock()
+            let endpoints = Endpoints(baseURL: Self.baseURL)
+            let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                        api: api,
+                                                        crypter: CryptingMock(),
+                                                        accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                        canWriteUnifiedDeviceList: { true })
+            let account = makeAccount(primaryKey: Data(repeating: 0x8, count: 32))
+            let requestedKey = makeProtectedKey(kid: "candidate",
+                                                encryptedWith: SyncCredentialID.defaultCredential,
+                                                purpose: ProtectedKeyPurpose.accountInfo)
+            api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(
+                statusCode: statusCode,
+                body: "{}"
+            )
+
+            do {
+                _ = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                      keys: [requestedKey],
+                                                      for: account)
+                XCTFail("Expected setKeysIfAbsent to throw for HTTP \(statusCode)")
+            } catch SyncError.unableToDecodeResponse(let message) {
+                XCTAssertEqual(message, "Failed to decode protected keys")
+            } catch {
+                XCTFail("Unexpected error for HTTP \(statusCode): \(error)")
+            }
+        }
+    }
+
+    func testWhenSetKeysIfAbsentPayloadIsRejectedThenThrowsUnexpectedStatusCode() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data(repeating: 0x9, count: 32))
-        let requestedKey = makeProtectedKey(kid: "requested",
-                                            encryptedWith: "ddg",
-                                            purpose: "ai_chats")
+        let requestedKeys = [
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
 
         let rejectingRequest = HTTPRequestingMock()
         rejectingRequest.error = SyncError.unexpectedStatusCode(422)
-        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: "ai_chats")] = rejectingRequest
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = rejectingRequest
 
         do {
-            _ = try await manager.setKeyIfAbsent(purpose: "ai_chats", key: requestedKey, for: account)
-            XCTFail("Expected setKeyIfAbsent to throw")
+            _ = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                  keys: requestedKeys,
+                                                  for: account)
+            XCTFail("Expected setKeysIfAbsent to throw")
         } catch SyncError.unexpectedStatusCode(let statusCode) {
             XCTAssertEqual(statusCode, 422)
         } catch {
@@ -490,7 +1772,11 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     func testWhenFetchingProtectedKeysFailsThenCachedKeysAreNotUsedForThirdPartyCredentialCreation() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
         api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody([]))
         api.fakeRequests[endpoints.keys] = makeFailingRequest(statusCode: 500)
@@ -535,13 +1821,14 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
 
     private func makeNativeEncryptedProtectedKey(privateKey: Data,
                                                  account: SyncAccount,
-                                                 crypter: CryptingInternal) throws -> ProtectedKey {
+                                                 crypter: CryptingInternal,
+                                                 purpose: String = "ai_chats") throws -> ProtectedKey {
         let encryptedPrivateKey = try crypter.encrypt(privateKey, using: account.secretKey)
         return ProtectedKey(kid: UUID().uuidString,
                             encryptedPrivateKey: Base64URL.encode(encryptedPrivateKey),
                             publicKey: .mock,
                             encryptedWith: "ddg",
-                            purpose: "ai_chats")
+                            purpose: purpose)
     }
 
     private func makeRequest(statusCode: Int, body: String? = nil) -> HTTPRequestingMock {

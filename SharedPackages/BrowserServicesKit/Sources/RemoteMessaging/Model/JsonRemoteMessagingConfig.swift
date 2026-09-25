@@ -47,6 +47,13 @@ public enum RemoteMessageResponse {
     struct JsonDisplayConditions: Decodable, Equatable {
         let trigger: String?
         let dismissAfterDaysShown: Int?
+        let maxImpressions: Int?
+
+        init(trigger: String?, dismissAfterDaysShown: Int?, maxImpressions: Int? = nil) {
+            self.trigger = trigger
+            self.dismissAfterDaysShown = dismissAfterDaysShown
+            self.maxImpressions = maxImpressions
+        }
     }
 
     struct JsonMetrics: Decodable {

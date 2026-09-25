@@ -24,7 +24,7 @@ import CombineExtensions
 import StoreKit
 import LocalAuthentication
 import BrowserServicesKit
-import Navigation
+import DDGNavigation
 import SwiftUI
 import Bookmarks
 import Persistence
@@ -515,6 +515,16 @@ class TabViewController: UIViewController {
     var isAITab: Bool {
         tabModel.isAITab
     }
+    
+    var tabType: TabType {
+        tabModel.type
+    }
+
+    var isShowingDocument: Bool {
+        // Local (file://) pages aren't attachable, so don't offer the document menu for a local PDF.
+        guard featureFlagger.isFeatureOn(.aiChatPdfPageContext), let url, !url.isFileURL else { return false }
+        return DocumentPageContextProvider.isSupportedDocument(mimeType: lastMainFramePageContextMIMEType(for: url), url: url)
+    }
 
     /// The tab's chat identity: written on commit and on settled same-document URL rewrites.
     /// Seeded from the stored link so a recreated controller's reload isn't a chat change.
@@ -869,7 +879,11 @@ class TabViewController: UIViewController {
         self.pixelFiring = pixelFiring
         self.tabTerminationErrorPageInstrumentation = tabTerminationErrorPageInstrumentation
             ?? DefaultTabTerminationErrorPageInstrumentation(pixelFiring: pixelFiring)
-        self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
+        let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
+            privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
+            featureFlagger: featureFlagger)
+        self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger,
+                                                          performanceOptimizedPaywalls: performanceOptimizedPaywallsProvider) {
             return AppDependencyProvider.shared.subscriptionManager.isSubscriptionPurchaseEligible
         }
         
@@ -1868,8 +1882,7 @@ class TabViewController: UIViewController {
     }
     
     private func showError(message: String) {
-        webView.isHidden = true
-        error.isHidden = false
+        setNativeErrorPageVisible(true)
         setErrorInfoImage()
         errorHeader.text = defaultErrorHeaderText
         errorMessage.text = formattedErrorMessage(message)
@@ -1889,8 +1902,7 @@ class TabViewController: UIViewController {
     }
 
     private func hideErrorMessage() {
-        error.isHidden = true
-        webView.isHidden = false
+        setNativeErrorPageVisible(false)
         setErrorInfoImage()
         errorHeader.text = defaultErrorHeaderText
         errorActionButton.isHidden = true
@@ -1900,8 +1912,7 @@ class TabViewController: UIViewController {
 
     private func showSafariRedirectLoopError(for url: URL) {
         actionableErrorPage = .safariRedirectLoop(url)
-        webView.isHidden = true
-        error.isHidden = false
+        setNativeErrorPageVisible(true)
         setErrorInfoImage(resource: .shieldAlert96)
         errorHeader.text = UserText.generalPageProblemTitle
         errorMessage.text = UserText.generalPageProblemMessage
@@ -1915,8 +1926,7 @@ class TabViewController: UIViewController {
 
     func showTabTerminationErrorPage() {
         actionableErrorPage = .tabTermination
-        webView.isHidden = true
-        error.isHidden = false
+        setNativeErrorPageVisible(true)
         setErrorInfoImage(resource: .webAlert128, size: CGSize(width: 128, height: 96))
         errorHeader.text = UserText.tabTerminationErrorPageTitle
         errorMessage.text = UserText.tabTerminationErrorPageMessage
@@ -1928,6 +1938,12 @@ class TabViewController: UIViewController {
         hideProgressIndicator()
         webpageDidFailToLoad(preservePrivacyInfo: true)
         tabTerminationErrorPageInstrumentation.errorPageShown()
+    }
+
+    private func setNativeErrorPageVisible(_ isVisible: Bool) {
+        webView.isHidden = isVisible
+        error.isHidden = !isVisible
+        pullToRefreshViewAdapter?.setNativeErrorPageVisible(isVisible)
     }
 
     private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy,
@@ -3391,7 +3407,7 @@ extension TabViewController: WKNavigationDelegate {
         // This check needs to happen before GPC checks. Otherwise the navigation type may be rewritten to `.other`
         // which would skip link rewrites.
         if navigationAction.navigationType != .backForward,
-           navigationAction.isTargetingMainFrame(),
+           navigationAction.isTargetingMainFrame,
            !(navigationAction.request.url?.isDuckDuckGoSearch ?? false) {
             let didRewriteLink = linkProtection.requestTrackingLinkRewrite(initiatingURL: webView.url,
                                                                            navigationAction: navigationAction,
@@ -3413,7 +3429,7 @@ extension TabViewController: WKNavigationDelegate {
         var modifiedRequest = navigationAction.request
         var didModifyRequest = false
 
-        if navigationAction.isTargetingMainFrame(),
+        if navigationAction.isTargetingMainFrame,
            !(navigationAction.request.url?.isCustomURLScheme() ?? false),
            navigationAction.navigationType != .backForward,
            let trimmed = referrerTrimming.trimReferrer(forNavigation: navigationAction,
@@ -3422,7 +3438,7 @@ extension TabViewController: WKNavigationDelegate {
             didModifyRequest = true
         }
 
-        if navigationAction.isTargetingMainFrame(),
+        if navigationAction.isTargetingMainFrame,
            !navigationAction.isSameDocumentNavigation,
            !navigationAction.shouldDownload,
            !(navigationAction.request.url?.isCustomURLScheme() ?? false),
@@ -3434,7 +3450,7 @@ extension TabViewController: WKNavigationDelegate {
 
         // Attach Search Token experiment signals (dindexexp param + X-DDG-Search-Token header) to SERP navigations.
         // Enrolled devices only, skipping back/forward so we don't wipe forward history.
-        if navigationAction.isTargetingMainFrame(),
+        if navigationAction.isTargetingMainFrame,
            navigationAction.navigationType != .backForward,
            let url = navigationAction.request.url,
            SerpSearchTokenInterceptor.isSerpURL(url),
@@ -3486,7 +3502,7 @@ extension TabViewController: WKNavigationDelegate {
             if let self = self,
                let url = navigationAction.request.url,
                decision != .cancel,
-               navigationAction.isTargetingMainFrame() {
+               navigationAction.isTargetingMainFrame {
                 if url.isDuckDuckGoSearch {
 
                     if !url.isDuckAIURL {
@@ -3550,7 +3566,7 @@ extension TabViewController: WKNavigationDelegate {
         // If WKNavigationAction requests to shouldPerformDownload prepare for handling it in decidePolicyFor:navigationResponse:
         recentNavigationActionShouldPerformDownloadURL = navigationAction.shouldPerformDownload ? navigationAction.request.url : nil
 
-        if navigationAction.isTargetingMainFrame()
+        if navigationAction.isTargetingMainFrame
             && tld.domain(navigationAction.request.mainDocumentURL?.host) != tld.domain(lastUpgradedURL?.host) {
             lastUpgradedURL = nil
             privacyInfo?.connectionUpgradedTo = nil
@@ -3566,7 +3582,7 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
 
-        if navigationAction.isTargetingMainFrame(), navigationAction.navigationType == .backForward {
+        if navigationAction.isTargetingMainFrame, navigationAction.navigationType == .backForward {
             adClickAttributionLogic.onBackForwardNavigation(mainFrameURL: webView.url)
         }
 
@@ -3597,7 +3613,7 @@ extension TabViewController: WKNavigationDelegate {
             performBlobNavigation(navigationAction, completion: completion)
         
         case .duck:
-            if navigationAction.isTargetingMainFrame() {
+            if navigationAction.isTargetingMainFrame {
                 duckPlayerNavigationHandler.handleDuckNavigation(navigationAction, webView: webView)
             }
             completion(.cancel)
@@ -3634,7 +3650,7 @@ extension TabViewController: WKNavigationDelegate {
                                       completion: @escaping (WKNavigationActionPolicy) -> Void) {
 
         // when navigating to a request with basic auth username/password, cache it and redirect to a trimmed URL
-        if navigationAction.isTargetingMainFrame(),
+        if navigationAction.isTargetingMainFrame,
            let credential = url.basicAuthCredential {
             var newRequest = navigationAction.request
             newRequest.url = url.removingBasicAuthCredential()
@@ -3669,7 +3685,7 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
 
-        if allowPolicy != WKNavigationActionPolicy.cancel && navigationAction.isTargetingMainFrame() {
+        if allowPolicy != WKNavigationActionPolicy.cancel && navigationAction.isTargetingMainFrame {
             if shouldUseSafariOnlyUserAgentForNextMainFrameNavigation {
                 webView.customUserAgent = userAgentManager.safariOnlyUserAgent(isDesktop: tabModel.isDesktop)
                 shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
@@ -3716,7 +3732,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func shouldUpgradeToHttps(url: URL, navigationAction: WKNavigationAction) -> Bool {
-        return url.isHttp && url.port == nil && !failingUrls.contains(url.host ?? "") && navigationAction.isTargetingMainFrame()
+        return url.isHttp && url.port == nil && !failingUrls.contains(url.host ?? "") && navigationAction.isTargetingMainFrame
     }
 
     private func performExternalNavigationFor(url: URL, action: SchemeHandler.Action) {

@@ -17,22 +17,50 @@
 //  limitations under the License.
 //
 
+import AIChat
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import UIKit
 
 /// A New Tab Page built as a vertical stack of independent blocks.
 final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
+
+    private enum Metrics {
+        static let customizeButtonTopMargin: CGFloat = 10
+        static let customizeButtonTrailingMargin: CGFloat = 20
+        static let customizeButtonSize: CGFloat = 44
+        static let portraitContentTopInset: CGFloat = 96
+        static let entranceTranslation: CGFloat = 12
+        static let entranceDuration: TimeInterval = 0.25
+    }
 
     weak var delegate: NewTabPageControllerDelegate?
     weak var chromeDelegate: BrowserChromeDelegate?
 
     var isDragging: Bool { scrollView.isDragging }
 
+    var hasInlineSearchInput: Bool { true }
+
     private let blocks: [any NewTabPageBlock]
+    private let favoritesModel: FavoritesViewModel?
+    private let pageModel: NewTabPageViewModel?
+    private let messagesModel: NewTabPageMessagesModel?
+    private var areFavoritesHidden = false
+    private var isEntranceAnimationPending = false
+    private var entranceAnimator: UIViewPropertyAnimator?
+
+    private let contentContainerView: UIView = {
+        let view = UIView()
+        // Clip scrolling content at the page bounds, rather than at the horizontal safe-area edges.
+        view.clipsToBounds = true
+        return view
+    }()
 
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.alwaysBounceVertical = true
+        // Keep content inside the safe area while allowing its shadows to extend beyond it.
+        scrollView.clipsToBounds = false
         return scrollView
     }()
 
@@ -42,8 +70,31 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         return stackView
     }()
 
-    init(blocks: [any NewTabPageBlock]) {
+    private lazy var contentTopConstraint = blocksStackView.topAnchor.constraint(
+        equalTo: scrollView.contentLayoutGuide.topAnchor,
+        constant: Metrics.portraitContentTopInset)
+
+    private lazy var customizeButton: CircularButton = {
+        let button = CircularButton()
+        button.isShadowHidden = true
+        button.setImage(DesignSystemImages.Glyphs.Size24.options, for: .normal)
+        button.setColors(foreground: UIColor(designSystemColor: .iconsSecondary),
+                         background: UIColor(designSystemColor: .controlsFillPrimary),
+                         pressedForeground: UIColor(designSystemColor: .iconsSecondary),
+                         pressedBackground: UIColor(designSystemColor: .controlsFillTertiary))
+        button.accessibilityLabel = UserText.newTabPageCustomizationTitle
+        button.addTarget(self, action: #selector(customizeButtonTapped), for: .touchUpInside)
+        return button
+    }()
+
+    init(blocks: [any NewTabPageBlock],
+         favoritesModel: FavoritesViewModel? = nil,
+         pageModel: NewTabPageViewModel? = nil,
+         messagesModel: NewTabPageMessagesModel? = nil) {
         self.blocks = blocks
+        self.favoritesModel = favoritesModel
+        self.pageModel = pageModel
+        self.messagesModel = messagesModel
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -55,9 +106,30 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = UIColor(designSystemColor: .alertYellow)
+        view.backgroundColor = UIColor(designSystemColor: .background)
         addSubviews()
         installBlocks()
+        // Load once per page, after the caller has supplied the initial escape-hatch context.
+        messagesModel?.load()
+    }
+
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+
+        let isLandscape = view.bounds.width > view.bounds.height
+        contentTopConstraint.constant = isLandscape ? Metrics.customizeButtonTopMargin : Metrics.portraitContentTopInset
+    }
+
+    @objc private func customizeButtonTapped() {
+        let model = NewTabPageCustomizationModel()
+        model.reportOpening()
+        let customizationViewController = NewTabPageCustomizationViewController(model: model)
+        customizationViewController.onAllSettingsSelected = { [weak self] in
+            guard let self else { return }
+            delegate?.newTabPageDidRequestSettings(self)
+        }
+
+        present(customizationViewController, animated: true)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -66,29 +138,78 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         // The page is attached with alpha 0 ahead of a contextual dialog so content cannot flash
         // for a frame first, and is expected to restore it itself.
         view.alpha = 1
+        guard isEntranceAnimationPending else { return }
+        isEntranceAnimationPending = false
+        let animator = UIViewPropertyAnimator(duration: Metrics.entranceDuration, curve: .easeOut) { [weak self] in
+            self?.restoreEntrancePose()
+        }
+        entranceAnimator = animator
+        animator.startAnimation()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        finishEntranceAnimation()
+    }
+
+    func prepareForEntranceAnimation(if shouldAnimate: Bool) {
+        guard shouldAnimate, !UIAccessibility.isReduceMotionEnabled else { return }
+        loadViewIfNeeded()
+        isEntranceAnimationPending = true
+        contentContainerView.alpha = 0
+        contentContainerView.transform = CGAffineTransform(translationX: 0, y: Metrics.entranceTranslation)
+    }
+
+    private func restoreEntrancePose() {
+        contentContainerView.alpha = 1
+        contentContainerView.transform = .identity
+    }
+
+    func finishEntranceAnimation() {
+        guard isEntranceAnimationPending || entranceAnimator != nil else { return }
+        isEntranceAnimationPending = false
+        entranceAnimator?.stopAnimation(true)
+        entranceAnimator = nil
+        restoreEntrancePose()
     }
 
     private func addSubviews() {
-        view.addSubview(scrollView)
+        view.addSubview(contentContainerView)
+        contentContainerView.addSubview(scrollView)
         scrollView.addSubview(blocksStackView)
+        contentContainerView.addSubview(customizeButton)
 
+        contentContainerView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         blocksStackView.translatesAutoresizingMaskIntoConstraints = false
+        customizeButton.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            contentContainerView.topAnchor.constraint(equalTo: view.topAnchor),
+            contentContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            contentContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            contentContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
-            blocksStackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            scrollView.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.trailingAnchor),
+
+            contentTopConstraint,
             blocksStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
             blocksStackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
             blocksStackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
 
             // Pinning the content width to the visible width leaves block heights as the only
             // thing that can make the page scroll.
-            blocksStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
+            blocksStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+
+            customizeButton.topAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.topAnchor,
+                                                 constant: Metrics.customizeButtonTopMargin),
+            customizeButton.trailingAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.trailingAnchor,
+                                                      constant: -Metrics.customizeButtonTrailingMargin),
+            customizeButton.widthAnchor.constraint(equalToConstant: Metrics.customizeButtonSize),
+            customizeButton.heightAnchor.constraint(equalToConstant: Metrics.customizeButtonSize)
         ])
     }
 
@@ -100,6 +221,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
             blocksStackView.addArrangedSubview(blockController.view)
             blockController.didMove(toParent: self)
         }
+    }
+
+    func beginSearch(textEntryMode: TextEntryMode) {
+        delegate?.newTabPageDidRequestSearch(self, textEntryMode: textEntryMode)
+    }
+
+    func beginVoiceSearch(textEntryMode: TextEntryMode) {
+        delegate?.newTabPageDidRequestVoiceSearch(self, textEntryMode: textEntryMode)
     }
 
     func dismiss() {
@@ -121,20 +250,24 @@ extension RedesignedNewTabPageViewController: HomeScreenTransitionSource {
     var rootContainerView: UIView { view }
 }
 
-/// The logo and favorites blocks are not hosted on this page yet.
+/// The logo is not hosted on this page; favorites participate in the existing content handoff.
 extension RedesignedNewTabPageViewController: NewTabPageContentHandoff {
 
     var isShowingLogo: Bool { false }
 
-    var isShowingFavorites: Bool { false }
+    var isShowingFavorites: Bool { restingContentIsFavorites && !areFavoritesHidden }
 
     var restingContentIsLogo: Bool { false }
 
-    var restingContentIsFavorites: Bool { false }
+    var restingContentIsFavorites: Bool { favoritesModel?.isEmpty == false }
 
     func setLogoHidden(_ hidden: Bool) {}
 
-    func setFavoritesHidden(_ hidden: Bool) {}
+    func setFavoritesHidden(_ hidden: Bool) {
+        areFavoritesHidden = hidden
+        // Preserve the block's space while focused content covers the resting page.
+        blocks.first { $0.id == .favorites }?.viewController.view.alpha = hidden ? 0 : 1
+    }
 }
 
 extension RedesignedNewTabPageViewController: NewTabPageChromeAdapting {
@@ -145,8 +278,13 @@ extension RedesignedNewTabPageViewController: NewTabPageChromeAdapting {
 
 extension RedesignedNewTabPageViewController: NewTabPageEscapeHatchPresenting {
 
-    /// The escape hatch will arrive as a block.
-    func setEscapeHatch(_ model: EscapeHatchModel?) {}
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
+        pageModel?.escapeHatch = model
+        pageModel?.openedAfterIdle = model != nil
+        if isViewLoaded {
+            messagesModel?.refresh()
+        }
+    }
 }
 
 /// Contextual dialogs are not hosted on this page yet.
@@ -167,4 +305,23 @@ extension RedesignedNewTabPageViewController: NewTabPageOnboardingPresenting {
     func refreshContextualOnboardingDialogLayout() {}
 
     func dismissDuckAICompletionDialogIfNeededOnEditingEnd() {}
+}
+
+extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
+
+    var searchInputView: UIView? {
+        blocks.first { $0.id == .searchInput }?.viewController.view
+    }
+
+    func setSearchInputEditing(_ isEditing: Bool) {
+        if isEditing {
+            finishEntranceAnimation()
+        }
+        searchInputView?.alpha = isEditing ? 0 : 1
+        view.accessibilityElementsHidden = isEditing
+        searchInputView?.isUserInteractionEnabled = !isEditing
+        scrollView.isScrollEnabled = !isEditing
+        customizeButton.alpha = isEditing ? 0 : 1
+        customizeButton.isUserInteractionEnabled = !isEditing
+    }
 }

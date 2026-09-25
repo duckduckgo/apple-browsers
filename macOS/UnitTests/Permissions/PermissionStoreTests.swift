@@ -47,6 +47,12 @@ final class PermissionStoreTests: XCTestCase {
         pixelKit = nil
     }
 
+    func testWhenGettingDecisionLocalizedTitleThenItMatchesPermissionCenterLabel() {
+        XCTAssertEqual(PersistedPermissionDecision.ask.localizedTitle, UserText.permissionCenterAlwaysAsk)
+        XCTAssertEqual(PersistedPermissionDecision.allow.localizedTitle, UserText.permissionCenterAlwaysAllow)
+        XCTAssertEqual(PersistedPermissionDecision.deny.localizedTitle, UserText.permissionCenterNeverAllow)
+    }
+
     func testWhenPermissionIsAddedThenItMustBeLoadedFromStore() throws {
         let stored1 = try store.add(domain: "duckduckgo.com", permissionType: .camera, decision: .allow, lastModified: Self.referenceDate)
         XCTAssertEqual(stored1.decision, .allow)

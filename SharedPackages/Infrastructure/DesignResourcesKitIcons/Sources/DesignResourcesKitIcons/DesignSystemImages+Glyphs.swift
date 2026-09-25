@@ -159,6 +159,7 @@ public extension DesignSystemImages {
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat16) }
             public static var aiChatOnboarding: DesignSystemImage { .init(resource: .aiChatOnboarding16) }
             public static var aiChatAdd: DesignSystemImage { .init(resource: .aiChatAdd16) }
+            public static var aiChatDown: DesignSystemImage { .init(resource: .aiChatDown16) }
             public static var aiChatGradientColor: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .aiChatColor16)

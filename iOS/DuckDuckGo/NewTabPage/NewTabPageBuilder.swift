@@ -20,12 +20,15 @@
 import AIChat
 import Bookmarks
 import BrowserServicesKit
+import Combine
 import Core
 import Onboarding
 import RemoteMessaging
 import Subscription
+import SwiftUI
 
 /// Builds the New Tab Page shown in a browser tab.
+@MainActor
 struct NewTabPageBuilder {
 
     let favoritesInteractionModel: FavoritesListInteracting
@@ -44,6 +47,11 @@ struct NewTabPageBuilder {
     let internalUserCommands: URLBasedDebugCommands
     let floatingUIManager: FloatingUIManaging
     let redesignFeature: NewTabPageRedesignFeatureProviding
+    let toggleModeStorage: ToggleModeStoring
+    let voiceSearchHelper: VoiceSearchHelperProtocol
+    let daxGreetingProvider: DaxGreetingProviding
+    let daxGreetingChanges: AnyPublisher<Void, Never>
+    let updateDaxGreetingAppearance: (DaxGreetingContext.Appearance) -> Void
 
     /// `daxDialogFactory` is supplied per page rather than stored.
     func makeNewTabPage(tab: Tab,
@@ -52,7 +60,7 @@ struct NewTabPageBuilder {
         // Fire tabs are excluded because their empty state is drawn elsewhere and would cover the
         // page.
         if !tab.fireTab, redesignFeature.isAvailable {
-            return makeRedesignedNewTabPage()
+            return makeRedesignedNewTabPage(openedAfterIdle: openedAfterIdle)
         }
 
         return makeCurrentNewTabPage(tab: tab,
@@ -60,10 +68,74 @@ struct NewTabPageBuilder {
                                      daxDialogFactory: daxDialogFactory)
     }
 
-    private func makeRedesignedNewTabPage() -> any NewTabPage {
-        RedesignedNewTabPageViewController(blocks: [
-            SwiftUIBlock(id: "daxLogo", rootView: NewTabPageDaxLogoView())
-        ])
+    private func makeRedesignedNewTabPage(openedAfterIdle: Bool) -> any NewTabPage {
+        // The callbacks are created before their owning page; keep the back-reference weak.
+        weak var newTabPage: RedesignedNewTabPageViewController?
+        let searchInputView = NewTabPageSearchInputView(
+            model: NewTabPageSearchInputModel(readSettings: { [aiChatSettings, toggleModeStorage, voiceSearchHelper] in
+                NewTabPageSearchInputModel.Settings(
+                    isModeToggleShown: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+                    isAIChatEnabled: aiChatSettings.isAIChatEnabled,
+                    isVoiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
+                    // Must match the address bar's home-tab mode resolution.
+                    defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })
+            }),
+            onActivate: { textEntryMode in
+                newTabPage?.beginSearch(textEntryMode: textEntryMode)
+            },
+            onVoiceSearch: { textEntryMode in
+                newTabPage?.beginVoiceSearch(textEntryMode: textEntryMode)
+            })
+
+        let pageModel = NewTabPageViewModel(fireTab: false)
+        pageModel.openedAfterIdle = openedAfterIdle
+        let messagesModel = NewTabPageMessagesModel(
+            homePageMessagesConfiguration: homePageMessagesConfiguration,
+            subscriptionDataReporter: subscriptionDataReporting,
+            messageActionHandler: remoteMessagingActionHandler,
+            imageLoader: remoteMessagingImageLoader,
+            pixelReporter: remoteMessagingPixelReporter,
+            isOpenedAfterIdle: { [weak pageModel] in pageModel?.openedAfterIdle ?? false })
+        messagesModel.onMessageInteraction = { interaction in
+            guard let newTabPage else { return }
+            newTabPage.delegate?.newTabPage(newTabPage, didInteractWithMessage: interaction)
+        }
+
+        let favoritesModel = FavoritesViewModel(
+            isFocussedState: false,
+            favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: favoritesInteractionModel),
+            faviconLoader: faviconLoader,
+            faviconsCache: faviconsCache)
+        favoritesModel.onFavoriteURLSelected = { [internalUserCommands] favorite in
+            guard let newTabPage else { return }
+            if let url = favorite.url.flatMap(URL.init(string:)), internalUserCommands.handle(url: url) {
+                return
+            }
+            newTabPage.delegate?.newTabPageDidSelectFavorite(newTabPage, favorite: favorite)
+        }
+        favoritesModel.onFavoriteEdit = { favorite in
+            guard let newTabPage else { return }
+            newTabPage.delegate?.newTabPageDidEditFavorite(newTabPage, favorite: favorite)
+        }
+        favoritesModel.onFaviconMissing = {
+            guard let newTabPage else { return }
+            newTabPage.delegate?.newTabPageDidRequestFaviconsFetcherOnboarding(newTabPage)
+        }
+
+        let page = RedesignedNewTabPageViewController(blocks: [
+            NewTabPageSwiftUIBlock(id: .welcome, rootView: NewTabPageWelcomeView(
+                model: NewTabPageWelcomeModel(greetingProvider: daxGreetingProvider,
+                                             contextChanges: daxGreetingChanges,
+                                             updateAppearance: updateDaxGreetingAppearance))),
+            NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView),
+            NewTabPageSwiftUIBlock(id: .escapeHatch,
+                                  rootView: RedesignedNewTabPageEscapeHatchView(pageModel: pageModel)),
+            NewTabPageSwiftUIBlock(id: .messages,
+                                  rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel)),
+            NewTabPageSwiftUIBlock(id: .favorites, rootView: RedesignedNewTabPageModulesView(favoritesModel: favoritesModel))
+        ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel)
+        newTabPage = page
+        return page
     }
 
     private func makeCurrentNewTabPage(tab: Tab,

@@ -65,7 +65,9 @@ final class AIChatTabChatHeaderView: UIView {
         /// `nil` until the first subscription-state check resolves, so we can render a blank
         /// title slot rather than flashing "Free Plan" before flipping to "Duck.ai".
         var isSubscriptionActive: Bool?
-        var isVoiceSessionActive: Bool = false
+        var allowsSubscriptionUpsell = true
+        /// Non-nil while the voice surface is on screen; the value is the colour to paint the header.
+        var voiceBackgroundColor: UIColor?
         /// Hides the free/upgrade title during the Duck.ai fire onboarding step.
         var isOnboardingLocked: Bool = false
         /// Visibility of the enclosing Duck.ai tab-header container.
@@ -84,11 +86,11 @@ final class AIChatTabChatHeaderView: UIView {
 
     /// `nil` subscription state means unresolved, not free — hence the explicit `== false`.
     private var isTitleContainerVisible: Bool {
-        !state.isOnboardingLocked && state.isSubscriptionActive == false
+        !state.isOnboardingLocked && state.isSubscriptionActive == false && state.allowsSubscriptionUpsell
     }
 
     private var isTitleHolderVisible: Bool {
-        !state.isVoiceSessionActive
+        state.voiceBackgroundColor == nil
     }
 
     private var isUpgradePlateVisible: Bool {
@@ -390,17 +392,24 @@ final class AIChatTabChatHeaderView: UIView {
         }
     }
 
-    func configure(isSubscriptionActive: Bool) {
-        state.isSubscriptionActive = isSubscriptionActive
+    func configure(isSubscriptionActive: Bool, allowsSubscriptionUpsell: Bool = true) {
+        var updatedState = state
+        updatedState.isSubscriptionActive = isSubscriptionActive
+        updatedState.allowsSubscriptionUpsell = allowsSubscriptionUpsell
+        state = updatedState
+    }
+
+    func setAllowsSubscriptionUpsell(_ allowed: Bool) {
+        state.allowsSubscriptionUpsell = allowed
     }
 
     func setContainerVisible(_ visible: Bool) {
         state.isContainerVisible = visible
     }
 
-    /// Hide title, chat-list pill, and close button during voice — voice owns its own dismiss UI.
-    func setVoiceSessionActive(_ active: Bool) {
-        state.isVoiceSessionActive = active
+    /// Paints the header the voice colour and hides the title/pills during voice; `nil` colour → the token.
+    func setVoiceSessionActive(_ active: Bool, backgroundColor: UIColor? = nil) {
+        state.voiceBackgroundColor = active ? (backgroundColor ?? UIColor(singleUseColor: .duckAIVoiceModeBackground)) : nil
     }
 
     /// Lock/unlock header controls during onboarding (close included — would otherwise let users escape via the NTP).
@@ -424,8 +433,11 @@ final class AIChatTabChatHeaderView: UIView {
     private func applyState() {
         // During fire onboarding, hide the free/upgrade title to avoid distraction.
         titleContainer.isHidden = !isTitleContainerVisible
-        paidTitleStack.isHidden = state.isSubscriptionActive != true
-        let voiceActive = state.isVoiceSessionActive
+        let showsNeutralTitle = state.isSubscriptionActive == false && !state.allowsSubscriptionUpsell && !state.isOnboardingLocked
+        paidTitleStack.isHidden = state.isSubscriptionActive != true && !showsNeutralTitle
+        titleContainer.accessibilityElementsHidden = !isTitleContainerVisible
+        let voiceActive = state.voiceBackgroundColor != nil
+        applyVoiceSessionAppearance(state.voiceBackgroundColor)
         titleHolder.isHidden = !isTitleHolderVisible
         // Hide each pill (and its button inside it) together so the surrounding glass pill
         // background also disappears during voice sessions. Voice mode owns its own dismiss UI.
@@ -436,6 +448,15 @@ final class AIChatTabChatHeaderView: UIView {
         titleSpacingConstraints.forEach { $0.isActive = !titleHolder.isHidden }
     }
 
+    /// During voice, repaint with the voice `backgroundColor` (light-on-dark controls, no separator) so the
+    /// header reads as one surface with the voice background; restore standard canvas chrome when `nil`.
+    private func applyVoiceSessionAppearance(_ backgroundColor: UIColor?) {
+        let active = backgroundColor != nil
+        self.backgroundColor = backgroundColor ?? UIColor(designSystemColor: .surfaceCanvas)
+        overrideUserInterfaceStyle = active ? .dark : .unspecified
+        bottomSeparator.isHidden = active
+    }
+
     private lazy var bottomSeparator: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -444,7 +465,6 @@ final class AIChatTabChatHeaderView: UIView {
     }()
 
     private func setupUI() {
-        backgroundColor = UIColor(designSystemColor: .surfaceCanvas)
         addSubview(leftStack)
         addSubview(rightStack)
         addSubview(titleHolder)
@@ -535,7 +555,8 @@ final class AIChatTabChatHeaderView: UIView {
 
         upgradeLabel.accessibilityCustomActions = [
             UIAccessibilityCustomAction(name: UserText.aiChatHeaderUpgrade) { [weak self] _ in
-                self?.upgradeTapped()
+                guard let self, self.isUpgradePlateVisible else { return false }
+                self.upgradeTapped()
                 return true
             }
         ]
@@ -571,7 +592,7 @@ final class AIChatTabChatHeaderView: UIView {
     @objc private func newChatTapped() { delegate?.aiChatTabChatHeaderDidTapNewChat() }
     @objc private func tabSwitcherTapped() { delegate?.aiChatTabChatHeaderDidTapTabSwitcher() }
     @objc private func upgradeTapped() {
-        if state.isSubscriptionActive == false {
+        if isUpgradePlateVisible {
             delegate?.aiChatTabChatHeaderDidTapUpgrade()
         }
     }

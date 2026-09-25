@@ -119,6 +119,9 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User picks "New Chat" from the tab-bar Duck.ai menu button (or middle-clicks the pill).
     case aiChatNewChatTitleBarMenu
 
+    /// Event Trigger: User picks "Chats" from the tab-bar Duck.ai menu button.
+    case aiChatChatsTitleBarMenu
+
     // MARK: - Summarization
 
     /// Event Trigger: User triggers summarize action (either via keyboard shortcut or a context menu action)
@@ -327,6 +330,12 @@ enum AIChatPixel: PixelKit.Event {
 
     /// Event Trigger: The address bar's reasoning picker opened showing at least one gated effort.
     case aiChatAddressBarReasoningPickerShown(origin: String)
+
+    /// Event Trigger: User taps a gated model or reasoning effort in the address bar picker.
+    case aiChatAddressBarGatedRowClick(origin: String)
+
+    /// Event Trigger: User taps a gated model or reasoning effort in the New Tab Page picker.
+    case aiChatNtpGatedRowClick(origin: String)
 
     // MARK: - Duck.ai Subscription Funnel (frontend-reported)
 
@@ -595,6 +604,8 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_tabbar_button_clicked"
         case .aiChatNewChatTitleBarMenu:
             return "aichat_new_chat_title_bar_menu"
+        case .aiChatChatsTitleBarMenu:
+            return "aichat_chats_title_bar_menu"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
         case .aiChatSummarizeSourceLinkClicked:
@@ -744,6 +755,10 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_addressbar_model_picker_shown"
         case .aiChatAddressBarReasoningPickerShown:
             return "aichat_addressbar_reasoning_picker_shown"
+        case .aiChatAddressBarGatedRowClick:
+            return "aichat_addressbar_gated_row_click"
+        case .aiChatNtpGatedRowClick:
+            return "aichat_ntp_gated_row_click"
         case .aiChatSubscriptionFunnelImpression:
             return "aichat_subscription-funnel_impression"
         case .aiChatSubscriptionFunnelClick:
@@ -893,6 +908,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatSidebarFloatingTabActivated,
                 .aiChatTabbarButtonClicked,
                 .aiChatNewChatTitleBarMenu,
+                .aiChatChatsTitleBarMenu,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
@@ -1007,6 +1023,8 @@ enum AIChatPixel: PixelKit.Event {
             return ["origin": origin]
         case .aiChatAddressBarModelPickerShown(let origin),
                 .aiChatAddressBarReasoningPickerShown(let origin),
+                .aiChatAddressBarGatedRowClick(let origin),
+                .aiChatNtpGatedRowClick(let origin),
                 .aiChatNtpModelPickerShown(let origin),
                 .aiChatNtpModelPickerTryForFreeShown(let origin),
                 .aiChatNtpModelPickerUpgradeShown(let origin),
@@ -1114,6 +1132,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatSidebarFloatingTabActivated,
                 .aiChatTabbarButtonClicked,
                 .aiChatNewChatTitleBarMenu,
+                .aiChatChatsTitleBarMenu,
                 .aiChatSummarizeText,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
@@ -1176,6 +1195,8 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNtpSubscriptionUpsellShown,
                 .aiChatAddressBarModelPickerShown,
                 .aiChatAddressBarReasoningPickerShown,
+                .aiChatAddressBarGatedRowClick,
+                .aiChatNtpGatedRowClick,
                 .aiChatNtpModelPickerShown,
                 .aiChatNtpModelPickerTryForFreeShown,
                 .aiChatNtpModelPickerUpgradeShown,
@@ -1247,6 +1268,17 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNtpCustomizeResponsesOpened,
                 .serpSettingsUnrecognizedValue:
             return [.pixelSource]
+        }
+    }
+
+    // Native gated-row pixels omit the legacy platform prefix used by existing AI Chat pixels.
+    var namePrefix: PixelKitNamePrefix {
+        switch self {
+        case .aiChatAddressBarGatedRowClick,
+                .aiChatNtpGatedRowClick:
+            return .none
+        default:
+            return .platformDefault
         }
     }
 

@@ -24,6 +24,7 @@ import SwiftUI
 struct RedesignedFavoritesView: View {
     @ObservedObject var model: FavoritesViewModel
     @State private var isExpanded = false
+    @State private var isDraggingFavorite = false
     private let haptics = UIImpactFeedbackGenerator()
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Metrics.columnSpacing, alignment: .top), count: Metrics.columnCount)
 
@@ -37,7 +38,8 @@ struct RedesignedFavoritesView: View {
     var body: some View {
         if !model.isEmpty {
             LazyVGrid(columns: columns, alignment: .center, spacing: Metrics.rowSpacing) {
-                ReorderableForEach(visibleFavorites, id: \.id, isReorderingEnabled: model.canEditFavorites) { favorite in
+                ReorderableForEach(visibleFavorites, id: \.id, isReorderingEnabled: model.canEditFavorites,
+                                  onDragActivityChanged: { isDraggingFavorite = $0 }) { favorite in
                     Button {
                         model.favoriteSelected(favorite)
                     } label: {

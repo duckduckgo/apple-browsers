@@ -33,9 +33,11 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     private let preview: PreviewBuilder?
     private let onMove: (_ from: IndexSet, _ to: Int) -> Void
     private let onMoveFinished: () -> Void
+    private let onDragActivityChanged: ((Bool) -> Void)?
 
     @State private var movedItem: Data?
     @State private var didMove = false
+    @State private var activeDragSessionID: ObjectIdentifier?
 
     init(_ data: [Data],
          id: KeyPath<Data, ID>,
@@ -44,6 +46,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
         self.data = data
         self.id = id
         self.isReorderingEnabled = true
+        self.onDragActivityChanged = nil
         self.content = content
         self.preview = nil
         self.onMove = onMove
@@ -53,6 +56,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     init(_ data: [Data],
          id: KeyPath<Data, ID>,
          isReorderingEnabled: Bool = true,
+         onDragActivityChanged: ((Bool) -> Void)? = nil,
          @ViewBuilder content: @escaping ContentBuilder,
          @ViewBuilder preview: @escaping (Data) -> Preview,
          onMove: @escaping (_ from: IndexSet, _ to: Int) -> Void,
@@ -60,6 +64,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
         self.data = data
         self.id = id
         self.isReorderingEnabled = isReorderingEnabled
+        self.onDragActivityChanged = onDragActivityChanged
         self.content = content
         self.preview = preview
         self.onMove = onMove
@@ -77,7 +82,26 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
         switch item.trait {
 
         case .movable(let metadata) where isReorderingEnabled:
-            if let preview {
+            if let onDragActivityChanged, let preview {
+                ReorderDragSource(content: content(item), preview: preview(item), itemProvider: metadata.itemProvider,
+                                  onBegin: { sessionID in
+                    activeDragSessionID = sessionID
+                    movedItem = item
+                    didMove = false
+                    onDragActivityChanged(true)
+                }, onEnd: { sessionID in
+                    // A previous drag's drop animation can finish after the next drag starts.
+                    guard activeDragSessionID == sessionID else { return }
+                    activeDragSessionID = nil
+                    movedItem = nil
+                    if didMove {
+                        didMove = false
+                        onMoveFinished()
+                    }
+                    onDragActivityChanged(false)
+                })
+                .onDrop(of: [metadata.type], delegate: dropDelegate(for: item))
+            } else if let preview {
                 droppableContent(for: item, metadata: metadata)
                     .onDrag {
                         movedItem = item
@@ -104,13 +128,95 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     @ViewBuilder
     private func droppableContent(for item: Data, metadata: MoveMetadata) -> some View {
         content(item)
-            .onDrop(of: [metadata.type], delegate: ReorderDropDelegate(
-                data: data,
-                item: item,
-                onMove: onMove,
-                onMoveFinished: onMoveFinished,
-                movedItem: $movedItem,
-                didMove: $didMove))
+            .onDrop(of: [metadata.type], delegate: dropDelegate(for: item))
+    }
+
+    private func dropDelegate(for item: Data) -> ReorderDropDelegate<Data> {
+        ReorderDropDelegate(data: data,
+                            item: item,
+                            onMove: onMove,
+                            onMoveFinished: onMoveFinished,
+                            movedItem: $movedItem,
+                            didMove: $didMove)
+    }
+}
+
+/// Track each native session rather than treating SwiftUI's item-provider request
+/// as a drag-start notification. The end callback also covers cancelled drags.
+private struct ReorderDragSource<Content: View, Preview: View>: UIViewControllerRepresentable {
+    let content: Content
+    let preview: Preview
+    let itemProvider: NSItemProvider
+    let onBegin: (ObjectIdentifier) -> Void
+    let onEnd: (ObjectIdentifier) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(source: self)
+    }
+
+    func makeUIViewController(context: Context) -> UIHostingController<Content> {
+        let controller = UIHostingController(rootView: content)
+        controller.view.backgroundColor = .clear
+        let interaction = UIDragInteraction(delegate: context.coordinator)
+        interaction.isEnabled = true
+        controller.view.addInteraction(interaction)
+        return controller
+    }
+
+    func updateUIViewController(_ controller: UIHostingController<Content>, context: Context) {
+        context.coordinator.source = self
+        controller.rootView = content
+        controller.view.invalidateIntrinsicContentSize()
+    }
+
+    @available(iOS 16.0, *)
+    func sizeThatFits(_ proposal: ProposedViewSize, uiViewController: UIHostingController<Content>, context: Context) -> CGSize? {
+        uiViewController.sizeThatFits(in: CGSize(width: proposal.width ?? UIView.layoutFittingExpandedSize.width,
+                                               height: UIView.layoutFittingExpandedSize.height))
+    }
+
+    final class Coordinator: NSObject, UIDragInteractionDelegate {
+        var source: ReorderDragSource
+        private var previewController: UIHostingController<Preview>?
+        private var activeSessionID: ObjectIdentifier?
+
+        init(source: ReorderDragSource) {
+            self.source = source
+        }
+
+        func dragInteraction(_ interaction: UIDragInteraction, itemsForBeginning session: UIDragSession) -> [UIDragItem] {
+            [UIDragItem(itemProvider: source.itemProvider)]
+        }
+
+        func dragInteraction(_ interaction: UIDragInteraction, sessionWillBegin session: UIDragSession) {
+            let sessionID = ObjectIdentifier(session)
+            activeSessionID = sessionID
+            source.onBegin(sessionID)
+        }
+
+        func dragInteraction(_ interaction: UIDragInteraction, previewForLifting item: UIDragItem,
+                             session: UIDragSession) -> UITargetedDragPreview? {
+            guard let view = interaction.view, let window = view.window else { return nil }
+            let controller = UIHostingController(rootView: source.preview)
+            controller.view.backgroundColor = .clear
+            controller.view.bounds.size = controller.sizeThatFits(in: UIView.layoutFittingExpandedSize)
+            controller.view.layoutIfNeeded()
+            previewController = controller
+
+            let parameters = UIDragPreviewParameters()
+            parameters.backgroundColor = .clear
+            let center = CGPoint(x: view.bounds.midX, y: controller.view.bounds.height / 2)
+            let target = UIDragPreviewTarget(container: window, center: view.convert(center, to: window))
+            return UITargetedDragPreview(view: controller.view, parameters: parameters, target: target)
+        }
+
+        func dragInteraction(_ interaction: UIDragInteraction, session: UIDragSession, didEndWith operation: UIDropOperation) {
+            let sessionID = ObjectIdentifier(session)
+            guard activeSessionID == sessionID else { return }
+            activeSessionID = nil
+            previewController = nil
+            source.onEnd(sessionID)
+        }
     }
 }
 
@@ -162,6 +268,7 @@ extension ReorderableForEach where Data: Identifiable, ID == Data.ID {
         self.data = data
         self.id = \Data.id
         self.isReorderingEnabled = true
+        self.onDragActivityChanged = nil
         self.content = content
         self.preview = nil
         self.onMove = onMove
@@ -176,6 +283,7 @@ extension ReorderableForEach where Data: Identifiable, ID == Data.ID {
         self.data = data
         self.id = \Data.id
         self.isReorderingEnabled = true
+        self.onDragActivityChanged = nil
         self.content = content
         self.preview = preview
         self.onMove = onMove

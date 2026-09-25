@@ -69,7 +69,8 @@ public class MockWindow: NSWindow {
 
     public override func beginSheet(_ sheetWindow: NSWindow, completionHandler handler: ((NSApplication.ModalResponse) -> Void)? = nil) {
         beginSheetCalled = true
-        // This mock completes presentation immediately, so close the sheet before reporting completion.
+        // This mock completes presentation immediately, so also close the sheet it was given.
+        // Otherwise AppKit can retain its window and hosting view after the test finishes.
         sheetWindow.isReleasedWhenClosed = false
         sheetWindow.close()
         handler?(.continue)

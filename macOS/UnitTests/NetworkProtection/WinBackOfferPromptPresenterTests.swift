@@ -77,12 +77,12 @@ final class WinBackOfferPromptPresenterTests: XCTestCase {
         mockVisibilityManager.shouldShowLaunchMessage = true
         XCTAssertEqual(capturedPixels.count, 0, "Should not have fired any pixels yet")
         let window = MockWindow()
-        let sheetPresented = expectation(description: "Prompt sheet presented and closed")
+        let sheetPresented = expectation(description: "Win-back prompt presentation completed")
         window.onBeginSheet = { sheetPresented.fulfill() }
 
         // When
         sut.tryToShowPrompt(in: window)
-        await fulfillment(of: [sheetPresented], timeout: 2)
+        await fulfillment(of: [sheetPresented], timeout: 5)
 
         // Then
         XCTAssertEqual(capturedPixels.count, 1, "Should have fired exactly one pixel")

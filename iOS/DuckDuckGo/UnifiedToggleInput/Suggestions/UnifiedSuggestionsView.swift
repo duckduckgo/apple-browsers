@@ -25,8 +25,9 @@ struct UnifiedSuggestionsView: View {
 
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
-    /// Built lazily by the host for the `.favorites` state; nil when favorites aren't supported (Duck.ai).
-    let favoritesProvider: () -> NewTabPageViewController?
+    let favoritesPresentation: FocusedFavoritesPresentation
+    var usesRedesignedNewTabPageLayout = false
+    var showsRedesignedSearchModules = false
 
     var body: some View {
         // The chrome (escape hatch + sync-promo) is pinned to the bar by the container (it rides the
@@ -69,11 +70,25 @@ struct UnifiedSuggestionsView: View {
         // Favorites renders on top; the list is hidden + non-interactive beneath it.
         ZStack {
             listLayer
-            overlayLayer
+            if usesRedesignedNewTabPageLayout {
+                RedesignedFocusedSearchModulesView(favoritesModel: favoritesPresentation.viewController?.favoritesModel)
+                    // Keep expansion and scroll state while typing or switching modes. Only one
+                    // favorites hierarchy is mounted for the selected layout.
+                    .opacity(showsRedesignedSearchModules ? 1 : 0)
+                    .animation(nil, value: showsRedesignedSearchModules)
+                    .allowsHitTesting(showsRedesignedSearchModules)
+                    .accessibilityHidden(!showsRedesignedSearchModules)
+                    .transition(.identity)
+                    .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
+            } else {
+                SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: isShowingFavorites)
+                    .transition(.identity)
+            }
         }
     }
 
     private var isShowingList: Bool {
+        guard !showsRedesignedSearchModules else { return false }
         if case .list = viewModel.content { return true }
         return false
     }
@@ -86,38 +101,15 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var listLayer: some View {
-        SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
-                            isAddressBarAtBottom: isAddressBarAtBottom)
-            .opacity(isShowingList ? 1 : 0)
-            // Fade *in* on a mode change, but snap *out* — otherwise the recents list lingers over the
-            // Search favorites/logo (which snap in instantly) when toggling away from Duck.ai.
-            .animation(isShowingList ? .easeInOut(duration: 0.2) : nil, value: isShowingList)
-            // Fade out with the collapse (like the logo) so a list→favorites dismiss hands off to the
-            // NTP favorites instead of snapping away when the host is hidden.
-            .modifier(DismissFade(isFadingOut: viewModel.isFadingOut))
-            .allowsHitTesting(isShowingList)
+        FocusedSuggestionsView(viewModel: viewModel.listViewModel(for: activeListKind),
+                               isAddressBarAtBottom: isAddressBarAtBottom,
+                               isVisible: isShowingList,
+                               isFadingOut: viewModel.isFadingOut)
     }
 
     private var isShowingFavorites: Bool {
         if case .favorites = viewModel.content { return true }
         return false
-    }
-
-    /// Favorites stays mounted like the list and toggles a plain `.opacity` — NOT an insert/remove
-    /// `.transition` (which snaps when interrupted by rapid Search↔Duck.ai toggling). Its opacity is
-    /// instant (`.animation(nil)`): the incoming list fades in, but favorites must not linger visibly
-    /// over Duck.ai while the crossfade runs.
-    @ViewBuilder
-    private var overlayLayer: some View {
-        if let controller = favoritesProvider() {
-            // Extend under the top safe area so the frame stays static; the top inset is delivered to
-            // the nested NTP's own scroll view as a content inset (animatable), not as a frame move.
-            SuggestionsFavoritesView(controller: controller)
-                .ignoresSafeArea(.container, edges: .top)
-                .opacity(isShowingFavorites ? 1 : 0)
-                .animation(nil, value: isShowingFavorites)
-                .allowsHitTesting(isShowingFavorites)
-        }
     }
 
     private var isShowingLogo: Bool {
@@ -160,7 +152,7 @@ struct UnifiedSuggestionsView: View {
                 .animation(nil, value: isShowingLogo)
                 // On dismiss it fades out (the NTP content takes over) — a separate opacity so the
                 // toggle's instant show/hide above is unaffected.
-                .modifier(DismissFade(isFadingOut: viewModel.isFadingOut))
+                .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
                 .allowsHitTesting(false)
         }
         .ignoresSafeArea(.container, edges: .top)
@@ -193,20 +185,5 @@ struct UnifiedSuggestionsView: View {
         static let bottomBarGap: CGFloat = 56
         /// Mirrors `FocusedDaxLogoView`'s height — used to find the logo's top for the overlap check.
         static let logoHeight: CGFloat = 162
-    }
-}
-
-/// Fades transient content (logo, suggestion list) out as the host collapses back to the NTP, so it
-/// hands off to the NTP content instead of snapping away. Favorites are excluded — they hand off via
-/// the embedded-copy reveal, not a fade.
-///
-/// One-directional: only the fade-*out* (false→true) animates. The reset (true→false, on the next
-/// focus) snaps, so the logo reappears instantly instead of replaying a fade-in.
-private struct DismissFade: ViewModifier {
-    let isFadingOut: Bool
-    func body(content: Content) -> some View {
-        content
-            .opacity(isFadingOut ? 0 : 1)
-            .animation(isFadingOut ? .easeInOut(duration: 0.2) : nil, value: isFadingOut)
     }
 }

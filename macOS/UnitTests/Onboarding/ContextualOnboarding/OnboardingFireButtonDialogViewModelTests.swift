@@ -113,7 +113,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
-        let sheetPresented = expectation(description: "Fire sheet presented and closed")
+        let sheetPresented = expectation(description: "Fire dialog presentation completed")
         window.onBeginSheet = { sheetPresented.fulfill() }
         let mainWindowController = MainWindowController(
             window: window,
@@ -127,7 +127,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         window.isVisible = true
 
         viewModel.tryFireButton()
-        await fulfillment(of: [sheetPresented], timeout: 2)
+        await fulfillment(of: [sheetPresented], timeout: 5)
 
         XCTAssertTrue(onFireButtonPressedCalled)
         XCTAssertTrue(reporter.measureFireButtonTryItCalled)

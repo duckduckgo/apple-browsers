@@ -107,8 +107,8 @@ final class FireWindowClosingTests: XCTestCase {
     // MARK: - Helpers
 
     private func expectationForClosing(_ window: NSWindow) -> XCTestExpectation {
-        // Notification expectations retain their observed object. Keep only a weak reference
-        // so the window can deallocate before the harness checks for retained views.
+        // Notification expectations retain their observed object. Avoid keeping the closed window
+        // and its view hierarchy alive while the harness checks deallocation at teardown.
         expectation(forNotification: NSWindow.willCloseNotification, object: nil) { [weak window] notification in
             guard let window else { return false }
             return notification.object as? NSWindow === window

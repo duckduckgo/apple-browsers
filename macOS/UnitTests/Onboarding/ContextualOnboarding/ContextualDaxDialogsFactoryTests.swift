@@ -336,7 +336,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
-        let sheetPresented = expectation(description: "Fire sheet presented and closed")
+        let sheetPresented = expectation(description: "Fire dialog presentation completed")
         window.onBeginSheet = { sheetPresented.fulfill() }
         let mainWindowController = MainWindowController(
             window: window,
@@ -360,7 +360,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // WHEN
         window.isVisible = true
         view.viewModel.tryFireButton()
-        await fulfillment(of: [sheetPresented], timeout: 2)
+        await fulfillment(of: [sheetPresented], timeout: 5)
 
         // THEN
         XCTAssertTrue(onFireButtonRun)

@@ -22,7 +22,7 @@ import SwiftUI
 
 /// Shared raised surface for controls on the redesigned New Tab Page.
 struct RedesignedNewTabPageCardBackground: View {
-    var cornerRadius: CGFloat = Metrics.cornerRadius
+    private let cornerRadius: CGFloat = Metrics.cornerRadius
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)

@@ -27,7 +27,6 @@ public protocol ManagementViewModel: ObservableObject {
     var isAccountRecoveryAvailable: Bool { get }
     var isAppVersionNotSupported: Bool { get }
     var isAIChatSyncEnabled: Bool { get }
-    var isAppRebranded: Bool { get }
     var isSimplifiedSyncSetupV2Enabled: Bool { get }
 
     var isSyncEnabled: Bool { get }

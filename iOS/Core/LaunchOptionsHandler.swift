@@ -224,6 +224,14 @@ extension LaunchOptionsHandler {
             }
         }
 
+#if DEBUG
+        // Seed only UI-test setup. A separate argument avoids shadowing persisted records when Fire clears them.
+        if isUITesting,
+           let permissions = userDefaults.dictionary(forKey: "sitePermissionsTestSeed") as? [String: [String: String]] {
+            userDefaults.set(permissions, forKey: "site-permissions-per-site")
+        }
+#endif
+
         // Writing ATB keys in -backdateInstallDate makes hasInstallStatistics=true, which causes
         // assignVariantIfNeeded to return early without calling onVariantAssigned → primeForUse()
         // is never called → isDismissed stays true (its default) → contextual dax dialogs are

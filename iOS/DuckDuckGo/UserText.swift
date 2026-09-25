@@ -727,6 +727,7 @@ public struct UserText {
     public static let actionAutofillLogins = NSLocalizedString("action.title.autofill.logins", value: "Passwords", comment: "Autofill Logins menu item opening the login list")
     public static let actionTabNew = NSLocalizedString("action.title.tab.new", value: "New Tab", comment: "New tab menu item opening a new tab")
     static let actionVPN = NSLocalizedString("action.title.vpn", value: "VPN", comment: "VPN menu item")
+    static let actionVPNFreeTrialBadge = NSLocalizedString("action.title.vpn.free-trial-badge", value: "Try for Free", comment: "Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased.")
 
     // MARK: - Control Center Widget Education
 
@@ -2002,6 +2003,9 @@ public struct UserText {
         comment: "English-only Dax greeting on the New Tab page.")
 
     // MARK: - New Tab Page customization
+
+    public static let newTabPageFavoritesSeeAll = NotLocalizedString("new-tab-page.favorites.see-all", value: "See All", comment: "Button that expands the New Tab Page favorites grid to show all favorites")
+    public static let newTabPageFavoritesSeeLess = NotLocalizedString("new-tab-page.favorites.see-less", value: "See Less", comment: "Button that collapses the New Tab Page favorites grid to show fewer favorites")
 
     public static let newTabPageCustomizationTitle = NotLocalizedString("new-tab-page.customization.title", value: "Customize Your Start", comment: "Title of the sheet for customizing the New Tab Page")
     public static let newTabPageCustomizationMessages = NotLocalizedString("new-tab-page.customization.messages", value: "Messages", comment: "Name of the New Tab Page section showing messages, in the customization sheet")

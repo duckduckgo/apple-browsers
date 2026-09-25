@@ -102,6 +102,16 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     /// The one resolver-driven host that serves both surfaces; its container pinned directly in
     /// `contentContainerView`.
+    var usesRedesignedNewTabPageLayout = false {
+        didSet {
+            guard oldValue != usesRedesignedNewTabPageLayout else { return }
+            unifiedSuggestionsHost?.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
+            if isViewLoaded {
+                applyRequestedContentInset()
+            }
+        }
+    }
+
     private var unifiedSuggestionsHost: UnifiedSuggestionsHost?
     private var unifiedSuggestionsContainerView: UIView?
     /// Single-host path: the suggestions container's top offset (input height + hatch) lives on this
@@ -371,6 +381,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let rootView = FocusedChromeView(
             hatchModel: hatchModel,
             syncPromo: promo,
+            usesRaisedEscapeHatch: usesRedesignedNewTabPageLayout,
             topInset: chromeTopInsetForPosition,
             onHeightChange: { [weak self] height in
                 guard let self, self.chromeMeasuredHeight != height else { return }
@@ -438,7 +449,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         if isSyncPromoCardVisible {
             return chromeMeasuredHeight
         } else if shouldShowPinnedHatch {
-            return chromeTopInsetForPosition + TabSwitcherPill.compactSize + FocusedChromeView.Metrics.bottomInset
+            let cardPadding = usesRedesignedNewTabPageLayout ? FocusedChromeView.Metrics.raisedHatchPadding * 2 : 0
+            return chromeTopInsetForPosition + TabSwitcherPill.compactSize + cardPadding + FocusedChromeView.Metrics.bottomInset
         } else {
             return 0
         }
@@ -648,6 +660,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         )
 
         let host = UnifiedSuggestionsHost(config: config)
+        host.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
         host.onContentChanged = { [weak self] in
             self?.refreshVisibleContent(animateContentUpdates: true)
         }

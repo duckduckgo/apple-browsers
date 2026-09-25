@@ -20,17 +20,17 @@ DuckDuckGo.xcworkspace/          # Main workspace (ALWAYS open this)
 ```
 iOS/
 ├── DuckDuckGo/                  # Main iOS app
-│   ├── AppDelegate.swift        # App lifecycle
-│   ├── MainViewController.swift # Primary browser interface
 │   ├── BrowserTab.swift        # Tab state and WebKit integration
 │   ├── AIChat/                 # AI chat integration
-│   ├── AppLifecycle/           # App lifecycle management
+│   ├── Application/            # App lifecycle, configuration, and services
+│   │   └── AppLifecycle/       # AppDelegate, SceneDelegate, app state machine
 │   ├── Autofill/               # Form autofill features
 │   ├── Bookmarks/              # Bookmark management
 │   ├── BrowsingMenu/           # Browser menu UI
 │   ├── Configuration/          # App configuration
 │   ├── DataImport/             # Data import utilities
 │   ├── HealthKitReporting/     # Health data reporting
+│   ├── Main/                   # MainViewController and browser chrome
 │   ├── MainWindow/             # Main window controllers
 │   ├── Subscription/           # Premium features
 │   ├── SyncPrompt/             # Sync feature prompts

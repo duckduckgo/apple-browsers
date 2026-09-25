@@ -32,12 +32,40 @@ public struct BadgeView: View {
         Text(text.uppercased())
             .font(.caption2)
             .bold()
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
             .background(Color(designSystemColor: .alertYellow))
             .foregroundColor(.black)
             .cornerRadius(6)
     }
 }
+
+#if DEBUG
+
+private struct BadgeViewPreviewSamples: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            BadgeView(text: "New")
+            BadgeView(text: "Try for Free")
+            HStack {
+                Text("VPN")
+                Spacer()
+                BadgeView(text: "Try for Free")
+            }
+        }
+        .padding()
+    }
+}
+
+#Preview("Light") {
+    BadgeViewPreviewSamples()
+}
+
+#Preview("Dark") {
+    BadgeViewPreviewSamples()
+        .preferredColorScheme(.dark)
+}
+
+#endif
 
 #endif

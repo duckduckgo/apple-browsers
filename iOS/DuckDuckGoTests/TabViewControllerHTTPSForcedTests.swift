@@ -112,6 +112,29 @@ final class TabViewControllerHTTPSForcedTests: XCTestCase {
         XCTAssertFalse(tracker.isHTTPSForced(committedURL: httpPage))
     }
 
+    // MARK: - Link protection
+
+    // Link protection strips tracking parameters and resolves AMP links between the upgrade and the
+    // request, so the tracker is armed with the cleaned URL — the one the navigation actually carries.
+    func test_upgradeArmedWithCleanedURL_isForced() {
+        let cleaned = URL(string: "https://example.com/article")!
+        tracker.didUpgrade(to: cleaned)
+        tracker.willNavigate(mainFrameTo: cleaned)
+
+        XCTAssertTrue(tracker.isHTTPSForced(committedURL: cleaned))
+    }
+
+    // Arming with the pre-cleaning URL is what broke reporting: the navigation carries the cleaned
+    // URL, which clears the tracker before the page ever commits.
+    func test_upgradeArmedWithPreCleaningURL_isNotForced() {
+        tracker.didUpgrade(to: URL(string: "https://example.com/article?utm_source=newsletter")!)
+
+        let cleaned = URL(string: "https://example.com/article")!
+        tracker.willNavigate(mainFrameTo: cleaned)
+
+        XCTAssertFalse(tracker.isHTTPSForced(committedURL: cleaned))
+    }
+
     // MARK: - Redirects
 
     // A server redirect away from the upgraded URL reports false. macOS and Windows behave the same,

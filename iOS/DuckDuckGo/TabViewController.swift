@@ -149,7 +149,10 @@ struct HTTPSUpgradeNavigationTracker {
 
     private var upgradedURL: URL?
 
-    /// Records an upgrade that is about to be loaded.
+    /// Records the upgraded URL that is about to be requested.
+    ///
+    /// Must be the URL actually handed to the web view, not the raw output of the upgrader: link
+    /// protection can strip tracking parameters or swap an AMP link for its canonical in between.
     mutating func didUpgrade(to url: URL) {
         upgradedURL = url
     }
@@ -1595,6 +1598,12 @@ class TabViewController: UIViewController {
                                    onStartExtracting: { showProgressIndicator() },
                                    onFinishExtracting: { },
                                    completion: { [weak self] url in
+            // Arm the report here, not in `upgradeToHttps`: link protection may have stripped tracking
+            // parameters or resolved an AMP link, and the tracker has to hold the URL we actually
+            // request or the navigation that follows won't match it.
+            if didUpgradeURL {
+                self?.httpsUpgradeTracker.didUpgrade(to: url)
+            }
             self?.load(urlRequest: .userInitiated(url))
         })
     }
@@ -3743,7 +3752,6 @@ extension TabViewController: WKNavigationDelegate {
             case let .success(upgradedUrl):
                 if lastUpgradedURL != upgradedUrl {
                     lastUpgradedURL = upgradedUrl
-                    httpsUpgradeTracker.didUpgrade(to: upgradedUrl)
                     privacyInfo?.connectionUpgradedTo = upgradedUrl
                     load(url: upgradedUrl, didUpgradeURL: true)
                     completion(.cancel)

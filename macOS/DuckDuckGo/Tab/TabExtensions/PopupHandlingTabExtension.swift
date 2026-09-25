@@ -271,8 +271,12 @@ final class PopupHandlingTabExtension {
                                     isUserInitiated: Bool) -> WKWebView? {
         // disable opening 'javascript:' links in new tab
         guard ![.javascript, .data].contains(navigationAction.request.url?.navigationalScheme) else { return nil }
-        // disable opening internal pages in pop-up windows
-        guard TabContent.contentFromURL(navigationAction.request.url, source: .link).isExternalUrl || !kind.isPopup else { return nil }
+        // disable opening internal pages in pop-up windows. An extension's own page is allowed:
+        // an extension frame embedded in a website opens one with `window.open()` and the `popup`
+        // feature — iCloud Passwords' completion list does so to start pairing — and Chrome shows it
+        // as a small window.
+        let content = TabContent.contentFromURL(navigationAction.request.url, source: .link)
+        guard content.isExternalUrl || content.isWebExtensionUrl || !kind.isPopup else { return nil }
 
         let securityOrigin = navigationAction.safeSourceFrame.map { SecurityOrigin($0.securityOrigin) }
         guard let childTab = createChildTab(configuration, securityOrigin, kind) else { return nil }

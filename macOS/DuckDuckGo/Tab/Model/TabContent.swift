@@ -332,6 +332,14 @@ extension TabContent {
         }
     }
 
+    /// A page of a loaded web extension, at its `webkit-extension://` URL.
+    var isWebExtensionUrl: Bool {
+        if case .webExtensionUrl = self {
+            return true
+        }
+        return false
+    }
+
     var userEnteredValue: String? {
         switch self {
         case .url(_, credential: _, source: let source):

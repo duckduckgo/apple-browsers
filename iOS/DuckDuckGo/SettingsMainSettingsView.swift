@@ -77,7 +77,7 @@ struct SettingsMainSettingsView: View {
             AnyView(NavigationLink(destination: SettingsAIFeaturesView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.settingsAiFeatures,
                                  image: Image(uiImage: DesignSystemImages.Color.Size24.aiGeneral))
-            })
+            }.accessibilityIdentifier("Settings.Main.AIFeatures"))
         }
 
         @ViewBuilder func buildAppearence(viewModel: SettingsViewModel) -> AnyView {

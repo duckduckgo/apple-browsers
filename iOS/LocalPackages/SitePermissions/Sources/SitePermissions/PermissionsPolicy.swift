@@ -107,6 +107,10 @@ public struct PermissionsPolicy {
         let matchesWildcardSubdomain = isWildcardSubdomain && pageHost.hasSuffix(String(sourceHost.dropFirst()))
         guard sourceHost == "*" || matchesExactHost || matchesWildcardSubdomain else { return false }
 
+        return sourcePortMatches(hostAndPort, pageURL: pageURL, pageScheme: pageScheme)
+    }
+
+    private static func sourcePortMatches(_ hostAndPort: [Substring], pageURL: URL, pageScheme: String) -> Bool {
         let defaultPort = pageScheme == "https" ? 443 : 80
         let pagePort = pageURL.port ?? defaultPort
         guard hostAndPort.count == 2 else { return pagePort == defaultPort }

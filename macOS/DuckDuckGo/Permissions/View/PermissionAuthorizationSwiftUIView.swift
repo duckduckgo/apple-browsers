@@ -212,20 +212,12 @@ enum PermissionAuthorizationType: Equatable {
 // MARK: - PermissionAuthorizationSwiftUIView
 
 struct PermissionAuthorizationSwiftUIView: View {
-    enum Action {
-        case allow
-        case deny
-        case decision(PermissionPromptDecision)
-        case dismiss
-        case learnMore
-    }
-
     let domain: String
     let permissionType: PermissionAuthorizationType
     let showsTwoStepUI: Bool
     let isSystemPermissionDisabled: Bool
     let showsDecisionDialog: Bool
-    let onAction: (Action) -> Void
+    let onAction: (PermissionAuthorizationViewController.Action) -> Void
     let systemPermissionManager: SystemPermissionManagerProtocol
 
     /// State for the system permission step in two-step flow
@@ -742,7 +734,7 @@ extension PermissionAuthorizationSwiftUIView {
         showsTwoStepUI: Bool = false,
         isSystemPermissionDisabled: Bool = false,
         showsDecisionDialog: Bool = false,
-        onAction: @escaping (Action) -> Void
+        onAction: @escaping (PermissionAuthorizationViewController.Action) -> Void
     ) {
         self.domain = domain
         self.permissionType = permissionType

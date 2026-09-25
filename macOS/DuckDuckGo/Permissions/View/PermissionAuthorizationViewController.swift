@@ -64,6 +64,14 @@ extension Array where Element == PermissionType {
 
 final class PermissionAuthorizationViewController: NSViewController {
 
+    enum Action {
+        case allow
+        case deny
+        case decision(PermissionPromptDecision)
+        case dismiss
+        case learnMore
+    }
+
     let systemPermissionManager = SystemPermissionManager()
     private let featureFlagger: FeatureFlagger
 
@@ -143,7 +151,7 @@ final class PermissionAuthorizationViewController: NSViewController {
         isAuthorizationInProgress = true
     }
 
-    private func handleAction(_ action: PermissionAuthorizationSwiftUIView.Action) {
+    private func handleAction(_ action: Action) {
         switch action {
         case .allow:
             handleAllow()

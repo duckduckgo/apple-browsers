@@ -29,8 +29,9 @@ protocol UTIFooterPresenting: AnyObject {
     func clearPendingFooterMessage()
 }
 
-/// Presents the shared usage-limit view model on the Duck.ai input's footer slot. The view model
-/// decides what to say; this decides when the card can be on screen, and animates it.
+/// Presents the Terms of Service disclaimer and the shared usage-limit view model on the Duck.ai
+/// input's footer slot. The view model decides what to say; this decides when the card can be on
+/// screen, and animates it.
 @MainActor
 final class UTIFooterController {
 
@@ -46,7 +47,10 @@ final class UTIFooterController {
     /// Reported when the spent-allowance state changes, so the input goes inert alongside the card.
     var onInputBlockChanged: ((Bool) -> Void)?
 
-    private let viewModel: DuckAiUsageWarningViewModel
+    /// `nil` when usage warnings are off; the footer can still carry the Terms of Service disclaimer.
+    private let viewModel: DuckAiUsageWarningViewModel?
+    /// `nil` when the native disclaimer is off, which leaves the Terms of Service to the web app.
+    private let termsOfServiceStore: DuckAiTermsOfServiceStore?
     private let highUsageNotice: UTIFooterHighUsageNoticeSource?
     private let mapper: UTIFooterMessageMapper
     private let measurement: DuckAiUsageWarningMeasurement
@@ -64,9 +68,14 @@ final class UTIFooterController {
 
     private var isInputBlocked = false
 
+    private var isShowingTermsOfService = false
+    /// Reported by the view: a resolved message can still be waiting for the input to expand.
+    private var isCardOnScreen = false
+
     private(set) var currentMessage: UTIFooterMessage?
 
-    init(viewModel: DuckAiUsageWarningViewModel,
+    init(viewModel: DuckAiUsageWarningViewModel?,
+         termsOfServiceStore: DuckAiTermsOfServiceStore? = nil,
          highUsageNotice: UTIFooterHighUsageNoticeSource? = nil,
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
          measurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
@@ -74,6 +83,7 @@ final class UTIFooterController {
          allowsSubscriptionUpsell: @escaping () -> Bool = { true },
          animator: Animator? = nil) {
         self.viewModel = viewModel
+        self.termsOfServiceStore = termsOfServiceStore
         self.highUsageNotice = highUsageNotice
         self.mapper = mapper
         self.measurement = measurement
@@ -84,9 +94,9 @@ final class UTIFooterController {
 
     /// Synchronous: a lookup in the already-loaded entries blob.
     func refresh() {
-        viewModel.refresh()
+        viewModel?.refresh()
         highUsageNotice?.refresh()
-        Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller refresh → warning=\(self.viewModel.warning == nil ? "none" : "present", privacy: .public) suppressed=\(self.isSuppressed, privacy: .public)")
+        Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller refresh → warning=\(self.viewModel?.warning == nil ? "none" : "present", privacy: .public) suppressed=\(self.isSuppressed, privacy: .public)")
         applyCurrentState()
     }
 
@@ -94,10 +104,11 @@ final class UTIFooterController {
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller reset for pose change")
         // Not a dismissal: the next refresh re-reads the snapshot and the message comes back.
         measurement.inputSessionEnded()
-        viewModel.clear()
+        viewModel?.clear()
         highUsageNotice?.clear()
         currentMessage = nil
         currentExposure = nil
+        isShowingTermsOfService = false
         updateInputBlock()
         // Keeps the view's copy in lockstep — otherwise a later refresh that resolves to no
         // warning no-ops (nil == nil) and the view resurrects the stale card on the next expand.
@@ -129,6 +140,8 @@ final class UTIFooterController {
     /// The user closing the card. A model switch is not a usage warning. It spends neither the
     /// warning's dismissal record nor its pixel.
     func dismissCurrent() {
+        // Required: it has no close button, and a stray close must not spend a warning behind it.
+        guard !isShowingTermsOfService else { return }
         if modelSwitchNotice != nil {
             modelSwitchNotice = nil
             createImagePixelFiring.modelSwitchNoticeDismissed()
@@ -142,6 +155,7 @@ final class UTIFooterController {
     /// The card entering or leaving the footer slot. Only entering is an impression: the exposure
     /// outlives the card, so a prompt sent after a dismissal still belongs to the message.
     func footerVisibilityChanged(isVisible: Bool) {
+        isCardOnScreen = isVisible
         guard isVisible, let exposure = currentExposure else { return }
         measurement.cardBecameVisible(exposure)
     }
@@ -150,15 +164,25 @@ final class UTIFooterController {
         measurement.promptSubmitted()
     }
 
+    /// Sending with the disclaimer on screen is the acceptance; a send the user made without seeing it
+    /// accepts nothing, and the web app shows its own card for that prompt instead.
+    func acceptTermsIfDisclaimerShown() {
+        guard isShowingTermsOfService, isCardOnScreen, let termsOfServiceStore else { return }
+        Logger.duckAIUsageWarnings.debug("[TermsOfService] accepted by sending from the native input")
+        termsOfServiceStore.recordAcceptedInNativeInput()
+        applyCurrentState()
+    }
+
     /// A switch from the bar's picker: always reported, but it only retires the message when it is the
     /// step down the message asked for. The card's own CTA reports and retires itself.
     func userSwitchedModel(from previousModelId: String?, to modelId: String) {
         measurement.modelSwitched()
-        viewModel.userSwitchedModel(from: previousModelId, to: modelId)
+        viewModel?.userSwitchedModel(from: previousModelId, to: modelId)
         applyCurrentState()
     }
 
     func performPrimaryAction() {
+        guard let viewModel else { return }
         if case .tryForFree = viewModel.warning?.action, !allowsSubscriptionUpsell() {
             applyCurrentState()
             return
@@ -181,7 +205,7 @@ final class UTIFooterController {
     /// retires a card that carries no close button.
     private func retireCurrent() {
         // The two dismissals are recorded separately, so each message spends only its own.
-        if viewModel.warning != nil {
+        if let viewModel, viewModel.warning != nil {
             viewModel.dismiss()
         } else {
             highUsageNotice?.dismissCurrent()
@@ -198,7 +222,7 @@ final class UTIFooterController {
     }
 
     private var currentActionSwitchesModel: Bool {
-        switch viewModel.warning?.action {
+        switch viewModel?.warning?.action {
         case .switchToModel, .switchToFreeModel: return true
         default: return false
         }
@@ -217,13 +241,14 @@ final class UTIFooterController {
         // Set before the presenter runs: applying can reveal the card synchronously, and the
         // impression that reports needs the exposure it belongs to.
         currentExposure = card.flatMap(\.exposure)
+        isShowingTermsOfService = card?.isTermsOfService == true
         animator { [weak self] in
             self?.presenter?.applyFooterMessage(message)
         }
     }
 
     private func updateInputBlock() {
-        let blocked = !isSuppressed && viewModel.warning?.blocksInput == true
+        let blocked = !isSuppressed && viewModel?.warning?.blocksInput == true
         guard blocked != isInputBlocked else { return }
         isInputBlocked = blocked
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] input blocked=\(blocked, privacy: .public)")
@@ -234,14 +259,19 @@ final class UTIFooterController {
         let message: UTIFooterMessage
         /// `nil` for a card that is not a usage warning, so it reports no usage-warning pixel.
         let exposure: DuckAiUsageWarningExposure?
+        var isTermsOfService = false
     }
 
-    /// One slot: the model switch outranks an actionable warning, which outranks the informational
-    /// notice.
+    /// One slot: the Terms of Service outrank everything, then the model switch outranks an actionable
+    /// warning, which outranks the informational notice.
     private func resolveCard() -> ResolvedCard? {
         guard !isSuppressed else {
             Logger.duckAIUsageWarnings.debug("[UsageWarnings] nothing to show: suppressed (editing or Search mode)")
             return nil
+        }
+        // The one exception is a spent allowance: its input can't send the prompt that would accept.
+        if let termsOfServiceStore, !termsOfServiceStore.hasAccepted, !isInputBlocked {
+            return ResolvedCard(message: mapper.termsOfServiceMessage(), exposure: nil, isTermsOfService: true)
         }
         // The model switch is something the app just did to the user's selection, so it outranks a
         // usage warning, which stays available once the notice is gone. It carries no CTA, so the
@@ -249,7 +279,7 @@ final class UTIFooterController {
         if let modelSwitchNotice {
             return ResolvedCard(message: mapper.message(for: modelSwitchNotice), exposure: nil)
         }
-        if let warning = viewModel.warning {
+        if let warning = viewModel?.warning {
             let warningMessage = mapper.message(for: warning, allowsSubscriptionUpsell: allowsSubscriptionUpsell())
             guard let message = unlessActedOn(warningMessage) else { return nil }
             return ResolvedCard(message: message, exposure: DuckAiUsageWarningExposure(warning: warning))
@@ -264,7 +294,7 @@ final class UTIFooterController {
     /// Releases as soon as the resolver produces a different message, so the next rung still shows,
     /// and once the acted-on record is gone, so clearing it is not undone by this copy.
     private func unlessActedOn(_ message: UTIFooterMessage) -> UTIFooterMessage? {
-        guard viewModel.hasActedOnCurrentNotice, message == actedOnMessage else { return message }
+        guard viewModel?.hasActedOnCurrentNotice == true, message == actedOnMessage else { return message }
         return nil
     }
 

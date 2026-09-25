@@ -166,6 +166,31 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         XCTAssertTrue(sut.message(for: notice).isDismissible)
     }
 
+    // MARK: - Terms of Service
+
+    /// Required: nothing closes it before the user has seen what sending agrees to.
+    func test_termsOfServiceMessage_hasNoCloseButtonAndNoAction() {
+        let message = sut.termsOfServiceMessage()
+
+        XCTAssertFalse(message.isDismissible)
+        XCTAssertNil(message.primaryAction)
+    }
+
+    func test_termsOfServiceMessage_linksThePhraseToThePrivacyTerms() throws {
+        let message = sut.termsOfServiceMessage()
+        let link = try XCTUnwrap(message.link)
+
+        XCTAssertTrue(message.title.contains(link.text))
+        XCTAssertEqual(link.url, URL(string: "https://duckduckgo.com/duckai/privacy-terms"))
+    }
+
+    func test_termsOfServiceMessage_showsTheShieldAndNoResetLine() {
+        let message = sut.termsOfServiceMessage()
+
+        XCTAssertEqual(message.icon, .shield)
+        XCTAssertNil(message.subtitle)
+    }
+
     // MARK: - Create Image model switch
 
     /// The title names the model now in use; the subtitle names the one it replaced. Getting these

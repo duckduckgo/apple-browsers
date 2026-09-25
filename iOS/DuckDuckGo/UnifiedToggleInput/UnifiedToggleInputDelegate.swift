@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Foundation
 
 @MainActor
 protocol UnifiedToggleInputDelegate: AnyObject {
@@ -40,6 +41,8 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     /// Edit mode entered/exited — the host applies the surrounding chrome (transcript whiteout,
     /// header swap). The input side is handled within the coordinator.
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool)
+    /// A link in the input's own copy, such as the Terms of Service disclaimer.
+    func unifiedToggleInputDidRequestOpenURL(_ url: URL)
 }
 
 extension UnifiedToggleInputDelegate {
@@ -49,4 +52,5 @@ extension UnifiedToggleInputDelegate {
     func unifiedToggleInputDidTapClearText() {}
     func unifiedToggleInputDidTapToActivate() {}
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {}
+    func unifiedToggleInputDidRequestOpenURL(_ url: URL) {}
 }

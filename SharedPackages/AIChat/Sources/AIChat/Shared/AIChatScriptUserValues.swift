@@ -154,6 +154,9 @@ public struct AIChatNativeConfigValues: Codable {
     /// and discover tools. The front end must not open a session when this is false — it also
     /// serves as version-skew protection against builds that predate the bridge.
     public let supportsBrowserTools: Bool
+    /// `true` when the native input shows the Terms of Service disclaimer itself, so the FE can trust
+    /// a prompt's `termsAccepted` marker instead of showing its own card.
+    public let supportsNativeTermsOfService: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -229,7 +232,8 @@ public struct AIChatNativeConfigValues: Codable {
                 installType: AIChatInstallType = .new,
                 installAge: Int = 0,
                 attachmentLimits: AIChatNativeAttachmentLimits? = nil,
-                supportsBrowserTools: Bool = false) {
+                supportsBrowserTools: Bool = false,
+                supportsNativeTermsOfService: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -260,6 +264,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.installAge = installAge
         self.attachmentLimits = attachmentLimits
         self.supportsBrowserTools = supportsBrowserTools
+        self.supportsNativeTermsOfService = supportsNativeTermsOfService
     }
 
     /// Buckets the days between the install date and `now` into the values expected by the
@@ -328,6 +333,10 @@ public struct AIChatNativePrompt: Codable, Equatable {
 
     /// Text selections attached to this prompt, sent alongside `pageContext` rather than folded into it.
     public let selections: [AIChatSelectionContextData]?
+
+    /// Whether the user has accepted the Terms of Service natively. `nil` omits the key, which is how
+    /// a build without native Terms of Service support reads to the FE.
+    public let termsAccepted: Bool?
 
     public enum Tool: Equatable {
         case query(Query)
@@ -467,16 +476,28 @@ public struct AIChatNativePrompt: Codable, Equatable {
         case translation
         case pageContext
         case selections
+        case termsAccepted
     }
 
     public init(platform: String,
                 tool: Tool?,
                 pageContext: AIChatPageContextPayload? = nil,
-                selections: [AIChatSelectionContextData]? = nil) {
+                selections: [AIChatSelectionContextData]? = nil,
+                termsAccepted: Bool? = nil) {
         self.platform = platform
         self.tool = tool
         self.pageContext = pageContext
         self.selections = selections
+        self.termsAccepted = termsAccepted
+    }
+
+    /// The same prompt carrying `termsAccepted`, stamped where it crosses the bridge.
+    public func withTermsAccepted(_ termsAccepted: Bool?) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: platform,
+                           tool: tool,
+                           pageContext: pageContext,
+                           selections: selections,
+                           termsAccepted: termsAccepted)
     }
 
     public init(from decoder: Decoder) throws {
@@ -502,6 +523,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
 
         pageContext = try container.decodeIfPresent(AIChatPageContextPayload.self, forKey: .pageContext)
         selections = try container.decodeIfPresent([AIChatSelectionContextData].self, forKey: .selections)
+        termsAccepted = try container.decodeIfPresent(Bool.self, forKey: .termsAccepted)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -525,6 +547,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
 
         try container.encodeIfPresent(pageContext, forKey: .pageContext)
         try container.encodeIfPresent(selections, forKey: .selections)
+        try container.encodeIfPresent(termsAccepted, forKey: .termsAccepted)
     }
 
     public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, modelId: String? = nil, pageContext: AIChatPageContextPayload? = nil, selections: [AIChatSelectionContextData]? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {

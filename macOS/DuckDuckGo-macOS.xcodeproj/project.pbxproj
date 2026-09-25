@@ -74,6 +74,8 @@
 		1D1A33492A6FEB170080ACED /* BurnerMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A33482A6FEB170080ACED /* BurnerMode.swift */; };
 		1D1A334A2A6FEB170080ACED /* BurnerMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A33482A6FEB170080ACED /* BurnerMode.swift */; };
 		1D1B4A462EDF97F400FE43C9 /* PermissionAuthorizationTypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1B4A452EDF97EF00FE43C9 /* PermissionAuthorizationTypeTests.swift */; };
+		A5B00101000000000000002F /* PermissionAuthorizationViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000002E /* PermissionAuthorizationViewControllerTests.swift */; };
+		A5B001010000000000000030 /* PermissionAuthorizationViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000002E /* PermissionAuthorizationViewControllerTests.swift */; };
 		1D1B4A472EDF97F400FE43C9 /* PermissionAuthorizationTypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1B4A452EDF97EF00FE43C9 /* PermissionAuthorizationTypeTests.swift */; };
 		1D1B4A722EE20B9900FE43C9 /* WarnBeforeQuitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1B4A6F2EE20B9900FE43C9 /* WarnBeforeQuitManager.swift */; };
 		1D1B4A732EE20B9900FE43C9 /* WarnBeforeQuitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1B4A702EE20B9900FE43C9 /* WarnBeforeQuitView.swift */; };
@@ -5173,6 +5175,7 @@
 		1D074B262909A433006E4AC3 /* PasswordManagerCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordManagerCoordinator.swift; sourceTree = "<group>"; };
 		1D1A33482A6FEB170080ACED /* BurnerMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BurnerMode.swift; sourceTree = "<group>"; };
 		1D1B4A452EDF97EF00FE43C9 /* PermissionAuthorizationTypeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuthorizationTypeTests.swift; sourceTree = "<group>"; };
+		A5B00101000000000000002E /* PermissionAuthorizationViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuthorizationViewControllerTests.swift; sourceTree = "<group>"; };
 		1D1B4A6F2EE20B9900FE43C9 /* WarnBeforeQuitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarnBeforeQuitManager.swift; sourceTree = "<group>"; };
 		1D1B4A702EE20B9900FE43C9 /* WarnBeforeQuitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarnBeforeQuitView.swift; sourceTree = "<group>"; };
 		1D1B4A712EE20B9900FE43C9 /* WarnBeforeQuitViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarnBeforeQuitViewModel.swift; sourceTree = "<group>"; };
@@ -12584,6 +12587,7 @@
 				B6106B9F26A7BE0B0013B453 /* PermissionManagerTests.swift */,
 				A5B001010000000000000025 /* WebsitePermissionDefaultsTests.swift */,
 				1D1B4A452EDF97EF00FE43C9 /* PermissionAuthorizationTypeTests.swift */,
+				A5B00101000000000000002E /* PermissionAuthorizationViewControllerTests.swift */,
 				9ACF016763024CDAB7439781 /* PermissionTypeTests.swift */,
 				B51792B02F7C4F790018ED80 /* PermissionCenterViewModelTests.swift */,
 				B6106BB026A7D8720013B453 /* PermissionStoreTests.swift */,
@@ -17203,6 +17207,7 @@
 				BB9851932E3102ED00FED56A /* NetworkProtectionNavBarButtonModelTests.swift in Sources */,
 				3785F6EE2EA6520400AF66E9 /* SuggestionLoadingDeciderTests.swift in Sources */,
 				1D1B4A462EDF97F400FE43C9 /* PermissionAuthorizationTypeTests.swift in Sources */,
+				A5B00101000000000000002F /* PermissionAuthorizationViewControllerTests.swift in Sources */,
 				9ACF016763024CDAB7439782 /* PermissionTypeTests.swift in Sources */,
 				3706FDE6293F661700E42796 /* BookmarkOutlineViewDataSourceTests.swift in Sources */,
 				BBC063E92C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift in Sources */,
@@ -19730,6 +19735,7 @@
 				6A06A7E014E04F60B399531F /* AIChatTabOpenerTests.swift in Sources */,
 				F1AFDBD42C231B9700710F2C /* SubscriptionErrorReporterTests.swift in Sources */,
 				1D1B4A472EDF97F400FE43C9 /* PermissionAuthorizationTypeTests.swift in Sources */,
+				A5B001010000000000000030 /* PermissionAuthorizationViewControllerTests.swift in Sources */,
 				CCD235FA3052BE170046906B /* MockPromoHistoryProvider.swift in Sources */,
 				9ACF016763024CDAB7439783 /* PermissionTypeTests.swift in Sources */,
 				1D8C2FEA2B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift in Sources */,

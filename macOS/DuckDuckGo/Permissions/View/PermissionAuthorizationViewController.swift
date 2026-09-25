@@ -18,7 +18,9 @@
 
 import AIChat
 import Cocoa
+import FeatureFlags_macOS
 import PixelKit
+import PrivacyConfig
 import SwiftUI
 
 extension PermissionType {
@@ -60,9 +62,31 @@ extension Array where Element == PermissionType {
 
 }
 
+/// A choice made in the Allow this visit / Always allow / Never allow dialog.
+enum PermissionPromptDecision {
+    case allowThisVisit
+    case alwaysAllow
+    case neverAllow
+
+    /// The query output for this decision. Allow this visit persists exactly like the Allow button of the Allow / Deny prompt.
+    func output(for query: PermissionAuthorizationQuery) -> PermissionAuthorizationQueryOutput {
+        switch self {
+        case .allowThisVisit:
+            // For duck.ai microphone, persist "always allow" so voice chat doesn't re-prompt on every session.
+            let alwaysRemember = query.permissions.contains(.microphone) && query.domain.isDuckAIHost
+            return (granted: true, remember: alwaysRemember ? true : nil)
+        case .alwaysAllow:
+            return (granted: true, remember: true)
+        case .neverAllow:
+            return (granted: false, remember: true)
+        }
+    }
+}
+
 final class PermissionAuthorizationViewController: NSViewController {
 
     let systemPermissionManager = SystemPermissionManager()
+    private let featureFlagger: FeatureFlagger
 
     private var swiftUIHostingView: NSHostingView<PermissionAuthorizationSwiftUIView>?
 
@@ -76,7 +100,8 @@ final class PermissionAuthorizationViewController: NSViewController {
         }
     }
 
-    init() {
+    init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -106,17 +131,33 @@ final class PermissionAuthorizationViewController: NSViewController {
         let permissionType = PermissionAuthorizationType(from: query.permissions)
         let showsTwoStepUI = permissionType.requiresSystemPermission
             && systemPermissionManager.isAuthorizationRequired(for: permissionType.asPermissionType)
+        // The System Settings step isn't part of the decision dialog yet, so the existing
+        // two-step and system-disabled views keep handling those cases.
+        let showsDecisionDialog = featureFlagger.isFeatureOn(.websitePermissionsPrompts)
+            && !showsTwoStepUI
+            && !query.isSystemPermissionDisabled
 
         let swiftUIView = PermissionAuthorizationSwiftUIView(
             domain: query.domain,
             permissionType: permissionType,
             showsTwoStepUI: showsTwoStepUI,
             isSystemPermissionDisabled: query.isSystemPermissionDisabled,
+            showsDecisionDialog: showsDecisionDialog,
             onDeny: { [weak self] in
                 self?.handleDeny()
             },
             onAllow: { [weak self] in
-                self?.handleAllow()
+                if showsDecisionDialog {
+                    self?.handle(.allowThisVisit)
+                } else {
+                    self?.handleAllow()
+                }
+            },
+            onAlwaysAllow: { [weak self] in
+                self?.handle(.alwaysAllow)
+            },
+            onNeverAllow: { [weak self] in
+                self?.handle(.neverAllow)
             },
             onDismiss: { [weak self] in
                 self?.handleDismiss()
@@ -163,9 +204,19 @@ final class PermissionAuthorizationViewController: NSViewController {
         guard let query else { return }
 
         fireAuthorizationPixel(decision: .allow)
-        // For duck.ai microphone, persist "always allow" so voice chat doesn't re-prompt on every session.
-        let alwaysRemember = query.permissions.contains(.microphone) && query.domain.isDuckAIHost
-        query.handleDecision(grant: true, remember: alwaysRemember ? true : nil)
+        let output = PermissionPromptDecision.allowThisVisit.output(for: query)
+        query.handleDecision(grant: output.granted, remember: output.remember)
+    }
+
+    private func handle(_ decision: PermissionPromptDecision) {
+        defer {
+            isAuthorizationInProgress = false
+            dismiss()
+        }
+        guard let query else { return }
+
+        let output = decision.output(for: query)
+        query.handleDecision(grant: output.granted, remember: output.remember)
     }
 
     private func handleDismiss() {

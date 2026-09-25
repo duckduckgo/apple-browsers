@@ -41,7 +41,7 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         let exchanger = makeExchanger()
 
         let error = await relayRequestError {
-            _ = try await exchanger.fetchMessages(from: "channel", after: 0)
+            _ = try await exchanger.fetchMessages(from: "channel", after: 0, authorizationSecret: nil)
         }
 
         XCTAssertEqual(error?.kind, .unavailable)
@@ -53,7 +53,7 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         let exchanger = makeExchanger()
 
         let error = await relayRequestError {
-            _ = try await exchanger.fetchMessages(from: "channel", after: 0)
+            _ = try await exchanger.fetchMessages(from: "channel", after: 0, authorizationSecret: nil)
         }
 
         XCTAssertEqual(error?.kind, .expired)
@@ -65,7 +65,7 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         let exchanger = makeExchanger()
 
         let error = await relayRequestError {
-            _ = try await exchanger.fetchMessages(from: "channel", after: 0)
+            _ = try await exchanger.fetchMessages(from: "channel", after: 0, authorizationSecret: nil)
         }
 
         XCTAssertEqual(error?.kind, .httpError)
@@ -80,7 +80,7 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         let exchanger = makeExchanger()
 
         let error = await relayRequestError {
-            _ = try await exchanger.fetchMessages(from: "channel", after: 0)
+            _ = try await exchanger.fetchMessages(from: "channel", after: 0, authorizationSecret: nil)
         }
 
         XCTAssertEqual(error?.kind, .networkError)
@@ -92,7 +92,7 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         let exchanger = makeExchanger()
 
         do {
-            _ = try await exchanger.fetchMessages(from: "channel", after: 0)
+            _ = try await exchanger.fetchMessages(from: "channel", after: 0, authorizationSecret: nil)
             XCTFail("Expected decoding to fail")
         } catch {
             XCTAssertTrue(error is DecodingError)
@@ -109,7 +109,7 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         api.request = request
         let exchanger = makeExchanger()
 
-        try await exchanger.send([.init(payload: "payload")], to: "channel")
+        try await exchanger.send([.init(payload: "payload")], to: "channel", authorizationSecret: nil)
 
         XCTAssertEqual(request.executeCallCount, 3)
         XCTAssertEqual(api.createRequestCallCount, 1)
@@ -126,7 +126,7 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         let exchanger = makeExchanger()
 
         let error = await relayRequestError {
-            try await exchanger.send([.init(payload: "payload")], to: "channel")
+            try await exchanger.send([.init(payload: "payload")], to: "channel", authorizationSecret: nil)
         }
 
         XCTAssertEqual(error?.kind, .unavailable)
@@ -143,9 +143,9 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         api.request = request
         let exchanger = makeExchanger()
 
-        try await exchanger.send([.init(payload: "first-payload")], to: "channel")
+        try await exchanger.send([.init(payload: "first-payload")], to: "channel", authorizationSecret: nil)
         let error = await relayRequestError {
-            try await exchanger.send([.init(payload: "second-payload")], to: "channel")
+            try await exchanger.send([.init(payload: "second-payload")], to: "channel", authorizationSecret: nil)
         }
 
         XCTAssertEqual(error?.kind, .unavailable)
@@ -158,7 +158,7 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         let exchanger = makeExchanger()
 
         let error = await relayRequestError {
-            try await exchanger.send([.init(payload: "payload")], to: "channel")
+            try await exchanger.send([.init(payload: "payload")], to: "channel", authorizationSecret: nil)
         }
 
         XCTAssertEqual(error?.kind, .expired)
@@ -168,7 +168,7 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         api.request = makeRequest(statusCode: 201)
         let exchanger = makeExchanger()
 
-        try await exchanger.openChannel("channel")
+        try await exchanger.openChannel("channel", authorizationSecret: nil)
 
         XCTAssertEqual(api.createRequestCallCount, 1)
     }
@@ -178,7 +178,7 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         let exchanger = makeExchanger()
 
         let error = await relayRequestError {
-            try await exchanger.openChannel("channel")
+            try await exchanger.openChannel("channel", authorizationSecret: nil)
         }
 
         XCTAssertEqual(error?.kind, .unavailable)
@@ -189,8 +189,33 @@ final class PairingV2MessageExchangerTests: XCTestCase {
             api.request = makeRequest(statusCode: statusCode)
             let exchanger = makeExchanger()
 
-            try await exchanger.closeChannel("channel")
+            try await exchanger.closeChannel("channel", authorizationSecret: nil)
         }
+    }
+
+    func testWhenAuthorizationSecretIsProvidedThenEveryChannelRequestUsesBearerAuthorization() async throws {
+        api.request = makeRequest(statusCode: 200, body: #"{"messages":[]}"#)
+        let exchanger = makeExchanger()
+        let secret = "local-channel-secret"
+
+        try await exchanger.openChannel("local-channel", authorizationSecret: secret)
+        try await exchanger.send([.init(payload: "payload")], to: "peer-channel", authorizationSecret: secret)
+        _ = try await exchanger.fetchMessages(from: "local-channel", after: 0, authorizationSecret: secret)
+        try await exchanger.closeChannel("local-channel", authorizationSecret: secret)
+
+        XCTAssertEqual(api.createRequestCallArgs.map(\.headers),
+                       Array(repeating: ["Authorization": "Bearer \(secret)"], count: 4))
+        XCTAssertEqual(api.createRequestCallArgs[1].url,
+                       endpoints.pairingV2Exchange.appendingPathComponent("peer-channel/messages"))
+    }
+
+    func testWhenAuthorizationSecretIsAbsentThenChannelRequestHasNoAuthorizationHeader() async throws {
+        api.request = makeRequest(statusCode: 201)
+        let exchanger = makeExchanger()
+
+        try await exchanger.openChannel("channel", authorizationSecret: nil)
+
+        XCTAssertEqual(api.createRequestCallArgs.first?.headers, [:])
     }
 
     private func makeExchanger() -> PairingV2MessageExchanger {

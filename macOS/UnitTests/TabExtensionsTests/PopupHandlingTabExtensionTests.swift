@@ -118,6 +118,56 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         )
     }
 
+    // MARK: - Pop-up Windows for Internal and Extension Pages
+
+    /// Window features with a size, which is what turns a `window.open()` into a pop-up window.
+    private final class PopupWindowFeatures: WKWindowFeatures {
+        override var width: NSNumber? { 378 }
+        override var height: NSNumber? { 150 }
+    }
+
+    @MainActor
+    func testWhenExtensionPageIsOpenedAsPopupWindow_ThenChildTabIsCreated() {
+        // GIVEN
+        popupHandlingExtension = createExtension()
+        let childTabCreated = expectation(description: "child tab created for the extension page")
+        var policy: NewWindowPolicy?
+        createChildTab = { _, _, newWindowPolicy in
+            policy = newWindowPolicy
+            childTabCreated.fulfill()
+            return nil
+        }
+        let extensionPage = URL(string: "webkit-extension://0bfbd4be-83d2-44e6-a21a-f3f012238f27/page_popup.html?popupWindow=1")!
+        let navigationAction = makeMockNavigationAction(url: extensionPage, isUserInitiated: true)
+
+        // WHEN
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: PopupWindowFeatures())
+
+        // THEN
+        wait(for: [childTabCreated], timeout: 1.0)
+        XCTAssertEqual(policy?.isPopup, true)
+    }
+
+    @MainActor
+    func testWhenInternalPageIsOpenedAsPopupWindow_ThenNoChildTabIsCreated() {
+        // GIVEN
+        popupHandlingExtension = createExtension()
+        let childTabCreated = expectation(description: "child tab must not be created for an internal page")
+        childTabCreated.isInverted = true
+        createChildTab = { _, _, _ in
+            childTabCreated.fulfill()
+            return nil
+        }
+        let navigationAction = makeMockNavigationAction(url: URL(string: "duck://settings")!, isUserInitiated: true)
+
+        // WHEN
+        let result = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: PopupWindowFeatures())
+
+        // THEN
+        XCTAssertNil(result)
+        wait(for: [childTabCreated], timeout: 0.1)
+    }
+
     // MARK: - User Interaction Tracking Tests
 
     @MainActor

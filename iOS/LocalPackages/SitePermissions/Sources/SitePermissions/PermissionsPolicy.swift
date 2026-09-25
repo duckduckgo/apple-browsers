@@ -76,54 +76,63 @@ public struct PermissionsPolicy {
         if expression == "*" { return true }
 
         if expression.hasSuffix(":"), !expression.contains("/") {
-            return scheme(String(expression.dropLast()).lowercased(), matches: pageScheme)
+            return sourceSchemeMatches(String(expression.dropLast()).lowercased(), pageScheme: pageScheme)
         }
 
+        guard let source = parseHostSource(expression, matching: pageScheme) else { return false }
+        return sourceHostMatches(source.host, pageHost: pageHost)
+            && sourcePortMatches(source.port, pageURL: pageURL, pageScheme: pageScheme)
+    }
+
+    private static func parseHostSource(_ expression: String, matching pageScheme: String) -> (host: String, port: Substring?)? {
         let schemeAndAuthority = expression.components(separatedBy: "://")
-        guard schemeAndAuthority.count <= 2 else { return false }
+        guard schemeAndAuthority.count <= 2 else { return nil }
         let hasExplicitScheme = schemeAndAuthority.count == 2
         let sourceScheme = hasExplicitScheme ? schemeAndAuthority[0].lowercased() : pageScheme
-        guard scheme(sourceScheme, matches: pageScheme) else { return false }
+        guard sourceSchemeMatches(sourceScheme, pageScheme: pageScheme) else { return nil }
 
         let authority = hasExplicitScheme ? schemeAndAuthority[1] : schemeAndAuthority[0]
         let authorityAndPath = authority.split(separator: "/", maxSplits: 1, omittingEmptySubsequences: false)
         // Permissions Policy matches the serialized origin, whose path is always empty or '/'.
         guard let hostAndPortSource = authorityAndPath.first,
-              authorityAndPath.count == 1 || authorityAndPath[1].isEmpty else { return false }
+              authorityAndPath.count == 1 || authorityAndPath[1].isEmpty else { return nil }
         let hostAndPort = hostAndPortSource.split(separator: ":", omittingEmptySubsequences: false)
-        guard let hostPart = hostAndPort.first, hostAndPort.count <= 2 else { return false }
-
-        let sourceHost = hostPart.lowercased()
-        let isWildcardSubdomain = sourceHost.hasPrefix("*.")
-        let hostWithoutWildcard = isWildcardSubdomain ? String(sourceHost.dropFirst(2)) : sourceHost
-        let labelCharacters = "abcdefghijklmnopqrstuvwxyz0123456789-"
-        let hostLabels = (hostWithoutWildcard.hasSuffix(".") ? hostWithoutWildcard.dropLast() : hostWithoutWildcard[...])
-            .split(separator: ".", omittingEmptySubsequences: false)
-        guard sourceHost == "*" || (!hostWithoutWildcard.isEmpty && hostLabels.allSatisfy({
-            !$0.isEmpty && $0.allSatisfy(labelCharacters.contains)
-        })) else { return false }
-
-        let matchesExactHost = sourceHost == pageHost
-        let matchesWildcardSubdomain = isWildcardSubdomain && pageHost.hasSuffix(String(sourceHost.dropFirst()))
-        guard sourceHost == "*" || matchesExactHost || matchesWildcardSubdomain else { return false }
-
-        return sourcePortMatches(hostAndPort, pageURL: pageURL, pageScheme: pageScheme)
+        guard let host = hostAndPort.first, hostAndPort.count <= 2 else { return nil }
+        return (host.lowercased(), hostAndPort.count == 2 ? hostAndPort[1] : nil)
     }
 
-    private static func sourcePortMatches(_ hostAndPort: [Substring], pageURL: URL, pageScheme: String) -> Bool {
+    private static func sourceHostMatches(_ sourceHost: String, pageHost: String) -> Bool {
+        if sourceHost == "*" { return true }
+        let isWildcardSubdomain = sourceHost.hasPrefix("*.")
+        let hostForValidation = isWildcardSubdomain ? String(sourceHost.dropFirst(2)) : sourceHost
+        let labelCharacters = "abcdefghijklmnopqrstuvwxyz0123456789-"
+        // A trailing dot is valid syntax, but remains part of the origin comparison below.
+        let hostLabels = (hostForValidation.hasSuffix(".") ? hostForValidation.dropLast() : hostForValidation[...])
+            .split(separator: ".", omittingEmptySubsequences: false)
+        guard !hostForValidation.isEmpty, hostLabels.allSatisfy({
+            !$0.isEmpty && $0.allSatisfy(labelCharacters.contains)
+        }) else { return false }
+
+        // Keep the dot in the suffix so *.example.com cannot match evilexample.com.
+        return sourceHost == pageHost
+            || (isWildcardSubdomain && pageHost.hasSuffix(String(sourceHost.dropFirst())))
+    }
+
+    private static func sourcePortMatches(_ sourcePort: Substring?, pageURL: URL, pageScheme: String) -> Bool {
         let defaultPort = pageScheme == "https" ? 443 : 80
         let pagePort = pageURL.port ?? defaultPort
-        guard hostAndPort.count == 2 else { return pagePort == defaultPort }
-        if hostAndPort[1] == "*" { return true }
+        guard let sourcePort else { return pagePort == defaultPort }
+        if sourcePort == "*" { return true }
         let portDigits = "0123456789"
-        guard !hostAndPort[1].isEmpty, hostAndPort[1].allSatisfy(portDigits.contains),
-              let sourcePort = UInt16(hostAndPort[1]) else { return false }
-        return Int(sourcePort) == pagePort
+        guard !sourcePort.isEmpty, sourcePort.allSatisfy(portDigits.contains),
+              let port = UInt16(sourcePort) else { return false }
+        return Int(port) == pagePort
     }
 
-    private static func scheme(_ source: String, matches target: String) -> Bool {
-        source == target || (source == "http" && target == "https")
-            || (source == "ws" && ["http", "https"].contains(target))
-            || (source == "wss" && target == "https")
+    private static func sourceSchemeMatches(_ sourceScheme: String, pageScheme: String) -> Bool {
+        // CSP source expressions permit these scheme upgrades when matching an HTTP(S) origin.
+        sourceScheme == pageScheme || (sourceScheme == "http" && pageScheme == "https")
+            || (sourceScheme == "ws" && ["http", "https"].contains(pageScheme))
+            || (sourceScheme == "wss" && pageScheme == "https")
     }
 }

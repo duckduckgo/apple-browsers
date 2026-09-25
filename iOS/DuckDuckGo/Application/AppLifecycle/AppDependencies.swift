@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import HangMetrics
 import PrivacyConfig
 
 struct AppDependencies {

@@ -1,6 +1,5 @@
 //
 //  HangMetricsProcessorTests.swift
-//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +17,7 @@
 //
 
 import XCTest
-@testable import DuckDuckGo
+@testable import HangMetrics
 
 final class HangMetricsProcessorTests: XCTestCase {
 

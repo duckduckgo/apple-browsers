@@ -22,6 +22,7 @@ import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckAiDataStore
+import HangMetrics
 import Persistence
 import PrivacyConfig
 import UIKit

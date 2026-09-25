@@ -19,6 +19,7 @@
 
 import UIKit
 import Core
+import HangMetrics
 import Persistence
 import SERPSettings
 import PixelKit

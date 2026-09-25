@@ -232,6 +232,7 @@
 		4BC5E8672E174D6A00391C19 /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC5E8662E174D6A00391C19 /* DesignResourcesKit */; };
 		4BC8948C2C7902E6009AA141 /* WireGuard in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC8948B2C7902E6009AA141 /* WireGuard */; };
 		4BC95E792D7416A1002FAB32 /* Crashes in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95E782D7416A1002FAB32 /* Crashes */; };
+		FA57C0DE000000000000000F /* HangMetrics in Frameworks */ = {isa = PBXBuildFile; productRef = FA57C0DE000000000000000E /* HangMetrics */; };
 		4BC95E7B2D7416AD002FAB32 /* DDGNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95E7A2D7416AD002FAB32 /* DDGNavigation */; };
 		4BC95E7D2D7416B2002FAB32 /* Onboarding in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95E7C2D7416B2002FAB32 /* Onboarding */; };
 		4BC95E7F2D7416C1002FAB32 /* PrivacyDashboard in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95E7E2D7416C1002FAB32 /* PrivacyDashboard */; };
@@ -343,8 +344,6 @@
 		5BF65FD42F58C01F00BCC9F4 /* SettingsAutoplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BF65FD32F58C01C00BCC9F4 /* SettingsAutoplayView.swift */; };
 		5BF65FDD2F5A2CFB00BCC9F4 /* AutoplaySettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BF65FDC2F5A2CF700BCC9F4 /* AutoplaySettingsTests.swift */; };
 		5BF65FE22F5F224000BCC9F4 /* ListBasedPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BF65FE12F5F224000BCC9F4 /* ListBasedPicker.swift */; };
-		FA57C0DE000000000000000A /* HangMetricsProcessorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA57C0DE0000000000000009 /* HangMetricsProcessorTests.swift */; };
-		FA57C0DE000000000000000C /* HangMetricsSubscriberTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA57C0DE000000000000000B /* HangMetricsSubscriberTests.swift */; };
 		5F94A9DD9D48374FDBD4EC49 /* RebrandedAddToDockTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3E2B5140E5464B0AA21D09 /* RebrandedAddToDockTutorialView.swift */; };
 		60F0888B646078A1C54D7C2E /* SearchTokenRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CBE907E9CAC75F8561B75D4 /* SearchTokenRequestTests.swift */; };
 		64C0847679ED02196F3D425D /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 3D0759507C5E488826CC23DC /* WideEvent */; };
@@ -2337,6 +2336,7 @@
 		4BD96E0C2C4DCEAA003BC32C /* VPNSnoozeLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNSnoozeLiveActivityWidget.swift; sourceTree = "<group>"; };
 		4BE27566272F878F006B20B0 /* URLRequestExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = URLRequestExtension.swift; path = ../DuckDuckGo/URLRequestExtension.swift; sourceTree = "<group>"; };
 		4BE4D0BB2D8D2DFC00D63840 /* BrowserServicesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BrowserServicesKit; path = ../SharedPackages/BrowserServicesKit; sourceTree = SOURCE_ROOT; };
+		FA57C0DE0000000000000016 /* HangMetrics */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = HangMetrics; path = ../SharedPackages/HangMetrics; sourceTree = SOURCE_ROOT; };
 		4BEEEA982E24670700B0BE00 /* DBPDebugWebViewWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DBPDebugWebViewWindowManager.swift; sourceTree = "<group>"; };
 		4BF557EF2DF79393008E16A8 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		4C8AD06BCB81EA991F22DD66 /* DefaultTogglePositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultTogglePositionTests.swift; sourceTree = "<group>"; };
@@ -3462,8 +3462,6 @@
 		AD5E1ED02B0000000000F209 /* SelectionFrameUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionFrameUserScriptTests.swift; sourceTree = "<group>"; };
 		AEC7FF2261884003814DB9D0 /* OnboardingSearchAIToggle_dark.lottie */ = {isa = PBXFileReference; lastKnownFileType = file; path = OnboardingSearchAIToggle_dark.lottie; sourceTree = "<group>"; };
 		AF81E0C6EDC46254CF28AFCB /* OnboardingView+SearchExperienceContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "OnboardingView+SearchExperienceContent.swift"; sourceTree = "<group>"; };
-		FA57C0DE0000000000000009 /* HangMetricsProcessorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HangMetricsProcessorTests.swift; sourceTree = "<group>"; };
-		FA57C0DE000000000000000B /* HangMetricsSubscriberTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HangMetricsSubscriberTests.swift; sourceTree = "<group>"; };
 		B4E5D6C7A8F9012345678901 /* AIChatTabChatHeaderViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabChatHeaderViewTests.swift; sourceTree = "<group>"; };
 		B50DAF4E2FBE4FD3007BFA26 /* EscapeHatchModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EscapeHatchModelTests.swift; sourceTree = "<group>"; };
 		B56252F0D368C46F50BE864C /* MockSubscriptionOnboardingActivationRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSubscriptionOnboardingActivationRecorder.swift; sourceTree = "<group>"; };
@@ -4230,6 +4228,7 @@
 				F143C2EB1E4A4CD400CFDE3A /* Core.framework in Frameworks */,
 				9FB71C982F342B4F000AD042 /* MetricBuilder in Frameworks */,
 				4BC95E792D7416A1002FAB32 /* Crashes in Frameworks */,
+				FA57C0DE000000000000000F /* HangMetrics in Frameworks */,
 				4BC95E7B2D7416AD002FAB32 /* DDGNavigation in Frameworks */,
 				4BC95E7F2D7416C1002FAB32 /* PrivacyDashboard in Frameworks */,
 				315E39652F86ABEE00D2289D /* DebugServer in Frameworks */,
@@ -4851,6 +4850,7 @@
 				31794BFF2821DFB600F18633 /* DuckUI */,
 				EE7B00000000000000000001 /* EventHub */,
 				A64F1A010000000000000001 /* FeatureFlags-iOS */,
+				FA57C0DE0000000000000016 /* HangMetrics */,
 				4BACF9153022746600B46B44 /* InstallStatistics */,
 				9F292C522F342B1200441F7A /* MetricBuilder */,
 				85B6ABB62DE5E4CC009C85C7 /* Onboarding */,
@@ -7985,8 +7985,6 @@
 				85C11E4020904BBE00BFFEB4 /* VariantManagerTests.swift */,
 				A6E8A70CF1DFF21DC84B150F /* LaunchTimeMetricsProcessorTests.swift */,
 				B8FD41799FD12C35CD0E1600 /* LaunchTimeMetricsSubscriberTests.swift */,
-				FA57C0DE0000000000000009 /* HangMetricsProcessorTests.swift */,
-				FA57C0DE000000000000000B /* HangMetricsSubscriberTests.swift */,
 			);
 			name = Statistics;
 			sourceTree = "<group>";
@@ -8890,6 +8888,7 @@
 				4B94B79D2D4831D90014AAB8 /* SyncUI-iOS */,
 				9F254AF02CF8D5250063B308 /* MaliciousSiteProtection */,
 				4BC95E782D7416A1002FAB32 /* Crashes */,
+				FA57C0DE000000000000000E /* HangMetrics */,
 				4BC95E7A2D7416AD002FAB32 /* DDGNavigation */,
 				4BC95E7C2D7416B2002FAB32 /* Onboarding */,
 				4BC95E7E2D7416C1002FAB32 /* PrivacyDashboard */,
@@ -9362,6 +9361,7 @@
 				FCFC00011F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */,
 				FCFC00011F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */,
 				FCFC00011F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */,
+				FA57C0DE0000000000000014 /* XCLocalSwiftPackageReference "../SharedPackages/HangMetrics" */,
 				F486D2EF25069482002D07D7 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				F486D2FD25069744002D07D7 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
 				F486D3022506975E002D07D7 /* XCRemoteSwiftPackageReference "swifter" */,
@@ -11017,8 +11017,6 @@
 				45865446DBAA91F852E4AEA1 /* SearchTokenExperimentTests.swift in Sources */,
 				E7BE23F1F67AF41F9871BC6F /* LaunchTimeMetricsProcessorTests.swift in Sources */,
 				C256781EC700D62BEDE36B94 /* LaunchTimeMetricsSubscriberTests.swift in Sources */,
-				FA57C0DE000000000000000A /* HangMetricsProcessorTests.swift in Sources */,
-				FA57C0DE000000000000000C /* HangMetricsSubscriberTests.swift in Sources */,
 				53FC97E1D0E95EA8B6ECD771 /* SearchTokenFetcherTests.swift in Sources */,
 				60F0888B646078A1C54D7C2E /* SearchTokenRequestTests.swift in Sources */,
 				E85300B61A233D45A5D82FFC /* SearchTokenExperimentSettingsTests.swift in Sources */,
@@ -14806,6 +14804,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		FA57C0DE0000000000000014 /* XCLocalSwiftPackageReference "../SharedPackages/HangMetrics" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/HangMetrics;
+		};
 		315E39632F86ABE100D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/DebugServer;
@@ -15113,6 +15115,11 @@
 		4BC95E782D7416A1002FAB32 /* Crashes */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Crashes;
+		};
+		FA57C0DE000000000000000E /* HangMetrics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA57C0DE0000000000000014 /* XCLocalSwiftPackageReference "../SharedPackages/HangMetrics" */;
+			productName = HangMetrics;
 		};
 		4BC95E7A2D7416AD002FAB32 /* DDGNavigation */ = {
 			isa = XCSwiftPackageProductDependency;

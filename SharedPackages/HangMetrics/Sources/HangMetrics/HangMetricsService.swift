@@ -1,6 +1,5 @@
 //
 //  HangMetricsService.swift
-//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,17 +18,17 @@
 
 import Foundation
 import MetricKit
-import Core
 import Persistence
 
 /// Owns the MetricKit hang-time subscriber. Registers it with `MXMetricManager`
 /// and drains any already-available past payloads on start and on every foreground.
-@available(iOSApplicationExtension, unavailable)
-final class HangMetricsService {
+/// Shared by iOS and macOS; each platform only decides when to construct it and
+/// when to call `resume()`.
+public final class HangMetricsService {
 
     private let subscriber: HangMetricsSubscriber
 
-    init(store: KeyValueStoring = UserDefaults.standard) {
+    public init(store: KeyValueStoring = UserDefaults.standard) {
         let subscriber = HangMetricsSubscriber(store: store)
         self.subscriber = subscriber
         MXMetricManager.shared.add(subscriber)
@@ -39,7 +38,7 @@ final class HangMetricsService {
     /// Re-processes MetricKit's retained past payloads. Called on `applicationDidBecomeActive`
     /// to pick up payloads delivered while the app was inactive. The subscriber does the work
     /// off the main thread, and its dedup marker makes repeated calls safe
-    func resume() {
+    public func resume() {
         subscriber.processPastPayloads()
     }
 

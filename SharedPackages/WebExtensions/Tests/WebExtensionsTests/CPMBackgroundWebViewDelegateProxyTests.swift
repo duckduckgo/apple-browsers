@@ -308,6 +308,281 @@ final class CPMBackgroundWebViewDelegateProxyTests: XCTestCase {
         XCTAssertEqual(parameters[CPMMessagingDiagnostics.ParameterName.backgroundEvents], "load@1m,view@1m,died_crash@1m")
     }
 
+    func testGraveyardIsDisabledByDefault() async throws {
+        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+        weak var weakWebView: WKWebView?
+        autoreleasepool {
+            let webView = WKWebView(frame: .zero)
+            weakWebView = webView
+            recorder.didCreateBackgroundWebView(webView, for: context)
+
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
+        }
+
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 0)
+        XCTAssertNil(weakWebView)
+    }
+
+    func testInactiveExperimentDoesNotRetainOrFirePixels() async throws {
+        let pixels = ABPixelFiring()
+        let flags = CPMDiagnosticsStaticFeatureFlags()
+        let recorder = CPMMessagingDiagnosticsRecorder(
+            tabResolver: { _ in nil },
+            observesMemoryPressure: false,
+            featureFlags: flags,
+            pixelFiring: pixels
+        )
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+        weak var weakWebView: WKWebView?
+        autoreleasepool {
+            let webView = WKWebView(frame: .zero)
+            weakWebView = webView
+            recorder.didCreateBackgroundWebView(webView, for: context)
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
+        }
+
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 0)
+        XCTAssertNil(weakWebView)
+        XCTAssertTrue(pixels.metadata.isEmpty)
+    }
+
+    func testGraveyardRetainsOnlyLatestViewUntilScheduledRelease() async throws {
+        let flags = CPMDiagnosticsStaticFeatureFlags(backgroundGraveyardCohort: .treatment)
+        let recorder = CPMMessagingDiagnosticsRecorder(
+            tabResolver: { _ in nil },
+            observesMemoryPressure: false,
+            featureFlags: flags
+        )
+        var scheduledReleases: [(delay: TimeInterval, workItem: DispatchWorkItem)] = []
+        recorder.backgroundWebViewGraveyard.releaseScheduler = { delay, workItem in
+            scheduledReleases.append((delay, workItem))
+        }
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+
+        weak var weakFirstWebView: WKWebView?
+        autoreleasepool {
+            let webView = WKWebView(frame: .zero)
+            weakFirstWebView = webView
+            recorder.didCreateBackgroundWebView(webView, for: context)
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
+        }
+        XCTAssertNotNil(weakFirstWebView, "graveyard must retain the terminated view")
+
+        weak var weakSecondWebView: WKWebView?
+        autoreleasepool {
+            let webView = WKWebView(frame: .zero)
+            weakSecondWebView = webView
+            recorder.didCreateBackgroundWebView(webView, for: context)
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .exceededMemoryLimit)
+        }
+
+        XCTAssertNil(weakFirstWebView, "replacing the graveyard entry must release the previous view synchronously")
+        XCTAssertNotNil(weakSecondWebView)
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 1)
+        XCTAssertEqual(scheduledReleases.count, 2)
+        XCTAssertEqual(scheduledReleases.last?.delay, CPMBackgroundWebViewGraveyard.holdDuration)
+
+        scheduledReleases[0].workItem.perform()
+        XCTAssertNotNil(weakSecondWebView, "a stale release must not clear the current graveyard entry")
+
+        scheduledReleases[1].workItem.perform()
+
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 0)
+        XCTAssertNil(weakSecondWebView, "scheduled release must relinquish the view")
+        let events = recorder.snapshot().pixelParameters[CPMMessagingDiagnostics.ParameterName.backgroundEvents] ?? ""
+        XCTAssertTrue(events.contains("hold@"), events)
+        XCTAssertTrue(events.contains("release@"), events)
+    }
+
+    func testRuntimeExperimentDeactivationPreventsNewEnrollment() async throws {
+        let pixels = ABPixelFiring()
+        let flags = CPMDiagnosticsStaticFeatureFlags(backgroundGraveyardCohort: .treatment)
+        let recorder = CPMMessagingDiagnosticsRecorder(
+            tabResolver: { _ in nil },
+            observesMemoryPressure: false,
+            featureFlags: flags,
+            pixelFiring: pixels
+        )
+        var scheduledReleases: [DispatchWorkItem] = []
+        recorder.backgroundWebViewGraveyard.releaseScheduler = { _, workItem in
+            scheduledReleases.append(workItem)
+        }
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+        let firstWebView = WKWebView(frame: .zero)
+        recorder.didCreateBackgroundWebView(firstWebView, for: context)
+        recorder.backgroundWebView(firstWebView, webContentProcessDidTerminateWith: .crash)
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 1)
+        XCTAssertEqual(pixels.metadata.filter { $0.name.hasSuffix("termination") }.count, 1)
+
+        scheduledReleases[0].perform()
+        flags.backgroundGraveyardCohort = nil
+
+        weak var weakSecondWebView: WKWebView?
+        autoreleasepool {
+            let webView = WKWebView(frame: .zero)
+            weakSecondWebView = webView
+            recorder.didCreateBackgroundWebView(webView, for: context)
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
+        }
+
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 0)
+        XCTAssertNil(weakSecondWebView)
+        XCTAssertEqual(pixels.metadata.filter { $0.name.hasSuffix("termination") }.count, 1)
+    }
+
+    func testContextUnloadReleasesHeldView() async throws {
+        let flags = CPMDiagnosticsStaticFeatureFlags(backgroundGraveyardCohort: .treatment)
+        let recorder = CPMMessagingDiagnosticsRecorder(
+            tabResolver: { _ in nil },
+            observesMemoryPressure: false,
+            featureFlags: flags
+        )
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+        weak var weakWebView: WKWebView?
+        autoreleasepool {
+            let webView = WKWebView(frame: .zero)
+            weakWebView = webView
+            recorder.didCreateBackgroundWebView(webView, for: context)
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
+        }
+
+        recorder.contextDidUnload(identifier: context.uniqueIdentifier)
+
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 0)
+        XCTAssertNil(weakWebView)
+    }
+
+    func testContextReloadReleasesHeldViewWithoutRecordingOldRelease() async throws {
+        let flags = CPMDiagnosticsStaticFeatureFlags(backgroundGraveyardCohort: .treatment)
+        let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, featureFlags: flags)
+        let oldContext = try await makeContext()
+        let newContext = try await makeContext()
+        recorder.contextWillLoad(oldContext)
+        weak var weakWebView: WKWebView?
+        autoreleasepool {
+            let webView = WKWebView(frame: .zero)
+            weakWebView = webView
+            recorder.didCreateBackgroundWebView(webView, for: oldContext)
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: .crash)
+        }
+
+        recorder.contextWillLoad(newContext)
+
+        XCTAssertEqual(recorder.backgroundWebViewGraveyard.retainedWebViewCount, 0)
+        XCTAssertNil(weakWebView)
+        let events = recorder.snapshot().backgroundEvents.map(\.token)
+        XCTAssertTrue(events.contains("load"), events.description)
+        XCTAssertFalse(events.contains("hold"), events.description)
+        XCTAssertFalse(events.contains("release"), events.description)
+    }
+
+    func testControlAndTreatmentHaveSameDenominatorButOnlyTreatmentRetainsView() async throws {
+        let controlPixels = ABPixelFiring()
+        let control = CPMMessagingDiagnosticsRecorder(
+            tabResolver: { _ in nil },
+            observesMemoryPressure: false,
+            featureFlags: CPMDiagnosticsStaticFeatureFlags(backgroundGraveyardCohort: .control),
+            pixelFiring: controlPixels
+        )
+        let controlContext = try await makeContext()
+        let controlWebView = WKWebView(frame: .zero)
+        control.contextWillLoad(controlContext)
+        control.didCreateBackgroundWebView(controlWebView, for: controlContext)
+        control.backgroundWebView(controlWebView, webContentProcessDidTerminateWith: .crash)
+
+        let treatmentPixels = ABPixelFiring()
+        let treatment = CPMMessagingDiagnosticsRecorder(
+            tabResolver: { _ in nil },
+            observesMemoryPressure: false,
+            featureFlags: CPMDiagnosticsStaticFeatureFlags(backgroundGraveyardCohort: .treatment),
+            pixelFiring: treatmentPixels
+        )
+        treatment.backgroundWebViewGraveyard.releaseScheduler = { _, _ in }
+        let treatmentContext = try await makeContext()
+        let treatmentWebView = WKWebView(frame: .zero)
+        treatment.contextWillLoad(treatmentContext)
+        treatment.didCreateBackgroundWebView(treatmentWebView, for: treatmentContext)
+        treatment.backgroundWebView(treatmentWebView, webContentProcessDidTerminateWith: .crash)
+
+        XCTAssertEqual(control.backgroundWebViewGraveyard.retainedWebViewCount, 0)
+        XCTAssertEqual(treatment.backgroundWebViewGraveyard.retainedWebViewCount, 1)
+        XCTAssertEqual(controlPixels.metadata.first?.name, "debug_web_extension_cpm_background_graveyard_termination")
+        XCTAssertEqual(treatmentPixels.metadata.first?.name, "debug_web_extension_cpm_background_graveyard_termination")
+        XCTAssertEqual(controlPixels.metadata.first?.parameters["cohort"], "control")
+        XCTAssertEqual(treatmentPixels.metadata.first?.parameters["cohort"], "treatment")
+    }
+
+    func testOutcomeMatchesEveryTerminationDenominator() async throws {
+        let pixels = ABPixelFiring()
+        let recorder = CPMMessagingDiagnosticsRecorder(
+            tabResolver: { _ in nil },
+            observesMemoryPressure: false,
+            featureFlags: CPMDiagnosticsStaticFeatureFlags(backgroundGraveyardCohort: .control),
+            pixelFiring: pixels
+        )
+        let context = try await makeContext()
+        let firstWebView = WKWebView(frame: .zero)
+        recorder.contextWillLoad(context)
+        recorder.didCreateBackgroundWebView(firstWebView, for: context)
+        recorder.backgroundWebView(firstWebView, webContentProcessDidTerminateWith: .crash)
+        let secondWebView = WKWebView(frame: .zero)
+        recorder.didCreateBackgroundWebView(secondWebView, for: context)
+        recorder.backgroundWebView(secondWebView, webContentProcessDidTerminateWith: .exceededMemoryLimit)
+
+        recorder.recordCPMOutcome(.healthy)
+
+        XCTAssertEqual(pixels.metadata.filter { $0.name.hasSuffix("termination") }.count, 2)
+        let outcomes = pixels.metadata.filter { $0.name.hasSuffix("outcome") }
+        XCTAssertEqual(outcomes.count, 2)
+        XCTAssertTrue(outcomes.allSatisfy { $0.parameters["outcome"] == "healthy" })
+    }
+
+    func testPendingOutcomeQueueEvictsOldestTerminationAtCapacity() async throws {
+        let pixels = ABPixelFiring()
+        let recorder = CPMMessagingDiagnosticsRecorder(
+            tabResolver: { _ in nil },
+            observesMemoryPressure: false,
+            featureFlags: CPMDiagnosticsStaticFeatureFlags(backgroundGraveyardCohort: .control),
+            pixelFiring: pixels
+        )
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+
+        let reasons: [CPMBackgroundProcessTerminationReason] = [.crash] + Array(repeating: .exceededMemoryLimit, count: 10)
+        for reason in reasons {
+            let webView = WKWebView(frame: .zero)
+            recorder.didCreateBackgroundWebView(webView, for: context)
+            recorder.backgroundWebView(webView, webContentProcessDidTerminateWith: reason)
+        }
+        recorder.recordCPMOutcome(.healthy)
+
+        let outcomes = pixels.metadata.filter { $0.name.hasSuffix("outcome") }
+        XCTAssertEqual(pixels.metadata.filter { $0.name.hasSuffix("termination") }.count, 11)
+        XCTAssertEqual(outcomes.filter { $0.parameters["outcome"] == "not_measured" }.map { $0.parameters["reason"] }, ["crash"])
+        XCTAssertEqual(outcomes.filter { $0.parameters["outcome"] == "healthy" }.count, 10)
+        XCTAssertTrue(outcomes.filter { $0.parameters["outcome"] == "healthy" }.allSatisfy { $0.parameters["reason"] == "memory" })
+    }
+
+    func testExperimentOutcomeMetadataOnlyMapsOutcomeEvents() throws {
+        let metadata = try XCTUnwrap(CPMBackgroundGraveyardExperimentPixelMetadata(
+            event: .cpmBackgroundGraveyardOutcome(reason: .crash, cohort: .treatment, outcome: .initializationFailed)
+        ))
+
+        XCTAssertEqual(CPMBackgroundGraveyardExperimentPixelMetadata.experimentName, "cpmBackgroundGraveyardExperiment")
+        XCTAssertEqual(CPMBackgroundGraveyardExperimentPixelMetadata.metricName, "cpmBackgroundGraveyardOutcome")
+        XCTAssertEqual(CPMBackgroundGraveyardExperimentPixelMetadata.conversionWindowDays, 0...1)
+        XCTAssertEqual(metadata.value, "initialization_failed")
+        XCTAssertNil(CPMBackgroundGraveyardExperimentPixelMetadata(
+            event: .cpmBackgroundGraveyardTermination(reason: .crash, cohort: .treatment)
+        ))
+    }
+
     func testWhenProxyDisabledThenAllSurvivingViewDelegatesAreRestored() async throws {
         let flags = CPMDiagnosticsStaticFeatureFlags()
         let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, featureFlags: flags)
@@ -419,5 +694,16 @@ final class CPMBackgroundWebViewDelegateProxyTests: XCTestCase {
         let context = WKWebExtensionContext(for: webExtension)
         context.uniqueIdentifier = "cpm-proxy-test"
         return context
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private final class ABPixelFiring: WebExtensionPixelFiring {
+    private(set) var metadata: [CPMWebExtensionPixelMetadata] = []
+
+    func fire(_ event: WebExtensionPixelEvent) {
+        if let metadata = CPMWebExtensionPixelMetadata(event: event) {
+            self.metadata.append(metadata)
+        }
     }
 }

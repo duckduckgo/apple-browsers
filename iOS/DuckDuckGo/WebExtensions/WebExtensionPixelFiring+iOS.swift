@@ -19,6 +19,7 @@
 
 import Core
 import Foundation
+import PixelExperimentKit
 import PixelKit
 import WebExtensions
 
@@ -170,7 +171,9 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
              .cpmMessagingStuck,
              .cpmMessagingRecoveredWithoutExtensionReload,
              .cpmMessagingRecoveredAfterExtensionReload,
-             .cpmMessagingExtensionReloadFailed:
+             .cpmMessagingExtensionReloadFailed,
+             .cpmBackgroundGraveyardTermination,
+             .cpmBackgroundGraveyardOutcome:
             fireCPMPixel(event)
         }
     }
@@ -178,6 +181,13 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
     private func fireCPMPixel(_ event: WebExtensionPixelEvent) {
         guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
         PixelKit.fire(CPMWebExtensionPixel(metadata: metadata), frequency: metadata.frequency.pixelKitFrequency)
+        guard let experimentMetadata = CPMBackgroundGraveyardExperimentPixelMetadata(event: event) else { return }
+        PixelKit.fireExperimentPixel(
+            for: CPMBackgroundGraveyardExperimentPixelMetadata.experimentName,
+            metric: CPMBackgroundGraveyardExperimentPixelMetadata.metricName,
+            conversionWindowDays: CPMBackgroundGraveyardExperimentPixelMetadata.conversionWindowDays,
+            value: experimentMetadata.value
+        )
     }
 }
 

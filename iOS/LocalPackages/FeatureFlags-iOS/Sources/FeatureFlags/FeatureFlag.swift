@@ -425,6 +425,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444896174
     case cpmDiagnosticsRecorder
 
+    /// Control/treatment experiment for the graveyard mitigation.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860832428343?focus=true
+    case cpmBackgroundGraveyardExperiment
+
     /// Failsafe kill switch for deferring web-extension load/install until protected data is
     /// available. On by default; disable remotely to load/install immediately (previous flow).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451186617267
@@ -577,6 +581,11 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     /// Search-token experiment cohorts. Treatment devices signal the SERP to serve the faster combined response.
     public enum SearchTokenExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    public enum CPMBackgroundGraveyardExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -892,6 +901,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy))
         case .cpmDiagnosticsRecorder:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder))
+        case .cpmBackgroundGraveyardExperiment:
+            Config(source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardExperiment),
+                   cohortType: CPMBackgroundGraveyardExperimentCohort.self)
         case .webExtensionProtectedDataLoadGate:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.protectedDataLoadGate))
         case .embeddedExtension:

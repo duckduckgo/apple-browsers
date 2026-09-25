@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PixelExperimentKit
 import PixelKit
 import WebExtensions
 
@@ -332,7 +333,9 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
              .cpmMessagingStuck,
              .cpmMessagingRecoveredWithoutExtensionReload,
              .cpmMessagingRecoveredAfterExtensionReload,
-             .cpmMessagingExtensionReloadFailed:
+             .cpmMessagingExtensionReloadFailed,
+             .cpmBackgroundGraveyardTermination,
+             .cpmBackgroundGraveyardOutcome:
             guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
             pixel = .debugCPM(metadata)
         }
@@ -344,6 +347,14 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             frequency = .dailyAndStandard
         }
         PixelKit.fire(pixel, frequency: frequency)
+        if let experimentMetadata = CPMBackgroundGraveyardExperimentPixelMetadata(event: event) {
+            PixelKit.fireExperimentPixel(
+                for: CPMBackgroundGraveyardExperimentPixelMetadata.experimentName,
+                metric: CPMBackgroundGraveyardExperimentPixelMetadata.metricName,
+                conversionWindowDays: CPMBackgroundGraveyardExperimentPixelMetadata.conversionWindowDays,
+                value: experimentMetadata.value
+            )
+        }
     }
 }
 

@@ -78,6 +78,8 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
     // Observed through `CPMBackgroundWebViewDelegateProxy` on the background web view.
     /// `WKWebView._webProcessIsResponsive` for the background view: WebKit's hang-detection verdict at snapshot time.
     public var backgroundWebProcessResponsive: Bool?
+    /// Most recently enrolled graveyard cohort for this context, used to segment existing failure guardrails.
+    public var backgroundGraveyardCohort: String?
     /// Most recent background lifecycle events, oldest first (context load, view created/deallocated, process death with
     /// reason, unresponsive/responsive, load errors, and proxy state). Rendered as `token@<age bucket>`.
     public var backgroundEvents: [BackgroundEvent] = []
@@ -96,9 +98,11 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         tabControllerMatchesContext: Bool? = nil,
         tabHasExtensionUserScripts: Bool? = nil,
         backgroundWebProcessResponsive: Bool? = nil,
+        backgroundGraveyardCohort: String? = nil,
         backgroundEvents: [BackgroundEvent] = []
     ) {
         self.backgroundWebProcessResponsive = backgroundWebProcessResponsive
+        self.backgroundGraveyardCohort = backgroundGraveyardCohort
         self.backgroundEvents = backgroundEvents
         self.extensionContextLoaded = extensionContextLoaded
         self.secondsSinceCriticalMemoryPressure = secondsSinceCriticalMemoryPressure
@@ -132,6 +136,7 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         public static let tabControllerMatchesContext = "tab_controller_match"
         public static let tabHasExtensionUserScripts = "tab_has_ext_scripts"
         public static let backgroundWebProcessResponsive = "bg_process_responsive"
+        public static let backgroundGraveyardCohort = "background_graveyard_cohort"
         public static let backgroundEvents = "bg_events"
     }
 
@@ -157,6 +162,7 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
         parameters[ParameterName.tabControllerMatchesContext] = tabControllerMatchesContext.map(String.init)
         parameters[ParameterName.tabHasExtensionUserScripts] = tabHasExtensionUserScripts.map(String.init)
         parameters[ParameterName.backgroundWebProcessResponsive] = backgroundWebProcessResponsive.map(String.init)
+        parameters[ParameterName.backgroundGraveyardCohort] = backgroundGraveyardCohort
         if !backgroundEvents.isEmpty {
             parameters[ParameterName.backgroundEvents] = Self.backgroundEventsValue(backgroundEvents)
         }

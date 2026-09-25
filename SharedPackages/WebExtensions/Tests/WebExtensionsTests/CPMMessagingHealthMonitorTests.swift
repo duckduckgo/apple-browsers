@@ -1218,6 +1218,50 @@ final class CPMMessagingHealthMonitorDiagnosticsTests: XCTestCase {
         XCTAssertEqual(pixelFiring.events.sorted(), ["initialization_failed_other", "initialization_failed_other", "stuck_other"])
         XCTAssertEqual(pixelFiring.diagnostics.compactMap { $0 }.count, 3)
         XCTAssertEqual(provider.requests.map(\.tabIdentifier), ["tab-1", "tab-2", "tab-2"])
+        XCTAssertEqual(provider.outcomes, [.initializationFailed, .initializationFailed])
+    }
+
+    func testSuccessfulMeasurementReportsHealthyExperimentOutcome() {
+        let provider = StubDiagnosticsProvider()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: CapturingWebExtensionPixelFiring())
+        monitor.diagnosticsProvider = provider
+        let measurement = monitor.beginMeasurement(tabIdentifier: "tab-1", navigationKind: .other)
+
+        monitor.reportSuccess(measurement)
+
+        XCTAssertEqual(provider.outcomes, [.healthy])
+    }
+
+    func testAmbiguousResponseReportsHealthyExperimentOutcome() {
+        let provider = StubDiagnosticsProvider()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: CapturingWebExtensionPixelFiring())
+        monitor.diagnosticsProvider = provider
+        let sharedURL = URL(string: "https://example.com/shared")!
+        for tabIdentifier in ["tab-1", "tab-2"] {
+            monitor.handle(.navigationStarted(tabIdentifier: tabIdentifier, navigationKind: .other))
+            monitor.handle(.navigationCommitted(tabIdentifier: tabIdentifier, url: sharedURL))
+        }
+
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: nil, url: sharedURL))
+
+        XCTAssertEqual(provider.outcomes, [.healthy])
+    }
+
+    func testAmbiguousResponseDoesNotReportHealthyExperimentOutcomeAcrossReloadBoundary() {
+        let provider = StubDiagnosticsProvider()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: CapturingWebExtensionPixelFiring())
+        monitor.diagnosticsProvider = provider
+        monitor.reportFailure(monitor.beginMeasurement(tabIdentifier: "failed", navigationKind: .other))
+        monitor.handle(.reloaded(identifier: "embedded", type: .embedded, trigger: .dataClearing))
+        let sharedURL = URL(string: "https://example.com/shared")!
+        for tabIdentifier in ["tab-1", "tab-2"] {
+            monitor.handle(.navigationStarted(tabIdentifier: tabIdentifier, navigationKind: .other))
+            monitor.handle(.navigationCommitted(tabIdentifier: tabIdentifier, url: sharedURL))
+        }
+
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: nil, url: sharedURL))
+
+        XCTAssertEqual(provider.outcomes, [.initializationFailed])
     }
 
     func testWhenContextChangesAfterFailureThenPixelKeepsFailureTimeDiagnostics() {
@@ -1243,11 +1287,16 @@ private final class StubDiagnosticsProvider: CPMMessagingDiagnosticsProviding {
     }
 
     private(set) var requests: [Request] = []
+    private(set) var outcomes: [CPMBackgroundGraveyardOutcome] = []
     var diagnostics = CPMMessagingDiagnostics(extensionContextLoaded: true, tabKnownToWebKit: true)
 
     func collectDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics {
         requests.append(Request(tabIdentifier: tabIdentifier))
         return diagnostics
+    }
+
+    func recordCPMOutcome(_ outcome: CPMBackgroundGraveyardOutcome) {
+        outcomes.append(outcome)
     }
 }
 

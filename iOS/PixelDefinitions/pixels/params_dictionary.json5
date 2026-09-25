@@ -578,7 +578,31 @@
     "background_events": {
         "key": "bg_events",
         "type": "string",
-        "description": "Bounded, sanitized CPM lifecycle timeline, oldest first, including extension_updated (successful replacement of an installed CPM version, not first install or reload; latest update survives context reloads), base_url_changed (local comparison between context loads; no URL or identifier is sent), context unload and extension file removal failures with error descriptors. Each token@age entry uses the first matching age bucket relative to the snapshot: 30s (<30s), 1m (<60s), 2m (<120s), 5m (<300s), 15m (<900s), over_15 (>=900s). Order and repeated events within a bucket are preserved; exact ages are not sent."
+        "description": "Bounded, sanitized CPM lifecycle timeline, oldest first, including extension_updated (successful replacement of an installed CPM version, not first install or reload; latest update survives context reloads), base_url_changed (local comparison between context loads; no URL or identifier is sent), process death, graveyard hold/release, context unload and extension file removal failures with error descriptors. Each token@age entry uses the first matching age bucket relative to the snapshot: 30s (<30s), 1m (<60s), 2m (<120s), 5m (<300s), 15m (<900s), over_15 (>=900s). Order and repeated events within a bucket are preserved; exact ages are not sent."
+    },
+    "background_graveyard_cohort": {
+        "key": "background_graveyard_cohort",
+        "type": "string",
+        "description": "Most recently enrolled CPM background-graveyard cohort.",
+        "enum": ["control", "treatment"]
+    },
+    "cpmBackgroundTerminationReason": {
+        "key": "reason",
+        "type": "string",
+        "description": "WebKit's bounded CPM background-process termination reason.",
+        "enum": ["memory", "cpu", "client", "crash", "crash_limit", "unknown"]
+    },
+    "cpmBackgroundGraveyardCohort": {
+        "key": "cohort",
+        "type": "string",
+        "description": "CPM background-graveyard experiment cohort.",
+        "enum": ["control", "treatment"]
+    },
+    "cpmBackgroundGraveyardOutcome": {
+        "key": "outcome",
+        "type": "string",
+        "description": "First measurable CPM result after an enrolled termination.",
+        "enum": ["healthy", "initialization_failed", "not_measured"]
     },
     "web_extension_type": {
         "key": "extension_type",

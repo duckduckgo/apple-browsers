@@ -73,6 +73,12 @@ public enum WebExtensionPixelEvent {
     case cpmMessagingRecoveredAfterExtensionReload(from: CPMMessagingRecoverySource)
     /// The first CPM measurement using a successful extension-reload generation also failed.
     case cpmMessagingExtensionReloadFailed
+    /// Denominator for every enrolled background-process termination.
+    case cpmBackgroundGraveyardTermination(reason: CPMBackgroundProcessTerminationReason?, cohort: CPMBackgroundGraveyardCohort)
+    /// First measurable CPM result following an enrolled termination.
+    case cpmBackgroundGraveyardOutcome(reason: CPMBackgroundProcessTerminationReason?,
+                                       cohort: CPMBackgroundGraveyardCohort,
+                                       outcome: CPMBackgroundGraveyardOutcome)
 }
 
 /// Failure state of the episode immediately before recovery.
@@ -154,6 +160,14 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "debug_web_extension_cpm_messaging_extension_reload_failed"
             frequency = .dailyAndCount
             parameters = [:]
+        case .cpmBackgroundGraveyardTermination(let reason, let cohort):
+            name = "debug_web_extension_cpm_background_graveyard_termination"
+            frequency = .dailyAndCount
+            parameters = ["reason": reason?.description ?? "unknown", "cohort": cohort.rawValue]
+        case .cpmBackgroundGraveyardOutcome(let reason, let cohort, let outcome):
+            name = "debug_web_extension_cpm_background_graveyard_outcome"
+            frequency = .dailyAndCount
+            parameters = ["reason": reason?.description ?? "unknown", "cohort": cohort.rawValue, "outcome": outcome.rawValue]
         case .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
              .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
@@ -161,6 +175,22 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
              .scriptletValidationError, .scriptletInstalled, .scriptletInstallError:
             return nil
         }
+    }
+}
+
+/// Metadata for the user-level experiment outcome pixel. Operational CPM pixels remain countable and carry
+/// per-termination context; this metric is intentionally low-cardinality and unique per experiment assignment.
+@available(macOS 15.4, iOS 18.4, *)
+public struct CPMBackgroundGraveyardExperimentPixelMetadata: Equatable, Sendable {
+    public static let experimentName = "cpmBackgroundGraveyardExperiment"
+    public static let metricName = "cpmBackgroundGraveyardOutcome"
+    public static let conversionWindowDays = 0...1
+
+    public let value: String
+
+    public init?(event: WebExtensionPixelEvent) {
+        guard case .cpmBackgroundGraveyardOutcome(_, _, let outcome) = event else { return nil }
+        value = outcome.rawValue
     }
 }
 

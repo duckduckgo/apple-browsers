@@ -61,7 +61,7 @@ final class AIChatDebugMenu: NSMenu {
 
             storageServerMenuItem
 
-#if DEBUG
+#if DEBUG || REVIEW
             NSMenuItem.separator()
 
             NSMenuItem(title: "Browser Tools Panel…", action: #selector(openBrowserToolsPanel))
@@ -72,7 +72,7 @@ final class AIChatDebugMenu: NSMenu {
         }
     }
 
-#if DEBUG
+#if DEBUG || REVIEW
 
     // MARK: - Browser Tools
 
@@ -255,7 +255,7 @@ final class AIChatDebugMenu: NSMenu {
     // MARK: - Menu State Update
 
     override func update() {
-#if DEBUG
+#if DEBUG || REVIEW
         browserToolsPanelInSidebarMenuItem.state = browserToolsDebugSettings.showsPanelInSidebar == true ? .on : .off
 #endif
         updateWebUIMenuItemsState()
@@ -364,7 +364,7 @@ final class AIChatDebugMenu: NSMenu {
     }
 }
 
-#if DEBUG
+#if DEBUG || REVIEW
 extension AIChatDebugMenu: NSMenuDelegate {
 
     /// Rebuilt on every open so it always shows the decisions currently stored.

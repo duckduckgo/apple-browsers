@@ -158,7 +158,7 @@ final class AIChatViewController: NSViewController {
         createAndSetupSeparator(in: container)
         createAndSetupTopBar(in: container)
         createAndSetupWebViewContainer(in: container)
-#if DEBUG
+#if DEBUG || REVIEW
         embedBrowserToolsDebugPanelIfEnabled(in: container)
 #endif
 
@@ -658,7 +658,7 @@ private final class FloatingWindowTitleDragButton: MouseOverButton {
     }
 }
 
-#if DEBUG
+#if DEBUG || REVIEW
 // MARK: - Browser tools debug panel in the sidebar
 
 extension AIChatViewController {
